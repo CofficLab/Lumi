@@ -69,8 +69,8 @@ public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 详情：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(self.t)获取 Issue 详情：\(owner)/\(repo)#\(issueNumber)")
             }
         }
 
@@ -82,8 +82,8 @@ public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
             )
             return formatIssueDetail(issue)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("获取 Issue 详情失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("获取 Issue 详情失败：\(error.localizedDescription)")
             }
             return "获取 Issue 详情失败：\(error.localizedDescription)"
         }

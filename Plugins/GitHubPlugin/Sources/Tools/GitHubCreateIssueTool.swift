@@ -3,17 +3,17 @@ import SuperLogKit
 import AgentToolKit
 import GitHubKit
 
-/// GitHub 更新 Issue 工具
-public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
-    public nonisolated static let emoji = "✏️"
+/// GitHub 创建 Issue 工具
+public struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "✍️"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_update_issue"
+    public let name = "github_create_issue"
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
+            return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
         case .english:
-            return "Update a GitHub issue, including title, body, state, labels, assignees, and milestone."
+            return "Create a new issue in a GitHub repository. Supports title, body, labels, assignees, and milestone."
         }
     }
 
@@ -31,41 +31,31 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                         "type": "string",
                         "description": "仓库名称"
                     ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue 编号",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ],
                     "title": [
                         "type": "string",
-                        "description": "新的标题（可选）"
+                        "description": "Issue 标题"
                     ],
                     "body": [
                         "type": "string",
-                        "description": "新的描述（可选）"
-                    ],
-                    "state": [
-                        "type": "string",
-                        "description": "状态：open 或 closed",
-                        "enum": ["open", "closed"]
+                        "description": "Issue 描述（支持 Markdown 格式）"
                     ],
                     "labels": [
                         "type": "array",
                         "items": ["type": "string"],
-                        "description": "新的标签数组（可选）"
+                        "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
                     ],
                     "assignees": [
                         "type": "array",
                         "items": ["type": "string"],
-                        "description": "新的指派用户数组（可选）"
+                        "description": "指派的用户名数组"
                     ],
                     "milestone": [
                         "type": "integer",
-                        "description": "里程碑编号（可选，null 表示移除）",
+                        "description": "里程碑编号",
                         "minimum": 1
                     ]
                 ],
-                "required": ["owner", "repo", "issueNumber"]
+                "required": ["owner", "repo", "title"]
             ]
         case .english:
             return [
@@ -73,52 +63,42 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
                 "properties": [
                     "owner": [
                         "type": "string",
-                        "description": "Repository owner (username or organization)"
+                        "description": "Repository owner"
                     ],
                     "repo": [
                         "type": "string",
                         "description": "Repository name"
                     ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue number",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ],
                     "title": [
                         "type": "string",
-                        "description": "New title (optional)"
+                        "description": "Issue title"
                     ],
                     "body": [
                         "type": "string",
-                        "description": "New description (optional)"
-                    ],
-                    "state": [
-                        "type": "string",
-                        "description": "State: open or closed",
-                        "enum": ["open", "closed"]
+                        "description": "Issue description (Markdown supported)"
                     ],
                     "labels": [
                         "type": "array",
                         "items": ["type": "string"],
-                        "description": "New labels array (optional)"
+                        "description": "Array of label names, e.g. [\"bug\", \"help wanted\"]"
                     ],
                     "assignees": [
                         "type": "array",
                         "items": ["type": "string"],
-                        "description": "New assignees array (optional)"
+                        "description": "Array of usernames to assign"
                     ],
                     "milestone": [
                         "type": "integer",
-                        "description": "Milestone number (optional, null to remove)",
+                        "description": "Milestone number",
                         "minimum": 1
                     ]
                 ],
-                "required": ["owner", "repo", "issueNumber"]
+                "required": ["owner", "repo", "title"]
             ]
         }
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "更新 Issue"    }
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "创建 Issue"    }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }
@@ -126,58 +106,54 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
               let repo = arguments["repo"]?.value as? String,
-              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
+              let title = arguments["title"]?.value as? String else {
             throw NSError(
                 domain: name,
                 code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, issueNumber"]
+                userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, title"]
             )
         }
 
-        let title = arguments["title"]?.value as? String
         let body = arguments["body"]?.value as? String
-        let state = arguments["state"]?.value as? String
         let labels = arguments["labels"]?.value as? [String]
         let assignees = arguments["assignees"]?.value as? [String]
         let milestone = GitHubToolArgumentNormalizer.issueNumber(arguments["milestone"]?.value)
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)更新 Issue：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
             }
         }
 
         do {
-            let issue = try await GitHubAPIService.shared.updateIssue(
+            let issue = try await GitHubAPIService.shared.createIssue(
                 owner: owner,
                 repo: repo,
-                issueNumber: issueNumber,
                 title: title,
                 body: body,
-                state: state,
                 labels: labels,
                 assignees: assignees,
                 milestone: milestone
             )
-            return formatUpdatedIssue(issue)
+            return formatCreatedIssue(issue)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("更新 Issue 失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
             }
-            return "更新 Issue 失败：\(error.localizedDescription)"
+            return "创建 Issue 失败：\(error.localizedDescription)"
         }
     }
 
-    private func formatUpdatedIssue(_ issue: GitHubIssue) -> String {
+    private func formatCreatedIssue(_ issue: GitHubIssue) -> String {
         let stateEmoji = issue.state == .open ? "🟢" : "🔴"
-        let stateText = issue.state == .open ? "开放中" : "已关闭"
 
         return """
-        \(stateEmoji) **Issue 已更新**
+        \(stateEmoji) **Issue 已创建**
 
         **#\(issue.number) \(issue.title)**
 
-        **状态**: \(stateText)
+        \(issue.body ?? "")
+
         **链接**: \(issue.htmlUrl)
         """
     }

@@ -60,8 +60,8 @@ public struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
             }
         }
 
@@ -72,8 +72,8 @@ public struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
             )
             return formatRepoInfo(repoInfo)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
             }
             return "获取仓库信息失败：\(error.localizedDescription)"
         }

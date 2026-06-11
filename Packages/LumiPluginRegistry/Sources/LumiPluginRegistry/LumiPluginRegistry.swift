@@ -91,7 +91,6 @@ import ThemeVscodeLightPlugin
 import ThemeOneDarkPlugin
 import ThemeDraculaPlugin
 import ThemeStatusBarPlugin
-import AgentGitHubToolsPlugin
 import MultiAgentPlugin
 import DatabaseManagerPlugin
 import CodeReviewPlugin
@@ -237,7 +236,6 @@ public enum LumiPluginRegistry {
         BrowserPlugin.self,
         ProjectOverviewPlugin.self,
         ShowImagePlugin.self,
-        GitHubToolsPlugin.self,
         MultiAgentPlugin.self,
         DatabaseManagerPlugin.self,
         CodeReviewPlugin.self,

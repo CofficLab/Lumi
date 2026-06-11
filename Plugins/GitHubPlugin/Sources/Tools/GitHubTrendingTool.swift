@@ -59,8 +59,8 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         let limit = Self.normalizedLimit(arguments["limit"]?.value)
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
             }
         }
 
@@ -68,8 +68,8 @@ public struct GitHubTrendingTool: SuperAgentTool, SuperLog {
             let repos = try await GitHubAPIService.shared.getTrendingRepositories(since: since)
             return formatTrendingRepos(Array(repos.prefix(limit)))
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
             }
             return "获取趋势项目失败：\(error.localizedDescription)"
         }

@@ -124,8 +124,8 @@ extension GitHubPluginSettingsView {
             isLoadingSettings = false
         }
 
-        if Self.verbose, GitHubToolsPlugin.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)Token 加载状态：\(apiLimitInfo)")
+        if Self.verbose, GitHubPlugin.verbose {
+            GitHubPlugin.logger.info("\(self.t)Token 加载状态：\(apiLimitInfo)")
         }
     }
 
@@ -141,8 +141,8 @@ extension GitHubPluginSettingsView {
             }
         }
 
-        if Self.verbose, GitHubToolsPlugin.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)Token 已保存，认证状态：\(apiLimitInfo)")
+        if Self.verbose, GitHubPlugin.verbose {
+            GitHubPlugin.logger.info("\(self.t)Token 已保存，认证状态：\(apiLimitInfo)")
         }
     }
 }

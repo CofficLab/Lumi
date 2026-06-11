@@ -3,17 +3,17 @@ import SuperLogKit
 import AgentToolKit
 import GitHubKit
 
-/// GitHub Issue 评论列表工具
-public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
-    public nonisolated static let emoji = "💬"
+/// GitHub Issue 列表工具
+public struct GitHubIssueListTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_issue_comments"
+    public let name = "github_issues"
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "获取 GitHub Issue 的评论列表。"
+            return "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
         case .english:
-            return "Get the comment list for a GitHub issue."
+            return "List issues in a GitHub repository. Supports filtering by state: open, closed, or all."
         }
     }
 
@@ -25,16 +25,16 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                 "properties": [
                     "owner": [
                         "type": "string",
-                        "description": "仓库所有者"
+                        "description": "仓库所有者（用户名或组织名）"
                     ],
                     "repo": [
                         "type": "string",
                         "description": "仓库名称"
                     ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue 编号",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
+                    "state": [
+                        "type": "string",
+                        "description": "Issue 状态：open（开放）、closed（已关闭）、all（全部），默认 open",
+                        "enum": ["open", "closed", "all"]
                     ],
                     "page": [
                         "type": "integer",
@@ -48,7 +48,7 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                         "maximum": 100
                     ]
                 ],
-                "required": ["owner", "repo", "issueNumber"]
+                "required": ["owner", "repo"]
             ]
         case .english:
             return [
@@ -56,16 +56,16 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                 "properties": [
                     "owner": [
                         "type": "string",
-                        "description": "Repository owner"
+                        "description": "Repository owner (username or organization)"
                     ],
                     "repo": [
                         "type": "string",
                         "description": "Repository name"
                     ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue number",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
+                    "state": [
+                        "type": "string",
+                        "description": "Issue state: open, closed, or all. Default: open",
+                        "enum": ["open", "closed", "all"]
                     ],
                     "page": [
                         "type": "integer",
@@ -79,64 +79,70 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
                         "maximum": 100
                     ]
                 ],
-                "required": ["owner", "repo", "issueNumber"]
+                "required": ["owner", "repo"]
             ]
         }
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查看 Issue 评论"    }
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "列出 Issue"    }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 
     public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         guard let owner = arguments["owner"]?.value as? String,
-              let repo = arguments["repo"]?.value as? String,
-              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
+              let repo = arguments["repo"]?.value as? String else {
             throw NSError(
                 domain: name,
                 code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, issueNumber"]
+                userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner 和 repo"]
             )
         }
 
+        let stateRaw = arguments["state"]?.value as? String ?? "open"
+        let state = GitHubIssueState(rawValue: stateRaw) ?? .open
         let page = Self.normalizedPage(arguments["page"]?.value)
         let perPage = Self.normalizedPerPage(arguments["perPage"]?.value)
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
             }
         }
 
         do {
-            let comments = try await GitHubAPIService.shared.getIssueComments(
+            let issues = try await GitHubAPIService.shared.getIssues(
                 owner: owner,
                 repo: repo,
-                issueNumber: issueNumber,
+                state: state,
                 page: page,
                 perPage: perPage
             )
-            return formatComments(comments)
+            return formatIssues(issues)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
             }
-            return "获取 Issue 评论失败：\(error.localizedDescription)"
+            return "获取 Issue 列表失败：\(error.localizedDescription)"
         }
     }
 
-    private func formatComments(_ comments: [GitHubIssueComment]) -> String {
-        guard !comments.isEmpty else {
-            return "暂无评论"
+    private func formatIssues(_ issues: [GitHubIssue]) -> String {
+        guard !issues.isEmpty else {
+            return "暂无 Issue"
         }
 
-        var output = "💬 Issue 评论（\(comments.count) 条）\n\n"
+        var output = "📋 GitHub Issue 列表\n\n"
 
-        for (index, comment) in comments.enumerated() {
+        for (index, issue) in issues.enumerated() {
+            let stateEmoji = issue.state == .open ? "🟢" : "🔴"
+            let labelsText = issue.labels.isEmpty ? "" : " | 标签：\(issue.labels.map { $0.name }.joined(separator: ", "))"
+            let milestoneText = issue.milestone != nil ? " | 里程碑：\(issue.milestone!.title)" : ""
+
             output += """
-            \(index + 1). **@\(comment.user.login)** - \(formatDate(comment.updatedAt))
-               \(comment.body.prefix(200))\(comment.body.count > 200 ? "..." : "")
+            \(index + 1). \(stateEmoji) **#\((issue.number)) \(issue.title)**
+               作者：\(issue.user.login) | 评论：\(issue.comments) | 更新于：\(formatDate(issue.updatedAt))\(labelsText)\(milestoneText)
+               \(issue.htmlUrl)
 
             """
         }
@@ -151,7 +157,7 @@ public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
 
         if let date = formatter.date(from: dateString) {
             let outputFormatter = DateFormatter()
-            outputFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+            outputFormatter.dateFormat = "MM-dd HH:mm"
             return outputFormatter.string(from: date)
         }
         return dateString.prefix(10).description

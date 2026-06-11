@@ -1,10 +1,11 @@
 import AgentToolKit
+import GitHubKit
 import LumiCoreKit
 import LumiUI
 import os
 import SwiftUI
 
-/// GitHub 插件：合并了 CLI 检测和生态洞察功能。
+/// GitHub 插件：CLI 检测、生态洞察 + GitHub API 远程操作。
 public enum GitHubPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .development
@@ -19,8 +20,8 @@ public enum GitHubPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.github",
-        displayName: PluginGitHubLocalization.string("GitHub"),
-        description: PluginGitHubLocalization.string("GitHub CLI detection, ecosystem insight and local knowledge base."),
+        displayName: GitHubPluginLocalization.string("GitHub"),
+        description: GitHubPluginLocalization.string("GitHub CLI detection, ecosystem insight, local knowledge base, and GitHub API tools."),
         order: 16
     )
 
@@ -28,27 +29,41 @@ public enum GitHubPlugin: LumiPlugin {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapIfNeeded()
         return [GitHubKBChatMiddleware()]
     }
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapIfNeeded()
         return [
+            // Insight tools
             QueryEcoKBTool().asLumiAgentTool(),
             GitHubCLICheckTool().asLumiAgentTool(),
+            // GitHub API tools
+            GitHubRepoInfoTool().asLumiAgentTool(),
+            GitHubSearchTool().asLumiAgentTool(),
+            GitHubFileContentTool().asLumiAgentTool(),
+            GitHubTrendingTool().asLumiAgentTool(),
+            GitHubIssueListTool().asLumiAgentTool(),
+            GitHubIssueDetailTool().asLumiAgentTool(),
+            GitHubCreateIssueTool().asLumiAgentTool(),
+            GitHubUpdateIssueTool().asLumiAgentTool(),
+            GitHubCloseIssueTool().asLumiAgentTool(),
+            GitHubReopenIssueTool().asLumiAgentTool(),
+            GitHubIssueCommentsTool().asLumiAgentTool(),
+            GitHubAddIssueCommentTool().asLumiAgentTool(),
         ]
     }
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapIfNeeded()
         let projectPath = context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).kb",
-                title: PluginGitHubLocalization.string("GitHub Ecosystem KB"),
+                title: GitHubPluginLocalization.string("GitHub Ecosystem KB"),
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {
@@ -57,9 +72,28 @@ public enum GitHubPlugin: LumiPlugin {
             )
         ]
     }
+
+    @MainActor
+    public static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
+        bootstrapIfNeeded()
+        return AnyView(GitHubPluginSettingsView())
+    }
+
+    // MARK: - Bootstrap
+
+    @MainActor
+    private static func bootstrapIfNeeded() {
+        guard !didBootstrap else { return }
+        let settingsStore = GitHubPluginLocalStore()
+        settingsStore.migrateLegacyValueIfMissing(forKey: "GitHubToken")
+        GitHubAPIService.shared.setTokenProvider(settingsStore)
+        didBootstrap = true
+    }
 }
 
-enum PluginGitHubLocalization {
+private nonisolated(unsafe) var didBootstrap = false
+
+enum GitHubPluginLocalization {
     static let table = "Localizable"
     static let bundle = Bundle.module
 

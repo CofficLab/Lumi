@@ -3,17 +3,17 @@ import SuperLogKit
 import AgentToolKit
 import GitHubKit
 
-/// GitHub 重新打开 Issue 工具
-public struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
-    public nonisolated static let emoji = "🔓"
+/// GitHub 关闭 Issue 工具
+public struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "🔒"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_reopen_issue"
+    public let name = "github_close_issue"
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "重新打开已关闭的 GitHub Issue。"
+            return "关闭指定的 GitHub Issue。"
         case .english:
-            return "Reopen a closed GitHub issue."
+            return "Close the specified GitHub issue."
         }
     }
 
@@ -62,7 +62,7 @@ public struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         }
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "重新打开 Issue"    }
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "关闭 Issue"    }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .medium
     }
@@ -79,29 +79,29 @@ public struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(self.t)关闭 Issue：\(owner)/\(repo)#\(issueNumber)")
             }
         }
 
         do {
-            let issue = try await GitHubAPIService.shared.reopenIssue(
+            let issue = try await GitHubAPIService.shared.closeIssue(
                 owner: owner,
                 repo: repo,
                 issueNumber: issueNumber
             )
-            return formatReopenedIssue(issue)
+            return formatClosedIssue(issue)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("关闭 Issue 失败：\(error.localizedDescription)")
             }
-            return "重新打开 Issue 失败：\(error.localizedDescription)"
+            return "关闭 Issue 失败：\(error.localizedDescription)"
         }
     }
 
-    private func formatReopenedIssue(_ issue: GitHubIssue) -> String {
+    private func formatClosedIssue(_ issue: GitHubIssue) -> String {
         return """
-        🔓 **Issue 已重新打开**
+        🔒 **Issue 已关闭**
 
         **#\(issue.number) \(issue.title)**
 

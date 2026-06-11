@@ -87,8 +87,8 @@ public struct GitHubFileContentTool: SuperAgentTool, SuperLog {
         let branch = arguments["branch"]?.value as? String ?? "main"
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
             }
         }
 
@@ -106,8 +106,8 @@ public struct GitHubFileContentTool: SuperAgentTool, SuperLog {
 
             return "📄 **\(fileContent.name)**\n\n```\(content)```"
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
             }
             return "获取文件失败：\(error.localizedDescription)"
         }

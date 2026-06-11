@@ -92,8 +92,8 @@ public struct GitHubSearchTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(Self.t)搜索：\(searchQuery)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(Self.t)搜索：\(searchQuery)")
             }
         }
 

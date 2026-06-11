@@ -88,8 +88,8 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
             }
         }
 
@@ -102,8 +102,8 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
             )
             return formatAddedComment(comment)
         } catch {
-            if GitHubToolsPlugin.verbose {
-                            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+            if GitHubPlugin.verbose {
+                            GitHubPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
             }
             return "添加评论失败：\(error.localizedDescription)"
         }

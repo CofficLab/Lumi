@@ -18,7 +18,7 @@ public final class GitHubPluginLocalStore: @unchecked Sendable {
 
     public convenience init() {
         self.init(settingsDirectory: Self.dbFolderURLProvider()
-            .appendingPathComponent("GitHubToolsPlugin", isDirectory: true)
+            .appendingPathComponent("GitHubPlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
 
