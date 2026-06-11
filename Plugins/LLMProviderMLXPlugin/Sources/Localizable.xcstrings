@@ -1,0 +1,174 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Gemma 4 26B-A4B" : {
+
+    },
+    "Gemma 4 26B-A4B Instruct" : {
+
+    },
+    "Gemma 4 31B" : {
+
+    },
+    "Gemma 4 31B Instruct" : {
+
+    },
+    "Gemma 4 E2B" : {
+
+    },
+    "Gemma 4 E2B Instruct" : {
+
+    },
+    "Gemma 4 E4B" : {
+
+    },
+    "Gemma 4 E4B Instruct" : {
+
+    },
+    "Google 中端基础模型，支持多模态" : {
+
+    },
+    "Google 中端指令模型，支持多模态" : {
+
+    },
+    "Google 大型基础模型，强大的多模态能力" : {
+
+    },
+    "Google 大型指令模型，强大的多模态能力" : {
+
+    },
+    "Google 轻量级基础模型" : {
+
+    },
+    "Google 轻量级指令模型" : {
+
+    },
+    "Google 轻量级模型，适合低内存设备" : {
+
+    },
+    "Llama 3.2 3B" : {
+
+    },
+    "Llama 3.3 70B" : {
+
+    },
+    "Local LLM via Apple MLX" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local LLM via Apple MLX"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过 Apple MLX 运行本地 LLM"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通過 Apple MLX 運行本地 LLM"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通過 Apple MLX 運行本地 LLM"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通過 Apple MLX 運行本地 LLM"
+          }
+        }
+      }
+    },
+    "Local MLX models for offline chat." : {
+
+    },
+    "Local models via Apple MLX" : {
+
+    },
+    "Mistral Nemo 12B" : {
+
+    },
+    "MLX" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        }
+      }
+    },
+    "Qwen 3.5 0.8B OptiQ" : {
+
+    },
+    "Qwen 3.5 4B OptiQ" : {
+
+    },
+    "Qwen 3.5 9B" : {
+
+    },
+    "Qwen 3.5 14B" : {
+
+    },
+    "Qwen2 VL 7B" : {
+
+    },
+    "最强开源模型，需要高配置" : {
+
+    },
+    "支持图片理解的视觉语言模型" : {
+
+    },
+    "更强的中文模型，适合复杂任务" : {
+
+    },
+    "极小体积，适合入门与低内存设备" : {
+
+    },
+    "超轻量，适合低配置设备" : {
+
+    },
+    "轻量中文模型，OptiQ 量化" : {
+
+    },
+    "轻量高效，适合日常使用" : {
+
+    },
+    "阿里云最新模型，中文能力强，支持工具调用" : {
+
+    }
+  },
+  "version" : "1.1"
+}

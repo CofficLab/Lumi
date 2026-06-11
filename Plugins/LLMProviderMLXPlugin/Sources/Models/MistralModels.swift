@@ -10,8 +10,8 @@ public enum MistralModels {
     public static let all: [LocalModelInfo] = [
         LocalModelInfo(
             id: "mlx-community/Mistral-Nemo-12B-Instruct-4bit",
-            displayName: String(localized: "Mistral Nemo 12B", bundle: .module),
-            description: String(localized: "轻量高效，适合日常使用", bundle: .module),
+            displayName: LumiPluginLocalization.string("Mistral Nemo 12B", bundle: .module),
+            description: LumiPluginLocalization.string("轻量高效，适合日常使用", bundle: .module),
             size: "~7 GB",
             minRAM: 16,
             expectedBytes: 7_000_000_000,

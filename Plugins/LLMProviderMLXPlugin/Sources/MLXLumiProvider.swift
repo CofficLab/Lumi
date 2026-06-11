@@ -5,8 +5,8 @@ import LumiCoreKit
 public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
         id: "mlx",
-        displayName: String(localized: "MLX", bundle: .module),
-        description: String(localized: "Local models via Apple MLX", bundle: .module),
+        displayName: LumiPluginLocalization.string("MLX", bundle: .module),
+        description: LumiPluginLocalization.string("Local models via Apple MLX", bundle: .module),
         defaultModel: MLXModels.toolModels.first?.id ?? "mlx-community/Qwen3.5-9B-4bit",
         availableModels: MLXModels.toolModels.map(\.id)
     )

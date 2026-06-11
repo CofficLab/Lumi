@@ -31,18 +31,13 @@ let package = Package(
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: ".",
+            path: "Sources",
             exclude: [
-                "Tests",
-                "README.md",
-                "Sources/MLXPlugin.swift",
-                "Sources/MLXProvider.swift",
-                "Sources/MLXModelManager.swift",
-                "Sources/MLXDownloadManager.swift",
+                "MLXPlugin.swift",
+                "MLXProvider.swift",
             ],
-            sources: ["Sources"],
             resources: [
-                .process("Resources")
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

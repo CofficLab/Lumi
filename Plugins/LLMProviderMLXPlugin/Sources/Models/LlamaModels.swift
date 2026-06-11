@@ -10,8 +10,8 @@ public enum LlamaModels {
     public static let all: [LocalModelInfo] = [
         LocalModelInfo(
             id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
-            displayName: String(localized: "Llama 3.2 3B", bundle: .module),
-            description: String(localized: "超轻量，适合低配置设备", bundle: .module),
+            displayName: LumiPluginLocalization.string("Llama 3.2 3B", bundle: .module),
+            description: LumiPluginLocalization.string("超轻量，适合低配置设备", bundle: .module),
             size: "~2 GB",
             minRAM: 8,
             expectedBytes: 2_000_000_000,
@@ -22,8 +22,8 @@ public enum LlamaModels {
         ),
         LocalModelInfo(
             id: "mlx-community/Llama-3.3-70B-Instruct-4bit",
-            displayName: String(localized: "Llama 3.3 70B", bundle: .module),
-            description: String(localized: "最强开源模型，需要高配置", bundle: .module),
+            displayName: LumiPluginLocalization.string("Llama 3.3 70B", bundle: .module),
+            description: LumiPluginLocalization.string("最强开源模型，需要高配置", bundle: .module),
             size: "~40 GB",
             minRAM: 64,
             expectedBytes: 40_000_000_000,

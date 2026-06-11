@@ -3,7 +3,8 @@ import Testing
 @testable import LLMProviderMLXPlugin
 
 @Test func packageLoads() async throws {
-    #expect(MLXPlugin.id == "LLMProviderMLX")
+    #expect(MLXLumiPlugin.info.id == "com.coffic.lumi.plugin.llm-provider.mlx")
+    #expect(MLXLumiPlugin.info.displayName.isEmpty == false)
 }
 
 @Test func modelCacheDirectoryStaysInsideModelsCacheRoot() throws {
