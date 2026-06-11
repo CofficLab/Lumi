@@ -116,6 +116,7 @@ import EditorRailSearchPlugin
 import EditorRailSymbolsPlugin
 import EditorRailCallHierarchyPlugin
 import LLMAvailabilityPlugin
+import ConversationNewPlugin
 import DisplayControlPlugin
 
 @MainActor
@@ -203,6 +204,7 @@ public enum LumiPluginRegistry {
         RAGPlugin.self,
         ConversationTitlePlugin.self,
         ConversationListPlugin.self,
+        ConversationNewPlugin.self,
         EditorPanelPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         EditorTabStripHeaderPlugin.self,

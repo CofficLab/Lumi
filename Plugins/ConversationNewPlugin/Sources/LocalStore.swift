@@ -3,7 +3,7 @@ import LumiCoreKit
 
 /// 本地存储
 ///
-/// 存储位置：WindowConversationVM.databaseDirectory()/ConversationNewPlugin/settings.plist
+/// 存储位置：LumiCore.coreDataDirectory/ConversationNewPlugin/settings.plist
 final class LocalStore: @unchecked Sendable {
     private enum Keys {
         static let defaultChatMode = "default_chat_mode"
@@ -26,13 +26,13 @@ final class LocalStore: @unchecked Sendable {
         try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
     }
 
-    func loadDefaultChatMode() -> ChatMode? {
+    func loadDefaultAutomationLevel() -> LumiAutomationLevel? {
         guard let rawValue = string(forKey: Keys.defaultChatMode) else { return nil }
-        return ChatMode(rawValue: rawValue)
+        return LumiAutomationLevel(rawValue: rawValue)
     }
 
-    func saveDefaultChatMode(_ chatMode: ChatMode) {
-        set(chatMode.rawValue, forKey: Keys.defaultChatMode)
+    func saveDefaultAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+        set(automationLevel.rawValue, forKey: Keys.defaultChatMode)
     }
 
     func set(_ value: Any?, forKey key: String) {

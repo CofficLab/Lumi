@@ -1,50 +1,63 @@
-import SwiftUI
 import LumiCoreKit
 import LumiUI
+import SwiftUI
 
 /// 新会话按钮视图组件
 public struct NewChatButton: View {
-    let context: PluginContext
+    let chatService: any LumiChatServicing
+    let projectPathStore: (any LumiCurrentProjectPathStoring)?
 
-    @State private var showUnavailableAlert = false
-    @State private var unavailableAlertMessage = ""
+    @State private var localStore: LocalStore?
 
-    public init(context: PluginContext) {
-        self.context = context
+    public init(
+        chatService: any LumiChatServicing,
+        projectPathStore: (any LumiCurrentProjectPathStoring)? = nil
+    ) {
+        self.chatService = chatService
+        self.projectPathStore = projectPathStore
     }
 
     public var body: some View {
         AppIconButton(
             systemImage: "plus",
-            label: String(localized: "Start New Conversation", bundle: .module)
+            label: LumiPluginLocalization.string("Start New Conversation", bundle: .module)
         ) {
-            Task {
-                await handleTap()
-            }
+            createConversation()
         }
         .onAppear {
-            context.conversationCreationContext?.syncDefaultChatMode()
-        }
-        .alert(
-            String(localized: "Cannot Create Conversation", bundle: .module),
-            isPresented: $showUnavailableAlert
-        ) {
-            Button(String(localized: "OK", bundle: .module), role: .cancel) {}
-        } message: {
-            Text(unavailableAlertMessage)
+            syncDefaultAutomationLevel()
         }
     }
 
-    @MainActor
-    private func handleTap() async {
-        guard let creationContext = context.conversationCreationContext else {
-            unavailableAlertMessage = String(
-                localized: "New conversation is unavailable in the current environment.",
-                bundle: .module
-            )
-            showUnavailableAlert = true
-            return
+    func syncDefaultAutomationLevel(using localStore: LocalStore? = nil) {
+        let store = localStore ?? resolvedLocalStore()
+        store.saveDefaultAutomationLevel(
+            chatService.automationLevel(for: chatService.selectedConversationID)
+        )
+    }
+
+    func createConversation(using localStore: LocalStore? = nil) {
+        let store = localStore ?? resolvedLocalStore()
+        let projectPath = projectPathStore?.currentProjectPath
+        let resolvedPath = (projectPath?.isEmpty == false) ? projectPath : nil
+        let language = chatService.language(for: chatService.selectedConversationID)
+        let automationLevel = store.loadDefaultAutomationLevel()
+            ?? chatService.automationLevel(for: chatService.selectedConversationID)
+
+        let conversationID = chatService.createConversation(
+            title: nil,
+            projectPath: resolvedPath,
+            language: language
+        )
+        chatService.setAutomationLevel(automationLevel, for: conversationID)
+    }
+
+    private func resolvedLocalStore() -> LocalStore {
+        if let localStore {
+            return localStore
         }
-        await creationContext.createConversation()
+        let store = LocalStore(databaseDirectory: LumiCore.coreDataDirectory)
+        localStore = store
+        return store
     }
 }
