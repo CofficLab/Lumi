@@ -6,7 +6,7 @@ import SwiftUI
 
 /// GitHub 插件：合并了 CLI 检测和生态洞察功能。
 public enum GitHubPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .development
     public static let iconName = "network"
 
