@@ -6,6 +6,7 @@ struct DeviceInfoView: View {
     @LumiTheme private var theme
     @StateObject private var data = DeviceData()
     @ObservedObject private var gpuService = GPUService.shared
+    @ObservedObject private var batteryService = BatteryService.shared
 
     var body: some View {
         ScrollView {
@@ -86,21 +87,62 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "Battery", icon: "battery.100", color: theme.info) {
+                        DeviceInfoCard(title: "Battery", icon: batteryIcon, color: batteryLevelColor) {
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("\(Int(data.batteryLevel * 100))%")
-                                        .font(.title.weight(.semibold))
-                                        .foregroundColor(theme.textPrimary)
-                                    Spacer()
-                                    if data.isCharging {
-                                        Image(systemName: "bolt.fill")
-                                            .foregroundColor(theme.warning)
+                                if batteryService.hasBattery {
+                                    HStack {
+                                        Text("\(Int(batteryService.level * 100))%")
+                                            .font(.title.weight(.semibold))
+                                            .foregroundColor(theme.textPrimary)
+                                        Spacer()
+                                        if batteryService.isCharging {
+                                            Image(systemName: "bolt.fill")
+                                                .foregroundColor(theme.warning)
+                                        }
+                                    }
+
+                                    ProgressView(value: batteryService.level)
+                                        .tint(batteryLevelColor)
+
+                                    // Enhanced details
+                                    HStack(spacing: 12) {
+                                        if batteryService.healthPercentage > 0 {
+                                            Label {
+                                                Text("\(Int(batteryService.healthPercentage))%")
+                                                    .font(.caption2)
+                                            } icon: {
+                                                Image(systemName: "heart.fill")
+                                                    .font(.caption2)
+                                            }
+                                            .foregroundColor(batteryHealthColor)
+                                        }
+                                        if batteryService.cycleCount > 0 {
+                                            Label {
+                                                Text("\(batteryService.cycleCount) cycles")
+                                                    .font(.caption2)
+                                            } icon: {
+                                                Image(systemName: "arrow.triangle.2.circlepath")
+                                                    .font(.caption2)
+                                            }
+                                            .foregroundColor(theme.textSecondary)
+                                        }
+                                    }
+                                } else {
+                                    // Desktop Mac without internal battery
+                                    HStack {
+                                        Image(systemName: "powerplug.fill")
+                                            .foregroundColor(.green)
+                                        Text("AC Power")
+                                            .font(.body.weight(.medium))
+                                            .foregroundColor(theme.textPrimary)
+                                        Spacer()
+                                    }
+                                    if batteryService.adapterWatts > 0 {
+                                        Text("Adapter: \(batteryService.adapterWattsString)")
+                                            .font(.caption)
+                                            .foregroundColor(theme.textSecondary)
                                     }
                                 }
-
-                                ProgressView(value: data.batteryLevel)
-                                    .tint(theme.info)
                             }
                         }
 
@@ -172,6 +214,37 @@ struct DeviceInfoView: View {
 
     private var diskTotalText: String {
         ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
+    }
+
+    // MARK: - Battery Helpers
+
+    private var batteryIcon: String {
+        guard batteryService.hasBattery else { return "powerplug.fill" }
+        let pct = Int(batteryService.level * 100)
+        if batteryService.isCharging {
+            if pct >= 90 { return "battery.100.bolt" }
+            return "battery.25.bolt"
+        }
+        if pct >= 90 { return "battery.100" }
+        if pct >= 65 { return "battery.75" }
+        if pct >= 40 { return "battery.50" }
+        if pct >= 15 { return "battery.25" }
+        return "battery.0"
+    }
+
+    private var batteryLevelColor: Color {
+        guard batteryService.hasBattery else { return .green }
+        let pct = batteryService.level * 100
+        if pct > 50 { return .green }
+        if pct > 20 { return .orange }
+        return .red
+    }
+
+    private var batteryHealthColor: Color {
+        let h = batteryService.healthPercentage
+        if h >= 80 { return .green }
+        if h >= 60 { return .orange }
+        return .red
     }
 
     private func formatUptime(_ interval: TimeInterval) -> String {

@@ -4,6 +4,7 @@ import LumiUI
 struct SystemMonitorView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()
     @ObservedObject private var gpuService = GPUService.shared
+    @ObservedObject private var batteryService = BatteryService.shared
     
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
@@ -80,15 +81,85 @@ struct SystemMonitorView: View {
                         .opacity(0.6)
                 }
             }
+            
+            // Battery Card
+            if batteryService.hasBattery {
+                MonitorCard(title: "Battery",
+                            value: batteryMonitorValue,
+                            color: batteryLevelColor) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Health")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                Text("\(Int(batteryService.healthPercentage))%")
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundColor(batteryHealthColor)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Cycles")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                Text("\(batteryService.cycleCount)")
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundColor(Color.adaptive(light: "3C3C43", dark: "EBEBF5"))
+                            }
+                            
+                            if batteryService.temperature > 0 {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(PluginDeviceInfoLocalization.string("Temperature"))
+                                        .font(.system(size: 8))
+                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    Text(String(format: "%.1f°C", batteryService.temperature))
+                                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                        .foregroundColor(batteryTemperatureColor)
+                                }
+                            }
+                            
+                            if batteryService.watts > 0 {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Power")
+                                        .font(.system(size: 8))
+                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    Text(batteryService.wattsString)
+                                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                        .foregroundColor(batteryLevelColor)
+                                }
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        // Battery bar
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.adaptive(light: "E5E5EA", dark: "38383A"))
+                                    .frame(height: 8)
+                                
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(batteryLevelColor)
+                                    .frame(width: geo.size.width * min(max(batteryService.level, 0), 1), height: 8)
+                            }
+                        }
+                        .frame(height: 8)
+                    }
+                    .padding(8)
+                }
+            }
         }
         .padding()
         .onAppear {
             viewModel.startMonitoring()
             gpuService.startMonitoring()
+            batteryService.startMonitoring()
         }
         .onDisappear {
             viewModel.stopMonitoring()
             gpuService.stopMonitoring()
+            batteryService.stopMonitoring()
         }
     }
     
@@ -96,6 +167,35 @@ struct SystemMonitorView: View {
         let value = gpuService.utilization
         if value < 60 { return Color(hex: "BF5AF2") }
         if value < 85 { return Color(hex: "FF9F0A") }
+        return Color(hex: "FF453A")
+    }
+    
+    private var batteryMonitorValue: String {
+        let pct = Int(batteryService.level * 100)
+        if batteryService.isCharging {
+            return "\(pct)% ⚡"
+        }
+        return "\(pct)%"
+    }
+    
+    private var batteryLevelColor: Color {
+        let pct = batteryService.level * 100
+        if pct > 50 { return Color(hex: "30D158") }
+        if pct > 20 { return Color(hex: "FF9F0A") }
+        return Color(hex: "FF453A")
+    }
+    
+    private var batteryHealthColor: Color {
+        let h = batteryService.healthPercentage
+        if h >= 80 { return Color(hex: "30D158") }
+        if h >= 60 { return Color(hex: "FF9F0A") }
+        return Color(hex: "FF453A")
+    }
+    
+    private var batteryTemperatureColor: Color {
+        let t = batteryService.temperature
+        if t < 35 { return Color(hex: "30D158") }
+        if t < 45 { return Color(hex: "FF9F0A") }
         return Color(hex: "FF453A")
     }
 }
