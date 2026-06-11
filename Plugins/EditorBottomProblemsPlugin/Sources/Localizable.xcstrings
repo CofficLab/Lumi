@@ -12,25 +12,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostics"
+            "value" : "诊断"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostics"
+            "value" : "診斷"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostics"
+            "value" : "診斷"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostics"
+            "value" : "診斷"
           }
         }
       }
@@ -49,25 +49,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Problems"
+            "value" : "没有问题"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Problems"
+            "value" : "沒有問題"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Problems"
+            "value" : "沒有問題"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Problems"
+            "value" : "沒有問題"
           }
         }
       }
@@ -83,25 +83,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "问题"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "問題"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "問題"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "問題"
           }
         }
       }
@@ -117,25 +117,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems (%lld)"
+            "value" : "问题 (%lld)"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems (%lld)"
+            "value" : "問題 (%lld)"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems (%lld)"
+            "value" : "問題 (%lld)"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems (%lld)"
+            "value" : "問題 (%lld)"
           }
         }
       }
@@ -154,25 +154,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project"
+            "value" : "项目"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project"
+            "value" : "專案"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project"
+            "value" : "專案"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project"
+            "value" : "專案"
           }
         }
       }
@@ -188,25 +188,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project Context"
+            "value" : "项目上下文"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project Context"
+            "value" : "專案情境"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project Context"
+            "value" : "專案情境"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project Context"
+            "value" : "專案情境"
           }
         }
       }

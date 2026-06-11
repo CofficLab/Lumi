@@ -12,25 +12,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld matches in %2$lld files"
+            "value" : "%1$lld 个匹配，分布在 %2$lld 个文件中"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld matches in %2$lld files"
+            "value" : "%1$lld 個匹配，分佈在 %2$lld 個檔案中"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld matches in %2$lld files"
+            "value" : "%1$lld 個匹配，分佈在 %2$lld 個檔案中"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld matches in %2$lld files"
+            "value" : "%1$lld 個匹配，分佈在 %2$lld 個檔案中"
           }
         }
       }
@@ -49,25 +49,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a query and press Return"
+            "value" : "输入查询内容后按回车键"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a query and press Return"
+            "value" : "輸入查詢內容後按 Return 鍵"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a query and press Return"
+            "value" : "輸入查詢內容後按 Return 鍵"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a query and press Return"
+            "value" : "輸入查詢內容後按 Return 鍵"
           }
         }
       }
@@ -117,25 +117,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "match"
+            "value" : "个匹配"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "match"
+            "value" : "個匹配"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "match"
+            "value" : "個匹配"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "match"
+            "value" : "個匹配"
           }
         }
       }
@@ -151,25 +151,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "matches"
+            "value" : "个匹配"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "matches"
+            "value" : "個匹配"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "matches"
+            "value" : "個匹配"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "matches"
+            "value" : "個匹配"
           }
         }
       }
@@ -185,25 +185,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No results"
+            "value" : "无结果"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No results"
+            "value" : "無結果"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No results"
+            "value" : "無結果"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No results"
+            "value" : "無結果"
           }
         }
       }
@@ -219,25 +219,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "打开搜索编辑器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "開啟搜尋編輯器"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "開啟搜尋編輯器"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "開啟搜尋編輯器"
           }
         }
       }
@@ -253,25 +253,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "搜索"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "搜尋"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "搜尋"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "搜尋"
           }
         }
       }
@@ -287,25 +287,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in files"
+            "value" : "在文件中搜索"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in files"
+            "value" : "在檔案中搜尋"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in files"
+            "value" : "在檔案中搜尋"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in files"
+            "value" : "在檔案中搜尋"
           }
         }
       }
@@ -324,25 +324,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searching workspace…"
+            "value" : "正在搜索工作区…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searching workspace…"
+            "value" : "正在搜尋工作區…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searching workspace…"
+            "value" : "正在搜尋工作區…"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searching workspace…"
+            "value" : "正在搜尋工作區…"
           }
         }
       }
