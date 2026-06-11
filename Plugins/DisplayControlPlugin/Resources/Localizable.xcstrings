@@ -1,0 +1,136 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Brightness" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "亮度"
+        },
+        "zh-HK" : {
+          "string" : "亮度"
+        },
+        "zh-Hant" : {
+          "string" : "亮度"
+        }
+      }
+    },
+    "Brightness, Volume & Contrast" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "亮度、音量与对比度"
+        },
+        "zh-HK" : {
+          "string" : "亮度、音量與對比度"
+        },
+        "zh-Hant" : {
+          "string" : "亮度、音量與對比度"
+        }
+      }
+    },
+    "Built-in" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "内置"
+        },
+        "zh-HK" : {
+          "string" : "內置"
+        },
+        "zh-Hant" : {
+          "string" : "內建"
+        }
+      }
+    },
+    "Connect an external display or check your display connections." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "请连接外接显示器或检查显示器连接。"
+        },
+        "zh-HK" : {
+          "string" : "請連接外接顯示器或檢查顯示器連接。"
+        },
+        "zh-Hant" : {
+          "string" : "請連接外接顯示器或檢查顯示器連接。"
+        }
+      }
+    },
+    "Contrast" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "对比度"
+        },
+        "zh-HK" : {
+          "string" : "對比度"
+        },
+        "zh-Hant" : {
+          "string" : "對比度"
+        }
+      }
+    },
+    "Display Control" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "显示器控制"
+        },
+        "zh-HK" : {
+          "string" : "顯示器控制"
+        },
+        "zh-Hant" : {
+          "string" : "顯示器控制"
+        }
+      }
+    },
+    "Displays" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "显示器"
+        },
+        "zh-HK" : {
+          "string" : "顯示器"
+        },
+        "zh-Hant" : {
+          "string" : "顯示器"
+        }
+      }
+    },
+    "External" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "外接"
+        },
+        "zh-HK" : {
+          "string" : "外接"
+        },
+        "zh-Hant" : {
+          "string" : "外接"
+        }
+      }
+    },
+    "No displays detected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "未检测到显示器"
+        },
+        "zh-HK" : {
+          "string" : "未偵測到顯示器"
+        },
+        "zh-Hant" : {
+          "string" : "未偵測到顯示器"
+        }
+      }
+    },
+    "Volume" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "string" : "音量"
+        },
+        "zh-HK" : {
+          "string" : "音量"
+        },
+        "zh-Hant" : {
+          "string" : "音量"
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

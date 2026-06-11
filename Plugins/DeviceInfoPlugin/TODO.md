@@ -155,17 +155,17 @@ sysctl(&mib, 2, &bootTime, &size, nil, 0)
 
 > 参考来源：`hagimi-monitor/HagimiMonitorDirectOnly/DisplayDDCBridge.swift` + `DisplayControlsSection.swift`
 
-- [ ] 外接显示器亮度控制（DDC VCP 0x10 luminance）
-- [ ] 外接显示器音量控制（DDC VCP 0x62 audioSpeakerVolume + 0x8D mute）
-- [ ] 外接显示器对比度控制（DDC VCP 0x12 contrast）
-- [ ] 内置显示器亮度（`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`）
-- [ ] Apple Silicon DDC 服务匹配（`Arm64DDCMatcher`，基于 EDID UUID + IORegistry 路径匹配）
-- [ ] I2C 通信封装（`IOAVServiceWriteI2C` / `IOAVServiceReadI2C`）
-- [ ] 滑块 UI（亮度/音量/对比度 Slider）
-- [ ] 防抖写入（150ms debounce，避免 DDC 过载）
-- [ ] 不支持的控制项灰显处理
+- [x] 外接显示器亮度控制（DDC VCP 0x10 luminance）
+- [x] 外接显示器音量控制（DDC VCP 0x62 audioSpeakerVolume + 0x8D mute）
+- [x] 外接显示器对比度控制（DDC VCP 0x12 contrast）
+- [x] 内置显示器亮度（`DisplayServicesGetBrightness` / `DisplayServicesSetBrightness`）
+- [x] Apple Silicon DDC 服务匹配（`Arm64DDCMatcher`，基于 EDID UUID + IORegistry 路径匹配）
+- [x] I2C 通信封装（`IOAVServiceWriteI2C` / `IOAVServiceReadI2C`）
+- [x] 滑块 UI（亮度/音量/对比度 Slider）
+- [x] 防抖写入（150ms debounce，避免 DDC 过载）
+- [x] 不支持的控制项灰显处理
 
-**建议**：此功能复杂度高、独立性强，适合作为 `DisplayControlPlugin` 单独插件开发。
+**已完成**：已作为 `DisplayControlPlugin` 独立插件开发，位于 `Plugins/DisplayControlPlugin/`。
 
 ---
 
