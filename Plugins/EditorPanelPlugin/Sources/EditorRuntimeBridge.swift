@@ -38,6 +38,13 @@ public enum EditorRuntimeBridge {
             editorServiceProvider: { _ in service },
             currentProjectPath: { _ in editor.currentProjectPathProvider?() }
         )
+        runtime.addToChat = { text, _ in
+            NotificationCenter.default.post(
+                name: Notification.Name("addToChat"),
+                object: nil,
+                userInfo: ["text": text, "windowId": service.state.windowId as Any]
+            )
+        }
         runtime.openFile = { url, projectRoot, _ in
             if let projectRoot {
                 await service.refreshProjectContext(for: projectRoot)
