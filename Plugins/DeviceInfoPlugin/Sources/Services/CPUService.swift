@@ -22,6 +22,15 @@ public final class CPUService: ObservableObject, SuperLog {
     /// System load averages (1m, 5m, 15m)
     @Published public var loadAverage: [Double] = [0, 0, 0]
 
+    /// CPU usage breakdown: user percentage (0-100)
+    @Published public var userUsage: Double = 0.0
+
+    /// CPU usage breakdown: system percentage (0-100)
+    @Published public var systemUsage: Double = 0.0
+
+    /// CPU usage breakdown: idle percentage (0-100)
+    @Published public var idleUsage: Double = 100.0
+
     // MARK: - Private Properties
 
     private var monitoringTimer: Timer?
@@ -80,13 +89,16 @@ public final class CPUService: ObservableObject, SuperLog {
                 self.cpuUsage = snapshot.totalUsage
                 self.perCoreUsage = snapshot.perCoreUsage
                 self.loadAverage = load
+                self.userUsage = snapshot.userUsage
+                self.systemUsage = snapshot.systemUsage
+                self.idleUsage = snapshot.idleUsage
             }
         }
     }
 
     private nonisolated static func calculateCPUSnapshot(
         previousTicks: [integer_t]?
-    ) -> (totalUsage: Double, perCoreUsage: [Double], currentTicks: [integer_t]) {
+    ) -> (totalUsage: Double, perCoreUsage: [Double], userUsage: Double, systemUsage: Double, idleUsage: Double, currentTicks: [integer_t]) {
         var processorInfo = processor_info_array_t(nil)
         var processorMsgCount = mach_msg_type_number_t(0)
         var processorCount = natural_t(0)
@@ -94,7 +106,7 @@ public final class CPUService: ObservableObject, SuperLog {
         let result = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &processorCount, &processorInfo, &processorMsgCount)
 
         guard result == KERN_SUCCESS, let processorInfo else {
-            return (0.0, [], previousTicks ?? [])
+            return (0.0, [], 0.0, 0.0, 100.0, previousTicks ?? [])
         }
         defer {
             let size = Int(processorMsgCount) * MemoryLayout<integer_t>.stride
@@ -105,6 +117,10 @@ public final class CPUService: ObservableObject, SuperLog {
 
         var totalUsage = 0.0
         var coreUsage: [Double] = []
+        var totalUser: Int64 = 0
+        var totalSystem: Int64 = 0
+        var totalIdle: Int64 = 0
+        var totalNice: Int64 = 0
 
         if let previousTicks, previousTicks.count >= currentTicks.count {
             for i in 0..<Int(processorCount) {
@@ -121,6 +137,11 @@ public final class CPUService: ObservableObject, SuperLog {
 
                 coreUsage.append(usage)
                 totalUsage += usage
+
+                totalUser += Int64(user)
+                totalSystem += Int64(system)
+                totalNice += Int64(nice)
+                totalIdle += Int64(idle)
             }
 
             if processorCount > 0 {
@@ -128,7 +149,12 @@ public final class CPUService: ObservableObject, SuperLog {
             }
         }
 
-        return (totalUsage, coreUsage, currentTicks)
+        let allTicks = totalUser + totalSystem + totalNice + totalIdle
+        let userPct = allTicks > 0 ? Double(totalUser + totalNice) / Double(allTicks) * 100.0 : 0.0
+        let systemPct = allTicks > 0 ? Double(totalSystem) / Double(allTicks) * 100.0 : 0.0
+        let idlePct = allTicks > 0 ? Double(totalIdle) / Double(allTicks) * 100.0 : 100.0
+
+        return (totalUsage, coreUsage, userPct, systemPct, idlePct, currentTicks)
     }
 
     private nonisolated static func getLoadAverage() -> [Double] {

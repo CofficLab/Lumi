@@ -12,6 +12,9 @@ class CPUManagerViewModel: ObservableObject {
     @Published var perCoreUsage: [Double] = []
     @Published var loadAverage: [Double] = [0, 0, 0]
     @Published var topProcesses: [ProcessMetric] = []
+    @Published var userUsage: Double = 0.0
+    @Published var systemUsage: Double = 0.0
+    @Published var idleUsage: Double = 100.0
     
     private var cancellables = Set<AnyCancellable>()
     private let monitorsProcesses: Bool
@@ -51,6 +54,19 @@ class CPUManagerViewModel: ObservableObject {
             self?.cpuUsage = usage
             self?.perCoreUsage = perCoreUsage
             self?.loadAverage = load
+        }
+        .store(in: &cancellables)
+
+        Publishers.CombineLatest3(
+            CPUService.shared.$userUsage,
+            CPUService.shared.$systemUsage,
+            CPUService.shared.$idleUsage
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] user, system, idle in
+            self?.userUsage = user
+            self?.systemUsage = system
+            self?.idleUsage = idle
         }
         .store(in: &cancellables)
 

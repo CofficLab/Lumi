@@ -63,6 +63,34 @@ struct DeviceInfoMenuBarPopupView: View {
                 }
             }
             .frame(height: 6)
+
+            // CPU usage breakdown: User / System
+            HStack(spacing: 8) {
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(Color(hex: "30D158"))
+                        .frame(width: 6, height: 6)
+                    Text(String(format: "User %.0f%%", viewModel.userUsage))
+                        .font(.system(size: 9))
+                        .foregroundColor(Color(hex: "98989E"))
+                }
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(Color(hex: "FF9F0A"))
+                        .frame(width: 6, height: 6)
+                    Text(String(format: "Sys %.0f%%", viewModel.systemUsage))
+                        .font(.system(size: 9))
+                        .foregroundColor(Color(hex: "98989E"))
+                }
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(Color(hex: "98989E").opacity(0.4))
+                        .frame(width: 6, height: 6)
+                    Text(String(format: "Idle %.0f%%", viewModel.idleUsage))
+                        .font(.system(size: 9))
+                        .foregroundColor(Color(hex: "98989E"))
+                }
+            }
         }
         .padding()
     }

@@ -114,9 +114,9 @@ FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: [
 
 > 参考来源：`hagimi-monitor/HagimiMonitor/Samplers/CPUSampler.swift`
 
-- [ ] 系统启动时间（`KERN_BOOTTIME` sysctl → 计算运行时长）
-- [ ] CPU 使用率细分：系统/用户/闲置占比（当前只有总使用率和每核使用率）
-- [ ] 运行时长格式化（"3天 2小时"）
+- [x] 系统启动时间（`KERN_BOOTTIME` sysctl → 计算运行时长）
+- [x] CPU 使用率细分：系统/用户/闲置占比（当前只有总使用率和每核使用率）
+- [x] 运行时长格式化（"3天 2小时"）
 
 关键技术点：
 ```swift

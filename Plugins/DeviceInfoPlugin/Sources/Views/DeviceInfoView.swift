@@ -8,6 +8,7 @@ struct DeviceInfoView: View {
     @ObservedObject private var gpuService = GPUService.shared
     @ObservedObject private var batteryService = BatteryService.shared
     @ObservedObject private var storageService = StorageService.shared
+    @ObservedObject private var cpuService = CPUService.shared
 
     var body: some View {
         ScrollView {
@@ -59,6 +60,39 @@ struct DeviceInfoView: View {
                                                 .fill(theme.info)
                                                 .frame(width: 40 * min(max(data.cpuUsage / 100, 0), 1), height: 6)
                                         }
+                                }
+
+                                // CPU usage breakdown bar
+                                GeometryReader { geo in
+                                    HStack(spacing: 0) {
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(Color(hex: "30D158"))
+                                            .frame(width: geo.size.width * min(max(cpuService.userUsage / 100, 0), 1))
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(Color(hex: "FF9F0A"))
+                                            .frame(width: geo.size.width * min(max(cpuService.systemUsage / 100, 0), 1))
+                                    }
+                                }
+                                .background(RoundedRectangle(cornerRadius: 2).fill(Color(hex: "98989E").opacity(0.15)))
+                                .frame(height: 4)
+
+                                HStack(spacing: 8) {
+                                    HStack(spacing: 3) {
+                                        Circle()
+                                            .fill(Color(hex: "30D158"))
+                                            .frame(width: 5, height: 5)
+                                        Text(String(format: "%.0f%%", cpuService.userUsage))
+                                            .font(.system(size: 9))
+                                            .foregroundColor(theme.textSecondary)
+                                    }
+                                    HStack(spacing: 3) {
+                                        Circle()
+                                            .fill(Color(hex: "FF9F0A"))
+                                            .frame(width: 5, height: 5)
+                                        Text(String(format: "%.0f%%", cpuService.systemUsage))
+                                            .font(.system(size: 9))
+                                            .foregroundColor(theme.textSecondary)
+                                    }
                                 }
                             }
                         }
