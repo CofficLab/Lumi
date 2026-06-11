@@ -6,22 +6,13 @@ import SwiftUI
 struct AppTitleToolbar: View {
     @LumiTheme private var theme
     @ObservedObject var pluginService: PluginService
-    let activeID: String
-    let activeTitle: String
-    let projectPathStore: LumiCurrentProjectPathStore
+    let pluginContext: LumiPluginContext
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let context = LumiPluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-            }
-        )
-        let items = pluginService.titleToolbarItems(context: context)
+        let items = pluginService.titleToolbarItems(context: pluginContext)
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }

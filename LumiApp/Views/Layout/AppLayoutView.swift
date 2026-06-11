@@ -48,9 +48,7 @@ struct AppLayoutView: View {
         VStack(spacing: 0) {
             AppTitleToolbar(
                 pluginService: pluginService,
-                activeID: activeID,
-                activeTitle: activeTitle,
-                projectPathStore: projectPathStore
+                pluginContext: pluginContext
             )
 
             AppDivider()
