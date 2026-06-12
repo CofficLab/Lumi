@@ -425,22 +425,10 @@ jobs:
       # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
       # =================================================================================================
-      - name: Generate Appcast
+      - name: Generate Appcasts (per-arch)
         if: env.IS_PRERELEASE == 'false'
         run: |
           set -euo pipefail
-
-          APPCAST_INPUT="${{ github.workspace }}/appcast-updates"
-          DEFAULT_DMG="${{ github.workspace }}/updates/${{ env.SCHEME }}_${{ env.new_version }}_${{ env.DEFAULT_UPDATE_ARCH }}.dmg"
-
-          if [ ! -f "$DEFAULT_DMG" ]; then
-            echo "❌ Default appcast DMG not found: $DEFAULT_DMG"
-            exit 1
-          fi
-
-          rm -rf "$APPCAST_INPUT"
-          mkdir -p "$APPCAST_INPUT"
-          cp "$DEFAULT_DMG" "$APPCAST_INPUT/"
 
           # 解决依赖以获取 Sparkle 工具
           xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
@@ -450,50 +438,50 @@ jobs:
             -skipPackagePluginValidation
           SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
-          if [ -d "$SPARKLE_BIN" ]; then
-            cd "$SPARKLE_BIN"
-            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - "$APPCAST_INPUT"
-            cp "$APPCAST_INPUT/appcast.xml" "${{ github.workspace }}/updates/appcast.xml"
-          else
+          if [ ! -d "$SPARKLE_BIN" ]; then
             echo "❌ Sparkle bin not found"
             exit 1
           fi
 
-      - name: Update Appcast Link
-        if: env.IS_PRERELEASE == 'false'
-        run: |
-          cd updates
-          if [ -f appcast.xml ]; then
-            dmg_file="${{ env.SCHEME }}_${{ env.new_version }}_${{ env.DEFAULT_UPDATE_ARCH }}.dmg"
-            if [ ! -f "$dmg_file" ]; then
-              echo "⚠️ Default appcast DMG not found: $dmg_file; falling back to first DMG"
-              dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
-            fi
-            if [ -z "$dmg_file" ]; then
-              echo "❌ DMG not found in updates directory"
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            DMG_FILE="${{ github.workspace }}/updates/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
+            if [ ! -f "$DMG_FILE" ]; then
+              echo "❌ DMG not found for $arch: $DMG_FILE"
               exit 1
             fi
 
-            # 对文件名进行 URL 编码处理（简单处理空格）
-            dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
+            # 每个架构使用独立目录，避免 generate_appcast 混淆
+            APPCAST_INPUT="${{ github.workspace }}/appcast_input_${arch}"
+            rm -rf "$APPCAST_INPUT"
+            mkdir -p "$APPCAST_INPUT"
+            cp "$DMG_FILE" "$APPCAST_INPUT/"
 
-            # 构建正确的下载链接（使用具体 tag 而不是 latest，确保永久有效）
-            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
+            echo "🔑 Generating appcast for $arch..."
+            cd "$SPARKLE_BIN"
+            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - "$APPCAST_INPUT"
 
-            # 替换 enclosure 标签中的 url 属性，无论当前 URL 是什么
-            # 匹配 url="任意内容" 并替换为正确的链接
-            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "appcast.xml"
+            # 替换 enclosure url 为正确的下载链接
+            DMG_FILENAME=$(basename "$DMG_FILE")
+            DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
+            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$DMG_URL_ENCODED"
+            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_INPUT/appcast.xml"
 
-            # 移动到根目录以便提交
-            mv appcast.xml ../appcast.xml
+            # 添加 releaseNotesLink（如果不存在）
+            if ! grep -q "sparkle:releaseNotesLink" "$APPCAST_INPUT/appcast.xml"; then
+              sed -i '' '/<sparkle:minimumSystemVersion>/a\
+            <sparkle:releaseNotesLink>${{ env.REPO_LINK }}/releases/latest</sparkle:releaseNotesLink>
+            ' "$APPCAST_INPUT/appcast.xml"
+            fi
 
-            echo "✅ Appcast updated with link: $DOWNLOAD_URL"
-            echo "📝 Preview:"
-            cat ../appcast.xml | head -n 20
-          else
-             echo "❌ appcast.xml generation failed"
-             exit 1
-          fi
+            # 输出到根目录
+            cp "$APPCAST_INPUT/appcast.xml" "${{ github.workspace }}/appcast-${arch}.xml"
+
+            echo "✅ appcast-${arch}.xml generated:"
+            cat "${{ github.workspace }}/appcast-${arch}.xml"
+          done
+
+          # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
+          cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
 
       # =================================================================================================
       # 4. 提交更改与推送
@@ -507,7 +495,7 @@ jobs:
           tagging_message: ${{ env.tag }}
           push_options: "--follow-tags"
           # 仅提交项目文件和appcast
-          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
+          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml appcast-arm64.xml appcast-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()
@@ -527,6 +515,8 @@ jobs:
               exit 1
             fi
             cp ./appcast.xml release-assets/
+            cp ./appcast-arm64.xml release-assets/
+            cp ./appcast-x86_64.xml release-assets/
           fi
 
           if compgen -G "./temp/*_dSYMs.zip" > /dev/null; then

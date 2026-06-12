@@ -81,16 +81,11 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public static func getApiKey() -> String {
-        UserDefaults.standard.string(forKey: apiKeyStorageKey) ?? ""
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
     }
 
     public static func setApiKey(_ apiKey: String) {
-        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            UserDefaults.standard.removeObject(forKey: apiKeyStorageKey)
-        } else {
-            UserDefaults.standard.set(trimmed, forKey: apiKeyStorageKey)
-        }
+        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 
     private static func getApiKeyIfConfigured() -> String? {

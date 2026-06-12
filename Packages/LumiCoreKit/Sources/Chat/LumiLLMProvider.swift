@@ -6,19 +6,22 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let description: String
     public let defaultModel: String
     public let availableModels: [String]
+    public let isLocal: Bool
 
     public init(
         id: String,
         displayName: String,
         description: String = "",
         defaultModel: String,
-        availableModels: [String]
+        availableModels: [String],
+        isLocal: Bool = false
     ) {
         self.id = id
         self.displayName = displayName
         self.description = description
         self.defaultModel = defaultModel
         self.availableModels = availableModels
+        self.isLocal = isLocal
     }
 }
 

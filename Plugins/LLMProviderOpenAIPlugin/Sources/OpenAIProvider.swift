@@ -99,8 +99,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     private func apiKey() throws -> String {
-        if let storedKey = UserDefaults.standard.string(forKey: Self.apiKeyStorageKey),
-           !storedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+           !storedKey.isEmpty {
             return storedKey
         }
 

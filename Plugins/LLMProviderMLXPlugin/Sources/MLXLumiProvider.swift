@@ -8,7 +8,8 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         displayName: LumiPluginLocalization.string("MLX", bundle: .module),
         description: LumiPluginLocalization.string("Local models via Apple MLX", bundle: .module),
         defaultModel: MLXModels.toolModels.first?.id ?? "mlx-community/Qwen3.5-9B-4bit",
-        availableModels: MLXModels.toolModels.map(\.id)
+        availableModels: MLXModels.toolModels.map(\.id),
+        isLocal: true
     )
 
     public init() {}

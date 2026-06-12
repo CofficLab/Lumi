@@ -1,3 +1,4 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -6,6 +7,7 @@ struct SettingsView: View {
     @LumiTheme private var theme
     let pluginService: PluginService
     let lumiUIService: LumiUIService
+    @ObservedObject var chatService: ChatService
     @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
@@ -51,6 +53,10 @@ struct SettingsView: View {
             GeneralSettingsPage()
         case .appearance:
             AppearanceSettingsPage(lumiUIService: lumiUIService)
+        case .localProvider:
+            LocalProviderSettingsPage(chatService: chatService)
+        case .remoteProvider:
+            RemoteProviderSettingsPage(chatService: chatService)
         case .plugins:
             PluginSettingsPage(pluginService: pluginService)
         case .about:

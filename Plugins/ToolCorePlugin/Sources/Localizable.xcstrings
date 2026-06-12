@@ -19,9 +19,6 @@
     "Read File" : {
 
     },
-    "Read UTF-8 text contents from a file at the given path." : {
-
-    },
     "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit." : {
 
     },

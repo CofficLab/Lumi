@@ -13,6 +13,8 @@
 		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
+		MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = MLX1000000000000000001 /* LLMProviderMLXPlugin */; };
+		CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = CDX1000000000000000001 /* LLMProviderCodexPlugin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +53,8 @@
 				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
 				LUI1000000000000000002 /* LumiUI in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
+				MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */,
+				CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +95,8 @@
 				LCK1000000000000000001 /* LumiChatKit */,
 				LUI1000000000000000001 /* LumiUI */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
+				MLX1000000000000000001 /* LLMProviderMLXPlugin */,
+				CDX1000000000000000001 /* LLMProviderCodexPlugin */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -128,6 +134,8 @@
 				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
 				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
+				MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */,
+				CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -396,6 +404,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
 		};
+		MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/LLMProviderMLXPlugin;
+		};
+		CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/LLMProviderCodexPlugin;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -423,6 +439,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
 			productName = LumiUI;
+		};
+		MLX1000000000000000001 /* LLMProviderMLXPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */;
+			productName = LLMProviderMLXPlugin;
+		};
+		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */;
+			productName = LLMProviderCodexPlugin;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
