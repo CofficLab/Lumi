@@ -236,7 +236,6 @@ public struct BreadcrumbNavComponent: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // 文件名按钮（带弹出菜单）
             Menu {
                 BreadcrumbMenuContent(
                     siblings: item.siblings,
@@ -245,12 +244,10 @@ public struct BreadcrumbNavComponent: View {
                 )
             } label: {
                 HStack(spacing: 4) {
-                    // 文件图标
-                    Image(systemName: iconName(for: item))
+                    Image(systemName: BreadcrumbNavIconStyle.iconName(for: item))
                         .font(.appMicro)
-                        .foregroundColor(iconColor(for: item))
+                        .foregroundColor(BreadcrumbNavIconStyle.iconColor(for: item, theme: theme))
 
-                    // 文件名
                     Text(item.name)
                         .font(isLastItem ? .appMicroEmphasized : .appMicro)
                         .foregroundColor(isLastItem ? theme.textPrimary : theme.textSecondary)
@@ -336,61 +333,6 @@ public struct BreadcrumbNavComponent: View {
         return theme.textPrimary.opacity(0.06)
     }
 
-    // MARK: - Icon Helpers
-
-    private func iconName(for item: BreadcrumbItem) -> String {
-        if item.isDirectory {
-            return "folder.fill"
-        }
-        let ext = item.url.pathExtension.lowercased()
-        switch ext {
-        case "swift": return "swift"
-        case "md", "mdx": return "doc.text"
-        case "json": return "doc.text"
-        case "yaml", "yml", "toml": return "doc.text"
-        case "xml", "html": return "doc.text"
-        case "css", "scss", "less": return "doc.text"
-        case "js", "jsx": return "doc.text"
-        case "ts", "tsx": return "doc.text"
-        case "py": return "doc.text"
-        case "java": return "doc.text"
-        case "kt": return "doc.text"
-        case "go": return "doc.text"
-        case "rs": return "doc.text"
-        case "c", "h": return "doc.text"
-        case "cpp", "hpp", "cc": return "doc.text"
-        case "m", "mm": return "doc.text"
-        case "sh", "bash", "zsh": return "terminal"
-        case "png", "jpg", "jpeg", "gif", "svg", "ico": return "photo"
-        case "pdf": return "doc.richtext"
-        case "txt": return "doc.plaintext"
-        case "xcodeproj", "xcworkspace": return "hammer"
-        default: return "doc"
-        }
-    }
-
-    private func iconColor(for item: BreadcrumbItem) -> Color {
-        if item.isDirectory {
-            return Color.blue
-        }
-        let ext = item.url.pathExtension.lowercased()
-        switch ext {
-        case "swift": return Color.orange
-        case "js", "jsx": return Color.yellow
-        case "ts", "tsx": return Color.blue
-        case "py": return Color.green
-        case "json": return Color.orange
-        case "yaml", "yml", "toml": return Color.orange
-        case "md", "mdx": return Color.blue
-        case "html": return Color.orange
-        case "css", "scss": return Color.purple
-        case "java": return Color.red
-        case "go": return Color.cyan
-        case "rs": return Color.orange
-        case "sh", "bash", "zsh": return Color.green
-        default: return theme.textSecondary
-        }
-    }
 }
 
 // MARK: - Breadcrumb Menu Content

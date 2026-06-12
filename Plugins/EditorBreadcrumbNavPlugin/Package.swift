@@ -35,7 +35,10 @@ let package = Package(
         ),
         .testTarget(
             name: "EditorBreadcrumbNavPluginTests",
-            dependencies: ["EditorBreadcrumbNavPlugin"],
+            dependencies: [
+                "EditorBreadcrumbNavPlugin",
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
             path: "Tests"
         )
     ]
