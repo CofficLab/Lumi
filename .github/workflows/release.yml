@@ -24,6 +24,7 @@ env:
   BuildPath: "./temp"
   RELEASE_ARCHS: "arm64 x86_64"
   DEFAULT_UPDATE_ARCH: "arm64"
+  SPARKLE_VERSION: "2.9.1"
 
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -430,16 +431,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 解决依赖以获取 Sparkle 工具
-          xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
-            -scheme ${{ env.SCHEME }} \
-            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-            -resolvePackageDependencies \
-            -skipPackagePluginValidation
-          SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
+          chmod +x .github/scripts/install-sparkle-tools.sh
+          SPARKLE_BIN="$(SPARKLE_VERSION="${{ env.SPARKLE_VERSION }}" .github/scripts/install-sparkle-tools.sh)"
 
-          if [ ! -d "$SPARKLE_BIN" ]; then
-            echo "❌ Sparkle bin not found"
+          if [ ! -x "$SPARKLE_BIN/generate_appcast" ]; then
+            echo "❌ Sparkle generate_appcast not found at $SPARKLE_BIN"
             exit 1
           fi
 
