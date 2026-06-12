@@ -4,7 +4,7 @@ import SwiftUI
 /// 面包屑段图标命名与着色（供视图与单测共用）。
 enum BreadcrumbNavIconStyle {
     /// 面包屑段曾用 `Menu` + `.borderlessButton`，macOS 上会吞掉 label 内图标前景色。
-    static let usesBorderlessMenuLabel = true
+    static let usesBorderlessMenuLabel = false
 
     static func iconName(for item: BreadcrumbItem) -> String {
         if item.isDirectory {

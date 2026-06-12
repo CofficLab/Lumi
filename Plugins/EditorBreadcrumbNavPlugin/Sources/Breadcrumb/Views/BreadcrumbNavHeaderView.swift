@@ -232,16 +232,12 @@ public struct BreadcrumbNavComponent: View {
 
     @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovering = false
-    @State private var isMenuVisible = false
+    @State private var isSiblingPopoverPresented = false
 
     public var body: some View {
         HStack(spacing: 0) {
-            Menu {
-                BreadcrumbMenuContent(
-                    siblings: item.siblings,
-                    currentURL: item.url,
-                    onSelectFile: onSelectFile
-                )
+            Button {
+                isSiblingPopoverPresented.toggle()
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: BreadcrumbNavIconStyle.iconName(for: item))
@@ -259,11 +255,22 @@ public struct BreadcrumbNavComponent: View {
                 .appSurface(
                     style: .custom(hoverBackground),
                     cornerRadius: 4,
-                    borderColor: isMenuVisible ? theme.primary.opacity(0.3) : Color.clear
+                    borderColor: isSiblingPopoverPresented ? theme.primary.opacity(0.3) : Color.clear
                 )
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
+            .buttonStyle(.plain)
+            .popover(isPresented: $isSiblingPopoverPresented, arrowEdge: .bottom) {
+                BreadcrumbMenuContent(
+                    siblings: item.siblings,
+                    currentURL: item.url,
+                    onSelectFile: { url in
+                        isSiblingPopoverPresented = false
+                        onSelectFile(url)
+                    }
+                )
+                .frame(minWidth: 220)
+                .padding(.vertical, 4)
+            }
             .frame(maxWidth: 200)
             .frame(
                 maxWidth: isHovering || isLastItem ? nil : truncatedCrumbWidth,
