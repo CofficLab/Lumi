@@ -2,5 +2,15 @@
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>Lumi</title>
+        <item>
+            <title>4.1.0</title>
+            <pubDate>Fri, 12 Jun 2026 05:17:06 +0000</pubDate>
+            <sparkle:version>221</sparkle:version>
+            <sparkle:shortVersionString>4.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+  <sparkle:releaseNotesLink>https://github.com/CofficLab/Lumi/releases/latest</sparkle:releaseNotesLink>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.1.0/Lumi_4.1.0_arm64.dmg" length="45804341" type="application/octet-stream" sparkle:edSignature="CesYShRbHnlbD5EeJuajzTB1Dz0dacr9qRiKtMCbDa035TicG+u1/CleZkXpf2MwYXmP7DY+XxtdG1kctNDhDg=="/>
+        </item>
     </channel>
 </rss>

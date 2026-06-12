@@ -3,12 +3,14 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>3.5.1</title>
-            <pubDate>Thu, 28 May 2026 09:17:48 +0000</pubDate>
-            <sparkle:version>216</sparkle:version>
-            <sparkle:shortVersionString>3.5.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.5</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v3.5.1/Lumi_3.5.1.dmg" length="89984536" type="application/octet-stream" sparkle:edSignature="mZXz58wpcQArCgRTHk0pbu9y00Z675YsDPDLQElWFYcRLCjRoLp/2Uk6tmEJWpJn5l4uUwvy0Go46nGJlgGQCQ=="/>
+            <title>4.1.0</title>
+            <pubDate>Fri, 12 Jun 2026 05:17:06 +0000</pubDate>
+            <sparkle:version>221</sparkle:version>
+            <sparkle:shortVersionString>4.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+  <sparkle:releaseNotesLink>https://github.com/CofficLab/Lumi/releases/latest</sparkle:releaseNotesLink>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.1.0/Lumi_4.1.0_arm64.dmg" length="45804341" type="application/octet-stream" sparkle:edSignature="CesYShRbHnlbD5EeJuajzTB1Dz0dacr9qRiKtMCbDa035TicG+u1/CleZkXpf2MwYXmP7DY+XxtdG1kctNDhDg=="/>
         </item>
     </channel>
 </rss>
