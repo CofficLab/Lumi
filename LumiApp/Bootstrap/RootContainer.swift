@@ -1,6 +1,7 @@
+import ChatPanelPlugin
+import LayoutPlugin
 import LumiCoreKit
 import SwiftUI
-import ChatPanelPlugin
 
 @MainActor
 final class RootContainer: ObservableObject {
@@ -38,6 +39,7 @@ final class RootContainer: ObservableObject {
         )
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)
+        LayoutPlugin.restorePersistedStateIfNeeded()
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }
             self.chatCoreService.reloadPluginContributions(from: self.pluginService)

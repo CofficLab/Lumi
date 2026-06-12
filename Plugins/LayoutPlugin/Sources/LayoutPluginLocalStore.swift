@@ -84,13 +84,19 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     /// 加载已保存的视图容器 ID
     public func loadActiveViewContainerID() -> String? {
         string(forKey: Keys.activeViewContainerID)
-            ?? string(forKey: Keys.activeViewContainerIcon)
-            ?? string(forKey: Keys.legacyActivePanelIcon)
     }
 
     /// 保存视图容器 ID
     public func saveActiveViewContainerID(_ id: String?) {
-        set(id, forKey: Keys.activeViewContainerID)
+        queue.sync {
+            var dict = self.readDict()
+            if let id {
+                dict[Keys.activeViewContainerID] = id
+            } else {
+                dict.removeValue(forKey: Keys.activeViewContainerID)
+            }
+            self.writeDict(dict)
+        }
     }
 
     /// 加载已保存的侧边栏 Tab ID
