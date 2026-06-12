@@ -1,4 +1,5 @@
 import AgentToolKit
+import LibGit2Swift
 import LumiCoreKit
 import SwiftUI
 import SuperLogKit
@@ -30,6 +31,7 @@ public enum GitPlugin: LumiPlugin {
     public static func bootstrap(
         chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?
     ) {
+        LibGit2.initialize()
         GitRuntimeBridge.chatServiceProvider = chatServiceProvider
     }
 
