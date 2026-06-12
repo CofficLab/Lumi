@@ -66,7 +66,7 @@ class DeviceData: ObservableObject {
         self.osVersion = "macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
 
         self.processorName = DeviceData.getProcessorName()
-        self.coreCount = ProcessInfo.processInfo.activeProcessorCount
+        self.coreCount = Self.physicalCoreCount()
 
         self.memoryTotal = ProcessInfo.processInfo.physicalMemory
 
@@ -116,6 +116,16 @@ class DeviceData: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    /// 物理 CPU 核心数（`hw.physicalcpu`），与系统监视器一致；失败时回退到逻辑核数。
+    nonisolated static func physicalCoreCount() -> Int {
+        var physicalCores: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        if sysctlbyname("hw.physicalcpu", &physicalCores, &size, nil, 0) == 0, physicalCores > 0 {
+            return Int(physicalCores)
+        }
+        return ProcessInfo.processInfo.activeProcessorCount
+    }
 
     private static func getProcessorName() -> String {
         var size: Int = 0
