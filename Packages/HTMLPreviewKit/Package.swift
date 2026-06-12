@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "HTMLPreviewKit",
-            path: "Sources/HTMLPreviewKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "HTMLPreviewKitTests",
             dependencies: ["HTMLPreviewKit"],
-            path: "Tests/HTMLPreviewKitTests"
+            path: "Tests"
         )
     ]
 )

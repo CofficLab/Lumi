@@ -25,7 +25,8 @@ let package = Package(
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
-            path: "Sources/LumiPreviewKit"
+            path: "Sources",
+            exclude: ["LumiPreviewHostApp"]
         ),
         .executableTarget(
             name: "LumiPreviewHostApp",
@@ -35,7 +36,7 @@ let package = Package(
         .testTarget(
             name: "LumiPreviewKitTests",
             dependencies: ["LumiPreviewKit"],
-            path: "Tests/LumiPreviewKitTests"
+            path: "Tests"
         )
     ]
 )

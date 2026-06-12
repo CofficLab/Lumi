@@ -160,6 +160,21 @@ struct MarkdownTableNormalizerTests {
         }
     }
 
+    @Test
+    func preservesEscapedPipesInsideCells() {
+        let input = """
+            | Expression | Meaning |
+            | --- | --- |
+            | A \\| B | union text |
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(blocks.count == 1)
+        #expect(blocks[0] == .table(headers: ["Expression", "Meaning"], rows: [["A | B", "union text"]]))
+    }
+
     // MARK: - 分隔线格式变体
 
     @Test
@@ -173,6 +188,27 @@ struct MarkdownTableNormalizerTests {
         let blocks = MarkdownParser.parse(result)
         #expect(blocks.count == 1)
         #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
+    }
+
+    @Test
+    func preservesInvalidSeparatorCellsAsData() {
+        let input = """
+            | A | B |
+            | --- | nope |
+            | 1 | 2 |
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == """
+            | A | B |
+            | --- | --- |
+            | --- | nope |
+            | 1 | 2 |
+            """)
+        #expect(blocks.count == 1)
+        #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["—", "nope"], ["1", "2"]]))
     }
 
     // MARK: - 混合内容（表格前后有其他 Markdown）
@@ -198,6 +234,30 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[1] == .paragraph(text: "Some text here."))
         #expect(blocks[2] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
         #expect(blocks[3] == .paragraph(text: "More text after table."))
+    }
+
+    @Test
+    func preservesPipeParagraphImmediatelyAfterTable() {
+        let input = """
+            | A | B |
+            | --- | --- |
+            | 1 | 2 |
+            Note: choose A | B based on context.
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == """
+            | A | B |
+            | --- | --- |
+            | 1 | 2 |
+
+            Note: choose A | B based on context.
+            """)
+        #expect(blocks.count == 2)
+        #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
+        #expect(blocks[1] == .paragraph(text: "Note: choose A | B based on context."))
     }
 
     // MARK: - 空内容
@@ -228,5 +288,50 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks.count == 3)
         #expect(blocks[0] == .heading(level: 1, text: "Hello"))
         #expect(blocks[2] == .codeBlock(language: "swift", code: "let x = 1\n"))
+    }
+
+    @Test
+    func preservesPipeTablesInsideFencedCodeBlocks() {
+        let input = """
+            ```markdown
+            | A | B |
+            | 1 | 2 |
+            ```
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.codeBlock(language: "markdown", code: "| A | B |\n| 1 | 2 |\n")])
+    }
+
+    @Test
+    func preservesPipeTablesInsideTildeFencedCodeBlocks() {
+        let input = """
+            ~~~
+            | A | B |
+            | 1 | 2 |
+            ~~~
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.codeBlock(language: nil, code: "| A | B |\n| 1 | 2 |\n")])
+    }
+
+    @Test
+    func preservesPipeTablesInsideIndentedCodeBlocks() {
+        let input = "Example:\n\n    | A | B |\n    | --- | --- |\n    | 1 | 2 |"
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks.count == 2)
+        #expect(blocks[0] == .paragraph(text: "Example:"))
+        #expect(blocks[1] == .codeBlock(language: nil, code: "| A | B |\n| --- | --- |\n| 1 | 2 |\n"))
     }
 }

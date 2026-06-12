@@ -14,11 +14,13 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "FileTreeKit"
+            name: "FileTreeKit",
+            path: "Sources"
         ),
         .testTarget(
             name: "FileTreeKitTests",
-            dependencies: ["FileTreeKit"]
+            dependencies: ["FileTreeKit"],
+            path: "Tests"
         )
     ]
 )

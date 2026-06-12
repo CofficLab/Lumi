@@ -1,0 +1,41 @@
+import LumiCoreKit
+import SwiftUI
+
+public enum AppStoreConnectPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let category: LumiPluginCategory = .development
+    public static let iconName = "bag"
+
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.app-store-connect",
+        displayName: AppStoreConnectLocalization.string("App Store"),
+        description: AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots"),
+        order: 65
+    )
+
+    @MainActor
+    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+        [
+            LumiViewContainerItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                AppStoreConnectView()
+            }
+        ]
+    }
+}
+
+enum AppStoreConnectLocalization {
+    static let table = "Localizable"
+    static let bundle = Bundle.module
+
+    static func string(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
+    }
+
+    static func string(_ key: String, _ args: CVarArg...) -> String {
+        String(format: string(key), locale: Locale.current, arguments: args)
+    }
+}

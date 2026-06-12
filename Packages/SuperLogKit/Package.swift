@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "SuperLogKit",
-            path: "Sources/SuperLogKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "SuperLogKitTests",
             dependencies: ["SuperLogKit"],
-            path: "Tests/SuperLogKitTests"
+            path: "Tests"
         )
     ]
 )

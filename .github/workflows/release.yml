@@ -22,6 +22,8 @@ env:
   DERIVED_DATA_PATH: "./DerivedData"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
+  RELEASE_ARCHS: "arm64 x86_64"
+  DEFAULT_UPDATE_ARCH: "arm64"
 
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -188,22 +190,22 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Restore CodeEditLanguages Framework
+      - name: Restore EditorCodeEditLanguages Framework
         id: codeedit-languages-cache
         uses: actions/cache@v5
         with:
           path: |
-            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework
-            Packages/CodeEditLanguages/CodeLanguagesContainer.xcframework.zip
-          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/CodeEditLanguages/Package.resolved', 'Packages/CodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/CodeEditLanguages/build_framework.sh') }}
+            Packages/EditorCodeEditLanguages/CodeLanguagesContainer.xcframework
+            Packages/EditorCodeEditLanguages/CodeLanguagesContainer.xcframework.zip
+          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/EditorCodeEditLanguages/Package.resolved', 'Packages/EditorCodeEditLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/EditorCodeEditLanguages/build_framework.sh') }}
 
-      - name: Build CodeEditLanguages Framework
+      - name: Build EditorCodeEditLanguages Framework
         if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
         run: |
-          cd Packages/CodeEditLanguages
-          ./build_framework.sh
+          cd Packages/EditorCodeEditLanguages
+          ./build_framework.sh --quiet
 
-      - name: Check CodeEditLanguages Framework
+      - name: Check EditorCodeEditLanguages Framework
         run: scripts/check-codeedit-languages-framework.sh
 
       - name: Cache SPM Packages
@@ -226,121 +228,172 @@ jobs:
 
       - name: Build App (Archive)
         run: |
+          set -euo pipefail
           set -o pipefail
-          xcodebuild archive \
-            -project ${{ env.SCHEME }}.xcodeproj \
-            -scheme ${{ env.SCHEME }} \
-            -destination "${{ env.DESTINATION }}" \
-            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-            -archivePath ./temp/${{ env.SCHEME }}.xcarchive \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            -skipPackageUpdates \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="-" \
-            DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGNING_REQUIRED=NO \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | xcpretty
+          mkdir -p ./temp
+
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
+            rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
+
+            xcodebuild archive \
+              -project ${{ env.SCHEME }}.xcodeproj \
+              -scheme ${{ env.SCHEME }} \
+              -destination "${{ env.DESTINATION }}" \
+              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+              -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              -skipPackageUpdates \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="-" \
+              DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
+              PROVISIONING_PROFILE_SPECIFIER="" \
+              CODE_SIGNING_REQUIRED=NO \
+              AD_HOC_CODE_SIGNING_ALLOWED=YES \
+              ARCHS="$arch" \
+              ONLY_ACTIVE_ARCH=NO \
+              | xcpretty
+          done
 
       - name: Codesign App
         run: |
-          # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
-          ditto "./temp/${{ env.SCHEME }}.xcarchive/Products/Applications/${{ env.SCHEME }}.app" "./temp/${{ env.SCHEME }}.app"
+          set -euo pipefail
 
-          APP_PATH="./temp/${{ env.SCHEME }}.app"
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
 
           # 使用脚本进行深度签名
           chmod +x .github/scripts/sign_app.sh
-          .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
+
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            ARCHIVE_APP="./temp/${{ env.SCHEME }}-${arch}.xcarchive/Products/Applications/${{ env.SCHEME }}.app"
+            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
+
+            if [ ! -d "$ARCHIVE_APP" ]; then
+              echo "❌ Archived app not found: $ARCHIVE_APP"
+              exit 1
+            fi
+
+            # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
+            rm -rf "$APP_PATH"
+            ditto "$ARCHIVE_APP" "$APP_PATH"
+
+            BINARY_PATH="$APP_PATH/Contents/MacOS/${{ env.SCHEME }}"
+            if ! lipo -archs "$BINARY_PATH" | tr ' ' '\n' | grep -qx "$arch"; then
+              echo "❌ $BINARY_PATH does not contain expected architecture: $arch"
+              lipo -archs "$BINARY_PATH" || true
+              exit 1
+            fi
+
+            .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
+          done
 
       - name: Create DMG
         run: |
           set -euo pipefail
-          STAGING_DIR="./temp/dmg_staging"
-          VOL_NAME="${{ env.SCHEME }}"
-          DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}.dmg"
 
-          # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
-          rm -rf "$STAGING_DIR"
-          mkdir -p "$STAGING_DIR"
-          ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
-          ln -sfn /Applications "$STAGING_DIR/Applications"
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            STAGING_DIR="./temp/dmg_staging_${arch}"
+            VOL_NAME="${{ env.SCHEME }}-${arch}"
+            DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
+            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
 
-          echo "Checking Staging Dir:"
-          ls -la "$STAGING_DIR"
-
-          # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
-          mdutil -i off "$STAGING_DIR" 2>/dev/null || true
-          mdutil -i off "./temp" 2>/dev/null || true
-          sync
-          sleep 1
-
-          create_dmg() {
-            # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
-            hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
-            rm -f "$DMG_NAME"
-            if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
-              return 0
-            fi
-            return 1
-          }
-
-          MAX_ATTEMPTS=6
-          attempt=0
-          until create_dmg; do
-            attempt=$((attempt + 1))
-            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
-              echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
+            if [ ! -d "$APP_PATH" ]; then
+              echo "❌ Signed app not found: $APP_PATH"
               exit 1
             fi
-            echo "hdiutil create failed (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
-            sleep $((attempt * 3))
-          done
 
-          echo "Created: $DMG_NAME"
+            # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
+            rm -rf "$STAGING_DIR"
+            mkdir -p "$STAGING_DIR"
+            ditto "$APP_PATH" "$STAGING_DIR/${{ env.SCHEME }}.app"
+            ln -sfn /Applications "$STAGING_DIR/Applications"
+
+            echo "Checking Staging Dir for $arch:"
+            ls -la "$STAGING_DIR"
+
+            # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
+            mdutil -i off "$STAGING_DIR" 2>/dev/null || true
+            mdutil -i off "./temp" 2>/dev/null || true
+            sync
+            sleep 1
+
+            create_dmg() {
+              # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
+              hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
+              rm -f "$DMG_NAME"
+              if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
+                return 0
+              fi
+              return 1
+            }
+
+            MAX_ATTEMPTS=6
+            attempt=0
+            until create_dmg; do
+              attempt=$((attempt + 1))
+              if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
+                exit 1
+              fi
+              echo "hdiutil create failed for $arch (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
+              sleep $((attempt * 3))
+            done
+
+            echo "Created: $DMG_NAME"
+          done
 
       - name: Notary
         run: |
-          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
-          if [ -z "$file" ]; then echo "DMG not found"; exit 1; fi
+          set -euo pipefail
 
-          # Run submit and capture output
-          set +e
-          xcrun notarytool submit "$file" \
-            --key ${{ steps.signing.outputs.api_key_path }} \
-            --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-            --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
-            --wait \
-            --timeout 10m > notary_result.txt 2>&1
-
-          EXIT_CODE=$?
-          # Output result for debugging
-          cat notary_result.txt
-
-          if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" notary_result.txt; then
-             echo "❌ Notarization failed. Retrieving logs..."
-             # Extract ID from the output file
-             SUBMISSION_ID=$(grep "id:" notary_result.txt | head -n 1 | awk '{print $2}' | tr -d ' ')
-             if [ -n "$SUBMISSION_ID" ]; then
-                echo "Fetching log for Submission ID: $SUBMISSION_ID"
-                xcrun notarytool log "$SUBMISSION_ID" \
-                  --key ${{ steps.signing.outputs.api_key_path }} \
-                  --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-                  --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} 
-             fi
-             exit 1
+          if ! compgen -G "./temp/*.dmg" > /dev/null; then
+            echo "DMG not found"
+            exit 1
           fi
-          set -e
 
-          stapler staple "$file"
+          for file in ./temp/*.dmg; do
+            echo "📨 Notarizing $file..."
+            result_file="notary_result_$(basename "$file" .dmg).txt"
+
+            # Run submit and capture output
+            set +e
+            xcrun notarytool submit "$file" \
+              --key ${{ steps.signing.outputs.api_key_path }} \
+              --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+              --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
+              --wait \
+              --timeout 10m > "$result_file" 2>&1
+
+            EXIT_CODE=$?
+            set -e
+
+            # Output result for debugging
+            cat "$result_file"
+
+            if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" "$result_file"; then
+               echo "❌ Notarization failed for $file. Retrieving logs..."
+               # Extract ID from the output file
+               SUBMISSION_ID=$(grep "id:" "$result_file" | head -n 1 | awk '{print $2}' | tr -d ' ')
+               if [ -n "$SUBMISSION_ID" ]; then
+                  echo "Fetching log for Submission ID: $SUBMISSION_ID"
+                  xcrun notarytool log "$SUBMISSION_ID" \
+                    --key ${{ steps.signing.outputs.api_key_path }} \
+                    --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
+                    --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }}
+               fi
+               exit 1
+            fi
+
+            stapler staple "$file"
+          done
 
       - name: Validate Notarization
         run: |
-          file=$(find ./temp -name "*.dmg" -type f | head -n 1)
-          stapler validate "$file"
+          set -euo pipefail
+          for file in ./temp/*.dmg; do
+            stapler validate "$file"
+          done
 
       - name: Prepare Updates Directory
         run: |
@@ -353,25 +406,30 @@ jobs:
       # =================================================================================================
       - name: Package dSYMs
         run: |
-          DSYM_SOURCE="./temp/${{ env.SCHEME }}.xcarchive/dSYMs"
-          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+          set -euo pipefail
 
-          if [ -d "$DSYM_SOURCE" ]; then
-            cd "$DSYM_SOURCE"
-            zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM
-            echo "✅ dSYMs packaged: $(du -sh "$GITHUB_WORKSPACE/$DSYM_ZIP" | cut -f1)"
-            ls -lh "$GITHUB_WORKSPACE/$DSYM_ZIP"
-          else
-            echo "⚠️ No dSYMs directory found in xcarchive"
-            ls -R "./temp/${{ env.SCHEME }}.xcarchive/" || true
-          fi
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            DSYM_SOURCE="./temp/${{ env.SCHEME }}-${arch}.xcarchive/dSYMs"
+            DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}_dSYMs.zip"
+
+            if [ -d "$DSYM_SOURCE" ]; then
+              (cd "$DSYM_SOURCE" && zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM)
+              echo "✅ dSYMs packaged for $arch: $(du -sh "$DSYM_ZIP" | cut -f1)"
+              ls -lh "$DSYM_ZIP"
+            else
+              echo "⚠️ No dSYMs directory found in xcarchive for $arch"
+              ls -R "./temp/${{ env.SCHEME }}-${arch}.xcarchive/" || true
+            fi
+          done
 
       # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
       # =================================================================================================
-      - name: Generate Appcast
+      - name: Generate Appcasts (per-arch)
         if: env.IS_PRERELEASE == 'false'
         run: |
+          set -euo pipefail
+
           # 解决依赖以获取 Sparkle 工具
           xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
@@ -380,45 +438,50 @@ jobs:
             -skipPackagePluginValidation
           SPARKLE_BIN="${{ env.DERIVED_DATA_PATH }}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
-          if [ -d "$SPARKLE_BIN" ]; then
-            cd "$SPARKLE_BIN"
-            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - ${{ github.workspace }}/updates
-          else
+          if [ ! -d "$SPARKLE_BIN" ]; then
             echo "❌ Sparkle bin not found"
             exit 1
           fi
 
-      - name: Update Appcast Link
-        if: env.IS_PRERELEASE == 'false'
-        run: |
-          cd updates
-          if [ -f appcast.xml ]; then
-            dmg_file=$(ls *.dmg 2>/dev/null | head -n 1)
-            if [ -z "$dmg_file" ]; then
-              echo "❌ DMG not found in updates directory"
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            DMG_FILE="${{ github.workspace }}/updates/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
+            if [ ! -f "$DMG_FILE" ]; then
+              echo "❌ DMG not found for $arch: $DMG_FILE"
               exit 1
             fi
 
-            # 对文件名进行 URL 编码处理（简单处理空格）
-            dmg_url_encoded=$(echo "$dmg_file" | sed 's/ /%20/g')
+            # 每个架构使用独立目录，避免 generate_appcast 混淆
+            APPCAST_INPUT="${{ github.workspace }}/appcast_input_${arch}"
+            rm -rf "$APPCAST_INPUT"
+            mkdir -p "$APPCAST_INPUT"
+            cp "$DMG_FILE" "$APPCAST_INPUT/"
 
-            # 构建正确的下载链接（使用具体 tag 而不是 latest，确保永久有效）
-            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$dmg_url_encoded"
+            echo "🔑 Generating appcast for $arch..."
+            cd "$SPARKLE_BIN"
+            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - "$APPCAST_INPUT"
 
-            # 替换 enclosure 标签中的 url 属性，无论当前 URL 是什么
-            # 匹配 url="任意内容" 并替换为正确的链接
-            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "appcast.xml"
+            # 替换 enclosure url 为正确的下载链接
+            DMG_FILENAME=$(basename "$DMG_FILE")
+            DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
+            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$DMG_URL_ENCODED"
+            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_INPUT/appcast.xml"
 
-            # 移动到根目录以便提交
-            mv appcast.xml ../appcast.xml
+            # 添加 releaseNotesLink（如果不存在）
+            if ! grep -q "sparkle:releaseNotesLink" "$APPCAST_INPUT/appcast.xml"; then
+              sed -i '' '/<sparkle:minimumSystemVersion>/a\
+            <sparkle:releaseNotesLink>${{ env.REPO_LINK }}/releases/latest</sparkle:releaseNotesLink>
+            ' "$APPCAST_INPUT/appcast.xml"
+            fi
 
-            echo "✅ Appcast updated with link: $DOWNLOAD_URL"
-            echo "📝 Preview:"
-            cat ../appcast.xml | head -n 20
-          else
-             echo "❌ appcast.xml generation failed"
-             exit 1
-          fi
+            # 输出到根目录
+            cp "$APPCAST_INPUT/appcast.xml" "${{ github.workspace }}/appcast-${arch}.xml"
+
+            echo "✅ appcast-${arch}.xml generated:"
+            cat "${{ github.workspace }}/appcast-${arch}.xml"
+          done
+
+          # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
+          cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
 
       # =================================================================================================
       # 4. 提交更改与推送
@@ -432,7 +495,7 @@ jobs:
           tagging_message: ${{ env.tag }}
           push_options: "--follow-tags"
           # 仅提交项目文件和appcast
-          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml"
+          file_pattern: "Lumi.xcodeproj/project.pbxproj appcast.xml appcast-arm64.xml appcast-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()
@@ -452,19 +515,58 @@ jobs:
               exit 1
             fi
             cp ./appcast.xml release-assets/
+            cp ./appcast-arm64.xml release-assets/
+            cp ./appcast-x86_64.xml release-assets/
           fi
 
-          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
-          if [ -f "$DSYM_ZIP" ]; then
-            cp "$DSYM_ZIP" release-assets/
+          if compgen -G "./temp/*_dSYMs.zip" > /dev/null; then
+            cp ./temp/*_dSYMs.zip release-assets/
           else
-            echo "⚠️ dSYM zip not found, continuing without it"
+            echo "⚠️ dSYM zips not found, continuing without them"
           fi
 
           ls -alh release-assets
 
       # =================================================================================================
-      # 5. 发布 Release
+      # 5.5 上传 DMG 到 Cloudflare R2
+      # =================================================================================================
+      - name: Upload DMG to Cloudflare R2
+        if: success()
+        env:
+          WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
+          API_URL: https://data.kuaiyizhi.cn
+        run: |
+          set -euo pipefail
+          
+          if ! compgen -G "./release-assets/*.dmg" > /dev/null; then
+            echo "⚠️  No DMG file found to upload"
+            exit 0
+          fi
+
+          for DMG_FILE in ./release-assets/*.dmg; do
+            DMG_FILENAME=$(basename "$DMG_FILE")
+            R2_KEY="lumi/${DMG_FILENAME}"
+
+            echo "📤 Uploading DMG to R2: $R2_KEY"
+
+            RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
+              -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+              -F "file=@${DMG_FILE}" \
+              -F "key=${R2_KEY}")
+
+            echo "Response: $RESPONSE"
+
+            if echo "$RESPONSE" | grep -q '"success":true'; then
+              R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+              echo "✅ DMG uploaded: $R2_DMG_URL"
+            else
+              echo "❌ Failed to upload DMG to R2: $DMG_FILENAME"
+              exit 1
+            fi
+          done
+
+      # =================================================================================================
+      # 6. 发布 Release
       # =================================================================================================
       - name: Generate Changelog
         if: success()

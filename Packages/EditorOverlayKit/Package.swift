@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorOverlayKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -27,12 +28,17 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/EditorOverlayKit"
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "EditorOverlayKitTests",
             dependencies: ["EditorOverlayKit"],
-            path: "Tests/EditorOverlayKitTests"
+            path: "Tests"
         )
     ]
 )

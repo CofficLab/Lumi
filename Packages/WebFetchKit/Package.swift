@@ -21,12 +21,12 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
             ],
-            path: "Sources/WebFetchKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "WebFetchKitTests",
             dependencies: ["WebFetchKit"],
-            path: "Tests/WebFetchKitTests"
+            path: "Tests"
         )
     ]
 )

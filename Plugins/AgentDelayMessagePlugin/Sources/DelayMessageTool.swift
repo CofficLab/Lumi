@@ -1,0 +1,122 @@
+import Foundation
+import SuperLogKit
+import AgentToolKit
+
+/// 延时消息工具
+///
+/// 在指定秒数后向目标会话注入一条用户消息，触发新一轮对话。
+/// 等价于用户在延时结束后自己在输入框里敲了一句话。
+///
+/// ## 工作原理
+///
+/// 1. LLM 调用 `delay_message(message, seconds)`
+/// 3. 工具立即返回，当前回合正常结束
+/// 4. 后台 Task sleep N 秒后，通过 `DelayMessageState` 持有的 messageQueueVM 引用入队消息
+/// 5. RootView 检测到 queueVersion 变化，触发 attemptBeginNextQueuedSend()
+/// 6. 新回合开始，LLM 收到这条用户消息并继续处理
+///
+/// ## 依赖
+///
+/// - `DelayMessageState`：@MainActor 单例，存储从 Environment 同步来的 VM 引用
+/// - `WindowMessageQueueVM`：消息入队，触发已有的发送闭环
+/// - 不依赖 `RootViewContainer.shared`
+public struct DelayMessageTool: SuperAgentTool, SuperLog {
+    public nonisolated static let emoji = "⏳"
+    public nonisolated static let verbose: Bool = false
+    static let defaultDelaySeconds: TimeInterval = 5
+    static let minDelaySeconds: TimeInterval = 1
+    static let maxDelaySeconds: TimeInterval = 3600
+    public let name = "delay_message"
+    public func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在指定秒数后向当前对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。"
+        case .english:
+            return "Send a delayed user message to the current conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives."
+        }
+    }
+
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "message": [
+                    "type": "string",
+                    "description": "The message content to send after the delay. This will appear as a user message in the conversation."
+                ],
+                "seconds": [
+                    "type": "number",
+                    "description": "Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour).",
+                    "minimum": Self.minDelaySeconds,
+                    "maximum": Self.maxDelaySeconds
+                ]
+            ],
+            "required": ["message", "seconds"]
+        ]
+    }
+
+    public init() {}
+
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+        "延迟发送消息"
+    }
+
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
+        .low
+    }
+    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let conversationId = context.conversationId
+
+        // 解析 message
+        let message = (arguments["message"]?.value as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !message.isEmpty else {
+            return "Error: message cannot be empty."
+        }
+
+        // 解析 seconds
+        let seconds = Self.normalizedDelaySeconds(arguments["seconds"]?.value)
+
+        if Self.verbose {
+            DelayMessagePlugin.logger.info("\(Self.t) 延时 \(Int(seconds))s 后发送消息到会话 \(conversationId.uuidString.prefix(8))")
+        }
+
+        // 启动后台延时任务
+        Task { [seconds, message, conversationId] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+
+            if Self.verbose {
+                DelayMessagePlugin.logger.info("\(Self.t)⏰ 延时到达，注入消息：\(message.prefix(50))")
+            }
+
+            // 通过 DelayMessageState 持有的 VM 引用入队，在 MainActor 上执行
+            await MainActor.run {
+                DelayMessageState.shared.enqueueDelayedMessage(
+                    conversationId: conversationId,
+                    content: message
+                )
+            }
+        }
+
+        return "Scheduled: a message will be sent in \(Int(seconds)) seconds to conversation \(conversationId.uuidString.prefix(8)). The current turn will end now. When the message arrives, a new turn will start automatically."
+    }
+
+    static func normalizedDelaySeconds(_ value: Any?) -> TimeInterval {
+        let raw: TimeInterval
+        if let double = value as? Double {
+            raw = double
+        } else if let int = value as? Int {
+            raw = TimeInterval(int)
+        } else if let string = value as? String, let double = TimeInterval(string) {
+            raw = double
+        } else {
+            raw = Self.defaultDelaySeconds
+        }
+
+        guard raw.isFinite else { return Self.defaultDelaySeconds }
+        return min(max(raw, Self.minDelaySeconds), Self.maxDelaySeconds)
+    }
+}

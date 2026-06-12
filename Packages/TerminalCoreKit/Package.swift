@@ -12,12 +12,12 @@ let package = Package(
         .target(
             name: "TerminalCoreKit",
             dependencies: ["SwiftTerm"],
-            path: "Sources/TerminalCoreKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "TerminalCoreKitTests",
             dependencies: ["TerminalCoreKit"],
-            path: "Tests/TerminalCoreKitTests"
+            path: "Tests"
         )
     ]
 )

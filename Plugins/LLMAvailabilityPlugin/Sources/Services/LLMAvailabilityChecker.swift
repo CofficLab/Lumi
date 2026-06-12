@@ -1,0 +1,254 @@
+import AgentToolKit
+import Foundation
+import LLMKit
+import LLMProviderKit
+import os
+
+/// LLM 可用性检测服务
+/// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
+@MainActor
+public final class LLMAvailabilityChecker {
+    public static let verbose: Bool = false
+
+    private let llmService: any LLMAvailabilityLLMServicing
+    private let store = LLMAvailabilityStore.shared
+
+    public init(llmService: any LLMAvailabilityLLMServicing) {
+        self.llmService = llmService
+    }
+
+    // MARK: - 单模型检测结果
+
+    /// 单模型检测的结果
+    public struct ModelCheckResult: Sendable {
+        public let providerId: String
+        public let modelId: String
+        public let isAvailable: Bool
+        public let reason: String?
+    }
+
+    // MARK: - 全量检测
+
+    /// 检测所有供应商+模型的可用性
+    public func checkAll() async {
+        if Self.verbose {
+            let providersInfo = llmService.allProviders()
+            let totalModels = providersInfo.reduce(0) { $0 + $1.availableModels.count }
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
+            }
+        }
+
+        store.setCheckingAll(true)
+
+        let providersInfo = llmService.allProviders()
+
+        for providerInfo in providersInfo {
+            await checkProvider(providerInfo)
+        }
+
+        store.setCheckingAll(false)
+
+        let availableCount = store.availablePairs.count
+        let totalModelCount = store.providers.reduce(0) { $0 + $1.models.count }
+
+        if Self.verbose {
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
+            }
+        }
+    }
+
+    // MARK: - 单模型检测（公开接口）
+
+    /// 检测指定供应商+模型的可用性
+    ///
+    /// 自动查找 API Key，执行 ping 请求并更新 Store 状态。
+    /// - Parameters:
+    ///   - providerId: 供应商 ID
+    ///   - modelId: 模型 ID
+    /// - Returns: 检测结果
+    @discardableResult
+    public func checkModel(providerId: String, modelId: String) async -> ModelCheckResult {
+        guard let providerType = llmService.providerType(forId: providerId) else {
+            let msg = "供应商 `\(providerId)` 未注册"
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+        }
+
+        let providerInfo = llmService.allProviders().first { $0.id == providerId }
+        let isLocal = providerInfo?.isLocal ?? false
+
+        if !providerType.hasApiKey && !isLocal {
+            let msg = "未配置凭证"
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+        }
+
+        // 委托给内部实现
+        return await performCheck(providerId: providerId, modelId: modelId)
+    }
+
+    // MARK: - 内部实现
+
+    /// 检测单个供应商的所有模型
+    private func checkProvider(_ info: LLMProviderInfo) async {
+        let providerId = info.id
+
+        if Self.verbose {
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
+            }
+        }
+
+        guard let providerType = llmService.providerType(forId: providerId) else {
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
+                }
+            }
+            for modelId in info.availableModels {
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("供应商类型未找到"))
+            }
+            return
+        }
+
+        if !providerType.hasApiKey && !info.isLocal {
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置凭证，跳过所有模型")
+                }
+            }
+            for modelId in info.availableModels {
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置凭证"))
+            }
+            return
+        }
+
+        // 逐个检测模型
+        for modelId in info.availableModels {
+            await performCheck(providerId: providerId, modelId: modelId)
+        }
+
+        let availableCount = store.providers.first(where: { $0.providerId == providerId })?.availableModels.count ?? 0
+        if Self.verbose {
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
+            }
+        }
+    }
+
+    /// 检测单个模型的可用性（内部实现）
+    ///
+    /// 通过供应商提供的 `availabilityCheckStrategy(forModel:)` 策略决定检测方式。
+    private func performCheck(providerId: String, modelId: String) async -> ModelCheckResult {
+        store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
+
+        // 从供应商获取检测策略
+        guard let provider = llmService.createProvider(id: providerId) else {
+            let msg = "供应商 `\(providerId)` 未注册"
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+        }
+
+        let strategy = provider.availabilityCheckStrategy(forModel: modelId)
+
+        switch strategy {
+        case .apiKeyOnly:
+            // 仅验证 API Key，不发网络请求
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（apiKeyOnly 策略）: \(providerId) / \(modelId)")
+                }
+            }
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+
+        case .chatPing(let maxTokens):
+            return await performChatPing(
+                providerId: providerId,
+                modelId: modelId,
+                maxTokens: maxTokens
+            )
+
+        case .custom(let check):
+            let credential = llmService.providerType(forId: providerId)?.getApiKey() ?? ""
+            let result = await check(credential, modelId)
+            let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(result.reason ?? "检测失败")
+            store.updateStatus(providerId: providerId, modelId: modelId, status: status)
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                    if result.isAvailable {
+                        LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（custom 策略）: \(providerId) / \(modelId)")
+                    } else {
+                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用（custom 策略）: \(providerId) / \(modelId) - \(result.reason ?? "")")
+                    }
+                }
+            }
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: result.isAvailable, reason: result.reason)
+        }
+    }
+
+    /// 执行标准聊天 ping 检测
+    private func performChatPing(
+        providerId: String,
+        modelId: String,
+        maxTokens: Int?
+    ) async -> ModelCheckResult {
+        var config = LLMConfig(
+            model: modelId,
+            providerId: providerId
+        )
+        if let maxTokens { config.maxTokens = maxTokens }
+
+        // 构建最小测试请求（单条简短消息）
+        let testMessages: [ChatMessage] = [
+            ChatMessage(role: .user, content: "Hi")
+        ]
+
+        do {
+            _ = try await llmService.sendMessage(messages: testMessages, config: config, tools: nil)
+
+            // 请求成功 → 模型可用
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
+
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
+                }
+            }
+
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+        } catch let error as LLMServiceError {
+            switch error {
+            case .cancelled:
+                // 取消意味着请求已开始执行 → 视为可用
+                if Self.verbose {
+                    if LLMAvailabilityPlugin.verbose {
+                        LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
+                    }
+                }
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
+                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+            default:
+                let reason = error.errorDescription ?? error.localizedDescription
+                if Self.verbose {
+                    if LLMAvailabilityPlugin.verbose {
+                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(reason)")
+                    }
+                }
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
+                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
+            }
+        } catch {
+            let reason = error.localizedDescription
+            if Self.verbose {
+                if LLMAvailabilityPlugin.verbose {
+                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(reason)")
+                }
+            }
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
+        }
+    }
+}

@@ -1,0 +1,7 @@
+import Foundation
+
+public enum AvailabilityCheckStrategy: Sendable {
+    case apiKeyOnly
+    case chatPing(maxTokens: Int? = nil)
+    case custom(@Sendable (String, String) async -> (isAvailable: Bool, reason: String?))
+}

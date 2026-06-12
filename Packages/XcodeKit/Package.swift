@@ -22,11 +22,13 @@ let package = Package(
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-            ]
+            ],
+            path: "Sources"
         ),
         .testTarget(
             name: "XcodeKitTests",
-            dependencies: ["XcodeKit"]
+            dependencies: ["XcodeKit"],
+            path: "Tests"
         ),
     ]
 )

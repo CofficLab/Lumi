@@ -27,14 +27,49 @@ enum MarkdownTableNormalizer {
         
         var result: [String] = []
         var i = 0
+        var activeFence: String?
+        var activeIndentedCode = false
         
         while i < lines.count {
             let line = String(lines[i])
             let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if activeIndentedCode {
+                if line.isEmpty || isIndentedCodeLine(line) {
+                    result.append(line)
+                    i += 1
+                    continue
+                }
+                activeIndentedCode = false
+            }
+
+            if let fence = activeFence {
+                result.append(line)
+                if trimmed.hasPrefix(fence) {
+                    activeFence = nil
+                }
+                i += 1
+                continue
+            }
+
+            if let fence = openingFence(in: trimmed) {
+                activeFence = fence
+                result.append(line)
+                i += 1
+                continue
+            }
+
+            if startsIndentedCodeBlock(line, at: i, in: lines) {
+                activeIndentedCode = true
+                result.append(line)
+                i += 1
+                continue
+            }
             
             if isTableLine(trimmed) {
                 var tableLines: [String] = []
                 var standardTableLineCount = 0
+                var needsBlockBreakAfterTable = false
                 
                 // 收集连续的表格行
                 while i < lines.count {
@@ -69,17 +104,21 @@ enum MarkdownTableNormalizer {
                     if nextTrimmed.isEmpty { break }
                     if isTableLine(nextTrimmed) { break }
                     
-                    // 只含管道符或看起来像续行的内容 → 收集
-                    if nextTrimmed.contains("|") || looksLikeContinuation(nextTrimmed, after: tableLines) {
+                    // 只收集像表格断裂行的内容，避免把表格后的普通管道文本吞进表格。
+                    if looksLikeBrokenTableContinuation(nextTrimmed, after: tableLines) {
                         tableLines.append(nextLine)
                         i += 1
                     } else {
+                        needsBlockBreakAfterTable = nextTrimmed.contains("|")
                         break
                     }
                 }
                 
                 let normalized = normalizeTableBlock(tableLines)
                 result.append(contentsOf: normalized)
+                if needsBlockBreakAfterTable {
+                    result.append("")
+                }
             } else {
                 result.append(line)
                 i += 1
@@ -94,6 +133,22 @@ enum MarkdownTableNormalizer {
     /// 判断一行是否为表格相关行（至少 2 个管道符）
     private static func isTableLine(_ line: String) -> Bool {
         line.filter { $0 == "|" }.count >= 2
+    }
+
+    private static func openingFence(in line: String) -> String? {
+        if line.hasPrefix("```") { return "```" }
+        if line.hasPrefix("~~~") { return "~~~" }
+        return nil
+    }
+
+    private static func startsIndentedCodeBlock(_ line: String, at index: Int, in lines: [String.SubSequence]) -> Bool {
+        guard isIndentedCodeLine(line) else { return false }
+        if index == 0 { return true }
+        return String(lines[index - 1]).trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private static func isIndentedCodeLine(_ line: String) -> Bool {
+        line.hasPrefix("    ") || line.hasPrefix("\t")
     }
     
     private static func shouldNormalizeTableLines(_ lines: [String]) -> Bool {
@@ -129,12 +184,25 @@ enum MarkdownTableNormalizer {
         
         return false
     }
+
+    private static func looksLikeBrokenTableContinuation(_ line: String, after tableLines: [String]) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("|") || trimmed.hasSuffix("|") {
+            return true
+        }
+        return looksLikeContinuation(trimmed, after: tableLines)
+    }
     
     /// 判断是否为分隔线行（如 `| --- | --- |` 或 `| :--- | ---: |`）
     private static func isSeparatorLine(_ line: String) -> Bool {
-        let normalized = line.trimmingCharacters(in: .whitespaces)
-            .replacingOccurrences(of: " ", with: "")
-        return normalized.range(of: #"^\|:?-{1,}:?\|"#, options: .regularExpression) != nil
+        let cells = parseTableRow(line)
+        guard !cells.isEmpty else { return false }
+
+        return cells.allSatisfy { cell in
+            let normalized = cell.trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: " ", with: "")
+            return normalized.range(of: #"^:?-{1,}:?$"#, options: .regularExpression) != nil
+        }
     }
     
     /// 规范化单个表格块
@@ -248,12 +316,6 @@ enum MarkdownTableNormalizer {
     
     /// 解析表格行，提取单元格内容
     private static func parseTableRow(_ line: String) -> [String] {
-        let normalized = line
-            .trimmingCharacters(in: .whitespaces)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "|"))
-        guard !normalized.isEmpty else { return [] }
-        return normalized
-            .split(separator: "|", omittingEmptySubsequences: false)
-            .map { String($0).trimmingCharacters(in: .whitespaces) }
+        MarkdownTableRowParser.parse(line)
     }
 }

@@ -1,0 +1,46 @@
+import Foundation
+import LumiCoreKit
+import AgentToolKit
+
+/// Memory Plugin：持久化记忆系统。
+public enum MemoryPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .agent
+    public static let iconName = "brain.head.profile"
+    public static var verbose: Bool { false }
+
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.memory",
+        displayName: PluginMemoryLocalization.string("Memory"),
+        description: PluginMemoryLocalization.string("Persistent memory system for cross-session context"),
+        order: 15
+    )
+
+    nonisolated(unsafe) public static var config: MemoryPluginConfig = .default
+
+    @MainActor
+    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+        Self.bootstrapFromLumiCoreIfNeeded()
+        return [MemoryChatMiddleware()]
+    }
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        Self.bootstrapFromLumiCoreIfNeeded()
+        return [
+            SaveMemoryLumiTool(),
+            RecallMemoryLumiTool(),
+            ListMemoriesLumiTool(),
+            DeleteMemoryLumiTool()
+        ]
+    }
+}
+
+enum PluginMemoryLocalization {
+    static let table = "Localizable"
+    static let bundle = Bundle.module
+
+    static func string(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
+    }
+}

@@ -6,13 +6,17 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-"$ROOT_DIR/scripts/check-codeedit-languages-framework.sh"
-
-# CodeEditSourceEditor / CodeEditTextView currently attach a SwiftLint build-tool
+# CodeEditSourceEditor / EditorCodeEditTextView currently attach a SwiftLint build-tool
 # plugin that fails under this Xcode setup because its Output directory is not
 # materialized by the build system. Disable that external lint step so the app
 # build itself remains reproducible.
 export DISABLE_SWIFTLINT=1
+
+# Re-resolve local SPM packages after renames (e.g. ChatInputEditorKit → EditorChatInputKit).
+xcodebuild \
+  -project Lumi.xcodeproj \
+  -scheme Lumi \
+  -resolvePackageDependencies
 
 xcodebuild \
   -project Lumi.xcodeproj \

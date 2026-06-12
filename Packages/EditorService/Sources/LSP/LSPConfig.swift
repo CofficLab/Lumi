@@ -1,0 +1,243 @@
+import Foundation
+import SuperLogKit
+import os
+import EditorGoCore
+import ShellKit
+
+/// LSP 配置：定义语言服务器二进制路径和默认参数
+public struct LSPConfig: SuperLog {
+    public nonisolated static let emoji = "⚙️"
+
+    /// 当前内建支持的语言 ID（用于可用性探测和 UI 状态）
+    public static let supportedLanguageIds: [String] = [
+        "swift",
+        "python",
+        "typescript",
+        "javascript",
+        "html",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "rust",
+        "go",
+        "cpp",
+        "c",
+        "objective-c",
+        "objective-cpp",
+        "vue",
+    ]
+
+    /// 语言服务器二进制配置
+    public struct ServerConfig: Sendable {
+        public let languageId: String
+        public let execPath: String
+        public let arguments: [String]
+        public let env: [String: String]
+
+        public init(
+            languageId: String,
+            execPath: String,
+            arguments: [String] = [],
+            env: [String: String] = [:]
+        ) {
+            self.languageId = languageId
+            self.execPath = execPath
+            self.arguments = arguments
+            self.env = env
+        }
+    }
+
+    // MARK: - Server Path Cache
+
+    /// 路径检测结果缓存（languageId → 路径或 nil）
+    /// 避免重复 fork 子进程检测服务器路径
+    /// 使用 nonisolated(unsafe) 标注，实际线程安全由 pathCacheLock 保证
+    private static let pathCacheLock = NSLock()
+    nonisolated(unsafe) private static var _pathCache: [String: String?] = [:]
+
+    /// 缓存是否已经执行过完整扫描
+    nonisolated(unsafe) private static var _fullScanCompleted = false
+
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.config")
+
+    // MARK: - Default Server Discovery
+
+    /// 查找语言服务器路径（带缓存，线程安全）
+    public static func findServer(for languageId: String) -> String? {
+        pathCacheLock.lock()
+        if let cached = _pathCache[languageId] {
+            pathCacheLock.unlock()
+            return cached
+        }
+        pathCacheLock.unlock()
+
+        let result = findServerUncached(for: languageId)
+
+        pathCacheLock.lock()
+        _pathCache[languageId] = result
+        pathCacheLock.unlock()
+
+        return result
+    }
+
+    /// 获取默认配置
+    public static func defaultConfig(for languageId: String) -> ServerConfig? {
+        guard let path = findServer(for: languageId) else { return nil }
+        let executableName = URL(fileURLWithPath: path).lastPathComponent
+
+        switch languageId {
+        case "typescript", "javascript":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "go":
+            if let goConfig = GoLSPConfig.resolve() {
+                return ServerConfig(
+                    languageId: languageId,
+                    execPath: goConfig.goplsPath,
+                    arguments: goConfig.serverArguments,
+                    env: goConfig.processEnvironment
+                )
+            }
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["serve"])
+        case "html", "css", "scss", "sass", "less":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "vue":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "python" where executableName == "pyright-langserver":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        default:
+            return ServerConfig(languageId: languageId, execPath: path)
+        }
+    }
+
+    // MARK: - Async Availability Check
+
+    /// 在后台线程执行所有语言的可用性检测，结果写入缓存。
+    /// 调用方应在非主线程调用此方法（如 Task.detached）。
+    @discardableResult
+    public static func warmUpCacheInBackground() async -> Bool {
+        await Task.detached(priority: .utility) {
+            var available = false
+            for languageId in supportedLanguageIds {
+                let path = findServer(for: languageId)
+                if path != nil {
+                    available = true
+                }
+            }
+            _fullScanCompleted = true
+            return available
+        }.value
+    }
+
+    /// 重置缓存（用于测试或服务器安装变更后刷新）
+    public static func resetCache() {
+        pathCacheLock.lock()
+        _pathCache.removeAll()
+        _fullScanCompleted = false
+        pathCacheLock.unlock()
+    }
+
+    // MARK: - Private Helpers
+
+    /// 实际查找（不查缓存）
+    private static func findServerUncached(for languageId: String) -> String? {
+        switch languageId {
+        case "swift":
+            return findSourceKitLSP()
+        case "python":
+            return findCommand("pylsp") ?? findCommand("pyright-langserver")
+        case "typescript":
+            return findCommand("typescript-language-server")
+        case "javascript":
+            return findCommand("typescript-language-server")
+        case "html":
+            return findCommand("vscode-html-language-server") ?? findCommand("html-languageserver")
+        case "css", "scss", "sass", "less":
+            return findCommand("vscode-css-language-server") ?? findCommand("css-languageserver")
+        case "rust":
+            return findCommand("rust-analyzer")
+        case "go":
+            return findCommand("gopls")
+        case "cpp", "c", "objective-c", "objective-cpp":
+            return findCommand("clangd")
+        case "vue":
+            return findVueLanguageServer()
+        default:
+            return nil
+        }
+    }
+
+    private static func findSourceKitLSP() -> String? {
+        let xcodePaths = [
+            "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp",
+            "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp",
+        ]
+        for path in xcodePaths where FileManager.default.fileExists(atPath: path) {
+            return path
+        }
+        return try? runShellCommand("xcrun", args: ["--find", "sourcekit-lsp"])?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func findCommand(_ command: String) -> String? {
+        return Shell.findCommandSync(command)
+    }
+
+    /// 查找 Vue Language Server (Volar)
+    ///
+    /// 优先检查 npx 全局路径，然后检查常见的 node_modules 路径。
+    /// Volar 不像其他 LS 有独立二进制，通常通过 node 运行 JS 入口。
+    private static func findVueLanguageServer() -> String? {
+        // 1. 检查 npx 可用性（全局安装的 @vue/language-server）
+        if let npxPath = findCommand("npx") {
+            return npxPath
+        }
+
+        // 2. 检查 node 可用性 — 如果有 node，可以用 npx 启动 volar
+        if findCommand("node") != nil {
+            // 返回 node 路径，实际启动参数由 LanguageIntegrationCapability 配置
+            // 但由于 LSPConfig.defaultConfig 需要一个可执行路径，
+            // 而实际 volar 通常由项目 node_modules 提供，
+            // 所以这里返回 node 路径让后续逻辑处理
+            return nil
+        }
+
+        return nil
+    }
+
+    private static func runShellCommand(_ path: String, args: [String]) throws -> String? {
+        let executable = path.hasPrefix("/") ? path : Shell.findCommandSync(path)
+        guard let executable else { return nil }
+
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = LSPLockedStringBox()
+        Task {
+            let result = try? await Shell.execute(
+                executable: executable,
+                arguments: args,
+                options: ShellOptions(throwsOnError: false)
+            )
+            box.set(result?.exitCode == 0 ? result?.stdout : nil)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
+    }
+}
+
+private final class LSPLockedStringBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    public func set(_ value: String?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    public func get() -> String? {
+        lock.lock()
+        let result = value
+        lock.unlock()
+        return result
+    }
+}

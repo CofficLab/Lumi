@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorService",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -15,12 +16,18 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../EditorKernel"),
-        .package(path: "../LumiCodeEditSourceEditor"),
-        .package(path: "../CodeEditTextView"),
-        .package(path: "../CodeEditLanguages"),
+        .package(path: "../EditorCodeEditSourceEditor"),
+        .package(path: "../EditorCodeEditTextView"),
+        .package(path: "../EditorCodeEditLanguages"),
+        .package(path: "../EditorGoCore"),
+        .package(path: "../LumiCoreKit"),
+        .package(path: "../ShellKit"),
         .package(path: "../SuperLogKit"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
+        .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
+        .package(url: "https://github.com/ChimeHQ/JSONRPC", from: "0.9.0"),
+        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
     ],
     targets: [
         .target(
@@ -28,12 +35,24 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
-                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
+                .product(name: "CodeEditSourceEditor", package: "EditorCodeEditSourceEditor"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
+                .product(name: "EditorCodeEditLanguages", package: "EditorCodeEditLanguages"),
+                .product(name: "EditorGoCore", package: "EditorGoCore"),
+                .product(name: "JSONRPC", package: "JSONRPC"),
+                .product(name: "LanguageClient", package: "LanguageClient"),
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+            ],
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(
@@ -41,9 +60,9 @@ let package = Package(
             dependencies: [
                 "EditorService",
                 .product(name: "EditorKernel", package: "EditorKernel"),
-                .product(name: "CodeEditTextView", package: "CodeEditTextView"),
+                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
             ],
-            path: "Tests/EditorServiceTests"
+            path: "Tests"
         ),
     ]
 )

@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "ModelRouterKit",
-            path: "Sources/ModelRouterKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "ModelRouterKitTests",
             dependencies: ["ModelRouterKit"],
-            path: "Tests/ModelRouterKitTests"
+            path: "Tests"
         ),
     ]
 )

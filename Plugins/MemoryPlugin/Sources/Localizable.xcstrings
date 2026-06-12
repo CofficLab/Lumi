@@ -1,0 +1,98 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Delete a memory from the persistent memory system." : {
+
+    },
+    "Delete Memory" : {
+
+    },
+    "List all saved memories." : {
+
+    },
+    "List Memories" : {
+
+    },
+    "Memory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记忆"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        }
+      }
+    },
+    "Persistent memory system for cross-session context" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persistent memory system for cross-session context"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨会话持久化记忆系统"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨會話持久化記憶系統"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨會話持久化記憶系統"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨會話持久化記憶系統"
+          }
+        }
+      }
+    },
+    "Recall Memory" : {
+
+    },
+    "Save a memory to the persistent memory system." : {
+
+    },
+    "Save Memory" : {
+
+    },
+    "Search for memories related to a query." : {
+
+    }
+  },
+  "version" : "1.0"
+}

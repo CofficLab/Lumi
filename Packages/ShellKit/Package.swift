@@ -8,7 +8,8 @@ let package = Package(
         .library(name: "ShellKit", targets: ["ShellKit"]),
     ],
     targets: [
-        .target(name: "ShellKit"),
-        .testTarget(name: "ShellKitTests", dependencies: ["ShellKit"]),
+        .target(name: "ShellKit", path: "Sources"),
+        .testTarget(name: "ShellKitTests", dependencies: ["ShellKit"],
+            path: "Tests"),
     ]
 )

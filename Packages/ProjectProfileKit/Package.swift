@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "ProjectProfileKit",
-            path: "Sources/ProjectProfileKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "ProjectProfileKitTests",
             dependencies: ["ProjectProfileKit"],
-            path: "Tests/ProjectProfileKitTests"
+            path: "Tests"
         ),
     ]
 )

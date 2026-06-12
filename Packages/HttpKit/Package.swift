@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "HttpKit",
-            path: "Sources/HttpKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "HttpKitTests",
             dependencies: ["HttpKit"],
-            path: "Tests/HttpKitTests"
+            path: "Tests"
         ),
     ]
 )

@@ -1,0 +1,3 @@
+# RegistryManagerPlugin
+
+Manage Lumi registries

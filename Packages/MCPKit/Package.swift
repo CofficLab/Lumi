@@ -25,12 +25,12 @@ let package = Package(
                 .product(name: "MCP", package: "swift-sdk"),
                 .product(name: "Logging", package: "swift-log"),
             ],
-            path: "Sources/MCPKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "MCPKitTests",
             dependencies: ["MCPKit"],
-            path: "Tests/MCPKitTests"
+            path: "Tests"
         ),
     ]
 )

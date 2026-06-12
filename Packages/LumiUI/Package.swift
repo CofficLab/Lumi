@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LumiUI",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -13,18 +14,25 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../AgentToolKit")
+        .package(path: "../LumiCoreKit")
     ],
     targets: [
         .target(
             name: "LumiUI",
-            dependencies: ["AgentToolKit"],
-            path: "Sources/LumiUI"
+            dependencies: [
+                .product(name: "LumiCoreKit", package: "LumiCoreKit")
+            ],
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "LumiUITests",
             dependencies: ["LumiUI"],
-            path: "Tests/LumiUITests"
+            path: "Tests"
         )
     ]
 )

@@ -21,12 +21,12 @@ let package = Package(
             dependencies: [
                 "HttpKit",
             ],
-            path: "Sources/LLMKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "LLMKitTests",
             dependencies: ["LLMKit"],
-            path: "Tests/LLMKitTests"
+            path: "Tests"
         ),
     ]
 )

@@ -1,0 +1,43 @@
+import Foundation
+import EditorService
+import LumiCoreKit
+
+/// Editor Chat 集成插件：提供代码发送到 AI chat 的上下文菜单操作
+public actor EditorChatIntegrationPlugin: SuperPlugin {
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public static let shared = EditorChatIntegrationPlugin()
+    public static let id = "EditorChatIntegration"
+    public static let displayName = LumiPluginLocalization.string("Chat Integration", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Adds context menu actions to send code and locations to the AI chat.", bundle: .module)
+    public static let iconName = "bubble.left"
+    public static var category: PluginCategory { .editor }
+    public static let order = 12
+
+    public nonisolated var providesEditorExtensions: Bool { true }
+
+    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerCommandContributor(EditorChatIntegrationCommandContributor())
+    }
+}
+
+extension EditorChatIntegrationPlugin: LumiEditorExtensionRegistering {
+    public static var extensionPluginInfo: LumiPluginInfo {
+        LumiPluginInfo(
+            id: id,
+            displayName: displayName,
+            description: description,
+            order: order
+        )
+    }
+
+    public static var extensionPluginPolicy: LumiPluginPolicy {
+        policy.lumiPluginPolicy
+    }
+
+    @MainActor
+    public static func registerEditorExtensionsErased(into registry: AnyObject) async {
+        guard let registry = registry as? EditorExtensionRegistry else { return }
+        await shared.registerEditorExtensions(into: registry)
+    }
+}

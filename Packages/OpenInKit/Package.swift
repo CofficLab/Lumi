@@ -15,12 +15,12 @@ let package = Package(
     targets: [
         .target(
             name: "OpenInKit",
-            path: "Sources/OpenInKit"
+            path: "Sources"
         ),
         .testTarget(
             name: "OpenInKitTests",
             dependencies: ["OpenInKit"],
-            path: "Tests/OpenInKitTests"
+            path: "Tests"
         )
     ]
 )

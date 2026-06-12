@@ -1,0 +1,112 @@
+import Foundation
+import EditorService
+import LSPDocumentHighlightEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
+import SwiftUI
+import CodeEditSourceEditor
+import EditorCodeEditTextView
+public struct SourceEditorCoordinatorSet {
+    public var textCoordinator: EditorCoordinator?
+    public var cursorCoordinator: CursorCoordinator?
+    public var scrollCoordinator: ScrollCoordinator?
+    public var contextMenuCoordinator: ContextMenuCoordinator?
+    public var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
+    public var semanticTokenHighlightProvider: (any HighlightProviding)?
+    public var documentHighlightProvider: DocumentHighlightHighlighter?
+    public var hoverCoordinator: HoverEditorCoordinator?
+}
+
+@MainActor
+public struct SourceEditorViewBridge {
+    public func initializeCoordinators(
+        state: EditorState,
+        current: SourceEditorCoordinatorSet
+    ) -> SourceEditorCoordinatorSet {
+        var next = current
+
+        if next.textCoordinator == nil {
+            next.textCoordinator = EditorCoordinator(state: state)
+        }
+        if next.cursorCoordinator == nil {
+            next.cursorCoordinator = CursorCoordinator(state: state)
+        }
+        if next.scrollCoordinator == nil {
+            next.scrollCoordinator = ScrollCoordinator(state: state)
+        }
+        if next.contextMenuCoordinator == nil {
+            next.contextMenuCoordinator = ContextMenuCoordinator(state: state)
+        }
+        if next.semanticTokenProvider == nil, let semanticTokenProvider = state.editorExtensions.semanticTokenProvider {
+            next.semanticTokenProvider = semanticTokenProvider
+            next.semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
+            next.semanticTokenHighlightProvider = semanticTokenProvider as? any HighlightProviding
+        }
+        if next.documentHighlightProvider == nil, let highlightProvider = state.documentHighlightProvider as? DocumentHighlightProvider {
+            next.documentHighlightProvider = DocumentHighlightHighlighter(
+                provider: highlightProvider
+            )
+        }
+        if next.hoverCoordinator == nil {
+            next.hoverCoordinator = HoverEditorCoordinator(state: state)
+        }
+
+        return next
+    }
+
+    public func wireDelegates(
+        state: EditorState,
+        jumpDelegate: EditorJumpToDefinitionDelegate,
+        treeSitterClient: TreeSitterClient,
+        textCoordinator: EditorCoordinator?,
+        completionDelegate: inout LSPCompletionDelegate
+    ) {
+        jumpDelegate.textStorage = state.content
+        jumpDelegate.treeSitterClient = treeSitterClient
+        jumpDelegate.lspClient = state.lspClient
+        jumpDelegate.semanticCapabilityProvider = { [weak state] in
+            state?.semanticCapability
+        }
+        jumpDelegate.currentFileURLProvider = { [weak state] in
+            state?.currentFileURL
+        }
+        jumpDelegate.allowsLocalFallbackProvider = { [weak state] in
+            !(state?.projectContextSnapshot?.isStructuredProject ?? false)
+        }
+        jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
+            state?.performNavigation(.definition(url, target, highlightLine: false))
+        }
+        state.jumpDelegate = jumpDelegate
+        textCoordinator?.jumpDelegate = jumpDelegate
+
+        completionDelegate.configure(
+            lspClient: state.lspClient,
+            editorExtensionRegistry: state.editorExtensions,
+            editorState: state
+        )
+    }
+
+    public func binding(for state: EditorState) -> Binding<SourceEditorState> {
+        Binding<SourceEditorState>(
+            get: {
+                var result = state.editorState
+                result.scrollPosition = nil
+                return result
+            },
+            set: { newState in
+                let update = EditorSourceEditorBindingController.update(
+                    from: newState,
+                    multiCursorSelectionCount: state.multiCursorState.all.count,
+                    currentFindReplaceState: state.activeSession.findReplaceState
+                )
+
+                DispatchQueue.main.async {
+                    state.applySourceEditorBindingUpdate(update)
+                }
+            }
+        )
+    }
+
+    public func lineTable(for content: NSTextStorage?) -> LineOffsetTable? {
+        content.map { LineOffsetTable(content: $0.string) }
+    }
+}

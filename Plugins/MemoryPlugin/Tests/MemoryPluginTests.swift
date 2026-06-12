@@ -1,0 +1,172 @@
+import AgentToolKit
+import Foundation
+import LumiCoreKit
+import Testing
+@testable import MemoryPlugin
+
+@Suite("PluginMemory")
+struct PluginMemoryTests {
+    @Test("plugin metadata is stable")
+    func pluginMetadata() {
+        #expect(MemoryPlugin.info.id == "com.coffic.lumi.plugin.memory")
+        #expect(MemoryPlugin.info.displayName == PluginMemoryLocalization.string("Memory"))
+        #expect(MemoryPlugin.iconName == "brain.head.profile")
+        #expect(MemoryPlugin.category == .agent)
+        #expect(MemoryPlugin.info.order == 15)
+    }
+
+    @MainActor
+    @Test("plugin registers four memory tools")
+    func pluginRegistersTools() {
+        let tools = MemoryPlugin.agentTools(context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
+
+        #expect(tools.count == 4)
+        let names = tools.map(\.name)
+        #expect(names.contains("save_memory"))
+        #expect(names.contains("recall_memory"))
+        #expect(names.contains("list_memories"))
+        #expect(names.contains("delete_memory"))
+    }
+
+    @MainActor
+    @Test("plugin registers send middleware")
+    func pluginRegistersSendMiddleware() {
+        let context = LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+        #expect(MemoryPlugin.sendMiddlewares(context: context).count == 1)
+    }
+
+    @Test("save memory tool schema has required fields")
+    func saveMemoryToolSchema() throws {
+        let tool = SaveMemoryTool()
+        let schema = tool.inputSchema(for: .english)
+
+        let required = try #require(schema["required"] as? [String])
+        #expect(required.contains("id"))
+        #expect(required.contains("type"))
+        #expect(required.contains("name"))
+        #expect(required.contains("description"))
+        #expect(required.contains("content"))
+    }
+
+    @Test("recall memory tool schema requires query")
+    func recallMemoryToolSchema() throws {
+        let tool = RecallMemoryTool()
+        let schema = tool.inputSchema(for: .english)
+
+        let required = try #require(schema["required"] as? [String])
+        #expect(required == ["query"])
+
+        let properties = try #require(schema["properties"] as? [String: [String: Any]])
+        #expect(properties["max_results"]?["type"] as? String == "integer")
+        #expect(properties["max_results"]?["minimum"] as? Int == MemoryToolInput.minMaxResults)
+        #expect(properties["max_results"]?["maximum"] as? Int == MemoryToolInput.maxMaxResults)
+    }
+
+    @Test("all tools have low risk level")
+    func allToolsLowRisk() {
+        #expect(SaveMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
+        #expect(RecallMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
+        #expect(ListMemoriesTool().permissionRiskLevel(arguments: [:]) == .low)
+        #expect(DeleteMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
+    }
+
+    @Test("localization catalog is packaged")
+    func localizationCatalogIsPackaged() {
+        #expect(PluginMemoryLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        #expect(PluginMemoryLocalization.string("Memory").isEmpty == false)
+    }
+
+    @Test("config has sensible defaults")
+    func configDefaults() {
+        let config = MemoryPluginConfig.default
+        #expect(config.maxRelevantMemories == 3)
+        #expect(config.staleThresholdDays == 7)
+        #expect(config.halfLifeDays == 30)
+        #expect(config.injectGlobalIndex == true)
+        #expect(config.injectProjectIndex == true)
+    }
+
+    @Test("tool input strings are trimmed and blank strings are rejected")
+    func toolInputStringNormalization() {
+        #expect(MemoryToolInput.string(" \n/Users/example/Project\t") == "/Users/example/Project")
+        #expect(MemoryToolInput.string(" \n\t ") == nil)
+    }
+
+    @Test("tool input scopes are trimmed and validated")
+    func toolInputScopeNormalization() throws {
+        let projectScope = try MemoryToolInput.scope(" \nproject\t", default: "global", allowed: ["global", "project"])
+        #expect(projectScope == "project")
+
+        let defaultScope = try MemoryToolInput.scope(nil, default: "all", allowed: ["global", "project", "all"])
+        #expect(defaultScope == "all")
+
+        #expect(throws: MemoryToolError.self) {
+            try MemoryToolInput.scope("workspace", default: "global", allowed: ["global", "project"])
+        }
+    }
+
+    @Test("recall max results are clamped to a safe range")
+    func recallMaxResultsAreClamped() {
+        #expect(MemoryToolInput.maxResults(-3) == MemoryToolInput.minMaxResults)
+        #expect(MemoryToolInput.maxResults(8) == 8)
+        #expect(MemoryToolInput.maxResults(8.0) == 8)
+        #expect(MemoryToolInput.maxResults("9") == 9)
+        #expect(MemoryToolInput.maxResults(99) == MemoryToolInput.maxMaxResults)
+        #expect(MemoryToolInput.maxResults(nil) == MemoryToolInput.defaultMaxResults)
+        #expect(MemoryToolInput.maxResults("not-a-number") == MemoryToolInput.defaultMaxResults)
+    }
+
+    @Test("local store reports save result and reloads values")
+    func localStoreReportsSaveResultAndReloadsValues() {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = MemoryPluginLocalStore(settingsDirectory: directory)
+
+        #expect(store.set(8, forKey: .maxRelevantMemories) == true)
+        #expect(store.set(true, forKey: .injectGlobalIndex) == true)
+
+        let reloadedStore = MemoryPluginLocalStore(settingsDirectory: directory)
+        #expect(reloadedStore.maxRelevantMemories == 8)
+        #expect(reloadedStore.shouldInjectGlobalIndex == true)
+    }
+
+    @Test("local store quarantines invalid settings file and recovers")
+    func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-Invalid-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let settingsURL = directory.appending(path: "Memory.plist")
+        let corruptURL = directory.appending(path: "Memory.corrupt.plist")
+        let invalidData = Data("not a plist".utf8)
+        try invalidData.write(to: settingsURL)
+
+        let store = MemoryPluginLocalStore(settingsDirectory: directory)
+
+        #expect(store.set(10, forKey: .maxRelevantMemories) == true)
+        #expect((try? Data(contentsOf: corruptURL)) == invalidData)
+        #expect(store.maxRelevantMemories == 10)
+
+        let reloadedStore = MemoryPluginLocalStore(settingsDirectory: directory)
+        #expect(reloadedStore.maxRelevantMemories == 10)
+    }
+
+    @Test("local store reports failure when settings directory is blocked")
+    func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appending(path: "MemoryPluginLocalStore-Blocked-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let blockedDirectory = tempRoot.appending(path: "PluginSettings", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+
+        let store = MemoryPluginLocalStore(settingsDirectory: blockedDirectory)
+
+        #expect(store.set(10, forKey: .maxRelevantMemories) == false)
+        #expect(store.maxRelevantMemories == 3)
+    }
+}

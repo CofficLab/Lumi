@@ -1,0 +1,3 @@
+import LumiCoreKit
+
+public typealias WindowPersistenceRecord = LumiCoreKit.WindowPersistenceRecord

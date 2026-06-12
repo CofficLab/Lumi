@@ -17,8 +17,8 @@
 
 ## 依赖
 
-- `EditorKernel`, `LumiCodeEditSourceEditor`（`CodeEditSourceEditor`）
-- `CodeEditTextView`, `CodeEditLanguages`, `SwiftTreeSitter`
+- `EditorKernel`, `EditorCodeEditSourceEditor`（`CodeEditSourceEditor`）
+- `EditorCodeEditTextView`, `EditorCodeEditLanguages`, `SwiftTreeSitter`
 - 见 `Package.swift` 了解完整依赖列表
 
 ## 依赖与集成
