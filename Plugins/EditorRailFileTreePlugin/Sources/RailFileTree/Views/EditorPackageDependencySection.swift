@@ -1,10 +1,10 @@
 import AppKit
-import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public struct EditorPackageDependencySection: View {
-    @EnvironmentObject private var editorContext: EditorContext
+    @LumiTheme private var uiTheme
 
     public let projectRootPath: String
     public let dependencies: [EditorPackageDependency]
@@ -15,10 +15,6 @@ public struct EditorPackageDependencySection: View {
     @State private var isExpanded: Bool = true
 
     public var body: some View {
-        guard let theme = editorContext.activeChromeTheme else {
-            return AnyView(Color.clear)
-        }
-
         return AnyView(
             VStack(alignment: .leading, spacing: 0) {
                 Button {
@@ -28,17 +24,17 @@ public struct EditorPackageDependencySection: View {
                     HStack(spacing: 4) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(theme.workspaceSecondaryTextColor())
+                            .foregroundColor(uiTheme.textTertiary)
                             .frame(width: 12)
 
                         Image(systemName: "shippingbox")
                             .font(.system(size: 12))
-                            .foregroundColor(theme.accentColors().primary)
+                            .foregroundColor(uiTheme.primary)
                             .frame(width: 16)
 
                         Text(LumiPluginLocalization.string("Package Dependencies", bundle: .module))
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(theme.workspaceTextColor())
+                            .font(.appBody)
+                            .foregroundColor(uiTheme.textPrimary)
                             .lineLimit(1)
 
                         Spacer(minLength: 4)
@@ -50,8 +46,8 @@ public struct EditorPackageDependencySection: View {
                                 .frame(width: 14, height: 14)
                         } else if !dependencies.isEmpty {
                             Text("\(dependencies.count)")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(theme.workspaceSecondaryTextColor())
+                                .font(.appMicro)
+                                .foregroundColor(uiTheme.textSecondary)
                         }
                     }
                     .padding(.vertical, 5)
@@ -65,8 +61,8 @@ public struct EditorPackageDependencySection: View {
                 if isExpanded {
                     if dependencies.isEmpty {
                         Text(diagnostic ?? LumiPluginLocalization.string("No package dependencies", bundle: .module))
-                            .font(.system(size: 10))
-                            .foregroundColor(theme.workspaceSecondaryTextColor())
+                            .font(.appMicro)
+                            .foregroundColor(uiTheme.textSecondary)
                             .lineLimit(2)
                             .padding(.vertical, 5)
                             .padding(.horizontal, 6)

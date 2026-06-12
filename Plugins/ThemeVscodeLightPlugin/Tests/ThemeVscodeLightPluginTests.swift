@@ -37,6 +37,7 @@ struct ThemeVscodeLightPluginTests {
             )
         )
     }
+
 }
 
 private enum VscodeLightThemeContrastTestSupport {

@@ -1,10 +1,10 @@
 import AppKit
-import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public struct EditorPackageDependencyRow: View {
-    @EnvironmentObject private var editorContext: EditorContext
+    @LumiTheme private var uiTheme
 
     public let dependency: EditorPackageDependency
     public let depth: Int
@@ -12,10 +12,6 @@ public struct EditorPackageDependencyRow: View {
     @State private var isHovering = false
 
     public var body: some View {
-        guard let theme = editorContext.activeChromeTheme else {
-            return AnyView(Color.clear)
-        }
-
         return AnyView(
             HStack(spacing: 4) {
                 Color.clear.frame(width: 12)
@@ -27,13 +23,13 @@ public struct EditorPackageDependencyRow: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(dependency.displayName)
-                        .font(.system(size: 11))
-                        .foregroundColor(theme.workspaceTextColor())
+                        .font(.appBody)
+                        .foregroundColor(uiTheme.textPrimary)
                         .lineLimit(1)
 
                     Text(dependency.subtitle)
-                        .font(.system(size: 9))
-                        .foregroundColor(theme.workspaceSecondaryTextColor())
+                        .font(.appMicro)
+                        .foregroundColor(uiTheme.textSecondary)
                         .lineLimit(1)
                 }
 
@@ -50,7 +46,7 @@ public struct EditorPackageDependencyRow: View {
             .padding(.horizontal, 6)
             .padding(.leading, CGFloat(depth) * 16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isHovering ? theme.workspaceTextColor().opacity(0.06) : Color.clear)
+            .background(isHovering ? uiTheme.textPrimary.opacity(0.06) : Color.clear)
             .contentShape(Rectangle())
             .onHover { isHovering = $0 }
             .contextMenu { contextMenuContent }
