@@ -96,16 +96,20 @@ private var testContext: LumiPluginContext {
     let ui = ChromeToUIThemeAdapter(chrome: chrome)
     let lightAppearance = NSAppearance(named: .aqua)!
 
-    let readable = AssistantMarkdownContrastTestSupport.hasSufficientContrast(
+    let defaultReadable = AssistantMarkdownContrastTestSupport.hasSufficientContrast(
         text: Color.primary,
         surface: ui.surface,
         systemAppearance: lightAppearance
     )
+    #expect(!defaultReadable, "Default Markdown foreground should expose the regression on forced-dark chrome")
 
-    #expect(
-        readable,
-        "Assistant MarkdownBlockRenderer should not rely on Color.primary over forced-dark chat chrome"
+    let chatTheme = ChatMarkdownTheme.make(from: ui)
+    let chatReadable = AssistantMarkdownContrastTestSupport.hasSufficientContrast(
+        text: chatTheme.textColor!,
+        surface: ui.surface,
+        systemAppearance: lightAppearance
     )
+    #expect(chatReadable, "Chat markdown theme should follow chrome text colors")
 }
 
 private struct ForcedDarkChatChromeFixture: LumiAppChromeTheme {

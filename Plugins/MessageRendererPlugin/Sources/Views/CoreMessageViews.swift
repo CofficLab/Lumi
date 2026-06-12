@@ -782,9 +782,12 @@ private struct CollapsibleAssistantContent: View {
                     ? lines.prefix(collapseLineLimit).joined(separator: "\n") + "\n..."
                     : message.content
 
-                MarkdownBlockRenderer(markdown: rendered)
-                    .textSelection(.enabled)
-                    .font(.appBody)
+                MarkdownBlockRenderer(
+                    markdown: rendered,
+                    theme: ChatMarkdownTheme.make(from: theme)
+                )
+                .textSelection(.enabled)
+                .font(.appBody)
 
                 if shouldCollapse {
                     Button(isCollapsed ? "Show more" : "Show less") {
