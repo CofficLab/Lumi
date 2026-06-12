@@ -454,6 +454,16 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         themeContributors.sort { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
+    /// 注册或替换同 ID 的主题 contributor（App 主题同步时使用）。
+    public func registerOrReplaceThemeContributor(_ contributor: any SuperEditorThemeContributor) {
+        if let index = themeContributors.firstIndex(where: { $0.id == contributor.id }) {
+            themeContributors[index] = contributor
+        } else {
+            themeContributors.append(contributor)
+        }
+        themeContributors.sort { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+    }
+
     /// 所有已注册的主题（按 displayName 排序）
     public func allThemes() -> [any SuperEditorThemeContributor] {
         themeContributors

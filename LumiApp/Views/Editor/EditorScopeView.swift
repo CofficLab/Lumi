@@ -51,7 +51,12 @@ struct EditorScopeView<Content: View>: View {
     }
 
     private func syncEditorTheme() {
-        let themeID = LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
-        editor.editorService.syncInitialThemeFromExternal(themeID)
+        let scheme = SystemAppearanceResolver.effectiveColorScheme
+        let resolved = EditorSyntaxThemeResolver.resolve(
+            registry: LumiUIThemeRegistry.shared,
+            extensions: editor.extensionRegistry,
+            colorScheme: scheme
+        )
+        editor.editorService.syncInitialThemeFromExternal(resolved.id)
     }
 }

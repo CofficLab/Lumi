@@ -29,7 +29,8 @@ public enum EditorRuntimeBridge {
             editor.currentProjectPathProvider?() ?? ""
         }
         EditorBottomTerminalBridge.editorThemeIdProvider = {
-            LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
+            let scheme = SystemAppearanceResolver.effectiveColorScheme
+            return LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
         }
 
         EditorPreviewRuntimeBridge.addToChatHandler = { _, _ in }

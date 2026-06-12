@@ -425,21 +425,18 @@ public struct SourceEditorView: View, SuperLog {
         return config
     }
 
-    /// 以 AppThemeVM 为单一来源解析编辑器语法主题，不依赖 EditorState 通知链。
+    /// 以 App 主题注册表为单一来源解析编辑器语法主题。
     @MainActor
     private func applyAppChromeTheme(to config: inout SourceEditorConfiguration) {
         let chromeTheme = themeVM.activeChromeTheme
-        let editorThemeId = chromeTheme.resolvedEditorThemeId(
-            defaultEditorThemeId: "xcode-dark",
-            colorScheme: effectiveColorScheme(for: chromeTheme)
+        let scheme = effectiveColorScheme(for: chromeTheme)
+        let resolved = EditorSyntaxThemeResolver.resolve(
+            registry: LumiUIThemeRegistry.shared,
+            extensions: state.editorExtensions,
+            colorScheme: scheme
         )
-        if let contributor = state.editorExtensions.theme(for: editorThemeId) {
-            config.appearance.theme = contributor.createTheme()
-            config.appearance.themeIdentifier = editorThemeId
-        } else {
-            config.appearance.theme = EditorThemeAdapter.fallbackTheme()
-            config.appearance.themeIdentifier = editorThemeId
-        }
+        config.appearance.theme = resolved.theme
+        config.appearance.themeIdentifier = resolved.id
     }
 
     private func effectiveColorScheme(for chromeTheme: any LumiAppChromeTheme) -> ColorScheme {

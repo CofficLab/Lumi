@@ -20,6 +20,12 @@ struct ThemeDraculaPluginTests {
         #expect(contributions[0].editorThemeId == "dracula")
     }
 
+    @Test func editorSyntaxPaletteMatchesDraculaPreset() {
+        let palette = DraculaTheme().editorSyntaxPalette(colorScheme: .dark)
+        #expect(palette.backgroundHex == "282A36")
+        #expect(palette.keywords.colorHex == "FF79C6")
+    }
+
     @Test func conformsToPluginAndThemeProvider() {
         let plugin = ThemeDraculaPlugin.self as any LumiPlugin.Type
         let provider = plugin as? any LumiUIThemeProviding.Type
