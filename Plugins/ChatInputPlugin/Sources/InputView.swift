@@ -45,6 +45,11 @@ public struct InputView: View {
             isFocused = true
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addToChat"))) { notification in
+            if let fileURL = Self.addToChatFileURL(from: notification, targetWindowId: conversationVM.windowId) {
+                handleFileDrop(fileURL)
+                isFocused = true
+                return
+            }
             guard let value = Self.addToChatText(from: notification, targetWindowId: conversationVM.windowId) else { return }
             appendToDraft(value)
             isFocused = true
@@ -170,6 +175,24 @@ public struct InputView: View {
     private func appendToDraft(_ value: String) {
         conversationVM.appendDraftText(value)
         cursorPosition = conversationVM.draftText.count
+    }
+
+    static func addToChatFileURL(from notification: Notification, targetWindowId: UUID?) -> URL? {
+        guard let userInfo = notification.userInfo,
+              let path = userInfo["fileURL"] as? String,
+              !path.isEmpty else {
+            return nil
+        }
+
+        guard let senderWindowId = userInfo["windowId"] as? UUID else {
+            return URL(fileURLWithPath: path)
+        }
+
+        guard let targetWindowId, senderWindowId == targetWindowId else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: path)
     }
 
     static func addToChatText(from notification: Notification, targetWindowId: UUID?) -> String? {

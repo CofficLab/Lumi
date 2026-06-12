@@ -44,6 +44,27 @@ final class EditorContextFileTreeHighlightTests: XCTestCase {
         )
     }
 
+    func testAddToConversationPostsFileURLNotification() {
+        let service = makeService()
+        let context = EditorContext(service: service)
+        let windowId = UUID()
+        let fileURL = URL(fileURLWithPath: "/tmp/project/Sources/A.swift")
+        let expectation = expectation(description: "addToChat notification")
+        let observer = NotificationCenter.default.addObserver(
+            forName: EditorContext.addToChatNotificationName,
+            object: nil,
+            queue: .main
+        ) { notification in
+            XCTAssertEqual(notification.userInfo?["fileURL"] as? String, fileURL.path)
+            XCTAssertEqual(notification.userInfo?["windowId"] as? UUID, windowId)
+            expectation.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        context.addToConversation(fileURL: fileURL, windowId: windowId)
+        wait(for: [expectation], timeout: 1)
+    }
+
     func testTreeSelectionStillWorksBeforeEditorCurrentFileCatchesUp() {
         let service = makeService()
         let context = EditorContext(service: service)

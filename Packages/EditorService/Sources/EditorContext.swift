@@ -47,8 +47,22 @@ public final class EditorContext: ObservableObject {
         fileTreeHighlightedFileURL = service.currentFileURL
     }
 
-    /// Intentionally no-op: Editor workspace has no chat integration.
-    public func addToConversation(fileURL: URL, windowId: UUID?) {}
+    public static let addToChatNotificationName = Notification.Name("addToChat")
+
+    /// 将文件路径加入当前窗口的对话输入区（与拖入输入区行为一致，由 Chat 侧处理图片附件）。
+    public func addToConversation(fileURL: URL, windowId: UUID?) {
+        let standardized = fileURL.standardizedFileURL
+        let resolvedWindowId = windowId ?? service.state.windowId
+        var userInfo: [String: Any] = ["fileURL": standardized.path]
+        if let resolvedWindowId {
+            userInfo["windowId"] = resolvedWindowId
+        }
+        NotificationCenter.default.post(
+            name: Self.addToChatNotificationName,
+            object: nil,
+            userInfo: userInfo
+        )
+    }
 
     private func bindFileTreeHighlightToEditorCurrentFile() {
         service.state.$currentFileURL
