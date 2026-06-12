@@ -33,7 +33,7 @@ public struct EditorPackageDependencySection: View {
                             .frame(width: 16)
 
                         Text(LumiPluginLocalization.string("Package Dependencies", bundle: .module))
-                            .font(.appBody)
+                            .font(.appCaption)
                             .foregroundColor(uiTheme.textPrimary)
                             .lineLimit(1)
 

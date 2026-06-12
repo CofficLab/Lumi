@@ -151,7 +151,7 @@ public struct EditorFileTreeNodeView: View {
                         .frame(width: 16)
 
                     Text(fileName)
-                        .font(.appBody)
+                        .font(.appCaption)
                         .foregroundColor(uiTheme.textPrimary)
                         .lineLimit(1)
 

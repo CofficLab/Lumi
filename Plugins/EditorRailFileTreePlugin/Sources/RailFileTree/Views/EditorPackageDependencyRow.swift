@@ -23,7 +23,7 @@ public struct EditorPackageDependencyRow: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(dependency.displayName)
-                        .font(.appBody)
+                        .font(.appCaption)
                         .foregroundColor(uiTheme.textPrimary)
                         .lineLimit(1)
 
