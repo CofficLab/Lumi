@@ -21,6 +21,7 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     private let documentSymbolsPreflight: @MainActor (_ uri: String) -> EditorLanguageFeatureError?
     private let requestDocumentSymbolsOperation: @Sendable (_ uri: String) async -> [DocumentSymbol]
     private let requestDefinitionOperation: @Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?
+    private let openDocumentOperation: @Sendable (_ uri: String, _ languageId: String, _ text: String, _ version: Int) async -> Void
     
     /// LSP 请求防抖器 — 避免快速连续请求导致主线程阻塞
     private let debouncer = LSPDebouncer()
@@ -33,6 +34,8 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     public var languageId: String = "swift"
     /// 文档版本计数器
     private var version = 0
+    /// 当前文档打开任务；定义跳转等请求需等待其完成，避免 LSP 尚未就绪。
+    private var activeOpenTask: Task<Void, Never>?
 
     private struct DocumentRequestContext {
         let uri: String
@@ -65,7 +68,8 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
                 )
         },
         requestDocumentSymbolsOperation: (@Sendable (_ uri: String) async -> [DocumentSymbol])? = nil,
-        requestDefinitionOperation: (@Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?)? = nil
+        requestDefinitionOperation: (@Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?)? = nil,
+        openDocumentOperation: (@Sendable (_ uri: String, _ languageId: String, _ text: String, _ version: Int) async -> Void)? = nil
     ) {
         self.lspService = lspService
         self.documentSymbolsPreflight = documentSymbolsPreflight
@@ -74,6 +78,9 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
         }
         self.requestDefinitionOperation = requestDefinitionOperation ?? { [lspService] uri, line, character in
             await lspService.requestDefinition(uri: uri, line: line, character: character)
+        }
+        self.openDocumentOperation = openDocumentOperation ?? { [lspService] uri, languageId, text, version in
+            await lspService.openDocument(uri: uri, languageId: languageId, text: text, version: version)
         }
     }
     
@@ -91,13 +98,19 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
         self.languageId = languageId
         self.version = version
 
-        await lspService.openDocument(uri: uri, languageId: languageId, text: content, version: version)
+        let openTask = Task {
+            await self.openDocumentOperation(uri, languageId, content, version)
+        }
+        activeOpenTask = openTask
+        await openTask.value
     }
     
     /// 关闭文件时调用
     public func closeFile() {
         guard let uri = fileURI else { return }
         fileSessionGeneration.invalidate()
+        activeOpenTask?.cancel()
+        activeOpenTask = nil
         Task {
             await self.debouncer.cancelAll()
         }
@@ -227,6 +240,7 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
 
     /// 请求定义位置
     public func requestDefinition(line: Int, character: Int) async -> Location? {
+        await activeOpenTask?.value
         guard let uri = fileURI else { return nil }
         let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await requestDefinitionOperation(uri, line, character)

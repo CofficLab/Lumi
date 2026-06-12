@@ -26,6 +26,9 @@ final class TextViewBridge {
         }
 
         jumpDelegate?.textViewController = controller
+        if let client = controller.treeSitterClient {
+            jumpDelegate?.treeSitterClient = client
+        }
         state?.focusedTextView = controller.textView
 
         return NotificationCenter.default.addObserver(
