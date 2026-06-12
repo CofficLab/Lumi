@@ -1,5 +1,5 @@
-import ChatPanelPlugin
 import LayoutPlugin
+import LumiChatKit
 import LumiCoreKit
 import SwiftUI
 

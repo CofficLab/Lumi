@@ -1,6 +1,6 @@
 import EditorService
-import ChatPanelPlugin
 import LayoutPlugin
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI

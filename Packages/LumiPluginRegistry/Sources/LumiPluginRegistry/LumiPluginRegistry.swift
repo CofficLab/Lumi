@@ -2,6 +2,7 @@ import LumiCoreKit
 import DeviceInfoPlugin
 import NetworkManagerPlugin
 import ChatPanelPlugin
+import MessageListPlugin
 import LLMProviderOpenAIPlugin
 import LLMProviderZhipuPlugin
 import LLMProviderAiRouterPlugin

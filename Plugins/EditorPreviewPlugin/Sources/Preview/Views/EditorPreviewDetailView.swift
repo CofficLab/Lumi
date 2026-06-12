@@ -764,6 +764,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 unsupportedPreview(url: url)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
             EditorPreviewCanvasAccessor { view in
                 previewCanvasView = view
@@ -1411,6 +1412,7 @@ private struct EditorPreviewStringCatalogContainer: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
@@ -1561,10 +1563,10 @@ private struct EditorPreviewStringCatalogView: View {
                 } header: {
                     tableHeader
                 }
-
-                Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 

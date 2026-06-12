@@ -1,7 +1,6 @@
 import AppKit
-import EditorChatInputKit
 import Combine
-import LumiChatKit
+import EditorChatInputKit
 import LumiCoreKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -19,12 +18,10 @@ public final class ChatSectionCoordinator: ObservableObject {
     @Published public var showCommandSuggestions = false
 
     public let chatService: ChatService
-    private let localStore: LocalStore?
     private var cancellables = Set<AnyCancellable>()
 
     public init(chatService: ChatService, databaseDirectory: URL? = nil) {
         self.chatService = chatService
-        self.localStore = databaseDirectory.map { LocalStore(databaseDirectory: $0) }
         bindChatService()
     }
 
@@ -76,8 +73,9 @@ public final class ChatSectionCoordinator: ObservableObject {
         guard !text.isEmpty || !imageAttachments.isEmpty else { return }
 
         if text.hasPrefix("/") {
-            if let command = ChatSlashCommand.suggestions(for: text).first(where: { $0.command == text.lowercased() }) {
-                handleSlashCommand(command, selectedID: selectedID)
+            let normalized = text.lowercased()
+            if Self.exactSlashCommands.contains(normalized) {
+                handleSlashCommand(normalized, selectedID: selectedID)
                 draft = ""
                 return
             }
@@ -90,9 +88,9 @@ public final class ChatSectionCoordinator: ObservableObject {
         chatService.enqueueText(text, imageAttachments: attachments, in: selectedID)
     }
 
-    func handleSlashCommand(_ command: ChatSlashCommand, selectedID: UUID?) {
+    public func handleSlashCommand(_ command: String, selectedID: UUID?) {
         showCommandSuggestions = false
-        switch command.command {
+        switch command {
         case "/clear":
             if let selectedID {
                 for message in chatService.messages(for: selectedID) {
@@ -103,7 +101,7 @@ public final class ChatSectionCoordinator: ObservableObject {
             draft = ""
             isInputFocused = true
         default:
-            draft = command.command + " "
+            draft = command + " "
         }
     }
 
@@ -190,6 +188,8 @@ public final class ChatSectionCoordinator: ObservableObject {
     public func bindDraftChanges() {
         showCommandSuggestions = draft.hasPrefix("/")
     }
+
+    private static let exactSlashCommands = ["/clear", "/help", "/model"]
 
     private func bindChatService() {
         chatService.objectWillChange

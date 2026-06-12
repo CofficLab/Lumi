@@ -1,72 +1,47 @@
 import Foundation
-import Testing
+import LumiChatKit
 import LumiCoreKit
+import Testing
 @testable import MessageListPlugin
 
 @MainActor
-@Test func windowConversationVMProvidesSelectedConversationMessages() {
-    let selectedConversationId = UUID()
-    let otherConversationId = UUID()
-    let selectedMessage = ChatMessage(
-        id: UUID(),
-        role: .user,
-        conversationId: selectedConversationId,
-        content: "selected conversation",
-        timestamp: Date(timeIntervalSince1970: 1)
-    )
-    let otherMessage = ChatMessage(
-        id: UUID(),
-        role: .assistant,
-        conversationId: otherConversationId,
-        content: "other conversation",
-        timestamp: Date(timeIntervalSince1970: 2)
+@Test func chatMessagesSectionPluginReturnsEmptyWhenChatSectionHidden() {
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .none
     )
 
-    let conversationVM = WindowConversationVM(
-        selectedConversationId: selectedConversationId,
-        messagesProvider: { conversationId in
-            conversationId == selectedConversationId ? [selectedMessage] : [otherMessage]
-        }
-    )
-
-    #expect(conversationVM.hasSelectedConversation)
-    #expect(conversationVM.currentMessages() == [selectedMessage])
-
-    conversationVM.selectedConversationId = otherConversationId
-    #expect(conversationVM.currentMessages() == [otherMessage])
-
-    conversationVM.selectedConversationId = nil
-    #expect(!conversationVM.hasSelectedConversation)
-    #expect(conversationVM.currentMessages().isEmpty)
+    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
 }
 
 @MainActor
-@Test func windowConversationVMAppendsSelectedConversationStatusMessage() {
-    let selectedConversationId = UUID()
-    let selectedMessage = ChatMessage(
-        id: UUID(),
-        role: .user,
-        conversationId: selectedConversationId,
-        content: "selected conversation",
-        timestamp: Date(timeIntervalSince1970: 1)
-    )
-    let statusMessage = ChatMessage(
-        id: UUID(),
-        role: .status,
-        conversationId: selectedConversationId,
-        content: "正在发送消息…",
-        timestamp: Date(timeIntervalSince1970: 2),
-        isTransientStatus: true
+@Test func chatMessagesSectionPluginRequiresCoordinatorWhenVisible() {
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .wide
     )
 
-    let conversationVM = WindowConversationVM(
-        selectedConversationId: selectedConversationId,
-        messagesProvider: { _ in [selectedMessage] },
-        statusMessageProvider: { conversationId in
-            conversationId == selectedConversationId ? statusMessage : nil
+    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
+}
+
+@MainActor
+@Test func chatMessagesSectionPluginContributesItemWithCoordinator() {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("MessageListPluginTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let coordinator = ChatSectionCoordinator(chatService: chatService)
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .wide,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(ChatSectionCoordinator.self, coordinator)
         }
     )
 
-    #expect(conversationVM.currentMessages() == [selectedMessage])
-    #expect(conversationVM.currentDisplayMessages() == [selectedMessage, statusMessage])
+    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).count == 1)
 }
