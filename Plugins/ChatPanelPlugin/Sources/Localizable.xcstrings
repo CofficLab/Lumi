@@ -137,9 +137,6 @@
         }
       }
     },
-    "Agent chat messages timeline in the right ChatSection." : {
-
-    },
     "Approve" : {
       "localizations" : {
         "en" : {
@@ -209,6 +206,7 @@
       }
     },
     "Ask a question, paste context, or describe the task you want Lumi to handle." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -353,9 +351,6 @@
     "Chat input area with editor and command suggestions." : {
 
     },
-    "Chat Messages" : {
-
-    },
     "Chat Pending Messages" : {
 
     },
@@ -432,6 +427,7 @@
       }
     },
     "Copy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -466,6 +462,7 @@
       }
     },
     "Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -568,6 +565,7 @@
       }
     },
     "Hide Raw Message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -602,6 +600,7 @@
       }
     },
     "Load earlier messages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -918,6 +917,7 @@
       }
     },
     "Resend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1261,6 +1261,7 @@
 
     },
     "Show Raw Message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1295,6 +1296,7 @@
       }
     },
     "Start a conversation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1363,6 +1365,7 @@
       }
     },
     "Thinking" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1431,6 +1434,7 @@
       }
     },
     "Use as Draft" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
