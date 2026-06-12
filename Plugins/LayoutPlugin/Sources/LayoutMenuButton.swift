@@ -1,11 +1,13 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// Layout menu for toggling the right ChatSection visibility.
 public struct LayoutMenuButton: View {
     /// `Menu` + `.borderlessButton` does not reliably inherit parent `foregroundStyle`.
-    static let usesExplicitIconForeground = false
+    static let usesExplicitIconForeground = true
 
+    @LumiTheme private var theme
     let layoutContext: LayoutControlContext
 
     public init(layoutContext: LayoutControlContext) {
@@ -23,6 +25,7 @@ public struct LayoutMenuButton: View {
         } label: {
             Image(systemName: "sidebar.leading")
                 .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(theme.textPrimary)
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }

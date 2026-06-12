@@ -23,6 +23,7 @@ let package = Package(
             name: "LayoutPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

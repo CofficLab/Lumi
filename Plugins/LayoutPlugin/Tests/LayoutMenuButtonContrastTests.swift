@@ -10,8 +10,8 @@ import Testing
 /// 使用 `Menu` + `.menuStyle(.borderlessButton)`，标签图标往往仍解析为系统 `Color.primary`。
 @MainActor
 struct LayoutMenuButtonContrastTests {
-    @Test func layoutMenuButtonReliesOnInheritedForeground() {
-        #expect(LayoutMenuButton.usesExplicitIconForeground == false)
+    @Test func layoutMenuButtonUsesExplicitIconForeground() {
+        #expect(LayoutMenuButton.usesExplicitIconForeground)
     }
 
     @Test func systemPrimaryIconFailsContrastOnDarkToolbarUnderLightSystem() {
