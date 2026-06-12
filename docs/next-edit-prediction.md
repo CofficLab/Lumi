@@ -282,7 +282,7 @@ selection_utf16: ...
 - 插入型预测：在光标后显示灰色 ghost text。
 - 替换型预测：用当前已有 `.diff` inline presentation 在目标行末尾显示短摘要和 `Tab` badge。
 
-如果 CodeEditSourceEditor 难以直接绘制 ghost text，可以先复用 overlay：
+如果 EditorSource 难以直接绘制 ghost text，可以先复用 overlay：
 
 - 打开 `SourceEditorView` 中 `EditorInlinePresentationsOverlayView` 的 overlay。
 - 扩展 `EditorInlinePresentationKind` 增加 `.nextEdit`，或复用 `.diff`。
@@ -426,7 +426,7 @@ if acceptNextEditPrediction(textViewSelections: textViewSelections) {
 
 ## 主要风险
 
-- CodeEditSourceEditor ghost text 能力可能不足。规避方式：先用 overlay diff pill 打通核心价值，再做更深的文本绘制集成。
+- EditorSource ghost text 能力可能不足。规避方式：先用 overlay diff pill 打通核心价值，再做更深的文本绘制集成。
 - 模型延迟影响体验。规避方式：debounce 后预取、严格取消、短上下文、可选 fast model。
 - 错误 edit 破坏代码。规避方式：小范围限制、版本校验、长度限制、Tab 明确接受、支持撤销。
 - 与 Tab 缩进冲突。规避方式：只在可见候选且校验通过时劫持 Tab，并保留 snippet/completion 优先级。

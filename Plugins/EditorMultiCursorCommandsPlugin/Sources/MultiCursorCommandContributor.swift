@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import EditorCodeEditTextView
+import EditorTextView
 import LumiCoreKit
 
 @MainActor

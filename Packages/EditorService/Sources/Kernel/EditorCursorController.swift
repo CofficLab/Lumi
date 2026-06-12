@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 @MainActor
 final class EditorCursorController {

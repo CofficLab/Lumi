@@ -1,5 +1,5 @@
 import EditorKernel
-import CodeEditSourceEditor
+import EditorSource
 import LanguageServerProtocol
 
 enum EditorNavigationController {

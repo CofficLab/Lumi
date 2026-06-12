@@ -1,5 +1,5 @@
 import SwiftUI
-import CodeEditSourceEditor
+import EditorSource
 import EditorService
 import LumiUI
 import LumiCoreKit

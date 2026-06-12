@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 import LanguageServerProtocol
 
 @MainActor

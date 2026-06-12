@@ -1,5 +1,5 @@
 import AppKit
-import CodeEditSourceEditor
+import EditorSource
 import LumiUI
 
 /// 将 LumiUI `EditorSyntaxPalette` 转为 CodeEdit `EditorTheme`。

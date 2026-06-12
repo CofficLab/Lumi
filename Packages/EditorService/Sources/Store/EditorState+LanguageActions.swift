@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import CodeEditSourceEditor
+import EditorSource
 import LanguageServerProtocol
 
 @MainActor

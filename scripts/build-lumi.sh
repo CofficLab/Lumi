@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-# CodeEditSourceEditor / EditorCodeEditTextView currently attach a SwiftLint build-tool
+# EditorSource / EditorTextView currently attach a SwiftLint build-tool
 # plugin that fails under this Xcode setup because its Output directory is not
 # materialized by the build system. Disable that external lint step so the app
 # build itself remains reproducible.

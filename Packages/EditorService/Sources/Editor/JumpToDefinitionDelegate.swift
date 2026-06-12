@@ -2,9 +2,9 @@ import Foundation
 import AppKit
 import SwiftUI
 import Combine
-import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+import EditorSource
+import EditorTextView
+import EditorLanguages
 import SwiftTreeSitter
 import LanguageServerProtocol
 import MagicAlert
@@ -16,7 +16,7 @@ import SuperLogKit
 /// 
 /// 工作原理：
 /// 1. 用户按住 Cmd 并点击标识符
-/// 2. CodeEditSourceEditor 的 JumpToDefinitionModel 检测到交互
+/// 2. EditorSource 的 JumpToDefinitionModel 检测到交互
 /// 3. 调用此 Delegate 的 queryLinks 方法
 /// 4. 此方法通过 AST 或正则查找定义位置
 /// 5. 引擎自动执行跳转或显示多定义弹窗

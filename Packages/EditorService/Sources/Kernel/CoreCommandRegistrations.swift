@@ -1,5 +1,5 @@
 import AppKit
-import EditorCodeEditTextView
+import EditorTextView
 import Foundation
 import LanguageServerProtocol
 

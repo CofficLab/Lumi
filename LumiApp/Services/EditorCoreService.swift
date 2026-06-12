@@ -1,4 +1,4 @@
-import EditorCodeEditTextView
+import EditorTextView
 import EditorMultiCursorCommandsPlugin
 import Foundation
 import EditorService

@@ -1,6 +1,6 @@
 import AppKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 import Foundation
 
 // MARK: - Selection Mapper
@@ -42,7 +42,7 @@ enum EditorSelectionMapper {
 
     /// 判断是否应该接受这次原生选区变化。
     ///
-    /// 在多光标模式下，CodeEditSourceEditor 的 updateCursorPosition() 可能
+    /// 在多光标模式下，EditorSource 的 updateCursorPosition() 可能
     /// 会把 textSelections 转换为 cursorPositions 时丢失选区。如果原生
     /// 回传的选区数量少于内核持有的数量，说明发生了丢失，不应该覆盖内核。
     static func shouldAcceptCanonicalUpdate(

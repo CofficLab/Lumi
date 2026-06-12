@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 struct EditorSessionRestoreResult {
     let cursorLine: Int

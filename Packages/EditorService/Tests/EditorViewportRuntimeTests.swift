@@ -1,5 +1,5 @@
 #if canImport(XCTest)
-import EditorCodeEditTextView
+import EditorTextView
 import EditorKernel
 import LanguageServerProtocol
 import XCTest

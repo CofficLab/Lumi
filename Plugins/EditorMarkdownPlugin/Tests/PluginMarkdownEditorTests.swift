@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import CodeEditSourceEditor
+import EditorSource
 @testable import EditorMarkdownPlugin
 
 @Test func highlightsMarkdownOutsideFencedCodeBlocks() {

@@ -1,4 +1,4 @@
-import EditorCodeEditTextView
+import EditorTextView
 import Foundation
 import LanguageServerProtocol
 

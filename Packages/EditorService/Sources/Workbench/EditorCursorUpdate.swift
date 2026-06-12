@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 enum EditorCursorUpdate: Equatable {
     case observedPositions([CursorPosition], fallbackLine: Int, fallbackColumn: Int)

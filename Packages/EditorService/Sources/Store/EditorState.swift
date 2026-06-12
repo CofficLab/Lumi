@@ -3,9 +3,9 @@ import AppKit
 import Combine
 import EditorKernel
 import MagicAlert
-import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+import EditorSource
+import EditorTextView
+import EditorLanguages
 import LanguageServerProtocol
 import UniformTypeIdentifiers
 import SuperLogKit
@@ -258,7 +258,7 @@ public final class EditorState: ObservableObject, SuperLog {
         }
     }
     
-    /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
+    /// 当前文件内容（NSTextStorage，EditorSource 要求）
     @Published public var content: NSTextStorage? {
         didSet {
             SuperEditorRuntimeContext.shared.updateCurrentDocument(

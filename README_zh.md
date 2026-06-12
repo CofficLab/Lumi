@@ -99,15 +99,15 @@ cd Lumi
 
 ### 2. 生成 CodeLanguagesContainer
 
-`EditorCodeEditLanguages` 依赖本地二进制框架 `CodeLanguagesContainer.xcframework`，该文件未纳入 Git（超过 GitHub 100 MB 限制）。全新克隆后，请先在 Xcode 中解析 Swift Package 之前执行（首次约 15 分钟）：
+`EditorLanguages` 依赖本地二进制框架 `CodeLanguagesContainer.xcframework`，该文件未纳入 Git（超过 GitHub 100 MB 限制）。全新克隆后，请先在 Xcode 中解析 Swift Package 之前执行（首次约 15 分钟）：
 
 ```bash
-cd Packages/EditorCodeEditLanguages
+cd Packages/EditorLanguages
 ./build_framework.sh
 cd ../..
 ```
 
-详见 [Packages/EditorCodeEditLanguages/README.md](Packages/EditorCodeEditLanguages/README.md)。
+详见 [Packages/EditorLanguages/README.md](Packages/EditorLanguages/README.md)。
 
 ### 3. 在 Xcode 中打开
 

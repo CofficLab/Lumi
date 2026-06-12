@@ -1,4 +1,4 @@
-import EditorCodeEditLanguages
+import EditorLanguages
 import EditorService
 import LumiCoreKit
 import LumiUI

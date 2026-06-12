@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import XcodeKit
-import CodeEditSourceEditor
+import EditorSource
 import os
 import LumiCoreKit
 

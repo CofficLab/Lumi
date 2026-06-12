@@ -31,9 +31,9 @@ Language and LSP plugins register into `EditorExtensionRegistry` at runtime. Thi
 
 | Package | Description |
 |---------|-------------|
-| [EditorCodeEditLanguages](../../Packages/EditorCodeEditLanguages) | Code editing language support |
-| [EditorCodeEditSourceEditor](../../Packages/EditorCodeEditSourceEditor) | Source code editor component |
-| [EditorCodeEditTextView](../../Packages/EditorCodeEditTextView) | Text view component |
+| [EditorLanguages](../../Packages/EditorLanguages) | Code editing language support |
+| [EditorSource](../../Packages/EditorSource) | Source code editor component |
+| [EditorTextView](../../Packages/EditorTextView) | Text view component |
 | [EditorOverlayKit](../../Packages/EditorOverlayKit) | Editor overlay utilities |
 | [EditorService](../../Packages/EditorService) | Editor service framework |
 | [FilePreviewKit](../../Packages/FilePreviewKit) | File preview utilities |

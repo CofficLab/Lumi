@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 import SuperLogKit
-import CodeEditSourceEditor
+import EditorSource
 
 /// 编辑器 UI 状态
 ///

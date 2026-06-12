@@ -1,6 +1,6 @@
 # EditorService
 
-可复用的 macOS 代码编辑器服务层。作为编辑器子系统的对外门面，协调 `EditorKernel` 纯逻辑与 `CodeEditSourceEditor` 视图实现，管理会话、标签页、LSP 交互与命令路由。
+可复用的 macOS 代码编辑器服务层。作为编辑器子系统的对外门面，协调 `EditorKernel` 纯逻辑与 `EditorSource` 视图实现，管理会话、标签页、LSP 交互与命令路由。
 
 ## Package
 
@@ -17,8 +17,8 @@
 
 ## 依赖
 
-- `EditorKernel`, `EditorCodeEditSourceEditor`（`CodeEditSourceEditor`）
-- `EditorCodeEditTextView`, `EditorCodeEditLanguages`, `SwiftTreeSitter`
+- `EditorKernel`, `EditorSource`（`EditorSource`）
+- `EditorTextView`, `EditorLanguages`, `SwiftTreeSitter`
 - 见 `Package.swift` 了解完整依赖列表
 
 ## 依赖与集成

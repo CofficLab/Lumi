@@ -1,8 +1,8 @@
 import SwiftUI
 import SuperLogKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+import EditorSource
+import EditorTextView
+import EditorLanguages
 import EditorOverlayKit
 import EditorService
 import LSPDocumentHighlightEditorPlugin
@@ -12,7 +12,7 @@ import LumiCoreKit
 import LumiUI
 
 /// 代码编辑器主视图。
-/// 基于 CodeEditSourceEditor 实现专业级编辑体验。
+/// 基于 EditorSource 实现专业级编辑体验。
 ///
 /// 该视图负责装配编辑器实例、状态协调器以及各类 overlay 子视图，是
 /// EditorPanel 中源码编辑体验的核心入口。

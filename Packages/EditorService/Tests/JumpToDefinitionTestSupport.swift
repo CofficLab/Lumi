@@ -1,7 +1,7 @@
 #if canImport(XCTest)
-import CodeEditSourceEditor
-import EditorCodeEditLanguages
-import EditorCodeEditTextView
+import EditorSource
+import EditorLanguages
+import EditorTextView
 import Foundation
 import LanguageServerProtocol
 import SwiftTreeSitter

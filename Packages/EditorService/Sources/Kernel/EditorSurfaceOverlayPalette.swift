@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import CodeEditSourceEditor
+import EditorSource
 
 public struct EditorSurfaceHighlightStyle {
     public let fillColor: Color

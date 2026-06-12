@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 public struct EditorSourceEditorBindingUpdate {
     public let viewState: EditorViewState?

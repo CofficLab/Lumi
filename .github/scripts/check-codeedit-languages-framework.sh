@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-FRAMEWORK_DIR="$ROOT_DIR/Packages/EditorCodeEditLanguages/CodeLanguagesContainer.xcframework"
+FRAMEWORK_DIR="$ROOT_DIR/Packages/EditorLanguages/CodeLanguagesContainer.xcframework"
 
 if [[ -d "$FRAMEWORK_DIR" ]]; then
   FRAMEWORK_BINARY="$(
@@ -20,13 +20,13 @@ fi
 cat >&2 <<'EOF'
 error: Missing CodeLanguagesContainer.xcframework.
 
-EditorCodeEditLanguages uses a generated binary framework for bundled tree-sitter
+EditorLanguages uses a generated binary framework for bundled tree-sitter
 language parsers. The framework is intentionally ignored by Git because it is
 larger than GitHub's 100 MB file limit.
 
 Generate it before building Lumi:
 
-  cd Packages/EditorCodeEditLanguages
+  cd Packages/EditorLanguages
   ./build_framework.sh
 
 EOF

@@ -1,8 +1,8 @@
 import Foundation
 import EditorService
-@preconcurrency import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+@preconcurrency import EditorSource
+import EditorTextView
+import EditorLanguages
 
 @MainActor
 public final class MarkdownHighlightContributor: SuperEditorHighlightProviderContributor {

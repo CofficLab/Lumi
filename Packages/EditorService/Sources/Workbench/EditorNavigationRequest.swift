@@ -1,6 +1,6 @@
 import EditorKernel
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 public enum EditorNavigationRequest: Equatable {
     case reference(ReferenceResult)

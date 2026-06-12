@@ -2,15 +2,15 @@ import Foundation
 import EditorKernel
 import SuperLogKit
 import AppKit
-@preconcurrency import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+@preconcurrency import EditorSource
+import EditorTextView
+import EditorLanguages
 import LanguageServerProtocol
 import Combine
 import os
 
 /// 编辑器 LSP 协调器
-/// 负责将 LSP 服务与 CodeEditSourceEditor 集成
+/// 负责将 LSP 服务与 EditorSource 集成
 @MainActor
 public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     public nonisolated static let emoji = "😊"

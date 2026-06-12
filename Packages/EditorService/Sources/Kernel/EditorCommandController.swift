@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import EditorCodeEditTextView
+import EditorTextView
 
 @MainActor
 final class EditorCommandController {

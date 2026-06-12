@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 
 public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
     private weak var state: EditorState?

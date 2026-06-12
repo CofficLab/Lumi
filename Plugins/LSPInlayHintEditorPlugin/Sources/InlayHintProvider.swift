@@ -3,8 +3,8 @@ import EditorKernel
 import EditorService
 import EditorService
 import Combine
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 import LanguageServerProtocol
 
 /// Inlay Hint 提供者

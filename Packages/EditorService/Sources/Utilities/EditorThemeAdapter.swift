@@ -1,5 +1,5 @@
 import SwiftUI
-import CodeEditSourceEditor
+import EditorSource
 
 /// 主题适配器（Fallback）
 /// 仅在插件系统未加载任何主题时提供默认主题。
