@@ -197,6 +197,15 @@ private struct ChatEmptyMessagesView: View {
                 }
             }
             .frame(maxWidth: 420)
+
+            AppButton(
+                localized("Onboarding Guide"),
+                style: .ghost,
+                size: .small
+            ) {
+                NotificationCenter.default.post(name: .lumiShowOnboarding, object: nil)
+            }
+            .accessibilityHint(localized("Onboarding Guide Hint"))
         }
         .padding(28)
     }

@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -31,6 +32,16 @@ struct GeneralSettingsPage: View {
                         systemImage: "ladybug",
                         isOn: $showDeveloperCommands
                     )
+                }
+
+                AppSettingsSection(title: "新手引导") {
+                    AppButton("重新查看新手引导", systemImage: "graduationcap", style: .secondary) {
+                        NotificationCenter.default.post(
+                            name: .lumiShowOnboarding,
+                            object: nil,
+                            userInfo: [LumiOnboardingNotification.resetKey: true]
+                        )
+                    }
                 }
             }
         }

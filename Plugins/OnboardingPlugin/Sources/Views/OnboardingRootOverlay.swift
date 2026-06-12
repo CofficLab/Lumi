@@ -3,12 +3,6 @@ import LumiCoreKit
 import os
 import SwiftUI
 
-// MARK: - 通知
-
-private enum OnboardingNotification {
-    public static let show = Notification.Name("Onboarding.Show")
-}
-
 enum OnboardingPageIndexing {
     static func clampedIndex(_ index: Int, pageCount: Int) -> Int {
         guard pageCount > 0 else { return 0 }
@@ -245,8 +239,8 @@ public struct OnboardingRootOverlay<Content: View>: View {
             .onAppear {
                 viewModel.presentIfNeededOnLaunch()
             }
-            .onReceive(NotificationCenter.default.publisher(for: OnboardingNotification.show)) { notification in
-                let forceReset = notification.userInfo?["reset"] as? Bool ?? false
+            .onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
+                let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
                 viewModel.show(forceReset: forceReset)
             }
             .sheet(isPresented: $viewModel.isPresentingOnboarding) {
