@@ -17,16 +17,16 @@ public struct RAGSettingsPopoverView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Label(LumiPluginLocalization.string("RAG 索引状态", bundle: .module), systemImage: "doc.text.magnifyingglass")
+                Label(LumiPluginLocalization.string("RAG Index Status", bundle: .module), systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
-                Button(LumiPluginLocalization.string("刷新全部", bundle: .module)) {
+                Button(LumiPluginLocalization.string("Refresh All", bundle: .module)) {
                     Task { await loadStatus() }
                 }
                 .disabled(isLoading)
                 .controlSize(.small)
 
-                Button(LumiPluginLocalization.string("重建全部", bundle: .module)) {
+                Button(LumiPluginLocalization.string("Rebuild All", bundle: .module)) {
                     Task { await rebuildAll() }
                 }
                 .disabled(isLoading)
@@ -47,7 +47,7 @@ public struct RAGSettingsPopoverView: View, SuperLog {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if trackedProjects.isEmpty {
-                        Text(LumiPluginLocalization.string("暂无项目", bundle: .module))
+                        Text(LumiPluginLocalization.string("No Projects", bundle: .module))
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(trackedProjects) { project in
@@ -93,13 +93,13 @@ extension RAGSettingsPopoverView {
                 HStack(spacing: 10) {
                     Label("\(status.fileCount)", systemImage: "doc")
                     Label("\(status.chunkCount)", systemImage: "square.stack.3d.up")
-                    Label(status.isStale ? LumiPluginLocalization.string("已过期", bundle: .module) : LumiPluginLocalization.string("最新", bundle: .module), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    Label(status.isStale ? LumiPluginLocalization.string("Outdated", bundle: .module) : LumiPluginLocalization.string("Up to Date", bundle: .module), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                         .foregroundStyle(status.isStale ? .orange : .green)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             } else {
-                Text(LumiPluginLocalization.string("尚未建立索引", bundle: .module))
+                Text(LumiPluginLocalization.string("Not indexed yet", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -109,12 +109,12 @@ extension RAGSettingsPopoverView {
             }
 
             HStack(spacing: 8) {
-                Button(LumiPluginLocalization.string("刷新", bundle: .module)) {
+                Button(LumiPluginLocalization.string("Refresh", bundle: .module)) {
                     Task { await refreshProjectStatus(projectPath: project.path) }
                 }
                 .disabled(isLoading)
 
-                Button(LumiPluginLocalization.string("重建", bundle: .module)) {
+                Button(LumiPluginLocalization.string("Rebuild", bundle: .module)) {
                     Task { await rebuildProject(projectPath: project.path) }
                 }
                 .disabled(isLoading)
@@ -181,7 +181,7 @@ extension RAGSettingsPopoverView {
             statusesByPath = next
             message = nil
         } catch {
-            message = "读取索引状态失败：\(error.localizedDescription)"
+            message = String(format: LumiPluginLocalization.string("Failed to load index status: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -190,7 +190,7 @@ extension RAGSettingsPopoverView {
         guard !projects.isEmpty else { return }
 
         isLoading = true
-        message = "正在重建全部索引..."
+        message = LumiPluginLocalization.string("Rebuilding all indexes...", bundle: .module)
         defer { isLoading = false }
 
         do {
@@ -200,9 +200,9 @@ extension RAGSettingsPopoverView {
                 try await service.ensureIndexed(projectPath: project.path, force: true)
             }
             await loadStatus()
-            message = "全部项目索引更新完成。"
+            message = LumiPluginLocalization.string("All project indexes updated.", bundle: .module)
         } catch {
-            message = "重建索引失败：\(error.localizedDescription)"
+            message = String(format: LumiPluginLocalization.string("Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -217,9 +217,9 @@ extension RAGSettingsPopoverView {
             if status == nil {
                 statusesByPath.removeValue(forKey: projectPath)
             }
-            message = "已刷新：\(projectPath)"
+            message = String(format: LumiPluginLocalization.string("Refreshed: %@", bundle: .module), projectPath)
         } catch {
-            message = "刷新失败：\(error.localizedDescription)"
+            message = String(format: LumiPluginLocalization.string("Refresh failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 
@@ -232,9 +232,9 @@ extension RAGSettingsPopoverView {
             try await service.ensureIndexed(projectPath: projectPath, force: true)
             let status = try await service.getIndexStatus(projectPath: projectPath)
             statusesByPath[projectPath] = status
-            message = "已重建：\(projectPath)"
+            message = String(format: LumiPluginLocalization.string("Rebuilt: %@", bundle: .module), projectPath)
         } catch {
-            message = "重建失败：\(error.localizedDescription)"
+            message = String(format: LumiPluginLocalization.string("Rebuild failed: %@", bundle: .module), error.localizedDescription)
         }
     }
 }

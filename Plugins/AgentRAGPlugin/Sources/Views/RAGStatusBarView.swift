@@ -217,7 +217,7 @@ public struct RAGStatusBarView: View, SuperLog {
             }
         } catch {
             // 检查是否是未初始化错误
-            if error.localizedDescription.contains("RAG 服务未初始化") {
+            if let ragError = error as? RAGError, case .notInitialized = ragError {
                 isNotInitialized = true
                 errorMessage = nil
                 if Self.verbose {
@@ -256,7 +256,7 @@ public struct RAGStatusDetailView: View {
 
     public var body: some View {
         StatusBarPopoverScaffold(
-            title: LumiPluginLocalization.string("RAG 索引状态", bundle: .module),
+            title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
             systemImage: "doc.text.magnifyingglass"
         ) {
             if isIndexing {
@@ -280,21 +280,21 @@ public struct RAGStatusDetailView: View {
                 ProgressView()
                     .scaleEffect(0.8)
 
-                Text(LumiPluginLocalization.string("正在索引...", bundle: .module))
+                Text(LumiPluginLocalization.string("Indexing...", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.primary)
             }
 
             if let event = progressEvent {
                 VStack(alignment: .leading, spacing: 8) {
-                    RAGProgressRow(label: LumiPluginLocalization.string("已扫描", bundle: .module), value: "\(event.scannedFiles) / \(event.totalFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
-                    RAGProgressRow(label: LumiPluginLocalization.string("已索引", bundle: .module), value: "\(event.indexedFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
-                    RAGProgressRow(label: LumiPluginLocalization.string("已跳过", bundle: .module), value: "\(event.skippedFiles) \(LumiPluginLocalization.string("文件", bundle: .module))")
-                    RAGProgressRow(label: LumiPluginLocalization.string("文档块", bundle: .module), value: "\(event.chunkCount) \(LumiPluginLocalization.string("个", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("Scanned", bundle: .module), value: "\(event.scannedFiles) / \(event.totalFiles) \(LumiPluginLocalization.string("Files", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("Indexed", bundle: .module), value: "\(event.indexedFiles) \(LumiPluginLocalization.string("Files", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("Skipped", bundle: .module), value: "\(event.skippedFiles) \(LumiPluginLocalization.string("Files", bundle: .module))")
+                    RAGProgressRow(label: LumiPluginLocalization.string("Document Chunks", bundle: .module), value: "\(event.chunkCount)")
 
                     if !event.currentFilePath.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(LumiPluginLocalization.string("当前文件", bundle: .module))
+                            Text(LumiPluginLocalization.string("Current File", bundle: .module))
                                 .font(.appMicro)
                                 .foregroundColor(theme.textSecondary)
 
@@ -312,18 +312,18 @@ public struct RAGStatusDetailView: View {
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            RAGInfoRow(label: LumiPluginLocalization.string("文件数量", bundle: .module), value: "\(status.fileCount)")
-            RAGInfoRow(label: LumiPluginLocalization.string("文档块数量", bundle: .module), value: "\(status.chunkCount)")
-            RAGInfoRow(label: LumiPluginLocalization.string("最后索引", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
-            RAGInfoRow(label: LumiPluginLocalization.string("嵌入模型", bundle: .module), value: status.embeddingModel)
-            RAGInfoRow(label: LumiPluginLocalization.string("向量维度", bundle: .module), value: "\(status.embeddingDimension)")
+            RAGInfoRow(label: LumiPluginLocalization.string("File Count", bundle: .module), value: "\(status.fileCount)")
+            RAGInfoRow(label: LumiPluginLocalization.string("Chunk Count", bundle: .module), value: "\(status.chunkCount)")
+            RAGInfoRow(label: LumiPluginLocalization.string("Last Indexed", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
+            RAGInfoRow(label: LumiPluginLocalization.string("Embedding Model", bundle: .module), value: status.embeddingModel)
+            RAGInfoRow(label: LumiPluginLocalization.string("Vector Dimensions", bundle: .module), value: "\(status.embeddingDimension)")
 
             if status.isStale {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(theme.warning)
 
-                    Text(LumiPluginLocalization.string("索引已过期，建议重新索引", bundle: .module))
+                    Text(LumiPluginLocalization.string("Index is outdated, recommend re-indexing", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.warning)
                 }
@@ -338,11 +338,11 @@ public struct RAGStatusDetailView: View {
                 .font(.system(size: 32, weight: .regular))
                 .foregroundColor(theme.textTertiary)
 
-            Text(LumiPluginLocalization.string("RAG 索引未初始化", bundle: .module))
+            Text(LumiPluginLocalization.string("RAG Index Not Initialized", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
 
-            Text(LumiPluginLocalization.string("RAG 服务将在插件启用时自动初始化", bundle: .module))
+            Text(LumiPluginLocalization.string("RAG service will initialize automatically when the plugin is enabled", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }
@@ -357,7 +357,7 @@ public struct RAGStatusDetailView: View {
                 .font(.system(size: 32, weight: .regular))
                 .foregroundColor(theme.error)
 
-            Text(LumiPluginLocalization.string("获取索引状态失败", bundle: .module))
+            Text(LumiPluginLocalization.string("Failed to get index status", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.error)
 
@@ -377,7 +377,7 @@ public struct RAGStatusDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text(LumiPluginLocalization.string("正在检查索引状态...", bundle: .module))
+            Text(LumiPluginLocalization.string("Checking index status...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -390,16 +390,16 @@ public struct RAGStatusDetailView: View {
         let interval = now.timeIntervalSince(date)
 
         if interval < 60 {
-            return "刚刚"
+            return LumiPluginLocalization.string("Just now", bundle: .module)
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return "\(minutes) 分钟前"
+            return String(format: LumiPluginLocalization.string("%lld minutes ago", bundle: .module), minutes)
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return "\(hours) 小时前"
+            return String(format: LumiPluginLocalization.string("%lld hours ago", bundle: .module), hours)
         } else {
             let days = Int(interval / 86400)
-            return "\(days) 天前"
+            return String(format: LumiPluginLocalization.string("%lld days ago", bundle: .module), days)
         }
     }
 }

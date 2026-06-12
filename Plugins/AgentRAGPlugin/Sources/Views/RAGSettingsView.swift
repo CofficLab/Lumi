@@ -21,7 +21,7 @@ public struct RAGSettingsView: View, SuperLog {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("RAG 索引状态", bundle: .module),
+            title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
             subtitle: LumiPluginLocalization.string("Manage semantic indexes for tracked projects.", bundle: .module),
             showHeader: false
         ) {
@@ -31,7 +31,7 @@ public struct RAGSettingsView: View, SuperLog {
                 AppCard {
                     AppEmptyState(
                         icon: "folder.badge.questionmark",
-                        title: LumiPluginLocalization.string("请先选择或添加项目，RAG 才能建立与展示索引。", bundle: .module)
+                        title: LumiPluginLocalization.string("Please select or add a project first for RAG to build and display indexes.", bundle: .module)
                     )
                     .frame(minHeight: 160)
                 }
@@ -66,7 +66,7 @@ public struct RAGSettingsView: View, SuperLog {
             AppSettingsSection(title: LumiPluginLocalization.string("Actions", bundle: .module), spacing: 12) {
                 HStack(spacing: 8) {
                     AppButton(
-                        LumiPluginLocalization.string("刷新全部状态", bundle: .module),
+                        LumiPluginLocalization.string("Refresh All Status", bundle: .module),
                         style: .secondary,
                         fillsWidth: true
                     ) {
@@ -75,7 +75,7 @@ public struct RAGSettingsView: View, SuperLog {
                     .disabled(isLoading)
 
                     AppButton(
-                        LumiPluginLocalization.string("重建全部索引", bundle: .module),
+                        LumiPluginLocalization.string("Rebuild All Indexes", bundle: .module),
                         style: .primary,
                         fillsWidth: true
                     ) {
@@ -90,7 +90,7 @@ public struct RAGSettingsView: View, SuperLog {
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
         AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("运行时", bundle: .module), spacing: 8) {
+            AppSettingsSection(title: LumiPluginLocalization.string("Runtime", bundle: .module), spacing: 8) {
                 GlassKeyValueRow(
                     label: LumiPluginLocalization.string("Vector Backend", bundle: .module),
                     value: info.vectorBackend.rawValue
@@ -105,39 +105,39 @@ public struct RAGSettingsView: View, SuperLog {
             AppSettingsSection(title: project.name, subtitle: project.path, spacing: 12) {
                 if let status = statusesByPath[project.path] {
                     GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("最近索引", bundle: .module),
+                        label: LumiPluginLocalization.string("Last Indexed", bundle: .module),
                         value: relativeDate(status.lastIndexedAt)
                     )
                     GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("文件数", bundle: .module),
+                        label: LumiPluginLocalization.string("File Count", bundle: .module),
                         value: "\(status.fileCount)"
                     )
                     GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("片段数", bundle: .module),
+                        label: LumiPluginLocalization.string("Chunk Count", bundle: .module),
                         value: "\(status.chunkCount)"
                     )
                     AppSettingsRow {
                         HStack {
-                            Text(LumiPluginLocalization.string("状态", bundle: .module))
+                            Text(LumiPluginLocalization.string("Status", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundColor(theme.textSecondary)
                             Spacer()
                             GlassBadge(
                                 text: LocalizedStringKey(
                                     status.isStale
-                                        ? LumiPluginLocalization.string("已过期", bundle: .module)
-                                        : LumiPluginLocalization.string("最新", bundle: .module)
+                                        ? LumiPluginLocalization.string("Outdated", bundle: .module)
+                                        : LumiPluginLocalization.string("Up to Date", bundle: .module)
                                 ),
                                 style: status.isStale ? .warning : .success
                             )
                         }
                     }
                 } else if isLoading {
-                    Text(LumiPluginLocalization.string("读取中…", bundle: .module))
+                    Text(LumiPluginLocalization.string("Loading…", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 } else {
-                    Text(LumiPluginLocalization.string("尚未建立索引", bundle: .module))
+                    Text(LumiPluginLocalization.string("Not indexed yet", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -150,12 +150,12 @@ public struct RAGSettingsView: View, SuperLog {
                 }
 
                 HStack(spacing: 8) {
-                    AppButton(LumiPluginLocalization.string("刷新", bundle: .module), style: .secondary, fillsWidth: true) {
+                    AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), style: .secondary, fillsWidth: true) {
                         Task { await refreshProjectStatus(projectPath: project.path) }
                     }
                     .disabled(isLoading)
 
-                    AppButton(LumiPluginLocalization.string("重建", bundle: .module), style: .primary, fillsWidth: true) {
+                    AppButton(LumiPluginLocalization.string("Rebuild", bundle: .module), style: .primary, fillsWidth: true) {
                         Task { await rebuildProjectIndex(projectPath: project.path) }
                     }
                     .disabled(isLoading)

@@ -9,13 +9,13 @@ public enum RAGError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .notInitialized:
-            return "RAG 服务未初始化"
+            return "RAG service not initialized"
         case .invalidProjectPath:
-            return "无效的项目路径"
+            return "Invalid project path"
         case .internalStateCorrupted:
-            return "RAG 内部状态异常"
+            return "RAG internal state corrupted"
         case let .dbError(message):
-            return "RAG 数据库错误：\(message)"
+            return "RAG database error: \(message)"
         }
     }
 }
