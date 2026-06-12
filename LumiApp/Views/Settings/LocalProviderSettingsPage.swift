@@ -21,18 +21,18 @@ struct LocalProviderSettingsPage: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            providerSelectorCard
-                .padding(24)
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            VStack(spacing: 0) {
+                providerSelectorCard
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if let selectedProvider {
-                        providerDetail(for: selectedProvider)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if let selectedProvider {
+                            providerDetail(for: selectedProvider)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 24)
             }
         }
         .onAppear(perform: loadSelectedProviderID)
@@ -55,7 +55,7 @@ struct LocalProviderSettingsPage: View {
                 } else {
                     LazyVStack(spacing: 4) {
                         ForEach(localProviders) { provider in
-                            ProviderSettingsProviderButton(
+                            AppSettingsProviderRow(
                                 title: provider.displayName,
                                 subtitle: provider.description,
                                 isSelected: selectedProviderID == provider.id
@@ -103,7 +103,7 @@ struct LocalProviderSettingsPage: View {
             AppSettingsSection(title: "可用模型", subtitle: "点击某个模型可设为默认", spacing: 12) {
                 VStack(spacing: 0) {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                        ProviderSettingsModelRow(
+                        AppSettingsModelRow(
                             model: model,
                             isDefault: initialModel == model
                         ) {

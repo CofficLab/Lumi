@@ -23,21 +23,21 @@ struct RemoteProviderSettingsPage: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 24) {
-            providerSidebar
-                .frame(maxWidth: 320, alignment: .topLeading)
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            HStack(alignment: .top, spacing: 24) {
+                providerSidebar
+                    .frame(maxWidth: 320, alignment: .topLeading)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if selectedProvider != nil {
-                        configurationCard
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if selectedProvider != nil {
+                            configurationCard
+                        }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 24)
             }
         }
-        .padding(24)
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderID) { _, _ in
             loadSettings()
@@ -58,7 +58,7 @@ struct RemoteProviderSettingsPage: View {
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(remoteProviders) { provider in
-                            ProviderSettingsProviderButton(
+                            AppSettingsProviderRow(
                                 title: provider.displayName,
                                 subtitle: provider.description,
                                 isSelected: selectedProviderID == provider.id
@@ -109,7 +109,7 @@ struct RemoteProviderSettingsPage: View {
             VStack(spacing: 0) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(Array(models.enumerated()), id: \.element) { index, model in
-                    ProviderSettingsModelRow(
+                    AppSettingsModelRow(
                         model: model,
                         isDefault: selectedModel == model
                     ) {

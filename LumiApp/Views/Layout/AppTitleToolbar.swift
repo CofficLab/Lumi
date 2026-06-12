@@ -44,9 +44,7 @@ struct AppTitleToolbar: View {
         .foregroundStyle(theme.textPrimary)
         .appSurface(style: .toolbar, cornerRadius: 0)
         .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(theme.divider)
-                .frame(height: 1)
+            AppDivider()
         }
     }
 

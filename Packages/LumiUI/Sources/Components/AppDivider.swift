@@ -1,15 +1,15 @@
-import LumiUI
 import SwiftUI
 
-struct AppDivider: View {
+/// Layout shell divider (horizontal or vertical). Uses `theme.divider`.
+public struct AppDivider: View {
     @LumiTheme private var theme
     let axis: Axis
 
-    init(_ axis: Axis = .horizontal) {
+    public init(_ axis: Axis = .horizontal) {
         self.axis = axis
     }
 
-    var body: some View {
+    public var body: some View {
         switch axis {
         case .horizontal:
             Rectangle()

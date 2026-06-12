@@ -76,9 +76,7 @@ struct StatusBar: View {
         .frame(height: 24)
         .appSurface(style: .custom(statusBarBackgroundColor), cornerRadius: 0)
         .overlay(alignment: .top) {
-            Rectangle()
-                .fill(statusBarDividerColor)
-                .frame(height: 1)
+            AppDivider()
         }
         .environmentObject(projectVM)
     }
@@ -93,10 +91,6 @@ struct StatusBar: View {
 
     private var statusBarForegroundColor: Color {
         chromeTheme.statusBarForegroundColor()
-    }
-
-    private var statusBarDividerColor: Color {
-        chromeTheme.statusBarDividerColor()
     }
 }
 

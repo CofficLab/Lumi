@@ -27,35 +27,34 @@ struct MenuBarPopupView: View {
                 GlassDivider()
             }
 
-            menuItem("打开 Lumi", systemImage: "macwindow", action: onShowMainWindow)
+            menuRow("打开 Lumi", systemImage: "macwindow", action: onShowMainWindow)
 
             GlassDivider()
 
-            menuItem("退出 Lumi", systemImage: "power", role: .destructive, action: onQuit)
+            menuRow("退出 Lumi", systemImage: "power", role: .destructive, action: onQuit)
         }
         .frame(width: 300)
         .appSurface(style: .popover, cornerRadius: 0)
     }
 
-    private func menuItem(
-        _ title: String,
+    private func menuRow(
+        _ titleKey: LocalizedStringKey,
         systemImage: String,
         role: ButtonRole? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        Button(role: role, action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .frame(width: 16)
-                Text(title)
-                    .font(.appCaption)
-                Spacer()
+        Group {
+            if let role {
+                AppContextMenuRow(titleKey, systemImage: systemImage, role: role, action: action)
+            } else {
+                AppContextMenuRow(titleKey, systemImage: systemImage, action: action)
             }
-            .foregroundStyle(role == .destructive ? theme.error : theme.textPrimary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .font(.appCaption)
+        .foregroundStyle(role == .destructive ? theme.error : theme.textPrimary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
