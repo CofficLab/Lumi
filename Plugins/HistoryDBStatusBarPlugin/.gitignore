@@ -23,3 +23,5 @@ Packages/
 .idea/
 *.iml
 .vscode/
+
+Package.resolved

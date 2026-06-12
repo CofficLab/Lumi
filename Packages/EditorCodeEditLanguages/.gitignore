@@ -9,3 +9,5 @@ CodeLanguagesContainer.xcframework.zip
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 docs/
+
+Package.resolved

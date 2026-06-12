@@ -6,3 +6,5 @@ Packages/
 xcuserdata/
 DerivedData/
 .DS_Store
+
+Package.resolved
