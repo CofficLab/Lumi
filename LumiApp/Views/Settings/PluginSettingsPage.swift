@@ -294,7 +294,6 @@ private struct PluginSettingsDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 8) {
-                    policyBadge
                     categoryBadge
                     stateBadge
                 }
@@ -304,10 +303,6 @@ private struct PluginSettingsDetailView: View {
 
             actionControl
         }
-    }
-
-    private var policyBadge: some View {
-        badge(row.policy.label, systemImage: row.policy.systemImage)
     }
 
     private var categoryBadge: some View {
@@ -352,7 +347,6 @@ private struct PluginSettingsDetailView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 infoRow("插件 ID", value: row.id)
-                infoRow("加载策略", value: row.policy.label)
                 infoRow("分类", value: row.category.displayName)
                 infoRow("排序", value: "\(row.order)")
             }
@@ -394,24 +388,4 @@ private struct PluginSettingsRowModel: Identifiable {
     var iconName: String { plugin.iconName }
     var category: LumiPluginCategory { plugin.category }
     var policy: LumiPluginPolicy { plugin.policy }
-}
-
-private extension LumiPluginPolicy {
-    var label: String {
-        switch self {
-        case .alwaysOn: "Always On"
-        case .optOut: "Opt Out"
-        case .optIn: "Opt In"
-        case .disabled: "Disabled"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .alwaysOn: "lock.fill"
-        case .optOut: "checkmark.circle"
-        case .optIn: "power"
-        case .disabled: "slash.circle"
-        }
-    }
 }
