@@ -461,30 +461,47 @@ public struct AppSettingsSecureFieldRow: View {
     let title: Text
     let placeholder: Text
     @Binding var text: String
+    let allowsReveal: Bool
+    let allowsCopy: Bool
 
     public init(
         _ title: LocalizedStringKey,
         placeholder: LocalizedStringKey = "",
+        allowsReveal: Bool = false,
+        allowsCopy: Bool = false,
         text: Binding<String>
     ) {
         self.title = Text(title)
         self.placeholder = Text(placeholder)
+        self.allowsReveal = allowsReveal
+        self.allowsCopy = allowsCopy
         self._text = text
     }
 
     public init(
         _ title: String,
         placeholder: String = "",
+        allowsReveal: Bool = false,
+        allowsCopy: Bool = false,
         text: Binding<String>
     ) {
         self.title = Text(title)
         self.placeholder = Text(placeholder)
+        self.allowsReveal = allowsReveal
+        self.allowsCopy = allowsCopy
         self._text = text
     }
 
     public var body: some View {
         AppSettingsRow(verticalPadding: 12) {
-            GlassTextField(title: title, text: $text, placeholder: placeholder, isSecure: true)
+            GlassTextField(
+                title: title,
+                text: $text,
+                placeholder: placeholder,
+                isSecure: true,
+                allowsReveal: allowsReveal,
+                allowsCopy: allowsCopy
+            )
         }
     }
 }

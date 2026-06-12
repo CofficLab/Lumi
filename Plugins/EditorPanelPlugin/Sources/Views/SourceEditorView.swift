@@ -64,6 +64,13 @@ public struct SourceEditorView: View, SuperLog {
                 wireDelegates()
                 updateContentLineTable()
                 state.refreshFoldingRanges()
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: EditorHostEnvironment.current.notifications.editorExtensionProvidersDidChange
+                )
+            ) { _ in
+                wireDelegates()
             })
 
         let appearanceObserved = AnyView(base

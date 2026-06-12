@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = CDX1000000000000000001 /* LLMProviderCodexPlugin */; };
 		EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */; };
 		ESV1000000000000000002 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = ESV1000000000000000001 /* EditorService */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
@@ -14,7 +15,6 @@
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
 		MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = MLX1000000000000000001 /* LLMProviderMLXPlugin */; };
-		CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = CDX1000000000000000001 /* LLMProviderCodexPlugin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -384,6 +384,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/LLMProviderCodexPlugin;
+		};
 		EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/EditorMultiCursorCommandsPlugin;
@@ -408,13 +412,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/LLMProviderMLXPlugin;
 		};
-		CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/LLMProviderCodexPlugin;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */;
+			productName = LLMProviderCodexPlugin;
+		};
 		EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */;
@@ -444,11 +449,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */;
 			productName = LLMProviderMLXPlugin;
-		};
-		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */;
-			productName = LLMProviderCodexPlugin;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

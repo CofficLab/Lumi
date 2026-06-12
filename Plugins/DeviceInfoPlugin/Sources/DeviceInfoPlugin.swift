@@ -6,10 +6,10 @@ public enum DeviceInfoPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.device-info",
         displayName: LumiPluginLocalization.string("Device Info", bundle: .module),
         description: LumiPluginLocalization.string("Shows basic device and system information.", bundle: .module),
-        order: 20
+        order: 0
     )
     public static let category: LumiPluginCategory = .system
-    public static let policy: LumiPluginPolicy = .optIn
+    public static let policy: LumiPluginPolicy = .alwaysOn
 
     public static let iconName = "macbook.and.iphone"
 

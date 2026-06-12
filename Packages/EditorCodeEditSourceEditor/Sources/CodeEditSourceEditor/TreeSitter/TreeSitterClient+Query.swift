@@ -24,6 +24,21 @@ extension TreeSitterClient {
         let cursor: ResolvingQueryMatchSequence<QueryCursor>
     }
 
+    /// Root nodes for each active language layer.
+    public func rootNodes() throws -> [NodeResult] {
+        try executor.execSync({
+            var nodes: [NodeResult] = []
+            for layer in self.state?.layers ?? [] {
+                if let language = layer.tsLanguage,
+                   let node = layer.tree?.rootNode {
+                    nodes.append(NodeResult(id: layer.id, language: language, node: node))
+                }
+            }
+            return nodes
+        })
+        .throwOrReturn()
+    }
+
     /// Finds nodes for each language layer at the given location.
     /// - Parameter location: The location to get a node for.
     /// - Returns: All pairs of `Language, Node` where Node is the nearest node in the tree at the given location.

@@ -16,7 +16,7 @@ import os
 /// 该插件没有独立 View；它通过 `SuperEditorCommandContributor` 把命令贡献给命令面板、
 /// 右键菜单或其它消费编辑器命令的 UI。
 public actor EditorLSPContextCommandsPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
+    public nonisolated static let policy: PluginPolicy = .alwaysOn
     public static let shared = EditorLSPContextCommandsPlugin()
     public nonisolated static let emoji = "🔌"
     public nonisolated static let verbose: Bool = false

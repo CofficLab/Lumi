@@ -47,6 +47,18 @@ public struct DraculaTheme: LumiAppChromeTheme {
         )
     }
 
+    public func workspaceTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "F8F8F2")
+    }
+
+    public func workspaceSecondaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "BFBFBF")
+    }
+
+    public func workspaceTertiaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "6272A4")
+    }
+
     public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {

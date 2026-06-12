@@ -111,6 +111,10 @@ struct ChatComposerSectionView: View {
             coordinator.addImageAttachment(data: data)
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addToChat"))) { notification in
+            if let path = notification.userInfo?["fileURL"] as? String, !path.isEmpty {
+                coordinator.handleFileDrop(URL(fileURLWithPath: path))
+                return
+            }
             guard let userInfo = notification.userInfo,
                   let text = userInfo["text"] as? String,
                   !text.isEmpty else { return }

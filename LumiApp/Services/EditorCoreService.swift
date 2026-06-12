@@ -58,6 +58,7 @@ final class EditorCoreService: LumiEditorServicing {
         EditorSettingsLifecycle.onReinstallPlugins = { [weak self] registry in
             Task { @MainActor in
                 await self?.core.extensionInstaller?(registry)
+                self?.core.editorService.state.refreshExtensionProviders()
             }
         }
         EditorSettingsLifecycle.editorThemeIDForAppThemeID = { [themeRegistry] _ in

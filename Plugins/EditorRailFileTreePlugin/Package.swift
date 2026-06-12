@@ -39,7 +39,10 @@ let package = Package(
         ),
         .testTarget(
             name: "EditorRailFileTreePluginTests",
-            dependencies: ["EditorRailFileTreePlugin"],
+            dependencies: [
+                "EditorRailFileTreePlugin",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests"
         )
     ]

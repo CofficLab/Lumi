@@ -47,6 +47,18 @@ public struct OneDarkTheme: LumiAppChromeTheme {
         )
     }
 
+    public func workspaceTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "ABB2BF")
+    }
+
+    public func workspaceSecondaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "828997")
+    }
+
+    public func workspaceTertiaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "5C6370")
+    }
+
     public func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {

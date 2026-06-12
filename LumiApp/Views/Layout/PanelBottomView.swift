@@ -33,49 +33,16 @@ struct PanelBottomView: View {
     }
 
     private var tabBar: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(tabs) { tab in
-                        tabButton(for: tab)
-                            .id(tab.id)
-                    }
-                }
-                .padding(.horizontal, 8)
-            }
-            .onChange(of: layoutState.activeBottomTabID) { _, tabID in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo(tabID, anchor: .center)
-                }
-            }
-            .onAppear {
-                proxy.scrollTo(layoutState.activeBottomTabID, anchor: .center)
-            }
-        }
+        AppTabBar(
+            tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+            selectedTab: Binding(
+                get: { layoutState.activeBottomTabID },
+                set: { layoutState.activeBottomTabID = $0 }
+            )
+        )
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
         .background(theme.surface.opacity(0.85))
-    }
-
-    private func tabButton(for tab: LumiPanelBottomTabItem) -> some View {
-        let isSelected = layoutState.activeBottomTabID == tab.id
-
-        return Button {
-            layoutState.activeBottomTabID = tab.id
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 10, weight: .semibold))
-                Text(tab.title)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .fixedSize(horizontal: true, vertical: false)
-        }
-        .buttonStyle(.plain)
-        .help(tab.title)
     }
 
     @ViewBuilder

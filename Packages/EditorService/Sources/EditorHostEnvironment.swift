@@ -12,10 +12,12 @@ public struct EditorHostEnvironment: Sendable {
         public var showCommandPalette: Notification.Name
         public var triggerCompletion: Notification.Name
         public var triggerSignatureHelp: Notification.Name
+        public var editorExtensionProvidersDidChange: Notification.Name
 
         public init(
             projectContextDidChange: Notification.Name = Notification.Name("EditorProjectContextDidChange"),
             settingsDidChange: Notification.Name = Notification.Name("EditorSettingsDidChange"),
+            editorExtensionProvidersDidChange: Notification.Name = Notification.Name("EditorExtensionProvidersDidChange"),
             themeDidChange: Notification.Name = Notification.Name("EditorThemeDidChange"),
             toggleOpenEditorsPanel: Notification.Name = Notification.Name("EditorToggleOpenEditorsPanel"),
             toggleOutlinePanel: Notification.Name = Notification.Name("EditorToggleOutlinePanel"),
@@ -25,6 +27,7 @@ public struct EditorHostEnvironment: Sendable {
         ) {
             self.projectContextDidChange = projectContextDidChange
             self.settingsDidChange = settingsDidChange
+            self.editorExtensionProvidersDidChange = editorExtensionProvidersDidChange
             self.themeDidChange = themeDidChange
             self.toggleOpenEditorsPanel = toggleOpenEditorsPanel
             self.toggleOutlinePanel = toggleOutlinePanel

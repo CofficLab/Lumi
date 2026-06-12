@@ -60,7 +60,7 @@ public struct CodexLocalProviderSettingsView: View {
             AppSettingsSection(title: "可用模型", subtitle: "点击某个模型可设为默认", spacing: 12) {
                 VStack(spacing: 0) {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                        ProviderSettingsModelRow(
+                        AppSettingsModelRow(
                             model: model,
                             isDefault: selectedModelID == model
                         ) {
@@ -79,29 +79,3 @@ public struct CodexLocalProviderSettingsView: View {
     }
 }
 
-private struct ProviderSettingsModelRow: View {
-    @LumiTheme private var theme
-
-    let model: String
-    let isDefault: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                Text(model)
-                    .font(.appBody)
-                    .foregroundColor(theme.textPrimary)
-                Spacer(minLength: 0)
-                if isDefault {
-                    Text("默认")
-                        .font(.appCaption)
-                        .foregroundColor(theme.primary)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-    }
-}

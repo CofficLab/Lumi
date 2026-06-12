@@ -34,7 +34,7 @@ public struct EditorFileTreeView: View, SuperLog {
     @State private var openFileTask: Task<Void, Never>?
 
     private var highlightedFileURL: URL? {
-        editorContext.fileTreeHighlightedFileURL ?? editorContext.currentFileURL
+        editorContext.resolvedFileTreeHighlightURL()
     }
 
     private var showPackageDependencies: Bool {

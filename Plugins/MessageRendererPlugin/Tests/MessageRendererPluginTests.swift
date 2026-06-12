@@ -1,5 +1,9 @@
+import AppKit
 import Foundation
 import LumiCoreKit
+import LumiUI
+import MarkdownKit
+import SwiftUI
 import Testing
 @testable import MessageRendererPlugin
 
@@ -75,4 +79,81 @@ import Testing
 
 private var testContext: LumiPluginContext {
     LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+}
+
+// MARK: - Assistant markdown contrast
+
+/// 复现：VS Code 深色 + macOS 浅色系统时，助手正文用 Markdown 默认 `.primary`（跟系统走），
+/// 而聊天区背景跟 chrome 主题走，导致深字深底。
+@MainActor
+@Test func assistantMarkdownStandardThemeLeavesTextColorUnset() {
+    #expect(MarkdownTheme.standard.textColor == nil)
+}
+
+@MainActor
+@Test func assistantMarkdownBodyFailsContrastOnForcedDarkChatSurfaceUnderLightSystem() {
+    let chrome = ForcedDarkChatChromeFixture()
+    let ui = ChromeToUIThemeAdapter(chrome: chrome)
+    let lightAppearance = NSAppearance(named: .aqua)!
+
+    let defaultReadable = AssistantMarkdownContrastTestSupport.hasSufficientContrast(
+        text: Color.primary,
+        surface: ui.surface,
+        systemAppearance: lightAppearance
+    )
+    #expect(!defaultReadable, "Default Markdown foreground should expose the regression on forced-dark chrome")
+
+    let chatTheme = ChatMarkdownTheme.make(from: ui)
+    let chatReadable = AssistantMarkdownContrastTestSupport.hasSufficientContrast(
+        text: chatTheme.textColor!,
+        surface: ui.surface,
+        systemAppearance: lightAppearance
+    )
+    #expect(chatReadable, "Chat markdown theme should follow chrome text colors")
+}
+
+private struct ForcedDarkChatChromeFixture: LumiAppChromeTheme {
+    let identifier = "forced-dark-chat"
+    let displayName = "Forced Dark Chat"
+    let compactName = "Dark"
+    let description = "VS Code dark-like chrome for chat contrast tests"
+    let iconName = "bubble.left.and.bubble.right"
+    let iconColor = Color(hex: "007ACC")
+    let appearanceKind: ThemeAppearanceKind = .dark
+
+    func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
+        (Color(hex: "007ACC"), Color(hex: "C586C0"), Color(hex: "D7BA7D"))
+    }
+
+    func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+        (Color(hex: "1E1E1E"), Color(hex: "252526"), Color(hex: "2D2D2D"))
+    }
+
+    func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+        (.blue, .blue, .blue)
+    }
+
+    func workspaceTextColor() -> Color { Color(hex: "CCCCCC") }
+}
+
+private enum AssistantMarkdownContrastTestSupport {
+    static func perceptualLuminance(_ color: Color, appearance: NSAppearance) -> Double {
+        let saved = NSAppearance.current
+        NSAppearance.current = appearance
+        defer { NSAppearance.current = saved }
+        guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return 0 }
+        return 0.299 * rgb.redComponent + 0.587 * rgb.greenComponent + 0.114 * rgb.blueComponent
+    }
+
+    static func hasSufficientContrast(
+        text: Color,
+        surface: Color,
+        systemAppearance: NSAppearance,
+        minimumDelta: Double = 0.25
+    ) -> Bool {
+        abs(
+            perceptualLuminance(text, appearance: systemAppearance)
+                - perceptualLuminance(surface, appearance: systemAppearance)
+        ) >= minimumDelta
+    }
 }

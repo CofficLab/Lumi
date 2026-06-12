@@ -37,7 +37,7 @@ public struct EditorPanelView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            if hasActiveEditorSelection {
+            if EditorPanelContentRouting.hasActiveEditorSelection(editorContentSnapshot) {
                 FileInfoBannerView(
                     service: service,
                     warningMessage: panelService.projectContextWarningMessage(service: service)
@@ -134,34 +134,43 @@ public struct EditorPanelView: View {
 
     // MARK: - Editor Content
 
-    /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
-    private var isFileLoading: Bool {
-        hasActiveEditorSelection && service.isFileLoadInProgress
-    }
-
-    /// 编辑器是否存在激活会话（以 Editor 内核作为当前文件真源）
-    private var hasActiveEditorSelection: Bool {
-        service.activeSessionID != nil || service.currentFileURL != nil
+    private var editorContentSnapshot: EditorPanelContentRouting.Snapshot {
+        EditorPanelContentRouting.Snapshot(
+            activeSessionID: service.activeSessionID,
+            currentFileURL: service.currentFileURL,
+            canPreview: service.canPreview,
+            isBinaryFile: service.isBinaryFile,
+            isFileLoadInProgress: service.isFileLoadInProgress,
+            fileLoadErrorMessage: service.fileLoadErrorMessage,
+            isMarkdownFile: service.isMarkdownFile,
+            isMarkdownPreviewMode: service.isMarkdownPreviewMode
+        )
     }
 
     /// 编辑器主体（session 驱动）
     @ViewBuilder
     private var editorContent: some View {
-        if service.isMarkdownFile {
-            if service.isMarkdownPreviewMode {
-                markdownPreviewContent
-            } else {
-                sourceEditorContent
-            }
-        } else if service.canPreview {
-            sourceEditorContent
-        } else if service.isBinaryFile, let fileURL = service.currentFileURL {
-            FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if isFileLoading {
+        switch EditorPanelContentRouting.resolve(editorContentSnapshot) {
+        case .empty:
+            EmptyView()
+        case .loading:
             EditorLoadingStateView()
-        } else if let message = service.fileLoadErrorMessage, hasActiveEditorSelection {
-            EditorLoadFailureView(fileName: service.activeSession?.fileURL?.lastPathComponent ?? service.fileName, message: message)
-        } else if hasActiveEditorSelection {
+        case .sourceEditor:
+            sourceEditorContent
+        case .markdownPreview:
+            markdownPreviewContent
+        case .binaryPreview:
+            if let fileURL = service.currentFileURL {
+                FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        case .loadFailure:
+            if let message = service.fileLoadErrorMessage {
+                EditorLoadFailureView(
+                    fileName: service.activeSession?.fileURL?.lastPathComponent ?? service.fileName,
+                    message: message
+                )
+            }
+        case .unsupported:
             EditorUnsupportedFileView(fileName: service.fileName)
         }
     }

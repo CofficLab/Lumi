@@ -60,7 +60,11 @@ let package = Package(
             dependencies: [
                 "EditorService",
                 .product(name: "EditorKernel", package: "EditorKernel"),
+                .product(name: "CodeEditSourceEditor", package: "EditorCodeEditSourceEditor"),
+                .product(name: "EditorCodeEditLanguages", package: "EditorCodeEditLanguages"),
                 .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
             path: "Tests"
         ),

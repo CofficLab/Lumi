@@ -77,3 +77,28 @@ import LumiCoreKit
     )
     #expect(InputView.addToChatText(from: empty, targetWindowId: targetWindowId) == nil)
 }
+
+@MainActor
+@Test func addToChatFileURLNotificationsRespectWindowIdWhenPresent() throws {
+    let targetWindowId = UUID()
+    let otherWindowId = UUID()
+    let path = "/tmp/project/Sources/A.swift"
+
+    let matching = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["fileURL": path, "windowId": targetWindowId]
+    )
+    #expect(InputView.addToChatFileURL(from: matching, targetWindowId: targetWindowId)?.path == path)
+
+    let otherWindow = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["fileURL": path, "windowId": otherWindowId]
+    )
+    #expect(InputView.addToChatFileURL(from: otherWindow, targetWindowId: targetWindowId) == nil)
+
+    let broadcast = Notification(
+        name: Notification.Name("addToChat"),
+        userInfo: ["fileURL": path]
+    )
+    #expect(InputView.addToChatFileURL(from: broadcast, targetWindowId: targetWindowId)?.path == path)
+}

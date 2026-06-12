@@ -1166,22 +1166,7 @@ public final class EditorState: ObservableObject, SuperLog {
         self.diagnosticsProvider = NullDiagnosticsProvider()
         self.lspClient = NullLSPClient()
 
-        let registry = self.editorExtensions
-        
-        // All providers come from registry — no direct dependency on any plugin
-        if let client = registry.editorLSPClient {
-            self.lspClient = client
-        }
-        if let p = registry.signatureHelpProvider { self.signatureHelpProvider = p }
-        if let p = registry.inlayHintProvider { self.inlayHintProvider = p }
-        if let p = registry.documentHighlightProvider { self.documentHighlightProvider = p }
-        if let p = registry.codeActionProvider { self.codeActionProvider = p }
-        if let p = registry.workspaceSymbolProvider { self.workspaceSymbolProvider = p }
-        if let p = registry.callHierarchyProvider { self.callHierarchyProvider = p }
-        if let p = registry.documentSymbolProvider { self.documentSymbolProvider = p }
-        if let p = registry.foldingRangeProvider { self.foldingRangeProvider = p }
-        if let p = registry.diagnosticsProvider { self.diagnosticsProvider = p }
-        
+        applyExtensionProvidersFromRegistry(rebindCurrentDocument: false)
         commandController.refreshCoreCommandRegistrations(in: self)
         bindKeybindings()
         bindPanelState()
@@ -1192,6 +1177,61 @@ public final class EditorState: ObservableObject, SuperLog {
         observeSettingsChanges()
         observeThemeChanges()
         observeProjectContextChanges()
+    }
+
+    /// 编辑器扩展安装完成后重新绑定 registry 能力（LSP client、providers 等）。
+    public func refreshExtensionProviders() {
+        applyExtensionProvidersFromRegistry(rebindCurrentDocument: true)
+        commandController.refreshCoreCommandRegistrations(in: self)
+        NotificationCenter.default.post(
+            name: EditorHostEnvironment.current.notifications.editorExtensionProvidersDidChange,
+            object: self
+        )
+    }
+
+    private func applyExtensionProvidersFromRegistry(rebindCurrentDocument: Bool) {
+        let registry = editorExtensions
+
+        lspClient = registry.editorLSPClient ?? NullLSPClient()
+        signatureHelpProvider = registry.signatureHelpProvider ?? NullSignatureHelpProvider()
+        inlayHintProvider = registry.inlayHintProvider ?? NullInlayHintProvider()
+        documentHighlightProvider = registry.documentHighlightProvider ?? NullDocumentHighlightProvider()
+        codeActionProvider = registry.codeActionProvider ?? NullCodeActionProvider()
+        workspaceSymbolProvider = registry.workspaceSymbolProvider ?? NullWorkspaceSymbolProvider()
+        callHierarchyProvider = registry.callHierarchyProvider ?? NullCallHierarchyProvider()
+        documentSymbolProvider = registry.documentSymbolProvider ?? NullDocumentSymbolProvider()
+        foldingRangeProvider = registry.foldingRangeProvider ?? NullFoldingRangeProvider()
+        diagnosticsProvider = registry.diagnosticsProvider ?? NullDiagnosticsProvider()
+        jumpDelegate?.lspClient = lspClient
+        jumpDelegate?.lspClientProvider = { [weak self] in
+            self?.lspClient
+        }
+
+        guard rebindCurrentDocument else { return }
+        syncCurrentDocumentWithLSPClientIfNeeded()
+    }
+
+    private func syncCurrentDocumentWithLSPClientIfNeeded() {
+        guard let loadingURL = currentFileURL,
+              let content = content?.string
+        else {
+            return
+        }
+
+        let languageId = detectedLanguage?.id.rawValue ?? lspActionController.languageID(for: fileExtension)
+        guard let languageId else { return }
+
+        let rootPath = projectRootPath ?? loadingURL.deletingLastPathComponent().path
+        lspClient.setProjectRootPath(rootPath)
+        let documentVersion = currentDocumentVersion
+        Task {
+            await lspClient.openFile(
+                uri: loadingURL.absoluteString,
+                languageId: languageId,
+                content: content,
+                version: documentVersion
+            )
+        }
     }
 
     private func bindKeybindings() {
@@ -1648,7 +1688,18 @@ public final class EditorState: ObservableObject, SuperLog {
     }
     
     // MARK: - File Loading
-    
+
+    /// 活跃 session 已选中但 buffer 尚未就绪时，标记为加载中以避免 UI 误判。
+    func beginPendingContentLoadIfNeeded(for url: URL) {
+        guard !isContentReady(for: url) else { return }
+        isFileLoadInProgress = true
+        fileLoadErrorMessage = nil
+    }
+
+    private func isContentReady(for url: URL) -> Bool {
+        currentFileURL == url && content != nil && canPreview
+    }
+
     /// 加载指定文件
     func loadFile(from url: URL?) {
         // 清理旧状态
@@ -3486,6 +3537,13 @@ public final class EditorState: ObservableObject, SuperLog {
         return containsBaseIdentifierScalar
     }
 
+}
+
+extension EditorState {
+    /// 仅供单元测试模拟编辑器当前文件变化。
+    func testing_setCurrentFileURL(_ url: URL?) {
+        currentFileURL = url
+    }
 }
 
 private extension String.Index {
