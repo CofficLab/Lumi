@@ -136,7 +136,7 @@ private struct ChatEmptyMessagesView: View {
     let automationLevel: LumiAutomationLevel
     let onQuickStart: (String) -> Void
 
-    private var suggestions: [String] {
+    private var suggestionKeys: [String] {
         switch automationLevel {
         case .chat:
             [
@@ -159,6 +159,10 @@ private struct ChatEmptyMessagesView: View {
         }
     }
 
+    private func localized(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "text.bubble.fill")
@@ -176,11 +180,12 @@ private struct ChatEmptyMessagesView: View {
                 .frame(maxWidth: 420)
 
             VStack(spacing: 8) {
-                ForEach(suggestions, id: \.self) { suggestion in
+                ForEach(suggestionKeys, id: \.self) { key in
+                    let suggestion = localized(key)
                     Button {
                         onQuickStart(suggestion)
                     } label: {
-                        Text(suggestion)
+                        Text(verbatim: suggestion)
                             .font(.appCaption)
                             .foregroundColor(theme.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
