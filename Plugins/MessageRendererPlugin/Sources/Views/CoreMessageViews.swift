@@ -54,6 +54,10 @@ struct CoreMessageView: View {
             HStack(alignment: .center, spacing: 12) {
                 CopyMessageButton(content: copyContent, showFeedback: $didCopy)
 
+                if message.role == .user, !message.content.isEmpty {
+                    ResendMessageButton(message: message)
+                }
+
                 AppIdentityRow(
                     title: formatTimestamp(message.createdAt),
                     titleColor: theme.textSecondary

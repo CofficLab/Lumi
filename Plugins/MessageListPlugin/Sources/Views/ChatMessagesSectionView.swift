@@ -54,5 +54,15 @@ struct ChatMessagesSectionView: View {
         .onChange(of: coordinator.chatService.selectedConversationID) { _, _ in
             coordinator.resetOldestVisibleMessageID()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiResendMessage)) { notification in
+            guard let messageID = notification.userInfo?[LumiMessageSavedNotification.messageIDKey] as? UUID,
+                  let conversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID
+            else {
+                return
+            }
+            Task {
+                await coordinator.chatService.resendMessage(id: messageID, in: conversationID)
+            }
+        }
     }
 }

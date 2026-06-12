@@ -17,4 +17,5 @@ public extension Notification.Name {
     static let lumiMessageSaved = Notification.Name("lumi.messageSaved")
     static let lumiTurnCompleted = Notification.Name("lumi.turnCompleted")
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
+    static let lumiResendMessage = Notification.Name("lumi.resendMessage")
 }
