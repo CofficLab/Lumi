@@ -45,6 +45,18 @@ struct VscodeLightTheme: LumiAppChromeTheme {
         )
     }
 
+    func workspaceTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "333333")
+    }
+
+    func workspaceSecondaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "6A6A6A")
+    }
+
+    func workspaceTertiaryTextColor() -> SwiftUI.Color {
+        SwiftUI.Color(hex: "999999")
+    }
+
     func statusBarBackgroundColor() -> SwiftUI.Color {
         SwiftUI.Color(hex: "007ACC")
     }
