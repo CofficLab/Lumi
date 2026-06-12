@@ -33,6 +33,23 @@ struct LayoutMenuButtonContrastTests {
         )
     }
 
+    @Test func resolvedPopoverLabelPassesContrastOnDarkPopoverChromeUnderLightSystem() {
+        let chrome = ForcedDarkToolbarChromeFixture()
+        let ui = ChromeToUIThemeAdapter(chrome: chrome)
+        let lightAppearance = NSAppearance(named: .aqua)!
+
+        let readable = LayoutMenuButtonContrastTestSupport.hasSufficientContrast(
+            text: LayoutMenuButton.popoverLabelForegroundColor(theme: ui),
+            surface: LayoutMenuButton.popoverBackgroundColor(theme: ui),
+            systemAppearance: lightAppearance
+        )
+
+        #expect(
+            readable,
+            "Layout popover label should stay readable on themed popover chrome"
+        )
+    }
+
     @Test func resolvedIconForegroundPassesContrastOnDarkToolbarUnderLightSystem() {
         let chrome = ForcedDarkToolbarChromeFixture()
         let ui = ChromeToUIThemeAdapter(chrome: chrome)
