@@ -1,4 +1,5 @@
 import AppKit
+import MarkdownKitTesting
 import Testing
 import SwiftUI
 @testable import MarkdownKit
@@ -199,6 +200,27 @@ struct CodeBlockLayoutTests {
         #expect(fittingSize.height > 0)
     }
 
+    /// 多行代码块在 List 中应能渲染出 HorizontalScrollView 文档高度（离屏 List 行高可能仍为占位值）。
+    @Test
+    func multiLineCodeBlockInListUsesHorizontalScrollDocumentHeight() async throws {
+        let lines = (1...12).map { "let value\($0) = \($0)" }.joined(separator: "\n")
+        let markdown = "```swift\n\(lines)\n```\n\nTail paragraph."
+
+        let standaloneHeight = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
+            markdown: markdown,
+            preferOuterScroll: true,
+            settleMilliseconds: 500
+        )
+        let scrollRowHeight = try await MarkdownLayoutTestSupport.markdownRowContentHeightInChatScroll(
+            markdown: markdown,
+            preferOuterScroll: true,
+            settleMilliseconds: 300
+        )
+
+        #expect(standaloneHeight > 80)
+        #expect(scrollRowHeight >= standaloneHeight * 0.85)
+    }
+
     /// 代码块后面跟着段落，在 List 中不会产生过度空白
     @Test
     func codeBlockFollowedByParagraphInListNoExcessiveWhitespace() async throws {
@@ -234,8 +256,7 @@ struct CodeBlockLayoutTests {
         for content: V,
         width: CGFloat
     ) async throws -> CGSize {
-        let (_, scrollView) = try await makeHorizontalScrollView(for: content, width: width)
-        return scrollView.documentView?.frame.size ?? .zero
+        try await MarkdownLayoutTestSupport.horizontalScrollViewDocumentSize(for: content, width: width)
     }
 
     /// 创建一个 HorizontalScrollView 放入 NSHostingView 中，
@@ -252,21 +273,12 @@ struct CodeBlockLayoutTests {
         try await Task.sleep(for: .milliseconds(200))
         hostingView.layoutSubtreeIfNeeded()
 
-        guard let hScrollView = findView(ofType: HorizontalOnlyScrollView.self, in: hostingView) else {
+        guard let hScrollView = MarkdownLayoutTestSupport.findView(ofType: HorizontalOnlyScrollView.self, in: hostingView) else {
             Issue.record("Could not find HorizontalOnlyScrollView in view hierarchy")
             throw TestError.viewNotFound
         }
 
         return (hostingView, hScrollView)
-    }
-
-    /// 递归查找指定类型的 NSView
-    private func findView<T: NSView>(ofType type: T.Type, in view: NSView) -> T? {
-        if let match = view as? T { return match }
-        for subview in view.subviews {
-            if let found = findView(ofType: type, in: subview) { return found }
-        }
-        return nil
     }
 
     private enum TestError: Error {

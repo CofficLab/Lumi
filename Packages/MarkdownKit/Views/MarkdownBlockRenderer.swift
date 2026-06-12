@@ -24,9 +24,10 @@ public struct MarkdownBlockRenderer: View {
     ) {
         self.markdown = markdown
         self.theme = theme
+        self._blocks = State(initialValue: MarkdownParser.parse(markdown))
     }
 
-    @State private var blocks: [MarkdownBlock] = []
+    @State private var blocks: [MarkdownBlock]
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
     public var body: some View {

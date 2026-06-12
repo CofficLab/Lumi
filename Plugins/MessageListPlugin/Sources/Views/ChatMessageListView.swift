@@ -1,5 +1,6 @@
 import LumiCoreKit
 import LumiUI
+import MarkdownKit
 import SwiftUI
 
 struct ChatMessageListView: View {
@@ -65,9 +66,9 @@ struct ChatMessageListView: View {
                         onDelete: { onDelete(message) }
                     )
                     .id(message.id)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .padding(.horizontal, ChatMessageListLayout.messageRowHorizontalPadding)
+                    .padding(.vertical, ChatMessageListLayout.messageRowVerticalPadding)
+                    .listRowInsets(ChatMessageListLayout.messageRowInsets)
                     .listRowSeparator(.hidden)
                 }
 
@@ -83,6 +84,7 @@ struct ChatMessageListView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .environment(\.preferOuterScroll, ChatMessageListLayout.prefersOuterScrollForMarkdown)
             .onAppear {
                 scrollToBottom(proxy: proxy, animated: false, settleLayout: true)
             }
