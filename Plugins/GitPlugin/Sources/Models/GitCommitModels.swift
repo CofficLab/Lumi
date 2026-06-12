@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Git Commit Log
 
-public struct GitCommitLog: Codable {
+public struct GitCommitLog: Codable, Sendable {
     public let hash: String
     public let author: String
     public let email: String
@@ -15,7 +15,7 @@ public struct GitCommitLog: Codable {
 /// Git Commit 详情模型
 ///
 /// 包含 commit 的完整信息，包括 body、变更统计和文件列表。
-public struct GitCommitDetail: Codable {
+public struct GitCommitDetail: Codable, Sendable {
     /// 完整的 commit hash
     public let hash: String
     /// 作者名称

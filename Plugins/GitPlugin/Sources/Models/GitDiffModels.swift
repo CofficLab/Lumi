@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Git Diff
 
-public struct GitDiff: Codable {
+public struct GitDiff: Codable, Sendable {
     public let content: String
     public let stats: GitDiffStats?
 
@@ -17,7 +17,7 @@ public struct GitDiff: Codable {
     }
 }
 
-public struct GitDiffStats: Codable {
+public struct GitDiffStats: Codable, Sendable {
     public let filesChanged: Int
     public let insertions: Int
     public let deletions: Int
