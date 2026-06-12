@@ -174,7 +174,19 @@ public final class EditorService: ObservableObject {
     /// 打开或激活文件会话（仅创建 session，不加载内容）
     @discardableResult
     public func openFile(at url: URL?) -> EditorSession? {
-        sessionStore.openOrActivate(fileURL: url)
+        guard let url else {
+            return sessionStore.openOrActivate(fileURL: nil)
+        }
+
+        guard let session = sessionStore.openOrActivate(fileURL: url) else { return nil }
+        state.beginPendingContentLoadIfNeeded(for: url)
+        return session
+    }
+
+    /// 在后台创建或复用 session/tab，不改变当前活跃 session。
+    @discardableResult
+    public func openFileSessionInBackground(at url: URL) -> EditorSession {
+        sessionStore.openSessionWithoutActivating(fileURL: url)
     }
 
     /// 打开文件

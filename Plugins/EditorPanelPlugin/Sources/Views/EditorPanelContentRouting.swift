@@ -44,9 +44,15 @@ enum EditorPanelContentRouting {
         if snapshot.isFileLoadInProgress {
             return .loading
         }
+        if snapshot.activeSessionID != nil, snapshot.currentFileURL == nil {
+            return .loading
+        }
         if snapshot.fileLoadErrorMessage != nil {
             return .loadFailure
         }
-        return .unsupported
+        if snapshot.currentFileURL != nil {
+            return .unsupported
+        }
+        return .loading
     }
 }

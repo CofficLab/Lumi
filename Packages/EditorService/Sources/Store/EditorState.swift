@@ -1688,7 +1688,18 @@ public final class EditorState: ObservableObject, SuperLog {
     }
     
     // MARK: - File Loading
-    
+
+    /// 活跃 session 已选中但 buffer 尚未就绪时，标记为加载中以避免 UI 误判。
+    func beginPendingContentLoadIfNeeded(for url: URL) {
+        guard !isContentReady(for: url) else { return }
+        isFileLoadInProgress = true
+        fileLoadErrorMessage = nil
+    }
+
+    private func isContentReady(for url: URL) -> Bool {
+        currentFileURL == url && content != nil && canPreview
+    }
+
     /// 加载指定文件
     func loadFile(from url: URL?) {
         // 清理旧状态

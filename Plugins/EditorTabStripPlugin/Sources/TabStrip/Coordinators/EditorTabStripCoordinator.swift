@@ -40,13 +40,12 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     ) {
         trackedProjectPath = projectPathProvider()
 
-        // 首次启动且 tabs 为空 → 从磁盘恢复
+        // 首次启动且 tabs 为空 → 等待项目路径就绪后从磁盘恢复
         if !hasRestored && sessionStore.tabs.isEmpty {
-            hasRestored = true
-            let path = trackedProjectPath
             Task { @MainActor [weak self] in
-                await self?.restoreTabs(
-                    forProject: path,
+                await self?.attemptInitialRestore(
+                    sessionStore: sessionStore,
+                    projectPathProvider: projectPathProvider,
                     openFile: openFile,
                     openFileSessionOnly: openFileSessionOnly
                 )
@@ -130,9 +129,7 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
     /// 从持久化存储恢复指定项目的标签页
     ///
-    /// 使用两阶段恢复策略：
-    /// 1. 批量创建 session（不加载文件内容），快速恢复标签栏 UI
-    /// 2. 仅对上次活跃的标签页执行完整的 `openFile`（加载内容）
+    /// 先加载上次活跃标签的内容，再为其余标签创建后台 session（不改变活跃标签）。
     public func restoreTabs(
         forProject projectPath: String,
         openFile: @MainActor (URL) async -> Void,
@@ -151,12 +148,6 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         guard !validURLs.isEmpty else { return }
 
-        // 阶段 1：批量创建 session（不加载文件内容），快速恢复标签栏 UI
-        for url in validURLs {
-            openFileSessionOnly(url)
-        }
-
-        // 阶段 2：仅对上次活跃的标签页执行完整的 openFile（加载内容）
         let targetURL: URL
         if let activePath = activeTabPath,
            let activateURL = validURLs.first(where: { $0.path == activePath }) {
@@ -164,10 +155,41 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         } else {
             targetURL = validURLs[0]
         }
+
+        let backgroundURLs = validURLs.filter { $0.path != targetURL.path }
+        for url in backgroundURLs {
+            openFileSessionOnly(url)
+        }
         await openFile(targetURL)
     }
 
     // MARK: - 私有方法
+
+    /// 轮询等待项目路径就绪，避免空路径时过早消费首次恢复机会。
+    private func attemptInitialRestore(
+        sessionStore: EditorSessionStore,
+        projectPathProvider: @MainActor @escaping () -> String,
+        openFile: @MainActor @escaping (URL) async -> Void,
+        openFileSessionOnly: @MainActor @escaping (URL) -> Void
+    ) async {
+        for _ in 0 ..< 60 {
+            guard !hasRestored, sessionStore.tabs.isEmpty else { return }
+
+            let path = projectPathProvider().trimmingCharacters(in: .whitespacesAndNewlines)
+            if path.isEmpty {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                continue
+            }
+
+            hasRestored = true
+            await restoreTabs(
+                forProject: path,
+                openFile: openFile,
+                openFileSessionOnly: openFileSessionOnly
+            )
+            return
+        }
+    }
 
     /// 从 tabs 和 activeSessionID 中提取活跃标签的文件路径
     private func activeTabPath(

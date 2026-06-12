@@ -47,6 +47,19 @@ public final class EditorSessionStore: ObservableObject {
         return session
     }
 
+    /// 创建或复用 session/tab，但不改变当前活跃 session（用于恢复非活跃标签）。
+    @discardableResult
+    func openSessionWithoutActivating(fileURL: URL) -> EditorSession {
+        if let existing = sessions.first(where: { $0.fileURL == fileURL }) {
+            return existing
+        }
+
+        let session = EditorSession(fileURL: fileURL)
+        sessions.append(session)
+        tabs.append(EditorTab(sessionID: session.id, fileURL: fileURL))
+        return session
+    }
+
     func syncActiveSession(from snapshot: EditorSession) {
         guard let fileURL = snapshot.fileURL else {
             activeSessionID = nil

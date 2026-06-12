@@ -48,7 +48,7 @@ public struct EditorTabHeaderView: View {
                     service?.open(at: url)
                 },
                 openFileSessionOnly: { [weak service] url in
-                    service?.openFile(at: url)
+                    service?.openFileSessionInBackground(at: url)
                 }
             )
         }
@@ -69,7 +69,7 @@ public struct EditorTabHeaderView: View {
                     service?.open(at: url)
                 },
                 openFileSessionOnly: { [weak service] url in
-                    service?.openFile(at: url)
+                    service?.openFileSessionInBackground(at: url)
                 }
             )
         }

@@ -200,7 +200,7 @@ private final class TabRestoreFixture {
 
     func trackSessionOnly(_ url: URL) {
         sessionOnlyURLs.append(url)
-        _ = service.openFile(at: url)
+        _ = service.openFileSessionInBackground(at: url)
     }
 
     func trackOpen(_ url: URL) async {
