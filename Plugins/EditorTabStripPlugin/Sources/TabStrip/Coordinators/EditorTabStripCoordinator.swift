@@ -16,8 +16,12 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
     // MARK: - 属性
 
-    private let store = EditorTabStripStore.shared
+    private let store: EditorTabStripStore
     private var cancellables = Set<AnyCancellable>()
+
+    init(store: EditorTabStripStore = .shared) {
+        self.store = store
+    }
 
     /// 是否已完成首次恢复（避免 onAppear 与 onChange 重复恢复）
     private var hasRestored = false
