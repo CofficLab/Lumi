@@ -6,12 +6,12 @@ import Testing
 
 /// 复现：VS Code 深色 + macOS 浅色系统时，右上角 Layout 菜单图标几乎看不见。
 ///
-/// `AppTitleToolbar` 虽设置了 `.foregroundStyle(theme.textPrimary)`，但 `LayoutMenuButton`
-/// 使用 `Menu` + `.menuStyle(.borderlessButton)`，标签图标往往仍解析为系统 `Color.primary`。
+/// `AppTitleToolbar` 虽设置了 `.foregroundStyle(theme.textPrimary)`，但 `Menu` +
+/// `.borderlessButton` 在 macOS 上不会把 label 上的 `foregroundStyle` 画出来（单元测试测不到这一点）。
 @MainActor
 struct LayoutMenuButtonContrastTests {
-    @Test func layoutMenuButtonUsesExplicitIconForeground() {
-        #expect(LayoutMenuButton.usesExplicitIconForeground)
+    @Test func layoutMenuButtonAvoidsBorderlessMenuLabel() {
+        #expect(!LayoutMenuButton.usesBorderlessMenuLabel)
     }
 
     @Test func systemPrimaryIconFailsContrastOnDarkToolbarUnderLightSystem() {
@@ -33,20 +33,20 @@ struct LayoutMenuButtonContrastTests {
         )
     }
 
-    @Test func chromeTextPrimaryIconPassesContrastOnDarkToolbarUnderLightSystem() {
+    @Test func resolvedIconForegroundPassesContrastOnDarkToolbarUnderLightSystem() {
         let chrome = ForcedDarkToolbarChromeFixture()
         let ui = ChromeToUIThemeAdapter(chrome: chrome)
         let lightAppearance = NSAppearance(named: .aqua)!
 
         let readable = LayoutMenuButtonContrastTestSupport.hasSufficientContrast(
-            text: ui.textPrimary,
+            text: LayoutMenuButton.iconForegroundColor(theme: ui),
             surface: ui.elevatedSurface,
             systemAppearance: lightAppearance
         )
 
         #expect(
             readable,
-            "Layout menu icon should use chrome textPrimary over dark toolbar chrome"
+            "Layout toolbar icon should resolve to chrome textPrimary over dark toolbar chrome"
         )
     }
 }
