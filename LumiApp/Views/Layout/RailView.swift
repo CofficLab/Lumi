@@ -42,42 +42,19 @@ struct RailView: View {
     }
 
     private var railTabBar: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
-                    ForEach(tabs) { tab in
-                        railTabButton(for: tab)
-                            .id(tab.id)
-                    }
+        AppTabBar(
+            tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+            selectedTab: Binding(
+                get: { layoutState.activeRailTabID },
+                set: { newValue in
+                    layoutState.activeRailTabID = newValue
+                    layoutState.persistActiveRailTabID()
                 }
-                .padding(.horizontal, 10)
-            }
-            .onChange(of: layoutState.activeRailTabID) { _, tabID in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo(tabID, anchor: .center)
-                }
-            }
-            .onAppear {
-                proxy.scrollTo(layoutState.activeRailTabID, anchor: .center)
-            }
-        }
+            ),
+            showText: false
+        )
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
-    }
-
-    private func railTabButton(for tab: LumiPanelRailTabItem) -> some View {
-        Button {
-            layoutState.activeRailTabID = tab.id
-            layoutState.persistActiveRailTabID()
-        } label: {
-            Image(systemName: tab.systemImage)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(
-                    layoutState.activeRailTabID == tab.id ? theme.textPrimary : theme.textSecondary
-                )
-                .frame(width: 24, height: 24)
-        }
-        .buttonStyle(.plain)
-        .help(tab.title)
     }
 
     @ViewBuilder

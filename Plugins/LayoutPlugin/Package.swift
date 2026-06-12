@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -22,6 +23,7 @@ let package = Package(
             name: "LayoutPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
@@ -31,7 +33,10 @@ let package = Package(
         ),
         .testTarget(
             name: "LayoutPluginTests",
-            dependencies: ["LayoutPlugin"],
+            dependencies: [
+                "LayoutPlugin",
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
             path: "Tests"
         )
     ]

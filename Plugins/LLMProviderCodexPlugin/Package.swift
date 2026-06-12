@@ -15,12 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "LLMProviderCodexPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
             exclude: [

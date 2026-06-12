@@ -3,7 +3,7 @@ import SwiftUI
 
 /// First-run onboarding plugin.
 public enum OnboardingPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "hand.wave"
 

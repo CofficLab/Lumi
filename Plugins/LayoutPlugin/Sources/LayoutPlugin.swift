@@ -7,6 +7,24 @@ public enum LayoutPlugin: LumiPlugin {
     public static let category: LumiPluginCategory = .general
     public static let iconName = "sidebar.left"
 
+    @MainActor
+    private static var didRestorePersistedState = false
+
+    /// Restores persisted layout state before the main window renders.
+    @MainActor
+    public static func restorePersistedStateIfNeeded() {
+        guard !didRestorePersistedState else { return }
+        didRestorePersistedState = true
+
+        let layoutState = LumiLayoutStateStore.shared
+        if let savedID = LayoutPluginLocalStore.shared.loadActiveViewContainerID() {
+            layoutState.activeViewContainerID = savedID
+        }
+        if let savedVisible = LayoutPluginLocalStore.shared.loadRightSidebarVisible() {
+            layoutState.chatSectionVisible = savedVisible
+        }
+    }
+
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",
         displayName: LumiPluginLocalization.string("Layout Persistence", bundle: .module),
@@ -47,38 +65,14 @@ public enum LayoutPlugin: LumiPlugin {
 private struct LayoutPersistenceAnchor: View {
     let content: AnyView
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
-    @State private var hasRestored = false
 
     var body: some View {
-        ZStack {
-            content
-
-            Color.clear
-                .frame(width: 0, height: 0)
-                .allowsHitTesting(false)
-                .onAppear {
-                    restoreIfNeeded()
-                }
-        }
-        .onChange(of: layoutState.activeViewContainerID) { _, newValue in
-            guard hasRestored else { return }
-            LayoutPluginLocalStore.shared.saveActiveViewContainerID(newValue)
-        }
-        .onChange(of: layoutState.chatSectionVisible) { _, newValue in
-            guard hasRestored else { return }
-            LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
-        }
-    }
-
-    private func restoreIfNeeded() {
-        guard !hasRestored else { return }
-        hasRestored = true
-
-        if let savedID = LayoutPluginLocalStore.shared.loadActiveViewContainerID() {
-            layoutState.activeViewContainerID = savedID
-        }
-        if let savedVisible = LayoutPluginLocalStore.shared.loadRightSidebarVisible() {
-            layoutState.chatSectionVisible = savedVisible
-        }
+        content
+            .onChange(of: layoutState.activeViewContainerID) { _, newValue in
+                LayoutPluginLocalStore.shared.saveActiveViewContainerID(newValue)
+            }
+            .onChange(of: layoutState.chatSectionVisible) { _, newValue in
+                LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
+            }
     }
 }

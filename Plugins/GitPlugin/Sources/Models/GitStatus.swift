@@ -1,7 +1,7 @@
 import Foundation
 
 /// Git 仓库状态
-public struct GitStatus: Codable {
+public struct GitStatus: Codable, Sendable {
     public let branch: String
     public let remote: String?
     public let modified: [String]

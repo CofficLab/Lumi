@@ -38,6 +38,8 @@ let package = Package(
             dependencies: [
                 "MessageRendererPlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "MarkdownKit", package: "MarkdownKit"),
             ],
             path: "Tests"
         )

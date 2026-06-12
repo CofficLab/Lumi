@@ -319,10 +319,23 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     public func transformMessage(_ message: ChatMessage) -> [String: Any] {
         // 工具结果消息
         if let toolCallID = message.toolCallID {
+            if message.images.isEmpty {
+                return [
+                    "role": "user",
+                    "content": [
+                        ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
+                    ],
+                ]
+            }
+
+            let resultContent = VisionMessageContentBuilder.anthropicBlocks(
+                text: message.content,
+                images: message.images
+            )
             return [
                 "role": "user",
                 "content": [
-                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
+                    ["type": "tool_result", "tool_use_id": toolCallID, "content": resultContent],
                 ],
             ]
         }
@@ -347,6 +360,16 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             }
 
             return ["role": "assistant", "content": content]
+        }
+
+        if !message.images.isEmpty {
+            return [
+                "role": message.role.rawValue,
+                "content": VisionMessageContentBuilder.anthropicBlocks(
+                    text: message.content,
+                    images: message.images
+                ),
+            ]
         }
 
         // 普通文本消息

@@ -14,21 +14,17 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/MarkdownKit"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "MessageListPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "MarkdownKit", package: "MarkdownKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiUI", package: "LumiUI")
             ],
             path: "Sources",
             resources: [
@@ -40,6 +36,7 @@ let package = Package(
             dependencies: [
                 "MessageListPlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit")
             ],
             path: "Tests"
         )

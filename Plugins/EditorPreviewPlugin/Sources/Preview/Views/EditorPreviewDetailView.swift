@@ -412,11 +412,12 @@ public struct EditorPreviewDetailView: View, SuperLog {
     }
 
     /// 当前是否可以截图：swift 预览正在运行且已加载 entry，或非 swift 静态预览（image、markdown 等）。
+    /// 字符串目录格式不显示截图按钮。
     private var canTakeScreenshot: Bool {
         switch viewModel.previewMode {
         case .swift:
             return viewModel.status == .running && viewModel.currentFrame != nil
-        case .unsupported:
+        case .stringCatalog, .unsupported:
             return false
         default:
             return true
@@ -763,6 +764,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 unsupportedPreview(url: url)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
             EditorPreviewCanvasAccessor { view in
                 previewCanvasView = view
@@ -1410,6 +1412,7 @@ private struct EditorPreviewStringCatalogContainer: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 
@@ -1560,10 +1563,10 @@ private struct EditorPreviewStringCatalogView: View {
                 } header: {
                     tableHeader
                 }
-
-                Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
     }
 

@@ -28,6 +28,11 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources"
+        ),
+        .testTarget(
+            name: "LumiLLMProviderSupportTests",
+            dependencies: ["LumiLLMProviderSupport"],
+            path: "Tests"
         )
     ]
 )

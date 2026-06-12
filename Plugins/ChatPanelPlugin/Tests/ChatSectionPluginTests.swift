@@ -12,7 +12,6 @@ import Testing
         chatSection: .none
     )
 
-    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
     #expect(ChatPendingSectionPlugin.chatSectionItems(context: context).isEmpty)
     #expect(ChatAttachmentSectionPlugin.chatSectionItems(context: context).isEmpty)
     #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).isEmpty)
@@ -26,7 +25,6 @@ import Testing
         chatSection: .wide
     )
 
-    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).isEmpty)
     #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).isEmpty)
 }
 
@@ -47,7 +45,6 @@ import Testing
         }
     )
 
-    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).count == 1)
     #expect(ChatPendingSectionPlugin.chatSectionItems(context: context).count == 1)
     #expect(ChatAttachmentSectionPlugin.chatSectionItems(context: context).count == 1)
     #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).count == 1)

@@ -16,7 +16,9 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -25,7 +27,9 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

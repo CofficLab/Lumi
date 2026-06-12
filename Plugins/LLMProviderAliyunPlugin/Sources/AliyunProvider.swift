@@ -69,16 +69,11 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
     }
 
     public static func getApiKey() -> String {
-        UserDefaults.standard.string(forKey: apiKeyStorageKey) ?? ""
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
     }
 
     public static func setApiKey(_ apiKey: String) {
-        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            UserDefaults.standard.removeObject(forKey: apiKeyStorageKey)
-        } else {
-            UserDefaults.standard.set(trimmed, forKey: apiKeyStorageKey)
-        }
+        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 
     static func errorMessage(conversationID: UUID, error: Error) -> LumiChatMessage {

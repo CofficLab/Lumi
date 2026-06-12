@@ -3,6 +3,7 @@ import HttpKit
 import LLMKit
 import LLMProviderKit
 import LumiCoreKit
+import LumiLLMProviderSupport
 
 public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
@@ -52,7 +53,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
 
         let httpRequest = adapter.buildRequest(url: url, apiKey: apiKey)
         let body = try adapter.buildRequestBody(
-            messages: request.messages.map(Self.convertMessage),
+            messages: LumiVisionMessageSupport.preparedMessages(for: request),
             model: request.model,
             tools: request.tools.map(OpenAIToolSchema.init),
             systemPrompt: ""
@@ -99,8 +100,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     private func apiKey() throws -> String {
-        if let storedKey = UserDefaults.standard.string(forKey: Self.apiKeyStorageKey),
-           !storedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+           !storedKey.isEmpty {
             return storedKey
         }
 

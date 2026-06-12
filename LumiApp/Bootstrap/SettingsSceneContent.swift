@@ -7,7 +7,8 @@ struct SettingsSceneContent: View {
         RootView(container: container) {
             SettingsView(
                 pluginService: container.pluginService,
-                lumiUIService: container.lumiUIService
+                lumiUIService: container.lumiUIService,
+                chatService: container.chatCoreService.chatService
             )
         }
         .background {

@@ -179,7 +179,7 @@ public struct EditorFileTreeNodeView: View {
                 .onTapGesture { handleTap() }
                 .onHover { hovering in isHovering = hovering }
                 .confirmationDialog(
-                    LumiPluginLocalization.string("Are you sure you want to delete \"\(fileName)\"?", bundle: .module),
+                    String(format: LumiPluginLocalization.string("Are you sure you want to delete \"%@\"?", bundle: .module), fileName),
                     isPresented: $showDeleteConfirmation,
                     titleVisibility: .visible
                 ) {

@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "CLI 已就绪" : {
+
+    },
     "Codex" : {
       "localizations" : {
         "en" : {
@@ -206,6 +209,12 @@
           }
         }
       }
+    },
+    "可执行文件" : {
+
+    },
+    "未找到 Codex CLI，请先安装并加入 PATH" : {
+
     },
     "通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）" : {
       "extractionState" : "stale",

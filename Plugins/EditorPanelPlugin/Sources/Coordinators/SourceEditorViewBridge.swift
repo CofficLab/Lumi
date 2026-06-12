@@ -63,6 +63,9 @@ public struct SourceEditorViewBridge {
         jumpDelegate.textStorage = state.content
         jumpDelegate.treeSitterClient = treeSitterClient
         jumpDelegate.lspClient = state.lspClient
+        jumpDelegate.lspClientProvider = { [weak state] in
+            state?.lspClient
+        }
         jumpDelegate.semanticCapabilityProvider = { [weak state] in
             state?.semanticCapability
         }

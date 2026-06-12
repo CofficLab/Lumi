@@ -29,6 +29,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     public weak var treeSitterClient: TreeSitterClient?
     public weak var textStorage: NSTextStorage?
     public weak var lspClient: (any SuperEditorLSPClient)?
+    public var lspClientProvider: (() -> (any SuperEditorLSPClient)?)?
     weak var textViewController: TextViewController?
     public var semanticCapabilityProvider: (() -> (any SuperEditorSemanticCapability)?)?
     public var currentFileURLProvider: (() -> URL?)?
@@ -38,11 +39,8 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
     public init() {}
 
-    private func treeSitterNodes(
-        in client: TreeSitterClient,
-        at location: Int
-    ) throws -> [TreeSitterClient.NodeResult] {
-        try client.nodesAt(location: location)
+    private var activeTreeSitterClient: TreeSitterClient? {
+        textViewController?.treeSitterClient ?? treeSitterClient
     }
     
     // MARK: - JumpToDefinitionDelegate
@@ -87,35 +85,33 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             }
             return [link]
         }
-        
-        if allowsLocalFallbackForDefinition() {
-            // 1. 优先：通过 AST 查找定义（精确）
-            if let definitionRange = await findDefinitionViaAST(
-                word: word,
-                cursorRange: range,
-                content: content
-            ) {
-                guard requestGeneration.isCurrent(generation) else { return nil }
-                let position = CursorPosition(range: definitionRange)
-                if Self.verbose {
-                    logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
-                }
-                return [createLink(for: word, targetRange: position, content: content)]
-            }
 
-            // 2. 回退：通过正则匹配（快速但不够精确）
-            if let fallbackRange = findDefinitionViaRegex(
-                word: word,
-                cursorRange: range,
-                content: content
-            ) {
-                guard requestGeneration.isCurrent(generation) else { return nil }
-                let position = CursorPosition(range: fallbackRange)
-                if Self.verbose {
-                    logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
-                }
-                return [createLink(for: word, targetRange: position, content: content)]
+        // LSP 未命中时仍尝试同文件 AST（索引或 build context 未就绪时常见）。
+        if let definitionRange = await findDefinitionViaAST(
+            word: word,
+            cursorRange: range,
+            content: content
+        ) {
+            guard requestGeneration.isCurrent(generation) else { return nil }
+            let position = CursorPosition(range: definitionRange)
+            if Self.verbose {
+                logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
             }
+            return [createLink(for: word, targetRange: position, content: content)]
+        }
+        
+        // 回退：通过正则匹配（LSP/AST 均未命中时）
+        if let fallbackRange = findDefinitionViaRegex(
+            word: word,
+            cursorRange: range,
+            content: content
+        ) {
+            guard requestGeneration.isCurrent(generation) else { return nil }
+            let position = CursorPosition(range: fallbackRange)
+            if Self.verbose {
+                logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
+            }
+            return [createLink(for: word, targetRange: position, content: content)]
         }
         
         if Self.verbose {
@@ -204,9 +200,8 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             return
         }
 
-        // 2. 回退：通过 AST（仅 Definition 支持）
+        // 2. 回退：通过 AST（仅 Definition 支持；LSP 未就绪时仍可同文件跳转）
         if fallbackToAST,
-           allowsLocalFallbackForDefinition(),
            let definitionRange = await findDefinitionViaAST(
                word: word,
                cursorRange: range,
@@ -221,7 +216,6 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
 
         // 3. 回退：通过正则（仅 Definition 支持）
         if fallbackToRegex,
-           allowsLocalFallbackForDefinition(),
            let fallbackRange = findDefinitionViaRegex(
                word: word,
                cursorRange: range,
@@ -441,7 +435,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         cursorRange: NSRange,
         content: String
     ) async -> JumpToDefinitionLink? {
-        guard let lspClient else {
+        guard let lspClient = lspClientProvider?() ?? lspClient else {
             logger.warning("\(self.t)LSP 跳转取消: lspClient 不存在, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public)")
             return nil
         }
@@ -549,17 +543,16 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         cursorRange: NSRange,
         content: String
     ) async -> NSRange? {
-        guard let treeSitterClient = treeSitterClient else { return nil }
-        
+        guard let treeSitterClient = activeTreeSitterClient else { return nil }
+
         do {
-            // 获取当前光标位置的所有 AST 节点（可能有多层语言）
-            let nodes = try treeSitterNodes(in: treeSitterClient, at: cursorRange.location)
-            
-            for nodeResult in nodes {
+            // 从语法树根节点搜索整文件；从光标子树无法找到其它位置的同名定义。
+            let roots = try treeSitterClient.rootNodes()
+            for root in roots {
                 if let defRange = searchNodeTree(
                     word: word,
                     cursorRange: cursorRange,
-                    node: nodeResult.node,
+                    node: root.node,
                     content: content
                 ) {
                     return defRange
@@ -570,7 +563,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
                 logger.debug("\(self.t)AST 查询失败: \(error.localizedDescription, privacy: .public)")
             }
         }
-        
+
         return nil
     }
     
@@ -625,7 +618,10 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
             "function_item", "struct_item", "enum_item", "impl_item",
             "type_declaration", "method_declaration", "constructor_declaration",
             "class_declaration", "struct_specifier", "class_specifier",
-            "variable_declarator"
+            "variable_declarator",
+            "protocol_declaration", "initializer_declaration", "init_declaration",
+            "typealias_declaration", "subscript_declaration", "actor_declaration",
+            "associatedtype_declaration", "deinit_declaration",
         ]
         
         // 检查是否是定义节点
@@ -820,6 +816,40 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     static func isSameFile(currentFileURL: URL?, targetURL: URL?) -> Bool {
         guard let currentFileURL, let targetURL else { return false }
         return currentFileURL.standardizedFileURL == targetURL.standardizedFileURL
+    }
+}
+
+// MARK: - Testing
+
+extension EditorJumpToDefinitionDelegate {
+    /// 从已解析语法树根节点查找定义，供单元测试验证 AST 搜索策略。
+    func findDefinitionInTreeRoot(
+        word: String,
+        cursorRange: NSRange,
+        content: String,
+        root: Node
+    ) -> NSRange? {
+        searchNodeTree(
+            word: word,
+            cursorRange: cursorRange,
+            node: root,
+            content: content
+        )
+    }
+
+    /// 从光标附近子树查找定义，用于回归测试「只搜子树会漏掉远处定义」。
+    func findDefinitionInCursorSubtree(
+        word: String,
+        cursorRange: NSRange,
+        content: String,
+        cursorNode: Node
+    ) -> NSRange? {
+        searchNodeTree(
+            word: word,
+            cursorRange: cursorRange,
+            node: cursorNode,
+            content: content
+        )
     }
 }
 

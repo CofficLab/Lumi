@@ -3,7 +3,9 @@ import Testing
 @testable import OnboardingPlugin
 
 @Test func packageLoads() async throws {
-    #expect(OnboardingPlugin.id == "Onboarding")
+    #expect(OnboardingPlugin.info.id == "com.coffic.lumi.plugin.onboarding")
+    #expect(OnboardingPlugin.policy == .alwaysOn)
+    #expect(OnboardingPlugin.policy.shouldRegister)
 }
 
 @Test func onboardingStoreReportsSaveResultAndReloadsCompletion() {

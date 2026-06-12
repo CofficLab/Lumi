@@ -1,6 +1,6 @@
 import EditorService
-import ChatPanelPlugin
 import LayoutPlugin
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -278,11 +278,19 @@ struct AppLayoutView: View {
             return
         }
 
-        if let activeID = layoutState.activeViewContainerID,
-           containers.contains(where: { $0.id == activeID }) {
-            return
+        if let activeID = layoutState.activeViewContainerID {
+            if containers.contains(where: { $0.id == activeID }) {
+                return
+            }
+            if isViewContainerExpected(activeID) {
+                return
+            }
         }
 
         layoutState.activeViewContainerID = containers[0].id
+    }
+
+    private func isViewContainerExpected(_ containerID: String) -> Bool {
+        pluginService.enabledPlugins.contains { $0.info.id == containerID }
     }
 }

@@ -15,34 +15,56 @@ public struct AppTabBar: View {
 
     let tabs: [Tab]
     @Binding var selectedTab: String
-    var showText: Bool = true
+    var showText: Bool
+    var scrollToSelected: Bool
 
     public init(tabs: [String], selectedTab: Binding<String>) {
         self.tabs = tabs.map { Tab(title: $0) }
         self._selectedTab = selectedTab
+        self.showText = true
+        self.scrollToSelected = true
     }
 
-    public init(tabs: [Tab], selectedTab: Binding<String>, showText: Bool = true) {
+    public init(
+        tabs: [Tab],
+        selectedTab: Binding<String>,
+        showText: Bool = true,
+        scrollToSelected: Bool = true
+    ) {
         self.tabs = tabs
         self._selectedTab = selectedTab
         self.showText = showText
+        self.scrollToSelected = scrollToSelected
     }
 
     public var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppUI.Spacing.sm) {
-                ForEach(tabs) { tab in
-                    AppTabButton(
-                        title: tab.title,
-                        icon: tab.icon,
-                        isSelected: selectedTab == tab.id,
-                        showText: showText
-                    ) {
-                        selectedTab = tab.id
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppUI.Spacing.sm) {
+                    ForEach(tabs) { tab in
+                        AppTabButton(
+                            title: tab.title,
+                            icon: tab.icon,
+                            isSelected: selectedTab == tab.id,
+                            showText: showText
+                        ) {
+                            selectedTab = tab.id
+                        }
+                        .id(tab.id)
                     }
                 }
+                .padding(.horizontal, 1)
             }
-            .padding(.horizontal, 1)
+            .onChange(of: selectedTab) { _, tabID in
+                guard scrollToSelected else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(tabID, anchor: .center)
+                }
+            }
+            .onAppear {
+                guard scrollToSelected else { return }
+                proxy.scrollTo(selectedTab, anchor: .center)
+            }
         }
     }
 }
@@ -80,6 +102,7 @@ private struct AppTabButton: View {
             .animation(AppUI.Motion.enabled(AppUI.Motion.selection, preference: motionPreference), value: isSelected)
         }
         .buttonStyle(.plain)
+        .help(title)
         .onHover { hovering in
             AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering

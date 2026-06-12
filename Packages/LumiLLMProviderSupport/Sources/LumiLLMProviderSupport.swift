@@ -9,33 +9,7 @@ public typealias LumiAnthropicCompatibleProviderConfiguration = AnthropicCompati
 
 private enum LumiLLMRequestMessages {
     static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMProviderKit.ChatMessage] {
-        LLMMessagePreparer.prepare(request.messages.map(convert))
-    }
-
-    static func convert(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
-        LLMProviderKit.ChatMessage(
-            role: convertRole(message.role),
-            content: message.content,
-            toolCalls: message.toolCalls?.map {
-                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            },
-            toolCallID: message.toolCallID
-        )
-    }
-
-    static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
-        switch role {
-        case .system:
-            .system
-        case .user:
-            .user
-        case .assistant:
-            .assistant
-        case .tool:
-            .tool
-        case .error, .status:
-            .error
-        }
+        LumiVisionMessageSupport.preparedMessages(for: request)
     }
 }
 
@@ -120,8 +94,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     private func apiKey() throws -> String {
-        if let storedKey = UserDefaults.standard.string(forKey: Self.apiKeyStorageKey),
-           !storedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+           !storedKey.isEmpty {
             return storedKey
         }
 
@@ -273,8 +247,8 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     }
 
     private func apiKey() throws -> String {
-        if let storedKey = UserDefaults.standard.string(forKey: Self.apiKeyStorageKey),
-           !storedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+           !storedKey.isEmpty {
             return storedKey
         }
 

@@ -13,6 +13,22 @@ final class EditorServiceFacadeTests: XCTestCase {
         URL(fileURLWithPath: "/tmp/\(name)")
     }
 
+    func testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession() {
+        let service = makeService()
+        let url = makeURL("Facade-SessionOnly.swift")
+
+        let session = service.openFile(at: url)
+
+        XCTAssertNotNil(session)
+        XCTAssertEqual(service.activeSessionID, session?.id)
+        XCTAssertNil(service.currentFileURL)
+        XCTAssertFalse(service.canPreview)
+        XCTAssertTrue(
+            service.isFileLoadInProgress,
+            "活跃 session 在 buffer 就绪前应标记为加载中，避免 UI 误判为不支持的文件"
+        )
+    }
+
     func testOpenFileCreatesAndActivatesSession() {
         let service = makeService()
         let url = makeURL("Facade-A.swift")

@@ -27,61 +27,62 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
     private init() {}
 
+    /// 在 gitQueue 上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
+    private func performOnGitQueue<T: Sendable>(
+        _ body: @escaping @Sendable () throws -> T
+    ) async throws -> T {
+        try await GitAsyncBridge.perform(on: gitQueue, body: body)
+    }
+
     // MARK: - Git Status
 
     public func getStatus(path: String?) async throws -> GitStatus {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    // 获取当前分支
-                    let branch = (try? LibGit2.getCurrentBranch(at: repoPath)) ?? ""
+        return try await performOnGitQueue {
+            // 获取当前分支
+            let branch = (try? LibGit2.getCurrentBranch(at: repoPath)) ?? ""
 
-                    // 获取变更文件列表
-                    let unstagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: false)
-                    let stagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: true)
+            // 获取变更文件列表
+            let unstagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: false)
+            let stagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: true)
 
-                    var modified: [String] = []
-                    var added: [String] = []
-                    var deleted: [String] = []
-                    var renamed: [String] = []
-                    var staged: [String] = []
+            var modified: [String] = []
+            var added: [String] = []
+            var deleted: [String] = []
+            var renamed: [String] = []
+            var staged: [String] = []
 
-                    for file in unstagedFiles {
-                        switch file.changeType {
-                        case "M": modified.append(file.file)
-                        case "A": added.append(file.file)
-                        case "D": deleted.append(file.file)
-                        case "R": renamed.append(file.file)
-                        case "?": modified.append(file.file)
-                        default: modified.append(file.file)
-                        }
-                    }
-
-                    for file in stagedFiles {
-                        switch file.changeType {
-                        case "M", "A", "D", "R": staged.append(file.file)
-                        default: break
-                        }
-                    }
-
-                    // 获取远程 upstream
-                    let remote = try? LibGit2.getCurrentBranchInfo(at: repoPath)?.upstream
-
-                    continuation.resume(returning: GitStatus(
-                        branch: branch,
-                        remote: remote,
-                        modified: modified,
-                        added: added,
-                        deleted: deleted,
-                        renamed: renamed,
-                        staged: staged
-                    ))
-                } catch {
-                    continuation.resume(throwing: error)
+            for file in unstagedFiles {
+                switch file.changeType {
+                case "M": modified.append(file.file)
+                case "A": added.append(file.file)
+                case "D": deleted.append(file.file)
+                case "R": renamed.append(file.file)
+                case "?": modified.append(file.file)
+                default: modified.append(file.file)
                 }
             }
+
+            for file in stagedFiles {
+                switch file.changeType {
+                case "M", "A", "D", "R": staged.append(file.file)
+                default: break
+                }
+            }
+
+            // 获取远程 upstream
+            let remote = try? LibGit2.getCurrentBranchInfo(at: repoPath)?.upstream
+
+            return GitStatus(
+                branch: branch,
+                remote: remote,
+                modified: modified,
+                added: added,
+                deleted: deleted,
+                renamed: renamed,
+                staged: staged
+            )
         }
     }
 
@@ -90,32 +91,26 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getDiff(path: String?, staged: Bool, file: String?) async throws -> GitDiff {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    // 获取 diff 内容
-                    let content: String
-                    if let file = file {
-                        content = try LibGit2.getFileDiff(for: file, at: repoPath, staged: staged)
-                    } else {
-                        let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
-                        content = files.map { $0.diff }.joined()
-                    }
-
-                    // 统计
-                    let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
-                    var insertions = 0, deletions = 0
-                    for line in content.components(separatedBy: "\n") {
-                        if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
-                        else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
-                    }
-
-                    let stats = !files.isEmpty ? GitDiffStats(filesChanged: files.count, insertions: insertions, deletions: deletions) : nil
-                    continuation.resume(returning: GitDiff(content: content, stats: stats))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
+        return try await performOnGitQueue {
+            // 获取 diff 内容
+            let content: String
+            if let file = file {
+                content = try LibGit2.getFileDiff(for: file, at: repoPath, staged: staged)
+            } else {
+                let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
+                content = files.map { $0.diff }.joined()
             }
+
+            // 统计
+            let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
+            var insertions = 0, deletions = 0
+            for line in content.components(separatedBy: "\n") {
+                if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
+                else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
+            }
+
+            let stats = !files.isEmpty ? GitDiffStats(filesChanged: files.count, insertions: insertions, deletions: deletions) : nil
+            return GitDiff(content: content, stats: stats)
         }
     }
 
@@ -124,26 +119,19 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getLog(path: String?, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count)
+        return try await performOnGitQueue {
+            let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count)
 
-                    let dateFormatter = ISO8601DateFormatter()
+            let dateFormatter = ISO8601DateFormatter()
 
-                    let result = gitCommits.map { commit in
-                        GitCommitLog(
-                            hash: commit.hash,
-                            author: commit.author,
-                            email: commit.email,
-                            date: dateFormatter.string(from: commit.date),
-                            message: commit.message.components(separatedBy: "\n").first ?? commit.message
-                        )
-                    }
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
+            return gitCommits.map { commit in
+                GitCommitLog(
+                    hash: commit.hash,
+                    author: commit.author,
+                    email: commit.email,
+                    date: dateFormatter.string(from: commit.date),
+                    message: commit.message.components(separatedBy: "\n").first ?? commit.message
+                )
             }
         }
     }
@@ -154,26 +142,19 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getLogWithSkip(path: String?, count: Int, skip: Int) async throws -> [GitCommitLog] {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
+        return try await performOnGitQueue {
+            let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
 
-                    let dateFormatter = ISO8601DateFormatter()
+            let dateFormatter = ISO8601DateFormatter()
 
-                    let result = gitCommits.map { commit in
-                        GitCommitLog(
-                            hash: commit.hash,
-                            author: commit.author,
-                            email: commit.email,
-                            date: dateFormatter.string(from: commit.date),
-                            message: commit.message.components(separatedBy: "\n").first ?? commit.message
-                        )
-                    }
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
+            return gitCommits.map { commit in
+                GitCommitLog(
+                    hash: commit.hash,
+                    author: commit.author,
+                    email: commit.email,
+                    date: dateFormatter.string(from: commit.date),
+                    message: commit.message.components(separatedBy: "\n").first ?? commit.message
+                )
             }
         }
     }
@@ -186,46 +167,39 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getCommitDetail(path: String?, hash: String) async throws -> GitCommitDetail {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    // 直接按 hash 查找 commit，不再遍历 500 个 commit
-                    guard let commit = try LibGit2.getCommitDetail(commitHash: hash, at: repoPath) else {
-                        continuation.resume(throwing: NSError(domain: "GitService", code: -1, userInfo: [NSLocalizedDescriptionKey: "无法找到 commit \(hash.prefix(7))"]))
-                        return
-                    }
+        return try await performOnGitQueue {
+            // 直接按 hash 查找 commit，不再遍历 500 个 commit
+            guard let commit = try LibGit2.getCommitDetail(commitHash: hash, at: repoPath) else {
+                throw NSError(domain: "GitService", code: -1, userInfo: [NSLocalizedDescriptionKey: "无法找到 commit \(hash.prefix(7))"])
+            }
 
-                    // 使用 LibGit2Swift 获取变更文件列表（含精确变更类型和 diff）
-                    let diffFiles = try LibGit2.getCommitDiffFiles(atCommit: hash, at: repoPath)
+            // 使用 LibGit2Swift 获取变更文件列表（含精确变更类型和 diff）
+            let diffFiles = try LibGit2.getCommitDiffFiles(atCommit: hash, at: repoPath)
 
-                    var insertions = 0, deletions = 0
-                    for file in diffFiles {
-                        for line in file.diff.components(separatedBy: "\n") {
-                            if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
-                            else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
-                        }
-                    }
-
-                    let stats = !diffFiles.isEmpty ? GitDiffStats(
-                        filesChanged: diffFiles.count, insertions: insertions, deletions: deletions
-                    ) : nil
-
-                    let dateFormatter = ISO8601DateFormatter()
-
-                    continuation.resume(returning: GitCommitDetail(
-                        hash: commit.hash,
-                        author: commit.author,
-                        email: commit.email,
-                        date: dateFormatter.string(from: commit.date),
-                        message: commit.message.components(separatedBy: "\n").first ?? commit.message,
-                        body: commit.body,
-                        stats: stats,
-                        changedFiles: diffFiles.map { $0.file }
-                    ))
-                } catch {
-                    continuation.resume(throwing: error)
+            var insertions = 0, deletions = 0
+            for file in diffFiles {
+                for line in file.diff.components(separatedBy: "\n") {
+                    if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
+                    else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
                 }
             }
+
+            let stats = !diffFiles.isEmpty ? GitDiffStats(
+                filesChanged: diffFiles.count, insertions: insertions, deletions: deletions
+            ) : nil
+
+            let dateFormatter = ISO8601DateFormatter()
+
+            return GitCommitDetail(
+                hash: commit.hash,
+                author: commit.author,
+                email: commit.email,
+                date: dateFormatter.string(from: commit.date),
+                message: commit.message.components(separatedBy: "\n").first ?? commit.message,
+                body: commit.body,
+                stats: stats,
+                changedFiles: diffFiles.map { $0.file }
+            )
         }
     }
 
@@ -248,28 +222,22 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getUncommittedChanges(path: String?) async throws -> [GitChangedFile] {
         let repoPath = Self.resolvePath(path)
 
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let unstagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: false)
-                    let stagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: true)
+        return try await performOnGitQueue {
+            let unstagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: false)
+            let stagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: true)
 
-                    // 合并去重（staged 优先）
-                    var merged: [String: GitChangedFile] = [:]
-                    for file in stagedFiles {
-                        merged[file.file] = GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
-                    }
-                    for file in unstagedFiles {
-                        if merged[file.file] == nil {
-                            merged[file.file] = GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
-                        }
-                    }
-
-                    continuation.resume(returning: Array(merged.values).sorted { $0.path < $1.path })
-                } catch {
-                    continuation.resume(throwing: error)
+            // 合并去重（staged 优先）
+            var merged: [String: GitChangedFile] = [:]
+            for file in stagedFiles {
+                merged[file.file] = GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
+            }
+            for file in unstagedFiles {
+                if merged[file.file] == nil {
+                    merged[file.file] = GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
                 }
             }
+
+            return Array(merged.values).sorted { $0.path < $1.path }
         }
     }
 
@@ -278,30 +246,16 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 获取未提交文件的内容差异
     public func getUncommittedFileContentChange(path: String?, file: String) async throws -> (before: String?, after: String?) {
         let repoPath = Self.resolvePath(path)
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let result = try LibGit2.getUncommittedFileContentChange(for: file, at: repoPath)
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
+        return try await performOnGitQueue {
+            try LibGit2.getUncommittedFileContentChange(for: file, at: repoPath)
         }
     }
 
     /// 获取指定 commit 中某个文件的变更前后内容
     public func getCommitFileContentChange(path: String?, hash: String, file: String) async throws -> (before: String?, after: String?) {
         let repoPath = Self.resolvePath(path)
-        return try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let result = try LibGit2.getFileContentChange(atCommit: hash, file: file, at: repoPath)
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
+        return try await performOnGitQueue {
+            try LibGit2.getFileContentChange(atCommit: hash, file: file, at: repoPath)
         }
     }
 
@@ -337,22 +291,13 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func commit(path: String?, message: String, files: [String], amend: Bool) async throws -> GitCommitResult {
         let repoPath = Self.resolvePath(path)
 
-        let commitHash: String = try await withCheckedThrowingContinuation { continuation in
-            gitQueue.async {
-                do {
-                    let hash: String
-                    if amend {
-                        hash = try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
-                    } else {
-                        // addAndCommit with empty files correctly stages ALL changes then commits.
-                        // Direct createCommit would only commit what's already staged, leaving working tree changes behind.
-                        hash = try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
-                    }
-                    continuation.resume(returning: hash)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
+        let commitHash: String = try await performOnGitQueue {
+            if amend {
+                return try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
             }
+            // addAndCommit with empty files correctly stages ALL changes then commits.
+            // Direct createCommit would only commit what's already staged, leaving working tree changes behind.
+            return try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
         }
 
         // 获取提交详情

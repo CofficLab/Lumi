@@ -11,9 +11,9 @@ struct HttpErrorView: View {
 
     private var title: String {
         if let statusCode {
-            return "Zhipu HTTP \(statusCode)"
+            return String(format: NSLocalizedString("Zhipu HTTP %lld", bundle: .module, comment: ""), statusCode)
         }
-        return "Zhipu request failed"
+        return NSLocalizedString("Zhipu request failed", bundle: .module, comment: "")
     }
 
     private var displayText: String {

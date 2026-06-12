@@ -14,14 +14,16 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiCoreKit"),
-        .package(path: "../ModelRouterKit")
+        .package(path: "../ModelRouterKit"),
+        .package(path: "../EditorChatInputKit")
     ],
     targets: [
         .target(
             name: "LumiChatKit",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "ModelRouterKit", package: "ModelRouterKit")
+                .product(name: "ModelRouterKit", package: "ModelRouterKit"),
+                .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
             ],
             path: "Sources"
         ),

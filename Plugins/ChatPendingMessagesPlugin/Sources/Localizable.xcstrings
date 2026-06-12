@@ -12,25 +12,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "(%lld)"
+            "value": "（%lld）"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "(%lld)"
+            "value": "（%lld）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "(%lld)"
+            "value": "（%lld）"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "(%lld)"
+            "value": "（%lld）"
           }
         }
       }
@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "聊天待发送消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "聊天待傳送訊息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "聊天待傳送訊息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "聊天待傳送訊息"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show queued chat messages above the input area"
+            "value": "在输入框上方显示排队的聊天消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show queued chat messages above the input area"
+            "value": "在輸入框上方顯示排隊的聊天訊息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show queued chat messages above the input area"
+            "value": "在輸入框上方顯示排隊的聊天訊息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show queued chat messages above the input area"
+            "value": "在輸入框上方顯示排隊的聊天訊息"
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting to Send"
+            "value": "等待发送"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting to Send"
+            "value": "等待傳送"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting to Send"
+            "value": "等待傳送"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting to Send"
+            "value": "等待傳送"
           }
         }
       }

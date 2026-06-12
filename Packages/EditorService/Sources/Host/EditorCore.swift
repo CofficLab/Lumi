@@ -20,6 +20,7 @@ public final class EditorCore: LumiEditorServicing {
         guard let extensionInstaller else { return }
         Task {
             await extensionInstaller(extensionRegistry)
+            editorService.state.refreshExtensionProviders()
         }
     }
 }

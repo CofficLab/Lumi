@@ -19,6 +19,31 @@ import Testing
     #expect(reloadedStore.loadSplitDimension(forKey: railKey) == 312)
 }
 
+@Test func localStorePersistsActiveViewContainerID() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginLayoutLocalStore-ViewContainer-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = LayoutPluginLocalStore(pluginDirectory: directory)
+    store.saveActiveViewContainerID("LumiEditor")
+
+    #expect(store.loadActiveViewContainerID() == "LumiEditor")
+
+    let reloadedStore = LayoutPluginLocalStore(pluginDirectory: directory)
+    #expect(reloadedStore.loadActiveViewContainerID() == "LumiEditor")
+}
+
+@Test func loadActiveViewContainerIDIgnoresLegacyIconKeys() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginLayoutLocalStore-LegacyIcon-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = LayoutPluginLocalStore(pluginDirectory: directory)
+    store.saveActiveViewContainerIcon("chevron.left.forwardslash.chevron.right")
+
+    #expect(store.loadActiveViewContainerID() == nil)
+}
+
 @Test func localStorePersistsLayoutSettings() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-\(UUID().uuidString)", isDirectory: true)

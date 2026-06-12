@@ -55,12 +55,7 @@ struct PluginSettingsPage: View {
     }
 
     var body: some View {
-        SettingsPageScaffold(
-            title: "插件",
-            subtitle: "管理插件启用状态和查看插件说明",
-            maxContentWidth: nil,
-            scrollsContent: false
-        ) {
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 14) {
                 headerStats
 
@@ -160,20 +155,7 @@ struct PluginSettingsPage: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: systemImage)
-                    .font(.appMicro)
-                Text(title)
-                    .font(.appMicro)
-            }
-            .foregroundColor(isSelected ? theme.textPrimary : theme.textSecondary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(isSelected ? theme.appAccentSoftFill : Color.clear))
-            .overlay {
-                Capsule()
-                    .strokeBorder(isSelected ? theme.primary.opacity(0.32) : theme.appDivider, lineWidth: 1)
-            }
+            AppTag(title, systemImage: systemImage, style: isSelected ? .accent : .subtle)
         }
         .buttonStyle(.plain)
     }
@@ -182,9 +164,7 @@ struct PluginSettingsPage: View {
         let isSelected = selectedPluginID == row.id
         let isEnabled = pluginService.isPluginEnabled(row.plugin)
 
-        return Button {
-            selectedPluginID = row.id
-        } label: {
+        return AppListRow(isSelected: isSelected, action: { selectedPluginID = row.id }) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: row.iconName)
                     .font(.appBody)
@@ -211,15 +191,7 @@ struct PluginSettingsPage: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isSelected ? theme.appAccentSoftFill : Color.clear)
-            )
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -294,8 +266,12 @@ private struct PluginSettingsDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 8) {
-                    categoryBadge
-                    stateBadge
+                    AppTag(row.policy.label, systemImage: row.policy.systemImage)
+                    AppTag(row.category.displayName, systemImage: row.category.systemImage)
+                    AppTag(
+                        isEnabled ? "已启用" : "未启用",
+                        systemImage: isEnabled ? "checkmark.circle" : "circle"
+                    )
                 }
             }
 
@@ -305,33 +281,22 @@ private struct PluginSettingsDetailView: View {
         }
     }
 
-    private var categoryBadge: some View {
-        badge(row.category.displayName, systemImage: row.category.systemImage)
-    }
-
-    private var stateBadge: some View {
-        badge(isEnabled ? "已启用" : "未启用", systemImage: isEnabled ? "checkmark.circle" : "circle")
-    }
-
     @ViewBuilder
     private var actionControl: some View {
         if row.policy.isConfigurable {
-            Toggle(
-                "",
+            AppSettingsToggleRow(
+                "启用",
                 isOn: Binding(
                     get: { pluginService.isPluginEnabled(row.plugin) },
                     set: { pluginService.setPlugin(row.plugin, enabled: $0) }
                 )
             )
-            .toggleStyle(.switch)
-            .labelsHidden()
+            .frame(maxWidth: 140)
         } else {
-            Label(row.policy == .alwaysOn ? "Always On" : "Disabled", systemImage: row.policy == .alwaysOn ? "lock.fill" : "slash.circle")
-                .font(.appCaptionEmphasized)
-                .foregroundStyle(theme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .appSurface(style: .subtle, cornerRadius: 7)
+            AppTag(
+                row.policy == .alwaysOn ? "Always On" : "Disabled",
+                systemImage: row.policy == .alwaysOn ? "lock.fill" : "slash.circle"
+            )
         }
     }
 
@@ -346,35 +311,14 @@ private struct PluginSettingsDetailView: View {
                 .foregroundStyle(theme.textSecondary)
 
             VStack(alignment: .leading, spacing: 10) {
-                infoRow("插件 ID", value: row.id)
-                infoRow("分类", value: row.category.displayName)
-                infoRow("排序", value: "\(row.order)")
+                GlassKeyValueRow(label: "插件 ID", value: row.id, labelWidth: 72)
+                GlassKeyValueRow(label: "加载策略", value: row.policy.label, labelWidth: 72)
+                GlassKeyValueRow(label: "分类", value: row.category.displayName, labelWidth: 72)
+                GlassKeyValueRow(label: "排序", value: "\(row.order)", labelWidth: 72)
             }
             .padding(14)
             .appSurface(style: .subtle, cornerRadius: 8)
         }
-    }
-
-    private func infoRow(_ label: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label)
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-                .frame(width: 72, alignment: .leading)
-            Text(value)
-                .font(.appCaptionEmphasized)
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-        }
-    }
-
-    private func badge(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.appMicro)
-            .foregroundStyle(theme.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .appSurface(style: .subtle, cornerRadius: 6)
     }
 }
 
@@ -388,4 +332,24 @@ private struct PluginSettingsRowModel: Identifiable {
     var iconName: String { plugin.iconName }
     var category: LumiPluginCategory { plugin.category }
     var policy: LumiPluginPolicy { plugin.policy }
+}
+
+private extension LumiPluginPolicy {
+    var label: String {
+        switch self {
+        case .alwaysOn: "Always On"
+        case .optOut: "Opt Out"
+        case .optIn: "Opt In"
+        case .disabled: "Disabled"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .alwaysOn: "lock.fill"
+        case .optOut: "checkmark.circle"
+        case .optIn: "power"
+        case .disabled: "slash.circle"
+        }
+    }
 }
