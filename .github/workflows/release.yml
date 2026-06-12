@@ -206,7 +206,7 @@ jobs:
           ./build_framework.sh --quiet
 
       - name: Check EditorCodeEditLanguages Framework
-        run: scripts/check-codeedit-languages-framework.sh
+        run: .github/scripts/check-codeedit-languages-framework.sh
 
       - name: Cache SPM Packages
         id: spm-cache
