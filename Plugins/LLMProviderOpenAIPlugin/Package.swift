@@ -17,7 +17,8 @@ let package = Package(
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LLMProviderKit"),
-        .package(path: "../../Packages/LumiCoreKit")
+        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLLMProviderSupport")
     ],
     targets: [
         .target(
@@ -26,7 +27,8 @@ let package = Package(
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit")
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport")
             ],
             path: "Sources",
             resources: [

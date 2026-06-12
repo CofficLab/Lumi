@@ -76,6 +76,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     public var toolCalls: [ToolCall]?
     public var toolCallID: String?
     public var reasoningContent: String?
+    public var images: [MessageImage]
 
     public init(
         id: UUID = UUID(),
@@ -83,7 +84,8 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         content: String,
         toolCalls: [ToolCall]? = nil,
         toolCallID: String? = nil,
-        reasoningContent: String? = nil
+        reasoningContent: String? = nil,
+        images: [MessageImage] = []
     ) {
         self.id = id
         self.role = role
@@ -91,6 +93,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.images = images
     }
 }
 

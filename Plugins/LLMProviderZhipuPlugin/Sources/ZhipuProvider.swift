@@ -1,7 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LLMProviderKit
 import LumiCoreKit
+import LumiLLMProviderSupport
 
 public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "ZhiPu"
@@ -52,7 +54,12 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
         urlRequest.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body = Self.requestBody(messages: request.messages, model: request.model, tools: request.tools)
+        let body = Self.requestBody(
+            messages: request.messages,
+            model: request.model,
+            tools: request.tools,
+            imageAttachments: request.imageAttachments
+        )
 
         do {
             let data = try await apiService.sendChatRequest(request: urlRequest, body: body)
@@ -102,7 +109,8 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     private static func requestBody(
         messages: [LumiChatMessage],
         model: String,
-        tools: [any LumiAgentTool]
+        tools: [any LumiAgentTool],
+        imageAttachments: [LumiImageAttachment]
     ) -> [String: Any] {
         let system = messages
             .filter { $0.role == .system }
@@ -110,8 +118,10 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
             .filter { !$0.isEmpty }
             .joined(separator: "\n\n")
 
-        let conversationMessages = messages
-            .filter { $0.role == .user || $0.role == .assistant || $0.role == .tool }
+        let sendableMessages = messages.filter { $0.role == .user || $0.role == .assistant || $0.role == .tool }
+        let lastUserID = sendableMessages.last(where: { $0.role == .user })?.id
+
+        let conversationMessages = sendableMessages
             .map { message -> [String: Any] in
                 switch message.role {
                 case .assistant:
@@ -147,9 +157,29 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
                     ]
 
                 default:
+                    var images = LumiVisionMessageSupport.messageImages(from: message.metadata)
+                    if images.isEmpty, message.id == lastUserID {
+                        images = LumiVisionMessageSupport.messageImages(
+                            from: [
+                                "imageAttachments": (try? JSONEncoder().encode(imageAttachments))
+                                    .flatMap { String(data: $0, encoding: .utf8) } ?? "",
+                            ]
+                        )
+                    }
+
+                    if images.isEmpty {
+                        return [
+                            "role": "user",
+                            "content": message.content,
+                        ]
+                    }
+
                     return [
                         "role": "user",
-                        "content": message.content,
+                        "content": VisionMessageContentBuilder.anthropicBlocks(
+                            text: message.content,
+                            images: images
+                        ),
                     ]
                 }
             }

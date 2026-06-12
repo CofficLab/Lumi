@@ -1,5 +1,7 @@
+import AgentToolKit
 import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
 @available(macOS 14.0, *)
 public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
@@ -48,15 +50,19 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         let service = MLXInferenceService()
         try await service.loadModel(id: request.model)
 
-        let mlxMessages = request.messages.compactMap { message -> MLXChatMessage? in
+        let preparedMessages = LumiVisionMessageSupport.preparedMessages(for: request)
+        let mlxMessages = preparedMessages.compactMap { message -> MLXChatMessage? in
             switch message.role {
             case .system:
                 return MLXChatMessage(role: .system, content: message.content)
             case .user:
-                return MLXChatMessage(role: .user, content: message.content)
+                let images = message.images.map {
+                    ImageAttachment(data: $0.data, mimeType: $0.mimeType)
+                }
+                return MLXChatMessage(role: .user, content: message.content, images: images)
             case .assistant:
                 return MLXChatMessage(role: .assistant, content: message.content)
-            case .tool, .error, .status:
+            case .tool, .error, .status, .unknown:
                 return nil
             }
         }
@@ -65,8 +71,13 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             throw MLXLumiError.emptyPrompt
         }
 
+        let requestImages = request.imageAttachments.compactMap { attachment -> ImageAttachment? in
+            guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
+            return ImageAttachment(data: data, mimeType: attachment.mimeType)
+        }
+
         var content = ""
-        for await chunk in service.chat(messages: mlxMessages) {
+        for await chunk in service.chat(messages: mlxMessages, images: requestImages) {
             switch chunk {
             case .text(let text):
                 content += text

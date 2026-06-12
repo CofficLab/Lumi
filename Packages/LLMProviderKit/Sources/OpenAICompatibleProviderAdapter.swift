@@ -153,7 +153,10 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
         var dict: [String: Any] = [
             "role": message.role.rawValue,
-            "content": message.content,
+            "content": VisionMessageContentBuilder.openAIContent(
+                text: message.content,
+                images: message.images
+            ),
         ]
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
