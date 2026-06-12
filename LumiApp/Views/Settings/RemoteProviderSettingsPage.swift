@@ -89,8 +89,11 @@ struct RemoteProviderSettingsPage: View {
             AppSettingsSecureFieldRow(
                 "API Key",
                 placeholder: "输入 API Key",
+                allowsReveal: true,
+                allowsCopy: true,
                 text: $apiKey
             )
+            .id(selectedProviderID)
 
             if !apiKey.isEmpty {
                 HStack(spacing: 6) {
