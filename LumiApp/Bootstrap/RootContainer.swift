@@ -39,6 +39,7 @@ final class RootContainer: ObservableObject {
         )
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)
+        _ = UpdateController.shared
         LayoutPlugin.restorePersistedStateIfNeeded()
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }

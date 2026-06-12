@@ -5,6 +5,7 @@ struct AppCommands: Commands {
         SidebarCommands()
         ChatCommands()
         DebugCommand()
+        CheckForUpdatesCommand()
         SettingsCommand()
         WindowCommand()
     }

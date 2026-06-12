@@ -2,7 +2,7 @@ import LumiCoreKit
 import SwiftUI
 
 public enum AppUpdateStatusBarPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .general
     public static let iconName = "arrow.down.circle"
 
@@ -15,7 +15,8 @@ public enum AppUpdateStatusBarPlugin: LumiPlugin {
 
     @MainActor
     public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
-        [
+        AppUpdateStatusBarStore.shared.start()
+        return [
             LumiMenuBarContentItem(id: "\(info.id).content", order: info.order) {
                 AppUpdateStatusBarContentView(store: AppUpdateStatusBarStore.shared)
             }
@@ -24,7 +25,8 @@ public enum AppUpdateStatusBarPlugin: LumiPlugin {
 
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        [
+        AppUpdateStatusBarStore.shared.start()
+        return [
             LumiMenuBarPopupItem(id: "\(info.id).popup", order: info.order) {
                 AppUpdateStatusBarPopupView(store: AppUpdateStatusBarStore.shared)
             }
