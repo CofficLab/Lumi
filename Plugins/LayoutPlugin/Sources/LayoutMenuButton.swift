@@ -3,6 +3,9 @@ import SwiftUI
 
 /// Layout menu for toggling the right ChatSection visibility.
 public struct LayoutMenuButton: View {
+    /// `Menu` + `.borderlessButton` does not reliably inherit parent `foregroundStyle`.
+    static let usesExplicitIconForeground = false
+
     let layoutContext: LayoutControlContext
 
     public init(layoutContext: LayoutControlContext) {
