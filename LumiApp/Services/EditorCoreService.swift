@@ -35,7 +35,7 @@ final class EditorCoreService: LumiEditorServicing {
         }
         self.core = core
         EditorLanguageRuntimeBridge.configure = { context in
-            await EditorExtensionRuntimeBootstrap.configureRuntime(context)
+            await EditorExtensionsBootstrap.configureRuntime(context)
         }
         configureLifecycle(
             persistenceRootURL: persistenceRootURL,

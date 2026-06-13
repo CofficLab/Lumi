@@ -11,7 +11,7 @@ public struct RequestLogDetailView: View {
     public var body: some View {
         StatusBarPopoverScaffold(
             title: LumiPluginLocalization.string("Request Log", bundle: .module),
-            systemImage: "doc.text.magnifyingglass"
+            systemImage: RequestLogPlugin.iconName
         ) {
             HStack(spacing: 12) {
                 statsSummary

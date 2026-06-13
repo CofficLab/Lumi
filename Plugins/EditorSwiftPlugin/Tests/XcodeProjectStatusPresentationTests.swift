@@ -1,0 +1,104 @@
+@testable import EditorSwiftPlugin
+import EditorService
+import Testing
+import XcodeKit
+
+@MainActor
+@Test func buildContextStatusDescriptionMapsKnownStates() {
+    let unknown = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(.unknown)
+    #expect(!unknown.isEmpty)
+    #expect(unknown == XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Unknown"))
+
+    let resolving = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(.resolving)
+    #expect(!resolving.isEmpty)
+    #expect(resolving == XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Resolving build context..."))
+
+    let available = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(
+        .available(.init(buildServerJSONPath: "/tmp/buildServer.json", workspacePath: "/tmp/App.xcodeproj", scheme: "App"))
+    )
+    #expect(available.contains("App"))
+
+    let unavailable = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(.unavailable("missing tool"))
+    #expect(unavailable.contains("missing tool"))
+}
+
+@MainActor
+@Test func buildContextStatusDescriptionParsesBridgeText() {
+    let parsed = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Available (scheme: Lumi)")
+    #expect(parsed.contains("Lumi"))
+    #expect(
+        XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Unavailable: xcode-build-server missing")
+            .contains("xcode-build-server missing")
+    )
+    #expect(
+        XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Not Initialized")
+        == XcodeProjectStatusPresentation.localizedBuildContextStatusDescription("Not Initialized")
+    )
+}
+
+@MainActor
+@Test func semanticReasonLocalizationRewritesKnownIds() {
+    let reason = XcodeSemanticAvailability.Reason(
+        id: "file-not-in-target",
+        severity: .warning,
+        title: "raw",
+        message: "Current file 'Feature.swift' is not in any target."
+    )
+    let localized = XcodeProjectStatusPresentation.localizedSemanticReason(reason)
+    #expect(localized.title != "raw")
+    #expect(localized.message.contains("Feature.swift"))
+}
+
+@MainActor
+@Test func semanticReasonSchemeExcludesTargetsParsesMessage() {
+    let reason = XcodeSemanticAvailability.Reason(
+        id: "scheme-excludes-targets",
+        severity: .warning,
+        title: "raw",
+        message: "Current scheme 'App' does not include WidgetExtension."
+    )
+    let localized = XcodeProjectStatusPresentation.localizedSemanticReason(reason)
+    #expect(localized.message.contains("App"))
+    #expect(localized.message.contains("WidgetExtension"))
+}
+
+@MainActor
+@Test func extractSingleQuotedValue() {
+    #expect(XcodeProjectStatusPresentation.extractSingleQuotedValue(from: "file 'MyFile.swift' missing") == "MyFile.swift")
+    #expect(XcodeProjectStatusPresentation.extractSingleQuotedValue(from: "no quotes") == nil)
+}
+
+@MainActor
+@Test func semanticStatusTextUsesBuildContextWhenNotIndexing() {
+    let ready = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .available(
+        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+    ))
+    #expect(!ready.isEmpty)
+    #expect(ready == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .available(
+        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+    )))
+
+    let resolving = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .resolving)
+    #expect(resolving == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .resolving))
+}
+
+@MainActor
+@Test func semanticStatusDescriptionUsesBuildContextWhenNotIndexing() {
+    let description = XcodeProjectStatusPresentation.semanticStatusDescription(
+        indexingTask: nil,
+        buildContextStatusDescription: "Unavailable: tool missing"
+    )
+    #expect(description.contains("tool missing"))
+}
+
+@MainActor
+@Test func semanticStatusAppearanceMapsStates() {
+    #expect(
+        XcodeProjectStatusPresentation.semanticStatusAppearance(isIndexing: true, buildContextStatus: .unknown)
+        == .indexing
+    )
+    #expect(
+        XcodeProjectStatusPresentation.semanticStatusAppearance(isIndexing: false, buildContextStatus: .needsResync)
+        == .needsResync
+    )
+}

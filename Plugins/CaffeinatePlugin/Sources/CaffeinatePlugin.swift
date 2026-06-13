@@ -33,7 +33,7 @@ public enum CaffeinatePlugin: LumiPlugin {
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
         [
-            LumiMenuBarPopupItem(id: "\(info.id).popup", order: info.order) {
+            LumiMenuBarPopupItem(id: "\(info.id).popup", order: -1) {
                 CaffeinateMenuBarPopupView()
             }
         ]

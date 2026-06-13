@@ -83,6 +83,20 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
         return [EditorWorkspaceFolder(uri: uri, name: name)]
     }
 
+    func serverConfig(for languageId: String, projectPath: String?) -> LSPConfig.ServerConfig? {
+        guard languageId == "vue", let projectPath,
+              let config = VolarServiceManager.serverConfig(projectPath: projectPath) else {
+            return nil
+        }
+
+        let serverPath = (projectPath as NSString).appendingPathComponent(config.serverBinary)
+        return LSPConfig.ServerConfig(
+            languageId: "vue",
+            execPath: config.nodePath,
+            arguments: [serverPath, "--stdio"]
+        )
+    }
+
     func initializationOptions(for languageId: String, projectPath: String) -> [String : String]? {
         // 尝试从 VolarServiceManager 获取完整配置
         if let config = VolarServiceManager.serverConfig(projectPath: projectPath) {

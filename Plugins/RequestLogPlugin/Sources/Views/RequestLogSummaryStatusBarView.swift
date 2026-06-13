@@ -9,7 +9,7 @@ struct RequestLogSummaryStatusBarView: View {
             popoverWidth: 680,
             id: "chat-request-log"
         ) {
-            Image(systemName: "doc.text.magnifyingglass")
+            Image(systemName: RequestLogPlugin.iconName)
                 .font(.appMicroEmphasized)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -24,7 +24,7 @@ private struct RequestLogSummaryDetailView: View {
     var body: some View {
         StatusBarPopoverScaffold(
             title: LumiPluginLocalization.string("Request Log", bundle: .module),
-            systemImage: "doc.text.magnifyingglass",
+            systemImage: RequestLogPlugin.iconName,
             subtitle: "\(entries.count) recent sends",
             headerAccessory: { EmptyView() },
             content: {

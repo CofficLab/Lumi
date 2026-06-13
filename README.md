@@ -97,19 +97,11 @@ git clone https://github.com/Coffic/Lumi.git
 cd Lumi
 ```
 
-### 2. Generate CodeLanguagesContainer
+### 2. Resolve Swift Packages
 
-`EditorLanguages` depends on a local binary framework that is not checked into Git
-(GitHub's 100 MB file limit). After a fresh clone, generate it before resolving
-Swift packages in Xcode (first run may take ~15 minutes):
+Language plugins bundle their own tree-sitter grammars via SPM. No separate `CodeLanguagesContainer.xcframework` build is required.
 
-```bash
-cd Packages/EditorLanguages
-./build_framework.sh
-cd ../..
-```
-
-See [Packages/EditorLanguages/README.md](Packages/EditorLanguages/README.md) for details.
+See [Packages/EditorLanguageRuntime/README.md](Packages/EditorLanguageRuntime/README.md).
 
 ### 3. Open in Xcode
 

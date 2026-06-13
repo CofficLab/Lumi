@@ -14,13 +14,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0")
+        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
+        .package(path: "../EditorLanguageRuntime"),
     ],
     targets: [
         .target(
             name: "EditorKernel",
             dependencies: [
-                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol")
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

@@ -9,7 +9,7 @@ import Foundation
 import TextFormation
 import TextStory
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftTreeSitter
 
 struct TagFilter: Filter {
@@ -24,7 +24,7 @@ struct TagFilter: Filter {
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"
     ]
 
-    var language: CodeLanguage
+    var language: EditorLanguageContext
     var indentOption: IndentOption
     var lineEnding: LineEnding
     var treeSitterClient: TreeSitterClient
@@ -116,9 +116,9 @@ struct TagFilter: Filter {
             openingTagId: queryResult.node.parent?.nodeType
         )
 
-        let openTags = try treeSitterClient.query(openQuery, matchingLanguages: [.html, .jsx, .tsx])
+        let openTags = try treeSitterClient.query(openQuery, matchingLanguages: Set(["html", "jsx", "tsx"]))
             .flatMap { $0.cursor.flatMap { $0.captures(named: "name") } }
-        let closeTags = try treeSitterClient.query(closeQuery, matchingLanguages: [.html, .jsx, .tsx])
+        let closeTags = try treeSitterClient.query(closeQuery, matchingLanguages: Set(["html", "jsx", "tsx"]))
             .flatMap { $0.cursor.flatMap { $0.captures(named: "name") } }
 
         if openTags.count > closeTags.count {
@@ -138,7 +138,7 @@ struct TagFilter: Filter {
     /// - Returns: A query to execute on a tree sitter tree, finding all matching nodes.
     private func tagQuery(
         _ language: Language,
-        id: TreeSitterLanguage,
+        id: String,
         tagName: String,
         opening: Bool,
         openingTagId: String?
@@ -158,18 +158,17 @@ struct TagFilter: Filter {
     ///   - opening: True, if querying the opening tag.
     ///   - openingTag: The ID of the original opening tag.
     /// - Returns: The node ID for the given language and whether or not it's an opening or closing tag.
-    private func tagId(for id: TreeSitterLanguage, opening: Bool, openingTag: String?) throws -> String {
+    private func tagId(for id: String, opening: Bool, openingTag: String?) throws -> String {
         switch id {
-        case .html:
+        case "html":
             if opening {
                 return "start_tag"
             } else {
                 return "end_tag"
             }
-        case .jsx, .tsx:
+        case "jsx", "tsx":
             if opening {
-                // Opening tag, match the given opening tag.
-                return openingTag ?? (id == .jsx ? "jsx_opening_element" : "tsx_opening_element")
+                return openingTag ?? (id == "jsx" ? "jsx_opening_element" : "tsx_opening_element")
             } else if let openingTag {
                 // Closing tag, match the opening tag ID.
                 if openingTag == "jsx_opening_element" {
@@ -190,11 +189,11 @@ struct TagFilter: Filter {
     ///   - id: The language to get the ID for.
     ///   - opening: True, if querying the opening tag.
     /// - Returns: A set of possible node IDs for the language.
-    private func tagIds(for id: TreeSitterLanguage, opening: Bool) throws -> Set<String> {
+    private func tagIds(for id: String, opening: Bool) throws -> Set<String> {
         switch id {
-        case .html:
+        case "html":
             return [opening ? "start_tag" : "end_tag"]
-        case .jsx, .tsx:
+        case "jsx", "tsx":
             return [
                 opening ? "jsx_opening_element" : "jsx_closing_element",
                 opening ? "tsx_opening_element" : "tsx_closing_element"
@@ -207,11 +206,11 @@ struct TagFilter: Filter {
     /// Get the name of the node that contains the tag's name.
     /// - Parameter id: The language to get the name for.
     /// - Returns: The node ID for a node that contains the tag's name.
-    private func tagNameId(for id: TreeSitterLanguage) throws -> String {
+    private func tagNameId(for id: String) throws -> String {
         switch id {
-        case .html:
+        case "html":
             return "tag_name"
-        case .jsx, .tsx:
+        case "jsx", "tsx":
             return "identifier"
         default:
             throw Self.Error.invalidLanguage

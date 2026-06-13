@@ -1,35 +1,58 @@
+import EditorSwiftPlugin
+import LSPServiceEditorPlugin
+import LSPRealtimeSignalsEditorPlugin
+import LSPSheetsEditorPlugin
+import LSPToolbarEditorPlugin
+import LSPCodeActionEditorPlugin
+import LSPCallHierarchyEditorPlugin
+import LSPWorkspaceSymbolEditorPlugin
+import LSPDocumentHighlightEditorPlugin
+import LSPInlayHintEditorPlugin
+import LSPSignatureHelpEditorPlugin
+import LSPFoldingRangeEditorPlugin
+import LSPDocumentColorEditorPlugin
+import LSPDocumentLinkEditorPlugin
+import LSPSelectionRangeEditorPlugin
+import EditorLSPContextCommandsPlugin
 import EditorChatIntegrationPlugin
-import EditorCSSPlugin
+import EditorMultiCursorCommandsPlugin
+import EditorVuePlugin
+import EditorJSPlugin
 import EditorGoPlugin
 import EditorHTMLPlugin
-import EditorJSPlugin
+import EditorCSSPlugin
 import EditorMarkdownPlugin
-import EditorXcodePlugin
-import EditorLSPContextCommandsPlugin
-import EditorMultiCursorCommandsPlugin
-import EditorSwiftKeywordHoverPlugin
-import EditorSwiftPrimitiveTypesPlugin
-import EditorSwiftSelectionCodeActionPlugin
-import EditorVuePlugin
+import EditorAgdaPlugin
+import EditorBashPlugin
+import EditorCPlugin
+import EditorCSharpPlugin
+import EditorDartPlugin
+import EditorDockerfilePlugin
+import EditorElixirPlugin
+import EditorHaskellPlugin
+import EditorJSONPlugin
+import EditorJavaPlugin
+import EditorJuliaPlugin
+import EditorKotlinPlugin
+import EditorLuaPlugin
+import EditorOCamlPlugin
+import EditorPHPPlugin
+import EditorPerlPlugin
+import EditorPythonPlugin
+import EditorRegexPlugin
+import EditorRubyPlugin
+import EditorRustPlugin
+import EditorSQLPlugin
+import EditorScalaPlugin
+import EditorTOMLPlugin
+import EditorVerilogPlugin
+import EditorYAMLPlugin
+import EditorZigPlugin
 import LumiCoreKit
-import LSPCallHierarchyEditorPlugin
-import LSPCodeActionEditorPlugin
-import LSPDocumentColorEditorPlugin
-import LSPDocumentHighlightEditorPlugin
-import LSPDocumentLinkEditorPlugin
-import LSPFoldingRangeEditorPlugin
-import LSPInlayHintEditorPlugin
-import LSPRealtimeSignalsEditorPlugin
-import LSPSelectionRangeEditorPlugin
-import LSPServiceEditorPlugin
-import LSPSheetsEditorPlugin
-import LSPSignatureHelpEditorPlugin
-import LSPToolbarEditorPlugin
-import LSPWorkspaceSymbolEditorPlugin
 
 public enum EditorExtensionPluginRegistry {
     public static let plugins: [any LumiEditorExtensionRegistering.Type] = [
-        EditorXcodeEditorPlugin.self,
+        EditorSwiftEditorPlugin.self,
         LSPServiceEditorPlugin.self,
         LSPRealtimeSignalsEditorPlugin.self,
         LSPSheetsEditorPlugin.self,
@@ -53,8 +76,31 @@ public enum EditorExtensionPluginRegistry {
         EditorHTMLPlugin.self,
         EditorCSSPlugin.self,
         EditorMarkdownPlugin.self,
-        EditorSwiftPrimitiveTypesPlugin.self,
-        EditorSwiftSelectionCodeActionPlugin.self,
-        EditorSwiftKeywordHoverPlugin.self,
+        EditorAgdaPlugin.self,
+        EditorBashPlugin.self,
+        EditorCPlugin.self,
+        EditorCSharpPlugin.self,
+        EditorDartPlugin.self,
+        EditorDockerfilePlugin.self,
+        EditorElixirPlugin.self,
+        EditorHaskellPlugin.self,
+        EditorJSONPlugin.self,
+        EditorJavaPlugin.self,
+        EditorJuliaPlugin.self,
+        EditorKotlinPlugin.self,
+        EditorLuaPlugin.self,
+        EditorOCamlPlugin.self,
+        EditorPHPPlugin.self,
+        EditorPerlPlugin.self,
+        EditorPythonPlugin.self,
+        EditorRegexPlugin.self,
+        EditorRubyPlugin.self,
+        EditorRustPlugin.self,
+        EditorSQLPlugin.self,
+        EditorScalaPlugin.self,
+        EditorTOMLPlugin.self,
+        EditorVerilogPlugin.self,
+        EditorYAMLPlugin.self,
+        EditorZigPlugin.self,
     ]
 }

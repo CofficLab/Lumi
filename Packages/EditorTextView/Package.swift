@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorTextView",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         // A Fast, Efficient text view for code.
@@ -35,7 +36,10 @@ let package = Package(
                 "EditorTextViewObjC"
             ],
             path: "Sources",
-            exclude: ["EditorTextViewObjC"]
+            exclude: ["EditorTextViewObjC"],
+            resources: [
+                .process("Resources")
+            ]
         ),
 
         // ObjC addons

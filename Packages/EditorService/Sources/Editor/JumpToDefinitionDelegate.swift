@@ -4,7 +4,7 @@ import SwiftUI
 import Combine
 import EditorSource
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftTreeSitter
 import LanguageServerProtocol
 import MagicAlert

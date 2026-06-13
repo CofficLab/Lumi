@@ -148,7 +148,11 @@ public final class LSPService: ObservableObject, SuperLog {
             server = nil
         }
         
-        guard let config = LSPConfig.serverConfig(for: languageId) else {
+        guard let config = LSPConfig.serverConfig(for: languageId)
+            ?? Self.languageIntegrationCapability(for: languageId, projectPath: projectPath)?.serverConfig(
+                for: languageId,
+                projectPath: projectPath
+            ) else {
             if Self.verbose {
                             Self.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
             }

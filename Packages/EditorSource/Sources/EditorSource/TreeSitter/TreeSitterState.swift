@@ -7,11 +7,11 @@
 
 import Foundation
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 
 /// TreeSitterState contains the tree of language layers that make up the tree-sitter document.
 public final class TreeSitterState {
-    private(set) var primaryLayer: CodeLanguage
+    private(set) var primaryLayer: EditorLanguageContext
     private(set) var layers: [LanguageLayer] = []
 
     // MARK: - Init
@@ -22,7 +22,7 @@ public final class TreeSitterState {
     ///   - readCallback: Callback used to read text for a specific range.
     ///   - readBlock: Callback used to read blocks of text.
     init(
-        codeLanguage: CodeLanguage,
+        codeLanguage: EditorLanguageContext,
         readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
         readBlock: @escaping Parser.ReadBlock
     ) {
@@ -32,7 +32,7 @@ public final class TreeSitterState {
     }
 
     /// Private initializer used by `copy`
-    private init(codeLanguage: CodeLanguage, layers: [LanguageLayer]) {
+    private init(codeLanguage: EditorLanguageContext, layers: [LanguageLayer]) {
         self.primaryLayer = codeLanguage
         self.layers = layers
     }
@@ -49,23 +49,27 @@ public final class TreeSitterState {
 
     /// Sets the language for the state. Removing all existing layers.
     /// - Parameter codeLanguage: The language to use.
-    private func setLanguage(_ codeLanguage: CodeLanguage) {
+    private func setLanguage(_ codeLanguage: EditorLanguageContext) {
         layers.removeAll()
 
         primaryLayer = codeLanguage
+        let registry = LanguageRegistry.shared
+        let tsLanguage = registry.treeSitterLanguage(for: codeLanguage)
+        let supportsInjections = registry.grammar(for: codeLanguage.highlightLanguageId)?
+            .injectionQueryURL() != nil
         layers = [
             LanguageLayer(
-                id: codeLanguage.id,
-                tsLanguage: codeLanguage.language,
+                id: codeLanguage.highlightLanguageId,
+                tsLanguage: tsLanguage,
                 parser: Parser(),
-                supportsInjections: codeLanguage.additionalHighlights?.contains("injections") ?? false,
+                supportsInjections: supportsInjections,
                 tree: nil,
-                languageQuery: TreeSitterModel.shared.query(for: codeLanguage.id),
+                languageQuery: registry.highlightQuery(for: codeLanguage),
                 ranges: []
             )
         ]
 
-        guard let treeSitterLanguage = codeLanguage.language else { return }
+        guard let treeSitterLanguage = tsLanguage else { return }
         try? layers[0].parser.setLanguage(treeSitterLanguage)
     }
 
@@ -117,22 +121,24 @@ public final class TreeSitterState {
     ///   - layerId: A language ID to add as a layer.
     ///   - readBlock: Completion called for efficient string lookup.
     public func addLanguageLayer(
-        layerId: TreeSitterLanguage,
+        layerId: String,
         readBlock: @escaping Parser.ReadBlock
     ) -> LanguageLayer? {
-        guard let language = CodeLanguage.allLanguages.first(where: { $0.id == layerId }),
-              let parserLanguage = language.language
+        let registry = LanguageRegistry.shared
+        guard let context = registry.context(forHighlightGrammarId: layerId),
+              let parserLanguage = registry.treeSitterLanguage(for: context)
         else {
             return nil
         }
 
+        let supportsInjections = registry.grammar(for: layerId)?.injectionQueryURL() != nil
         let newLayer = LanguageLayer(
             id: layerId,
-            tsLanguage: language.language,
+            tsLanguage: parserLanguage,
             parser: Parser(),
-            supportsInjections: language.additionalHighlights?.contains("injections") ?? false,
+            supportsInjections: supportsInjections,
             tree: nil,
-            languageQuery: TreeSitterModel.shared.query(for: layerId),
+            languageQuery: registry.highlightQuery(for: context),
             ranges: []
         )
 
@@ -226,18 +232,14 @@ public final class TreeSitterState {
         var updatedRanges = IndexSet()
 
         for (languageName, ranges) in languageRanges {
-            guard let treeSitterLanguage = TreeSitterLanguage(rawValue: languageName) else {
-                continue
-            }
-
-            if treeSitterLanguage == primaryLayer.id {
+            if languageName == primaryLayer.highlightLanguageId {
                 continue
             }
 
             for range in ranges {
                 // Temp layer object
                 let layer = LanguageLayer(
-                    id: treeSitterLanguage,
+                    id: languageName,
                     tsLanguage: nil,
                     parser: Parser(),
                     supportsInjections: false,
@@ -249,7 +251,7 @@ public final class TreeSitterState {
                     touchedLayers.remove(layer)
                 } else {
                     // New range, make a new layer!
-                    if let addedLayer = addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock) {
+                    if let addedLayer = addLanguageLayer(layerId: languageName, readBlock: readBlock) {
                         addedLayer.ranges = [range.range]
                         addedLayer.parser.includedRanges = addedLayer.ranges.compactMap { $0.tsRange }
                         addedLayer.tree = addedLayer.parser.parse(tree: nil as Tree?, readBlock: readBlock)

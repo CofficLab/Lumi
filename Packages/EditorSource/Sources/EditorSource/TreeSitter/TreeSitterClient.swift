@@ -7,7 +7,7 @@
 
 import Foundation
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftTreeSitter
 import OSLog
 
@@ -115,9 +115,9 @@ public final class TreeSitterClient: HighlightProviding {
     ///   - textView: The text view to use as a data source.
     ///               A weak reference will be kept for the lifetime of this object.
     ///   - codeLanguage: The language to use for parsing.
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
+    public func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {
         if Self.verbose {
-                    Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.id.rawValue, privacy: .public)")
+                    Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.languageId, privacy: .public)")
         }
 
         let readBlock = textView.createReadBlock()

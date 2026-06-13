@@ -5,28 +5,6 @@ import SwiftUI
 import SuperLogKit
 import os
 
-/// 编辑器支持的语言 ID（内核定义，不依赖具体 LSP 实现）
-enum EditorLanguageID {
-    static let all: [String] = [
-        "swift",
-        "python",
-        "typescript",
-        "javascript",
-        "html",
-        "css",
-        "scss",
-        "sass",
-        "less",
-        "rust",
-        "go",
-        "cpp",
-        "c",
-        "objective-c",
-        "objective-cpp",
-        "vue",
-    ]
-}
-
 /// 编辑器扩展注册中心
 /// 同时承担原 `EditorPluginManager` 的插件安装职责：
 /// - 维护 `installedPlugins` 列表（按 order 排序）
@@ -154,7 +132,21 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         _semanticTokenProvider = nil
         _diagnosticsProvider = nil
         railOutlineProvidersByLanguageID.removeAll()
+        LanguageRegistry.shared.reset()
+        LanguageQueryRegistry.shared.reset()
     }
+
+    // MARK: - Language Registration
+
+    public func registerLanguage(_ descriptor: EditorLanguageDescriptor) {
+        LanguageRegistry.shared.register(descriptor)
+    }
+
+    public func registerGrammarProvider(_ provider: any SuperEditorLanguageGrammarProvider) {
+        LanguageRegistry.shared.registerGrammarProvider(provider)
+    }
+
+    public var languageRegistry: LanguageRegistry { .shared }
 
     public func registerRailOutlineProvider(
         languageId: String,

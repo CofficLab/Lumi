@@ -251,4 +251,18 @@ final class PluginService: ObservableObject {
     private func userEnabledValue(for plugin: any LumiEditorExtensionRegistering.Type) -> Bool {
         enabledOverrides[plugin.extensionPluginInfo.id] ?? plugin.extensionPluginPolicy.enabledByDefault
     }
+
+    /// Registers all plugin contributions with the appropriate registries.
+    /// Should be called after plugins are loaded and enabled.
+    @MainActor
+    func registerPluginContributions(context: LumiPluginContext) {
+        registerLogoContributions(context: context)
+    }
+
+    private func registerLogoContributions(context: LumiPluginContext) {
+        let allItems = enabledPlugins.flatMap { plugin in
+            plugin.logoItems(context: context)
+        }
+        LogoRegistry.shared.register(allItems)
+    }
 }

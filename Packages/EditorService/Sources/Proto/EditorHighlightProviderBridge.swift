@@ -10,7 +10,7 @@ public final class DocumentHighlightHighlightAdapter: HighlightProviding {
         self.provider = provider
     }
 
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {}
+    public func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {}
 
     public func queryHighlightsFor(
         textView: TextView,
@@ -51,7 +51,7 @@ public final class StaticHighlightProviderAdapter: HighlightProviding {
         self.highlightsFor = highlightsFor
     }
 
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {}
+    public func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {}
 
     public func applyEdit(
         textView: TextView,

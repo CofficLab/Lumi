@@ -56,6 +56,68 @@ struct StringCatalogCleanerTests {
     }
 
     @Test
+    func removesSingleStaleEntry() throws {
+        let result = try StringCatalogCleaner.removingStaleEntry(withKey: "Active", from: """
+        {
+          "sourceLanguage": "en",
+          "strings": {
+            "Active": {
+              "extractionState": "stale",
+              "localizations": {
+                "en": {
+                  "stringUnit": {
+                    "state": "translated",
+                    "value": "Active"
+                  }
+                }
+              }
+            },
+            "Connected": {
+              "extractionState": "stale",
+              "localizations": {
+                "en": {
+                  "stringUnit": {
+                    "state": "translated",
+                    "value": "Connected"
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)
+
+        let catalog = try StringCatalogParser.parse(result.source, locale: Locale(identifier: "en"))
+        #expect(result.removedCount == 1)
+        #expect(catalog.entries.map(\.key) == ["Connected"])
+    }
+
+    @Test
+    func ignoresNonStaleEntryWhenRemovingSingleKey() throws {
+        let source = """
+        {
+          "sourceLanguage": "en",
+          "strings": {
+            "Connected": {
+              "localizations": {
+                "en": {
+                  "stringUnit": {
+                    "state": "translated",
+                    "value": "Connected"
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+        let result = try StringCatalogCleaner.removingStaleEntry(withKey: "Connected", from: source)
+
+        #expect(result.removedCount == 0)
+        #expect(result.source == source)
+    }
+
+    @Test
     func ignoresMalformedCatalogShape() throws {
         let source = """
         {

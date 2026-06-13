@@ -34,4 +34,10 @@ public enum EditorExtensionsBootstrap {
 
         registry.recordInstalledPlugins(records)
     }
+
+    public static func configureRuntime(_ context: PluginRuntimeContext) async {
+        for pluginType in EditorExtensionPluginRegistry.plugins {
+            await pluginType.configureEditorRuntime(context)
+        }
+    }
 }

@@ -375,6 +375,75 @@
         }
       }
     },
+    "Ask AI to fix String Catalog issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI to fix String Catalog issues"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请 AI 修复字符串目录问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請 AI 修復字串目錄問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請 AI 修復字串目錄問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請 AI 修復字串目錄問題"
+          }
+        }
+      }
+    },
+    "Ask AI to fix translation issues": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI to fix translation issues"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让 AI 修复翻译问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓 AI 修復翻譯問題"
+          }
+        }
+      }
+    },
     "Build log saved:": {
       "localizations": {
         "en": {
@@ -2586,6 +2655,40 @@
         }
       }
     },
+    "Remove Stale Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Stale Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除过期键"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除過期鍵"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除過期鍵"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除過期鍵"
+          }
+        }
+      }
+    },
     "Removed %d stale key(s) from %d String Catalog file(s).": {
       "localizations": {
         "en": {
@@ -3334,36 +3437,274 @@
         }
       }
     },
-    "Ask AI to fix translation issues": {
+    "Error: file_path is required": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask AI to fix translation issues"
+            "value": "Error: file_path is required"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "让 AI 修复翻译问题"
+            "value": "错误：file_path 参数为必填"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "讓 AI 修復翻譯問題"
+            "value": "錯誤：file_path 參數為必填"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "讓 AI 修復翻譯問題"
+            "value": "錯誤：file_path 參數為必填"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "讓 AI 修復翻譯問題"
+            "value": "錯誤：file_path 參數為必填"
+          }
+        }
+      }
+    },
+    "Error: file is not an xcstrings file: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: file is not an xcstrings file: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：文件不是 xcstrings 格式：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：檔案不是 xcstrings 格式：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：檔案不是 xcstrings 格式：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：檔案不是 xcstrings 格式：%@"
+          }
+        }
+      }
+    },
+    "Error: file not found: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: file not found: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：未找到文件：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：未找到檔案：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：未找到檔案：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：未找到檔案：%@"
+          }
+        }
+      }
+    },
+    "Error: failed to read file: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: failed to read file: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：读取文件失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：讀取檔案失敗：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：讀取檔案失敗：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：讀取檔案失敗：%@"
+          }
+        }
+      }
+    },
+    "Error: failed to clean string catalog: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: failed to clean string catalog: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：清理字符串目录失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：清理字串目錄失敗：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：清理字串目錄失敗：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：清理字串目錄失敗：%@"
+          }
+        }
+      }
+    },
+    "No stale keys found in the string catalog.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stale keys found in the string catalog."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字符串目录中未发现废弃的 key。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字串目錄中未發現废弃的 key。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字串目錄中未發現废弃的 key。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字串目錄中未發現废弃的 key。"
+          }
+        }
+      }
+    },
+    "Error: failed to write cleaned content: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: failed to write cleaned content: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：写入清理后的内容失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：寫入清理後的內容失敗：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：寫入清理後的內容失敗：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：寫入清理後的內容失敗：%@"
+          }
+        }
+      }
+    },
+    "✅ Cleaned %lld stale key(s) from %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Cleaned %lld stale key(s) from %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 已从 %2$@ 清理 %1$lld 个废弃的 key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 已從 %2$@ 清理 %1$lld 個废弃的 key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 已從 %2$@ 清理 %1$lld 個废弃的 key"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 已從 %2$@ 清理 %1$lld 個废弃的 key"
           }
         }
       }

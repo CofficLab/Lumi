@@ -1,12 +1,20 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ModelProviderPicker: View {
     @LumiTheme private var theme
+    @ObservedObject private var chatService: ChatService
 
-    let chatService: any LumiChatServicing
     @State private var isPresented = false
+
+    init(chatService: any LumiChatServicing) {
+        guard let chatService = chatService as? ChatService else {
+            preconditionFailure("ModelProviderPicker requires ChatService")
+        }
+        _chatService = ObservedObject(wrappedValue: chatService)
+    }
 
     var body: some View {
         Button {

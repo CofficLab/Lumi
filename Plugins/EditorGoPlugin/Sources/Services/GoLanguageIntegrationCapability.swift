@@ -24,8 +24,18 @@ public final class GoLanguageIntegrationCapability: SuperEditorLanguageIntegrati
         return [EditorWorkspaceFolder(uri: url.absoluteString, name: url.lastPathComponent)]
     }
 
-    public func initializationOptions(for languageId: String, projectPath: String) -> [String: String]? {
+    public     func initializationOptions(for languageId: String, projectPath: String) -> [String: String]? {
         guard languageId == "go" else { return nil }
         return GoLSPConfig.resolve()?.initializationOptions
+    }
+
+    func serverConfig(for languageId: String, projectPath: String?) -> LSPConfig.ServerConfig? {
+        guard languageId == "go", let config = GoLSPConfig.resolve() else { return nil }
+        return LSPConfig.ServerConfig(
+            languageId: "go",
+            execPath: config.goplsPath,
+            arguments: config.serverArguments,
+            env: config.processEnvironment
+        )
     }
 }

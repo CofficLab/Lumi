@@ -21,6 +21,10 @@ private enum QuickFileSearchSignpost {
     }
 }
 
+private enum QuickFileSearchLog {
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quick-file-search")
+}
+
 /// 文件搜索服务
 ///
 /// 负责文件索引、搜索算法和结果排序
@@ -54,7 +58,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     private init() {
         if Self.verbose {
-            QuickFileSearchPlugin.logger.info("\(Self.t)✅ FileSearchService 初始化完成")
+            QuickFileSearchLog.logger.info("\(Self.t)✅ FileSearchService 初始化完成")
         }
     }
 
@@ -91,7 +95,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
     /// 选择文件并更新 WindowProjectVM
     public func selectFile(_ result: FileResult, windowId: UUID? = nil) {
         if Self.verbose {
-            QuickFileSearchPlugin.logger.info("\(Self.t)📄 选择文件: \(result.relativePath)")
+            QuickFileSearchLog.logger.info("\(Self.t)📄 选择文件: \(result.relativePath)")
         }
 
         QuickFileSearchBridge.selectFileHandler?(result.path, windowId)
@@ -156,7 +160,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
                 let duration = Date().timeIntervalSince(startTime)
                 if Self.verbose {
-                    QuickFileSearchPlugin.logger.info("\(Self.t)📦 索引完成: \(files.count) 个文件，耗时 \(String(format: "%.2f", duration))s")
+                    QuickFileSearchLog.logger.info("\(Self.t)📦 索引完成: \(files.count) 个文件，耗时 \(String(format: "%.2f", duration))s")
                 }
             }
         }
@@ -205,7 +209,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
             let duration = Date().timeIntervalSince(startTime)
             if Self.verbose {
-                QuickFileSearchPlugin.logger.info("\(Self.t)🔍 搜索完成: '\(query)' -> \(results.count) 个结果，耗时 \(String(format: "%.2f", duration * 1000))ms")
+                QuickFileSearchLog.logger.info("\(Self.t)🔍 搜索完成: '\(query)' -> \(results.count) 个结果，耗时 \(String(format: "%.2f", duration * 1000))ms")
             }
         }
     }

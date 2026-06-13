@@ -42,6 +42,8 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorVuePluginDescriptor.descriptor)
+
         // 基础补全：Vue 指令、内置组件、宏、修饰符
         registry.registerCompletionContributor(VueCompletionContributor())
 

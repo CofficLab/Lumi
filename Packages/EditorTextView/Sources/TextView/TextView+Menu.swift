@@ -14,9 +14,9 @@ extension TextView {
         let menu = NSMenu()
 
         menu.items = [
-            NSMenuItem(title: "Cut", action: #selector(cut(_:)), keyEquivalent: "x"),
-            NSMenuItem(title: "Copy", action: #selector(copy(_:)), keyEquivalent: "c"),
-            NSMenuItem(title: "Paste", action: #selector(paste(_:)), keyEquivalent: "v")
+            NSMenuItem(title: String(localized: "Cut", bundle: .module), action: #selector(cut(_:)), keyEquivalent: "x"),
+            NSMenuItem(title: String(localized: "Copy", bundle: .module), action: #selector(copy(_:)), keyEquivalent: "c"),
+            NSMenuItem(title: String(localized: "Paste", bundle: .module), action: #selector(paste(_:)), keyEquivalent: "v")
         ]
 
         return menu

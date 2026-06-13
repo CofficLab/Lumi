@@ -31,7 +31,7 @@ import Testing
     )
     let items = RequestLogPlugin.statusBarItems(context: context)
     #expect(items.count == 1)
-    #expect(items.first?.systemImage == "doc.text.magnifyingglass")
+    #expect(items.first?.systemImage == "list.clipboard.fill")
 }
 
 @MainActor

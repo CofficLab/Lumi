@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 
 extension TreeSitterClient {
     func queryHighlightsForRange(range: NSRange) -> [HighlightRange] {
@@ -16,7 +16,7 @@ extension TreeSitterClient {
         var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
 
-        for layer in state.layers where layer.id != state.primaryLayer.id {
+        for layer in state.layers where layer.id != state.primaryLayer.highlightLanguageId {
             // Query injected only if a layer's ranges intersects with `range`
             for layerRange in layer.ranges {
                 if let rangeIntersection = range.intersection(layerRange) {
@@ -68,7 +68,7 @@ extension TreeSitterClient {
         var highlights: [HighlightRange] = []
 
         // See https://github.com/CodeEditApp/CodeEditSourceEditor/pull/228
-        if layer.id == .jsdoc {
+        if layer.id == "jsdoc" {
             highlights.append(HighlightRange(range: range, capture: .comment))
         }
 

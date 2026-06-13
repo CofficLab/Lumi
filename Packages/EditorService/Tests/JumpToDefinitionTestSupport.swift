@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import EditorSource
-import EditorLanguages
+import EditorLanguageRuntime
 import EditorTextView
 import Foundation
 import LanguageServerProtocol
@@ -39,8 +39,33 @@ enum JumpToDefinitionTestSupport {
     }
     """
 
-    static func swiftLanguage() -> CodeLanguage {
-        CodeLanguage.allLanguages.first { $0.tsName == "swift" } ?? CodeLanguage.allLanguages[0]
+    static func swiftLanguage() -> EditorLanguageContext {
+        LanguageRegistry.shared.context(for: "swift")
+            ?? EditorLanguageContext(
+                descriptor: EditorLanguageDescriptor(
+                    languageId: "swift",
+                    displayName: "Swift",
+                    fileExtensions: ["swift"],
+                    highlightLanguageId: "swift"
+                )
+            )
+    }
+
+    static func parseSwiftTree(for content: String) throws -> (MutableTree, Node) {
+        let language = swiftLanguage()
+        try XCTSkipIf(
+            LanguageRegistry.shared.treeSitterLanguage(for: language) == nil,
+            "tree_sitter_swift is unavailable; enable EditorSwiftPlugin"
+        )
+        guard let parserLanguage = LanguageRegistry.shared.treeSitterLanguage(for: language) else {
+            throw ParseError.missingLanguage
+        }
+        let parser = Parser()
+        try parser.setLanguage(parserLanguage)
+        guard let tree = parser.parse(content), let root = tree.rootNode else {
+            throw ParseError.missingTree
+        }
+        return (tree, root)
     }
 
     static func symbolRange(in text: String, symbol: String, occurrence: Int = 0) -> NSRange {
@@ -64,23 +89,6 @@ enum JumpToDefinitionTestSupport {
 
         XCTFail("Symbol '\(symbol)' occurrence \(occurrence) not found")
         return NSRange(location: 0, length: 0)
-    }
-
-    static func parseSwiftTree(for content: String) throws -> (MutableTree, Node) {
-        let language = swiftLanguage()
-        try XCTSkipIf(
-            language.language == nil,
-            "tree_sitter_swift is unavailable; build CodeLanguagesContainer.xcframework with ./build_framework.sh"
-        )
-        guard let parserLanguage = language.language else {
-            throw ParseError.missingLanguage
-        }
-        let parser = Parser()
-        try parser.setLanguage(parserLanguage)
-        guard let tree = parser.parse(content), let root = tree.rootNode else {
-            throw ParseError.missingTree
-        }
-        return (tree, root)
     }
 
     static func cursorNode(in tree: MutableTree, at location: Int, content: String) throws -> Node {

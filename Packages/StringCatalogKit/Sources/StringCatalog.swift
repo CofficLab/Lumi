@@ -110,6 +110,13 @@ public struct StringCatalog: Equatable, Sendable {
         entries.filter { $0.extractionState == "stale" }.count
     }
 
+    public var staleEntryKeys: [String] {
+        entries
+            .filter { $0.extractionState == "stale" }
+            .map(\.key)
+            .sorted()
+    }
+
     /// 检测翻译问题：未翻译和缺失翻译。
     public var translationIssues: TranslationIssuesSummary {
         let nonSourceLanguages = languages.filter { !$0.isSourceLanguage }.map(\.id)
