@@ -1,3 +1,4 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -5,12 +6,25 @@ import SwiftUI
 struct ModelSelectorView: View {
     @LumiTheme private var theme
 
-    let chatService: any LumiChatServicing
+    @ObservedObject private var chatService: ChatService
     let conversationID: UUID?
     let onClose: () -> Void
 
     @State private var selectedTab: ModelSelectorTab = .current
     @State private var searchText = ""
+
+    init(
+        chatService: any LumiChatServicing,
+        conversationID: UUID?,
+        onClose: @escaping () -> Void
+    ) {
+        guard let chatService = chatService as? ChatService else {
+            preconditionFailure("ModelSelectorView requires ChatService")
+        }
+        _chatService = ObservedObject(wrappedValue: chatService)
+        self.conversationID = conversationID
+        self.onClose = onClose
+    }
 
     var body: some View {
         HStack(spacing: 0) {
