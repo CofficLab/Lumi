@@ -12,19 +12,19 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chinese"
+            "value": "中文"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chinese"
+            "value": "中文"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chinese"
+            "value": "中文"
           }
         }
       }
@@ -40,19 +40,19 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "English"
+            "value": "英语"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "English"
+            "value": "英語"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "English"
+            "value": "英語"
           }
         }
       }
