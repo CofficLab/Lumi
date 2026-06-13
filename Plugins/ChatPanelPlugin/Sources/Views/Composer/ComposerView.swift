@@ -1,4 +1,5 @@
 import EditorChatInputKit
+import AppKit
 import LumiUI
 import SwiftUI
 import LumiCoreKit
@@ -31,6 +32,7 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker
             ChatInputEditorView(
                 text: $text,
                 height: $inputHeight,
+                textColor: NSColor(theme.textPrimary),
                 onSubmit: sendIfPossible,
                 onEnter: sendIfPossible,
                 onEscape: onEscape,
