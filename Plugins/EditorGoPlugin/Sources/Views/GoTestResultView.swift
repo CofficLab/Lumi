@@ -1,7 +1,7 @@
 import SwiftUI
 import LumiCoreKit
 import LumiUI
-import EditorGoCore
+
 
 /// Go 测试结果面板视图
 ///

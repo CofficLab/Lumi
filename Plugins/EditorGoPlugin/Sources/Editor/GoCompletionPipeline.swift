@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import EditorGoCore
+
 
 /// Go 轻量补全管线。
 ///
@@ -11,7 +11,7 @@ public final class GoCompletionContributor: SuperEditorCompletionContributor {
 
     public func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion] {
         guard context.languageId == "go" else { return [] }
-        return EditorGoCore.GoCompletionPipeline
+        return GoCompletionPipeline
             .suggestions(prefix: context.prefix, isTypeContext: context.isTypeContext)
             .map {
                 EditorCompletionSuggestion(

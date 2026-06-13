@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import EditorGoCore
+
 import SwiftUI
 import LumiCoreKit
 

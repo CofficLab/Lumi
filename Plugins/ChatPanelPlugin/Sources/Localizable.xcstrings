@@ -70,6 +70,7 @@
       }
     },
     "%lld models" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,6 +105,7 @@
       }
     },
     "Active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -241,6 +243,7 @@
       }
     },
     "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -531,6 +534,7 @@
       }
     },
     "Enable automatic routing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -635,6 +639,7 @@
       }
     },
     "Lumi will choose a provider and model based on tools, message size, and availability." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -778,6 +783,7 @@
 
     },
     "Providers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -815,6 +821,7 @@
 
     },
     "Registered Providers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1156,6 +1163,7 @@
       }
     },
     "Search models or providers..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1190,6 +1198,7 @@
       }
     },
     "Select Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1400,6 +1409,7 @@
       }
     },
     "Usage Signals" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
