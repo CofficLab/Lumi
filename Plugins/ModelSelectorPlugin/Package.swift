@@ -15,22 +15,17 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../LLMAvailabilityPlugin"),
     ],
     targets: [
         .target(
             name: "ModelSelectorPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LLMAvailabilityPlugin", package: "LLMAvailabilityPlugin"),
             ],
             path: "Sources",
             resources: [
@@ -39,7 +34,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ModelSelectorPluginTests",
-            dependencies: ["ModelSelectorPlugin"],
+            dependencies: [
+                "ModelSelectorPlugin",
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
+            ],
             path: "Tests"
         )
     ]

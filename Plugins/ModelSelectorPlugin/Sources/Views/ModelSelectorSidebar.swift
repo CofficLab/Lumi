@@ -2,12 +2,12 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ChatModelSelectorSidebar: View {
+struct ModelSelectorSidebar: View {
     @LumiTheme private var theme
 
     let providers: [LumiLLMProviderInfo]
     let selectedProviderID: String?
-    @Binding var selectedTab: ChatModelSelectorTab
+    @Binding var selectedTab: ModelSelectorTab
 
     var body: some View {
         VStack(spacing: 4) {
@@ -17,7 +17,7 @@ struct ChatModelSelectorSidebar: View {
             quickTabButton(tab: .auto, icon: "wand.and.sparkles", title: "Auto")
             quickTabButton(tab: .availability, icon: "network", title: "Availability")
 
-            ChatDivider(axis: .horizontal)
+            ModelSelectorDivider(axis: .horizontal)
                 .padding(.vertical, 4)
 
             Text(verbatim: LumiPluginLocalization.string("Providers", bundle: .module))
@@ -35,7 +35,7 @@ struct ChatModelSelectorSidebar: View {
                 }
             }
 
-            ChatDivider(axis: .horizontal)
+            ModelSelectorDivider(axis: .horizontal)
                 .padding(.vertical, 4)
 
             quickTabButton(tab: .all, icon: "globe", title: "All")
@@ -43,7 +43,7 @@ struct ChatModelSelectorSidebar: View {
         .padding()
     }
 
-    private func quickTabButton(tab: ChatModelSelectorTab, icon: String, title: String) -> some View {
+    private func quickTabButton(tab: ModelSelectorTab, icon: String, title: String) -> some View {
         AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -62,7 +62,7 @@ struct ChatModelSelectorSidebar: View {
     }
 
     private func providerTabButton(_ provider: LumiLLMProviderInfo) -> some View {
-        let tab = ChatModelSelectorTab.provider(provider.id)
+        let tab = ModelSelectorTab.provider(provider.id)
 
         return AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
             HStack(spacing: 4) {

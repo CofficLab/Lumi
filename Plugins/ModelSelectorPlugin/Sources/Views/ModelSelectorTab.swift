@@ -1,6 +1,6 @@
 import Foundation
 
-enum ChatModelSelectorTab: Equatable {
+enum ModelSelectorTab: Equatable {
     case current
     case frequent
     case fast

@@ -44,6 +44,9 @@ struct AppLayoutView: View {
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: shouldShowChatSection
         )
+        let chatSectionToolbarItems = shouldShowChatSection
+            ? pluginService.chatSectionToolbarItems(context: pluginContext)
+            : []
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
         let railTabs = pluginService.panelRailTabItems(context: pluginContext)
@@ -154,6 +157,12 @@ struct AppLayoutView: View {
         }
         .frame(minWidth: 1180, minHeight: 560)
         .background(theme.background)
+        .background {
+            ChatSectionToolbarSync(
+                items: chatSectionToolbarItems,
+                coordinator: chatSectionCoordinator
+            )
+        }
         .ignoresSafeArea()
     }
 
@@ -302,5 +311,21 @@ struct AppLayoutView: View {
 
     private func isViewContainerExpected(_ containerID: String) -> Bool {
         pluginService.enabledPlugins.contains { $0.info.id == containerID }
+    }
+}
+
+private struct ChatSectionToolbarSync: View {
+    let items: [LumiChatSectionToolbarItem]
+    @ObservedObject var coordinator: ChatSectionCoordinator
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear {
+                coordinator.setChatSectionToolbarItems(items)
+            }
+            .onChange(of: items.map(\.id)) { _, _ in
+                coordinator.setChatSectionToolbarItems(items)
+            }
     }
 }

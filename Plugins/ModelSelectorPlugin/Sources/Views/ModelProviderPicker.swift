@@ -2,12 +2,10 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ChatProviderPicker: View {
+struct ModelProviderPicker: View {
     @LumiTheme private var theme
 
     let chatService: any LumiChatServicing
-    let conversationID: UUID?
-    let onChange: () -> Void
     @State private var isPresented = false
 
     var body: some View {
@@ -32,15 +30,15 @@ struct ChatProviderPicker: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            ChatModelSelectorView(
+            ModelSelectorView(
                 chatService: chatService,
-                conversationID: conversationID,
-                onChange: onChange,
+                conversationID: chatService.selectedConversationID,
                 onClose: {
                     isPresented = false
                 }
             )
         }
+        .frame(maxWidth: 320, alignment: .leading)
         .accessibilityLabel("Select Model")
     }
 
@@ -49,6 +47,7 @@ struct ChatProviderPicker: View {
             return "Auto · Router"
         }
 
+        let conversationID = chatService.selectedConversationID
         guard let providerID = chatService.providerID(for: conversationID),
               let provider = chatService.providerInfos.first(where: { $0.id == providerID })
         else {

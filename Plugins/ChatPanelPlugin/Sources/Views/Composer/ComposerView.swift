@@ -4,7 +4,7 @@ import LumiUI
 import SwiftUI
 import LumiCoreKit
 
-struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker: View, VerbosityPicker: View>: View {
+struct ComposerView<LanguagePicker: View, AutomationPicker: View, VerbosityPicker: View>: View {
     @LumiTheme private var theme
 
     @Binding var text: String
@@ -15,9 +15,10 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker
     let isSending: Bool
     let hasConversation: Bool
     let hasAttachments: Bool
+    let leadingToolbarItems: [LumiChatSectionToolbarItem]
+    let trailingToolbarItems: [LumiChatSectionToolbarItem]
     @ViewBuilder let languagePicker: () -> LanguagePicker
     @ViewBuilder let automationPicker: () -> AutomationPicker
-    @ViewBuilder let providerPicker: () -> ProviderPicker
     @ViewBuilder let verbosityPicker: () -> VerbosityPicker
     let onAttachImage: () -> Void
     let onFileDrop: (URL) -> Void
@@ -63,10 +64,15 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, ProviderPicker
                 )
                 ToolbarButton(systemImage: "photo", help: "图片", action: onAttachImage)
 
-                providerPicker()
-                    .frame(maxWidth: 320, alignment: .leading)
+                ForEach(leadingToolbarItems) { item in
+                    item.makeView()
+                }
 
                 Spacer(minLength: 10)
+
+                ForEach(trailingToolbarItems) { item in
+                    item.makeView()
+                }
 
                 if isSending {
                     StopButton(action: onStop)

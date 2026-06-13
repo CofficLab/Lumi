@@ -2,7 +2,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ChatAvailabilityView: View {
+struct ModelAvailabilityView: View {
     @LumiTheme private var theme
 
     let chatService: any LumiChatServicing
@@ -26,9 +26,12 @@ struct ChatAvailabilityView: View {
             }
 
             Section("Usage Signals") {
-                Text(verbatim: LumiPluginLocalization.string("Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing.", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundColor(theme.textSecondary)
+                Text(verbatim: LumiPluginLocalization.string(
+                    "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing.",
+                    bundle: .module
+                ))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
             }
         }
         .listStyle(.sidebar)

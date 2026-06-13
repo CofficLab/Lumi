@@ -16,6 +16,7 @@ public final class ChatSectionCoordinator: ObservableObject {
     @Published public var isImageDragHovering = false
     @Published public var imageAttachments: [LumiImageAttachment] = []
     @Published public var showCommandSuggestions = false
+    @Published public private(set) var chatSectionToolbarItems: [LumiChatSectionToolbarItem] = []
 
     public let chatService: ChatService
     private var cancellables = Set<AnyCancellable>()
@@ -27,6 +28,10 @@ public final class ChatSectionCoordinator: ObservableObject {
 
     public var selectedConversationID: UUID? {
         chatService.selectedConversationID ?? chatService.conversations.first?.id
+    }
+
+    public func setChatSectionToolbarItems(_ items: [LumiChatSectionToolbarItem]) {
+        chatSectionToolbarItems = items
     }
 
     public func displayedMessages(for conversationID: UUID) -> [LumiChatMessage] {
