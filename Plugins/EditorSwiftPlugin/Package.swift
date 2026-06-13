@@ -51,7 +51,10 @@ let package = Package(
             name: "EditorSwiftPluginTests",
             dependencies: [
                 "EditorSwiftPlugin",
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "XcodeKit", package: "XcodeKit"),
             ],
             path: "Tests"
         )

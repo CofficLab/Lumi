@@ -164,27 +164,7 @@ public final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectConte
                             SwiftPluginLog.logger.info("\(self.t)状态映射: \(description)")
             }
         }
-        if description.contains("Needs resync") {
-            return .needsResync
-        }
-        if description.contains("Resolving build context...") {
-            return .resolving
-        }
-        if description.contains(": ") && !description.contains("Available") {
-            let prefix = "Unavailable" + ": "
-            if description.hasPrefix(prefix) {
-                return .unavailable(String(description.dropFirst(prefix.count)))
-            }
-            return .unavailable(description)
-        }
-        if description.contains("Available") {
-            return .available(description)
-        }
-        if description == "Not Initialized"
-            || description == "Unknown" {
-            return .unknown
-        }
-        return .available(description)
+        return XcodeProjectContextStatusMapper.map(description: description)
     }
 }
 

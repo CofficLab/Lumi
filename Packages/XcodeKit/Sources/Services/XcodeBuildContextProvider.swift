@@ -129,28 +129,73 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         buildContextStatus = .resolving
 
-        // 解析项目
+        let fastSchemeNames = await Task.detached(priority: .userInitiated) {
+            XcodeSchemeDiscovery.discoverSchemeNames(at: workspaceURL)
+        }.value
+
+        var selectedSchemeName: String?
+        if !fastSchemeNames.isEmpty {
+            let placeholder = XcodeProjectResolver.makePlaceholderWorkspaceContext(
+                workspaceURL: workspaceURL,
+                schemeNames: fastSchemeNames
+            )
+            applyWorkspaceContext(placeholder)
+            if let bestScheme = Self.selectBestScheme(
+                schemes: placeholder.schemes,
+                projectName: placeholder.name,
+                targets: []
+            ) {
+                selectedSchemeName = bestScheme.name
+                await setActiveScheme(bestScheme)
+            }
+        }
+
         guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
-            buildContextStatus = .unavailable("Unable to parse project")
+            if fastSchemeNames.isEmpty {
+                buildContextStatus = .unavailable("Unable to parse project")
+            }
             return
         }
 
+        applyWorkspaceContext(workspaceContext)
+
+        let schemeToActivate: XcodeSchemeContext? = {
+            if let selectedSchemeName,
+               let match = workspaceContext.schemes.first(where: { $0.name == selectedSchemeName }) {
+                return match
+            }
+            return Self.selectBestScheme(
+                schemes: workspaceContext.schemes,
+                projectName: workspaceContext.name,
+                targets: workspaceContext.projects.flatMap { $0.targets.map(\.name) }
+            )
+        }()
+
+        guard let schemeToActivate else { return }
+
+        if activeScheme?.name == schemeToActivate.name,
+           case .available = buildContextStatus {
+            let resolvedScheme = Self.resolvedSchemeSelection(
+                schemeToActivate,
+                fallbackDestination: activeDestination ?? currentWorkspace?.activeDestination ?? Self.defaultDestination()
+            )
+            activeScheme = resolvedScheme
+            activeConfiguration = resolvedScheme.activeConfiguration
+            activeDestination = resolvedScheme.activeDestination
+            currentWorkspace?.activeScheme = resolvedScheme
+            currentWorkspace?.activeDestination = resolvedScheme.activeDestination
+        } else {
+            await setActiveScheme(schemeToActivate)
+        }
+    }
+
+    private func applyWorkspaceContext(_ workspaceContext: XcodeWorkspaceContext) {
         currentWorkspace = workspaceContext
         targetMatchCache.removeAll()
         if currentWorkspace?.activeDestination == nil {
             currentWorkspace?.activeDestination = Self.defaultDestination()
         }
         activeDestination = currentWorkspace?.activeDestination
-
-        // 自动选择最佳 scheme
-        let bestScheme = Self.selectBestScheme(
-            schemes: workspaceContext.schemes,
-            projectName: workspaceContext.name,
-            targets: workspaceContext.projects.flatMap { $0.targets.map(\.name) }
-        )
-        if let bestScheme {
-            await setActiveScheme(bestScheme)
-        }
     }
 
     /// 设置 active scheme

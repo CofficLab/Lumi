@@ -68,14 +68,14 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         activeScheme = bridge.activeScheme ?? bridge.cachedActiveScheme
         activeConfiguration = bridge.activeConfiguration
         activeDestination = bridge.activeDestination
-        buildContextStatusDescription = Self.localizedBuildContextStatusDescription(bridge.buildContextStatusDescription)
+        buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(bridge.buildContextStatusDescription)
         latestEditorSnapshot = bridge.latestEditorSnapshot
         if let cached = bridge.cachedState {
             schemes = cached.schemes
             configurations = cached.configurations
         }
         buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
-        semanticReport = Self.makeSemanticReport(
+        semanticReport = XcodeProjectStatusPresentation.makeSemanticReport(
             snapshot: bridge.latestEditorSnapshot,
             cachedState: bridge.cachedState,
             buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
@@ -107,7 +107,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                     }
                 }
                 self?.buildContextStatus = status
-                self?.buildContextStatusDescription = Self.localizedBuildContextStatusDescription(status)
+                self?.buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(status)
             }
             .store(in: &cancellables)
 
@@ -279,232 +279,29 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
-    private static func makeSemanticReport(
-        snapshot: XcodeEditorContextSnapshot?,
-        cachedState: BridgeCachedState?,
-        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
-    ) -> XcodeSemanticAvailability.Report {
-        localizedSemanticReport(
-            XcodeSemanticAvailability.inspectCurrentFileContext(
-                snapshot: snapshot,
-                cachedState: cachedState,
-                buildContextStatus: buildContextStatus
-            )
-        )
-    }
-
-    private static func localizedSemanticReport(
-        _ report: XcodeSemanticAvailability.Report
-    ) -> XcodeSemanticAvailability.Report {
-        XcodeSemanticAvailability.Report(
-            reasons: report.reasons.map(localizedSemanticReason(_:))
-        )
-    }
-
-    private static func localizedSemanticReason(
-        _ reason: XcodeSemanticAvailability.Reason
-    ) -> XcodeSemanticAvailability.Reason {
-        XcodeSemanticAvailability.Reason(
-            id: reason.id,
-            severity: reason.severity,
-            title: localizedSemanticReasonTitle(reason),
-            message: localizedSemanticReasonMessage(reason)
-        )
-    }
-
-    private static func localizedSemanticReasonTitle(
-        _ reason: XcodeSemanticAvailability.Reason
-    ) -> String {
-        switch reason.id {
-        case "server-not-started":
-            return LumiPluginLocalization.string("LSP Not Initialized", bundle: .module)
-        case "build-context-unavailable":
-            return LumiPluginLocalization.string("Build Context Unavailable", bundle: .module)
-        case "build-context-resync":
-            return LumiPluginLocalization.string("Build Context Needs Sync", bundle: .module)
-        case "file-not-in-target":
-            return LumiPluginLocalization.string("File Not in Target", bundle: .module)
-        case "scheme-excludes-targets":
-            return LumiPluginLocalization.string("Scheme Does Not Cover File Target", bundle: .module)
-        case "multiple-targets-resolved":
-            return LumiPluginLocalization.string("Multi-Target File", bundle: .module)
-        case "multiple-targets-ambiguous":
-            return LumiPluginLocalization.string("Multi-Target Ambiguity", bundle: .module)
-        case "destination-unknown":
-            return LumiPluginLocalization.string("Destination Undetermined", bundle: .module)
-        default:
-            return reason.title
-        }
-    }
-
-    private static func localizedSemanticReasonMessage(
-        _ reason: XcodeSemanticAvailability.Reason
-    ) -> String {
-        switch reason.id {
-        case "server-not-started":
-            return LumiPluginLocalization.string("The current Xcode project context has not yet completed initialization.", bundle: .module)
-        case "build-context-resync":
-            return LumiPluginLocalization.string("The current build context has expired, workspace semantic results may be inaccurate.", bundle: .module)
-        case "destination-unknown":
-            return LumiPluginLocalization.string("The current target platform has not yet been resolved.", bundle: .module)
-        case "build-context-unavailable":
-            return localizedBuildContextStatusDescription(reason.message)
-        case "file-not-in-target":
-            let fileName = extractSingleQuotedValue(from: reason.message) ?? ""
-            return String(
-                format: LumiPluginLocalization.string("'%@' does not belong to any compilation target.", bundle: .module),
-                fileName
-            )
-        case "scheme-excludes-targets":
-            if let match = reason.message.firstMatch(of: #/Current scheme '(.+)' does not include (.+)\./#) {
-                return String(
-                    format: LumiPluginLocalization.string("Current scheme '%@' does not include %@.", bundle: .module),
-                    String(match.1),
-                    String(match.2)
-                )
-            }
-            return reason.message
-        case "multiple-targets-resolved":
-            if let target = extractSingleQuotedValue(from: reason.message) {
-                return String(
-                    format: LumiPluginLocalization.string("Current file matches multiple targets, currently resolving with '%@'.", bundle: .module),
-                    target
-                )
-            }
-            return reason.message
-        case "multiple-targets-ambiguous":
-            if let match = reason.message.firstMatch(of: #/Current file belongs to (.+), but current scheme cannot uniquely determine semantic context\./#) {
-                return String(
-                    format: LumiPluginLocalization.string("Current file belongs to %@, but current scheme cannot uniquely determine semantic context.", bundle: .module),
-                    String(match.1)
-                )
-            }
-            return reason.message
-        default:
-            return reason.message
-        }
-    }
-
-    private static func extractSingleQuotedValue(from text: String) -> String? {
-        text.firstMatch(of: #/'([^']+)'/#).map { String($0.1) }
-    }
-
-    private static func localizedBuildContextStatusDescription(
-        _ status: XcodeBuildContextProvider.BuildContextStatus
-    ) -> String {
-        switch status {
-        case .unknown:
-            return LumiPluginLocalization.string("Unknown", bundle: .module)
-        case .resolving:
-            return LumiPluginLocalization.string("Resolving build context...", bundle: .module)
-        case .available(let config):
-            return String(
-                format: LumiPluginLocalization.string("Available (scheme: %@)", bundle: .module),
-                config.scheme
-            )
-        case .unavailable(let reason):
-            return String(
-                format: LumiPluginLocalization.string("Unavailable: %@", bundle: .module),
-                reason
-            )
-        case .needsResync:
-            return LumiPluginLocalization.string("Needs resync", bundle: .module)
-        }
-    }
-
-    private static func localizedBuildContextStatusDescription(_ text: String) -> String {
-        if let match = text.firstMatch(of: #/Available \(scheme: (.+)\)/#) {
-            return String(
-                format: LumiPluginLocalization.string("Available (scheme: %@)", bundle: .module),
-                String(match.1)
-            )
-        }
-        if let match = text.firstMatch(of: #/Unavailable: (.+)/#) {
-            return String(
-                format: LumiPluginLocalization.string("Unavailable: %@", bundle: .module),
-                String(match.1)
-            )
-        }
-        switch text {
-        case "Unknown":
-            return LumiPluginLocalization.string("Unknown", bundle: .module)
-        case "Resolving build context...":
-            return LumiPluginLocalization.string("Resolving build context...", bundle: .module)
-        case "Needs resync":
-            return LumiPluginLocalization.string("Needs resync", bundle: .module)
-        case "Not Initialized":
-            return LumiPluginLocalization.string("Not Initialized", bundle: .module)
-        default:
-            return text
-        }
-    }
-
-    private static func localizedIndexingTaskText(_ indexingTask: ProgressTask) -> String {
-        if let percentage = indexingTask.percentage {
-            return String(
-                format: LumiPluginLocalization.string("Indexing %d%%", bundle: .module),
-                Int(percentage)
-            )
-        }
-        if let message = indexingTask.message, !message.isEmpty {
-            return message
-        }
-        return indexingTask.title.isEmpty
-            ? LumiPluginLocalization.string("Indexing...", bundle: .module)
-            : indexingTask.title
-    }
-
-    private static func localizedSemanticStatusText(
-        for buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
-    ) -> String {
-        switch buildContextStatus {
-        case .unknown:
-            return LumiPluginLocalization.string("Not Detected", bundle: .module)
-        case .resolving:
-            return LumiPluginLocalization.string("Resolving...", bundle: .module)
-        case .available:
-            return LumiPluginLocalization.string("Ready", bundle: .module)
-        case .unavailable:
-            return LumiPluginLocalization.string("Error", bundle: .module)
-        case .needsResync:
-            return LumiPluginLocalization.string("Needs Sync", bundle: .module)
-        }
-    }
-
     public var isIndexing: Bool {
         indexingTask != nil
     }
 
     public var semanticStatusText: String {
-        if let indexingTask {
-            return Self.localizedIndexingTaskText(indexingTask)
-        }
-
-        return Self.localizedSemanticStatusText(for: buildContextStatus)
+        XcodeProjectStatusPresentation.semanticStatusText(
+            indexingTask: indexingTask,
+            buildContextStatus: buildContextStatus
+        )
     }
 
     public var semanticStatusDescription: String {
-        if let indexingTask {
-            var parts = [LumiPluginLocalization.string("Swift semantic indexing in progress", bundle: .module)]
-            if !indexingTask.title.isEmpty {
-                parts.append(indexingTask.title)
-            }
-            if let message = indexingTask.message, !message.isEmpty {
-                parts.append(message)
-            }
-            return parts.joined(separator: " · ")
-        }
-        return buildContextStatusDescription
+        XcodeProjectStatusPresentation.semanticStatusDescription(
+            indexingTask: indexingTask,
+            buildContextStatusDescription: buildContextStatusDescription
+        )
     }
 
     public var semanticStatusColor: Color {
-        if isIndexing { return .blue }
-        switch buildContextStatus {
-        case .unknown: return .gray
-        case .resolving: return .yellow
-        case .available: return .green
-        case .unavailable: return .red
-        case .needsResync: return .orange
-        }
+        let appearance = XcodeProjectStatusPresentation.semanticStatusAppearance(
+            isIndexing: isIndexing,
+            buildContextStatus: buildContextStatus
+        )
+        return XcodeProjectStatusPresentation.color(for: appearance)
     }
 }
