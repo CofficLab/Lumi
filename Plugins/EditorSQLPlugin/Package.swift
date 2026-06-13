@@ -9,7 +9,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(url: "https://github.com/DerekStride/tree-sitter-sql", branch: "main"),
+        .package(url: "https://github.com/DerekStride/tree-sitter-sql", revision: "84a2b208f072a2ca78fc59b5fa51cbdbf9c5aa37"),
     ],
     targets: [
         .target(

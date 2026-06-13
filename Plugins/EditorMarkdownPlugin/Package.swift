@@ -25,7 +25,6 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "TreeSitterMarkdown", package: "tree-sitter-markdown"),
-                .product(name: "TreeSitterMarkdownInline", package: "tree-sitter-markdown"),
             ],
             path: "Sources",
             resources: [

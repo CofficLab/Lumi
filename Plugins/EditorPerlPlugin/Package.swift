@@ -9,7 +9,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(url: "https://github.com/tree-sitter-perl/tree-sitter-perl.git", branch: "master"),
+        .package(url: "https://github.com/tree-sitter-perl/tree-sitter-perl.git", revision: "ab93d487bc45cad286541ae9e55d5f99f077a1b3"),
     ],
     targets: [
         .target(
