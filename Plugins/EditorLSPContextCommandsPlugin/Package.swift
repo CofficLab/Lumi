@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/EditorCodeEditTextView"),
+        .package(path: "../../Packages/EditorTextView"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "EditorLSPContextCommandsPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
+                .product(name: "EditorTextView", package: "EditorTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

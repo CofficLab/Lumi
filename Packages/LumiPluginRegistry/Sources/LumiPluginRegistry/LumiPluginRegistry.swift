@@ -98,6 +98,7 @@ import CodeReviewPlugin
 import AgentDelayMessagePlugin
 import AppIconDesignerPlugin
 import EditorPanelPlugin
+import EditorXcodePlugin
 import EditorBreadcrumbNavPlugin
 import EditorTabStripPlugin
 import EditorStickySymbolBarPlugin
@@ -206,6 +207,7 @@ public enum LumiPluginRegistry {
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
         EditorPanelPlugin.self,
+        EditorXcodePlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         EditorTabStripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,

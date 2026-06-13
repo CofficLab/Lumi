@@ -4,7 +4,7 @@ import EditorGoPlugin
 import EditorHTMLPlugin
 import EditorJSPlugin
 import EditorMarkdownPlugin
-import EditorPanelPlugin
+import EditorXcodePlugin
 import EditorLSPContextCommandsPlugin
 import EditorMultiCursorCommandsPlugin
 import EditorSwiftKeywordHoverPlugin
@@ -29,7 +29,7 @@ import LSPWorkspaceSymbolEditorPlugin
 
 public enum EditorExtensionPluginRegistry {
     public static let plugins: [any LumiEditorExtensionRegistering.Type] = [
-        EditorXcodePlugin.self,
+        EditorXcodeEditorPlugin.self,
         LSPServiceEditorPlugin.self,
         LSPRealtimeSignalsEditorPlugin.self,
         LSPSheetsEditorPlugin.self,

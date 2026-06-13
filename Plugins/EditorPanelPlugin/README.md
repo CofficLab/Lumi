@@ -2,6 +2,36 @@
 
 Editor **UI shell** for Lumi: workspace layout, tabs, breadcrumb, file tree rail, bottom panels, preview, and Xcode integration.
 
+## 全局技术架构
+
+Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。
+
+```text
+应用装配层 (LumiApp)
+    ↓
+插件扩展层 (Plugins/Editor*, LSP*)
+    │  EditorPanelPlugin  ← 本 Package（UI Shell）
+    │  EditorTabStrip / Breadcrumb / Rail* / Bottom*（Panel 子插件）
+    │  EditorGo / Vue / JS …（语言插件）
+    │  LSP*EditorPlugin（LSP 功能插件）
+    ↓ 注册 SuperEditor* 贡献者
+服务门面层 (EditorService)
+    ↓                    ↓
+视图层 (EditorSource)   内核逻辑层 (EditorKernel)
+    ↓
+渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols)
+```
+
+## 本 Package 的位置
+
+| 属性 | 值 |
+|------|-----|
+| **层级** | 插件扩展层 — UI Shell |
+| **职责** | 工作区布局（`EditorPanelView`）、`SourceEditorView` 编辑区、Overlay（hover/peek/rename 等）、文件预览、命令面板、空/加载/错误状态 |
+| **上游依赖** | `EditorService`、`EditorSource`、`EditorKernel`、`LumiCoreKit`、`LumiUI` |
+| **下游消费者** | `LumiApp`（通过 `LumiPluginRegistry` 加载） |
+| **边界** | 不内嵌语言或 LSP 基础设施源码；语言/LSP 能力由其他插件注册到 `EditorExtensionRegistry` |
+
 ## Architecture layers
 
 | Layer | Responsibility | Location |
@@ -31,12 +61,10 @@ Language and LSP plugins register into `EditorExtensionRegistry` at runtime. Thi
 
 | Package | Description |
 |---------|-------------|
-| [EditorCodeEditLanguages](../../Packages/EditorCodeEditLanguages) | Code editing language support |
-| [EditorCodeEditSourceEditor](../../Packages/EditorCodeEditSourceEditor) | Source code editor component |
-| [EditorCodeEditTextView](../../Packages/EditorCodeEditTextView) | Text view component |
-| [EditorOverlayKit](../../Packages/EditorOverlayKit) | Editor overlay utilities |
+| [EditorLanguages](../../Packages/EditorLanguages) | Code editing language support |
+| [EditorSource](../../Packages/EditorSource) | Source code editor component |
+| [EditorTextView](../../Packages/EditorTextView) | Text view component |
 | [EditorService](../../Packages/EditorService) | Editor service framework |
-| [FilePreviewKit](../../Packages/FilePreviewKit) | File preview utilities |
 | [LumiCoreKit](../../Packages/LumiCoreKit) | Core framework for Lumi plugins |
 | [LumiUI](../../Packages/LumiUI) | UI components |
 | [MarkdownKit](../../Packages/MarkdownKit) | Markdown rendering |
@@ -69,6 +97,10 @@ Sources/
 │   ├── EditorLoadFailureView.swift
 │   ├── EditorEmptyContentStateView.swift
 │   └── DragPreview.swift
+├── Preview/
+│   └── FilePreviewView.swift         # Binary file preview (image/PDF/QuickLook)
+├── Overlay/
+│   └── …                             # Editor overlay views (hover, peek, rename, etc.)
 ├── Services/
 │   └── EditorPanelService.swift      # Editor panel service
 ├── Views/

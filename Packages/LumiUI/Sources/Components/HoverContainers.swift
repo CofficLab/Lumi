@@ -165,7 +165,11 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
                     maxWidth: popoverWidth,
                     minHeight: popoverMinHeight > 0 ? popoverMinHeight : nil
                 )
-                .appSurface(style: .custom(theme.elevatedSurface), cornerRadius: 12)
+                .appSurface(style: .popover, cornerRadius: 12, borderColor: theme.divider)
+                .appThemedAppearance()
+                .background {
+                    ThemeWindowAppearanceBridge()
+                }
         }
     }
 }

@@ -15,6 +15,7 @@
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
 		MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = MLX1000000000000000001 /* LLMProviderMLXPlugin */; };
+		SPK1000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPK1000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +56,7 @@
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
 				MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */,
 				CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */,
+				SPK1000000000000000002 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +99,7 @@
 				LPR1000000000000000001 /* LumiPluginRegistry */,
 				MLX1000000000000000001 /* LLMProviderMLXPlugin */,
 				CDX1000000000000000001 /* LLMProviderCodexPlugin */,
+				SPK1000000000000000001 /* Sparkle */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -136,6 +139,7 @@
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */,
 				CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */,
+				SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -414,6 +418,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -449,6 +464,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */;
 			productName = LLMProviderMLXPlugin;
+		};
+		SPK1000000000000000001 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

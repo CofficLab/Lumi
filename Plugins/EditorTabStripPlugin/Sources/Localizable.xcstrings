@@ -12,25 +12,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Others"
+            "value" : "关闭其他"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Others"
+            "value" : "關閉其他"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Others"
+            "value" : "關閉其他"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Others"
+            "value" : "關閉其他"
           }
         }
       }
@@ -46,25 +46,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tab"
+            "value" : "关闭标签页"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tab"
+            "value" : "關閉分頁"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tab"
+            "value" : "關閉分頁"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tab"
+            "value" : "關閉分頁"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Left"
+            "value" : "关闭左侧标签页"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Left"
+            "value" : "關閉左側分頁"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Left"
+            "value" : "關閉左側分頁"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Left"
+            "value" : "關閉左側分頁"
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Right"
+            "value" : "关闭右侧标签页"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Right"
+            "value" : "關閉右側分頁"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Right"
+            "value" : "關閉右側分頁"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close Tabs to the Right"
+            "value" : "關閉右側分頁"
           }
         }
       }
@@ -151,25 +151,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pin Tab"
+            "value" : "固定标签页"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pin Tab"
+            "value" : "固定分頁"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pin Tab"
+            "value" : "固定分頁"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pin Tab"
+            "value" : "固定分頁"
           }
         }
       }
@@ -188,25 +188,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unpin Tab"
+            "value" : "取消固定标签页"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unpin Tab"
+            "value" : "取消固定分頁"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unpin Tab"
+            "value" : "取消固定分頁"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unpin Tab"
+            "value" : "取消固定分頁"
           }
         }
       }

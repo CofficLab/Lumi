@@ -54,6 +54,7 @@ public struct AppTabBar: View {
                     }
                 }
                 .padding(.horizontal, 1)
+                .padding(.vertical, AppUI.Spacing.xs)
             }
             .onChange(of: selectedTab) { _, tabID in
                 guard scrollToSelected else { return }

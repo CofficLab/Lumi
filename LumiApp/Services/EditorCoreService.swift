@@ -1,4 +1,4 @@
-import EditorCodeEditTextView
+import EditorTextView
 import EditorMultiCursorCommandsPlugin
 import Foundation
 import EditorService
@@ -48,6 +48,13 @@ final class EditorCoreService: LumiEditorServicing {
         core.reinstallExtensions()
     }
 
+    func syncAppSyntaxThemes() {
+        EditorSettingsLifecycle.registerEditorThemeContributors?(extensionRegistry)
+        let scheme = SystemAppearanceResolver.effectiveColorScheme
+        let themeID = themeRegistry.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
+        editorService.syncInitialThemeFromExternal(themeID)
+    }
+
     private func configureLifecycle(
         persistenceRootURL: @escaping @Sendable () -> URL,
         recentProjects: @escaping @Sendable () -> [Project]
@@ -62,15 +69,15 @@ final class EditorCoreService: LumiEditorServicing {
             }
         }
         EditorSettingsLifecycle.editorThemeIDForAppThemeID = { [themeRegistry] _ in
-            themeRegistry.resolvedEditorThemeId(colorScheme: .dark) ?? "xcode-dark"
+            let scheme = SystemAppearanceResolver.effectiveColorScheme
+            return themeRegistry.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
         }
         EditorSettingsLifecycle.registerEditorThemeContributors = { [themeRegistry] registry in
-            EditorBuiltinSyntaxThemes.registerAll(into: registry)
-            for contribution in themeRegistry.themes {
-                if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
-                    registry.registerThemeContributor(contributor)
-                }
-            }
+            EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
+            AppEditorSyntaxThemeRegistrar.sync(
+                contributions: themeRegistry.themes,
+                into: registry
+            )
         }
         EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)

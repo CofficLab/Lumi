@@ -6,6 +6,7 @@ import SwiftUI
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
 public struct EditorFileTreeNodeView: View {
     @EnvironmentObject private var editorContext: EditorContext
+    @LumiTheme private var uiTheme
     public let url: URL
     public let depth: Int
 
@@ -128,7 +129,7 @@ public struct EditorFileTreeNodeView: View {
 
     public var body: some View {
         let isSelected = EditorFileTreePathFormatter.isSameFile(selectedURL, url)
-        guard let theme = editorContext.activeChromeTheme else {
+        guard let chrome = editorContext.activeChromeTheme else {
             return AnyView(Color.clear)
         }
 
@@ -138,7 +139,7 @@ public struct EditorFileTreeNodeView: View {
                     if isDirectory {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(theme.workspaceSecondaryTextColor())
+                            .foregroundColor(uiTheme.textTertiary)
                             .frame(width: 12)
                     } else {
                         Color.clear.frame(width: 12)
@@ -146,12 +147,12 @@ public struct EditorFileTreeNodeView: View {
 
                     fileIconView(resolvedIcon)
                         .font(.system(size: 12))
-                        .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
+                        .foregroundColor(isDirectory ? uiTheme.primary : uiTheme.textSecondary)
                         .frame(width: 16)
 
                     Text(fileName)
-                        .font(.system(size: 11))
-                        .foregroundColor(isSelected ? theme.sidebarSelectionTextColor() : theme.workspaceTextColor())
+                        .font(.appCaption)
+                        .foregroundColor(uiTheme.textPrimary)
                         .lineLimit(1)
 
                     Spacer()
@@ -159,7 +160,7 @@ public struct EditorFileTreeNodeView: View {
                     if let gitStatus = currentGitStatus {
                         Text(gitStatus.displayLetter)
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected, theme: theme))
+                            .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected))
                             .frame(width: 16, alignment: .trailing)
                             .help(gitStatus.tooltip)
                     }
@@ -168,7 +169,7 @@ public struct EditorFileTreeNodeView: View {
                 .padding(.horizontal, 6)
                 .padding(.leading, CGFloat(depth) * 16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(rowBackground(isSelected: isSelected, theme: theme))
+                .background(rowBackground(isSelected: isSelected, chrome: chrome))
                 .contentShape(Rectangle())
                 .onDrag {
                     NSItemProvider(object: url.path as NSString)
@@ -334,8 +335,7 @@ public struct EditorFileTreeNodeView: View {
     /// Git 状态标记颜色
     private func gitStatusColor(
         _ status: EditorFileTreeGitStatus,
-        isSelected: Bool,
-        theme: any LumiAppChromeTheme
+        isSelected: Bool
     ) -> Color {
         // 选中行时使用更亮的颜色保持对比度
         let baseColor: Color
@@ -395,11 +395,11 @@ public struct EditorFileTreeNodeView: View {
         }
     }
 
-    private func rowBackground(isSelected: Bool, theme: any LumiAppChromeTheme) -> Color {
+    private func rowBackground(isSelected: Bool, chrome: any LumiAppChromeTheme) -> Color {
         if isSelected {
-            return isHovering ? theme.sidebarSelectionColor().opacity(1.2) : theme.sidebarSelectionColor()
+            return isHovering ? chrome.sidebarSelectionColor().opacity(1.2) : chrome.sidebarSelectionColor()
         } else {
-            return isHovering ? theme.workspaceTextColor().opacity(0.06) : Color.clear
+            return isHovering ? uiTheme.textPrimary.opacity(0.06) : Color.clear
         }
     }
 }

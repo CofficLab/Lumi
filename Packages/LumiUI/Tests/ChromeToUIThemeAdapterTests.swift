@@ -40,5 +40,7 @@ struct ChromeToUIThemeAdapterTests {
         #expect(ui.textPrimary == chrome.workspaceTextColor())
         #expect(ui.background == chrome.atmosphereColors().deep)
         #expect(ui.surface == chrome.atmosphereColors().medium)
+        #expect(ui.preferredColorScheme == .dark)
+        #expect(ui.preferredAppKitAppearance?.name == .darkAqua)
     }
 }

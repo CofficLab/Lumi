@@ -1,7 +1,7 @@
 import Foundation
 import EditorKernel
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 import SwiftUI
 
 // MARK: - Contribution Context
@@ -248,7 +248,7 @@ public protocol SuperEditorCodeActionContributor: AnyObject {
 
 /// 编辑器高亮 provider 扩展点
 ///
-/// 允许插件按语言注入 `CodeEditSourceEditor` 的高亮 provider，
+/// 允许插件按语言注入 `EditorSource` 的高亮 provider，
 /// 例如 Markdown、特殊 DSL、额外语义层等。
 @MainActor
 public protocol SuperEditorHighlightProviderContributor: AnyObject {

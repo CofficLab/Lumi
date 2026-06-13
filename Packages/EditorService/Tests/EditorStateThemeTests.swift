@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import AppKit
-import CodeEditSourceEditor
+import EditorSource
 import XCTest
 @testable import EditorService
 

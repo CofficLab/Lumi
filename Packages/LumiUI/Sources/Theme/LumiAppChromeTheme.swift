@@ -16,6 +16,9 @@ public protocol LumiAppChromeTheme {
 
     func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String
 
+    /// 与此外壳主题配套的编辑器语法调色板。
+    func editorSyntaxPalette(colorScheme: ColorScheme) -> EditorSyntaxPalette
+
     func accentColors() -> (primary: Color, secondary: Color, tertiary: Color)
     func atmosphereColors() -> (deep: Color, medium: Color, light: Color)
     func glowColors() -> (subtle: Color, medium: Color, intense: Color)
@@ -60,6 +63,10 @@ public extension LumiAppChromeTheme {
 
     func resolvedEditorThemeId(defaultEditorThemeId: String, colorScheme: ColorScheme) -> String {
         defaultEditorThemeId
+    }
+
+    func editorSyntaxPalette(colorScheme: ColorScheme) -> EditorSyntaxPalette {
+        EditorSyntaxPalette.derived(from: self, colorScheme: colorScheme)
     }
 
     func workspaceBackgroundColor() -> Color {

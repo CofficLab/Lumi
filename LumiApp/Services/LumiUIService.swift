@@ -6,6 +6,7 @@ import SwiftUI
 final class LumiUIService: ObservableObject, LumiThemeServicing {
     let themeRegistry: LumiUIThemeRegistry
     private let selectionStore: ThemeSelectionStore
+    var onThemesDidChange: (() -> Void)?
 
     init(
         pluginService: PluginService,
@@ -38,15 +39,18 @@ final class LumiUIService: ObservableObject, LumiThemeServicing {
         do {
             try themeRegistry.replaceAll(registryContributions)
             restoreSavedThemeIfPossible()
+            onThemesDidChange?()
         } catch {
             try? themeRegistry.replaceAll([.builtInFallback()])
             assertionFailure("Failed to register LumiUI themes: \(error)")
+            onThemesDidChange?()
         }
     }
 
     func selectTheme(id: String) throws {
         try themeRegistry.select(themeId: id)
         selectionStore.saveSelectedThemeID(id)
+        onThemesDidChange?()
     }
 
     private func restoreSavedThemeIfPossible() {

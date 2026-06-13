@@ -1,8 +1,8 @@
-@preconcurrency import CodeEditSourceEditor
+@preconcurrency import EditorSource
 import EditorKernel
 import LSPServiceEditorPlugin
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
+import EditorTextView
+import EditorLanguages
 import LanguageServerProtocol
 import Foundation
 import EditorService

@@ -95,6 +95,11 @@ public extension LumiUITheme {
     var statusBarItemForeground: Color { textPrimary }
     var statusBarItemBackground: Color { textPrimary.opacity(0.08) }
     var statusBarItemPresentedBackground: Color { primary.opacity(0.14) }
+
+    /// SwiftUI 控件（如 segmented picker）应使用的外观，避免 popover 与主题背景不一致。
+    var preferredColorScheme: ColorScheme {
+        textPrimary.isLightColor ? .dark : .light
+    }
 }
 
 public struct LumiDefaultTheme: LumiUITheme {

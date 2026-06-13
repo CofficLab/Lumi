@@ -1,5 +1,5 @@
 import Foundation
-import CodeEditSourceEditor
+import EditorSource
 
 public struct EditorViewState: Equatable, Sendable {
     public var primaryCursorLine: Int

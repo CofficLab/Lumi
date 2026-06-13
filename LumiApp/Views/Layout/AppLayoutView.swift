@@ -12,7 +12,7 @@ struct AppLayoutView: View {
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
-    let chatService: any LumiChatServicing
+    let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
     let projectPathStore: LumiCurrentProjectPathStore
 
@@ -24,20 +24,29 @@ struct AppLayoutView: View {
         let chatSection = selectedContainer?.chatSection ?? .none
         let showsRail = selectedContainer?.showsRail ?? false
         let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
+        let preliminaryPluginContext = basePluginContext(
+            activeSectionID: activeID,
+            activeSectionTitle: activeTitle,
+            chatSection: chatSection,
+            showsRail: showsRail,
+            showsPanelChrome: showsPanelChrome,
+            isChatSectionVisible: chatSection.isVisible
+        )
+        let chatSectionItems = pluginService.chatSectionItems(context: preliminaryPluginContext)
+        let shouldShowChatSection = chatSection.isVisible
+            && layoutState.chatSectionVisible
+            && !chatSectionItems.isEmpty
         let pluginContext = basePluginContext(
             activeSectionID: activeID,
             activeSectionTitle: activeTitle,
             chatSection: chatSection,
             showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome
+            showsPanelChrome: showsPanelChrome,
+            isChatSectionVisible: shouldShowChatSection
         )
-        let chatSectionItems = pluginService.chatSectionItems(context: pluginContext)
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
         let railTabs = pluginService.panelRailTabItems(context: pluginContext)
-        let shouldShowChatSection = chatSection.isVisible
-            && layoutState.chatSectionVisible
-            && !chatSectionItems.isEmpty
         let showRail = showsRail && !railTabs.isEmpty
         let isRailOnlyPanel = showRail && !showsPanelChrome
         let autosaveName = layoutAutosaveName(
@@ -137,8 +146,7 @@ struct AppLayoutView: View {
             StatusBar(
                 pluginService: pluginService,
                 editorCoreService: editorCoreService,
-                activeID: activeID,
-                activeTitle: activeTitle,
+                pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
                 projectPathStore: projectPathStore
@@ -246,7 +254,8 @@ struct AppLayoutView: View {
         activeSectionTitle: String = "Main",
         chatSection: LumiChatSectionLayout = .none,
         showsRail: Bool = false,
-        showsPanelChrome: Bool = false
+        showsPanelChrome: Bool = false,
+        isChatSectionVisible: Bool? = nil
     ) -> LumiPluginContext {
         LumiPluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
@@ -254,6 +263,7 @@ struct AppLayoutView: View {
             chatSection: chatSection,
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
+            isChatSectionVisible: isChatSectionVisible,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)

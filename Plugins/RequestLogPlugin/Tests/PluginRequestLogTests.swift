@@ -21,8 +21,10 @@ import Testing
 @MainActor
 @Test func requestLogPluginContributesStatusBarOnChatPanel() {
     let context = LumiPluginContext(
-        activeSectionID: ChatPanelSection.id,
-        activeSectionTitle: "Chat",
+        activeSectionID: "editor",
+        activeSectionTitle: "Editor",
+        chatSection: .wide,
+        isChatSectionVisible: true,
         dependencies: LumiPluginDependencies { dependencies in
             dependencies.register((any LumiChatServicing).self, MockChatService())
         }
@@ -34,7 +36,12 @@ import Testing
 
 @MainActor
 @Test func requestLogPluginHidesStatusBarOutsideChatPanel() {
-    let context = LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+    let context = LumiPluginContext(
+        activeSectionID: "editor",
+        activeSectionTitle: "Editor",
+        chatSection: .wide,
+        isChatSectionVisible: false
+    )
     #expect(RequestLogPlugin.statusBarItems(context: context).isEmpty)
 }
 

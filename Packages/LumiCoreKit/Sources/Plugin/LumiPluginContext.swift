@@ -25,10 +25,24 @@ public struct LumiPluginContext {
     public let chatSection: LumiChatSectionLayout
     public let showsRail: Bool
     public let showsPanelChrome: Bool
+    /// Whether the chat section is currently rendered in the app layout.
+    public let isChatSectionVisible: Bool
     public let dependencies: LumiPluginDependencies
 
-    public var showsChatSection: Bool {
+    /// Whether the active view container is configured to host a chat section.
+    public var supportsChatSection: Bool {
         chatSection.isVisible
+    }
+
+    /// Whether chat section contributions should be active for this context.
+    public var showsChatSection: Bool {
+        isChatSectionVisible
+    }
+
+    /// Current active LLM provider ID (conversation preference with global fallback).
+    @MainActor
+    public var activeProviderID: String? {
+        Self.resolveActiveProviderID(from: dependencies)
     }
 
     public init(
@@ -37,6 +51,7 @@ public struct LumiPluginContext {
         chatSection: LumiChatSectionLayout = .none,
         showsRail: Bool = false,
         showsPanelChrome: Bool = false,
+        isChatSectionVisible: Bool? = nil,
         dependencies: LumiPluginDependencies = LumiPluginDependencies()
     ) {
         self.activeSectionID = activeSectionID
@@ -44,10 +59,35 @@ public struct LumiPluginContext {
         self.chatSection = chatSection
         self.showsRail = showsRail
         self.showsPanelChrome = showsPanelChrome
+        self.isChatSectionVisible = isChatSectionVisible ?? chatSection.isVisible
         self.dependencies = dependencies
     }
 
     public func resolve<T>(_ type: T.Type = T.self) -> T? {
         dependencies.resolve(type)
+    }
+
+    public func withAdditionalDependencies(
+        _ configure: (inout LumiPluginDependencies) -> Void
+    ) -> LumiPluginContext {
+        var dependencies = self.dependencies
+        configure(&dependencies)
+        return LumiPluginContext(
+            activeSectionID: activeSectionID,
+            activeSectionTitle: activeSectionTitle,
+            chatSection: chatSection,
+            showsRail: showsRail,
+            showsPanelChrome: showsPanelChrome,
+            isChatSectionVisible: isChatSectionVisible,
+            dependencies: dependencies
+        )
+    }
+
+    @MainActor
+    public static func resolveActiveProviderID(from dependencies: LumiPluginDependencies) -> String? {
+        guard let chatService = dependencies.resolve(LumiChatServicing.self) else {
+            return nil
+        }
+        return chatService.providerID(for: chatService.selectedConversationID)
     }
 }

@@ -59,6 +59,10 @@ private struct LayoutSidebarPopover: View {
         .padding(12)
         .frame(minWidth: 180, alignment: .leading)
         .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import EditorCodeEditLanguages
+import EditorLanguages
 import EditorKernel
 import LanguageServerProtocol
 
@@ -26,7 +26,7 @@ final class EditorFileState: ObservableObject {
     /// 当前文件 URL
     @Published var currentFileURL: URL?
 
-    /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
+    /// 当前文件内容（NSTextStorage，EditorSource 要求）
     @Published var content: NSTextStorage?
 
     /// 文件名

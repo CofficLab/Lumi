@@ -12,7 +12,7 @@ public enum EditorTabStripHeaderPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.editor-tab-strip-header",
         displayName: LumiPluginLocalization.string("Editor Tab Strip", bundle: .module),
         description: LumiPluginLocalization.string("Tab bar for the editor panel.", bundle: .module),
-        order: 88
+        order: 70
     )
 
     @MainActor

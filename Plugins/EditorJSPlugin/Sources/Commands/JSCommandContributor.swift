@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import SwiftUI
-import EditorCodeEditTextView
+import EditorTextView
 import LumiCoreKit
 
 @MainActor

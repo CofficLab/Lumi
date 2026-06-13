@@ -7,6 +7,7 @@ struct MenuBarPopupView: View {
 
     let popupItems: [LumiMenuBarPopupItem]
     let onShowMainWindow: () -> Void
+    let onCheckForUpdates: () -> Void
     let onQuit: () -> Void
 
     var body: some View {
@@ -28,6 +29,10 @@ struct MenuBarPopupView: View {
             }
 
             menuRow("打开 Lumi", systemImage: "macwindow", action: onShowMainWindow)
+
+            GlassDivider()
+
+            menuRow("检查更新", systemImage: "arrow.down.circle", action: onCheckForUpdates)
 
             GlassDivider()
 

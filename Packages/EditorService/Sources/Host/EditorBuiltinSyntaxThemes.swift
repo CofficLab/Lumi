@@ -1,56 +1,70 @@
-import CodeEditSourceEditor
+import EditorSource
 import Foundation
+import LumiUI
 
 @MainActor
 public enum EditorBuiltinSyntaxThemes {
-    private static let lightThemeIDs: Set<String> = [
-        "vscode-light",
-        "github",
-    ]
+  public static func registerFallbacks(into registry: EditorExtensionRegistry) {
+    registerPaletteContributor(
+      id: "xcode-dark",
+      displayName: "Xcode Dark",
+      isDark: true,
+      palette: .preset(.xcodeDark),
+      into: registry
+    )
+    registerPaletteContributor(
+      id: "xcode-light",
+      displayName: "Xcode Light",
+      isDark: false,
+      palette: .preset(.xcodeLight),
+      into: registry
+    )
+  }
 
-    private static let knownThemeIDs: [String] = [
-        "xcode-dark",
-        "lumi-dark",
-        "midnight",
-        "sky-dark",
-        "aurora",
-        "nebula",
-        "void",
-        "spring",
-        "summer",
-        "autumn",
-        "winter",
-        "github",
-        "orchard",
-        "mountain",
-        "vscode-dark",
-        "river",
-        "vscode-light",
-        "one-dark",
-        "dracula",
-    ]
-
-    public static func registerAll(into registry: EditorExtensionRegistry) {
-        for themeID in knownThemeIDs {
-            let isDark = !lightThemeIDs.contains(themeID)
-            registry.registerThemeContributor(BuiltinSyntaxThemeContributor(id: themeID, isDark: isDark))
-        }
-    }
-}
-
-@MainActor
-private final class BuiltinSyntaxThemeContributor: SuperEditorThemeContributor {
-    let id: String
-    let isDark: Bool
-    var displayName: String { id }
-    var icon: String? { "paintpalette" }
-
-    init(id: String, isDark: Bool) {
-        self.id = id
-        self.isDark = isDark
+  /// 从 LumiUI 主题贡献展开并注册语法调色板。
+  public static func registerAppThemes(
+    _ contributions: [LumiUIThemeContribution],
+    into registry: EditorExtensionRegistry
+  ) {
+    for contribution in contributions {
+      let chrome = contribution.chromeTheme
+      for scheme in EditorSyntaxPaletteSchemes.colorSchemes(for: chrome.appearanceKind) {
+        let themeId = chrome.resolvedEditorThemeId(
+          defaultEditorThemeId: contribution.editorThemeId,
+          colorScheme: scheme
+        )
+        let palette = chrome.editorSyntaxPalette(colorScheme: scheme)
+        registerPaletteContributor(
+          id: themeId,
+          displayName: contribution.displayName,
+          isDark: scheme == .dark,
+          palette: palette,
+          into: registry
+        )
+      }
     }
 
-    func createTheme() -> EditorTheme {
-        isDark ? EditorThemeAdapter.fallbackTheme() : EditorThemeAdapter.lightTheme()
+    for contribution in contributions {
+      if let contributor = contribution.attachments.editorThemeContributor as? any SuperEditorThemeContributor {
+        registry.registerOrReplaceThemeContributor(contributor)
+      }
     }
+  }
+
+  private static func registerPaletteContributor(
+    id: String,
+    displayName: String,
+    isDark: Bool,
+    palette: EditorSyntaxPalette,
+    into registry: EditorExtensionRegistry
+  ) {
+    registry.registerOrReplaceThemeContributor(
+      PaletteSyntaxThemeContributor(
+        id: id,
+        displayName: displayName,
+        isDark: isDark,
+        palette: palette
+      )
+    )
+  }
 }

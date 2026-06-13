@@ -1,9 +1,8 @@
 import SwiftUI
 import SuperLogKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
-import EditorCodeEditLanguages
-import EditorOverlayKit
+import EditorSource
+import EditorTextView
+import EditorLanguages
 import EditorService
 import LSPDocumentHighlightEditorPlugin
 import LSPRealtimeSignalsEditorPlugin
@@ -12,7 +11,7 @@ import LumiCoreKit
 import LumiUI
 
 /// 代码编辑器主视图。
-/// 基于 CodeEditSourceEditor 实现专业级编辑体验。
+/// 基于 EditorSource 实现专业级编辑体验。
 ///
 /// 该视图负责装配编辑器实例、状态协调器以及各类 overlay 子视图，是
 /// EditorPanel 中源码编辑体验的核心入口。
@@ -425,21 +424,18 @@ public struct SourceEditorView: View, SuperLog {
         return config
     }
 
-    /// 以 AppThemeVM 为单一来源解析编辑器语法主题，不依赖 EditorState 通知链。
+    /// 以 App 主题注册表为单一来源解析编辑器语法主题。
     @MainActor
     private func applyAppChromeTheme(to config: inout SourceEditorConfiguration) {
         let chromeTheme = themeVM.activeChromeTheme
-        let editorThemeId = chromeTheme.resolvedEditorThemeId(
-            defaultEditorThemeId: "xcode-dark",
-            colorScheme: effectiveColorScheme(for: chromeTheme)
+        let scheme = effectiveColorScheme(for: chromeTheme)
+        let resolved = EditorSyntaxThemeResolver.resolve(
+            registry: LumiUIThemeRegistry.shared,
+            extensions: state.editorExtensions,
+            colorScheme: scheme
         )
-        if let contributor = state.editorExtensions.theme(for: editorThemeId) {
-            config.appearance.theme = contributor.createTheme()
-            config.appearance.themeIdentifier = editorThemeId
-        } else {
-            config.appearance.theme = EditorThemeAdapter.fallbackTheme()
-            config.appearance.themeIdentifier = editorThemeId
-        }
+        config.appearance.theme = resolved.theme
+        config.appearance.themeIdentifier = resolved.id
     }
 
     private func effectiveColorScheme(for chromeTheme: any LumiAppChromeTheme) -> ColorScheme {

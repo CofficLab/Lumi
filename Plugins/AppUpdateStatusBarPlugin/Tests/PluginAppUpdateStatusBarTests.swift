@@ -1,28 +1,26 @@
 import Foundation
-import Testing
 import LumiCoreKit
+import Testing
 @testable import AppUpdateStatusBarPlugin
 
 @MainActor
 struct PluginAppUpdateStatusBarTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(AppUpdateStatusBarPlugin.id == "AppUpdateStatusBar")
-        #expect(AppUpdateStatusBarPlugin.navigationId == "app_update_status_bar")
-        #expect(AppUpdateStatusBarPlugin.displayName.isEmpty == false)
-        #expect(AppUpdateStatusBarPlugin.description.isEmpty == false)
+        #expect(AppUpdateStatusBarPlugin.info.id == "com.coffic.lumi.plugin.app-update-status-bar")
+        #expect(AppUpdateStatusBarPlugin.info.displayName.isEmpty == false)
+        #expect(AppUpdateStatusBarPlugin.info.description.isEmpty == false)
         #expect(AppUpdateStatusBarPlugin.iconName == "arrow.down.circle")
-        #expect(AppUpdateStatusBarPlugin.isConfigurable == false)
         #expect(AppUpdateStatusBarPlugin.category == .general)
-        #expect(AppUpdateStatusBarPlugin.order == 8)
-        #expect(AppUpdateStatusBarPlugin.policy == .disabled)
-        #expect(AppUpdateStatusBarPlugin.shared.instanceLabel == AppUpdateStatusBarPlugin.id)
+        #expect(AppUpdateStatusBarPlugin.info.order == 8)
+        #expect(AppUpdateStatusBarPlugin.policy == .alwaysOn)
     }
 
     @Test
     func menuBarContributionsAreProvided() {
-        #expect(AppUpdateStatusBarPlugin.shared.addMenuBarContentView() != nil)
-        #expect(AppUpdateStatusBarPlugin.shared.addMenuBarPopupView() != nil)
+        let context = LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+        #expect(AppUpdateStatusBarPlugin.menuBarContentItems(context: context).count == 1)
+        #expect(AppUpdateStatusBarPlugin.menuBarPopupItems(context: context).count == 1)
     }
 
     @Test
@@ -52,7 +50,7 @@ struct PluginAppUpdateStatusBarTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginAppUpdateStatusBarLocalization.bundle.url(forResource: "AppUpdateStatusBar", withExtension: "xcstrings") != nil)
+        #expect(PluginAppUpdateStatusBarLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(PluginAppUpdateStatusBarLocalization.string("App Update Status").isEmpty == false)
     }
 }

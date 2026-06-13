@@ -14,6 +14,10 @@ let package = Package(
         .library(
             name: "MarkdownKit",
             targets: ["MarkdownKit"]
+        ),
+        .library(
+            name: "MarkdownKitTesting",
+            targets: ["MarkdownKitTesting"]
         )
     ],
     dependencies: [
@@ -60,6 +64,11 @@ let package = Package(
                 "Views"
             ]
         ),
+        .target(
+            name: "MarkdownKitTesting",
+            dependencies: ["MarkdownKit"],
+            path: "Tests/MarkdownKitTesting"
+        ),
         .testTarget(
             name: "MarkdownKitCoreTests",
             dependencies: ["MarkdownKitCore"],
@@ -67,7 +76,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MarkdownKitTests",
-            dependencies: ["MarkdownKit"],
+            dependencies: ["MarkdownKit", "MarkdownKitTesting"],
             path: "Tests/MarkdownKitTests"
         )
     ]

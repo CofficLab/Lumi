@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/EditorCodeEditTextView"),
+        .package(path: "../../Packages/EditorTextView"),
         .package(path: "../../Packages/LumiCoreKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "EditorChatIntegrationPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "EditorCodeEditTextView", package: "EditorCodeEditTextView"),
+                .product(name: "EditorTextView", package: "EditorTextView"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources",

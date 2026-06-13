@@ -1,0 +1,52 @@
+// swift-tools-version: 5.9
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+
+import PackageDescription
+
+let package = Package(
+    name: "EditorTextView",
+    platforms: [.macOS(.v13)],
+    products: [
+        // A Fast, Efficient text view for code.
+        .library(
+            name: "EditorTextView",
+            targets: ["EditorTextView"]
+        ),
+    ],
+    dependencies: [
+        // Text mutation, storage helpers
+        .package(
+            url: "https://github.com/ChimeHQ/TextStory",
+            from: "0.9.0"
+        ),
+        // Useful data structures
+        .package(
+            url: "https://github.com/apple/swift-collections.git",
+            .upToNextMajor(from: "1.0.0")
+        )
+    ],
+    targets: [
+        // The main text view target.
+        .target(
+            name: "EditorTextView",
+            dependencies: [
+                "TextStory",
+                .product(name: "Collections", package: "swift-collections"),
+                "EditorTextViewObjC"
+            ],
+            path: "Sources",
+            exclude: ["EditorTextViewObjC"]
+        ),
+
+        // ObjC addons
+        .target(
+            name: "EditorTextViewObjC",
+            publicHeadersPath: "include"
+        ),
+        .testTarget(
+            name: "EditorTextViewTests",
+            dependencies: ["EditorTextView"],
+            path: "Tests"
+        ),
+    ]
+)

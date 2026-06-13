@@ -37,6 +37,7 @@
       }
     },
     ": " : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -71,6 +72,7 @@
       }
     },
     "'%@' does not belong to any compilation target." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -105,6 +107,7 @@
       }
     },
     "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -174,6 +177,7 @@
       }
     },
     "%@:%lld:%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -276,8 +280,10 @@
         }
       }
     },
+    "%lld available" : {
+
+    },
     "%lld items" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -731,7 +737,6 @@
       }
     },
     "Apply Rename" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -871,6 +876,7 @@
       }
     },
     "Available" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -905,6 +911,7 @@
       }
     },
     "Available (scheme: %@)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1009,6 +1016,7 @@
       }
     },
     "Build Context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1043,6 +1051,7 @@
       }
     },
     "Build Context Needs Sync" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1077,6 +1086,7 @@
       }
     },
     "Build Context Unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1356,7 +1366,6 @@
       }
     },
     "Cancel" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1389,6 +1398,9 @@
           }
         }
       }
+    },
+    "Cannot preview image" : {
+
     },
     "Case Sensitive" : {
       "extractionState" : "stale",
@@ -1739,6 +1751,9 @@
         }
       }
     },
+    "Code Actions" : {
+
+    },
     "Code Editor" : {
       "localizations" : {
         "en" : {
@@ -1912,6 +1927,7 @@
       }
     },
     "Config" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1946,6 +1962,7 @@
       }
     },
     "Configuration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2155,6 +2172,7 @@
       }
     },
     "Current File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2189,6 +2207,7 @@
       }
     },
     "Current file belongs to %@, but current scheme cannot uniquely determine semantic context." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2359,6 +2378,7 @@
       }
     },
     "Current file matches multiple targets, currently resolving with '%@'." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2393,6 +2413,7 @@
       }
     },
     "Current scheme '%@' does not include %@." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2497,7 +2518,6 @@
       }
     },
     "Current: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3162,6 +3182,7 @@
       }
     },
     "Destination" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3196,6 +3217,7 @@
       }
     },
     "Destination Undetermined" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4105,6 +4127,7 @@
       }
     },
     "Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4384,6 +4407,7 @@
       }
     },
     "File Not in Target" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4418,6 +4442,7 @@
       }
     },
     "File Not Registered in Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4522,7 +4547,6 @@
       }
     },
     "Files" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5571,6 +5595,7 @@
       }
     },
     "Got It" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5745,6 +5770,7 @@
       }
     },
     "Indexing %d%%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5779,6 +5805,7 @@
       }
     },
     "Indexing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6789,6 +6816,7 @@
       }
     },
     "LSP Not Initialized" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6963,6 +6991,7 @@
       }
     },
     "Matched Targets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7277,6 +7306,7 @@
       }
     },
     "Multi-Target Ambiguity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7311,6 +7341,7 @@
       }
     },
     "Multi-Target File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7379,6 +7410,7 @@
       }
     },
     "Needs resync" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7413,6 +7445,7 @@
       }
     },
     "Needs Sync" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7517,7 +7550,6 @@
       }
     },
     "New name" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7970,6 +8002,7 @@
       }
     },
     "No editor context snapshot available." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8004,6 +8037,7 @@
       }
     },
     "No File Open" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8282,7 +8316,6 @@
       }
     },
     "No preview available" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8597,6 +8630,7 @@
       }
     },
     "None" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8666,6 +8700,7 @@
       }
     },
     "Not Detected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8700,6 +8735,7 @@
       }
     },
     "Not Initialized" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8734,6 +8770,7 @@
       }
     },
     "Not Selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8803,7 +8840,6 @@
       }
     },
     "Open" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8908,7 +8944,6 @@
       }
     },
     "Open diagnostic" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9048,6 +9083,7 @@
       }
     },
     "Open in Xcode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9431,7 +9467,11 @@
         }
       }
     },
+    "Preferred" : {
+
+    },
     "Preferred Target" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9536,7 +9576,6 @@
       }
     },
     "Preview Changes" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9920,6 +9959,7 @@
       }
     },
     "Project Keys" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10023,6 +10063,7 @@
       }
     },
     "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10057,7 +10098,6 @@
       }
     },
     "Quick Fix" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10126,6 +10166,7 @@
       }
     },
     "Re-resolve" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10160,6 +10201,7 @@
       }
     },
     "Re-resolve Build Context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10194,6 +10236,7 @@
       }
     },
     "Re-resolving..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10263,6 +10306,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10891,7 +10935,6 @@
       }
     },
     "Rename Symbol" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11031,6 +11074,7 @@
       }
     },
     "Resolving build context..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11065,6 +11109,7 @@
       }
     },
     "Resolving..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11448,6 +11493,7 @@
       }
     },
     "Scheme" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11482,6 +11528,7 @@
       }
     },
     "Scheme Does Not Cover File Target" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11516,6 +11563,7 @@
       }
     },
     "Scheme Targets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11934,6 +11982,7 @@
       }
     },
     "Semantic Availability" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12423,6 +12472,7 @@
       }
     },
     "Swift semantic indexing in progress" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12597,6 +12647,7 @@
       }
     },
     "Target platform for current editor semantic context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12736,6 +12787,7 @@
       }
     },
     "The current build context has expired, workspace semantic results may be inaccurate." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12770,6 +12822,7 @@
       }
     },
     "The current target platform has not yet been resolved." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12804,6 +12857,7 @@
       }
     },
     "The current Xcode project context has not yet completed initialization." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13187,6 +13241,7 @@
       }
     },
     "Unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13221,6 +13276,7 @@
       }
     },
     "Unavailable: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13255,6 +13311,7 @@
       }
     },
     "Undetermined" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13394,6 +13451,7 @@
       }
     },
     "Unknown" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13777,6 +13835,7 @@
       }
     },
     "Workspace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13950,6 +14009,7 @@
       }
     },
     "Xcode Build Context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13984,6 +14044,7 @@
       }
     },
     "Xcode Context" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14018,6 +14079,7 @@
       }
     },
     "Xcode Project Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

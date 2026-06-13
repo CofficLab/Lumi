@@ -1,5 +1,6 @@
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 struct RootView<Content: View>: View {
@@ -24,6 +25,10 @@ struct RootView<Content: View>: View {
         let overlays = container.pluginService.rootOverlays(context: context)
         overlays.reduce(AnyView(content)) { wrapped, overlay in
             overlay.apply(to: wrapped)
+        }
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
         }
     }
 }

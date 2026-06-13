@@ -49,9 +49,6 @@ public enum EditorPanelPlugin: LumiPlugin {
         [
             GetCurrentFileTool().asLumiAgentTool(),
             SetCurrentFileTool().asLumiAgentTool(),
-            AddSwiftPackageTool().asLumiAgentTool(),
-            ListSwiftPackagesTool().asLumiAgentTool(),
-            GenerateXcodeProjectTool().asLumiAgentTool(),
         ]
     }
 

@@ -108,7 +108,7 @@ final class PluginService: ObservableObject {
     }
 
     func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection else { return [] }
+        guard context.supportsChatSection else { return [] }
         return enabledPlugins
             .flatMap { plugin in
                 plugin.chatSectionItems(context: context)
@@ -117,14 +117,14 @@ final class PluginService: ObservableObject {
     }
 
     func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
-        guard context.showsChatSection else { return content }
+        guard context.supportsChatSection else { return content }
         return enabledPlugins.reduce(content) { wrapped, plugin in
             plugin.chatSectionRootWrapper(context: context, content: wrapped)
         }
     }
 
     func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
-        guard context.showsChatSection else { return [] }
+        guard context.supportsChatSection else { return [] }
         return enabledPlugins
             .flatMap { plugin in
                 plugin.chatSectionToolbarItems(context: context)

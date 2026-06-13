@@ -389,7 +389,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let isKnownDependency: (String) -> Bool = { name in
             dependencySuffixes.contains(where: { name.hasSuffix($0) }) ||
             dependencyPrefixes.contains(where: { name.hasPrefix($0) }) ||
-            name == "EditorCodeEditLanguages" || name == "TextStory"
+            name == "EditorLanguages" || name == "TextStory"
         }
 
         if let match = schemes.first(where: { !isKnownDependency($0.name) }) {

@@ -786,6 +786,7 @@ private struct CollapsibleAssistantContent: View {
                     markdown: rendered,
                     theme: ChatMarkdownTheme.make(from: theme)
                 )
+                .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .font(.appBody)
 

@@ -430,7 +430,7 @@ final class XcodeCompiler: Sendable {
     /// 从 Xcode 中间产物 `common-args.resp` 文件中提取包含 modulemap 的 `-I` 路径。
     ///
     /// Xcode 为每个 target 生成 `common-args.resp`，其中包含实际的编译参数。
-    /// 对于本地 SPM 包中的 ObjC target（如 `EditorCodeEditTextViewObjC`），
+    /// 对于本地 SPM 包中的 ObjC target（如 `EditorTextViewObjC`），
     /// 文件会包含 `-I /path/to/Sources/TargetName/include` 这样的参数，
     /// 而 modulemap 就在该 include 目录中。
     static func moduleMapURLsFromCommonArgs(_ respURL: URL) -> [URL] {

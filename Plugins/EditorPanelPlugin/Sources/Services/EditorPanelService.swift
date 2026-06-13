@@ -1,4 +1,4 @@
-import CodeEditSourceEditor
+import EditorSource
 import EditorService
 import Foundation
 import os

@@ -1,15 +1,15 @@
 import Foundation
 import SuperLogKit
 import AppKit
-import CodeEditSourceEditor
-import EditorCodeEditTextView
+import EditorSource
+import EditorTextView
 import SwiftUI
 import LanguageServerProtocol
 import os
 
 fileprivate let editorContextMenuLog = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.contextmenu")
 /// 文本变更协调器
-/// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
+/// 监听 EditorSource 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
 public final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
     /// 弱引用状态管理器
     nonisolated static let verbose = false
@@ -180,7 +180,7 @@ public final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 /// 在编辑器的右键菜单中注入「添加到对话」操作
 ///
 /// **方案原理：**
-/// EditorCodeEditTextView 的 `TextView` 重写了 `menu(for:)`，每次右键时动态创建
+/// EditorTextView 的 `TextView` 重写了 `menu(for:)`，每次右键时动态创建
 /// 一个只含 Cut/Copy/Paste 的新 NSMenu。直接设置 `textView.menu` 属性无效，
 /// 因为 AppKit 调用的是 `menu(for:)` 而非读取 `self.menu`。
 ///

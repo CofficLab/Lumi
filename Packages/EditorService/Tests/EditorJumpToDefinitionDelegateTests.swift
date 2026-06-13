@@ -1,5 +1,5 @@
 #if canImport(XCTest)
-import CodeEditSourceEditor
+import EditorSource
 import Foundation
 import LanguageServerProtocol
 import XCTest

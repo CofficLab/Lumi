@@ -62,11 +62,25 @@ public final class LumiUIThemeRegistry: ObservableObject {
     }
 
     public func resolvedEditorThemeId(colorScheme: ColorScheme) -> String? {
+        resolvedEditorSyntax(colorScheme: colorScheme)?.themeId
+    }
+
+    public func resolvedEditorSyntax(colorScheme: ColorScheme) -> ResolvedEditorSyntax? {
         guard let contribution = selectedContribution else { return nil }
-        return contribution.chromeTheme.resolvedEditorThemeId(
+        let chrome = contribution.chromeTheme
+        let themeId = chrome.resolvedEditorThemeId(
             defaultEditorThemeId: contribution.editorThemeId,
             colorScheme: colorScheme
         )
+        let palette = chrome.editorSyntaxPalette(colorScheme: colorScheme)
+        let isDark: Bool = {
+            switch chrome.appearanceKind {
+            case .dark: return true
+            case .light: return false
+            case .system: return colorScheme == .dark
+            }
+        }()
+        return ResolvedEditorSyntax(themeId: themeId, palette: palette, isDark: isDark)
     }
 
     // MARK: - Private

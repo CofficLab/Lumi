@@ -1,7 +1,7 @@
 #if canImport(XCTest)
-@preconcurrency import CodeEditSourceEditor
-import EditorCodeEditLanguages
-import EditorCodeEditTextView
+@preconcurrency import EditorSource
+import EditorLanguages
+import EditorTextView
 import XCTest
 @testable import EditorService
 

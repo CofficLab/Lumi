@@ -121,6 +121,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
                 self?.showMainWindow()
                 self?.closePopover()
             },
+            onCheckForUpdates: { [weak self] in
+                NotificationCenter.postCheckForUpdates()
+                self?.closePopover()
+            },
             onQuit: {
                 NSApp.terminate(nil)
             }

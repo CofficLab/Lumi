@@ -85,6 +85,7 @@ struct ThemePickerDetailView: View {
                 }
             }
         }
+        .appThemedAppearance()
     }
 
     @ViewBuilder
@@ -109,7 +110,7 @@ struct ThemePickerDetailView: View {
                         .foregroundColor(isSelected ? uiTheme.textPrimary : uiTheme.textSecondary)
                     Text(theme.description)
                         .font(.appMicro)
-                        .foregroundColor(uiTheme.textTertiary)
+                        .foregroundColor(uiTheme.textSecondary)
                         .lineLimit(1)
                 }
 

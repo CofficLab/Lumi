@@ -18,8 +18,9 @@ public enum ZhipuPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == "com.coffic.lumi.plugin.chat-panel",
-              context.resolve(LumiChatServicing.self)?.selectedProviderID == ZhipuProvider.info.id else {
+        guard context.isChatSectionVisible,
+              context.activeProviderID == ZhipuProvider.info.id
+        else {
             return []
         }
 
