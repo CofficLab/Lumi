@@ -191,10 +191,10 @@ private extension HighlightProviderState {
                 guard let rangeToHighlight = self.currentDocumentRange(for: range), !rangeToHighlight.isEmpty else {
                     return
                 }
-                self.validSet.insert(range: rangeToHighlight)
 
                 switch result {
                 case .success(let highlights):
+                    self.validSet.insert(range: rangeToHighlight)
                     self.delegate?.applyHighlightResult(
                         provider: providerId,
                         highlights: self.clampedHighlights(highlights, to: rangeToHighlight),

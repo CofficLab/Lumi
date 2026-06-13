@@ -90,6 +90,8 @@ class Highlighter: NSObject {
     /// Flag to track if visible range has actually changed
     private var lastVisibleRange: NSRange?
 
+    private var treeSitterStateObserver: NSObjectProtocol?
+
     // MARK: - Init
 
     init(
@@ -123,6 +125,14 @@ class Highlighter: NSObject {
                 visibleRangeProvider: visibleRangeProvider,
                 language: language
             )
+        }
+
+        treeSitterStateObserver = NotificationCenter.default.addObserver(
+            forName: TreeSitterClient.Constants.stateDidUpdate,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.invalidate()
         }
     }
 
@@ -217,6 +227,9 @@ class Highlighter: NSObject {
     }
 
     deinit {
+        if let treeSitterStateObserver {
+            NotificationCenter.default.removeObserver(treeSitterStateObserver)
+        }
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProviders = []

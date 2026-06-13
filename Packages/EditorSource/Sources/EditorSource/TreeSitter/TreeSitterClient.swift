@@ -101,6 +101,9 @@ public final class TreeSitterClient: HighlightProviding {
             "EditorSource.longParseFinishedNotification"
         )
 
+        /// Posted on the main queue after the initial tree-sitter state is ready.
+        public static let stateDidUpdate: Notification.Name = .init("EditorSource.treeSitterStateDidUpdate")
+
         /// The duration tasks sleep before checking if they're runnable.
         ///
         /// Lower than 1ms starts causing bad lock contention, much higher reduces responsiveness with diminishing
@@ -132,6 +135,9 @@ public final class TreeSitterClient: HighlightProviding {
                 readBlock: readBlock
             )
             self?.state = state
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: Constants.stateDidUpdate, object: self)
+            }
         }
 
         executor.cancelAll(below: .all)
@@ -215,8 +221,14 @@ public final class TreeSitterClient: HighlightProviding {
         range: NSRange,
         completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
     ) {
-        let operation = { [weak self] in
-            return (self?.queryHighlightsForRange(range: range) ?? []).sorted { $0.range.location < $1.range.location }
+        let operation: () -> Result<[HighlightRange], Error> = { [weak self] in
+            guard let self else { return .success([]) }
+            guard self.state != nil else {
+                return .failure(HighlightProvidingError.operationCancelled)
+            }
+            let highlights = self.queryHighlightsForRange(range: range)
+                .sorted { $0.range.location < $1.range.location }
+            return .success(highlights)
         }
 
         let longQuery = range.length > Constants.maxSyncQueryLength
@@ -224,10 +236,12 @@ public final class TreeSitterClient: HighlightProviding {
         let execAsync = longQuery || longDocument
 
         if !execAsync || forceSyncOperation {
-            let result = executor.execSync(operation)
-            if case .success(let highlights) = result {
-                DispatchQueue.dispatchMainIfNot { completion(.success(highlights)) }
+            switch executor.execSync(operation) {
+            case .success(let queryResult):
+                DispatchQueue.dispatchMainIfNot { completion(queryResult) }
                 return
+            case .failure:
+                break
             }
         }
 
@@ -235,7 +249,7 @@ public final class TreeSitterClient: HighlightProviding {
             executor.execAsync(
                 priority: .access,
                 operation: {
-                    DispatchQueue.dispatchMainIfNot { completion(.success(operation())) }
+                    DispatchQueue.dispatchMainIfNot { completion(operation()) }
                 },
                 onCancel: {
                     DispatchQueue.dispatchMainIfNot {
