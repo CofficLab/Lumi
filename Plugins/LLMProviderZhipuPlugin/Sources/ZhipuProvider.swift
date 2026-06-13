@@ -16,6 +16,7 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Zhipu AI GLM", bundle: .module),
         defaultModel: "glm-4.7",
         availableModels: [
+            "glm-5.2",
             "glm-5.1",
             "glm-5-turbo",
             "glm-5",
