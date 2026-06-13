@@ -28,6 +28,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     private var semanticRefreshTask: Task<Void, Never>?
 
     private var provider: XcodeBuildContextProvider?
+    private var providerSubscriptionsBound = false
     private var cancellables = Set<AnyCancellable>()
 
     deinit {
@@ -49,48 +50,54 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                             SwiftPluginLog.logger.info("\(Self.t) setup() 开始")
             }
         }
-        
+
+        syncBuildContextFromBridge()
+        subscribeToCommonNotifications()
+        bindProviderSubscriptionsIfNeeded()
+
+        if SwiftPluginLog.verbose {
+            if SwiftPluginLog.verbose {
+                            SwiftPluginLog.logger.info("\(Self.t) setup() 完成, isXcodeProject=\(self.isXcodeProject), schemes=\(self.schemes.count)")
+            }
+        }
+    }
+
+    private func syncBuildContextFromBridge() {
         let bridge = XcodeProjectContextBridge.shared
         isXcodeProject = bridge.isXcodeProject
-        activeScheme = bridge.cachedActiveScheme
+        activeScheme = bridge.activeScheme ?? bridge.cachedActiveScheme
         activeConfiguration = bridge.activeConfiguration
         activeDestination = bridge.activeDestination
         buildContextStatusDescription = Self.localizedBuildContextStatusDescription(bridge.buildContextStatusDescription)
         latestEditorSnapshot = bridge.latestEditorSnapshot
+        if let cached = bridge.cachedState {
+            schemes = cached.schemes
+            configurations = cached.configurations
+        }
+        buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
         semanticReport = Self.makeSemanticReport(
             snapshot: bridge.latestEditorSnapshot,
             cachedState: bridge.cachedState,
             buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+    }
 
-        if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("\(Self.t) 初始状态: isXcodeProject=\(self.isXcodeProject), activeScheme=\(self.activeScheme ?? "nil")")
-            }
-        }
-
-        guard let provider = bridge.buildContextProvider else {
-            if SwiftPluginLog.verbose {
-                if SwiftPluginLog.verbose {
-                                    SwiftPluginLog.logger.warning("\(Self.t) buildContextProvider 为空")
-                }
+    private func bindProviderSubscriptionsIfNeeded() {
+        let bridge = XcodeProjectContextBridge.shared
+        guard !providerSubscriptionsBound, let provider = bridge.buildContextProvider else {
+            if SwiftPluginLog.verbose, bridge.buildContextProvider == nil {
+                SwiftPluginLog.logger.warning("\(Self.t) buildContextProvider 为空，等待后续绑定")
             }
             return
         }
         self.provider = provider
-        schemes = provider.currentWorkspace?.schemes.map(\.name) ?? []
-        configurations = Array(Set(provider.currentWorkspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
-        activeConfiguration = provider.activeConfiguration
-        buildContextStatus = provider.buildContextStatus
+        providerSubscriptionsBound = true
 
         if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("\(Self.t) schemes 数量: \(self.schemes.count), configurations 数量: \(self.configurations.count)")
-            }
+            SwiftPluginLog.logger.info("\(Self.t) 绑定 provider, schemes 数量: \(provider.currentWorkspace?.schemes.count ?? 0)")
         }
 
-        // 订阅 provider 的状态变化
         provider.$buildContextStatus
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
@@ -108,13 +115,11 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] workspace in
                 guard let self else { return }
+                let bridge = XcodeProjectContextBridge.shared
                 if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                                            SwiftPluginLog.logger.info("\(Self.t) workspace 变化: \(workspace?.name ?? "nil")")
-                    }
+                    SwiftPluginLog.logger.info("\(Self.t) workspace 变化: \(workspace?.name ?? "nil")")
                 }
-                self.isXcodeProject = workspace != nil
-                self.schemes = workspace?.schemes.map(\.name) ?? []
+                self.schemes = workspace?.schemes.map(\.name) ?? bridge.cachedState?.schemes ?? []
                 self.configurations = Array(Set(workspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
                 self.activeScheme = workspace?.activeScheme?.name
                 self.activeConfiguration = workspace?.activeScheme?.activeConfiguration
@@ -158,6 +163,9 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
+    }
+
+    private func subscribeToCommonNotifications() {
         LSPService.shared.progressProvider.$activeTasks
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -170,10 +178,10 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                                            SwiftPluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
-                    }
+                    SwiftPluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
                 }
+                self?.bindProviderSubscriptionsIfNeeded()
+                self?.syncBuildContextFromBridge()
                 self?.scheduleSemanticRefresh()
             }
 
@@ -182,19 +190,11 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 if SwiftPluginLog.verbose {
-                        if SwiftPluginLog.verbose {
-                                                    SwiftPluginLog.logger.info("\(Self.t) 收到 projectSnapshotDidChange 通知")
-                        }
+                    SwiftPluginLog.logger.info("\(Self.t) 收到 projectSnapshotDidChange 通知")
                 }
                 self?.scheduleSemanticRefresh()
             }
             .store(in: &cancellables)
-        
-        if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("\(Self.t) setup() 完成")
-            }
-        }
     }
 
     public func setActiveScheme(_ schemeName: String) {
@@ -266,14 +266,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     }
 
     private func refreshSemanticStateFromBridge() {
-        let bridge = XcodeProjectContextBridge.shared
-        activeDestination = bridge.activeDestination
-        latestEditorSnapshot = bridge.latestEditorSnapshot
-        semanticReport = Self.makeSemanticReport(
-            snapshot: bridge.latestEditorSnapshot,
-            cachedState: bridge.cachedState,
-            buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
-        )
+        syncBuildContextFromBridge()
     }
 
     private func finishResyncBuildContext() {

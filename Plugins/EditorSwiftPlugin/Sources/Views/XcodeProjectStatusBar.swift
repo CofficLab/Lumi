@@ -90,6 +90,10 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                 Text(viewModel.activeScheme ?? LumiPluginLocalization.string("Scheme", bundle: .module))
                     .lineLimit(1)
             }
+        } else if viewModel.isXcodeProject {
+            Text(viewModel.activeScheme ?? LumiPluginLocalization.string("Resolving build context...", bundle: .module))
+                .lineLimit(1)
+                .foregroundStyle(.secondary)
         }
     }
 
