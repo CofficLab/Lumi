@@ -3,14 +3,14 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.1.1</title>
-            <pubDate>Fri, 12 Jun 2026 11:25:19 +0000</pubDate>
-            <sparkle:version>222</sparkle:version>
-            <sparkle:shortVersionString>4.1.1</sparkle:shortVersionString>
+            <title>4.2.0</title>
+            <pubDate>Sat, 13 Jun 2026 14:23:37 +0000</pubDate>
+            <sparkle:version>223</sparkle:version>
+            <sparkle:shortVersionString>4.2.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
   <sparkle:releaseNotesLink>https://github.com/CofficLab/Lumi/releases/latest</sparkle:releaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.1.1/Lumi_4.1.1_arm64.dmg" length="46280947" type="application/octet-stream" sparkle:edSignature="PFzoqtDd8DEG0Rt9MhQr2NNXVNBlIsMbvT8XieffPmqxZgYXpDgcEmpf8vRYlfRIPRtsHCH6Lg2GrKB2RZL/Aw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.2.0/Lumi_4.2.0_arm64.dmg" length="44949075" type="application/octet-stream" sparkle:edSignature="oHlK66xsgZCPzC/BLU8s2KbnGnbfyWxY/SMzCXiv6i9LRBtr6jyOwZOyJXmOpGriPmg5BlIzJ3utfdfAz6hSAg=="/>
         </item>
     </channel>
 </rss>
