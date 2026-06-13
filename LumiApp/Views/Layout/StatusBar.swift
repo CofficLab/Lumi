@@ -9,45 +9,36 @@ struct StatusBar: View {
     @ObservedObject var pluginService: PluginService
     @StateObject private var projectVM: WindowProjectVM
     let editorCoreService: EditorCoreService
-    let activeID: String
-    let activeTitle: String
+    let pluginContext: LumiPluginContext
     let lumiUIService: LumiUIService
-    let chatService: any LumiChatServicing
+    @ObservedObject var chatService: ChatService
     let projectPathStore: LumiCurrentProjectPathStore
 
     init(
         pluginService: PluginService,
         editorCoreService: EditorCoreService,
-        activeID: String,
-        activeTitle: String,
+        pluginContext: LumiPluginContext,
         lumiUIService: LumiUIService,
-        chatService: any LumiChatServicing,
+        chatService: ChatService,
         projectPathStore: LumiCurrentProjectPathStore
     ) {
         self.pluginService = pluginService
         self.editorCoreService = editorCoreService
-        self.activeID = activeID
-        self.activeTitle = activeTitle
+        self.pluginContext = pluginContext
         self.lumiUIService = lumiUIService
-        self.chatService = chatService
+        self._chatService = ObservedObject(wrappedValue: chatService)
         self.projectPathStore = projectPathStore
         _projectVM = StateObject(wrappedValue: WindowProjectVM(store: projectPathStore))
     }
 
     var body: some View {
-        let context = LumiPluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register(LumiThemeServicing.self, lumiUIService)
-                dependencies.register(LumiChatServicing.self, chatService)
-                if let chatService = chatService as? ChatService {
-                    dependencies.register((any HistoryQueryService).self, chatService)
-                }
-                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-                dependencies.register(LumiEditorServicing.self, editorCoreService)
-            }
-        )
+        let context = pluginContext.withAdditionalDependencies { dependencies in
+            dependencies.register(LumiThemeServicing.self, lumiUIService)
+            dependencies.register(LumiChatServicing.self, chatService)
+            dependencies.register((any HistoryQueryService).self, chatService)
+            dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+            dependencies.register(LumiEditorServicing.self, editorCoreService)
+        }
         let items = pluginService.statusBarItems(context: context)
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }

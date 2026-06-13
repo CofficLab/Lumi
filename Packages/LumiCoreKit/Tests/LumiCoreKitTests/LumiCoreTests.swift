@@ -125,3 +125,80 @@ import Testing
     #expect(LumiChatSectionLayout.narrow.defaultWidth == 320)
     #expect(LumiChatSectionLayout.wide.defaultWidth == 480)
 }
+
+@MainActor
+@Test func pluginContextExposesChatSectionVisibilityAndActiveProvider() {
+    final class MockChatService: LumiChatServicing {
+        var conversations: [LumiConversationSummary] = []
+        var selectedConversationID: UUID? = UUID()
+        var providerInfos: [LumiLLMProviderInfo] = []
+        var selectedProviderID: String? = "zhipu"
+        var selectedModel: String?
+        var messageRenderers: [LumiMessageRendererItem] = []
+        var revision = 0
+        var agentTools: [any LumiAgentTool] = []
+        var pendingMessages: [LumiPendingMessage] = []
+        var routingMode: LumiModelRoutingMode = .manual
+        var pendingToolConfirmation: LumiPendingToolConfirmation?
+
+        func isSending(for conversationID: UUID?) -> Bool { false }
+        @discardableResult func createConversation(title: String?) -> UUID { UUID() }
+        @discardableResult func createConversation(title: String?, projectPath: String?, language: LumiConversationLanguage?) -> UUID { UUID() }
+        func selectConversation(id: UUID) {}
+        func deleteConversation(id: UUID) {}
+        func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { false }
+        @discardableResult func setConversationProjectPath(_ projectPath: String?, for conversationID: UUID) -> Bool { false }
+        func selectProvider(id: String, model: String?) {}
+        func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
+        func providerID(for conversationID: UUID?) -> String? { "zhipu" }
+        func modelName(for conversationID: UUID?) -> String? { nil }
+        func setRoutingMode(_ mode: LumiModelRoutingMode) {}
+        func language(for conversationID: UUID?) -> LumiConversationLanguage { .english }
+        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
+        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
+        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
+        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
+        func registerToolService(_ toolService: (any LumiToolServicing)?) {}
+        func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
+        func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
+        func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }
+        func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage? { nil }
+        func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] { [] }
+        func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool { false }
+        func enqueueText(_ text: String, in conversationID: UUID?) {}
+        func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?) {}
+        func cancelSending(for conversationID: UUID?) {}
+        func approvePendingTool() {}
+        func rejectPendingTool() {}
+        func removePendingMessage(id: UUID) {}
+        func deleteMessage(id: UUID, in conversationID: UUID) {}
+        func resendMessage(id: UUID, in conversationID: UUID) async {}
+        func send(_ text: String, in conversationID: UUID?) async {}
+        func generateEphemeralCompletion(messages: [LumiChatMessage], model: String, conversationID: UUID) async throws -> LumiChatMessage {
+            throw NSError(domain: "test", code: 1)
+        }
+    }
+
+    let hidden = LumiPluginContext(
+        activeSectionID: "editor",
+        activeSectionTitle: "Editor",
+        chatSection: .wide,
+        isChatSectionVisible: false,
+        dependencies: LumiPluginDependencies()
+    )
+    let visible = LumiPluginContext(
+        activeSectionID: "editor",
+        activeSectionTitle: "Editor",
+        chatSection: .wide,
+        isChatSectionVisible: true,
+        dependencies: LumiPluginDependencies {
+            $0.register(LumiChatServicing.self, MockChatService())
+        }
+    )
+
+    #expect(hidden.supportsChatSection)
+    #expect(hidden.showsChatSection == false)
+    #expect(visible.showsChatSection)
+    #expect(visible.activeProviderID == "zhipu")
+}

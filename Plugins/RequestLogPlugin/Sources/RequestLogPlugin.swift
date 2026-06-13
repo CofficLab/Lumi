@@ -20,7 +20,7 @@ public enum RequestLogPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == ChatPanelSection.id,
+        guard context.isChatSectionVisible,
               context.resolve((any LumiChatServicing).self) != nil
         else {
             return []
