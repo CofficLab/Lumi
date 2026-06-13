@@ -1,6 +1,7 @@
+import LumiCoreKit
 import SwiftUI
 
-struct SmartLightLogo: View {
+struct SmartLightLogoView: View {
     var scene: LogoScene = .general
 
     @State private var isBreathing = false
@@ -109,4 +110,45 @@ struct SmartLightLogo: View {
             .colorInvert()
             .frame(width: size * 0.5, height: size * 0.5)
     }
+}
+
+#Preview("General") {
+    SmartLightLogoView(scene: .general)
+        .frame(width: 64, height: 64)
+}
+
+#Preview("All Scenes") {
+    HStack(spacing: 20) {
+        VStack {
+            SmartLightLogoView(scene: .general)
+                .frame(width: 48, height: 48)
+            Text("General")
+                .font(.caption2)
+        }
+        VStack {
+            SmartLightLogoView(scene: .appIcon)
+                .frame(width: 48, height: 48)
+            Text("App Icon")
+                .font(.caption2)
+        }
+        VStack {
+            SmartLightLogoView(scene: .about)
+                .frame(width: 48, height: 48)
+            Text("About")
+                .font(.caption2)
+        }
+        VStack {
+            SmartLightLogoView(scene: .statusBarInactive)
+                .frame(width: 48, height: 48)
+            Text("Inactive")
+                .font(.caption2)
+        }
+        VStack {
+            SmartLightLogoView(scene: .statusBarActive)
+                .frame(width: 48, height: 48)
+            Text("Active")
+                .font(.caption2)
+        }
+    }
+    .padding()
 }

@@ -161,7 +161,8 @@ let package = Package(
         .package(path: "../../Plugins/EditorSwiftKeywordHoverPlugin"),
         .package(path: "../EditorService"),
         .package(path: "../../Plugins/AppIconDesignerPlugin"),
-        .package(path: "../../Plugins/DisplayControlPlugin")
+        .package(path: "../../Plugins/DisplayControlPlugin"),
+        .package(path: "../../Plugins/LogoSmartLightPlugin")
     ],
     targets: [
         .target(
@@ -315,7 +316,8 @@ let package = Package(
                 .product(name: "EditorSwiftSelectionCodeActionPlugin", package: "EditorSwiftSelectionCodeActionPlugin"),
                 .product(name: "EditorSwiftKeywordHoverPlugin", package: "EditorSwiftKeywordHoverPlugin"),
                 .product(name: "AppIconDesignerPlugin", package: "AppIconDesignerPlugin"),
-                .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin")
+                .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
+                .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin")
             ]
         )
     ]
