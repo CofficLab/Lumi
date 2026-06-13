@@ -101,7 +101,7 @@ public struct InspectStringCatalogTool: SuperAgentTool, SuperLog {
         // 解析 xcstrings
         let catalog: StringCatalog
         do {
-            catalog = try StringCatalogParser.parse(source: source)
+            catalog = try StringCatalogParser.parse(source)
         } catch {
             return String(
                 format: LumiPluginLocalization.string("Error: failed to parse xcstrings file: %@", bundle: .module),
