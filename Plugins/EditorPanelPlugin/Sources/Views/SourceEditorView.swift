@@ -1,8 +1,5 @@
 import SwiftUI
 import SuperLogKit
-import EditorSource
-import EditorTextView
-import EditorLanguages
 import EditorService
 import LSPDocumentHighlightEditorPlugin
 import LSPRealtimeSignalsEditorPlugin
@@ -32,7 +29,7 @@ public struct SourceEditorView: View, SuperLog {
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
     @State private var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     @State private var semanticTokenHighlightProvider: (any HighlightProviding)?
-    @State private var documentHighlightProvider: DocumentHighlightHighlighter?
+    @State private var documentHighlightProvider: DocumentHighlightHighlightAdapter?
     @State private var hoverCoordinator: HoverEditorCoordinator?
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）

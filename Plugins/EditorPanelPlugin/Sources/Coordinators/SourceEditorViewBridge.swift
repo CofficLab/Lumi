@@ -3,8 +3,6 @@ import EditorService
 import LSPDocumentHighlightEditorPlugin
 import LSPRealtimeSignalsEditorPlugin
 import SwiftUI
-import EditorSource
-import EditorTextView
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?
     public var cursorCoordinator: CursorCoordinator?
@@ -12,7 +10,7 @@ public struct SourceEditorCoordinatorSet {
     public var contextMenuCoordinator: ContextMenuCoordinator?
     public var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     public var semanticTokenHighlightProvider: (any HighlightProviding)?
-    public var documentHighlightProvider: DocumentHighlightHighlighter?
+    public var documentHighlightProvider: DocumentHighlightHighlightAdapter?
     public var hoverCoordinator: HoverEditorCoordinator?
 }
 
@@ -42,7 +40,7 @@ public struct SourceEditorViewBridge {
             next.semanticTokenHighlightProvider = semanticTokenProvider as? any HighlightProviding
         }
         if next.documentHighlightProvider == nil, let highlightProvider = state.documentHighlightProvider as? DocumentHighlightProvider {
-            next.documentHighlightProvider = DocumentHighlightHighlighter(
+            next.documentHighlightProvider = DocumentHighlightHighlightAdapter(
                 provider: highlightProvider
             )
         }

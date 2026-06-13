@@ -68,6 +68,10 @@ enum JumpToDefinitionTestSupport {
 
     static func parseSwiftTree(for content: String) throws -> (MutableTree, Node) {
         let language = swiftLanguage()
+        try XCTSkipIf(
+            language.language == nil,
+            "tree_sitter_swift is unavailable; build CodeLanguagesContainer.xcframework with ./build_framework.sh"
+        )
         guard let parserLanguage = language.language else {
             throw ParseError.missingLanguage
         }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import EditorSource
 @testable import EditorMarkdownPlugin
 
 @Test func highlightsMarkdownOutsideFencedCodeBlocks() {

@@ -21,9 +21,9 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
                 header
                 Divider()
             }
-            if let provider = service.workspaceSymbolProvider as? WorkspaceSymbolProvider {
+            if let provider = service.lsp.workspaceSymbolProvider as? WorkspaceSymbolProvider {
                 WorkspaceSymbolItemSearchView(provider: provider) { symbol in
-                    service.performOpenItem(.workspaceSymbol(symbol))
+                    service.navigation.performOpenItem(.workspaceSymbol(symbol))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -45,7 +45,7 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.performPanelCommand(.closeWorkspaceSymbolSearch)
+                service.panel.performPanelCommand(.closeWorkspaceSymbolSearch)
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -59,7 +59,7 @@ public struct BottomEditorWorkspaceSymbolsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = service.workspaceSymbolProvider.symbols.count
+        let count = service.lsp.workspaceSymbolProvider.symbols.count
         return count > 0 ? LumiPluginLocalization.string("Workspace Symbols (\(count))", bundle: .module) : LumiPluginLocalization.string("Workspace Symbols", bundle: .module)
     }
 }

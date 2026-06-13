@@ -2,7 +2,6 @@ import Foundation
 import EditorService
 import EditorGoCore
 import SwiftUI
-import EditorTextView
 import LumiCoreKit
 
 /// Go 命令贡献者

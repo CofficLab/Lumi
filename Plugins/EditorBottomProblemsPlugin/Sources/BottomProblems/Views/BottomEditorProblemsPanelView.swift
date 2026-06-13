@@ -34,7 +34,7 @@ public struct BottomEditorProblemsPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.presentBottomPanel(nil)
+                service.panel.presentBottomPanel(nil)
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -48,33 +48,33 @@ public struct BottomEditorProblemsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
+        let count = service.panel.panelState.semanticProblems.count + service.panel.panelState.problemDiagnostics.count
         return count > 0 ? LumiPluginLocalization.string("Problems (\(count))", bundle: .module) : LumiPluginLocalization.string("Problems", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if service.panelState.semanticProblems.isEmpty && service.panelState.problemDiagnostics.isEmpty {
+                if service.panel.panelState.semanticProblems.isEmpty && service.panel.panelState.problemDiagnostics.isEmpty {
                     emptyState(LumiPluginLocalization.string("No Problems", bundle: .module), systemImage: "checkmark.circle")
                 } else {
-                    if !service.panelState.semanticProblems.isEmpty {
+                    if !service.panel.panelState.semanticProblems.isEmpty {
                         sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
-                        ForEach(service.panelState.semanticProblems) { problem in
+                        ForEach(service.panel.panelState.semanticProblems) { problem in
                             panelCard(title: problem.title, subtitle: problem.message, badge: LumiPluginLocalization.string("Project", bundle: .module))
                         }
                     }
 
-                    if !service.panelState.problemDiagnostics.isEmpty {
+                    if !service.panel.panelState.problemDiagnostics.isEmpty {
                         sectionLabel(LumiPluginLocalization.string("Diagnostics", bundle: .module))
-                        ForEach(Array(service.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
+                        ForEach(Array(service.panel.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
                             Button {
-                                service.performOpenItem(.problem(diagnostic))
+                                service.navigation.performOpenItem(.problem(diagnostic))
                             } label: {
                                 panelCard(
-                                    title: "\(service.relativeFilePath):\(line):\(column)",
+                                    title: "\(service.files.relativeFilePath):\(line):\(column)",
                                     subtitle: diagnostic.message,
                                     badge: diagnostic.source ?? "LSP"
                                 )

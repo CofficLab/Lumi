@@ -161,7 +161,7 @@ final class PluginService: ObservableObject {
            context.activeSectionID == LumiEditorPanelContainer.id,
            let editor = context.resolve(LumiEditorServicing.self) {
             let service = editor.editorService
-            if let languageId = service.detectedLanguage?.tsName,
+            if let languageId = service.editing.detectedLanguage?.tsName,
                let registration = editor.extensionRegistry.railOutlineRegistration(for: languageId),
                !items.contains(where: { $0.id == registration.tabID }) {
                 items.append(

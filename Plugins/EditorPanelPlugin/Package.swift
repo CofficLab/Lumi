@@ -15,10 +15,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/EditorLanguages"),
-        .package(path: "../../Packages/EditorSource"),
-        .package(path: "../../Packages/EditorTextView"),
-        .package(path: "../../Packages/EditorKernel"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../LSPDocumentHighlightEditorPlugin"),
         .package(path: "../LSPRealtimeSignalsEditorPlugin"),
@@ -40,10 +36,6 @@ let package = Package(
             name: "EditorPanelPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "EditorLanguages", package: "EditorLanguages"),
-                .product(name: "EditorSource", package: "EditorSource"),
-                .product(name: "EditorTextView", package: "EditorTextView"),
-                .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LSPDocumentHighlightEditorPlugin", package: "LSPDocumentHighlightEditorPlugin"),
                 .product(name: "LSPRealtimeSignalsEditorPlugin", package: "LSPRealtimeSignalsEditorPlugin"),

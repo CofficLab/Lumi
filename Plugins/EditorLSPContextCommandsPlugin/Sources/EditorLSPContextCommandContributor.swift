@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import SuperLogKit
-import EditorTextView
 import os
 import LumiCoreKit
 

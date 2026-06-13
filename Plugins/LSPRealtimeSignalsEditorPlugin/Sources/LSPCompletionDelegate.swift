@@ -2,12 +2,10 @@ import Foundation
 import EditorService
 import SuperLogKit
 import SwiftUI
-import EditorSource
-import EditorTextView
 import LanguageServerProtocol
 import os
 
-private protocol ApplicableCompletionEntry: EditorSource.CodeSuggestionEntry {
+private protocol ApplicableCompletionEntry: CodeSuggestionEntry {
     var replacementText: String { get }
     var replaceRange: LSPRange? { get }
     var additionalTextEdits: [TextEdit]? { get }
@@ -52,7 +50,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
     public func completionSuggestionsRequested(
         textView: TextViewController,
         cursorPosition: CursorPosition
-    ) async -> (windowPosition: CursorPosition, items: [any EditorSource.CodeSuggestionEntry])? {
+    ) async -> (windowPosition: CursorPosition, items: [any CodeSuggestionEntry])? {
         guard let lspClient else { return nil }
         guard let editorTextView = textView.textView else { return nil }
 
@@ -213,7 +211,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
     public func completionOnCursorMove(
         textView: TextViewController,
         cursorPosition: CursorPosition
-    ) -> [any EditorSource.CodeSuggestionEntry]? {
+    ) -> [any CodeSuggestionEntry]? {
         guard let anchor = requestAnchor else { return nil }
         guard let editorTextView = textView.textView else { return nil }
         if cursorPosition.start.line != anchor.start.line ||
@@ -290,7 +288,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
     }
 
     public func completionWindowApplyCompletion(
-        item: any EditorSource.CodeSuggestionEntry,
+        item: any CodeSuggestionEntry,
         textView: TextViewController,
         cursorPosition: CursorPosition?
     ) {
@@ -372,7 +370,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         }
     }
 
-    public func completionWindowDidSelect(item: any EditorSource.CodeSuggestionEntry) {}
+    public func completionWindowDidSelect(item: any CodeSuggestionEntry) {}
 
     private static func utf16Offset(for position: CursorPosition.Position, in content: String) -> Int? {
         guard position.line > 0, position.column > 0 else { return nil }

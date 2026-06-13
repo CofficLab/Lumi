@@ -1,4 +1,3 @@
-import EditorLanguages
 import EditorService
 import LumiCoreKit
 import LumiUI
@@ -18,7 +17,7 @@ public struct BreadcrumbNavHeaderView: View {
 
     public var body: some View {
         // 仅在有文件打开时显示
-        if let fileURL = service.currentFileURL, projectVM.isProjectSelected {
+        if let fileURL = service.files.currentFileURL, projectVM.isProjectSelected {
             BreadcrumbNavPathView(fileURL: fileURL, service: service)
         }
     }
@@ -114,7 +113,7 @@ public struct BreadcrumbNavPathView: View {
                                 onSelectFile: { url in
                                     Task { @MainActor in
                                         await service.refreshProjectContext(for: projectVM.currentProjectPath)
-                                        service.open(at: url)
+                                        service.sessions.open(at: url)
                                     }
                                 }
                             )

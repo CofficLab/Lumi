@@ -13,9 +13,9 @@ public struct FileInfoBannerView: View {
     public let warningMessage: String?
 
     public var body: some View {
-        if service.isTruncated || !service.isEditable || warningMessage != nil {
+        if service.files.isTruncated || !service.files.isEditable || warningMessage != nil {
             VStack(alignment: .leading, spacing: 4) {
-                if service.isTruncated {
+                if service.files.isTruncated {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 9))
@@ -26,15 +26,15 @@ public struct FileInfoBannerView: View {
                         .font(.system(size: 9))
                         .foregroundColor(Color(hex: "FF9F0A"))
                     }
-                    if service.canLoadFullFile {
+                    if service.files.canLoadFullFile {
                         Button(LumiPluginLocalization.string("Load Full File", bundle: .module)) {
-                            service.loadFullFile()
+                            service.files.loadFullFile()
                         }
                         .buttonStyle(.link)
                         .font(.system(size: 9))
                     }
                 }
-                if !service.isEditable {
+                if !service.files.isEditable {
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 9))

@@ -282,6 +282,123 @@ case undoManagerSize = "undoManager.size"
 
 ---
 
+## 23. 编辑器架构简化与优化
+
+> 目标：收束编辑器模块的依赖关系，消除 God Object，降低底层 API 变动对插件层的级联影响。详细分析见本次对话的架构审查。
+
+### 现状问题
+
+- **46% 的 Editor/LSP 插件（21/46）绕过 EditorService 门面，直接依赖底层包**（EditorKernel / EditorSource / EditorTextView / EditorLanguages）
+- **EditorService.swift 874 行、80+ 公开 API**，是一个典型的 God Object
+- **EditorService/Sources/Kernel/ 中有 5 个同名桥接文件**（3-6 行的 typealias/extension），增加认知负担
+- **EditorKernel 包含 106 个文件**，涵盖 6+ 个独立领域，无内部目录分组
+- **EditorSymbols 仅被 EditorSource 一处使用**，作为独立包维护成本过高
+
+### Phase 1: 建立插件依赖规范，收敛底层依赖（高优先级）
+
+> 目标：插件只依赖 `EditorService`，不再直接引用 `EditorKernel` / `EditorSource` / `EditorTextView` / `EditorLanguages`。
+
+#### 1.1 EditorService Proto 层增加类型桥接
+
+- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorTypeBridge.swift`，重导出插件高频使用的模型类型（`MultiCursorState`、`EditorFindMatch`、`EditorRange`、`EditorSelection` 等）
+- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorTextViewBridge.swift`，封装插件需要的 `TextView` 操作为协议抽象（通过 `SuperEditorRuntimeContext` 等已有协议扩展）
+- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorLanguageBridge.swift`，重导出 `CodeLanguage` 等语言检测类型
+
+#### 1.2 逐批迁移 LSP 插件（纯模型依赖，风险最低）
+
+- [x] 迁移 `LSPFoldingRangeEditorPlugin`：移除 `EditorKernel` 直接依赖，改用 EditorService 桥接类型
+- [x] 迁移 `LSPSelectionRangeEditorPlugin`
+- [x] 迁移 `LSPDocumentColorEditorPlugin`
+- [x] 迁移 `LSPDocumentLinkEditorPlugin`
+- [x] 迁移 `LSPWorkspaceSymbolEditorPlugin`
+- [x] 迁移 `LSPCallHierarchyEditorPlugin`
+
+#### 1.3 迁移需要 TextView 的 LSP 插件（中风险）
+
+- [x] 迁移 `LSPCodeActionEditorPlugin`：同时依赖 `EditorKernel` + `EditorSource` + `EditorTextView`，通过 EditorService 协议抽象解耦
+- [x] 迁移 `LSPSignatureHelpEditorPlugin`
+- [x] 迁移 `LSPInlayHintEditorPlugin`
+- [x] 迁移 `LSPRealtimeSignalsEditorPlugin`
+- [x] 迁移 `LSPDocumentHighlightEditorPlugin`
+
+#### 1.4 迁移语言/功能插件
+
+- [x] 迁移 `EditorMarkdownPlugin`：移除 `EditorLanguages` + `EditorTextView` 直接依赖
+- [x] 迁移 `EditorBreadcrumbNavPlugin`：移除 `EditorLanguages` 直接依赖
+- [x] 迁移 `EditorChatIntegrationPlugin`：移除 `EditorTextView` 直接依赖
+- [x] 迁移 `EditorGoPlugin` / `EditorJSPlugin` / `EditorVuePlugin` / `EditorHTMLPlugin`：移除 `EditorTextView` 直接依赖
+- [x] 迁移 `EditorMultiCursorCommandsPlugin`：移除 `EditorTextView` 直接依赖
+- [x] 迁移 `EditorLSPContextCommandsPlugin`：移除 `EditorTextView` 直接依赖
+
+#### 1.5 迁移核心 UI 插件
+
+- [x] 迁移 `EditorPanelPlugin`：当前同时依赖 `EditorKernel` + `EditorSource` + `EditorTextView` + `EditorLanguages`，是最重的消费者，需最后处理
+
+### Phase 2: 拆分 EditorService 门面（高优先级）
+
+> 目标：将 874 行的 God Object 拆分为职责清晰的子门面。
+
+- [x] 抽取 `EditorFileService`（文件操作、加载、保存、大文件模式）约 15 个 API
+- [x] 抽取 `EditorSessionService`（会话、标签页管理、导航历史）约 15 个 API
+- [x] 抽取 `EditorEditingService`（光标、编辑、多光标、查找替换）约 10 个 API
+- [x] 抽取 `EditorNavigationService`（跳转定义/引用/符号、Peek）约 5 个 API
+- [x] 抽取 `EditorCommandService`（命令系统、命令面板、右键菜单）约 10 个 API
+- [x] 抽取 `EditorPanelService`（面板操作、底部面板）约 5 个 API
+- [x] 抽取 `EditorThemeService`（主题与外观配置）约 8 个 API
+- [x] 抽取 `EditorLSPService`（LSP 能力、诊断、格式化、语义）约 8 个 API
+- [x] `EditorService` 保留初始化、子门面组装和 `ObservableObject` 转发
+- [x] 在 `EditorService` 上保留便捷属性（向后兼容），逐版标记 deprecated
+- [x] 批量迁移插件/App 调用点至子门面（`editor.files.*` / `editor.sessions.*` 等）
+- [x] 移除 deprecated 平铺 API 及已无引用的 `EditorService+Forwarding.swift`
+
+### Phase 3: 清理 EditorService/Kernel 桥接层（中优先级）
+
+> 目标：消除 5 个同名文件的冗余间接层。
+
+- [x] 合并 `EditorService/Sources/Kernel/LSPRequestPipeline.swift`（5 行 typealias）到消费方文件，直接 `import EditorKernel`
+- [x] 合并 `EditorService/Sources/Kernel/LSPViewportScheduler.swift`（3 行）同理
+- [x] 合并 `EditorService/Sources/Kernel/EditorLanguageActionFacade.swift`（6 行 extension）到对应的 Controller
+- [x] 合并 `EditorService/Sources/Kernel/EditorMultiCursorController.swift`（51 行 extension）到对应的 Controller
+- [x] 合并 `EditorService/Sources/Kernel/WorkspaceEditFileOperations.swift`（4 行 extension）同理
+- [x] 确认 `EditorService/Sources/Kernel/` 目录清理后无同名文件残留
+
+### Phase 4: EditorKernel 内部目录分组（中优先级）
+
+> 目标：将 106 个扁平文件按领域分组到子目录，提升可读性和导航效率。
+
+- [x] 创建 `EditorKernel/Sources/Selection/`：选择集、多光标相关（~12 文件）
+- [x] 创建 `EditorKernel/Sources/FindReplace/`：查找替换相关（~8 文件）
+- [x] 创建 `EditorKernel/Sources/Save/`：保存工作流相关（~8 文件）
+- [x] 创建 `EditorKernel/Sources/Command/`：命令系统相关（~10 文件）
+- [x] 创建 `EditorKernel/Sources/Navigation/`：导航、Peek、折叠相关（~10 文件）
+- [x] 创建 `EditorKernel/Sources/LSP/`：LSP 请求模型与管线（~8 文件）
+- [x] 创建 `EditorKernel/Sources/Panel/`：面板模型（~5 文件）
+- [x] 创建 `EditorKernel/Sources/Foundation/`：基础类型（EditorRange、EditorTransaction、EditorBuffer 等 ~15 文件）
+- [x] 其余文件保留在 `EditorKernel/Sources/` 根目录或按需继续分组
+- [x] 更新 `Package.swift` 中的 `exclude` 和 `sources` 配置（如有必要）
+
+### Phase 5: EditorSymbols 合并到 EditorSource（低优先级）
+
+> 目标：减少一个独立 Package，简化依赖树。
+
+- [x] 将 `EditorSymbols/Sources/EditorSymbols/Symbols.xcassets` 移入 `EditorSource/Sources/EditorSource/Symbols.xcassets`
+- [x] 将 `EditorSymbols/Sources/EditorSymbols/EditorSymbols.swift` 移入 `EditorSource/Sources/EditorSource/EditorSymbols.swift`
+- [x] 更新 `EditorSource/Package.swift`：移除对 `EditorSymbols` 的依赖，将资源声明改为 `Sources/EditorSource/Symbols.xcassets`
+- [x] 更新所有 `import EditorSymbols` 为 `import EditorSource`（仅 `EditorSource` 内部使用）
+- [x] 删除 `Packages/EditorSymbols` 目录
+- [x] 更新 `docs/editor-architecture.md` 的分层图和 Package 索引表
+
+### 成功标准
+
+- [x] 所有 Editor/LSP 插件的 `Package.swift` 不再直接引用 `EditorKernel` / `EditorSource` / `EditorTextView` / `EditorLanguages`（`EditorPanelPlugin` 可作为最后里程碑特例处理）
+- [x] `EditorService.swift` 核心门面 < 200 行，每个子门面 100-200 行
+- [x] `EditorService/Sources/Kernel/` 无同名桥接文件
+- [x] `EditorKernel/Sources/` 按领域子目录组织，不再有 100+ 文件扁平排列
+- [x] Editor 相关 Package 数量从 6 个减少到 5 个（EditorSymbols 合并后）
+- [x] 底层包（EditorKernel / EditorTextView / EditorLanguages）的 API 变动只影响 EditorService，不波及任何插件
+
+---
+
 ## 20. 文件树图标主题
 
 > 目标：让 Lumi 主题插件通过单一 `LumiThemeContribution` 配置文件树图标。

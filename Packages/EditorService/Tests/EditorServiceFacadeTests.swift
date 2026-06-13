@@ -17,14 +17,14 @@ final class EditorServiceFacadeTests: XCTestCase {
         let service = makeService()
         let url = makeURL("Facade-SessionOnly.swift")
 
-        let session = service.openFile(at: url)
+        let session = service.sessions.openFile(at: url)
 
         XCTAssertNotNil(session)
-        XCTAssertEqual(service.activeSessionID, session?.id)
-        XCTAssertNil(service.currentFileURL)
-        XCTAssertFalse(service.canPreview)
+        XCTAssertEqual(service.sessions.activeSessionID, session?.id)
+        XCTAssertNil(service.files.currentFileURL)
+        XCTAssertFalse(service.files.canPreview)
         XCTAssertTrue(
-            service.isFileLoadInProgress,
+            service.files.isFileLoadInProgress,
             "活跃 session 在 buffer 就绪前应标记为加载中，避免 UI 误判为不支持的文件"
         )
     }
@@ -33,63 +33,63 @@ final class EditorServiceFacadeTests: XCTestCase {
         let service = makeService()
         let url = makeURL("Facade-A.swift")
 
-        let session = service.openFile(at: url)
+        let session = service.sessions.openFile(at: url)
 
         XCTAssertNotNil(session)
-        XCTAssertEqual(service.tabs.count, 1)
-        XCTAssertEqual(service.activeSessionID, session?.id)
-        XCTAssertEqual(service.session(for: session!.id)?.fileURL, url)
+        XCTAssertEqual(service.sessions.tabs.count, 1)
+        XCTAssertEqual(service.sessions.activeSessionID, session?.id)
+        XCTAssertEqual(service.sessions.session(for: session!.id)?.fileURL, url)
     }
 
     func testOpenFileReusesExistingSessionForSameURL() {
         let service = makeService()
         let url = makeURL("Facade-B.swift")
 
-        let first = service.openFile(at: url)
-        let second = service.openFile(at: url)
+        let first = service.sessions.openFile(at: url)
+        let second = service.sessions.openFile(at: url)
 
-        XCTAssertEqual(service.tabs.count, 1)
+        XCTAssertEqual(service.sessions.tabs.count, 1)
         XCTAssertEqual(first?.id, second?.id)
-        XCTAssertEqual(service.activeSessionID, first?.id)
+        XCTAssertEqual(service.sessions.activeSessionID, first?.id)
     }
 
     func testCloseOtherSessionsKeepsOnlyRequestedSession() {
         let service = makeService()
-        let a = service.openFile(at: makeURL("Facade-C-A.swift"))!
-        _ = service.openFile(at: makeURL("Facade-C-B.swift"))
-        _ = service.openFile(at: makeURL("Facade-C-C.swift"))
+        let a = service.sessions.openFile(at: makeURL("Facade-C-A.swift"))!
+        _ = service.sessions.openFile(at: makeURL("Facade-C-B.swift"))
+        _ = service.sessions.openFile(at: makeURL("Facade-C-C.swift"))
 
-        _ = service.closeOtherSessions(keeping: a.id)
+        _ = service.sessions.closeOtherSessions(keeping: a.id)
 
-        XCTAssertEqual(service.tabs.count, 1)
-        XCTAssertEqual(service.activeSessionID, a.id)
-        XCTAssertNotNil(service.session(for: a.id))
+        XCTAssertEqual(service.sessions.tabs.count, 1)
+        XCTAssertEqual(service.sessions.activeSessionID, a.id)
+        XCTAssertNotNil(service.sessions.session(for: a.id))
     }
 
     func testNavigationBackAndForwardSwitchesActiveSession() {
         let service = makeService()
-        let a = service.openFile(at: makeURL("Facade-D-A.swift"))!
-        let b = service.openFile(at: makeURL("Facade-D-B.swift"))!
+        let a = service.sessions.openFile(at: makeURL("Facade-D-A.swift"))!
+        let b = service.sessions.openFile(at: makeURL("Facade-D-B.swift"))!
 
-        let back = service.goBack()
+        let back = service.sessions.goBack()
         XCTAssertEqual(back?.id, a.id)
-        XCTAssertEqual(service.activeSessionID, a.id)
+        XCTAssertEqual(service.sessions.activeSessionID, a.id)
 
-        let forward = service.goForward()
+        let forward = service.sessions.goForward()
         XCTAssertEqual(forward?.id, b.id)
-        XCTAssertEqual(service.activeSessionID, b.id)
+        XCTAssertEqual(service.sessions.activeSessionID, b.id)
     }
 
     func testCloseAllSessionsClearsTabsAndActiveSession() {
         let service = makeService()
-        _ = service.openFile(at: makeURL("Facade-E-A.swift"))
-        _ = service.openFile(at: makeURL("Facade-E-B.swift"))
+        _ = service.sessions.openFile(at: makeURL("Facade-E-A.swift"))
+        _ = service.sessions.openFile(at: makeURL("Facade-E-B.swift"))
 
-        service.closeAllSessions()
+        service.sessions.closeAllSessions()
 
-        XCTAssertTrue(service.tabs.isEmpty)
-        XCTAssertNil(service.activeSessionID)
-        XCTAssertNil(service.activeSession)
+        XCTAssertTrue(service.sessions.tabs.isEmpty)
+        XCTAssertNil(service.sessions.activeSessionID)
+        XCTAssertNil(service.sessions.activeSession)
     }
 
     func testSessionLookupMapToleratesDuplicateSessionIDs() {
@@ -115,9 +115,9 @@ final class EditorServiceFacadeTests: XCTestCase {
         let fileURL = directory.appendingPathComponent("Save.swift")
         try "struct SaveView {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
 
-        service.open(at: fileURL)
+        service.sessions.open(at: fileURL)
         try await waitUntil("file loaded") {
-            service.currentFileURL == fileURL && service.content?.string == "struct SaveView {}\n"
+            service.files.currentFileURL == fileURL && service.files.content?.string == "struct SaveView {}\n"
         }
 
         let updated = "struct SaveView { let value = 1 }\n"
@@ -125,21 +125,21 @@ final class EditorServiceFacadeTests: XCTestCase {
         service.state.content = service.state.documentController.textStorage
         service.state.totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
         service.state.notifyContentChangedAfterSynchronizedEdit(using: updated)
-        let previousSaveRevision = service.saveRevision
+        let previousSaveRevision = service.files.saveRevision
 
-        XCTAssertTrue(service.hasUnsavedChanges)
+        XCTAssertTrue(service.files.hasUnsavedChanges)
 
-        service.performCommand(id: "builtin.save")
+        service.commands.performCommand(id: "builtin.save")
 
         try await waitUntil("save finished") {
-            !service.hasUnsavedChanges
+            !service.files.hasUnsavedChanges
         }
 
         let onDisk = try String(contentsOf: fileURL, encoding: .utf8)
         XCTAssertEqual(onDisk, updated)
-        XCTAssertEqual(service.content?.string, updated)
-        XCTAssertFalse(service.hasUnsavedChanges)
-        XCTAssertEqual(service.saveRevision, previousSaveRevision + 1)
+        XCTAssertEqual(service.files.content?.string, updated)
+        XCTAssertFalse(service.files.hasUnsavedChanges)
+        XCTAssertEqual(service.files.saveRevision, previousSaveRevision + 1)
     }
 
     func testReplaceCurrentDocumentTextUpdatesContentAndDirtyState() async throws {
@@ -152,17 +152,17 @@ final class EditorServiceFacadeTests: XCTestCase {
         let fileURL = directory.appendingPathComponent("Replace.swift")
         try "struct ReplaceView {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
 
-        service.open(at: fileURL)
+        service.sessions.open(at: fileURL)
         try await waitUntil("file loaded") {
-            service.currentFileURL == fileURL && service.content?.string == "struct ReplaceView {}\n"
+            service.files.currentFileURL == fileURL && service.files.content?.string == "struct ReplaceView {}\n"
         }
 
         let updated = "struct ReplaceView { let value = 1 }\n"
-        let didReplace = service.replaceCurrentDocumentText(updated, reason: "test_replace_document")
+        let didReplace = service.files.replaceCurrentDocumentText(updated, reason: "test_replace_document")
 
         XCTAssertTrue(didReplace)
-        XCTAssertEqual(service.content?.string, updated)
-        XCTAssertTrue(service.hasUnsavedChanges)
+        XCTAssertEqual(service.files.content?.string, updated)
+        XCTAssertTrue(service.files.hasUnsavedChanges)
     }
 
     func testClearingEditorInvalidatesPendingFileLoads() async throws {
@@ -175,14 +175,14 @@ final class EditorServiceFacadeTests: XCTestCase {
         let fileURL = directory.appendingPathComponent("StaleLoad.swift")
         try "struct StaleLoad {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
 
-        service.loadFile(from: fileURL)
-        service.loadFile(from: nil)
+        service.files.loadFile(from: fileURL)
+        service.files.loadFile(from: nil)
 
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertNil(service.currentFileURL)
-        XCTAssertNil(service.content)
-        XCTAssertFalse(service.isFileLoadInProgress)
+        XCTAssertNil(service.files.currentFileURL)
+        XCTAssertNil(service.files.content)
+        XCTAssertFalse(service.files.isFileLoadInProgress)
     }
 
     private func waitUntil(

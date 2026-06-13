@@ -50,7 +50,7 @@ public enum EditorRuntimeBridge {
             if let projectRoot {
                 await service.refreshProjectContext(for: projectRoot)
             }
-            service.open(at: url)
+            service.sessions.open(at: url)
         }
 
         Task { @MainActor in

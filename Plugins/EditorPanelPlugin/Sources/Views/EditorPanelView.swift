@@ -1,4 +1,3 @@
-import EditorSource
 import Combine
 import EditorService
 import LumiCoreKit
@@ -51,7 +50,7 @@ public struct EditorPanelView: View {
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
-        .onChange(of: service.currentFileURL) {
+        .onChange(of: service.files.currentFileURL) {
             coordinator.handleCurrentFileURLChange()
         }
         .onAppear {
@@ -135,13 +134,13 @@ public struct EditorPanelView: View {
 
     private var editorContentSnapshot: EditorPanelContentRouting.Snapshot {
         EditorPanelContentRouting.Snapshot(
-            activeSessionID: service.activeSessionID,
-            currentFileURL: service.currentFileURL,
-            canPreview: service.canPreview,
-            isBinaryFile: service.isBinaryFile,
-            isFileLoadInProgress: service.isFileLoadInProgress,
-            fileLoadErrorMessage: service.fileLoadErrorMessage,
-            isMarkdownFile: service.isMarkdownFile,
+            activeSessionID: service.sessions.activeSessionID,
+            currentFileURL: service.files.currentFileURL,
+            canPreview: service.files.canPreview,
+            isBinaryFile: service.files.isBinaryFile,
+            isFileLoadInProgress: service.files.isFileLoadInProgress,
+            fileLoadErrorMessage: service.files.fileLoadErrorMessage,
+            isMarkdownFile: service.files.isMarkdownFile,
             isMarkdownPreviewMode: service.isMarkdownPreviewMode
         )
     }
@@ -159,18 +158,18 @@ public struct EditorPanelView: View {
         case .markdownPreview:
             markdownPreviewContent
         case .binaryPreview:
-            if let fileURL = service.currentFileURL {
+            if let fileURL = service.files.currentFileURL {
                 FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         case .loadFailure:
-            if let message = service.fileLoadErrorMessage {
+            if let message = service.files.fileLoadErrorMessage {
                 EditorLoadFailureView(
-                    fileName: service.activeSession?.fileURL?.lastPathComponent ?? service.fileName,
+                    fileName: service.sessions.activeSession?.fileURL?.lastPathComponent ?? service.files.fileName,
                     message: message
                 )
             }
         case .unsupported:
-            EditorUnsupportedFileView(fileName: service.fileName)
+            EditorUnsupportedFileView(fileName: service.files.fileName)
         }
     }
 
@@ -186,7 +185,7 @@ public struct EditorPanelView: View {
     private var markdownPreviewContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if let content = service.content?.string, !content.isEmpty {
+                if let content = service.files.content?.string, !content.isEmpty {
                     MarkdownBlockRenderer(markdown: content)
                         .padding(20)
                 } else {

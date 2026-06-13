@@ -1,8 +1,4 @@
-@preconcurrency import EditorSource
-import EditorKernel
 import LSPServiceEditorPlugin
-import EditorTextView
-import EditorLanguages
 import LanguageServerProtocol
 import Foundation
 import EditorService
@@ -95,47 +91,3 @@ public final class DocumentHighlightProvider: ObservableObject, SuperEditorDocum
 }
 
 // MARK: - Highlight Providing
-
-/// 基于 LSP 文档高亮的 HighlightProvider
-@MainActor
-public final class DocumentHighlightHighlighter: HighlightProviding {
-    
-    private var provider: DocumentHighlightProvider
-    
-    public init(provider: DocumentHighlightProvider) {
-        self.provider = provider
-    }
-    
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
-        // No-op
-    }
-    
-    public func queryHighlightsFor(
-        textView: TextView,
-        range: NSRange,
-        completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
-    ) {
-        let ranges = provider.highlightRanges
-        guard !ranges.isEmpty else {
-            completion(.success([]))
-            return
-        }
-        
-        let highlights = ranges.compactMap { item -> HighlightRange? in
-            let intersection = NSIntersectionRange(item, range)
-            guard intersection.length > 0 else { return nil }
-            return HighlightRange(range: intersection, capture: nil, modifiers: [])
-        }
-        
-        completion(.success(highlights))
-    }
-    
-    public func applyEdit(
-        textView: TextView,
-        range: NSRange,
-        delta: Int,
-        completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void
-    ) {
-        completion(.success(IndexSet()))
-    }
-}

@@ -13,14 +13,14 @@ public final class EditorContext: ObservableObject {
     private let themeVM: AppThemeVM
     private var cancellables = Set<AnyCancellable>()
 
-    public var currentFileURL: URL? { service.currentFileURL }
+    public var currentFileURL: URL? { service.files.currentFileURL }
     public var activeChromeTheme: (any LumiAppChromeTheme)? { themeVM.activeChromeTheme }
     public var activeFileIconTheme: LumiFileIconThemeContributor? { LumiDefaultFileIconThemeContributor() }
 
     public init(service: EditorService, themeVM: AppThemeVM = .shared) {
         self.service = service
         self.themeVM = themeVM
-        fileTreeHighlightedFileURL = service.currentFileURL
+        fileTreeHighlightedFileURL = service.files.currentFileURL
         bindFileTreeHighlightToEditorCurrentFile()
     }
 
@@ -36,7 +36,7 @@ public final class EditorContext: ObservableObject {
     }
 
     public func openFile(at url: URL) {
-        service.open(at: url)
+        service.sessions.open(at: url)
     }
 
     public func refreshProjectContext(for projectPath: String) async {
@@ -44,7 +44,7 @@ public final class EditorContext: ObservableObject {
     }
 
     public func syncFileTreeHighlightFromEditor() {
-        fileTreeHighlightedFileURL = service.currentFileURL
+        fileTreeHighlightedFileURL = service.files.currentFileURL
     }
 
     public static let addToChatNotificationName = Notification.Name("addToChat")

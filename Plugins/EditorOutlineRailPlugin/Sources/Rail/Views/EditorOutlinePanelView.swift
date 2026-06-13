@@ -62,7 +62,7 @@ public struct EditorOutlinePanelView: View {
                 }
 
                 Button {
-                    service.performPanelCommand(.closeOutline)
+                    service.panel.performPanelCommand(.closeOutline)
                 } label: {
                     Image(systemName: "xmark")
                         .font(.appMicroEmphasized)
@@ -97,7 +97,7 @@ public struct EditorOutlinePanelView: View {
                 .onAppear {
                     syncActiveSymbolPresentation(using: proxy)
                 }
-                .onChange(of: service.cursorLine) { _, _ in
+                .onChange(of: service.editing.cursorLine) { _, _ in
                     syncActiveSymbolPresentation(using: proxy)
                 }
                 .onChange(of: provider.symbols.map(\.id)) { _, _ in
@@ -170,7 +170,7 @@ public struct EditorOutlinePanelView: View {
     }
 
     private var activePathIDs: Set<String> {
-        Set(provider.symbols.compactMap { $0.activePath(for: service.cursorLine) }.flatMap { $0 })
+        Set(provider.symbols.compactMap { $0.activePath(for: service.editing.cursorLine) }.flatMap { $0 })
     }
 
     private func filtered(_ item: EditorDocumentSymbolItem, query: String) -> EditorDocumentSymbolItem? {
@@ -208,7 +208,7 @@ public struct EditorOutlinePanelView: View {
                     }
 
                     Button {
-                        service.performOpenItem(.documentSymbol(item))
+                        service.navigation.performOpenItem(.documentSymbol(item))
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: item.iconSymbol)
@@ -260,10 +260,10 @@ public struct EditorOutlinePanelView: View {
     }
 
     private func syncActiveSymbolPresentation(using proxy: ScrollViewProxy) {
-        let activePathIDs = provider.activePathIDs(for: service.cursorLine)
+        let activePathIDs = provider.activePathIDs(for: service.editing.cursorLine)
         guard !activePathIDs.isEmpty else { return }
 
-        let ancestorIDs = provider.activeAncestorIDs(for: service.cursorLine)
+        let ancestorIDs = provider.activeAncestorIDs(for: service.editing.cursorLine)
         collapsedIDs.subtract(ancestorIDs)
 
         guard filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

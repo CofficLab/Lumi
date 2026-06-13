@@ -1,9 +1,6 @@
 import Foundation
-import EditorKernel
 import EditorService
 import Combine
-import EditorSource
-import EditorTextView
 import LanguageServerProtocol
 import LSPServiceEditorPlugin
 

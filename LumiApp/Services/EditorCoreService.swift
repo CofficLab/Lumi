@@ -52,7 +52,7 @@ final class EditorCoreService: LumiEditorServicing {
         EditorSettingsLifecycle.registerEditorThemeContributors?(extensionRegistry)
         let scheme = SystemAppearanceResolver.effectiveColorScheme
         let themeID = themeRegistry.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
-        editorService.syncInitialThemeFromExternal(themeID)
+        editorService.theme.syncInitialThemeFromExternal(themeID)
     }
 
     private func configureLifecycle(

@@ -67,14 +67,14 @@ public final class EditorPanelCoordinator: ObservableObject {
         service.projectRootPath = projectRootPath(from: projectVM)
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, service: service)
 
-        if service.activeSessionID != nil || service.currentFileURL != nil {
+        if service.sessions.activeSessionID != nil || service.files.currentFileURL != nil {
             panelService.openOrActivateSession(
-                for: service.currentFileURL ?? service.activeSession?.fileURL,
+                for: service.files.currentFileURL ?? service.sessions.activeSession?.fileURL,
                 service: service,
                 projectRootPath: projectRootPath(from: projectVM),
                 currentProjectPath: projectVM.currentProjectPath
             )
-            service.refreshDocumentOutline()
+            service.lsp.refreshDocumentOutline()
         }
     }
 
@@ -82,13 +82,13 @@ public final class EditorPanelCoordinator: ObservableObject {
     public func handleDisappear() {
         guard let service else { return }
 
-        if service.hasUnsavedChanges { service.saveNow() }
+        if service.files.hasUnsavedChanges { service.files.saveNow() }
     }
 
     /// App 切到后台时保存当前脏文件，匹配 VS Code 的 focus-change auto save 行为。
     public func handleApplicationDidResignActive() {
-        guard let service, service.hasUnsavedChanges else { return }
-        service.saveNow()
+        guard let service, service.files.hasUnsavedChanges else { return }
+        service.files.saveNow()
     }
 
     // MARK: - 项目路径变化
@@ -104,9 +104,9 @@ public final class EditorPanelCoordinator: ObservableObject {
         }
 
         // 保存未保存的变更后关闭所有编辑器会话
-        if service.hasUnsavedChanges { service.saveNow() }
-        service.closeAllSessions()
-        service.loadFile(from: nil)
+        if service.files.hasUnsavedChanges { service.files.saveNow() }
+        service.sessions.closeAllSessions()
+        service.files.loadFile(from: nil)
         panelService.refreshProjectContext(for: newPath, service: service)
     }
 
@@ -115,7 +115,7 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 处理当前文件 URL 变化（state 层面）
     public func handleCurrentFileURLChange() {
         guard let service else { return }
-        service.refreshDocumentOutline()
+        service.lsp.refreshDocumentOutline()
     }
 
     // MARK: - 命令通知订阅
@@ -171,7 +171,7 @@ public final class EditorPanelCoordinator: ObservableObject {
             panelService.handleEditorCommandEvent(
                 commandID,
                 service: service,
-                isFileSelected: service.activeSessionID != nil || service.currentFileURL != nil
+                isFileSelected: service.sessions.activeSessionID != nil || service.files.currentFileURL != nil
             )
         case .showCommandPalette:
             panelService.isCommandPalettePresented = true

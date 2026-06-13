@@ -92,10 +92,10 @@ struct EditorTabRestoreRegressionTests {
             forProject: fixture.projectPath,
             openFile: { url in
                 phaseOneGapObserved = fixture.sessionStore.tabs.count == 1
-                    && fixture.service.activeSessionID != nil
-                    && fixture.service.currentFileURL == nil
-                    && !fixture.service.canPreview
-                    && !fixture.service.isFileLoadInProgress
+                    && fixture.service.sessions.activeSessionID != nil
+                    && fixture.service.files.currentFileURL == nil
+                    && !fixture.service.files.canPreview
+                    && !fixture.service.files.isFileLoadInProgress
                 await fixture.trackOpen(url)
             },
             openFileSessionOnly: { url in
@@ -122,17 +122,17 @@ struct EditorTabRestoreRegressionTests {
             forProject: fixture.projectPath,
             openFile: { url in
                 try? await Task.sleep(nanoseconds: 50_000_000)
-                fixture.service.open(at: url)
+                fixture.service.sessions.open(at: url)
             },
             openFileSessionOnly: { url in
-                _ = fixture.service.openFile(at: url)
+                _ = fixture.service.sessions.openFile(at: url)
             }
         )
 
         await fixture.waitUntilFileLoaded(fixture.primaryFile)
 
-        #expect(fixture.service.currentFileURL == fixture.primaryFile)
-        #expect(fixture.service.canPreview)
+        #expect(fixture.service.files.currentFileURL == fixture.primaryFile)
+        #expect(fixture.service.files.canPreview)
     }
 }
 
@@ -200,17 +200,17 @@ private final class TabRestoreFixture {
 
     func trackSessionOnly(_ url: URL) {
         sessionOnlyURLs.append(url)
-        _ = service.openFileSessionInBackground(at: url)
+        _ = service.sessions.openFileSessionInBackground(at: url)
     }
 
     func trackOpen(_ url: URL) async {
         openedURLs.append(url)
-        service.open(at: url)
+        service.sessions.open(at: url)
     }
 
     func waitUntilFileLoaded(_ file: URL) async {
         for _ in 0 ..< 200 {
-            if service.currentFileURL == file, service.canPreview {
+            if service.files.currentFileURL == file, service.files.canPreview {
                 return
             }
             try? await Task.sleep(nanoseconds: 10_000_000)

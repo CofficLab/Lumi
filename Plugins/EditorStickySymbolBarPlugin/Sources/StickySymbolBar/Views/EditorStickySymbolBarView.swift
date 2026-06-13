@@ -17,7 +17,7 @@ public struct EditorStickySymbolBarHeaderView: View {
     }
 
     public var body: some View {
-        let activeDocumentSymbolTrail = service.documentSymbolProvider.activeItems(for: service.cursorLine)
+        let activeDocumentSymbolTrail = service.lsp.documentSymbolProvider.activeItems(for: service.editing.cursorLine)
         if !activeDocumentSymbolTrail.isEmpty {
             EditorStickySymbolBarView(
                 service: service,
@@ -67,7 +67,7 @@ public struct EditorStickySymbolBarView: View {
 
             Spacer(minLength: 0)
 
-            Text(LumiPluginLocalization.string("Ln \(service.cursorLine)", bundle: .module))
+            Text(LumiPluginLocalization.string("Ln \(service.editing.cursorLine)", bundle: .module))
                 .font(.appMicroEmphasized)
                 .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 8)
@@ -88,7 +88,7 @@ public struct EditorStickySymbolBarView: View {
     @ViewBuilder
     private func symbolChip(_ symbol: EditorDocumentSymbolItem) -> some View {
         Button {
-            service.performOpenItem(.documentSymbol(symbol))
+            service.navigation.performOpenItem(.documentSymbol(symbol))
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: symbol.iconSymbol)

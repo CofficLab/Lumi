@@ -34,15 +34,15 @@ public struct EditorTabItemView: View {
     }
 
     private var isActive: Bool {
-        service.activeSessionID == tab.sessionID
+        service.sessions.activeSessionID == tab.sessionID
     }
 
     private var isDirty: Bool {
-        tab.isDirty || (isActive && service.currentFileURL == tab.fileURL && service.hasUnsavedChanges)
+        tab.isDirty || (isActive && service.files.currentFileURL == tab.fileURL && service.files.hasUnsavedChanges)
     }
 
     private var tabIndex: Int? {
-        service.tabs.firstIndex(where: { $0.sessionID == tab.sessionID })
+        service.sessions.tabs.firstIndex(where: { $0.sessionID == tab.sessionID })
     }
 
     private var canCloseTabsToLeft: Bool {
@@ -52,7 +52,7 @@ public struct EditorTabItemView: View {
 
     private var canCloseTabsToRight: Bool {
         guard let tabIndex else { return false }
-        return tabIndex < service.tabs.count - 1
+        return tabIndex < service.sessions.tabs.count - 1
     }
 
     public var body: some View {
@@ -158,22 +158,22 @@ public struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func activateSession(_ tab: EditorTab) {
-        service.activateAndRestoreSession(id: tab.sessionID)
+        service.sessions.activateAndRestoreSession(id: tab.sessionID)
     }
 
     private func closeSession(_ tab: EditorTab) {
-        guard let session = service.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == service.activeSessionID
-        if wasActive, service.hasUnsavedChanges {
-            service.saveNow()
+        guard let session = service.sessions.session(for: tab.sessionID) else { return }
+        let wasActive = session.id == service.sessions.activeSessionID
+        if wasActive, service.files.hasUnsavedChanges {
+            service.files.saveNow()
         }
 
-        let nextSession = service.closeSession(id: session.id)
+        let nextSession = service.sessions.closeSession(id: session.id)
         guard wasActive, let nextSession else { return }
 
         // closeSession 已切换 activeSessionID，只需加载文件 + 恢复交互状态
-        service.loadFile(from: nextSession.fileURL)
-        service.applySessionRestore(nextSession)
+        service.files.loadFile(from: nextSession.fileURL)
+        service.files.applySessionRestore(nextSession)
     }
 
     // MARK: - Drag Preview
@@ -196,33 +196,33 @@ public struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func closeOtherSessions() {
-        guard let session = service.session(for: tab.sessionID) else { return }
-        if service.currentFileURL != session.fileURL, service.hasUnsavedChanges {
-            service.saveNow()
+        guard let session = service.sessions.session(for: tab.sessionID) else { return }
+        if service.files.currentFileURL != session.fileURL, service.files.hasUnsavedChanges {
+            service.files.saveNow()
         }
 
-        let keptSession = service.closeOtherSessions(keeping: session.id)
-        service.loadFile(from: keptSession?.fileURL)
+        let keptSession = service.sessions.closeOtherSessions(keeping: session.id)
+        service.files.loadFile(from: keptSession?.fileURL)
         if let keptSession {
-            service.applySessionRestore(keptSession)
+            service.files.applySessionRestore(keptSession)
         }
     }
 
     private func togglePinned() {
-        service.togglePinned(sessionID: tab.sessionID)
+        service.sessions.togglePinned(sessionID: tab.sessionID)
     }
 
     private func closeTabsToLeft() {
         closeTabsOnSide(
             closesActiveSession: activeSessionIsLeftOfTab,
-            close: { service.closeTabsToLeft(of: $0) }
+            close: { service.sessions.closeTabsToLeft(of: $0) }
         )
     }
 
     private func closeTabsToRight() {
         closeTabsOnSide(
             closesActiveSession: activeSessionIsRightOfTab,
-            close: { service.closeTabsToRight(of: $0) }
+            close: { service.sessions.closeTabsToRight(of: $0) }
         )
     }
 
@@ -230,23 +230,23 @@ public struct EditorTabItemView: View {
         closesActiveSession: Bool,
         close: (EditorSession.ID) -> EditorSession?
     ) {
-        let previousActiveSessionID = service.activeSessionID
-        if closesActiveSession, service.hasUnsavedChanges {
-            service.saveNow()
+        let previousActiveSessionID = service.sessions.activeSessionID
+        if closesActiveSession, service.files.hasUnsavedChanges {
+            service.files.saveNow()
         }
 
         let nextSession = close(tab.sessionID)
         guard nextSession?.id != previousActiveSessionID else { return }
 
-        service.loadFile(from: nextSession?.fileURL)
+        service.files.loadFile(from: nextSession?.fileURL)
         if let nextSession {
-            service.applySessionRestore(nextSession)
+            service.files.applySessionRestore(nextSession)
         }
     }
 
     private var activeSessionIsLeftOfTab: Bool {
-        guard let activeSessionID = service.activeSessionID,
-              let activeIndex = service.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
+        guard let activeSessionID = service.sessions.activeSessionID,
+              let activeIndex = service.sessions.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
               let targetIndex = tabIndex else {
             return false
         }
@@ -255,8 +255,8 @@ public struct EditorTabItemView: View {
     }
 
     private var activeSessionIsRightOfTab: Bool {
-        guard let activeSessionID = service.activeSessionID,
-              let activeIndex = service.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
+        guard let activeSessionID = service.sessions.activeSessionID,
+              let activeIndex = service.sessions.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
               let targetIndex = tabIndex else {
             return false
         }
