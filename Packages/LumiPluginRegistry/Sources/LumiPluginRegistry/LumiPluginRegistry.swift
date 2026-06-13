@@ -120,6 +120,8 @@ import EditorRailCallHierarchyPlugin
 import LLMAvailabilityPlugin
 import ConversationNewPlugin
 import DisplayControlPlugin
+import LogoSmartLightPlugin
+import LogoCofficPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -247,6 +249,8 @@ public enum LumiPluginRegistry {
         DelayMessagePlugin.self,
         LLMAvailabilityPlugin.self,
         AppIconDesignerPlugin.self,
-        DisplayControlPlugin.self
+        DisplayControlPlugin.self,
+        LogoSmartLightPlugin.self,
+        LogoCofficPlugin.self
     ]
 }
