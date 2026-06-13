@@ -250,25 +250,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+            "value": "管理 SQLite、MySQL、PostgreSQL 和 Redis"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         }
       }
