@@ -3,7 +3,7 @@ import AppKit
 import Combine
 import EditorSource
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import LanguageServerProtocol
 
 // MARK: - Editor LSP Provider Protocols
@@ -154,7 +154,7 @@ public protocol SuperEditorDocumentSymbolProvider: AnyObject {
 
 @MainActor
 public protocol SuperEditorSemanticTokenProvider: AnyObject {
-    func setUp(textView: TextView, codeLanguage: CodeLanguage)
+    func setUp(textView: TextView, codeLanguage: EditorLanguageContext)
     func setEnabled(_ enabled: Bool)
     func scheduleViewportRefresh()
     func applyEdit(

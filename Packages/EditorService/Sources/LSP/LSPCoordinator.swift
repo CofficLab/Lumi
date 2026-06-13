@@ -4,7 +4,7 @@ import SuperLogKit
 import AppKit
 @preconcurrency import EditorSource
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import LanguageServerProtocol
 import Combine
 import os
@@ -947,7 +947,7 @@ public final class SemanticTokenHighlightProvider: HighlightProviding, SuperEdit
         self.uriProvider = uriProvider
     }
     
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
+    public func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {
         requestGeneration.invalidate()
         self.textView = textView
         installViewportObservers(for: textView)

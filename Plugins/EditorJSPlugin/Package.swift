@@ -19,6 +19,9 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", branch: "master"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-typescript.git", branch: "master"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-jsdoc.git", branch: "master"),
     ],
     targets: [
         .target(
@@ -29,10 +32,14 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
+                .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
+                .product(name: "TreeSitterJSDoc", package: "tree-sitter-jsdoc"),
             ],
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Localizable.xcstrings"),
+                .copy("Resources"),
             ]
         ),
         .testTarget(

@@ -1,13 +1,13 @@
 #if canImport(XCTest)
 @preconcurrency import EditorSource
-import EditorLanguages
+import EditorLanguageRuntime
 import EditorTextView
 import XCTest
 @testable import EditorService
 
 @MainActor
 private final class MockHighlightProvider: HighlightProviding {
-    func setUp(textView: TextView, codeLanguage: CodeLanguage) {}
+    func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {}
 
     func applyEdit(
         textView: TextView,

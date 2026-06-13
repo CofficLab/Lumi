@@ -33,6 +33,12 @@ public protocol SuperEditorLanguageIntegrationCapability: AnyObject {
 
 extension SuperEditorLanguageIntegrationCapability {
     public var priority: Int { 0 }
+
+    /// Optional LSP server configuration discovered at runtime.
+    /// Plugins may also register via `LSPConfig.registerServerProvider` during extension registration.
+    func serverConfig(for languageId: String, projectPath: String?) -> LSPConfig.ServerConfig? {
+        nil
+    }
 }
 
 @MainActor

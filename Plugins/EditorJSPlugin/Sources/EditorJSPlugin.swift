@@ -44,6 +44,17 @@ public actor EditorJSPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorJSPluginDescriptor.javascript)
+        registry.registerLanguage(EditorJSPluginDescriptor.typescript)
+        registry.registerLanguage(EditorJSPluginDescriptor.jsx)
+        registry.registerLanguage(EditorJSPluginDescriptor.tsx)
+        registry.registerLanguage(EditorJSPluginDescriptor.jsdoc)
+        registry.registerGrammarProvider(EditorJSJavaScriptGrammarProvider())
+        registry.registerGrammarProvider(EditorJSXGrammarProvider())
+        registry.registerGrammarProvider(EditorJSTypeScriptGrammarProvider())
+        registry.registerGrammarProvider(EditorJSTsxGrammarProvider())
+        registry.registerGrammarProvider(EditorJSJSDocGrammarProvider())
+
         let taskManager = JSTaskManager()
         registry.registerLanguageIntegrationCapability(JSLanguageIntegrationCapability())
         

@@ -7,7 +7,7 @@
 
 import AppKit
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftUI
 import Combine
 import TextFormation
@@ -65,8 +65,8 @@ public class TextViewController: NSViewController {
         }
     }
 
-    /// The associated `CodeLanguage`
-    public var language: CodeLanguage {
+    /// The associated `EditorLanguageContext`
+    public var language: EditorLanguageContext {
         didSet {
             highlighter?.setLanguage(language: language)
             setUpTextFormation()
@@ -208,7 +208,7 @@ public class TextViewController: NSViewController {
 
     public init(
         string: String,
-        language: CodeLanguage,
+        language: EditorLanguageContext,
         configuration: SourceEditorConfiguration,
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],

@@ -5,7 +5,7 @@ import EditorKernel
 import MagicAlert
 import EditorSource
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import LanguageServerProtocol
 import UniformTypeIdentifiers
 import SuperLogKit
@@ -1069,7 +1069,7 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published var totalLines: Int = 0
     
     /// 检测到的语言
-    @Published public var detectedLanguage: CodeLanguage? {
+    @Published public var detectedLanguage: EditorLanguageContext? {
         didSet {
             restoreConfig()
         }
@@ -1218,7 +1218,7 @@ public final class EditorState: ObservableObject, SuperLog {
             return
         }
 
-        let languageId = detectedLanguage?.id.rawValue ?? lspActionController.languageID(for: fileExtension)
+        let languageId = detectedLanguage?.lspLanguageId ?? detectedLanguage?.languageId ?? lspActionController.languageID(for: fileExtension)
         guard let languageId else { return }
 
         let rootPath = projectRootPath ?? loadingURL.deletingLastPathComponent().path
@@ -1783,22 +1783,14 @@ public final class EditorState: ObservableObject, SuperLog {
                             self.hasUnsavedChanges = false
                             self.saveState = .idle
 
-                            self.detectedLanguage = CodeLanguage.detectLanguageFrom(
+                            self.detectedLanguage = LanguageRegistry.shared.detectLanguage(
                                 url: loadingURL,
                                 prefixBuffer: content.getFirstLines(5),
                                 suffixBuffer: content.getLastLines(5)
                             )
 
-                            if self.detectedLanguage == nil || self.detectedLanguage?.id == .plainText {
-                                let fallbackMap: [String: CodeLanguage] = [
-                                    "astro": .tsx,
-                                    "vue": .tsx,
-                                    "svelte": .tsx,
-                                    "astro-component": .tsx,
-                                ]
-                                if let fallback = fallbackMap[self.fileExtension] {
-                                    self.detectedLanguage = fallback
-                                }
+                            if self.detectedLanguage?.languageId == "plaintext" {
+                                self.detectedLanguage = nil
                             }
 
                             self.totalLines = content.filter { $0 == "\n" }.count + 1
@@ -1817,7 +1809,7 @@ public final class EditorState: ObservableObject, SuperLog {
                         self.resetUndoHistory()
                         self.setupFileWatcher(for: loadingURL)
 
-                        let languageId = self.detectedLanguage?.id.rawValue ?? self.lspActionController.languageID(for: self.fileExtension)
+                        let languageId = self.detectedLanguage?.lspLanguageId ?? detectedLanguage?.languageId ?? self.lspActionController.languageID(for: self.fileExtension)
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
                             if Self.verbose {

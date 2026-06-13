@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 import EditorTextView
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 import OSLog
 
 /// This class manages fetching syntax highlights from providers, and applying those styles to the editor.
@@ -64,7 +64,7 @@ class Highlighter: NSObject {
     static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
 
     /// The current language of the editor.
-    private var language: CodeLanguage
+    private var language: EditorLanguageContext
 
     /// The text view to highlight
     private weak var textView: TextView?
@@ -97,7 +97,7 @@ class Highlighter: NSObject {
         minimapView: MinimapView?,
         providers: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
-        language: CodeLanguage
+        language: EditorLanguageContext
     ) {
         self.language = language
         self.textView = textView
@@ -140,7 +140,7 @@ class Highlighter: NSObject {
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
-    public func setLanguage(language: CodeLanguage) {
+    public func setLanguage(language: EditorLanguageContext) {
         guard let textView = self.textView else { return }
 
         // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing

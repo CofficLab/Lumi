@@ -16,9 +16,7 @@ let package = Package(
         .package(
             path: "../EditorTextView"
         ),
-        .package(
-            path: "../EditorLanguages"
-        ),
+        .package(path: "../EditorLanguageRuntime"),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.8.2"
@@ -29,7 +27,7 @@ let package = Package(
             name: "EditorSource",
             dependencies: [
                 "EditorTextView",
-                "EditorLanguages",
+                "EditorLanguageRuntime",
                 "TextFormation",
             ],
             path: "Sources",

@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../../Packages/EditorService"),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-html.git", branch: "master"),
     ],
     targets: [
         .target(
@@ -25,10 +26,12 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "TreeSitterHTML", package: "tree-sitter-html"),
             ],
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Localizable.xcstrings"),
+                .copy("Resources"),
             ]
         ),
         .testTarget(

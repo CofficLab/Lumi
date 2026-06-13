@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 
 /// A SwiftUI View that provides source editing functionality.
 public struct SourceEditor: NSViewControllerRepresentable {
@@ -30,7 +30,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
         _ text: Binding<String>,
-        language: CodeLanguage,
+        language: EditorLanguageContext,
         configuration: SourceEditorConfiguration,
         state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
@@ -63,7 +63,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
         _ text: NSTextStorage,
-        language: CodeLanguage,
+        language: EditorLanguageContext,
         configuration: SourceEditorConfiguration,
         state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
@@ -84,7 +84,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     }
 
     var text: TextAPI
-    var language: CodeLanguage
+    var language: EditorLanguageContext
     var configuration: SourceEditorConfiguration
     @Binding var state: SourceEditorState
     var highlightProviders: [any HighlightProviding]?
@@ -205,7 +205,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     /// - Parameter controller: The controller to check.
     /// - Returns: True, if the controller's parameters should be updated.
     func paramsAreEqual(controller: NSViewControllerType, coordinator: Coordinator) -> Bool {
-        controller.language.id == language.id &&
+        controller.language.highlightLanguageId == language.highlightLanguageId &&
         controller.configuration == configuration &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }

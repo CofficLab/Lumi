@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import EditorLanguages
+import EditorLanguageRuntime
 import EditorTextView
 import OSLog
 
@@ -83,7 +83,7 @@ class HighlightProviderState {
         highlightProvider: HighlightProviding,
         textView: TextView,
         visibleRangeProvider: VisibleRangeProvider,
-        language: CodeLanguage
+        language: EditorLanguageContext
     ) {
         self.id = id
         self.delegate = delegate
@@ -94,7 +94,7 @@ class HighlightProviderState {
         highlightProvider.setUp(textView: textView, codeLanguage: language)
     }
 
-    func setLanguage(language: CodeLanguage) {
+    func setLanguage(language: EditorLanguageContext) {
         guard let textView else { return }
         highlightProvider?.setUp(textView: textView, codeLanguage: language)
         invalidate()

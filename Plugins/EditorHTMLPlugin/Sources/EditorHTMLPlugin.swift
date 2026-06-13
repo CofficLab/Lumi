@@ -24,6 +24,9 @@ public actor EditorHTMLPlugin: SuperPlugin {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorHTMLPluginDescriptor.descriptor)
+        registry.registerGrammarProvider(EditorHTMLPluginGrammarProvider())
+
         // Phase 1: 基础编辑
         registry.registerCompletionContributor(HTMLCompletionContributor())
         registry.registerHoverContributor(HTMLHoverContributor())

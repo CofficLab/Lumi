@@ -17,6 +17,11 @@ public actor EditorMarkdownPlugin: SuperPlugin {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorMarkdownPluginDescriptor.markdown)
+        registry.registerLanguage(EditorMarkdownPluginDescriptor.markdownInline)
+        registry.registerGrammarProvider(EditorMarkdownGrammarProvider())
+        registry.registerGrammarProvider(EditorMarkdownInlineGrammarProvider())
+
         let contributor = MarkdownHighlightContributor()
         registry.registerHighlightProviderContributor(contributor)
     }

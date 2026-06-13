@@ -6,6 +6,7 @@ import LanguageServerProtocol
 @Suite("EditorLSPActionPolicy")
 struct EditorLSPActionPolicyTests {
     @Test("language id mapping is case-insensitive")
+    @MainActor
     func languageIDMapping() {
         #expect(EditorLSPActionPolicy.languageID(forFileExtension: "SWIFT") == "swift")
         #expect(EditorLSPActionPolicy.languageID(forFileExtension: "tsx") == "typescript")

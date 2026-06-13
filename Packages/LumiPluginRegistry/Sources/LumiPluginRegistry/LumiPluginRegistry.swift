@@ -99,7 +99,7 @@ import CodeReviewPlugin
 import AgentDelayMessagePlugin
 import AppIconDesignerPlugin
 import EditorPanelPlugin
-import EditorXcodePlugin
+import EditorSwiftPlugin
 import EditorBreadcrumbNavPlugin
 import EditorTabStripPlugin
 import EditorStickySymbolBarPlugin
@@ -209,7 +209,7 @@ public enum LumiPluginRegistry {
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
         EditorPanelPlugin.self,
-        EditorXcodePlugin.self,
+        EditorSwiftPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         EditorTabStripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,

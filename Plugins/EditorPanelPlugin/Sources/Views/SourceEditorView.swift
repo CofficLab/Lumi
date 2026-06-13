@@ -346,7 +346,7 @@ public struct SourceEditorView: View, SuperLog {
     
     // MARK: - Language
     
-    private var resolvedLanguage: CodeLanguage {
+    private var resolvedLanguage: EditorLanguageContext {
         adapter.resolvedLanguage(for: state)
     }
 

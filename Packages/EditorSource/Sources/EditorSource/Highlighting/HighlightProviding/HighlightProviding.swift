@@ -7,7 +7,7 @@
 
 import Foundation
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import AppKit
 
 /// A single-case error that should be thrown when an operation should be retried.
@@ -22,7 +22,7 @@ public protocol HighlightProviding: AnyObject {
     ///   - textView: The text view to use as a text source.
     ///   - codeLanguage: The language that should be used by the highlighter.
     @MainActor
-    func setUp(textView: TextView, codeLanguage: CodeLanguage)
+    func setUp(textView: TextView, codeLanguage: EditorLanguageContext)
 
     /// Notifies the highlighter that an edit is going to happen in the given range.
     /// - Parameters:
