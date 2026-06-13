@@ -12,11 +12,7 @@ struct SmartLightLogoView: View {
 
             ZStack {
                 switch scene {
-                case .general:
-                    animatedColorLogo(size: size)
-                case .appIcon:
-                    animatedColorLogo(size: size)
-                case .about:
+                case .general, .appIcon, .about, .custom:
                     animatedColorLogo(size: size)
                 case .statusBarInactive:
                     monochromeLogo(size: size)
@@ -39,7 +35,7 @@ struct SmartLightLogoView: View {
 
     private var allowsAnimation: Bool {
         switch scene {
-        case .general, .appIcon, .about:
+        case .general, .appIcon, .about, .custom:
             true
         case .statusBarInactive, .statusBarActive:
             false

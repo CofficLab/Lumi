@@ -121,6 +121,7 @@ import LLMAvailabilityPlugin
 import ConversationNewPlugin
 import DisplayControlPlugin
 import LogoSmartLightPlugin
+import LogoCofficPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -249,6 +250,7 @@ public enum LumiPluginRegistry {
         LLMAvailabilityPlugin.self,
         AppIconDesignerPlugin.self,
         DisplayControlPlugin.self,
-        LogoSmartLightPlugin.self
+        LogoSmartLightPlugin.self,
+        LogoCofficPlugin.self
     ]
 }

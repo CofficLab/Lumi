@@ -1,11 +1,11 @@
 import LumiCoreKit
 
-public enum LogoSmartLightPlugin: LumiPlugin {
+public enum LogoCofficPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
-        id: "com.lumi.plugin.logo-smart-light",
-        displayName: "Smart Light Logo",
-        description: "Default animated logo with smart light effect",
-        order: 200
+        id: "com.lumi.plugin.logo-coffic",
+        displayName: "Coffic Logo",
+        description: "Coffee cup themed animated logo",
+        order: 100
     )
 
     public static let policy: LumiPluginPolicy = .alwaysOn
@@ -14,9 +14,9 @@ public enum LogoSmartLightPlugin: LumiPlugin {
         [
             LumiLogoItem(
                 id: info.id,
-                order: 200,
+                order: 100,
                 makeView: { scene in
-                    SmartLightLogoView(scene: scene)
+                    CofficLogoView(scene: scene)
                 }
             )
         ]

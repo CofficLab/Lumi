@@ -8,4 +8,5 @@ public enum LogoScene: String, CaseIterable, Sendable {
     case about
     case statusBarInactive
     case statusBarActive
+    case custom
 }
