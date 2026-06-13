@@ -13,11 +13,19 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TreeSitterPythonScannerFix",
+            path: "Vendor/TreeSitterScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
             name: "EditorPythonPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "TreeSitterPython", package: "tree-sitter-python"),
+                "TreeSitterPythonScannerFix",
             ],
             path: "Sources",
             resources: [.copy("Resources")]

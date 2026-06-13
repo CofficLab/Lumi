@@ -13,11 +13,19 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TreeSitterJuliaScannerFix",
+            path: "Vendor/TreeSitterScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
             name: "EditorJuliaPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "TreeSitterJulia", package: "tree-sitter-julia"),
+                "TreeSitterJuliaScannerFix",
             ],
             path: "Sources",
             resources: [.copy("Resources")]

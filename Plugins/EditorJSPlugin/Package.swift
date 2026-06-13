@@ -25,6 +25,20 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TreeSitterJavaScriptScannerFix",
+            path: "Vendor/TreeSitterScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
+            name: "TreeSitterJSDocScannerFix",
+            path: "Vendor/TreeSitterJSDocScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
             name: "EditorJSPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
@@ -35,6 +49,8 @@ let package = Package(
                 .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
                 .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
                 .product(name: "TreeSitterJSDoc", package: "tree-sitter-jsdoc"),
+                "TreeSitterJavaScriptScannerFix",
+                "TreeSitterJSDocScannerFix",
             ],
             path: "Sources",
             resources: [

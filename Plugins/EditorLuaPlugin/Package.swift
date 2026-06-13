@@ -13,11 +13,19 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TreeSitterLuaScannerFix",
+            path: "Vendor/TreeSitterScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
             name: "EditorLuaPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "TreeSitterLua", package: "tree-sitter-lua"),
+                "TreeSitterLuaScannerFix",
             ],
             path: "Sources",
             resources: [.copy("Resources")]

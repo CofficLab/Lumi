@@ -20,11 +20,19 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TreeSitterCSSScannerFix",
+            path: "Vendor/TreeSitterScannerFix",
+            sources: ["src/scanner.c"],
+            publicHeadersPath: "src/tree_sitter",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .target(
             name: "EditorCSSPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "TreeSitterCSS", package: "tree-sitter-css"),
+                "TreeSitterCSSScannerFix",
             ],
             path: "Sources",
             resources: [
