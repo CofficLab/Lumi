@@ -6,7 +6,11 @@ import SwiftUI
 public struct QuickFileSearchSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectContext: PluginProjectContext
+    private let projectPath: String
+
+    public init(projectPath: String) {
+        self.projectPath = projectPath
+    }
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -27,12 +31,12 @@ public struct QuickFileSearchSettingsView: View {
             ) {
                 AppSettingsRow {
                     HStack(spacing: 12) {
-                        Image(systemName: projectContext.currentProjectPath.isEmpty ? "circle" : "checkmark.circle.fill")
+                        Image(systemName: projectPath.isEmpty ? "circle" : "checkmark.circle.fill")
                             .font(.appTitle)
-                            .foregroundColor(projectContext.currentProjectPath.isEmpty ? theme.warning : theme.success)
+                            .foregroundColor(projectPath.isEmpty ? theme.warning : theme.success)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            if projectContext.currentProjectPath.isEmpty {
+                            if projectPath.isEmpty {
                                 Text(LumiPluginLocalization.string("No project selected", bundle: .module))
                                     .font(.appBody)
                                     .foregroundColor(theme.textPrimary)
@@ -43,7 +47,7 @@ public struct QuickFileSearchSettingsView: View {
                                 Text(LumiPluginLocalization.string("Project indexed", bundle: .module))
                                     .font(.appBody)
                                     .foregroundColor(theme.textPrimary)
-                                Text(projectContext.currentProjectName)
+                                Text(URL(fileURLWithPath: projectPath).lastPathComponent)
                                     .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
                             }
@@ -53,7 +57,7 @@ public struct QuickFileSearchSettingsView: View {
                     }
                 }
 
-                if !projectContext.currentProjectPath.isEmpty {
+                if !projectPath.isEmpty {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle")
                             .foregroundColor(theme.info)
@@ -106,7 +110,7 @@ public struct QuickFileSearchSettingsView: View {
 }
 
 #Preview("Quick File Search Settings") {
-    QuickFileSearchSettingsView()
+    QuickFileSearchSettingsView(projectPath: "/tmp/MyProject")
         .inRootView()
         .frame(width: 600, height: 500)
 }

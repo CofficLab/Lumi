@@ -57,6 +57,7 @@ import RegistryManagerPlugin
 import AppStoreConnectPlugin
 import TerminalPlugin
 import MenuBarManagerPlugin
+import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import AppUpdateStatusBarPlugin
 import AppLoadedPluginsPlugin
@@ -148,6 +149,7 @@ public enum LumiPluginRegistry {
         ThemeDraculaPlugin.self,
         ThemeStatusBarPlugin.self,
         OnboardingPlugin.self,
+        QuickFileSearchPlugin.self,
         QuickLauncherPlugin.self,
         AppUpdateStatusBarPlugin.self,
         DeviceInfoPlugin.self,

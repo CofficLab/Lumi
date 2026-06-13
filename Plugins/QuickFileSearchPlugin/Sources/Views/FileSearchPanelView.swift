@@ -7,12 +7,17 @@ import AppKit
 ///
 /// 悬浮在应用主界面之上的文件搜索框
 public struct FileSearchPanelView: View {
-    @EnvironmentObject private var conversationVM: WindowConversationVM
     @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
     @StateObject private var searchService = FileSearchService.shared
 
+    private let windowIdProvider: () -> UUID?
+
     @FocusState private var isSearchFocused: Bool
     @State private var selectedIndex: Int = 0
+
+    public init(windowIdProvider: @escaping () -> UUID? = { nil }) {
+        self.windowIdProvider = windowIdProvider
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -169,7 +174,7 @@ public struct FileSearchPanelView: View {
         guard index >= 0 && index < searchService.searchResults.count else { return }
 
         let result = searchService.searchResults[index]
-        searchService.selectFile(result, windowId: conversationVM.windowId)
+        searchService.selectFile(result, windowId: windowIdProvider())
         hotkeyManager.hideOverlay()
     }
 
