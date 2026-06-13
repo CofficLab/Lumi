@@ -1100,6 +1100,40 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         return result.removedCount
     }
 
+    public func removeStaleStringCatalogEntry(
+        key: String,
+        fileURL: URL?,
+        sourceText: String?,
+        editorService: EditorService
+    ) throws -> Bool {
+        guard let fileURL, fileURL.pathExtension.lowercased() == "xcstrings" else {
+            return false
+        }
+
+        let source: String
+        if let sourceText {
+            source = sourceText
+        } else {
+            source = try Self.stringCatalogSource(from: fileURL)
+        }
+        let result = try StringCatalogCleaner.removingStaleEntry(withKey: key, from: source)
+        guard result.removedCount > 0 else {
+            return false
+        }
+
+        if editorService.files.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
+            _ = editorService.files.replaceCurrentDocumentText(
+                result.source,
+                reason: "string_catalog_remove_stale_entry"
+            )
+            editorService.files.saveNow()
+        } else {
+            try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+
+        return true
+    }
+
     func cleanProjectStringCatalogs(
         projectRootPath: String,
         currentFileURL: URL?,
