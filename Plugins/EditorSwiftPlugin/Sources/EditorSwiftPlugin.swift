@@ -32,7 +32,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
             LumiTitleToolbarItem(
                 id: "\(info.id).xcode-scheme",
                 title: LumiPluginLocalization.string("Xcode Scheme", bundle: .module),
-                placement: .center
+                placement: .leading
             ) {
                 XcodeProjectStatusBar()
             }
