@@ -62,6 +62,12 @@ struct ChatComposerSectionView: View {
                 isSending: isSending,
                 hasConversation: selectedID != nil || !conversations.isEmpty,
                 hasAttachments: !coordinator.imageAttachments.isEmpty,
+                leadingToolbarItems: coordinator.chatSectionToolbarItems.filter {
+                    $0.placement == .leading
+                },
+                trailingToolbarItems: coordinator.chatSectionToolbarItems.filter {
+                    $0.placement == .trailing
+                },
                 languagePicker: {
                     ChatLanguagePicker(
                         selectedLanguage: coordinator.chatService.language(for: selectedID),
@@ -72,13 +78,6 @@ struct ChatComposerSectionView: View {
                     ChatAutomationLevelPicker(
                         selectedLevel: coordinator.chatService.automationLevel(for: selectedID),
                         onSelect: { coordinator.chatService.setAutomationLevel($0, for: selectedID) }
-                    )
-                },
-                providerPicker: {
-                    ChatProviderPicker(
-                        chatService: coordinator.chatService,
-                        conversationID: selectedID,
-                        onChange: {}
                     )
                 },
                 verbosityPicker: {

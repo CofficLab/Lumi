@@ -1,4 +1,3 @@
-import EditorSource
 import EditorService
 import Foundation
 import os
@@ -48,14 +47,14 @@ public final class EditorPanelService: ObservableObject {
             if EditorPanelPlugin.verbose {
                 EditorPanelPlugin.logger.info("fileURL 为 nil → loadFile(nil)")
             }
-            service.loadFile(from: nil)
+            service.files.loadFile(from: nil)
             return
         }
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info("打开文件: \(fileURL.path, privacy: .public)")
         }
-        service.open(at: fileURL)
+        service.sessions.open(at: fileURL)
     }
 
     /// 通过 Quick Open 打开文件
@@ -75,7 +74,7 @@ public final class EditorPanelService: ObservableObject {
             currentProjectPath: currentProjectPath
         )
         guard let target else { return }
-        service.performNavigation(.definition(url, target, highlightLine: highlightLine))
+        service.navigation.performNavigation(.definition(url, target, highlightLine: highlightLine))
     }
 
     // MARK: - 项目上下文
@@ -96,15 +95,15 @@ public final class EditorPanelService: ObservableObject {
 
     /// 获取排序后的打开编辑器列表
     public func openEditorItems(_ service: EditorService) -> [EditorOpenEditorItem] {
-        service.tabs.map { tab in
+        service.sessions.tabs.map { tab in
             EditorOpenEditorItem(
                 sessionID: tab.sessionID,
                 fileURL: tab.fileURL,
                 title: tab.title,
                 isDirty: tab.isDirty,
                 isPinned: tab.isPinned,
-                isActive: tab.sessionID == service.activeSessionID,
-                recentActivationRank: service.recentActivationRank(for: tab.sessionID)
+                isActive: tab.sessionID == service.sessions.activeSessionID,
+                recentActivationRank: service.sessions.recentActivationRank(for: tab.sessionID)
             )
         }
         .sorted { lhs, rhs in
@@ -132,7 +131,7 @@ public final class EditorPanelService: ObservableObject {
         default:
             break
         }
-        guard service.currentFileURL != nil else { return nil }
+        guard service.files.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
             return LumiPluginLocalization.string("Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", bundle: .module)
         }
@@ -162,6 +161,6 @@ public final class EditorPanelService: ObservableObject {
         isFileSelected: Bool
     ) {
         guard isFileSelected else { return }
-        service.performCommand(id: commandID)
+        service.commands.performCommand(id: commandID)
     }
 }

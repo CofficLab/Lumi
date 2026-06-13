@@ -1,5 +1,4 @@
 import AppKit
-import EditorTextView
 import EditorService
 
 // MARK: - Native Input Adapter

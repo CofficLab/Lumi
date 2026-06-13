@@ -1,14 +1,13 @@
 import Foundation
 import EditorService
-@preconcurrency import EditorSource
-import EditorTextView
-import EditorLanguages
 
 @MainActor
 public final class MarkdownHighlightContributor: SuperEditorHighlightProviderContributor {
     public let id = "builtin.markdown.highlight-provider"
     private let supportedLanguageIDs: Set<String> = ["markdown", "markdown-inline", "md", "mdx"]
-    private let provider = MarkdownHighlightProvider()
+    private let provider = StaticHighlightProviderAdapter { text, visibleRange in
+        MarkdownHighlightScanner.highlights(in: text, visibleRange: visibleRange)
+    }
 
     public func supports(languageId: String) -> Bool {
         supportedLanguageIDs.contains(languageId.lowercased())
@@ -151,33 +150,5 @@ public enum MarkdownHighlightScanner {
 
     private static func leadingSpaceCount(in line: String) -> Int {
         line.prefix(while: { $0 == " " }).count
-    }
-}
-
-@MainActor
-public final class MarkdownHighlightProvider: HighlightProviding {
-    public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
-        // No-op
-    }
-
-    public func applyEdit(
-        textView: TextView,
-        range: NSRange,
-        delta: Int,
-        completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void
-    ) {
-        let documentLength = textView.string.utf16.count
-        let clampedStart = min(max(0, range.location), documentLength)
-        let clampedEnd = min(max(clampedStart, range.location + range.length + max(delta, 0)), documentLength)
-        let invalidated = (textView.string as NSString).lineRange(for: NSRange(location: clampedStart, length: max(0, clampedEnd - clampedStart)))
-        completion(.success(IndexSet(integersIn: invalidated.location..<(invalidated.location + invalidated.length))))
-    }
-
-    public func queryHighlightsFor(
-        textView: TextView,
-        range: NSRange,
-        completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
-    ) {
-        completion(.success(MarkdownHighlightScanner.highlights(in: textView.string, visibleRange: range)))
     }
 }

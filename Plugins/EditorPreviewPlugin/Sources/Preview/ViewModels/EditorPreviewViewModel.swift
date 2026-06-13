@@ -236,7 +236,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] url in
                 guard let self else { return }
-                let sourceText = service.content?.string
+                let sourceText = service.files.content?.string
                 self.handleFileURLChange(url, sourceText: sourceText)
             }
             .store(in: &editorCancellables)
@@ -246,7 +246,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                let sourceText = service.content?.string
+                let sourceText = service.files.content?.string
                 self.handleSaveRevision(sourceText: sourceText)
             }
             .store(in: &editorCancellables)
@@ -256,7 +256,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                let sourceText = service.content?.string
+                let sourceText = service.files.content?.string
                 self.handleBufferTextUpdate(sourceText)
             }
             .store(in: &editorCancellables)
@@ -1087,12 +1087,12 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             return 0
         }
 
-        if editorService.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
-            _ = editorService.replaceCurrentDocumentText(
+        if editorService.files.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
+            _ = editorService.files.replaceCurrentDocumentText(
                 result.source,
                 reason: "string_catalog_remove_stale_entries"
             )
-            editorService.saveNow()
+            editorService.files.saveNow()
         } else {
             try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
         }
@@ -1118,12 +1118,12 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
         if let currentCleanedSource = cleanResult.currentCleanedSource,
            let currentStandardizedURL,
-           editorService.currentFileURL?.standardizedFileURL == currentStandardizedURL {
-            _ = editorService.replaceCurrentDocumentText(
+           editorService.files.currentFileURL?.standardizedFileURL == currentStandardizedURL {
+            _ = editorService.files.replaceCurrentDocumentText(
                 currentCleanedSource,
                 reason: "string_catalog_remove_project_stale_entries"
             )
-            editorService.saveNow()
+            editorService.files.saveNow()
         }
 
         return cleanResult.summary

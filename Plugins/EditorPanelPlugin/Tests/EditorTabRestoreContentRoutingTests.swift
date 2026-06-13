@@ -11,16 +11,16 @@ struct EditorTabRestoreContentRoutingTests {
         let file = makeTempSwiftFile(named: "Routed.swift")
         defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
 
-        _ = service.openFile(at: file)
+        _ = service.sessions.openFile(at: file)
 
         let snapshot = EditorPanelContentRouting.Snapshot(
-            activeSessionID: service.activeSessionID,
-            currentFileURL: service.currentFileURL,
-            canPreview: service.canPreview,
-            isBinaryFile: service.isBinaryFile,
-            isFileLoadInProgress: service.isFileLoadInProgress,
-            fileLoadErrorMessage: service.fileLoadErrorMessage,
-            isMarkdownFile: service.isMarkdownFile,
+            activeSessionID: service.sessions.activeSessionID,
+            currentFileURL: service.files.currentFileURL,
+            canPreview: service.files.canPreview,
+            isBinaryFile: service.files.isBinaryFile,
+            isFileLoadInProgress: service.files.isFileLoadInProgress,
+            fileLoadErrorMessage: service.files.fileLoadErrorMessage,
+            isMarkdownFile: service.files.isMarkdownFile,
             isMarkdownPreviewMode: service.isMarkdownPreviewMode
         )
 

@@ -1,6 +1,9 @@
+import EditorKernel
 import Foundation
 import EditorSource
 import EditorTextView
+
+typealias LSPViewportScheduler = EditorKernel.LSPViewportScheduler
 
 @MainActor
 final class EditorRuntimeModeController {

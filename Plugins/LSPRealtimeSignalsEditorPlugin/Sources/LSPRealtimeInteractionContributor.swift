@@ -1,7 +1,5 @@
 import Foundation
 import EditorService
-import EditorSource
-import EditorTextView
 
 @MainActor
 public final class LSPRealtimeInteractionContributor: SuperEditorInteractionContributor {

@@ -34,7 +34,7 @@ public struct BottomEditorCallHierarchyPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.performPanelCommand(.closeCallHierarchy)
+                service.panel.performPanelCommand(.closeCallHierarchy)
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -49,21 +49,21 @@ public struct BottomEditorCallHierarchyPanelView: View {
 
     @ViewBuilder
     private var content: some View {
-        if service.callHierarchyProvider.isLoading {
+        if service.lsp.callHierarchyProvider.isLoading {
             emptyState(LumiPluginLocalization.string("Loading Call Hierarchy...", bundle: .module), systemImage: "arrow.triangle.branch")
-        } else if service.callHierarchyProvider.rootItem == nil {
+        } else if service.lsp.callHierarchyProvider.rootItem == nil {
             emptyState(LumiPluginLocalization.string("No Call Hierarchy", bundle: .module), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: LumiPluginLocalization.string("Incoming", bundle: .module), calls: service.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: LumiPluginLocalization.string("Incoming", bundle: .module), calls: service.lsp.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: LumiPluginLocalization.string("Outgoing", bundle: .module), calls: service.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: LumiPluginLocalization.string("Outgoing", bundle: .module), calls: service.lsp.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
-        let count = service.callHierarchyProvider.incomingCalls.count + service.callHierarchyProvider.outgoingCalls.count
+        let count = service.lsp.callHierarchyProvider.incomingCalls.count + service.lsp.callHierarchyProvider.outgoingCalls.count
         return count > 0 ? LumiPluginLocalization.string("Call Hierarchy (\(count))", bundle: .module) : LumiPluginLocalization.string("Call Hierarchy", bundle: .module)
     }
 
@@ -82,7 +82,7 @@ public struct BottomEditorCallHierarchyPanelView: View {
                     } else {
                         ForEach(calls) { call in
                             Button {
-                                service.performOpenItem(.callHierarchyItem(call.item))
+                                service.navigation.performOpenItem(.callHierarchyItem(call.item))
                             } label: {
                                 panelCard(
                                     title: call.item.name,

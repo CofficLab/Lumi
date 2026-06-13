@@ -1,5 +1,5 @@
 import Foundation
-import EditorGoCore
+
 import EditorService
 
 /// Go 语言集成能力。

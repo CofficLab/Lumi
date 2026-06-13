@@ -53,11 +53,11 @@ public struct EditorPreviewDetailView: View, SuperLog {
     }
 
     private var sourceText: String? {
-        editorService?.content?.string
+        editorService?.files.content?.string
     }
 
     private var currentFileURL: URL? {
-        editorService?.currentFileURL
+        editorService?.files.currentFileURL
     }
 
     public var body: some View {
@@ -85,13 +85,13 @@ public struct EditorPreviewDetailView: View, SuperLog {
             }
             viewModel.setActiveFile(newValue, sourceText: sourceText)
         }
-        .onChange(of: editorService?.saveRevision ?? 0) { _, _ in
+        .onChange(of: editorService?.files.saveRevision ?? 0) { _, _ in
             if Self.verbose {
                 Self.logger.info("\(self.t)💾 saveRevision 变更")
             }
             viewModel.applySaveRevision(sourceText: sourceText)
         }
-        .onChange(of: editorService?.contentRevision ?? 0) { _, _ in
+        .onChange(of: editorService?.files.contentRevision ?? 0) { _, _ in
             viewModel.updateBufferText(sourceText)
         }
     }
@@ -1343,8 +1343,8 @@ private struct EditorPreviewMarkdownView: View {
         )
 
         // 替换编辑器内容
-        _ = editorService.replaceCurrentDocumentText(newContent, reason: "markdown_delete_heading")
-        editorService.saveNow()
+        _ = editorService.files.replaceCurrentDocumentText(newContent, reason: "markdown_delete_heading")
+        editorService.files.saveNow()
     }
 
     /// 快速解析 ATX 标题，只返回 level

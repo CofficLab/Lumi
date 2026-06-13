@@ -2,8 +2,6 @@ import Foundation
 import EditorService
 import SuperLogKit
 import AppKit
-import EditorSource
-import EditorTextView
 import LanguageServerProtocol
 import os
 

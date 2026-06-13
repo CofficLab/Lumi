@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import EditorGoCore
+
 
 @MainActor
 public final class GoTestGutterContributor: SuperEditorGutterDecorationContributor {

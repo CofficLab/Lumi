@@ -68,7 +68,7 @@ public final class LSPService: ObservableObject, SuperLog {
     /// 检查 LSP 可用性（使用缓存路径，不会 fork 进程）
     public func checkAvailability(for languageId: String? = nil) {
         if let languageId {
-            let available = LSPConfig.findServer(for: languageId) != nil
+            let available = LSPConfig.serverConfig(for: languageId) != nil
             isAvailable = available
             if Self.verbose {
                 if Self.verbose {
@@ -80,8 +80,8 @@ public final class LSPService: ObservableObject, SuperLog {
 
         // 不指定语言时，只做 O(1) 的缓存查找，不再遍历所有语言 fork 进程
         // 完整扫描由 init 中的 warmUpCacheInBackground() 异步完成
-        let available = LSPConfig.supportedLanguageIds.contains {
-            LSPConfig.findServer(for: $0) != nil
+        let available = LSPConfig.registeredLanguageIds.contains {
+            LSPConfig.serverConfig(for: $0) != nil
         }
         isAvailable = available
         if Self.verbose {
@@ -148,7 +148,7 @@ public final class LSPService: ObservableObject, SuperLog {
             server = nil
         }
         
-        guard let config = LSPConfig.defaultConfig(for: languageId) else {
+        guard let config = LSPConfig.serverConfig(for: languageId) else {
             if Self.verbose {
                             Self.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
             }

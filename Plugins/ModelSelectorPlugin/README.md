@@ -1,51 +1,32 @@
 # ModelSelectorPlugin
 
-Model selector plugin for Lumi. Provides a toolbar button to select LLM provider and model, with agent tool support for programmatic model switching.
+Independent Lumi plugin for LLM provider and model selection in the chat composer toolbar.
 
 ## Features
 
-- **Model selector toolbar** — button in the sidebar toolbar to switch models
-- **Model browser** — popover with provider and model list, latency info, and search
-- **Frequent models** — quick access to frequently used models
-- **Agent tool** — `switch_model` tool for programmatic model switching
-- **Availability overlay** — graceful handling when model selector is unavailable
+- **Composer toolbar button** — contributes via `chatSectionToolbarItems`
+- **Model browser** — popover with provider tabs, search, frequent models, and auto routing
+- **Persistence** — selections saved through `LumiChatServicing.selectProvider`
+- **Agent tool** — `switch_model` for programmatic model switching
 
-## Requirements
+## Architecture
 
-- macOS 14.0+
-- Swift 6.0+
+This plugin uses the new `LumiPlugin` system:
+
+| Extension point | Purpose |
+|-----------------|---------|
+| `chatSectionToolbarItems` | Renders `ModelProviderPicker` in the composer toolbar |
+| `agentTools` | Registers `SwitchModelTool` |
+
+The chat shell (`ChatPanelPlugin`) renders plugin toolbar items from `ChatSectionCoordinator.chatSectionToolbarItems`, synced by `AppLayoutView`.
 
 ## Dependencies
 
 | Package | Description |
 |---------|-------------|
-| [LumiCoreKit](../../Packages/LumiCoreKit) | Core framework for Lumi plugins |
-| [LumiUI](../../Packages/LumiUI) | UI components |
-| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
-| [AgentToolKit](../../Packages/AgentToolKit) | Agent tool definitions |
-
-## Usage
-
-### As a Lumi Plugin
-
-This plugin integrates with the Lumi application. It provides:
-
-- **Sidebar Toolbar Button** — model selector button in AI chat sidebar
-- **Agent Tool** — `switch_model` tool for automated model switching
-- **Root View Wrapper** — availability overlay for the entire app
-
-### Project Structure
-
-```
-Sources/
-├── ModelSelectorPlugin.swift       # Plugin entry point
-├── Models/                         # Data models for entries and tabs
-├── Views/                          # UI views for selector, rows, toolbar
-├── Support/                        # Compatibility helpers
-└── Tools/                          # Agent tool implementations
-Tests/
-└── PluginModelSelectorTests/       # Unit tests
-```
+| `LumiCoreKit` | Plugin protocol, chat service types |
+| `LumiUI` | Shared UI components |
+| `AgentToolKit` | Agent tool bridge types |
 
 ## License
 

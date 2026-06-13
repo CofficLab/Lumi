@@ -31,7 +31,7 @@ public enum EditorRailOutlinePanelPlugin: LumiPlugin {
                 title: LumiPluginLocalization.string("Outline", bundle: .module),
                 systemImage: "list.bullet.indent"
             ) {
-                if let provider = service.documentSymbolProvider as? DocumentSymbolProvider {
+                if let provider = service.lsp.documentSymbolProvider as? DocumentSymbolProvider {
                     EditorOutlinePanelView(
                         service: service,
                         provider: provider,

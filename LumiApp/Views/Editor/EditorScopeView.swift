@@ -57,6 +57,6 @@ struct EditorScopeView<Content: View>: View {
             extensions: editor.extensionRegistry,
             colorScheme: scheme
         )
-        editor.editorService.syncInitialThemeFromExternal(resolved.id)
+        editor.editorService.theme.syncInitialThemeFromExternal(resolved.id)
     }
 }

@@ -30,35 +30,35 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
             TextField(
                 LumiPluginLocalization.string("Search in files", bundle: .module),
                 text: Binding(
-                    get: { service.panelState.workspaceSearchQuery },
-                    set: { service.panelController.setWorkspaceSearchQuery($0) }
+                    get: { service.panel.panelState.workspaceSearchQuery },
+                    set: { service.panel.panelController.setWorkspaceSearchQuery($0) }
                 )
             )
             .textFieldStyle(.roundedBorder)
             .onSubmit {
                 Task { @MainActor in
-                    await service.performWorkspaceSearch()
+                    await service.panel.performWorkspaceSearch()
                 }
             }
 
             AppButton(LumiPluginLocalization.string("Search", bundle: .module), systemImage: "magnifyingglass", style: .primary, size: .small) {
                 Task { @MainActor in
-                    await service.performWorkspaceSearch()
+                    await service.panel.performWorkspaceSearch()
                 }
             }
-            .disabled(service.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(service.panel.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             AppButton(LumiPluginLocalization.string("Open Search Editor", bundle: .module), systemImage: "doc.text.magnifyingglass", style: .secondary, size: .small) {
-                service.openWorkspaceSearchResultsInEditor()
+                service.panel.openWorkspaceSearchResultsInEditor()
             }
-            .disabled(service.panelState.workspaceSearchResults.isEmpty)
+            .disabled(service.panel.panelState.workspaceSearchResults.isEmpty)
         }
         .padding(10)
     }
 
     @ViewBuilder
     private var content: some View {
-        if service.panelState.isWorkspaceSearchLoading {
+        if service.panel.panelState.isWorkspaceSearchLoading {
             VStack(spacing: 10) {
                 ProgressView()
                 Text(LumiPluginLocalization.string("Searching workspace…", bundle: .module))
@@ -66,25 +66,25 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
                     .foregroundColor(theme.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = service.panelState.workspaceSearchErrorMessage {
+        } else if let error = service.panel.panelState.workspaceSearchErrorMessage {
             emptyState(error, systemImage: "exclamationmark.triangle")
-        } else if service.panelState.workspaceSearchQuery.isEmpty {
+        } else if service.panel.panelState.workspaceSearchQuery.isEmpty {
             emptyState(LumiPluginLocalization.string("Enter a query and press Return", bundle: .module), systemImage: "magnifyingglass")
-        } else if service.panelState.workspaceSearchResults.isEmpty {
+        } else if service.panel.panelState.workspaceSearchResults.isEmpty {
             emptyState(LumiPluginLocalization.string("No results", bundle: .module), systemImage: "doc.text.magnifyingglass")
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    if let summary = service.panelState.workspaceSearchSummary {
+                    if let summary = service.panel.panelState.workspaceSearchSummary {
                         Text(LumiPluginLocalization.string("\(summary.totalMatches) matches in \(summary.totalFiles) files", bundle: .module))
                             .font(.appMicroEmphasized)
                             .foregroundColor(theme.textSecondary)
                     }
 
-                    ForEach(service.panelState.workspaceSearchResults) { file in
+                    ForEach(service.panel.panelState.workspaceSearchResults) { file in
                         VStack(alignment: .leading, spacing: 6) {
                             Button {
-                                service.panelController.toggleWorkspaceSearchFileCollapse(path: file.path)
+                                service.panel.panelController.toggleWorkspaceSearchFileCollapse(path: file.path)
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: isCollapsed(file) ? "chevron.right" : "chevron.down")
@@ -107,7 +107,7 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
                             if !isCollapsed(file) {
                                 ForEach(file.matches) { match in
                                     Button {
-                                        service.openWorkspaceSearchMatch(match)
+                                        service.panel.openWorkspaceSearchMatch(match)
                                     } label: {
                                         HStack(alignment: .top, spacing: 10) {
                                             Text("L\(match.line):C\(match.column)")
@@ -138,7 +138,7 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
     }
 
     private func isCollapsed(_ file: EditorWorkspaceSearchFileResult) -> Bool {
-        service.panelState.workspaceSearchCollapsedFilePaths.contains(file.path)
+        service.panel.panelState.workspaceSearchCollapsedFilePaths.contains(file.path)
     }
 
     private func fileMatchSummary(_ file: EditorWorkspaceSearchFileResult) -> String {
@@ -149,13 +149,13 @@ public struct BottomEditorWorkspaceSearchPanelView: View {
     }
 
     private func rowBackground(for match: EditorWorkspaceSearchMatch) -> Color {
-        service.panelState.selectedWorkspaceSearchMatchID == match.id
+        service.panel.panelState.selectedWorkspaceSearchMatchID == match.id
             ? theme.textPrimary.opacity(0.1)
             : theme.textPrimary.opacity(0.05)
     }
 
     private func rowBorder(for match: EditorWorkspaceSearchMatch) -> Color {
-        service.panelState.selectedWorkspaceSearchMatchID == match.id
+        service.panel.panelState.selectedWorkspaceSearchMatchID == match.id
             ? theme.textPrimary.opacity(0.18)
             : .clear
     }

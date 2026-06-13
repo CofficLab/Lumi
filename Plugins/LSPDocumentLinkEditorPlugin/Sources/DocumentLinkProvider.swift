@@ -1,8 +1,6 @@
 import Foundation
-import EditorKernel
 import EditorService
 import Combine
-import EditorTextView
 import LanguageServerProtocol
 
 /// 文档链接提供者

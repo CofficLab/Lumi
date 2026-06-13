@@ -14,9 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorTextView"),
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/EditorGoCore"),
+        .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -25,9 +24,8 @@ let package = Package(
         .target(
             name: "EditorGoPlugin",
             dependencies: [
-                .product(name: "EditorTextView", package: "EditorTextView"),
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "EditorGoCore", package: "EditorGoCore"),
+                .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

@@ -204,7 +204,7 @@ jobs:
         if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
         run: |
           cd Packages/EditorLanguages
-          ./build_framework.sh --quiet
+          ./build_framework.sh
 
       - name: Check EditorLanguages Framework
         run: .github/scripts/check-codeedit-languages-framework.sh

@@ -33,7 +33,7 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.performPanelCommand(.closeReferences)
+                service.panel.performPanelCommand(.closeReferences)
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -47,19 +47,19 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
     }
 
     private var panelTitle: String {
-        let count = service.panelState.referenceResults.count
+        let count = service.panel.panelState.referenceResults.count
         return count > 0 ? LumiPluginLocalization.string("References (\(count))", bundle: .module) : LumiPluginLocalization.string("References", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if service.panelState.referenceResults.isEmpty {
+                if service.panel.panelState.referenceResults.isEmpty {
                     emptyState(LumiPluginLocalization.string("No References", bundle: .module), systemImage: "arrow.triangle.branch")
                 } else {
-                    ForEach(service.panelState.referenceResults) { item in
+                    ForEach(service.panel.panelState.referenceResults) { item in
                         Button {
-                            service.performOpenItem(
+                            service.navigation.performOpenItem(
                                 .reference(
                                     .init(
                                         url: item.url,
@@ -75,7 +75,7 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
                                 title: "\(item.path):\(item.line):\(item.column)",
                                 subtitle: item.preview,
                                 badge: LumiPluginLocalization.string("Reference", bundle: .module),
-                                isSelected: service.panelState.selectedReferenceResult == item
+                                isSelected: service.panel.panelState.selectedReferenceResult == item
                             )
                         }
                         .buttonStyle(.plain)

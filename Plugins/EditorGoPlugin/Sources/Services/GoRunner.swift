@@ -1,6 +1,6 @@
 import Foundation
 import SuperLogKit
-import EditorGoCore
+
 import os
 
 /// Go 命令执行器

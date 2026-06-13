@@ -45,10 +45,10 @@ public struct EditorTabHeaderView: View {
                 openFile: { [weak service, weak projectVM] url in
                     let projectPath = projectVM?.currentProjectPath
                     await service?.refreshProjectContext(for: projectPath)
-                    service?.open(at: url)
+                    service?.sessions.open(at: url)
                 },
                 openFileSessionOnly: { [weak service] url in
-                    service?.openFileSessionInBackground(at: url)
+                    service?.sessions.openFileSessionInBackground(at: url)
                 }
             )
         }
@@ -66,10 +66,10 @@ public struct EditorTabHeaderView: View {
                 openFile: { [weak service, weak projectVM] url in
                     let projectPath = projectVM?.currentProjectPath
                     await service?.refreshProjectContext(for: projectPath)
-                    service?.open(at: url)
+                    service?.sessions.open(at: url)
                 },
                 openFileSessionOnly: { [weak service] url in
-                    service?.openFileSessionInBackground(at: url)
+                    service?.sessions.openFileSessionInBackground(at: url)
                 }
             )
         }
@@ -90,7 +90,7 @@ public struct EditorTabHeaderView: View {
     }
 
     private var visibleTabs: [EditorTab] {
-        service.tabs
+        service.sessions.tabs
     }
 
     // MARK: - 子视图
@@ -138,7 +138,7 @@ public struct EditorTabHeaderView: View {
 
         if targetTab?.sessionID == draggedTabSessionID { return }
 
-        _ = service.reorderSession(
+        _ = service.sessions.reorderSession(
             sessionID: draggedTabSessionID,
             before: targetTab?.sessionID
         )
@@ -147,7 +147,7 @@ public struct EditorTabHeaderView: View {
     /// 处理 SetCurrentFileTool 发出的通知，同步到编辑器
     private func handleCurrentFileDidChange(path: String) {
         // 如果路径与当前文件相同，无需切换
-        guard service.currentFileURL?.path != path else { return }
+        guard service.files.currentFileURL?.path != path else { return }
 
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
@@ -157,7 +157,7 @@ public struct EditorTabHeaderView: View {
         let url = URL(fileURLWithPath: path)
         Task { @MainActor in
             await service.refreshProjectContext(for: projectVM.currentProjectPath)
-            service.open(at: url)
+            service.sessions.open(at: url)
         }
     }
 }

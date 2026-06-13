@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import SwiftUI
-import EditorTextView
 import LumiCoreKit
 
 /// Vue 开发工具命令贡献器

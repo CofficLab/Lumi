@@ -2,6 +2,7 @@ import LumiCoreKit
 import DeviceInfoPlugin
 import NetworkManagerPlugin
 import ChatPanelPlugin
+import ModelSelectorPlugin
 import MessageListPlugin
 import LLMProviderOpenAIPlugin
 import LLMProviderZhipuPlugin
@@ -156,6 +157,7 @@ public enum LumiPluginRegistry {
         ChatAttachmentSectionPlugin.self,
         ChatPendingSectionPlugin.self,
         ChatComposerSectionPlugin.self,
+        ModelSelectorPlugin.self,
         OpenAIPlugin.self,
         ZhipuPlugin.self,
         AiRouterPlugin.self,

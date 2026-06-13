@@ -26,7 +26,7 @@ struct ChatHeaderView: View {
             Spacer()
         }
         .padding(.horizontal, 16)
-        .frame(height: 48)
+        .frame(height: 40)
         .appSurface(style: .toolbar, cornerRadius: 0)
     }
 }

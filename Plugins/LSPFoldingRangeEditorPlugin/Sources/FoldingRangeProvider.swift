@@ -1,6 +1,4 @@
 import Foundation
-import EditorKernel
-import EditorService
 import EditorService
 import LanguageServerProtocol
 

@@ -55,6 +55,7 @@ struct RailView: View {
         )
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .frame(height: 40)
     }
 
     @ViewBuilder

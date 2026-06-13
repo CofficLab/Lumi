@@ -1,30 +1,23 @@
-import SwiftUI
 import LumiUI
+import SwiftUI
 
-/// 模型选择器搜索栏
-/// 使用 LumiUI 的 AppSearchBar 组件
-public struct ModelSelectorSearchBar: View {
-    /// 搜索关键词
+struct ModelSelectorSearchBar: View {
+    @LumiTheme private var theme
+
     @Binding var searchText: String
+    let onCancel: () -> Void
 
-    /// 关闭回调
-    public let onCancel: () -> Void
+    var body: some View {
+        HStack(spacing: 12) {
+            AppSearchBar(text: $searchText, placeholder: "Search models or providers...")
 
-    public var body: some View {
-        HStack(spacing: 8) {
-            AppSearchBar(
-                text: $searchText,
-                placeholder: "Search Models"
-            )
-
-            Button(action: onCancel) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.secondary)
-            }
-            .buttonStyle(.plain)
+            Button("Cancel", action: onCancel)
+                .buttonStyle(.plain)
+                .font(.appCallout)
+                .foregroundColor(theme.primary)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
+        .background(theme.background)
     }
 }

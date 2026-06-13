@@ -2,6 +2,7 @@ import Foundation
 import EditorService
 import LumiCoreKit
 import SuperLogKit
+import ShellKit
 import SwiftUI
 import os
 
@@ -45,6 +46,27 @@ public actor EditorJSPlugin: SuperPlugin, SuperLog {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let taskManager = JSTaskManager()
         registry.registerLanguageIntegrationCapability(JSLanguageIntegrationCapability())
+        
+        // 注册 JavaScript/TypeScript LSP 服务器
+        if let tsServerPath = Shell.findCommandSync("typescript-language-server") {
+            LSPConfig.registerServerConfig(
+                for: "javascript",
+                config: LSPConfig.ServerConfig(
+                    languageId: "javascript",
+                    execPath: tsServerPath,
+                    arguments: ["--stdio"]
+                )
+            )
+            LSPConfig.registerServerConfig(
+                for: "typescript",
+                config: LSPConfig.ServerConfig(
+                    languageId: "typescript",
+                    execPath: tsServerPath,
+                    arguments: ["--stdio"]
+                )
+            )
+        }
+        
         // TODO: 暂时停用 Editor 右键菜单命令
         // registry.registerCommandContributor(JSCommandContributor(taskManager: taskManager))
         registry.registerPanelContributor(JSPanelContributor(taskManager: taskManager))
