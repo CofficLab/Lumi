@@ -105,7 +105,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             } else {
                 staticPreviewModeBadge
                 markdownTODOBadge
-                stringCatalogControls
+                stringCatalogInfoBadges
             }
 
             Spacer()
@@ -120,6 +120,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 statusBadge
 
                 entryDebugControls
+            } else {
+                stringCatalogActionButtons
             }
         }
         .padding(.horizontal, 12)
@@ -201,19 +203,28 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
     }
 
+    /// String Catalog 信息标签（纯展示，放在工具栏左侧）。
     @ViewBuilder
-    private var stringCatalogControls: some View {
+    private var stringCatalogInfoBadges: some View {
         if case .stringCatalog = viewModel.previewMode {
             if let catalog = currentStringCatalog {
-                if !catalog.translationIssues.isEmpty || catalog.staleEntryCount > 0 {
-                    aiFixStringCatalogButton(catalog: catalog)
-                }
-
                 if catalog.staleEntryCount > 0 {
                     Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundStyle(.orange)
                         .help(LumiPluginLocalization.string("Stale String Catalog keys in the current file", bundle: .module))
+                }
+            }
+        }
+    }
+
+    /// String Catalog 操作按钮（放在工具栏右侧）。
+    @ViewBuilder
+    private var stringCatalogActionButtons: some View {
+        if case .stringCatalog = viewModel.previewMode {
+            if let catalog = currentStringCatalog {
+                if !catalog.translationIssues.isEmpty || catalog.staleEntryCount > 0 {
+                    aiFixStringCatalogButton(catalog: catalog)
                 }
 
                 Button {
