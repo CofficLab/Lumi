@@ -52,6 +52,11 @@ public final class TreeSitterClient: HighlightProviding {
 
     package var pendingEdits: Atomic<[InputEdit]> = Atomic([])
 
+    public var documentStore: TreeSitterDocumentStore?
+
+    package private(set) var attachedDocumentKey: DocumentHighlightKey?
+
+
     /// Optional flag to force every operation to be done on the caller's thread.
     package var forceSyncOperation: Bool = false
 
@@ -119,22 +124,49 @@ public final class TreeSitterClient: HighlightProviding {
     ///               A weak reference will be kept for the lifetime of this object.
     ///   - codeLanguage: The language to use for parsing.
     public func setUp(textView: TextView, codeLanguage: EditorLanguageContext) {
+        let key = attachedDocumentKey ?? DocumentHighlightKey(
+            fileURL: URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("untitled"),
+            content: textView.string,
+            languageId: codeLanguage.languageId
+        )
+        attach(documentKey: key, textView: textView, codeLanguage: codeLanguage)
+    }
+
+    public func attach(
+        documentKey: DocumentHighlightKey,
+        textView: TextView,
+        codeLanguage: EditorLanguageContext
+    ) {
         if Self.verbose {
-                    Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.languageId, privacy: .public)")
+            Self.logger.debug(
+                "TreeSitterClient attaching document: \(documentKey.standardizedFileURL.path, privacy: .public)"
+            )
         }
 
         let readBlock = textView.createReadBlock()
         let readCallback = textView.createReadCallback()
         self.readBlock = readBlock
         self.readCallback = readCallback
+        self.attachedDocumentKey = documentKey
+
+        if let documentStore,
+           let cachedState = documentStore.takeState(for: documentKey) {
+            self.state = cachedState
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: Constants.stateDidUpdate, object: self)
+            }
+            return
+        }
 
         let operation = { [weak self] in
+            guard let self else { return }
             let state = TreeSitterState(
                 codeLanguage: codeLanguage,
                 readCallback: readCallback,
                 readBlock: readBlock
             )
-            self?.state = state
+            self.state = state
+            self.documentStore?.store(state, for: documentKey)
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: Constants.stateDidUpdate, object: self)
             }
@@ -146,6 +178,13 @@ public final class TreeSitterClient: HighlightProviding {
         } else {
             executor.execAsync(priority: .reset, operation: operation, onCancel: {})
         }
+    }
+
+    public func detach() {
+        guard let attachedDocumentKey, let state else { return }
+        documentStore?.store(state, for: attachedDocumentKey)
+        self.state = nil
+        self.attachedDocumentKey = nil
     }
 
     // MARK: - HighlightProviding

@@ -56,6 +56,26 @@ final class TreeSitterHighlightTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
     }
+
+    func testSetLanguageDoesNotClearExistingAttributesWhenPolicyPreserve() {
+        let textView = EditorHighlightTestSupport.makeTextViewInScrollView(text: "ArchivePath: value\n")
+        let textStorage = textView.textStorage!
+        let preservedColor = NSColor.systemPink
+        textStorage.addAttribute(.foregroundColor, value: preservedColor, range: NSRange(location: 0, length: 11))
+
+        let highlighter = Highlighter(
+            textView: textView,
+            minimapView: nil,
+            providers: [TreeSitterClient()],
+            attributeProvider: MockThemeAttributesProvider(),
+            language: .plainText
+        )
+
+        highlighter.setLanguage(language: .plainText, policy: .preserveAttributesUntilReplace)
+
+        let color = textStorage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
+        XCTAssertEqual(color, preservedColor)
+    }
 }
 
 @MainActor
@@ -166,6 +186,16 @@ private final class MockHighlightProvider: HighlightProviding {
         }
         let result = index < queryResults.count ? queryResults[index] : defaultResult
         completion(result)
+    }
+}
+
+@MainActor
+private final class MockThemeAttributesProvider: ThemeAttributesProviding {
+    func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
+        [
+            .foregroundColor: NSColor.textColor,
+            .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
+        ]
     }
 }
 

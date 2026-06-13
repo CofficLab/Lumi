@@ -79,6 +79,14 @@ public struct SourceEditorViewBridge {
         state.jumpDelegate = jumpDelegate
         textCoordinator?.jumpDelegate = jumpDelegate
 
+        state.documentHighlightCoordinator.configure(
+            treeSitterClient: treeSitterClient,
+            textViewController: jumpDelegate.textViewController,
+            attributesProvider: { capture in
+                jumpDelegate.textViewController?.attributesFor(capture) ?? [:]
+            }
+        )
+
         completionDelegate.configure(
             lspClient: state.lspClient,
             editorExtensionRegistry: state.editorExtensions,

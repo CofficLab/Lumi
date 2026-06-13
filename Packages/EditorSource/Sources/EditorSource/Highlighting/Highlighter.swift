@@ -59,6 +59,11 @@ import OSLog
 /// +-------------------------------+
 /// ```
 ///
+public enum LanguageTransitionPolicy {
+    case preserveAttributesUntilReplace
+    case clearAll
+}
+
 @MainActor
 class Highlighter: NSObject {
     static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
@@ -150,18 +155,48 @@ class Highlighter: NSObject {
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
-    public func setLanguage(language: EditorLanguageContext) {
+    public func setLanguage(
+        language: EditorLanguageContext,
+        policy: LanguageTransitionPolicy = .preserveAttributesUntilReplace
+    ) {
         guard let textView = self.textView else { return }
 
-        // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
-        // something immediately.
-        textView.textStorage.setAttributes(
-            attributeProvider?.attributesFor(nil) ?? [:],
-            range: NSRange(location: 0, length: textView.textStorage.length)
-        )
-        textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+        self.language = language
+
+        if policy == .clearAll {
+            textView.textStorage.setAttributes(
+                attributeProvider?.attributesFor(nil) ?? [:],
+                range: NSRange(location: 0, length: textView.textStorage.length)
+            )
+            textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+            highlightProviders.forEach { $0.invalidate() }
+        }
 
         highlightProviders.forEach { $0.setLanguage(language: language) }
+    }
+
+    public func exportSnapshot(highlightRevision: Int, key: DocumentHighlightKey) -> DocumentHighlightSnapshot? {
+        guard let providerState = highlightProviders.first else { return nil }
+        let runs = styleContainer.exportHighlightRanges(providerId: providerState.id)
+        guard !runs.isEmpty else { return nil }
+        return DocumentHighlightSnapshot(key: key, highlightRevision: highlightRevision, runs: runs)
+    }
+
+    public func markSnapshotRestored(
+        key: DocumentHighlightKey,
+        content: String,
+        highlightRevision: Int,
+        runs: [HighlightRange]? = nil
+    ) {
+        guard key.matches(content: content) else { return }
+        let restoredRuns = runs ?? styleContainer.exportHighlightRanges(providerId: highlightProviders.first?.id ?? 0)
+        guard !restoredRuns.isEmpty else { return }
+        let snapshot = DocumentHighlightSnapshot(
+            key: key,
+            highlightRevision: highlightRevision,
+            runs: restoredRuns
+        )
+        highlightProviders.forEach { $0.restore(snapshot: snapshot) }
     }
 
     /// Updates the highlight providers the highlighter is using, removing any that don't appear in the given array,

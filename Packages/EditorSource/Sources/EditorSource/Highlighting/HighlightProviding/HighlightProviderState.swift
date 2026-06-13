@@ -97,7 +97,15 @@ class HighlightProviderState {
     func setLanguage(language: EditorLanguageContext) {
         guard let textView else { return }
         highlightProvider?.setUp(textView: textView, codeLanguage: language)
-        invalidate()
+    }
+
+    func restore(snapshot: DocumentHighlightSnapshot) {
+        pendingSet.removeAll()
+        validSet.removeAll()
+        for run in snapshot.runs {
+            guard run.range.location != NSNotFound, run.range.length > 0 else { continue }
+            validSet.insert(integersIn: run.range)
+        }
     }
 
     /// Invalidates all pending and valid ranges, resetting the provider.

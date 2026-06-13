@@ -172,6 +172,24 @@ public class TextViewController: NSViewController {
 
     var highlighter: Highlighter?
 
+    public func exportHighlightSnapshot(highlightRevision: Int, key: DocumentHighlightKey) -> DocumentHighlightSnapshot? {
+        highlighter?.exportSnapshot(highlightRevision: highlightRevision, key: key)
+    }
+
+    public func restoreHighlightSnapshot(
+        key: DocumentHighlightKey,
+        content: String,
+        highlightRevision: Int,
+        runs: [HighlightRange]? = nil
+    ) {
+        highlighter?.markSnapshotRestored(
+            key: key,
+            content: content,
+            highlightRevision: highlightRevision,
+            runs: runs
+        )
+    }
+
     /// The tree sitter client managed by the source editor.
     ///
     /// This will be `nil` if another highlighter provider is passed to the source editor.
