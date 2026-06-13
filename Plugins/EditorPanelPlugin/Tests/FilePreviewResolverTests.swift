@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import FilePreviewKit
+@testable import EditorPanelPlugin
 
 @Suite("FilePreviewResolver")
 struct FilePreviewResolverTests {

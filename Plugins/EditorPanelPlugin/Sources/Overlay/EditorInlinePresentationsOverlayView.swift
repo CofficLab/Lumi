@@ -6,14 +6,14 @@ import LumiUI
 ///
 /// 负责在源码内容表面绘制内联提示卡片，例如符号状态、辅助说明或轻量提示。
 /// 该视图只消费已经计算好的展示模型。
-public struct EditorInlinePresentationsOverlayView: View {
-    public let presentations: [EditorInlinePresentation]
+struct EditorInlinePresentationsOverlayView: View {
+    let presentations: [EditorInlinePresentation]
 
-    public init(presentations: [EditorInlinePresentation]) {
+    init(presentations: [EditorInlinePresentation]) {
         self.presentations = presentations
     }
 
-    public var body: some View {
+    var body: some View {
         let style = EditorInlinePresentationStyle.standard
 
         if !presentations.isEmpty {

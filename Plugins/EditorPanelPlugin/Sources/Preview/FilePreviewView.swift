@@ -31,15 +31,11 @@ enum FilePreviewResolver {
 // MARK: - FilePreviewView
 
 /// 本地文件的 SwiftUI 预览（图片 / PDF / QuickLook 支持的其它类型）。
-public struct FilePreviewView: View {
+struct FilePreviewView: View {
 
     let fileURL: URL
 
-    public init(fileURL: URL) {
-        self.fileURL = fileURL
-    }
-
-    public var body: some View {
+    var body: some View {
         Group {
             switch FilePreviewResolver.previewKind(for: fileURL) {
             case .image:

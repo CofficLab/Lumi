@@ -1,6 +1,6 @@
 # Next Edit Prediction 设计方案
 
-本文档描述在 Lumi 编辑器中实现类似 Cursor “预测下一步编辑，按 Tab 接受”的功能方案。方案基于当前代码结构：`EditorService` 作为编辑器门面，`EditorInputRouter` 分发文本与选区变化，`EditorKernel` 提供 transaction/TextEdit 应用能力，`EditorOverlayKit` 提供编辑器浮层，`LumiApp` 已有 `LLMService` 与多供应商模型接入。
+本文档描述在 Lumi 编辑器中实现类似 Cursor “预测下一步编辑，按 Tab 接受”的功能方案。方案基于当前代码结构：`EditorService` 作为编辑器门面，`EditorInputRouter` 分发文本与选区变化，`EditorKernel` 提供 transaction/TextEdit 应用能力，`EditorPanelPlugin` 内的 overlay 视图提供编辑器浮层，`LumiApp` 已有 `LLMService` 与多供应商模型接入。
 
 ## 目标
 
@@ -32,7 +32,7 @@
 
 ### 展示层
 
-- `Packages/EditorOverlayKit/Sources/EditorOverlayKit/EditorInlinePresentationsOverlayView.swift`
+- `Plugins/EditorPanelPlugin/Sources/Overlay/EditorInlinePresentationsOverlayView.swift`
   - 已有 inline presentation 浮层，但当前 `SourceEditorView` 中相关 overlay 被注释。
 - `Packages/EditorService/Sources/EditorService/Kernel/EditorInlinePresentation.swift`
   - 已有 `.diff` 样式，可复用为轻量 “Tab 接受” 提示。

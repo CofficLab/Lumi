@@ -6,21 +6,21 @@ import EditorService
 ///
 /// 负责根据主视图传入的容器尺寸与缓存的卡片尺寸，定位并展示 hover 文档
 /// 气泡，同时回写气泡实际尺寸以便后续定位更稳定。
-public struct EditorHoverOverlayView: View, SuperLog {
-    nonisolated public static let emoji = "📝"
-    nonisolated public static let verbose: Bool = false
+struct EditorHoverOverlayView: View, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose: Bool = false
 
     @ObservedObject var state: EditorState
     let containerSize: CGSize
     @Binding var hoverPopoverSize: CGSize
 
-    public init(state: EditorState, containerSize: CGSize, hoverPopoverSize: Binding<CGSize>) {
+    init(state: EditorState, containerSize: CGSize, hoverPopoverSize: Binding<CGSize>) {
         self.state = state
         self.containerSize = containerSize
         self._hoverPopoverSize = hoverPopoverSize
     }
 
-    public var body: some View {
+    var body: some View {
         if let hoverText = state.currentHoverOverlayText {
             let style = EditorHoverOverlayStyle.standard
             let placement = state.hoverOverlayPlacement(

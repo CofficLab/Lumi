@@ -29,6 +29,31 @@ This package includes a binary framework `CodeLanguagesContainer.xcframework` wh
 
 The languages are then served as a `CodeLanguage`.
 
+## 全局技术架构
+
+Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。
+
+```text
+应用装配层 (LumiApp)
+    ↓
+插件扩展层 (Plugins/Editor*, LSP*)
+    ↓
+服务门面层 (EditorService)
+    ↓                    ↓
+视图层 (EditorSource)   内核逻辑层 (EditorKernel)
+    ↓
+渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols)
+                              ↑ 本 Package
+```
+
+| 属性 | 值 |
+|------|-----|
+| **层级** | 渲染基础层 |
+| **职责** | tree-sitter 语法与 `highlights.scm` 二进制框架（`CodeLanguagesContainer.xcframework`） |
+| **上游依赖** | `SwiftTreeSitter` |
+| **下游消费者** | `EditorSource`（语法高亮）、`EditorService`（语言 ID 解析） |
+| **不得依赖** | `EditorService`、`EditorKernel`、任何 Plugin |
+
 ## Lumi Maintenance Notes
 
 `CodeLanguagesContainer.xcframework` is generated locally and intentionally ignored by Git. The framework binary is larger than GitHub's 100 MB file limit, so it must not be committed as a normal Git object.

@@ -10,13 +10,13 @@ import LumiUI
 ///
 /// 该视图只负责展示和选择动作，不负责请求、解析或执行动作；真正的业务逻辑由
 /// `CodeActionProvider` 和消费该 Provider 的编辑器 Overlay/面板负责。
-public struct CodeActionPanel: View {
+struct CodeActionPanel: View {
 
-    public let actions: [CodeActionItem]
-    @Binding public var selectedIndex: Int
-    public let onActionSelected: (CodeActionItem) -> Void
+    let actions: [CodeActionItem]
+    @Binding var selectedIndex: Int
+    let onActionSelected: (CodeActionItem) -> Void
 
-    public init(
+    init(
         actions: [CodeActionItem],
         selectedIndex: Binding<Int>,
         onActionSelected: @escaping (CodeActionItem) -> Void
@@ -26,7 +26,7 @@ public struct CodeActionPanel: View {
         self.onActionSelected = onActionSelected
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "lightbulb.fill")
@@ -101,19 +101,19 @@ public struct CodeActionPanel: View {
 ///
 /// 展示一个 `CodeActionItem` 的图标、标题和 preferred 标记。
 /// 点击该行后会把选择事件回传给上层，由上层决定是否立即执行动作。
-public struct CodeActionRow: View {
+struct CodeActionRow: View {
 
-    public let action: CodeActionItem
-    public let isSelected: Bool
-    public let onTap: () -> Void
+    let action: CodeActionItem
+    let isSelected: Bool
+    let onTap: () -> Void
 
-    public init(action: CodeActionItem, isSelected: Bool, onTap: @escaping () -> Void) {
+    init(action: CodeActionItem, isSelected: Bool, onTap: @escaping () -> Void) {
         self.action = action
         self.isSelected = isSelected
         self.onTap = onTap
     }
 
-    public var body: some View {
+    var body: some View {
         Button(action: onTap) {
             HStack(spacing: 8) {
                 Image(systemName: action.icon)

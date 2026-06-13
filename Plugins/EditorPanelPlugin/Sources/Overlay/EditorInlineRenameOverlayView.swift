@@ -6,18 +6,18 @@ import LumiUI
 ///
 /// 负责承载符号重命名输入、预览状态和应用动作，是源码视图顶部的轻量级
 /// rename 交互容器。
-public struct EditorInlineRenameOverlayView: View {
+struct EditorInlineRenameOverlayView: View {
     @ObservedObject var state: EditorState
     @Binding var renameState: EditorInlineRenameState
 
     @FocusState private var isInputFocused: Bool
 
-    public init(state: EditorState, renameState: Binding<EditorInlineRenameState>) {
+    init(state: EditorState, renameState: Binding<EditorInlineRenameState>) {
         self.state = state
         self._renameState = renameState
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "pencil.line")

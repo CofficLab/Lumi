@@ -5,16 +5,16 @@ import EditorService
 ///
 /// 负责在行号区附近绘制诊断、标记、提示等 gutter 装饰元素，并将可点击
 /// 的诊断装饰转发为打开问题的动作。
-public struct EditorGutterDecorationsOverlayView: View {
-    public let decorations: [EditorGutterDecoration]
-    public let openDiagnostic: (Int) -> Void
+struct EditorGutterDecorationsOverlayView: View {
+    let decorations: [EditorGutterDecoration]
+    let openDiagnostic: (Int) -> Void
 
-    public init(decorations: [EditorGutterDecoration], openDiagnostic: @escaping (Int) -> Void) {
+    init(decorations: [EditorGutterDecoration], openDiagnostic: @escaping (Int) -> Void) {
         self.decorations = decorations
         self.openDiagnostic = openDiagnostic
     }
 
-    public var body: some View {
+    var body: some View {
         if !decorations.isEmpty {
             ZStack(alignment: .topLeading) {
                 ForEach(decorations) { decoration in

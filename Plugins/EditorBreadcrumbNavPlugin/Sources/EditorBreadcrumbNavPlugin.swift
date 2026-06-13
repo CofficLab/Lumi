@@ -12,7 +12,7 @@ public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.editor-breadcrumb-header",
         displayName: LumiPluginLocalization.string("Editor Breadcrumb", bundle: .module),
         description: LumiPluginLocalization.string("File path breadcrumb navigation below editor tabs.", bundle: .module),
-        order: 70
+        order: 88
     )
 
     @MainActor

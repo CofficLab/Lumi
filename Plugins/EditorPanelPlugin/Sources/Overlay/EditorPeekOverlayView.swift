@@ -5,18 +5,18 @@ import LumiUI
 /// 编辑器 peek 预览悬浮层。
 ///
 /// 负责在当前编辑上下文中展示定义、引用等跳转结果的列表与内容预览，让用户无需离开当前文件就能浏览目标位置。
-public struct EditorPeekOverlayView: View {
+struct EditorPeekOverlayView: View {
     @ObservedObject var state: EditorState
     let presentation: EditorPeekPresentation
 
     @State private var selectedItemID: String?
 
-    public init(state: EditorState, presentation: EditorPeekPresentation) {
+    init(state: EditorState, presentation: EditorPeekPresentation) {
         self.state = state
         self.presentation = presentation
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 0) {
             header
             Divider()

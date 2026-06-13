@@ -280,8 +280,10 @@
         }
       }
     },
+    "%lld available" : {
+
+    },
     "%lld items" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -735,7 +737,6 @@
       }
     },
     "Apply Rename" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1365,7 +1366,6 @@
       }
     },
     "Cancel" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1398,6 +1398,9 @@
           }
         }
       }
+    },
+    "Cannot preview image" : {
+
     },
     "Case Sensitive" : {
       "extractionState" : "stale",
@@ -1747,6 +1750,9 @@
           }
         }
       }
+    },
+    "Code Actions" : {
+
     },
     "Code Editor" : {
       "localizations" : {
@@ -2512,7 +2518,6 @@
       }
     },
     "Current: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4542,7 +4547,6 @@
       }
     },
     "Files" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7546,7 +7550,6 @@
       }
     },
     "New name" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8313,7 +8316,6 @@
       }
     },
     "No preview available" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8838,7 +8840,6 @@
       }
     },
     "Open" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8943,7 +8944,6 @@
       }
     },
     "Open diagnostic" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9467,6 +9467,9 @@
         }
       }
     },
+    "Preferred" : {
+
+    },
     "Preferred Target" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9573,7 +9576,6 @@
       }
     },
     "Preview Changes" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10096,7 +10098,6 @@
       }
     },
     "Quick Fix" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10934,7 +10935,6 @@
       }
     },
     "Rename Symbol" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

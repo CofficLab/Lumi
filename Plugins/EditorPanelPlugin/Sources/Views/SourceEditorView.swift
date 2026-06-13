@@ -3,7 +3,6 @@ import SuperLogKit
 import EditorSource
 import EditorTextView
 import EditorLanguages
-import EditorOverlayKit
 import EditorService
 import LSPDocumentHighlightEditorPlugin
 import LSPRealtimeSignalsEditorPlugin

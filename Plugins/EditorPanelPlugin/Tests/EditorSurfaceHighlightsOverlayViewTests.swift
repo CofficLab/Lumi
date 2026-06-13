@@ -1,6 +1,6 @@
 import CoreGraphics
 import Testing
-@testable import EditorOverlayKit
+@testable import EditorPanelPlugin
 
 @Suite("EditorSurfaceHighlightsOverlayView")
 @MainActor

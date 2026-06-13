@@ -1,133 +1,64 @@
-<p align="center">
-  <img src="https://github.com/CodeEditApp/EditorCodeEditTextView/blob/main/.github/EditorCodeEditTextView-Icon-128@2x.png?raw=true" height="128">
-  <h1 align="center">EditorTextView</h1>
-</p>
+# EditorTextView
 
+面向代码文档的高性能文本视图（源自 CodeEditApp 的 [EditorCodeEditTextView](https://github.com/CodeEditApp/EditorCodeEditTextView)）。提供自研 `TextView`（`NSView`），用于替代部分场景下的 `NSTextView`，支持快速布局与大文档编辑。
 
-<p align="center">
-  <a aria-label="Follow CodeEdit on Twitter" href="https://twitter.com/CodeEditApp" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Twitter">
-  </a>
-  <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
-  </a>
-  <a aria-label="Read the Documentation" href="https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Documentation-black.svg?style=for-the-badge&logo=readthedocs&logoColor=blue">
-  </a>
-</p>
+## 全局技术架构
 
-A text editor specialized for displaying and editing code documents. Features include basic text editing, extremely fast initial layout, support for handling large documents, customization options for code documents.
+Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。
 
-![GitHub release](https://img.shields.io/github/v/release/CodeEditApp/EditorTextView?color=orange&label=latest%20release&sort=semver&style=flat-square)
-![Github Tests](https://img.shields.io/github/actions/workflow/status/CodeEditApp/EditorCodeEditTextView/CI-push.yml?branch=main&label=tests&style=flat-square)
-![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/EditorCodeEditTextView?style=flat-square)
-![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/EditorCodeEditTextView?style=flat-square)
-[![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
-
-> [!IMPORTANT]
-> This package contains a text view suitable for replacing `NSTextView` in some, ***specific*** cases. If you want a text view that can handle things like: right-to-left text, custom layout elements, or feature parity with the system text view, consider using [STTextView](https://github.com/krzyzanowskim/STTextView) or [NSTextView](https://developer.apple.com/documentation/appkit/nstextview). The ``TextView`` exported by this library is designed to lay out documents made up of lines of text. It also does not attempt to reason about the contents of the document. If you're looking to edit *source code* (indentation, syntax highlighting) consider using the parent library [CodeEditSourceEditor](https://github.com/CodeEditApp/CodeEditSourceEditor).
-
-## Documentation
-
-This package is fully documented [here](https://codeeditapp.github.io/EditorCodeEditTextView/documentation/codeedittextview/).
-
-## Usage
-
-This package exports a primary `TextView` class. The `TextView` class is an `NSView` subclass that can be embedded in a scroll view or used standalone. It parses and renders lines of a document and handles mouse and keyboard events for text editing. It also renders styled strings for use cases like syntax highlighting.
-
-```swift
-import EditorTextView
-import AppKit
-
-/// # ViewController
-/// 
-/// An example view controller for displaying a text view embedded in a scroll view.
-class ViewController: NSViewController, TextViewDelegate {
-    private var scrollView: NSScrollView!
-    private var textView: TextView!
-    
-    var text: String = "func helloWorld() {\n\tprint(\"hello world\")\n}"
-    var font: NSFont!
-    var textColor: NSColor!
-    
-    override func loadView() {
-		textView = TextView(
-            string: text,
-            font: font,
-            textColor: textColor,
-            lineHeightMultiplier: 1.0,
-            wrapLines: true,
-            isEditable: true,
-            isSelectable: true,
-            letterSpacing: 1.0,
-            delegate: self
-        )
-        textView.translatesAutoresizingMaskIntoConstraints = false
-
-        scrollView = NSScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = true
-        scrollView.documentView = textView
-        self.view = scrollView
-		NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        textView.updateFrameIfNeeded()
-    }
-}
+```text
+应用装配层 (LumiApp)
+    ↓
+插件扩展层 (Plugins/Editor*, LSP*)
+    ↓
+服务门面层 (EditorService)
+    ↓                    ↓
+视图层 (EditorSource)   内核逻辑层 (EditorKernel)
+    ↓
+渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols)
+              ↑ 本 Package
 ```
 
-## License
+## 本 Package 的位置
 
-Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/main/LICENSE.md).
+| 属性 | 值 |
+|------|-----|
+| **层级** | 渲染基础层 |
+| **职责** | 高性能 `NSView` 文本渲染、布局、输入处理；大文档编辑性能优化 |
+| **上游依赖** | `TextStory`、`swift-collections` |
+| **下游消费者** | `EditorSource`（核心文本视图）、`EditorService`（类型桥接）、部分语言插件 |
+| **不得依赖** | `EditorService`、`EditorKernel`、任何 Plugin |
 
-## Dependencies
+## Package
 
-Special thanks to [Matt Massicotte](https://twitter.com/mattie) for the great work he's done!
+- Product: `EditorTextView`
+- Platform: macOS 13+
+- Swift tools: 5.9
 
-| Package     | Source                                               | Author                                        |
-| :---------- | :--------------------------------------------------- | :-------------------------------------------- |
-| `TextStory` | [GitHub](https://github.com/ChimeHQ/TextStory) | [Matt Massicotte](https://twitter.com/mattie) |
-| `swift-collections` | [GitHub](https://github.com/apple/swift-collections.git) | [Apple](https://github.com/apple) |
+## 用途
 
-## Related Repositories
+- 代码编辑器的底层文本渲染与输入处理
+- 被 `EditorSource` 用作核心文本视图
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEdit">
-        <img src="https://github.com/CodeEditApp/CodeEdit/blob/main/.github/CodeEdit-Icon-128@2x.png?raw=true" height="128">
-        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeEdit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditSourceEditor">
-        <img src="https://github.com/CodeEditApp/EditorCodeEditTextView/blob/main/.github/CodeEditSourceEditor-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p><a href="https://github.com/CodeEditApp/CodeEditSourceEditor">CodeEditSourceEditor</a></p>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditKit">
-        <img src="https://user-images.githubusercontent.com/806104/193877051-c60d255d-0b6a-408c-bb21-6fabc5e0e60c.png" height="128">
-        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeEditKit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/EditorLanguages">
-        <img src="https://user-images.githubusercontent.com/806104/201497920-d6aace8d-f0dc-49f6-bcd7-6a3b64cc384c.png" height="128">
-        <p>EditorLanguages</p>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditCLI">
-        <img src="https://user-images.githubusercontent.com/806104/205848006-f2654778-21f1-4f97-b292-32849cc1eff6.png" height="128">
-        <p>&nbsp;&nbsp;&nbsp;&nbsp;CodeEdit&nbsp;CLI&nbsp;&nbsp;&nbsp;&nbsp;</p>
-      </a>
-    </td>
-  </tr>
-</table>
+## 依赖与集成
+
+```swift
+dependencies: [
+    .package(path: "../EditorTextView"),
+],
+targets: [
+    .target(name: "YourTarget", dependencies: ["EditorTextView"]),
+]
+```
+
+## Testing
+
+From this package directory:
+
+```sh
+swift test
+```
+
+## 上游项目
+
+- https://github.com/CodeEditApp/EditorCodeEditTextView
