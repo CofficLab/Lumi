@@ -3708,6 +3708,244 @@
           }
         }
       }
+    },
+    "Error: failed to parse xcstrings file: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: failed to parse xcstrings file: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：解析 xcstrings 文件失败：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：解析 xcstrings 檔案失敗：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：解析 xcstrings 檔案失敗：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：解析 xcstrings 檔案失敗：%@"
+          }
+        }
+      }
+    },
+    "File: %@\\nSource language: %@ | Languages: %d | Active entries: %d | Stale entries: %d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File: %@\\nSource language: %@ | Languages: %d | Active entries: %d | Stale Entries: %d"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件：%1$@\\n源语言：%2$@ | 语言数：%3$d | 有效条目：%4$d | 废弃条目：%5$d"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案：%1$@\\n源語言：%2$@ | 語言數：%3$d | 有效條目：%4$d | 廢棄條目：%5$d"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案：%1$@\\n源語言：%2$@ | 語言數：%3$d | 有效條目：%4$d | 廢棄條目：%5$d"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案：%1$@\\n源語言：%2$@ | 語言數：%3$d | 有效條目：%4$d | 廢棄條目：%5$d"
+          }
+        }
+      }
+    },
+    "\\n⚠️ Stale keys (%d):": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ Stale keys (%d):"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ 废弃的 key（%d）："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ 廢棄的 key（%d）："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ 廢棄的 key（%d）："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ 廢棄的 key（%d）："
+          }
+        }
+      }
+    },
+    "\\n🚫 Missing translations for \\\"%@\\\" (%d):": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n🚫 Missing translations for \"%@\" (%d):"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n🚫 \"%@\" 缺失翻译（%d）："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n🚫 \"%@\" 缺失翻譯（%d）："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n🚫 \"%@\" 缺失翻譯（%d）："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n🚫 \"%@\" 缺失翻譯（%d）："
+          }
+        }
+      }
+    },
+    "\\n⚠️ Untranslated entries for \\\"%@\\\" (%d) — value equals key:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ Untranslated entries for \"%@\" (%d) — value equals key:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ \"%@\" 未实际翻译（%d）— 值与 key 相同："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ \"%@\" 未實際翻譯（%d）— 值與 key 相同："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ \"%@\" 未實際翻譯（%d）— 值與 key 相同："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n⚠️ \"%@\" 未實際翻譯（%d）— 值與 key 相同："
+          }
+        }
+      }
+    },
+    "\\n✅ No issues found.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n✅ No issues found."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n✅ 未发现问题。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n✅ 未發現問題。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n✅ 未發現問題。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n✅ 未發現問題。"
+          }
+        }
+      }
+    },
+    "\\n📊 Total issues: %d (stale: %d, missing: %d, untranslated: %d)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n📊 Total issues: %d (stale: %d, missing: %d, untranslated: %d)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n📊 问题总数：%1$d（废弃：%2$d，缺失：%3$d，未翻译：%4$d）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n📊 問題總數：%1$d（廢棄：%2$d，缺失：%3$d，未翻譯：%4$d）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n📊 問題總數：%1$d（廢棄：%2$d，缺失：%3$d，未翻譯：%4$d）"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\\n📊 問題總數：%1$d（廢棄：%2$d，缺失：%3$d，未翻譯：%4$d）"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
