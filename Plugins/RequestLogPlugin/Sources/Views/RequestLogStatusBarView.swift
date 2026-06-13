@@ -14,7 +14,7 @@ public struct RequestLogStatusBarView: View {
             id: "agent-request-log"
         ) {
             HStack(spacing: 6) {
-                Image(systemName: "doc.text.magnifyingglass")
+                Image(systemName: RequestLogPlugin.iconName)
                     .font(.appMicroEmphasized)
             }
             .padding(.horizontal, 8)
