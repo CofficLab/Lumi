@@ -1,7 +1,7 @@
 import EditorService
 import LumiCoreKit
 
-extension EditorXcodePlugin: LumiEditorExtensionRegistering {
+extension EditorXcodeEditorPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
         LumiPluginInfo(
             id: id,

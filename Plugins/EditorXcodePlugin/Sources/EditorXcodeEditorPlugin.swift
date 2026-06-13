@@ -13,12 +13,12 @@ public enum XcodePluginLog {
     nonisolated(unsafe) static var verbose: Bool = false
 }
 
-/// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
-public actor EditorXcodePlugin: SuperPlugin, SuperLog {
+/// Xcode 项目编辑器扩展：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
+public actor EditorXcodeEditorPlugin: SuperPlugin, SuperLog {
     public nonisolated static let policy: PluginPolicy = .alwaysOn
     public nonisolated static let emoji = "🔧"
 
-    public static let shared = EditorXcodePlugin()
+    public static let shared = EditorXcodeEditorPlugin()
     public static let id = "EditorXcode"
     public static let displayName = LumiPluginLocalization.string("Xcode Project Editor", bundle: .module)
     public static let description = LumiPluginLocalization.string("Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", bundle: .module)

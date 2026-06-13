@@ -29,8 +29,6 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/XcodeKit"),
-        .package(path: "../../Packages/XcodeProjectGen"),
         .package(path: "../EditorPreviewPlugin"),
         .package(path: "../EditorStickySymbolBarPlugin"),
         .package(path: "../EditorBottomTerminalPlugin"),
@@ -38,7 +36,6 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
         .package(url: "https://github.com/ChimeHQ/JSONRPC", from: "0.9.0"),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
-        .package(url: "https://github.com/tuist/XcodeProj", .upToNextMajor(from: "9.11.0")),
     ],
     targets: [
         .target(
@@ -66,9 +63,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "XcodeKit", package: "XcodeKit"),
-                .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),
-                .product(name: "XcodeProj", package: "XcodeProj"),
             ],
             path: "Sources",
             resources: [
