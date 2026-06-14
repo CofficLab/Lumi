@@ -152,7 +152,8 @@ struct AppLayoutView: View {
                 pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                projectPathStore: projectPathStore
+                projectPathStore: projectPathStore,
+                panelLayoutState: panelLayoutState
             )
         }
         .frame(minWidth: 1180, minHeight: 560)

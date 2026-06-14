@@ -18,12 +18,14 @@ public enum EditorBottomProblemsPanelPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         guard context.showsPanelChrome,
-              let editor = context.resolve(LumiEditorServicing.self)
+              let editor = context.resolve(LumiEditorServicing.self),
+              let presenter = context.resolve(LumiBottomPanelLayoutPresenting.self)
         else {
             return []
         }
 
         let editorService = editor.editorService
+        let viewContainerID = context.activeSectionID
         return [
             LumiStatusBarItem(
                 id: "\(info.id).diagnostics",
@@ -32,8 +34,10 @@ public enum EditorBottomProblemsPanelPlugin: LumiPlugin {
                 placement: .trailing,
                 statusBarView: {
                     ProblemsDiagnosticStatusBarView(editorService: editorService) {
-                        context.resolve(LumiBottomPanelLayoutPresenting.self)?
-                            .presentBottomTab(id: ProblemsPanelIDs.bottomTab)
+                        presenter.presentBottomTab(
+                            id: ProblemsPanelIDs.bottomTab,
+                            viewContainerID: viewContainerID
+                        )
                     }
                 }
             ),

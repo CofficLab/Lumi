@@ -1,4 +1,5 @@
 import EditorService
+import LanguageServerProtocol
 import LumiUI
 import SwiftUI
 import LumiCoreKit
@@ -7,10 +8,12 @@ public struct BottomEditorProblemsPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @ObservedObject var service: EditorService
+    @ObservedObject private var panelState: EditorPanelState
     public var showsHeader: Bool = true
 
     public init(service: EditorService, showsHeader: Bool = true) {
         self._service = ObservedObject(wrappedValue: service)
+        self._panelState = ObservedObject(wrappedValue: service.panel.panelState)
         self.showsHeader = showsHeader
     }
 
@@ -48,38 +51,53 @@ public struct BottomEditorProblemsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = service.panel.panelState.semanticProblems.count + service.panel.panelState.problemDiagnostics.count
+        let count = panelState.semanticProblems.count + panelState.problemDiagnostics.count
         return count > 0 ? LumiPluginLocalization.string("Problems (\(count))", bundle: .module) : LumiPluginLocalization.string("Problems", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if service.panel.panelState.semanticProblems.isEmpty && service.panel.panelState.problemDiagnostics.isEmpty {
+                if panelState.semanticProblems.isEmpty && panelState.problemDiagnostics.isEmpty {
                     emptyState(LumiPluginLocalization.string("No Problems", bundle: .module), systemImage: "checkmark.circle")
                 } else {
-                    if !service.panel.panelState.semanticProblems.isEmpty {
+                    if !panelState.semanticProblems.isEmpty {
                         sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
-                        ForEach(service.panel.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: LumiPluginLocalization.string("Project", bundle: .module))
+                        ForEach(panelState.semanticProblems) { problem in
+                            HStack(alignment: .top, spacing: 8) {
+                                panelCard(
+                                    title: problem.title,
+                                    subtitle: problem.message,
+                                    badge: LumiPluginLocalization.string("Project", bundle: .module)
+                                )
+                                ProblemAskAIButton {
+                                    sendProblemToChat(problem)
+                                }
+                            }
                         }
                     }
 
-                    if !service.panel.panelState.problemDiagnostics.isEmpty {
+                    if !panelState.problemDiagnostics.isEmpty {
                         sectionLabel(LumiPluginLocalization.string("Diagnostics", bundle: .module))
-                        ForEach(Array(service.panel.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
+                        ForEach(Array(panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
-                            Button {
-                                service.navigation.performOpenItem(.problem(diagnostic))
-                            } label: {
-                                panelCard(
-                                    title: "\(service.files.relativeFilePath):\(line):\(column)",
-                                    subtitle: diagnostic.message,
-                                    badge: diagnostic.source ?? "LSP"
-                                )
+                            HStack(alignment: .top, spacing: 8) {
+                                Button {
+                                    service.navigation.performOpenItem(.problem(diagnostic))
+                                } label: {
+                                    panelCard(
+                                        title: "\(service.files.relativeFilePath):\(line):\(column)",
+                                        subtitle: diagnostic.message,
+                                        badge: diagnostic.source ?? "LSP"
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
+                                ProblemAskAIButton {
+                                    sendDiagnosticToChat(diagnostic)
+                                }
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -132,5 +150,27 @@ public struct BottomEditorProblemsPanelView: View {
                 .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var problemPrompt: String {
+        LumiPluginLocalization.string("Please help me fix the following problem:", bundle: .module)
+    }
+
+    private func sendDiagnosticToChat(_ diagnostic: Diagnostic) {
+        ProblemsAddToChat.post(
+            ProblemsAddToChat.message(
+                for: diagnostic,
+                relativeFilePath: service.files.relativeFilePath,
+                prompt: problemPrompt
+            ),
+            windowId: service.state.windowId
+        )
+    }
+
+    private func sendProblemToChat(_ problem: EditorSemanticProblem) {
+        ProblemsAddToChat.post(
+            ProblemsAddToChat.message(for: problem, prompt: problemPrompt),
+            windowId: service.state.windowId
+        )
     }
 }

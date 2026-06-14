@@ -1207,6 +1207,7 @@ public final class EditorState: ObservableObject, SuperLog {
         documentSymbolProvider = registry.documentSymbolProvider ?? NullDocumentSymbolProvider()
         foldingRangeProvider = registry.foldingRangeProvider ?? NullFoldingRangeProvider()
         diagnosticsProvider = registry.diagnosticsProvider ?? NullDiagnosticsProvider()
+        bindDiagnostics()
         jumpDelegate?.lspClient = lspClient
         jumpDelegate?.lspClientProvider = { [weak self] in
             self?.lspClient

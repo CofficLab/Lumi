@@ -13,12 +13,12 @@ struct ProblemsDiagnosticStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @ObservedObject private var editorService: EditorService
-    @StateObject private var diagnosticsManager: DiagnosticsManager
+    @ObservedObject private var panelState: EditorPanelState
     private let onPresentPanel: () -> Void
 
     init(editorService: EditorService, onPresentPanel: @escaping () -> Void) {
         self._editorService = ObservedObject(wrappedValue: editorService)
-        self._diagnosticsManager = StateObject(wrappedValue: DiagnosticsManager())
+        self._panelState = ObservedObject(wrappedValue: editorService.panel.panelState)
         self.onPresentPanel = onPresentPanel
     }
 
@@ -27,7 +27,7 @@ struct ProblemsDiagnosticStatusBarView: View {
             StatusBarHoverContainer(
                 detailView: ProblemsDiagnosticStatusBarDetailView(
                     editorService: editorService,
-                    diagnosticsManager: diagnosticsManager,
+                    panelState: panelState,
                     onPresentPanel: onPresentPanel
                 ),
                 popoverWidth: 480,
@@ -40,29 +40,39 @@ struct ProblemsDiagnosticStatusBarView: View {
         }
     }
 
+    private var diagnostics: [Diagnostic] {
+        panelState.problemDiagnostics
+    }
+
     private var hasDiagnostics: Bool {
-        diagnosticsManager.errorCount > 0
-            || diagnosticsManager.warningCount > 0
-            || !editorService.panel.panelState.semanticProblems.isEmpty
+        errorCount > 0 || warningCount > 0 || !panelState.semanticProblems.isEmpty
+    }
+
+    private var errorCount: Int {
+        diagnostics.filter { $0.severity == .error }.count
+    }
+
+    private var warningCount: Int {
+        diagnostics.filter { $0.severity == .warning }.count
     }
 
     @ViewBuilder
     private var indicators: some View {
         HStack(spacing: 8) {
-            if diagnosticsManager.errorCount > 0 {
+            if errorCount > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(theme.error)
-                    Text("\(diagnosticsManager.errorCount)")
+                    Text("\(errorCount)")
                         .font(.appMicroEmphasized)
                 }
             }
 
-            if diagnosticsManager.warningCount > 0 {
+            if warningCount > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(theme.warning)
-                    Text("\(diagnosticsManager.warningCount)")
+                    Text("\(warningCount)")
                         .font(.appMicroEmphasized)
                 }
             }
@@ -74,8 +84,20 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @ObservedObject var editorService: EditorService
-    @ObservedObject var diagnosticsManager: DiagnosticsManager
+    @ObservedObject var panelState: EditorPanelState
     let onPresentPanel: () -> Void
+
+    private var diagnostics: [Diagnostic] {
+        panelState.problemDiagnostics
+    }
+
+    private var errorCount: Int {
+        diagnostics.filter { $0.severity == .error }.count
+    }
+
+    private var warningCount: Int {
+        diagnostics.filter { $0.severity == .warning }.count
+    }
 
     var body: some View {
         StatusBarPopoverScaffold(
@@ -86,39 +108,47 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
             content: {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
-                        if diagnosticsManager.diagnostics.isEmpty,
-                           editorService.panel.panelState.semanticProblems.isEmpty {
+                        if diagnostics.isEmpty, panelState.semanticProblems.isEmpty {
                             Text(LumiPluginLocalization.string("No problems in the current file.", bundle: .module))
                                 .foregroundColor(theme.textSecondary)
                         } else {
-                            if !editorService.panel.panelState.semanticProblems.isEmpty {
+                            if !panelState.semanticProblems.isEmpty {
                                 sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
-                                ForEach(editorService.panel.panelState.semanticProblems) { problem in
+                                ForEach(panelState.semanticProblems) { problem in
                                     diagnosticRow(
                                         title: problem.title,
                                         message: problem.message,
                                         badge: LumiPluginLocalization.string("Project", bundle: .module),
                                         systemImage: "exclamationmark.triangle.fill",
-                                        tint: theme.warning
+                                        tint: theme.warning,
+                                        askAI: {
+                                            sendProblemToChat(problem)
+                                        }
                                     )
                                 }
                             }
 
-                            if !diagnosticsManager.diagnostics.isEmpty {
+                            if !diagnostics.isEmpty {
                                 sectionLabel(LumiPluginLocalization.string("Diagnostics", bundle: .module))
-                                ForEach(Array(diagnosticsManager.diagnostics.enumerated()), id: \.offset) { _, diagnostic in
-                                    Button {
-                                        editorService.navigation.performOpenItem(.problem(diagnostic))
-                                    } label: {
-                                        diagnosticRow(
-                                            title: locationLabel(for: diagnostic),
-                                            message: diagnostic.message,
-                                            badge: diagnostic.source ?? "LSP",
-                                            systemImage: severityIcon(for: diagnostic.severity),
-                                            tint: severityColor(for: diagnostic.severity)
-                                        )
+                                ForEach(Array(diagnostics.enumerated()), id: \.offset) { _, diagnostic in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Button {
+                                            editorService.navigation.performOpenItem(.problem(diagnostic))
+                                        } label: {
+                                            diagnosticRow(
+                                                title: locationLabel(for: diagnostic),
+                                                message: diagnostic.message,
+                                                badge: diagnostic.source ?? "LSP",
+                                                systemImage: severityIcon(for: diagnostic.severity),
+                                                tint: severityColor(for: diagnostic.severity)
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+
+                                        ProblemAskAIButton {
+                                            sendDiagnosticToChat(diagnostic)
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -129,6 +159,7 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
             footer: {
                 Button(LumiPluginLocalization.string("Open Problems Panel", bundle: .module)) {
                     onPresentPanel()
+                    HoverCoordinator.shared.close(id: "problems-diagnostics")
                 }
                 .buttonStyle(.plain)
             }
@@ -136,9 +167,7 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
     }
 
     private var summaryText: String {
-        let errors = diagnosticsManager.errorCount
-        let warnings = diagnosticsManager.warningCount
-        switch (errors, warnings) {
+        switch (errorCount, warningCount) {
         case (0, 0):
             return LumiPluginLocalization.string("Current file", bundle: .module)
         case let (errors, 0):
@@ -161,7 +190,8 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
         message: String,
         badge: String,
         systemImage: String,
-        tint: SwiftUI.Color
+        tint: SwiftUI.Color,
+        askAI: (() -> Void)? = nil
     ) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: systemImage)
@@ -186,9 +216,35 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            if let askAI {
+                ProblemAskAIButton(action: askAI)
+            }
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
+    }
+
+    private var problemPrompt: String {
+        LumiPluginLocalization.string("Please help me fix the following problem:", bundle: .module)
+    }
+
+    private func sendDiagnosticToChat(_ diagnostic: Diagnostic) {
+        ProblemsAddToChat.post(
+            ProblemsAddToChat.message(
+                for: diagnostic,
+                relativeFilePath: editorService.files.relativeFilePath,
+                prompt: problemPrompt
+            ),
+            windowId: editorService.state.windowId
+        )
+    }
+
+    private func sendProblemToChat(_ problem: EditorSemanticProblem) {
+        ProblemsAddToChat.post(
+            ProblemsAddToChat.message(for: problem, prompt: problemPrompt),
+            windowId: editorService.state.windowId
+        )
     }
 
     private func locationLabel(for diagnostic: Diagnostic) -> String {
