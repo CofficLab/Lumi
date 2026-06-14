@@ -278,6 +278,7 @@ struct AppLayoutView: View {
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
+                dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
             }
         )
     }

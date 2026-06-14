@@ -1,8 +1,9 @@
 import Foundation
 import LayoutPlugin
+import LumiCoreKit
 
 @MainActor
-final class PanelLayoutState: ObservableObject {
+final class PanelLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting {
     @Published var activeRailTabID: String
     @Published var activeBottomTabID: String
 
@@ -20,6 +21,10 @@ final class PanelLayoutState: ObservableObject {
     func presentRailTab(id: String) {
         activeRailTabID = id
         persistActiveRailTabID()
+    }
+
+    func presentBottomTab(id: String) {
+        activeBottomTabID = id
     }
 }
 

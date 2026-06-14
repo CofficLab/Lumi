@@ -16,6 +16,31 @@ public enum EditorBottomProblemsPanelPlugin: LumiPlugin {
     )
 
     @MainActor
+    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        guard context.showsPanelChrome,
+              let editor = context.resolve(LumiEditorServicing.self)
+        else {
+            return []
+        }
+
+        let editorService = editor.editorService
+        return [
+            LumiStatusBarItem(
+                id: "\(info.id).diagnostics",
+                title: LumiPluginLocalization.string("Problems", bundle: .module),
+                systemImage: iconName,
+                placement: .trailing,
+                statusBarView: {
+                    ProblemsDiagnosticStatusBarView(editorService: editorService) {
+                        context.resolve(LumiBottomPanelLayoutPresenting.self)?
+                            .presentBottomTab(id: ProblemsPanelIDs.bottomTab)
+                    }
+                }
+            ),
+        ]
+    }
+
+    @MainActor
     public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
@@ -25,7 +50,7 @@ public enum EditorBottomProblemsPanelPlugin: LumiPlugin {
 
         return [
             LumiPanelBottomTabItem(
-                id: "editor-bottom-problems",
+                id: ProblemsPanelIDs.bottomTab,
                 order: info.order,
                 title: LumiPluginLocalization.string("Problems", bundle: .module),
                 systemImage: "exclamationmark.bubble"
