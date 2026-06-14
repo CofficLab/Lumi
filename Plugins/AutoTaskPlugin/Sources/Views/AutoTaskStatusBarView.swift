@@ -1,14 +1,14 @@
-import LumiCoreKit
+import LumiChatKit
 import LumiUI
 import SwiftUI
 
 struct AutoTaskStatusBarView: View {
-    let chatService: any LumiChatServicing
+    @ObservedObject var coordinator: ChatSectionCoordinator
 
     var body: some View {
         StatusBarHoverContainer(
             detailView: AutoTaskSidebarView(
-                conversationIdProvider: { chatService.selectedConversationID },
+                conversationIdProvider: { coordinator.selectedConversationID },
                 backgroundColorProvider: { Color.clear }
             ),
             popoverWidth: 360,
