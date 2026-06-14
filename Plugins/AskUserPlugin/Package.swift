@@ -32,7 +32,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskUserPluginTests",
-            dependencies: ["AskUserPlugin"],
+            dependencies: ["AskUserPlugin", "AgentToolKit", "LumiCoreKit"],
             path: "Tests"
         ),
     ]
