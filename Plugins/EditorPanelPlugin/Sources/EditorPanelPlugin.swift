@@ -55,19 +55,20 @@ public enum EditorPanelPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         guard context.activeSectionID == info.id,
-              context.resolve(LumiEditorServicing.self) != nil
+              let editor = context.resolve(LumiEditorServicing.self)
         else {
             return []
         }
 
+        let editorService = editor.editorService
         return [
             LumiStatusBarItem(
                 id: "\(info.id).lsp",
-                title: "LSP",
-                systemImage: "waveform.path.ecg",
+                title: "Problems",
+                systemImage: "exclamationmark.bubble",
                 placement: .trailing,
                 statusBarView: {
-                    LSPDiagnosticStatusBarItem()
+                    LSPDiagnosticStatusBarItem(editorService: editorService)
                 }
             ),
         ]

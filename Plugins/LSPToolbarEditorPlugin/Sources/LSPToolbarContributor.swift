@@ -47,7 +47,7 @@ private struct LSPStatusToolbarItem: View {
 
     public var body: some View {
         Button {
-            state.performEditorCommand(id: "builtin.toggle-problems")
+            state.performPanelCommand(.toggleProblems)
         } label: {
             HStack(spacing: 8) {
                 if diagnosticsManager.errorCount > 0 {
