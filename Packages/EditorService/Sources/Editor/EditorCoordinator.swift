@@ -38,6 +38,15 @@ public final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @un
                 jumpDelegate: jumpDelegate,
                 existingObserver: endEditingObserver
             )
+            if let treeSitterClient = jumpDelegate?.treeSitterClient {
+                state?.documentHighlightCoordinator.configure(
+                    treeSitterClient: treeSitterClient,
+                    textViewController: controller,
+                    attributesProvider: { capture in
+                        controller.attributesFor(capture)
+                    }
+                )
+            }
         }
     }
     

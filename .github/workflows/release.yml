@@ -556,8 +556,15 @@ jobs:
           if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
             NOTES="## Release ${{ env.tag }}\n\nInitial release"
           else
-            NOTES="## Release ${{ env.tag }}\n\n### Changes since v$PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
+            CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
+              | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
+              | grep -Ev '^- 👷 CI:' \
+              | sort -u \
+              | head -20)
+            if [ -z "$CHANGES" ]; then
+              CHANGES="- Maintenance and stability improvements"
+            fi
+            NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
           fi
 
           echo -e "$NOTES" > changelog.md

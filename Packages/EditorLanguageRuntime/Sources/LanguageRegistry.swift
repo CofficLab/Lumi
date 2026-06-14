@@ -112,9 +112,13 @@ public final class LanguageRegistry: ObservableObject, @unchecked Sendable {
         } else {
             parentURLs = []
         }
+        var highlightURLs = provider.highlightQueryURLs()
+        if let injectionURL = provider.injectionQueryURL() {
+            highlightURLs.append(injectionURL)
+        }
         return LanguageQueryRegistry.shared.query(
             for: context.highlightLanguageId,
-            highlightURLs: provider.highlightQueryURLs(),
+            highlightURLs: highlightURLs,
             parentHighlightURLs: parentURLs,
             language: treeSitterLanguage(for: context)
         )

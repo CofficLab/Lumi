@@ -52,6 +52,7 @@ public final class EditorService: ObservableObject {
         self.lsp = EditorLSPService(state: state)
         installNestedObservableForwarding()
         installActiveSessionSyncBridge()
+        state.installDocumentHighlightPrewarmScheduler(sessionStore: sessionStore)
     }
 
     public convenience init(editorExtensionRegistry: EditorExtensionRegistry) {

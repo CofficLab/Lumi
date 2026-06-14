@@ -1,4 +1,5 @@
 import AgentToolKit
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import os
@@ -41,14 +42,14 @@ public enum AutoTaskPlugin: LumiPlugin {
     @MainActor
     public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
         guard context.showsChatSection,
-              let chatService = context.resolve((any LumiChatServicing).self)
+              let coordinator = context.resolve(ChatSectionCoordinator.self)
         else {
             return []
         }
 
         return [
             LumiChatSectionItem(id: info.id, order: info.order) {
-                AutoTaskChatSectionView(chatService: chatService)
+                AutoTaskChatSectionView(coordinator: coordinator)
             }
         ]
     }
@@ -56,11 +57,11 @@ public enum AutoTaskPlugin: LumiPlugin {
 
 private struct AutoTaskChatSectionView: View {
     @LumiTheme private var theme
-    let chatService: any LumiChatServicing
+    @ObservedObject var coordinator: ChatSectionCoordinator
 
     var body: some View {
         AutoTaskSidebarView(
-            conversationIdProvider: { chatService.selectedConversationID },
+            conversationIdProvider: { coordinator.selectedConversationID },
             backgroundColorProvider: {
                 theme.background.opacity(0.94)
             }

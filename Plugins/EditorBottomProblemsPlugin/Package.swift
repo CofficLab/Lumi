@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
     ],
     targets: [
         .target(
@@ -25,16 +26,12 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
             ],
             path: "Sources",
             resources: [
                 .process("Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "EditorBottomProblemsPluginTests",
-            dependencies: ["EditorBottomProblemsPlugin"],
-            path: "Tests"
         )
     ]
 )

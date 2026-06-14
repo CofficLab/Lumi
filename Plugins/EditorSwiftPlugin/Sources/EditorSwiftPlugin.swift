@@ -4,7 +4,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// Swift / Xcode 集成插件：scheme 工具栏、构建上下文状态栏与 Agent 工具。
+/// Swift / Xcode 集成插件：scheme 工具栏与 Agent 工具。
 public enum EditorSwiftPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .development
@@ -36,27 +36,6 @@ public enum EditorSwiftPlugin: LumiPlugin {
             ) {
                 XcodeProjectStatusBar()
             }
-        ]
-    }
-
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == editorPanelSectionID,
-              context.resolve(LumiEditorServicing.self) != nil
-        else {
-            return []
-        }
-
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).xcode",
-                title: LumiPluginLocalization.string("Xcode Build Context", bundle: .module),
-                systemImage: "hammer.fill",
-                placement: .trailing,
-                statusBarView: {
-                    XcodeStatusBarTrailingView()
-                }
-            ),
         ]
     }
 

@@ -146,26 +146,12 @@ extension SourceEditorConfiguration {
             }
 
             if needsHighlighterInvalidation {
-                let documentRange = NSRange(
-                    location: 0,
-                    length: controller.textView.textStorage.length
-                )
-                if documentRange.length > 0 {
-                    controller.textView.textStorage.setAttributes(
-                        controller.attributesFor(nil),
-                        range: documentRange
-                    )
-                }
                 controller.highlighter?.invalidate()
             }
         }
 
         private func updateControllerNewTheme(controller: TextViewController) {
             controller.textView.layoutManager.setNeedsLayout()
-            controller.textView.textStorage.setAttributes(
-                controller.attributesFor(nil),
-                range: NSRange(location: 0, length: controller.textView.textStorage.length)
-            )
             controller.textView.selectionManager.selectionBackgroundColor = theme.selection
             controller.textView.selectionManager.selectedLineBackgroundColor = getThemeBackground(
                 systemAppearance: controller.systemAppearance

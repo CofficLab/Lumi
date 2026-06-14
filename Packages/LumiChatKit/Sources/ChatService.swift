@@ -502,6 +502,22 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                 )
                 incrementRevision()
 
+                let progressTask = Task { @MainActor [weak self] in
+                    while !Task.isCancelled {
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        guard let self, !Task.isCancelled else { return }
+                        let elapsed = Int(Date().timeIntervalSince(start))
+                        self.statusState.setToolProgress(
+                            conversationID: conversationID,
+                            toolName: toolCall.name,
+                            elapsedSeconds: elapsed,
+                            outputPreview: nil
+                        )
+                        self.incrementRevision()
+                    }
+                }
+                defer { progressTask.cancel() }
+
                 let result = await toolService.execute(toolCall, conversationID: conversationID)
                 let elapsed = Int(Date().timeIntervalSince(start))
                 statusState.setToolCompleted(

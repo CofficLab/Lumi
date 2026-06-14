@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import ShellKit
 
 public struct ShellTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -55,28 +56,21 @@ public struct ShellTool: LumiAgentTool {
             throw NSError(domain: "ShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing command"])
         }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-lc", command]
+        let options = ShellOptions(
+            workingDirectory: context.currentProjectPath,
+            throwsOnError: false
+        )
+        let result = try await ShellExecutor.execute(
+            executable: "/bin/zsh",
+            arguments: ["-lc", command],
+            options: options
+        )
 
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: outputData, encoding: .utf8) ?? ""
-        let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
-
-        if process.terminationStatus != 0 {
-            return "Exit code: \(process.terminationStatus)\n\(output)\n\(errorOutput)"
+        if result.exitCode != 0 {
+            return "Exit code: \(result.exitCode)\n\(result.stdout)\n\(result.stderr)"
         }
 
-        let combined = (output + errorOutput).trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = (result.stdout + result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
         return combined.isEmpty ? "Command completed successfully." : combined
     }
 }

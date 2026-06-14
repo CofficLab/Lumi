@@ -152,7 +152,8 @@ struct AppLayoutView: View {
                 pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                projectPathStore: projectPathStore
+                projectPathStore: projectPathStore,
+                panelLayoutState: panelLayoutState
             )
         }
         .frame(minWidth: 1180, minHeight: 560)
@@ -278,6 +279,7 @@ struct AppLayoutView: View {
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
+                dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
             }
         )
     }

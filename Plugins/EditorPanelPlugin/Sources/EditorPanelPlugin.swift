@@ -51,25 +51,4 @@ public enum EditorPanelPlugin: LumiPlugin {
             SetCurrentFileTool().asLumiAgentTool(),
         ]
     }
-
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.activeSectionID == info.id,
-              context.resolve(LumiEditorServicing.self) != nil
-        else {
-            return []
-        }
-
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).lsp",
-                title: "LSP",
-                systemImage: "waveform.path.ecg",
-                placement: .trailing,
-                statusBarView: {
-                    LSPDiagnosticStatusBarItem()
-                }
-            ),
-        ]
-    }
 }

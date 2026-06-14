@@ -30,7 +30,7 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [CleanStringCatalogTool()]
+        [CleanStringCatalogTool(), InspectStringCatalogTool()]
     }
 
     @MainActor

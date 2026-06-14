@@ -40,22 +40,6 @@ import Testing
 }
 
 @MainActor
-@Test func statusBarItemsRequireEditorPanel() {
-    let core = EditorCore()
-    let context = LumiPluginContext(
-        activeSectionID: "LumiEditor",
-        activeSectionTitle: "Editor",
-        dependencies: LumiPluginDependencies { dependencies in
-            dependencies.register(LumiEditorServicing.self, core)
-        }
-    )
-    let items = EditorSwiftPlugin.statusBarItems(context: context)
-    #expect(items.count == 1)
-    #expect(items[0].id == "EditorSwift.xcode")
-    #expect(items[0].placement == .trailing)
-}
-
-@MainActor
 @Test func agentToolsExposeSwiftXcodeTools() {
     let tools = EditorSwiftPlugin.agentTools(context: LumiPluginContext(activeSectionID: "main", activeSectionTitle: "Main"))
     #expect(tools.count == 3)

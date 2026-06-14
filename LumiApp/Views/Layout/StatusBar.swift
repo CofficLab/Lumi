@@ -13,6 +13,7 @@ struct StatusBar: View {
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
     let projectPathStore: LumiCurrentProjectPathStore
+    let panelLayoutState: PanelLayoutState
 
     init(
         pluginService: PluginService,
@@ -20,7 +21,8 @@ struct StatusBar: View {
         pluginContext: LumiPluginContext,
         lumiUIService: LumiUIService,
         chatService: ChatService,
-        projectPathStore: LumiCurrentProjectPathStore
+        projectPathStore: LumiCurrentProjectPathStore,
+        panelLayoutState: PanelLayoutState
     ) {
         self.pluginService = pluginService
         self.editorCoreService = editorCoreService
@@ -28,6 +30,7 @@ struct StatusBar: View {
         self.lumiUIService = lumiUIService
         self._chatService = ObservedObject(wrappedValue: chatService)
         self.projectPathStore = projectPathStore
+        self.panelLayoutState = panelLayoutState
         _projectVM = StateObject(wrappedValue: WindowProjectVM(store: projectPathStore))
     }
 
@@ -38,6 +41,7 @@ struct StatusBar: View {
             dependencies.register((any HistoryQueryService).self, chatService)
             dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
             dependencies.register(LumiEditorServicing.self, editorCoreService)
+            dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
         }
         let items = pluginService.statusBarItems(context: context)
         let leadingItems = items.filter { $0.placement == .leading }

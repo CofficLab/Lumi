@@ -76,7 +76,7 @@ public final class XcodePackageService: SuperLog, @unchecked Sendable {
         )
         
         // 保存项目文件
-        try xcodeProj.write(pathString: projectURL.path, override: true)
+        try PBXProjWriteSupport.write(xcodeProj, pathString: projectURL.path, override: true)
         
         if Self.verbose {
             Self.logger.info("\(Self.t)成功添加远程 Package: \(repositoryURL, privacy: .public) -> \(productName)")
@@ -147,7 +147,7 @@ public final class XcodePackageService: SuperLog, @unchecked Sendable {
         )
         
         // 保存项目文件
-        try xcodeProj.write(pathString: projectURL.path, override: true)
+        try PBXProjWriteSupport.write(xcodeProj, pathString: projectURL.path, override: true)
         
         if Self.verbose {
             Self.logger.info("\(Self.t)成功添加本地 Package: \(relativePath, privacy: .public) -> \(productName)")

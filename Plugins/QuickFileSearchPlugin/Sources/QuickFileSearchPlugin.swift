@@ -27,7 +27,7 @@ public enum QuickFileSearchPlugin: LumiPlugin {
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
         configureBridge(context: context)
         let projectPathProvider = {
-            context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+            context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath ?? ""
         }
         let windowIdProvider = {
             context.resolve(LumiEditorServicing.self)?.editorService.state.windowId
@@ -47,7 +47,7 @@ public enum QuickFileSearchPlugin: LumiPlugin {
 
     @MainActor
     public static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
-        let projectPath = context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+        let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath ?? ""
         return AnyView(QuickFileSearchSettingsView(projectPath: projectPath))
     }
 

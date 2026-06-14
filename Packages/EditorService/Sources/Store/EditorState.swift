@@ -335,6 +335,9 @@ public final class EditorState: ObservableObject, SuperLog {
     private(set) var inlayHintProvider: any SuperEditorInlayHintProvider
     /// 文档高亮提供者
     public private(set) var documentHighlightProvider: any SuperEditorDocumentHighlightProvider
+
+    public let documentHighlightCoordinator: DocumentHighlightCoordinator
+    public private(set) var documentHighlightPrewarmScheduler: DocumentHighlightPrewarmScheduler?
     /// 代码动作提供者
     private(set) var codeActionProvider: any SuperEditorCodeActionProvider
     /// 工作区符号搜索提供者
@@ -1157,6 +1160,7 @@ public final class EditorState: ObservableObject, SuperLog {
         // 内核不直接引用任何插件的类型，所有能力均通过 Registry 获取
         self.signatureHelpProvider = NullSignatureHelpProvider()
         self.inlayHintProvider = NullInlayHintProvider()
+        self.documentHighlightCoordinator = DocumentHighlightCoordinator()
         self.documentHighlightProvider = NullDocumentHighlightProvider()
         self.codeActionProvider = NullCodeActionProvider()
         self.workspaceSymbolProvider = NullWorkspaceSymbolProvider()
@@ -1181,6 +1185,7 @@ public final class EditorState: ObservableObject, SuperLog {
 
     /// 编辑器扩展安装完成后重新绑定 registry 能力（LSP client、providers 等）。
     public func refreshExtensionProviders() {
+        documentHighlightCoordinator.bumpHighlightRevision()
         applyExtensionProvidersFromRegistry(rebindCurrentDocument: true)
         commandController.refreshCoreCommandRegistrations(in: self)
         NotificationCenter.default.post(
@@ -1202,6 +1207,7 @@ public final class EditorState: ObservableObject, SuperLog {
         documentSymbolProvider = registry.documentSymbolProvider ?? NullDocumentSymbolProvider()
         foldingRangeProvider = registry.foldingRangeProvider ?? NullFoldingRangeProvider()
         diagnosticsProvider = registry.diagnosticsProvider ?? NullDiagnosticsProvider()
+        bindDiagnostics()
         jumpDelegate?.lspClient = lspClient
         jumpDelegate?.lspClientProvider = { [weak self] in
             self?.lspClient
@@ -1633,6 +1639,12 @@ public final class EditorState: ObservableObject, SuperLog {
     private func applyEditorTheme(id themeId: String) {
         currentTheme = resolveTheme(for: themeId)
         currentThemeId = themeId
+        documentHighlightCoordinator.handleThemeChange(
+            textStorage: content,
+            content: content?.string ?? "",
+            fileURL: currentFileURL,
+            language: highlightLanguageContext()
+        )
     }
 
     /// 根据主题 ID 解析 EditorTheme
@@ -1701,6 +1713,23 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 加载指定文件
+
+    func highlightLanguageContext() -> EditorLanguageContext {
+        detectedLanguage
+            ?? LanguageRegistry.shared.context(for: "swift")
+            ?? .plainText
+    }
+
+    public func installDocumentHighlightPrewarmScheduler(sessionStore: EditorSessionStore) {
+        documentHighlightPrewarmScheduler = DocumentHighlightPrewarmScheduler(
+            cache: documentHighlightCoordinator.cache,
+            documentStore: documentHighlightCoordinator.documentStore,
+            sessionStore: sessionStore,
+            stateProvider: self
+        )
+        documentHighlightPrewarmScheduler?.scheduleAllOpenTabs(activeFileURL: currentFileURL)
+    }
+
     func loadFile(from url: URL?) {
         // 清理旧状态
         referencesRequestGeneration.invalidate()
@@ -1730,6 +1759,14 @@ public final class EditorState: ObservableObject, SuperLog {
         }
         
         let loadingURL = url
+        if let currentURL = self.currentFileURL,
+           let currentContent = self.content?.string {
+            self.documentHighlightCoordinator.willDeactivate(
+                fileURL: currentURL,
+                content: currentContent,
+                language: self.highlightLanguageContext()
+            )
+        }
         let loadGeneration = fileLoadRequestGeneration.next()
         isFileLoadInProgress = true
         fileLoadErrorMessage = nil
@@ -1805,6 +1842,13 @@ public final class EditorState: ObservableObject, SuperLog {
                         }
                         self.isFileLoadInProgress = false
                         self.fileLoadErrorMessage = nil
+                        self.documentHighlightCoordinator.activate(
+                            fileURL: loadingURL,
+                            content: content,
+                            language: self.highlightLanguageContext(),
+                            textStorage: self.content
+                        )
+                        self.documentHighlightPrewarmScheduler?.scheduleAllOpenTabs(activeFileURL: loadingURL)
                         self.syncActiveSessionState()
                         self.resetUndoHistory()
                         self.setupFileWatcher(for: loadingURL)
