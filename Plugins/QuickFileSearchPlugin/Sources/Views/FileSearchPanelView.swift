@@ -91,10 +91,25 @@ public struct FileSearchPanelView: View {
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             }
+
+            closeButton
         }
         .padding(12)
         .frame(height: 44)  // 固定头部高度
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+    }
+
+    private var closeButton: some View {
+        Button(action: dismissSearch) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(LumiPluginLocalization.string("Close search", bundle: .module))
+        .accessibilityLabel(LumiPluginLocalization.string("Close search", bundle: .module))
     }
 
     // MARK: - Search Results List
@@ -103,6 +118,8 @@ public struct FileSearchPanelView: View {
         Group {
             if searchService.isLoading && searchService.searchQuery.isEmpty {
                 // 加载中
+                loadingView
+            } else if searchService.isLoading && searchService.searchResults.isEmpty {
                 loadingView
             } else if searchService.searchResults.isEmpty && !searchService.searchQuery.isEmpty {
                 // 无结果 - 使用较小的固定高度
@@ -165,6 +182,10 @@ public struct FileSearchPanelView: View {
 
     // MARK: - Actions
 
+    private func dismissSearch() {
+        hotkeyManager.hideOverlay()
+    }
+
     private func selectFirstResult() {
         guard !searchService.searchResults.isEmpty else { return }
         selectFile(at: 0)
@@ -195,7 +216,7 @@ public struct FileSearchPanelView: View {
             return .handled
 
         case .escape:
-            hotkeyManager.hideOverlay()
+            dismissSearch()
             return .handled
 
         case .return:
