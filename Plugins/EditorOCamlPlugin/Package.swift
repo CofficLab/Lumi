@@ -9,7 +9,8 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-ocaml.git", branch: "master"),
+        // Vendored: upstream examples/ git submodules break SPM resolution on slow networks.
+        .package(path: "Vendor/TreeSitterOCaml"),
     ],
     targets: [
         .target(
@@ -17,7 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "TreeSitterOCaml", package: "tree-sitter-ocaml"),
+                .product(name: "TreeSitterOCaml", package: "TreeSitterOCaml"),
             ],
             path: "Sources",
             resources: [.copy("Resources")]
