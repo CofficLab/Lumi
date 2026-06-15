@@ -31,7 +31,7 @@ public enum DisplayControlPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(DisplayControlView())
+        AnyView(DisplayControlAboutView())
     }
 
     @MainActor
