@@ -406,6 +406,47 @@ jobs:
           done
 
       # =================================================================================================
+      # 2.6 生成 Changelog (仅 Release 分支，供 appcast 和 GitHub Release 使用)
+      # =================================================================================================
+      - name: Generate Changelog
+        if: env.IS_PRERELEASE == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          PREVIOUS_TAG="${{ env.previous_tag }}"
+
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
+            NOTES="## Release ${{ env.tag }}\n\nInitial release"
+          else
+            CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
+              | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
+              | grep -Ev '^- 👷 CI:' \
+              | sort -u \
+              | head -20)
+            if [ -z "$CHANGES" ]; then
+              CHANGES="- Maintenance and stability improvements"
+            fi
+            NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
+          fi
+
+          echo -e "$NOTES" > changelog.md
+          cat changelog.md >> $GITHUB_STEP_SUMMARY
+
+          # 转换为 HTML 供 appcast 使用
+          RELEASE_NOTES_HTML=$(gh api markdown -F text=@changelog.md -f mode=gfm)
+          echo "RELEASE_NOTES_HTML<<EOF" >> $GITHUB_ENV
+          echo "$RELEASE_NOTES_HTML" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # 设置 release notes 链接
+          RELEASE_NOTES_LINK="${{ env.REPO_LINK }}/releases/tag/${{ env.tag }}"
+          echo "RELEASE_NOTES_LINK=$RELEASE_NOTES_LINK" >> $GITHUB_ENV
+
+          echo "✅ Changelog generated and converted to HTML"
+
+      # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
       # =================================================================================================
       - name: Generate Appcasts (per-arch)
@@ -444,11 +485,26 @@ jobs:
             DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$DMG_URL_ENCODED"
             sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_INPUT/appcast.xml"
 
-            # 添加 releaseNotesLink（如果不存在）
-            if ! grep -q "sparkle:releaseNotesLink" "$APPCAST_INPUT/appcast.xml"; then
-              sed -i '' '/<sparkle:minimumSystemVersion>/a\
-            <sparkle:releaseNotesLink>${{ env.REPO_LINK }}/releases/latest</sparkle:releaseNotesLink>
-            ' "$APPCAST_INPUT/appcast.xml"
+            # 注入 release notes HTML 到 appcast
+            if [ -n "${RELEASE_NOTES_HTML:-}" ]; then
+              export u="$DOWNLOAD_URL"
+              export RELEASE_NOTES_HTML
+              export RELEASE_NOTES_LINK="${{ env.RELEASE_NOTES_LINK }}"
+              
+              # 替换 enclosure url
+              perl -i -pe 'if (!$done) { s/(enclosure url=")[^"]*/$1.$ENV{u}/e && ($done=1) }' "$APPCAST_INPUT/appcast.xml"
+              
+              # 注入 description 和 fullReleaseNotesLink
+              perl -i -0777 -pe '
+                if (!$done++) {
+                  my $notes = $ENV{RELEASE_NOTES_HTML} // "";
+                  my $link = $ENV{RELEASE_NOTES_LINK} // "";
+                  my $insert = qq{\n            <description><![CDATA[$notes]]></description>\n            <sparkle:fullReleaseNotesLink>$link</sparkle:fullReleaseNotesLink>};
+                  s/(<sparkle:minimumSystemVersion>[^<]+<\/sparkle:minimumSystemVersion>)(?!\s*<description)/$1$insert/s;
+                }
+              ' "$APPCAST_INPUT/appcast.xml"
+              
+              echo "✅ Release notes injected for $arch"
             fi
 
             # 输出到根目录
@@ -506,70 +562,72 @@ jobs:
           ls -alh release-assets
 
       # =================================================================================================
-      # 5.5 上传 DMG 到 Cloudflare R2
+      # 5.5 上传到 Cloudflare R2
       # =================================================================================================
-      - name: Upload DMG to Cloudflare R2
+      - name: Upload to Cloudflare R2
         if: success()
         env:
           WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
           API_URL: https://data.kuaiyizhi.cn
         run: |
           set -euo pipefail
-          
+
+          # 上传 DMG
           if ! compgen -G "./release-assets/*.dmg" > /dev/null; then
             echo "⚠️  No DMG file found to upload"
-            exit 0
+          else
+            for DMG_FILE in ./release-assets/*.dmg; do
+              DMG_FILENAME=$(basename "$DMG_FILE")
+              R2_KEY="lumi/${DMG_FILENAME}"
+
+              echo "📤 Uploading DMG to R2: $R2_KEY"
+
+              RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
+                -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+                -F "file=@${DMG_FILE}" \
+                -F "key=${R2_KEY}")
+
+              echo "Response: $RESPONSE"
+
+              if echo "$RESPONSE" | grep -q '"success":true'; then
+                R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+                echo "✅ DMG uploaded: $R2_DMG_URL"
+              else
+                echo "❌ Failed to upload DMG to R2: $DMG_FILENAME"
+                exit 1
+              fi
+            done
           fi
 
-          for DMG_FILE in ./release-assets/*.dmg; do
-            DMG_FILENAME=$(basename "$DMG_FILE")
-            R2_KEY="lumi/${DMG_FILENAME}"
+          # 上传 appcast (仅 Release)
+          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+            for APPCAST_FILE in ./release-assets/appcast.xml ./release-assets/appcast-arm64.xml ./release-assets/appcast-x86_64.xml; do
+              if [ -f "$APPCAST_FILE" ]; then
+                APPCAST_FILENAME=$(basename "$APPCAST_FILE")
+                R2_KEY="lumi/${APPCAST_FILENAME}"
 
-            echo "📤 Uploading DMG to R2: $R2_KEY"
+                echo "📤 Uploading appcast to R2: $R2_KEY"
 
-            RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
-              -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
-              -F "file=@${DMG_FILE}" \
-              -F "key=${R2_KEY}")
+                RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
+                  -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
+                  -F "file=@${APPCAST_FILE}" \
+                  -F "key=${R2_KEY}")
 
-            echo "Response: $RESPONSE"
+                echo "Response: $RESPONSE"
 
-            if echo "$RESPONSE" | grep -q '"success":true'; then
-              R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
-              echo "✅ DMG uploaded: $R2_DMG_URL"
-            else
-              echo "❌ Failed to upload DMG to R2: $DMG_FILENAME"
-              exit 1
-            fi
-          done
+                if echo "$RESPONSE" | grep -q '"success":true'; then
+                  echo "✅ Appcast uploaded: $R2_KEY"
+                else
+                  echo "❌ Failed to upload appcast to R2: $APPCAST_FILENAME"
+                  exit 1
+                fi
+              fi
+            done
+          fi
 
       # =================================================================================================
       # 6. 发布 Release
       # =================================================================================================
-      - name: Generate Changelog
-        if: success()
-        run: |
-          # 使用在 workflow 开始时保存的上一个标签
-          # 这样可以避免 git-auto-commit-action 创建新 commit 后导致的标签混乱
-          PREVIOUS_TAG="${{ env.previous_tag }}"
-
-          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
-            NOTES="## Release ${{ env.tag }}\n\nInitial release"
-          else
-            CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
-              | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
-              | grep -Ev '^- 👷 CI:' \
-              | sort -u \
-              | head -20)
-            if [ -z "$CHANGES" ]; then
-              CHANGES="- Maintenance and stability improvements"
-            fi
-            NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
-          fi
-
-          echo -e "$NOTES" > changelog.md
-          cat changelog.md >> $GITHUB_STEP_SUMMARY
-
       - name: Create GitHub Release
         if: success()
         uses: softprops/action-gh-release@v3
