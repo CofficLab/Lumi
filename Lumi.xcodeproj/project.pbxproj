@@ -82,6 +82,7 @@
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
+				IPH1000000000000000001 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
 			);
@@ -161,6 +162,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		IPH1000000000000000001 /* Embed Inline Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Inline Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"${SRCROOT}/scripts/embed-inline-preview-host.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F54F8C7A2F1A3B6500AABB2A /* Sources */ = {
