@@ -48,6 +48,11 @@ public final class HoverCoordinator: ObservableObject {
     }
 }
 
+public enum HoverContainerChrome {
+    case statusBar
+    case titleToolbar
+}
+
 public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     let detailView: Detail?
     let content: Content
@@ -55,6 +60,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     let popoverMinHeight: CGFloat
     let id: String
     let arrowEdge: Edge
+    let chrome: HoverContainerChrome
 
     @ObservedObject private var coordinator = HoverCoordinator.shared
     @LumiTheme private var theme
@@ -68,6 +74,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         popoverMinHeight: CGFloat = 0,
         id: String = UUID().uuidString,
         arrowEdge: Edge = .top,
+        chrome: HoverContainerChrome = .statusBar,
         @ViewBuilder content: () -> Content
     ) {
         self.detailView = detailView
@@ -76,10 +83,12 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         self.popoverMinHeight = popoverMinHeight
         self.id = id
         self.arrowEdge = arrowEdge
+        self.chrome = chrome
     }
 
     public init(
         id: String = UUID().uuidString,
+        chrome: HoverContainerChrome = .statusBar,
         @ViewBuilder content: () -> Content
     ) where Detail == EmptyView {
         self.detailView = nil
@@ -88,6 +97,7 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
         self.popoverMinHeight = 0
         self.id = id
         self.arrowEdge = .top
+        self.chrome = chrome
     }
 
     public var body: some View {
@@ -146,11 +156,21 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     }
 
     private var statusItemBackground: Color {
-        isPresented ? theme.statusBarItemPresentedBackground : theme.statusBarItemBackground
+        switch chrome {
+        case .statusBar:
+            return isPresented ? theme.statusBarItemPresentedBackground : theme.statusBarItemBackground
+        case .titleToolbar:
+            return isPresented ? theme.primary.opacity(0.14) : theme.textPrimary.opacity(0.08)
+        }
     }
 
     private var statusItemForeground: Color {
-        theme.statusBarItemForeground
+        switch chrome {
+        case .statusBar:
+            return theme.statusBarItemForeground
+        case .titleToolbar:
+            return theme.textPrimary
+        }
     }
 
     @ViewBuilder

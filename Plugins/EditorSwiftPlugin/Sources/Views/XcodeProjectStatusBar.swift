@@ -8,6 +8,7 @@ import LumiCoreKit
 public struct XcodeProjectStatusBar: View, SuperLog {
     public nonisolated static let emoji = "🔨"
 
+    @LumiTheme private var theme
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
 
     public var body: some View {
@@ -16,7 +17,8 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                 StatusBarHoverContainer(
                     detailView: XcodeProjectStatusDetailView(viewModel: viewModel),
                     popoverWidth: 440,
-                    id: "lumi-xcode-project-status"
+                    id: "lumi-xcode-project-status",
+                    chrome: .titleToolbar
                 ) {
                     HStack(spacing: 8) {
                         Image(systemName: "hammer.fill")
@@ -65,9 +67,17 @@ public struct XcodeProjectStatusBar: View, SuperLog {
 
             Text(statusText)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .help(viewModel.semanticStatusDescription)
+    }
+
+    static func titleToolbarSecondaryTextColor(theme: any LumiUITheme) -> Color {
+        theme.textSecondary
+    }
+
+    static func titleToolbarPrimaryTextColor(theme: any LumiUITheme) -> Color {
+        theme.textPrimary
     }
 
     @ViewBuilder

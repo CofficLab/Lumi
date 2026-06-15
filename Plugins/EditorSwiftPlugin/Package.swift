@@ -54,6 +54,7 @@ let package = Package(
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "XcodeKit", package: "XcodeKit"),
             ],
             path: "Tests"
