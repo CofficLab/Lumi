@@ -224,7 +224,11 @@ private struct PluginSettingsDetailView: View {
                 if let detail = row.plugin.aboutView(context: settingsContext) {
                     detail
                 } else {
-                    defaultDetail
+                    DefaultPluginAboutView(
+                        pluginName: row.displayName,
+                        pluginDescription: row.description,
+                        iconName: row.iconName
+                    )
                 }
             }
             .padding(22)
@@ -281,18 +285,6 @@ private struct PluginSettingsDetailView: View {
                 row.policy == .alwaysOn ? "Always On" : "Disabled",
                 systemImage: row.policy == .alwaysOn ? "lock.fill" : "slash.circle"
             )
-        }
-    }
-
-    private var defaultDetail: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("插件说明")
-                .font(.appBodyEmphasized)
-                .foregroundStyle(theme.textPrimary)
-
-            Text(row.description.isEmpty ? "该插件暂未提供自定义介绍视图。" : row.description)
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
         }
     }
 }
