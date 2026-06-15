@@ -22,6 +22,10 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
     weak var editorExtensionRegistry: EditorExtensionRegistry?
     weak var editorState: EditorState?
 
+    private var sessionContext: (any LSPCompletionSessionContext)? {
+        editorState
+    }
+
     private var activeItems: [EditorCodeSuggestionEntry] = []
     private var requestAnchor: CursorPosition?
     private var requestAnchorOffset: Int?
@@ -58,25 +62,46 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         let cursorOffset = Self.currentCursorOffset(in: editorTextView) ??
             Self.utf16Offset(for: cursorPosition.start, in: content) ??
             content.utf16.count
+
+        return await resolveCompletion(
+            content: content,
+            cursorOffset: cursorOffset,
+            cursorPosition: cursorPosition,
+            lspClient: lspClient,
+            registry: editorExtensionRegistry,
+            session: sessionContext
+        )
+    }
+
+    /// Test seam for completion resolution without AppKit text view wiring.
+    func resolveCompletion(
+        content: String,
+        cursorOffset: Int,
+        cursorPosition: CursorPosition,
+        lspClient: any SuperEditorLSPClient,
+        registry: EditorExtensionRegistry?,
+        session: (any LSPCompletionSessionContext)?
+    ) async -> (windowPosition: CursorPosition, items: [any CodeSuggestionEntry])? {
         let lspPosition = Self.lspPosition(fromUTF16Offset: cursorOffset, in: content)
         let line = lspPosition.line
         let character = lspPosition.character
-        let context = Self.completionContext(atOffset: cursorOffset, in: content)
-        if editorState?.semanticCapability?.preflightError(
-            uri: editorState?.currentFileURL?.absoluteString,
+        let context = LSPCompletionContextAnalyzer.analyze(atOffset: cursorOffset, in: content)
+        let preflightError = session?.semanticCapability?.preflightError(
+            uri: session?.currentFileURL?.absoluteString,
             operation: "代码补全",
             symbolName: nil,
             strength: .soft
-        ) != nil {
-            if let extensionRegistry = editorExtensionRegistry {
+        )
+        if !LSPCompletionPreflightGate.shouldQueryLSP(preflightError: preflightError, context: context) {
+            if let registry {
                 let extensionContext = EditorCompletionContext(
-                    languageId: editorState?.detectedLanguage?.tsName ?? "swift",
+                    languageId: session?.languageId ?? "swift",
                     line: line,
                     character: character,
                     prefix: context.prefix,
                     isTypeContext: context.isTypeContext
                 )
-                let extensionSuggestions = await extensionRegistry.completionSuggestions(for: extensionContext)
+                let extensionSuggestions = await registry.completionSuggestions(for: extensionContext)
                 let extensionEntries = extensionSuggestions.map(EditorPluginSuggestionEntry.init)
                 if !extensionEntries.isEmpty {
                     requestAnchor = cursorPosition
@@ -97,7 +122,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         lastMoveDebugSignature = nil
         if Self.verbose {
             if Self.verbose {
-                            Self.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext)")
+                            Self.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext), 成员访问=\(context.isMemberAccessContext)")
             }
         }
 
@@ -105,13 +130,13 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         guard requestGeneration.isCurrent(requestGen) else { return nil }
         var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
         let extensionContext = EditorCompletionContext(
-            languageId: editorState?.detectedLanguage?.tsName ?? "swift",
+            languageId: session?.languageId ?? "swift",
             line: line,
             character: character,
             prefix: context.prefix,
             isTypeContext: context.isTypeContext
         )
-        let extensionSuggestions = await editorExtensionRegistry?.completionSuggestions(for: extensionContext) ?? []
+        let extensionSuggestions = await registry?.completionSuggestions(for: extensionContext) ?? []
         guard requestGeneration.isCurrent(requestGen) else { return nil }
         let extensionEntries = extensionSuggestions.map(EditorPluginSuggestionEntry.init)
         if Self.verbose {
@@ -222,7 +247,7 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         let cursorOffset = Self.currentCursorOffset(in: editorTextView) ??
             Self.utf16Offset(for: cursorPosition.start, in: editorTextView.string) ??
             editorTextView.string.utf16.count
-        let context = Self.completionContext(atOffset: cursorOffset, in: editorTextView.string)
+        let context = LSPCompletionContextAnalyzer.analyze(atOffset: cursorOffset, in: editorTextView.string)
         if !activeFallbackTypeItems.isEmpty {
             let filtered = Self.fallbackTypeEntries(prefix: context.prefix)
             if Self.verbose {
@@ -422,34 +447,6 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         return min(lineStartOffset + position.character, content.utf16.count)
     }
 
-    private struct CompletionContext {
-        let prefix: String
-        let isTypeContext: Bool
-    }
-
-    private static func completionContext(atOffset rawOffset: Int, in content: String) -> CompletionContext {
-        let cursorOffset = min(max(rawOffset, 0), content.utf16.count)
-        let ns = content as NSString
-        var tokenStart = cursorOffset
-        while tokenStart > 0 {
-            let unit = ns.character(at: tokenStart - 1)
-            guard isIdentifierScalar(unit) else { break }
-            tokenStart -= 1
-        }
-        let prefix = ns.substring(with: NSRange(location: tokenStart, length: cursorOffset - tokenStart))
-        var check = tokenStart
-        while check > 0 {
-            let unit = ns.character(at: check - 1)
-            if let scalar = UnicodeScalar(unit),
-               CharacterSet.whitespacesAndNewlines.contains(scalar) {
-                check -= 1
-                continue
-            }
-            return CompletionContext(prefix: prefix, isTypeContext: unit == 0x3A) // ":"
-        }
-        return CompletionContext(prefix: prefix, isTypeContext: false)
-    }
-
     private static func currentCursorOffset(in textView: TextView) -> Int? {
         let selection = textView.selectedRange()
         guard selection.location != NSNotFound else { return nil }
@@ -475,12 +472,6 @@ public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, Supe
         }
 
         return Position(line: line, character: character)
-    }
-
-    private static func isIdentifierScalar(_ scalar: unichar) -> Bool {
-        if scalar == 0x5F { return true } // "_"
-        guard let u = UnicodeScalar(scalar) else { return false }
-        return CharacterSet.alphanumerics.contains(u)
     }
 
     private static func filterAndRank(

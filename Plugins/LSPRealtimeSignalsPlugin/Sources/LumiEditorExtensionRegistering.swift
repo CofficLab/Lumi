@@ -1,7 +1,7 @@
 import EditorService
 import LumiCoreKit
 
-extension LSPRealtimeSignalsEditorPlugin: LumiEditorExtensionRegistering {
+extension LSPRealtimeSignalsPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
         LumiPluginInfo(
             id: id,

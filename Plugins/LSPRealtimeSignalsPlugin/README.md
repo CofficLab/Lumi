@@ -1,4 +1,4 @@
-# LSPRealtimeSignalsEditorPlugin
+# LSPRealtimeSignalsPlugin
 
 Triggers realtime LSP updates for highlights, hints, and signature help.
 
@@ -27,4 +27,3 @@ Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/ed
 | **注册目标** | `EditorExtensionRegistry`（经 `LumiPluginRegistry` → `EditorExtensionsBootstrap`） |
 | **上游依赖** | `EditorService`、`LumiCoreKit`（详见 `Package.swift`） |
 | **边界** | 不得依赖其他 Plugin 实现；通过 `SuperEditor*` 协议贡献能力 |
-

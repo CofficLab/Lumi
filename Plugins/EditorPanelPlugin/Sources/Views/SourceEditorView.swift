@@ -2,7 +2,7 @@ import SwiftUI
 import SuperLogKit
 import EditorService
 import LSPDocumentHighlightEditorPlugin
-import LSPRealtimeSignalsEditorPlugin
+import LSPRealtimeSignalsPlugin
 import LSPSignatureHelpEditorPlugin
 import LumiCoreKit
 import LumiUI

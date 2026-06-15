@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "LSPRealtimeSignalsEditorPlugin",
+    name: "LSPRealtimeSignalsPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "LSPRealtimeSignalsEditorPlugin",
-            targets: ["LSPRealtimeSignalsEditorPlugin"]
+            name: "LSPRealtimeSignalsPlugin",
+            targets: ["LSPRealtimeSignalsPlugin"]
         )
     ],
     dependencies: [
@@ -22,7 +22,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "LSPRealtimeSignalsEditorPlugin",
+            name: "LSPRealtimeSignalsPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
@@ -35,8 +35,12 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "LSPRealtimeSignalsEditorPluginTests",
-            dependencies: ["LSPRealtimeSignalsEditorPlugin"],
+            name: "LSPRealtimeSignalsPluginTests",
+            dependencies: [
+                "LSPRealtimeSignalsPlugin",
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+            ],
             path: "Tests"
         )
     ]
