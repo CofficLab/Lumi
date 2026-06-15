@@ -29,23 +29,13 @@ public enum AgentTurnNotificationPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "bell.badge", title: "Turn Notification", description: "Send a system notification when an Agent turn finishes."),
-                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Turn Notification into the Lumi workspace"),
-                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
-            ],
-            steps: [
-                "Enable Turn Notification in plugin settings",
-                "The plugin registers its contributions when enabled",
-                "Use the features provided in the Lumi workspace"
-            ],
-            tips: [
-                "Toggle the plugin off if you do not need this feature",
-                "Check plugin settings for additional options"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
         )
     }
 

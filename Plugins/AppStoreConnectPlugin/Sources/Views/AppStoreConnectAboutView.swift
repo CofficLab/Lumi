@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct AppStoreConnectAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Connect to App Store Connect API"),
                         L("Fetch app information and metadata"),
@@ -48,7 +49,7 @@ struct AppStoreConnectAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Configure API key in plugin settings"),
                         L("Select an app from the toolbar to manage"),
@@ -61,7 +62,11 @@ struct AppStoreConnectAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        AppStoreConnectLocalization.string(key)
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

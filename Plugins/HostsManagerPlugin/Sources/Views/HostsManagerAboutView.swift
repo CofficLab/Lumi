@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct HostsManagerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Reads the system hosts file with proper permissions"),
                         L("Parses and displays entries in an organized list"),
@@ -48,7 +49,7 @@ struct HostsManagerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Backup your hosts file before making changes"),
                         L("Use profiles to switch between different configurations"),
@@ -61,7 +62,11 @@ struct HostsManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

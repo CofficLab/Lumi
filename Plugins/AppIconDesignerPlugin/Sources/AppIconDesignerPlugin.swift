@@ -47,23 +47,13 @@ public enum AppIconDesignerPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "app.dashed", title: "App Icon Designer", description: "Provides App Icon Designer capabilities in Lumi."),
-                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates App Icon Designer into the Lumi workspace"),
-                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
-            ],
-            steps: [
-                "Enable App Icon Designer in plugin settings",
-                "The plugin registers its contributions when enabled",
-                "Use the features provided in the Lumi workspace"
-            ],
-            tips: [
-                "Toggle the plugin off if you do not need this feature",
-                "Check plugin settings for additional options"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
         )
     }
 

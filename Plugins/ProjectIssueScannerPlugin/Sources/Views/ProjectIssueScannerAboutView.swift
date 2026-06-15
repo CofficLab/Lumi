@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct ProjectIssueScannerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Monitors system idle time to trigger scans"),
                         L("Analyzes project files for common issues"),
@@ -48,7 +49,7 @@ struct ProjectIssueScannerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Enable during development for proactive issue detection"),
                         L("Review detected issues regularly"),
@@ -61,7 +62,11 @@ struct ProjectIssueScannerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

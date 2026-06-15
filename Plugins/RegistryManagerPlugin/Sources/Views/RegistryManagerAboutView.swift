@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct RegistryManagerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Connects to package registries for dependency resolution"),
                         L("Configures mirrors based on your region and preferences"),
@@ -48,7 +49,7 @@ struct RegistryManagerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Use regional mirrors for faster downloads"),
                         L("Regularly update registry cache for latest packages"),
@@ -61,7 +62,11 @@ struct RegistryManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct DockerManagerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Connects to local Docker daemon via socket"),
                         L("Fetches image list and metadata"),
@@ -48,7 +49,7 @@ struct DockerManagerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Ensure Docker Desktop is running before use"),
                         L("Regular cleanup helps reclaim disk space"),
@@ -61,7 +62,11 @@ struct DockerManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        PluginDockerManagerLocalization.string(key)
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

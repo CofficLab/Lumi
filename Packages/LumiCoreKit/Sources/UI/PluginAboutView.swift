@@ -13,33 +13,49 @@ public struct PluginAboutView: View {
         }
     }
 
-    private let features: [Feature]
-    private let steps: [String]
-    private let tips: [String]
+    private let icon: String
+    private let displayName: String
+    private let description: String
+    private let kind: PluginAboutContentKind
 
-    public init(features: [Feature], steps: [String] = [], tips: [String] = []) {
-        self.features = features
-        self.steps = steps
-        self.tips = tips
+    @Environment(\.locale) private var locale
+
+    public init(icon: String, displayName: String, description: String, kind: PluginAboutContentKind) {
+        self.icon = icon
+        self.displayName = displayName
+        self.description = description
+        self.kind = kind
     }
 
     public var body: some View {
+        let content = PluginAboutContentBuilder.make(
+            icon: icon,
+            displayName: displayName,
+            description: description,
+            kind: kind,
+            locale: locale
+        )
+
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
+                ForEach(Array(content.features.enumerated()), id: \.offset) { _, feature in
                     featureRow(feature)
                 }
 
-                if !steps.isEmpty {
-                    howItWorksCard
+                if !content.steps.isEmpty {
+                    howItWorksCard(steps: content.steps)
                 }
 
-                if !tips.isEmpty {
-                    tipsCard
+                if !content.tips.isEmpty {
+                    tipsCard(tips: content.tips)
                 }
             }
             .padding()
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
     }
 
     private func featureRow(_ feature: Feature) -> some View {
@@ -69,9 +85,9 @@ public struct PluginAboutView: View {
         .background(cardBackground)
     }
 
-    private var howItWorksCard: some View {
+    private func howItWorksCard(steps: [String]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("How It Works")
+            Text(localized("about.section.howItWorks"))
                 .font(.system(size: 14, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 10) {
@@ -98,9 +114,9 @@ public struct PluginAboutView: View {
         .background(cardBackground)
     }
 
-    private var tipsCard: some View {
+    private func tipsCard(tips: [String]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tips")
+            Text(localized("about.section.tips"))
                 .font(.system(size: 14, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 8) {
@@ -132,10 +148,18 @@ public struct PluginAboutView: View {
 public extension LumiPlugin {
     @MainActor
     static func pluginAboutView(
-        features: [PluginAboutView.Feature],
-        steps: [String] = [],
-        tips: [String] = []
+        icon: String,
+        displayName: String,
+        description: String,
+        kind: PluginAboutContentKind
     ) -> AnyView {
-        AnyView(PluginAboutView(features: features, steps: steps, tips: tips))
+        AnyView(
+            PluginAboutView(
+                icon: icon,
+                displayName: displayName,
+                description: description,
+                kind: kind
+            )
+        )
     }
 }

@@ -29,23 +29,13 @@ public enum WebSearchPlugin: LumiPlugin {
         [WebSearchTool().asLumiAgentTool()]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "magnifyingglass", title: "Web Search", description: "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。"),
-                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Web Search into the Lumi workspace"),
-                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
-            ],
-            steps: [
-                "Enable Web Search in plugin settings",
-                "The plugin registers its contributions when enabled",
-                "Use the features provided in the Lumi workspace"
-            ],
-            tips: [
-                "Toggle the plugin off if you do not need this feature",
-                "Check plugin settings for additional options"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
         )
     }
 

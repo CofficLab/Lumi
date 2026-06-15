@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct NettoAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Monitors network connection requests from applications"),
                         L("Applies rules based on your configuration"),
@@ -48,7 +49,7 @@ struct NettoAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Start with a permissive profile and tighten rules gradually"),
                         L("Review logs to identify unnecessary network access"),
@@ -61,7 +62,11 @@ struct NettoAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

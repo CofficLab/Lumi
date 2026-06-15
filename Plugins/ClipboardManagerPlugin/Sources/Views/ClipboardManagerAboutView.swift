@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct ClipboardManagerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Monitors clipboard changes automatically"),
                         L("Stores history in local database"),
@@ -48,7 +49,7 @@ struct ClipboardManagerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Use keyboard shortcuts for quick access"),
                         L("Pin important items to keep them accessible"),
@@ -61,7 +62,11 @@ struct ClipboardManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

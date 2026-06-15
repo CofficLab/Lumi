@@ -29,23 +29,13 @@ public enum DiskManagerPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "internaldrive", title: "Disk Manager", description: "Inspect local disk capacity and usage."),
-                .init(icon: "slider.horizontal.3", title: "Management UI", description: "Provides a dedicated management view in Lumi"),
-                .init(icon: "gearshape", title: "Configurable", description: "Can be enabled or disabled from plugin settings")
-            ],
-            steps: [
-                "Enable the plugin in plugin settings",
-                "Open the plugin view from the sidebar or view container",
-                "Manage resources directly inside Lumi"
-            ],
-            tips: [
-                "Review permissions if the plugin accesses system resources",
-                "Disable the plugin when you do not need this workflow"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .manager
         )
     }
 

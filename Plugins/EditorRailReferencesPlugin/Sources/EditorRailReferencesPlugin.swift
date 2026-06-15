@@ -36,23 +36,13 @@ public enum EditorRailReferencesPanelPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "arrow.triangle.branch", title: "Editor Rail References", description: "References tab in the editor rail."),
-                .init(icon: "sidebar.left", title: "Side Rail", description: "Adds a panel to the editor side rail"),
-                .init(icon: "doc.text", title: "File Context", description: "Shows information related to the active editor file")
-            ],
-            steps: [
-                "Enable the plugin in plugin settings",
-                "Open a file in the code editor",
-                "Select the rail tab provided by this plugin"
-            ],
-            tips: [
-                "Collapse the rail when you need more editor space",
-                "Combine with other rail plugins for a richer workflow"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .editorRail
         )
     }
 

@@ -38,7 +38,7 @@ struct DisplayControlAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Detects connected displays with DDC/CI support"),
                         L("Provides brightness, volume, and contrast sliders"),
@@ -63,6 +63,10 @@ struct DisplayControlAboutView: View {
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

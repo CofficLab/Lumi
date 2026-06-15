@@ -29,23 +29,13 @@ public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "point.topleft.down.curvedto.point.bottomright.up", title: "Editor Sticky Symbol Bar", description: "Current symbol breadcrumb for the editor panel."),
-                .init(icon: "chevron.left.forwardslash.chevron.right", title: "Editor Extension", description: "Extends the built-in code editor"),
-                .init(icon: "paintbrush", title: "Language Support", description: "Improves editing for specific file types")
-            ],
-            steps: [
-                "Enable the plugin in plugin settings",
-                "Open a supported file in the editor",
-                "Use the editor features provided by this plugin"
-            ],
-            tips: [
-                "Keep only the editor extensions you actively use enabled",
-                "Some features depend on language tooling being available"
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .editor
         )
     }
 

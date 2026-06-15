@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -37,7 +38,7 @@ struct AppManagerAboutView: View {
 
                 // How It Works
                 HowItWorksCard(
-                    title: L("How It Works"),
+                    title: coreL("about.section.howItWorks"),
                     steps: [
                         L("Scans system Applications folder and other locations"),
                         L("Builds a comprehensive list of installed apps"),
@@ -48,7 +49,7 @@ struct AppManagerAboutView: View {
 
                 // Tips
                 TipsCard(
-                    title: L("Tips"),
+                    title: coreL("about.section.tips"),
                     tips: [
                         L("Click on an app to view detailed information"),
                         L("Use the cache manager to free up disk space"),
@@ -61,7 +62,11 @@ struct AppManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        PluginAppManagerLocalization.string(key)
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
+
+    private func coreL(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
     }
 }
 

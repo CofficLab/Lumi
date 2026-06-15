@@ -53,23 +53,13 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
         ]
     }
 
-    @MainActor
+        @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
-            features: [
-                .init(icon: "network", title: "Network Monitor", description: "Real-time monitoring of network speed, traffic, and connection status"),
-                .init(icon: "slider.horizontal.3", title: "Management UI", description: "Provides a dedicated management view in Lumi"),
-                .init(icon: "menubar.rectangle", title: "Menu Bar Widget", description: "Shows live network activity in the menu bar"),
-            ],
-            steps: [
-                "Enable Network Monitor in plugin settings",
-                "Open the network dashboard from the sidebar",
-                "Use the menu bar widget for quick status checks",
-            ],
-            tips: [
-                "Keep the plugin enabled when you need live traffic visibility",
-                "Use the dashboard for detailed connection information",
-            ]
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .manager
         )
     }
 }

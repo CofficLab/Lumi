@@ -1,1673 +1,1909 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld": {},
-    "%lld images": {
+    "about.section.howItWorks": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld images"
+            "value": "How It Works"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld images"
+            "value": "工作原理"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld images"
+            "value": "運作方式"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld images"
+            "value": "運作方式"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld images"
+            "value": "運作方式"
           }
         }
       }
     },
-    "Are you sure you want to delete image %@? This action cannot be undone.": {
+    "about.section.tips": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "Tips"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "使用提示"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "使用提示"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "使用提示"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "使用提示"
           }
         }
       }
     },
-    "Cancel": {
+    "about.general.feature.integration.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancel"
+            "value": "Lumi Integration"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "取消"
+            "value": "Lumi 集成"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "取消"
+            "value": "Lumi 整合"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "取消"
+            "value": "Lumi 整合"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "取消"
+            "value": "Lumi 整合"
           }
         }
       }
     },
-    "Configuration": {
+    "about.general.feature.integration.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Configuration"
+            "value": "Integrates %@ into the Lumi workspace"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "配置"
+            "value": "将 %@ 集成到 Lumi 工作区"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "配置"
+            "value": "將 %@ 整合到 Lumi 工作區"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "配置"
+            "value": "將 %@ 整合到 Lumi 工作區"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "配置"
+            "value": "將 %@ 整合到 Lumi 工作區"
           }
         }
       }
     },
-    "Confirm": {
+    "about.general.feature.configurable.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "Configurable"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "可配置"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "可設定"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "可設定"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "可設定"
           }
         }
       }
     },
-    "Confirm Delete": {
+    "about.general.feature.configurable.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm Delete"
+            "value": "Enable or disable from plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "确认删除"
+            "value": "可在插件设置中启用或禁用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "確認刪除"
+            "value": "可在插件設定中啟用或停用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "確認刪除"
+            "value": "可在插件設定中啟用或停用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "確認刪除"
+            "value": "可在插件設定中啟用或停用"
           }
         }
       }
     },
-    "Created": {
+    "about.general.step.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Created"
+            "value": "Enable %@ in plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "创建时间"
+            "value": "在插件设置中启用 %@"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "建立時間"
+            "value": "在插件設定中啟用 %@"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "建立時間"
+            "value": "在插件設定中啟用 %@"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "建立時間"
+            "value": "在插件設定中啟用 %@"
           }
         }
       }
     },
-    "Delete": {
+    "about.general.step.register": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "The plugin registers its contributions when enabled"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "删除"
+            "value": "启用后插件会注册其功能贡献"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除"
+            "value": "啟用後插件會註冊其功能貢獻"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除"
+            "value": "啟用後外掛會註冊其功能貢獻"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除"
+            "value": "啟用後外掛會註冊其功能貢獻"
           }
         }
       }
     },
-    "Descending": {
+    "about.general.step.use": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "Use the features provided in the Lumi workspace"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "在 Lumi 工作区中使用提供的功能"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "在 Lumi 工作區中使用提供的功能"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "在 Lumi 工作區中使用提供的功能"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "在 Lumi 工作區中使用提供的功能"
           }
         }
       }
     },
-    "Dismiss": {
+    "about.general.tip.toggle": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dismiss"
+            "value": "Toggle the plugin off if you do not need this feature"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关闭"
+            "value": "如果不需要此功能，可关闭该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "關閉"
+            "value": "如果不需要此功能，可關閉該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "關閉"
+            "value": "如果不需要此功能，可關閉此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "關閉"
+            "value": "如果不需要此功能，可關閉此外掛"
           }
         }
       }
     },
-    "Docker": {
+    "about.general.tip.settings": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Docker"
+            "value": "Check plugin settings for additional options"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Docker"
+            "value": "查看插件设置了解更多选项"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Docker"
+            "value": "查看插件設定了解更多選項"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Docker"
+            "value": "查看外掛設定了解更多選項"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Docker"
+            "value": "查看外掛設定了解更多選項"
           }
         }
       }
     },
-    "ENV:": {
+    "about.manager.feature.ui.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ENV:"
+            "value": "Management UI"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "环境变量："
+            "value": "管理界面"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "環境變數："
+            "value": "管理介面"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "環境變數："
+            "value": "管理介面"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "環境變數："
+            "value": "管理介面"
           }
         }
       }
     },
-    "Export failed": {
+    "about.manager.feature.ui.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export failed"
+            "value": "Provides a dedicated management view in Lumi"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出失败"
+            "value": "在 Lumi 中提供专门的管理视图"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出失敗"
+            "value": "在 Lumi 中提供專門的管理視圖"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出失敗"
+            "value": "在 Lumi 中提供專門的管理視圖"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出失敗"
+            "value": "在 Lumi 中提供專門的管理視圖"
           }
         }
       }
     },
-    "Export...": {
+    "about.manager.feature.configurable.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export..."
+            "value": "Configurable"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出..."
+            "value": "可配置"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出..."
+            "value": "可設定"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出..."
+            "value": "可設定"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出..."
+            "value": "可設定"
           }
         }
       }
     },
-    "History / Layers": {
+    "about.manager.feature.configurable.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "History / Layers"
+            "value": "Can be enabled or disabled from plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "历史 / 层"
+            "value": "可在插件设置中启用或禁用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "歷史 / 層"
+            "value": "可在插件設定中啟用或停用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "歷史 / 層"
+            "value": "可在插件設定中啟用或停用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "歷史 / 層"
+            "value": "可在插件設定中啟用或停用"
           }
         }
       }
     },
-    "images": {
+    "about.manager.step.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "images"
+            "value": "Enable %@ in plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "个镜像"
+            "value": "在插件设置中启用 %@"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "個映像"
+            "value": "在插件設定中啟用 %@"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "個映像"
+            "value": "在插件設定中啟用 %@"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "個映像"
+            "value": "在插件設定中啟用 %@"
           }
         }
       }
     },
-    "Import": {
+    "about.manager.step.open": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "Open the plugin view from the sidebar or view container"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "从侧边栏或视图容器打开插件界面"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "從側邊欄或視圖容器打開插件介面"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "從側邊欄或視圖容器打開外掛介面"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "從側邊欄或視圖容器打開外掛介面"
           }
         }
       }
     },
-    "Import failed": {
+    "about.manager.step.manage": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import failed"
+            "value": "Manage resources directly inside Lumi"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导入失败"
+            "value": "在 Lumi 中直接管理相关资源"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯入失敗"
+            "value": "在 Lumi 中直接管理相關資源"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯入失敗"
+            "value": "在 Lumi 中直接管理相關資源"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯入失敗"
+            "value": "在 Lumi 中直接管理相關資源"
           }
         }
       }
     },
-    "Local Docker image management and monitoring": {
+    "about.manager.tip.permissions": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local Docker image management and monitoring"
+            "value": "Review permissions if the plugin accesses system resources"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地 Docker 镜像管理和监控"
+            "value": "若插件访问系统资源，请注意相关权限"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
+            "value": "若插件存取系統資源，請注意相關權限"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
+            "value": "若外掛存取系統資源，請注意相關權限"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
+            "value": "若外掛存取系統資源，請注意相關權限"
           }
         }
       }
     },
-    "more": {
+    "about.manager.tip.disable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "more"
+            "value": "Disable the plugin when you do not need this workflow"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多"
+            "value": "不需要此工作流时可禁用该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多"
+            "value": "不需要此工作流程時可停用該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多"
+            "value": "不需要此工作流程時可停用此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多"
+            "value": "不需要此工作流程時可停用此外掛"
           }
         }
       }
     },
-    "Name": {
+    "about.editorBottom.feature.panel.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Name"
+            "value": "Bottom Panel"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "名称"
+            "value": "底部面板"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "名稱"
+            "value": "底部面板"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "名稱"
+            "value": "底部面板"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "名稱"
+            "value": "底部面板"
           }
         }
       }
     },
-    "Pull": {
+    "about.editorBottom.feature.panel.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "Adds a tab to the editor bottom panel"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "在编辑器底部面板中添加标签页"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "在編輯器底部面板中新增標籤頁"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "在編輯器底部面板中新增標籤頁"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "在編輯器底部面板中新增標籤頁"
           }
         }
       }
     },
-    "Pull New Image": {
+    "about.editorBottom.feature.context.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull New Image"
+            "value": "Editor Context"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "拉取新镜像"
+            "value": "编辑器上下文"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "拉取新映像"
+            "value": "編輯器上下文"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "拉取新映像"
+            "value": "編輯器上下文"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "拉取新映像"
+            "value": "編輯器上下文"
           }
         }
       }
     },
-    "Pulling...": {
+    "about.editorBottom.feature.context.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "Works with the file currently open in the editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "与编辑器中当前打开的文件协同工作"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "與編輯器中目前開啟的檔案協同工作"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "與編輯器中目前開啟的檔案協同工作"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "與編輯器中目前開啟的檔案協同工作"
           }
         }
       }
     },
-    "Refresh": {
+    "about.editorBottom.step.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "Enable the plugin in plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "在插件设置中启用该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "在插件設定中啟用該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "在插件設定中啟用此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "在插件設定中啟用此外掛"
           }
         }
       }
     },
-    "Scan": {
+    "about.editorBottom.step.openFile": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scan"
+            "value": "Open a file in the code editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "扫描"
+            "value": "在代码编辑器中打开文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "掃描"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "掃描"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "掃描"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         }
       }
     },
-    "Search images...": {
+    "about.editorBottom.step.openTab": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "Open the bottom panel tab provided by this plugin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "打开该插件提供的底部面板标签页"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "打開該插件提供的底部面板標籤頁"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "打開此外掛提供的底部面板標籤頁"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "打開此外掛提供的底部面板標籤頁"
           }
         }
       }
     },
-    "Security Scan": {
+    "about.editorBottom.tip.shortcut": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Security Scan"
+            "value": "Use the status bar shortcut when available"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "安全扫描"
+            "value": "如有提供，可使用状态栏快捷入口"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "安全掃描"
+            "value": "如有提供，可使用狀態列快捷入口"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "安全掃描"
+            "value": "如有提供，可使用狀態列快捷入口"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "安全掃描"
+            "value": "如有提供，可使用狀態列快捷入口"
           }
         }
       }
     },
-    "Select an image to view details": {
+    "about.editorBottom.tip.layout": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select an image to view details"
+            "value": "Disable the plugin if you prefer a cleaner editor layout"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择一个镜像查看详情"
+            "value": "若偏好更简洁的编辑器布局，可禁用该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇一個映像查看詳情"
+            "value": "若偏好更簡潔的編輯器版面，可停用該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇一個映像查看詳情"
+            "value": "若偏好更簡潔的編輯器版面，可停用此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "選擇一個映像查看詳情"
+            "value": "若偏好更簡潔的編輯器版面，可停用此外掛"
           }
         }
       }
     },
-    "Size": {
+    "about.editorRail.feature.rail.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Size"
+            "value": "Side Rail"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大小"
+            "value": "侧边栏"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "大小"
+            "value": "側邊欄"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "大小"
+            "value": "側邊欄"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "大小"
+            "value": "側邊欄"
           }
         }
       }
     },
-    "Sort": {
+    "about.editorRail.feature.rail.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sort"
+            "value": "Adds a panel to the editor side rail"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "排序"
+            "value": "在编辑器侧边栏中添加面板"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "排序"
+            "value": "在編輯器側邊欄中新增面板"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "排序"
+            "value": "在編輯器側邊欄中新增面板"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "排序"
+            "value": "在編輯器側邊欄中新增面板"
           }
         }
       }
     },
-    "Source:": {
+    "about.editorRail.feature.context.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Source:"
+            "value": "File Context"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "来源："
+            "value": "文件上下文"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "來源："
+            "value": "檔案上下文"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "來源："
+            "value": "檔案上下文"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "來源："
+            "value": "檔案上下文"
           }
         }
       }
     },
-    "Tag Image": {
+    "about.editorRail.feature.context.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tag Image"
+            "value": "Shows information related to the active editor file"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "标签镜像"
+            "value": "显示与当前编辑文件相关的信息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤映像"
+            "value": "顯示與目前編輯檔案相關的資訊"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤映像"
+            "value": "顯示與目前編輯檔案相關的資訊"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤映像"
+            "value": "顯示與目前編輯檔案相關的資訊"
           }
         }
       }
     },
-    "Tag...": {
+    "about.editorRail.step.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tag..."
+            "value": "Enable the plugin in plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "标签..."
+            "value": "在插件设置中启用该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤..."
+            "value": "在插件設定中啟用該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤..."
+            "value": "在插件設定中啟用此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤..."
+            "value": "在插件設定中啟用此外掛"
           }
         }
       }
     },
-    "Image Cleanup": {
+    "about.editorRail.step.openFile": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Image Cleanup"
+            "value": "Open a file in the code editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "镜像清理"
+            "value": "在代码编辑器中打开文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像清理"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像清理"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像清理"
+            "value": "在程式碼編輯器中開啟檔案"
           }
         }
       }
     },
-    "Manage image tags and versions": {
+    "about.editorRail.step.openTab": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage image tags and versions"
+            "value": "Select the rail tab provided by this plugin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理镜像标签和版本"
+            "value": "选择该插件提供的侧边栏标签页"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理映像標籤和版本"
+            "value": "選擇該插件提供的側邊欄標籤頁"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理映像標籤和版本"
+            "value": "選擇此外掛提供的側邊欄標籤頁"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "管理映像標籤和版本"
+            "value": "選擇此外掛提供的側邊欄標籤頁"
           }
         }
       }
     },
-    "Connects to local Docker daemon via socket": {
+    "about.editorRail.tip.collapse": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connects to local Docker daemon via socket"
+            "value": "Collapse the rail when you need more editor space"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "通过 socket 连接本地 Docker 守护进程"
+            "value": "需要更多编辑空间时可收起侧边栏"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "透過 socket 連接本機 Docker 守護程式"
+            "value": "需要更多編輯空間時可收起側邊欄"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "透過 socket 連接本機 Docker 守護程式"
+            "value": "需要更多編輯空間時可收起側邊欄"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "透過 socket 連接本機 Docker 守護程式"
+            "value": "需要更多編輯空間時可收起側邊欄"
           }
         }
       }
     },
-    "Tag Management": {
+    "about.editorRail.tip.combine": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tag Management"
+            "value": "Combine with other rail plugins for a richer workflow"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "标签管理"
+            "value": "可与其他侧边栏插件组合使用，提升工作流"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤管理"
+            "value": "可與其他側邊欄插件組合使用，提升工作流程"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤管理"
+            "value": "可與其他側邊欄外掛組合使用，提升工作流程"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "標籤管理"
+            "value": "可與其他側邊欄外掛組合使用，提升工作流程"
           }
         }
       }
     },
-    "Click an image to view layer details": {
+    "about.editor.feature.extension.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Click an image to view layer details"
+            "value": "Editor Extension"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点击镜像查看层详情"
+            "value": "编辑器扩展"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊映像查看層詳情"
+            "value": "編輯器擴展"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊映像查看層詳情"
+            "value": "編輯器擴展"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊映像查看層詳情"
+            "value": "編輯器擴展"
           }
         }
       }
     },
-    "Browse, inspect, and manage local Docker images": {
+    "about.editor.feature.extension.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browse, inspect, and manage local Docker images"
+            "value": "Extends the built-in code editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "浏览、检查和管理本地 Docker 镜像"
+            "value": "扩展内置代码编辑器能力"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "瀏覽、檢查和管理本機 Docker 映像"
+            "value": "擴展內建程式碼編輯器能力"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "瀏覽、檢查和管理本機 Docker 映像"
+            "value": "擴展內建程式碼編輯器能力"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "瀏覽、檢查和管理本機 Docker 映像"
+            "value": "擴展內建程式碼編輯器能力"
           }
         }
       }
     },
-    "Remove unused images to free up disk space": {
+    "about.editor.feature.language.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Remove unused images to free up disk space"
+            "value": "Language Support"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "删除未使用的镜像以释放磁盘空间"
+            "value": "语言支持"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除未使用的映像以釋放磁碟空間"
+            "value": "語言支援"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除未使用的映像以釋放磁碟空間"
+            "value": "語言支援"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "刪除未使用的映像以釋放磁碟空間"
+            "value": "語言支援"
           }
         }
       }
     },
-    "Provides management actions": {
+    "about.editor.feature.language.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provides management actions"
+            "value": "Improves editing for specific file types"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供管理操作"
+            "value": "改进特定文件类型的编辑体验"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供管理操作"
+            "value": "改進特定檔案類型的編輯體驗"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供管理操作"
+            "value": "改進特定檔案類型的編輯體驗"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供管理操作"
+            "value": "改進特定檔案類型的編輯體驗"
           }
         }
       }
     },
-    "Image Management": {
+    "about.editor.step.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Image Management"
+            "value": "Enable the plugin in plugin settings"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "镜像管理"
+            "value": "在插件设置中启用该插件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像管理"
+            "value": "在插件設定中啟用該插件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像管理"
+            "value": "在插件設定中啟用此外掛"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "映像管理"
+            "value": "在插件設定中啟用此外掛"
           }
         }
       }
     },
-    "View detailed image layers and their sizes": {
+    "about.editor.step.openFile": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "View detailed image layers and their sizes"
+            "value": "Open a supported file in the editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看镜像层详情及大小"
+            "value": "在编辑器中打开受支持的文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看映像層詳情及大小"
+            "value": "在編輯器中開啟受支援的檔案"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看映像層詳情及大小"
+            "value": "在編輯器中開啟受支援的檔案"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看映像層詳情及大小"
+            "value": "在編輯器中開啟受支援的檔案"
           }
         }
       }
     },
-    "Fetches image list and metadata": {
+    "about.editor.step.use": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetches image list and metadata"
+            "value": "Use the editor features provided by this plugin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "获取镜像列表和元数据"
+            "value": "使用该插件提供的编辑器功能"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "取得映像列表和中繼資料"
+            "value": "使用該插件提供的編輯器功能"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "取得映像列表和中繼資料"
+            "value": "使用此外掛提供的編輯器功能"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "取得映像列表和中繼資料"
+            "value": "使用此外掛提供的編輯器功能"
           }
         }
       }
     },
-    "Displays image layers and sizes": {
+    "about.editor.tip.enable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Displays image layers and sizes"
+            "value": "Keep only the editor extensions you actively use enabled"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示镜像层和大小"
+            "value": "仅启用你实际使用的编辑器扩展"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示映像層和大小"
+            "value": "僅啟用你實際使用的編輯器擴展"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示映像層和大小"
+            "value": "僅啟用你實際使用的編輯器擴展"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示映像層和大小"
+            "value": "僅啟用你實際使用的編輯器擴展"
           }
         }
       }
     },
-    "Ensure Docker Desktop is running before use": {
+    "about.editor.tip.tooling": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ensure Docker Desktop is running before use"
+            "value": "Some features depend on language tooling being available"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用前请确保 Docker Desktop 正在运行"
+            "value": "部分功能依赖语言工具链是否可用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用前請確保 Docker Desktop 正在執行"
+            "value": "部分功能依賴語言工具鏈是否可用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用前請確保 Docker Desktop 正在執行"
+            "value": "部分功能依賴語言工具鏈是否可用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用前請確保 Docker Desktop 正在執行"
+            "value": "部分功能依賴語言工具鏈是否可用"
           }
         }
       }
     },
-    "Layer Inspection": {
+    "about.openIn.feature.access.title": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Layer Inspection"
+            "value": "Quick Access"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "层检查"
+            "value": "快速访问"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "層檢查"
+            "value": "快速存取"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "層檢查"
+            "value": "快速存取"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "層檢查"
+            "value": "快速存取"
           }
         }
       }
     },
-    "Regular cleanup helps reclaim disk space": {
+    "about.openIn.feature.access.description": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular cleanup helps reclaim disk space"
+            "value": "Adds a status bar action to open the current project externally"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "定期清理有助于回收磁盘空间"
+            "value": "在状态栏添加快捷操作，可在外部应用中打开当前项目"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "定期清理有助於回收磁碟空間"
+            "value": "在狀態列新增快捷操作，可在外部應用中開啟目前專案"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "定期清理有助於回收磁碟空間"
+            "value": "在狀態列新增快捷操作，可在外部應用中開啟目前專案"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "定期清理有助於回收磁碟空間"
+            "value": "在狀態列新增快捷操作，可在外部應用中開啟目前專案"
+          }
+        }
+      }
+    },
+    "about.openIn.feature.project.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Aware"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目感知"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案感知"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案感知"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案感知"
+          }
+        }
+      }
+    },
+    "about.openIn.feature.project.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses the active project path from the current workspace"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用当前工作区中的活动项目路径"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用目前工作區中的活動專案路徑"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用目前工作區中的活動專案路徑"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用目前工作區中的活動專案路徑"
+          }
+        }
+      }
+    },
+    "about.openIn.step.enable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable the plugin in plugin settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件设置中启用该插件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件設定中啟用該插件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件設定中啟用此外掛"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件設定中啟用此外掛"
+          }
+        }
+      }
+    },
+    "about.openIn.step.openProject": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a project in Lumi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 中打开项目"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 中開啟專案"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 中開啟專案"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 中開啟專案"
+          }
+        }
+      }
+    },
+    "about.openIn.step.launch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the status bar button to launch the external app"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用状态栏按钮启动外部应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用狀態列按鈕啟動外部應用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用狀態列按鈕啟動外部應用"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用狀態列按鈕啟動外部應用"
+          }
+        }
+      }
+    },
+    "about.openIn.tip.installed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make sure the target application is installed on your Mac"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请确保目标应用已安装在你的 Mac 上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請確保目標應用已安裝在你的 Mac 上"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請確保目標應用已安裝在你的 Mac 上"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請確保目標應用已安裝在你的 Mac 上"
+          }
+        }
+      }
+    },
+    "about.openIn.tip.path": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The action uses the currently opened project path"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该操作使用当前已打开的项目路径"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該操作使用目前已開啟的專案路徑"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該操作使用目前已開啟的專案路徑"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該操作使用目前已開啟的專案路徑"
           }
         }
       }
     }
-  },
-  "version": "1.1"
+  }
 }
