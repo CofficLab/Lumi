@@ -28,4 +28,9 @@ public enum ClipboardManagerPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(ClipboardManagerAboutView())
+    }
 }

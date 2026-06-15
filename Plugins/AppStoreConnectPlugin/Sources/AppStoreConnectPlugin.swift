@@ -2,7 +2,7 @@ import LumiCoreKit
 import SwiftUI
 
 public enum AppStoreConnectPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .optIn
     public static let category: LumiPluginCategory = .development
     public static let iconName = "bag"
 
@@ -13,6 +13,26 @@ public enum AppStoreConnectPlugin: LumiPlugin {
         order: 65
     )
 
+    public static var id: String { info.id }
+    public static var displayName: String { info.displayName }
+    public static var description: String { info.description }
+    public static var order: Int { info.order }
+
+    @MainActor
+    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        guard context.activeSectionID == info.id else { return [] }
+
+        return [
+            LumiTitleToolbarItem(
+                id: "\(info.id).app-picker",
+                title: AppStoreConnectLocalization.string("Select App"),
+                placement: .center
+            ) {
+                ToolbarAppPicker()
+            }
+        ]
+    }
+
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         [
@@ -21,9 +41,14 @@ public enum AppStoreConnectPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                AppStoreConnectView()
+                MainView()
             }
         ]
+    }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(AppStoreConnectAboutView())
     }
 }
 

@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LumiCoreKit
+import SwiftUI
 
 /// Web Fetch 插件。
 ///
@@ -26,6 +27,17 @@ public enum WebFetchPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [WebFetchTool().asLumiAgentTool()]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
+        )
+    }
+
 }
 
 enum PluginWebFetchLocalization {

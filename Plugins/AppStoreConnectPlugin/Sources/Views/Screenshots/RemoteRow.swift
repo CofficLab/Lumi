@@ -1,0 +1,60 @@
+import LumiUI
+import SwiftUI
+
+struct RemoteScreenshotRow: View {
+    let screenshot: AppScreenshot
+
+    var body: some View {
+        AppListRow {
+            HStack(spacing: 12) {
+                screenshotThumbnail
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName)
+                        .font(.body.weight(.medium))
+                        .lineLimit(1)
+                    if let fileSize = screenshot.fileSize {
+                        Text(ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Label(AppStoreConnectLocalization.string("On App Store Connect"), systemImage: "icloud")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var screenshotThumbnail: some View {
+        if let previewURL = screenshot.previewURL {
+            AsyncImage(url: previewURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty:
+                    ProgressView()
+                        .controlSize(.small)
+                case .failure:
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
+                @unknown default:
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        } else {
+            Image(systemName: "photo")
+                .font(.title3)
+                .frame(width: 44, height: 44)
+        }
+    }
+}

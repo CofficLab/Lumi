@@ -1,14 +1,37 @@
 import Testing
 import Foundation
 import CryptoKit
+import LumiCoreKit
 @testable import AppStoreConnectPlugin
 
 @Suite(.serialized)
 struct PluginAppStoreConnectTests {
     @Test
     func pluginIdentityIsStable() {
-        #expect(AppStoreConnectPlugin.id == "AppStoreConnect")
+        #expect(AppStoreConnectPlugin.id == "com.coffic.lumi.plugin.app-store-connect")
         #expect(AppStoreConnectPlugin.iconName == "bag")
+        #expect(AppStoreConnectPlugin.policy == .optIn)
+        #expect(AppStoreConnectPlugin.order == 65)
+        #expect(AppStoreConnectPlugin.category == .development)
+    }
+
+    @MainActor
+    @Test
+    func titleToolbarItemsShowAppPickerOnlyInAppStoreSection() {
+        let hidden = AppStoreConnectPlugin.titleToolbarItems(
+            context: LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+        )
+        let visible = AppStoreConnectPlugin.titleToolbarItems(
+            context: LumiPluginContext(
+                activeSectionID: AppStoreConnectPlugin.id,
+                activeSectionTitle: AppStoreConnectPlugin.displayName
+            )
+        )
+
+        #expect(hidden.isEmpty)
+        #expect(visible.count == 1)
+        #expect(visible.first?.id == "\(AppStoreConnectPlugin.id).app-picker")
+        #expect(visible.first?.placement == .center)
     }
 
     @Test
@@ -95,7 +118,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciBuildRunCreatePayloadIncludesWorkflowAndBranch() throws {
-        let body = try AppStoreConnectClient.makeCiBuildRunCreateBody(
+        let body = try ConnectClient.makeCiBuildRunCreateBody(
             workflowID: "workflow-1",
             branch: " main "
         )
@@ -114,7 +137,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciWorkflowEnabledUpdatePayloadOnlyPatchesEnabledState() throws {
-        let body = try AppStoreConnectClient.makeCiWorkflowEnabledUpdateBody(id: "workflow-1", isEnabled: false)
+        let body = try ConnectClient.makeCiWorkflowEnabledUpdateBody(id: "workflow-1", isEnabled: false)
         let object = try JSONSerialization.jsonObject(with: body) as? [String: Any]
         let data = try #require(object?["data"] as? [String: Any])
         let attributes = try #require(data["attributes"] as? [String: Any])
@@ -150,14 +173,14 @@ struct PluginAppStoreConnectTests {
 
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
-        #expect(AppStoreConnectLocalization.bundle.url(forResource: "AppStoreConnect", withExtension: "xcstrings") != nil)
+        #expect(AppStoreConnectLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(AppStoreConnectLocalization.string("App Store").isEmpty == false)
     }
 
-    @Test("plugin description resolves from package localization catalog")
-    func pluginDescriptionUsesRequestedLanguage() {
-        #expect(AppStoreConnectPlugin.description(for: .english) == "Manage App Store Connect apps, metadata, and screenshots")
-        #expect(AppStoreConnectPlugin.description(for: .chinese) == "管理 App Store Connect App、元数据和截图")
+    @Test("plugin description is localized")
+    func pluginDescriptionUsesLocalizationCatalog() {
+        #expect(AppStoreConnectPlugin.description.isEmpty == false)
+        #expect(AppStoreConnectPlugin.displayName == "App Store")
     }
 
     @Test
@@ -177,7 +200,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciBuildRunCreatePayloadOmitsEmptyBranch() throws {
-        let body = try AppStoreConnectClient.makeCiBuildRunCreateBody(
+        let body = try ConnectClient.makeCiBuildRunCreateBody(
             workflowID: "workflow-1",
             branch: "   "
         )
@@ -185,6 +208,140 @@ struct PluginAppStoreConnectTests {
         let data = try #require(object?["data"] as? [String: Any])
 
         #expect(data["attributes"] == nil)
+    }
+
+    @Test
+    func appScreenshotDecodesImageAsset() throws {
+        let json = """
+        {
+          "id": "shot-1",
+          "type": "appScreenshots",
+          "attributes": {
+            "fileName": "screenshot-1.png",
+            "fileSize": 1024,
+            "imageAsset": {
+              "templateUrl": "https://example.com/{w}x{h}.{f}",
+              "width": 1284,
+              "height": 2778
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        let screenshot = try JSONDecoder().decode(AppScreenshot.self, from: json)
+
+        #expect(screenshot.id == "shot-1")
+        #expect(screenshot.fileName == "screenshot-1.png")
+        #expect(screenshot.fileSize == 1024)
+        #expect(screenshot.previewURL?.absoluteString == "https://example.com/1284x2778.png")
+    }
+
+    @Test
+    func loadScreenshotSetsFallsBackToFilterEndpoint() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var paths: [String] = []
+        }
+        let counter = RequestCounter()
+        let session = MockURLProtocol.makeSession { request in
+            counter.paths.append(request.url?.path ?? "")
+            if request.url?.path.contains("/appStoreVersionLocalizations/") == true {
+                return (200, Data("{\"data\":[]}".utf8))
+            }
+            #expect(request.url?.path == "/v1/appScreenshotSets")
+            #expect(request.url?.query?.contains("filter%5BappStoreVersionLocalization%5D=loc-1") == true)
+            #expect(request.url?.query?.contains("include=appScreenshots") == true)
+
+            return (
+                200,
+                """
+                {
+                  "data": [{
+                    "id": "set-1",
+                    "type": "appScreenshotSets",
+                    "attributes": { "screenshotDisplayType": "APP_IPHONE_65" },
+                    "relationships": {
+                      "appScreenshots": {
+                        "data": [{ "type": "appScreenshots", "id": "shot-1" }]
+                      }
+                    }
+                  }],
+                  "included": [{
+                    "id": "shot-1",
+                    "type": "appScreenshots",
+                    "attributes": {
+                      "fileName": "screen.png",
+                      "fileSize": 512,
+                      "imageAsset": {
+                        "templateUrl": "https://example.com/{w}x{h}.{f}",
+                        "width": 100,
+                        "height": 200
+                      }
+                    }
+                  }]
+                }
+                """.data(using: .utf8)!
+            )
+        }
+        let client = ConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let payload = try await client.loadScreenshotSets(localizationID: "loc-1")
+
+        #expect(counter.paths.count == 2)
+        #expect(payload.sets.count == 1)
+        #expect(payload.sets.first?.screenshotDisplayType == "APP_IPHONE_65")
+        #expect(payload.screenshotsBySetID["set-1"]?.count == 1)
+        #expect(payload.screenshotsBySetID["set-1"]?.first?.fileName == "screen.png")
+    }
+
+    @Test
+    func listScreenshotsBuildsExpectedRequest() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var paths: [String] = []
+        }
+        let counter = RequestCounter()
+        let session = MockURLProtocol.makeSession { request in
+            counter.paths.append(request.url?.path ?? "")
+            if request.url?.path == "/v1/appScreenshotSets/set-1/appScreenshots" {
+                return (200, Data("{\"data\":[]}".utf8))
+            }
+            #expect(request.url?.path == "/v1/appScreenshots")
+            #expect(request.url?.query?.contains("filter%5BappScreenshotSet%5D=set-1") == true)
+
+            return (
+                200,
+                """
+                {
+                  "data": [{
+                    "id": "shot-1",
+                    "type": "appScreenshots",
+                    "attributes": {
+                      "fileName": "screenshot-1.png",
+                      "fileSize": 2048,
+                      "imageAsset": {
+                        "templateUrl": "https://example.com/{w}x{h}.{f}",
+                        "width": 120,
+                        "height": 120
+                      }
+                    }
+                  }]
+                }
+                """.data(using: .utf8)!
+            )
+        }
+        let client = ConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let screenshots = try await client.listScreenshots(screenshotSetID: "set-1")
+
+        #expect(counter.paths.count == 2)
+        #expect(screenshots.count == 1)
+        #expect(screenshots.first?.fileName == "screenshot-1.png")
+        #expect(screenshots.first?.previewURL?.absoluteString == "https://example.com/120x120.png")
     }
 
     @Test
@@ -230,7 +387,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )
@@ -286,7 +443,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )
@@ -297,12 +454,125 @@ struct PluginAppStoreConnectTests {
     }
 
     @Test
+    func connectCacheExpiresEntriesAfterTTL() {
+        let cache = ConnectCache(ttl: 10, maxEntries: 8)
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        cache.set("key", data: Data("value".utf8), now: now)
+        #expect(cache.get("key", now: now.addingTimeInterval(5)) != nil)
+        #expect(cache.get("key", now: now.addingTimeInterval(11)) == nil)
+    }
+
+    @Test
+    func connectCacheEvictsOldestEntryAtCapacity() {
+        let cache = ConnectCache(ttl: 60, maxEntries: 2)
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        let t1 = t0.addingTimeInterval(1)
+        let t2 = t0.addingTimeInterval(2)
+
+        cache.set("a", data: Data("a".utf8), now: t0)
+        cache.set("b", data: Data("b".utf8), now: t1)
+        cache.set("c", data: Data("c".utf8), now: t2)
+
+        #expect(cache.get("a", now: t2) == nil)
+        #expect(cache.get("b", now: t2) != nil)
+        #expect(cache.get("c", now: t2) != nil)
+    }
+
+    @Test
+    func connectClientReusesCachedGETResponses() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var count = 0
+        }
+        let counter = RequestCounter()
+        let response = """
+        {
+          "data": [{
+            "id": "app-1",
+            "type": "apps",
+            "attributes": {
+              "name": "Lumi",
+              "bundleId": "com.coffic.lumi",
+              "sku": "LUMI",
+              "primaryLocale": "en-US",
+              "platform": "IOS"
+            }
+          }]
+        }
+        """.data(using: .utf8)!
+        let session = MockURLProtocol.makeSession { _ in
+            counter.count += 1
+            return (200, response)
+        }
+        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let credentials = AppStoreConnectCredentials(
+            issuerID: "issuer-test",
+            keyID: "ABC123DEFG",
+            privateKey: P256.Signing.PrivateKey().pemRepresentation
+        )
+        let client = ConnectClient(
+            credentialsProvider: { credentials },
+            session: session,
+            cache: cache
+        )
+
+        _ = try await client.listApps(limit: 1)
+        _ = try await client.listApps(limit: 1)
+
+        #expect(counter.count == 1)
+    }
+
+    @Test
+    func connectClientBypassesCacheWhenNetworkOnly() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var count = 0
+        }
+        let counter = RequestCounter()
+        let response = """
+        {
+          "data": [{
+            "id": "app-1",
+            "type": "apps",
+            "attributes": {
+              "name": "Lumi",
+              "bundleId": "com.coffic.lumi",
+              "sku": "LUMI",
+              "primaryLocale": "en-US",
+              "platform": "IOS"
+            }
+          }]
+        }
+        """.data(using: .utf8)!
+        let session = MockURLProtocol.makeSession { _ in
+            counter.count += 1
+            return (200, response)
+        }
+        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let credentials = AppStoreConnectCredentials(
+            issuerID: "issuer-test",
+            keyID: "ABC123DEFG",
+            privateKey: P256.Signing.PrivateKey().pemRepresentation
+        )
+        let client = ConnectClient(
+            credentialsProvider: { credentials },
+            session: session,
+            cache: cache
+        )
+
+        _ = try await client.listApps(limit: 1)
+        client.fetchPolicy = .networkOnly
+        _ = try await client.listApps(limit: 1)
+
+        #expect(counter.count == 2)
+    }
+
+    @Test
     func clientRejectsMissingCredentialsBeforeSendingRequest() async throws {
         let session = MockURLProtocol.makeSession { _ in
             Issue.record("Request should not be sent when credentials are incomplete")
             return (200, #"{"data":[]}"#.data(using: .utf8)!)
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: {
                 AppStoreConnectCredentials(issuerID: "", keyID: "key", privateKey: "private")
             },
@@ -335,7 +605,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )
@@ -348,6 +618,58 @@ struct PluginAppStoreConnectTests {
         } catch {
             Issue.record("Expected request failed error, got \(error)")
         }
+    }
+
+    @Test
+    func sidebarVersionsFiltersPlatformAndDeduplicatesByVersionString() {
+        let versions = [
+            AppStoreVersion(
+                id: "ready-old",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 1)
+            ),
+            AppStoreVersion(
+                id: "ready-new",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 2)
+            ),
+            AppStoreVersion(
+                id: "prepare",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "PREPARE_FOR_SUBMISSION",
+                appVersionState: "PREPARE_FOR_SUBMISSION",
+                createdDate: Date(timeIntervalSince1970: 0)
+            ),
+            AppStoreVersion(
+                id: "mac",
+                platform: "MAC_OS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 3)
+            ),
+            AppStoreVersion(
+                id: "latest",
+                platform: "IOS",
+                versionString: "3.4.3",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 10)
+            )
+        ]
+
+        let sidebar = AppStoreVersion.sidebarVersions(from: versions, appPlatform: "IOS")
+
+        #expect(sidebar.count == 2)
+        #expect(sidebar[0].id == "latest")
+        #expect(sidebar[1].id == "prepare")
     }
 
     private static func validCredentials() -> AppStoreConnectCredentials {

@@ -3,6 +3,7 @@ import EditorService
 import LumiCoreKit
 import SuperLogKit
 import ShellKit
+import LumiUI
 import SwiftUI
 import os
 

@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 签名帮助编辑器插件。
 ///
 /// 该插件负责把 `SignatureHelpProvider` 注册到编辑器扩展注册中心，

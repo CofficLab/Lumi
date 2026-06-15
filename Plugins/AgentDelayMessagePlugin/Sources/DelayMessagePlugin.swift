@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 import os
 
 /// 延时消息插件：在未来某个时刻自动恢复对话。
@@ -20,4 +21,15 @@ public enum DelayMessagePlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [DelayMessageTool().asLumiAgentTool()]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
+        )
+    }
+
 }

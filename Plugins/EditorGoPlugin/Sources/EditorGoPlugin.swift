@@ -2,6 +2,7 @@ import Foundation
 import EditorService
 import LumiCoreKit
 import SuperLogKit
+import LumiUI
 import SwiftUI
 import os
 

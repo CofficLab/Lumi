@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
 /// Markdown 高亮编辑器插件：提供 Markdown 语法高亮
 public actor EditorMarkdownPlugin: SuperPlugin {

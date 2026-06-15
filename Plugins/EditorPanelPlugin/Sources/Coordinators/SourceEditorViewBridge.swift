@@ -1,7 +1,7 @@
 import Foundation
 import EditorService
 import LSPDocumentHighlightEditorPlugin
-import LSPRealtimeSignalsEditorPlugin
+import LSPRealtimeSignalsPlugin
 import SwiftUI
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?

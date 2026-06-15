@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 文档高亮编辑器插件。
 ///
 /// 该插件负责把 `DocumentHighlightProvider` 注册到编辑器扩展注册中心，

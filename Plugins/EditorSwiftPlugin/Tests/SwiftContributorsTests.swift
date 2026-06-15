@@ -3,6 +3,19 @@ import EditorService
 import Testing
 
 @MainActor
+@Test func swiftPrimitiveTypeCompletionDoesNotCoverEnumMemberAccess() async {
+    let contributor = SwiftPrimitiveTypeCompletionContributor()
+    let enumMemberContext = EditorCompletionContext(
+        languageId: "swift",
+        line: 0,
+        character: 22,
+        prefix: "",
+        isTypeContext: false
+    )
+    #expect(await contributor.provideSuggestions(context: enumMemberContext).isEmpty)
+}
+
+@MainActor
 @Test func swiftPrimitiveTypeCompletionRequiresSwiftAndTypeContext() async {
     let contributor = SwiftPrimitiveTypeCompletionContributor()
     let nonSwift = EditorCompletionContext(

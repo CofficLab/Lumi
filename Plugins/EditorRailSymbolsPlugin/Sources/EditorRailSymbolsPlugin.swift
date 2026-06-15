@@ -1,7 +1,6 @@
 import EditorBottomSymbolsPlugin
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 public enum EditorRailSymbolsPanelPlugin: LumiPlugin {
@@ -36,4 +35,15 @@ public enum EditorRailSymbolsPanelPlugin: LumiPlugin {
             }
         ]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .editorRail
+        )
+    }
+
 }

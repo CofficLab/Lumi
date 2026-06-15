@@ -43,6 +43,9 @@ final class RootContainer: ObservableObject {
             self?.editorCoreService.syncAppSyntaxThemes()
         }
         _ = UpdateController.shared
+        Task {
+            await UpdateController.shared.setupFeedURLIfNeeded()
+        }
         LayoutPlugin.restorePersistedStateIfNeeded()
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }

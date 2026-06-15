@@ -39,3 +39,41 @@ import Testing
     #expect(reloaded.conversations.first(where: { $0.id == id })?.automationLevel == .build)
     #expect(reloaded.conversations.first(where: { $0.id == id })?.verbosity == .detailed)
 }
+
+@MainActor
+@Test func loadEarlierMessagesExpandsVisibleWindowWithoutClearingConversation() {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LumiChatKitPaginationTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let service = ChatService(configuration: .coreDatabase(directory: directory))
+    let coordinator = ChatSectionCoordinator(chatService: service)
+    let conversationID = service.createConversation(title: "Paged")
+
+    for index in 0..<15 {
+        service.append(
+            LumiChatMessage(
+                conversationID: conversationID,
+                role: .user,
+                content: "Message \(index)"
+            )
+        )
+    }
+    service.selectConversation(id: conversationID)
+
+    let initial = coordinator.displayedMessages(for: conversationID)
+    #expect(initial.count == 10)
+    #expect(initial.first?.content == "Message 5")
+    #expect(initial.last?.content == "Message 14")
+
+    coordinator.loadEarlierMessages()
+
+    let expanded = coordinator.displayedMessages(for: conversationID)
+    #expect(expanded.count == 15)
+    #expect(expanded.first?.content == "Message 0")
+    #expect(expanded.last?.content == "Message 14")
+    #expect(coordinator.selectedConversationID == conversationID)
+
+    coordinator.loadEarlierMessages()
+    #expect(coordinator.displayedMessages(for: conversationID).count == 15)
+}

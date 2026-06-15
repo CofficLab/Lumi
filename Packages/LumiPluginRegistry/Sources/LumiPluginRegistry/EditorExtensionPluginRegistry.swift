@@ -1,6 +1,6 @@
 import EditorSwiftPlugin
 import LSPServiceEditorPlugin
-import LSPRealtimeSignalsEditorPlugin
+import LSPRealtimeSignalsPlugin
 import LSPSheetsEditorPlugin
 import LSPToolbarEditorPlugin
 import LSPCodeActionEditorPlugin
@@ -54,7 +54,7 @@ public enum EditorExtensionPluginRegistry {
     public static let plugins: [any LumiEditorExtensionRegistering.Type] = [
         EditorSwiftEditorPlugin.self,
         LSPServiceEditorPlugin.self,
-        LSPRealtimeSignalsEditorPlugin.self,
+        LSPRealtimeSignalsPlugin.self,
         LSPSheetsEditorPlugin.self,
         LSPToolbarEditorPlugin.self,
         LSPCodeActionEditorPlugin.self,

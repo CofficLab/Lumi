@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 选区范围编辑器插件。
 ///
 /// 该插件对应 LSP `textDocument/selectionRange` 能力，用于支持智能扩大/缩小选区。

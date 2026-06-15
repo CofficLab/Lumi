@@ -34,7 +34,7 @@ public protocol LumiPlugin {
     static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem]
 
     @MainActor
-    static func settingsDetailView(context: LumiPluginContext) -> AnyView?
+    static func aboutView(context: LumiPluginContext) -> AnyView?
 
     @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
@@ -116,7 +116,7 @@ public extension LumiPlugin {
     }
 
     @MainActor
-    static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
+    static func aboutView(context: LumiPluginContext) -> AnyView? {
         nil
     }
 

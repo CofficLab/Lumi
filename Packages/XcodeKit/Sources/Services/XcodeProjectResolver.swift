@@ -268,15 +268,10 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             }
         }
 
-        guard let graph = try? XcodePBXProjParser.parseMembershipGraph(projectURL: projectURL) else {
-            if Self.verbose {
-                            Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
-            }
-            return [:]
-        }
-
         let projectRoot = projectURL.deletingLastPathComponent()
-        return graph.targetRoots.reduce(into: [String: Set<String>]()) { result, item in
+        var result: [String: Set<String>] = [:]
+        if let graph = try? XcodePBXProjParser.parseMembershipGraph(projectURL: projectURL) {
+            result = graph.targetRoots.reduce(into: [String: Set<String>]()) { result, item in
             let files = item.value.reduce(into: Set<String>()) { partial, root in
                 let rootURL: URL
                 if root.rootPath.hasPrefix("/") {
@@ -284,10 +279,19 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
                 } else {
                     rootURL = projectRoot.appendingPathComponent(root.rootPath)
                 }
-                partial.formUnion(Self.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
+                partial.formUnion(XcodeProjectFileEnumerator.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
             }
             result[item.key] = files
+            }
+        } else if Self.verbose {
+            Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
         }
+
+        let swiftPackageFiles = XcodeSwiftPackageSourceResolver.resolveTargetSourceFiles(projectURL: projectURL)
+        for (targetName, files) in swiftPackageFiles {
+            result[targetName, default: []].formUnion(files)
+        }
+        return result
     }
 
     public static func uniquePreservingOrder(_ values: [String]) -> [String] {
@@ -297,37 +301,6 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             result.append(value)
         }
         return result
-    }
-
-    private static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
-        if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
-           values.isRegularFile == true {
-            return excludedRelativePaths.isEmpty ? [rootURL.path] : []
-        }
-
-        guard let enumerator = FileManager.default.enumerator(
-            at: rootURL,
-            includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return []
-        }
-
-        var files = Set<String>()
-        while let fileURL = enumerator.nextObject() as? URL {
-            let relativePath = path(fileURL, relativeTo: rootURL)
-            if excludedRelativePaths.contains(relativePath) {
-                continue
-            }
-            let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
-            if values?.isDirectory == true {
-                continue
-            }
-            if values?.isRegularFile == true {
-                files.insert(fileURL.path)
-            }
-        }
-        return files
     }
 
     static func path(_ fileURL: URL, relativeTo rootURL: URL) -> String {

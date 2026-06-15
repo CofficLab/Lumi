@@ -213,21 +213,22 @@ private struct PluginSettingsDetailView: View {
     let row: PluginSettingsRowModel
     @ObservedObject var pluginService: PluginService
 
-    private var isEnabled: Bool {
-        pluginService.isPluginEnabled(row.plugin)
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                enableToggle
 
                 AppDivider()
 
-                if let detail = row.plugin.settingsDetailView(context: settingsContext) {
+                if let detail = row.plugin.aboutView(context: settingsContext) {
                     detail
                 } else {
-                    defaultDetail
+                    DefaultPluginAboutView(
+                        pluginName: row.displayName,
+                        pluginDescription: row.description,
+                        iconName: row.iconName
+                    )
                 }
             }
             .padding(22)
@@ -264,25 +265,12 @@ private struct PluginSettingsDetailView: View {
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    AppTag(row.policy.label, systemImage: row.policy.systemImage)
-                    AppTag(row.category.displayName, systemImage: row.category.systemImage)
-                    AppTag(
-                        isEnabled ? "已启用" : "未启用",
-                        systemImage: isEnabled ? "checkmark.circle" : "circle"
-                    )
-                }
             }
-
-            Spacer()
-
-            actionControl
         }
     }
 
     @ViewBuilder
-    private var actionControl: some View {
+    private var enableToggle: some View {
         if row.policy.isConfigurable {
             AppSettingsToggleRow(
                 "启用",
@@ -299,27 +287,6 @@ private struct PluginSettingsDetailView: View {
             )
         }
     }
-
-    private var defaultDetail: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("插件说明")
-                .font(.appBodyEmphasized)
-                .foregroundStyle(theme.textPrimary)
-
-            Text(row.description.isEmpty ? "该插件暂未提供自定义介绍视图。" : row.description)
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                GlassKeyValueRow(label: "插件 ID", value: row.id, labelWidth: 72)
-                GlassKeyValueRow(label: "加载策略", value: row.policy.label, labelWidth: 72)
-                GlassKeyValueRow(label: "分类", value: row.category.displayName, labelWidth: 72)
-                GlassKeyValueRow(label: "排序", value: "\(row.order)", labelWidth: 72)
-            }
-            .padding(14)
-            .appSurface(style: .subtle, cornerRadius: 8)
-        }
-    }
 }
 
 private struct PluginSettingsRowModel: Identifiable {
@@ -334,22 +301,22 @@ private struct PluginSettingsRowModel: Identifiable {
     var policy: LumiPluginPolicy { plugin.policy }
 }
 
-private extension LumiPluginPolicy {
-    var label: String {
-        switch self {
-        case .alwaysOn: "Always On"
-        case .optOut: "Opt Out"
-        case .optIn: "Opt In"
-        case .disabled: "Disabled"
-        }
-    }
+private struct DefaultPluginAboutView: View {
+    @LumiTheme private var theme
+    let pluginName: String
+    let pluginDescription: String
+    let iconName: String
 
-    var systemImage: String {
-        switch self {
-        case .alwaysOn: "lock.fill"
-        case .optOut: "checkmark.circle"
-        case .optIn: "power"
-        case .disabled: "slash.circle"
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("插件说明")
+                .font(.appBodyEmphasized)
+                .foregroundStyle(theme.textPrimary)
+
+            Text(pluginDescription.isEmpty ? "该插件暂未提供自定义介绍视图。" : pluginDescription)
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 
 public enum CodeReviewPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
@@ -16,5 +17,10 @@ public enum CodeReviewPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [RunReviewTool().asLumiAgentTool()]
+    }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(CodeReviewAboutView())
     }
 }

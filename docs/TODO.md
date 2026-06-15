@@ -318,7 +318,7 @@ case undoManagerSize = "undoManager.size"
 - [x] 迁移 `LSPCodeActionEditorPlugin`：同时依赖 `EditorKernel` + `EditorSource` + `EditorTextView`，通过 EditorService 协议抽象解耦
 - [x] 迁移 `LSPSignatureHelpEditorPlugin`
 - [x] 迁移 `LSPInlayHintEditorPlugin`
-- [x] 迁移 `LSPRealtimeSignalsEditorPlugin`
+- [x] 迁移 `LSPRealtimeSignalsPlugin`
 - [x] 迁移 `LSPDocumentHighlightEditorPlugin`
 
 #### 1.4 迁移语言/功能插件
