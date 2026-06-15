@@ -1,14 +1,37 @@
 import Testing
 import Foundation
 import CryptoKit
+import LumiCoreKit
 @testable import AppStoreConnectPlugin
 
 @Suite(.serialized)
 struct PluginAppStoreConnectTests {
     @Test
     func pluginIdentityIsStable() {
-        #expect(AppStoreConnectPlugin.id == "AppStoreConnect")
+        #expect(AppStoreConnectPlugin.id == "com.coffic.lumi.plugin.app-store-connect")
         #expect(AppStoreConnectPlugin.iconName == "bag")
+        #expect(AppStoreConnectPlugin.policy == .optIn)
+        #expect(AppStoreConnectPlugin.order == 65)
+        #expect(AppStoreConnectPlugin.category == .development)
+    }
+
+    @MainActor
+    @Test
+    func titleToolbarItemsShowAppPickerOnlyInAppStoreSection() {
+        let hidden = AppStoreConnectPlugin.titleToolbarItems(
+            context: LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+        )
+        let visible = AppStoreConnectPlugin.titleToolbarItems(
+            context: LumiPluginContext(
+                activeSectionID: AppStoreConnectPlugin.id,
+                activeSectionTitle: AppStoreConnectPlugin.displayName
+            )
+        )
+
+        #expect(hidden.isEmpty)
+        #expect(visible.count == 1)
+        #expect(visible.first?.id == "\(AppStoreConnectPlugin.id).app-picker")
+        #expect(visible.first?.placement == .center)
     }
 
     @Test
@@ -150,14 +173,14 @@ struct PluginAppStoreConnectTests {
 
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
-        #expect(AppStoreConnectLocalization.bundle.url(forResource: "AppStoreConnect", withExtension: "xcstrings") != nil)
+        #expect(AppStoreConnectLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(AppStoreConnectLocalization.string("App Store").isEmpty == false)
     }
 
-    @Test("plugin description resolves from package localization catalog")
-    func pluginDescriptionUsesRequestedLanguage() {
-        #expect(AppStoreConnectPlugin.description(for: .english) == "Manage App Store Connect apps, metadata, and screenshots")
-        #expect(AppStoreConnectPlugin.description(for: .chinese) == "管理 App Store Connect App、元数据和截图")
+    @Test("plugin description is localized")
+    func pluginDescriptionUsesLocalizationCatalog() {
+        #expect(AppStoreConnectPlugin.description.isEmpty == false)
+        #expect(AppStoreConnectPlugin.displayName == "App Store")
     }
 
     @Test

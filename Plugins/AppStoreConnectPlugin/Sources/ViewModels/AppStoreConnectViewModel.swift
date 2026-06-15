@@ -8,6 +8,7 @@ final class AppStoreConnectViewModel: ObservableObject {
 
     enum Page: String, CaseIterable, Identifiable {
         case account
+        case apps
         case versions
         case metadata
         case screenshots
@@ -18,6 +19,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         var title: String {
             switch self {
             case .account: return AppStoreConnectLocalization.string("Account")
+            case .apps: return AppStoreConnectLocalization.string("Apps")
             case .versions: return AppStoreConnectLocalization.string("Versions")
             case .metadata: return AppStoreConnectLocalization.string("Metadata")
             case .screenshots: return AppStoreConnectLocalization.string("Screenshots")
@@ -28,6 +30,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         var systemImage: String {
             switch self {
             case .account: return "key"
+            case .apps: return "square.grid.2x2"
             case .versions: return "clock.arrow.circlepath"
             case .metadata: return "text.alignleft"
             case .screenshots: return "photo.on.rectangle"
@@ -36,7 +39,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         }
     }
 
-    static let generalPages: [Page] = [.account]
+    static let generalPages: [Page] = [.account, .apps]
     static let appPages: [Page] = [.versions, .metadata, .screenshots, .xcodeCloud]
 
     @Published var page: Page = .account
@@ -138,24 +141,56 @@ final class AppStoreConnectViewModel: ObservableObject {
 
     func loadApps() async {
         await runBusy {
-            apps = try await client.listApps()
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            apps = try await client.listApps(search: query.isEmpty ? nil : query)
             connectionStatus = AppStoreConnectLocalization.string("Connected")
             if selectedApp == nil {
                 selectedApp = apps.first
+            } else if let selectedApp,
+                      !apps.contains(where: { $0.id == selectedApp.id }) {
+                self.selectedApp = apps.first
             }
         }
     }
 
-    func selectApp(_ app: AppStoreApp) {
+    func navigate(to page: Page) {
+        self.page = page
+        Task { await preparePageIfNeeded(page) }
+    }
+
+    func preparePageIfNeeded(_ page: Page) async {
+        guard credentials.isComplete else { return }
+        switch page {
+        case .apps where apps.isEmpty:
+            await loadApps()
+        case .versions where versions.isEmpty && selectedApp != nil:
+            await loadVersions()
+        case .metadata where localizations.isEmpty && selectedVersion != nil:
+            await loadLocalizations()
+        case .screenshots where screenshotSets.isEmpty && selectedLocalizationID != nil:
+            await loadScreenshotSets()
+        case .xcodeCloud where ciProducts.isEmpty:
+            await loadCiProducts()
+        default:
+            break
+        }
+    }
+
+    func selectApp(_ app: AppStoreApp, openVersions: Bool = false) {
+        let appChanged = selectedApp?.id != app.id
         selectedApp = app
-        selectedVersion = nil
-        versions = []
-        localizations = []
-        editedLocalization = nil
-        pendingScreenshots = []
-        screenshotSets = []
-        clearXcodeCloudSelection()
-        page = .versions
+        if appChanged {
+            selectedVersion = nil
+            versions = []
+            localizations = []
+            editedLocalization = nil
+            pendingScreenshots = []
+            screenshotSets = []
+            clearXcodeCloudSelection()
+        }
+        if openVersions {
+            page = .versions
+        }
         Task { await loadVersions() }
     }
 

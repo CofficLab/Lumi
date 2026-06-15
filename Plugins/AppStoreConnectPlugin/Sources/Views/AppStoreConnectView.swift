@@ -77,7 +77,7 @@ struct AppStoreConnectView: View {
 
             ForEach(pages) { page in
                 Button {
-                    viewModel.page = page
+                    viewModel.navigate(to: page)
                 } label: {
                     Label(page.title, systemImage: page.systemImage)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -109,6 +109,8 @@ struct AppStoreConnectView: View {
                 switch viewModel.page {
                 case .account:
                     accountPage
+                case .apps:
+                    appsPage
                 case .versions:
                     versionsPage
                 case .metadata:
@@ -131,10 +133,27 @@ struct AppStoreConnectView: View {
 
     private var contextBar: some View {
         HStack(spacing: 12) {
-            Text(viewModel.selectedVersion?.versionString ?? AppStoreConnectLocalization.string("No Version"))
-                .foregroundStyle(.secondary)
-            Text(viewModel.selectedLocalization?.locale ?? AppStoreConnectLocalization.string("No Locale"))
-                .foregroundStyle(.secondary)
+            switch viewModel.page {
+            case .account, .apps:
+                if let app = viewModel.selectedApp {
+                    AppStoreIconView(url: app.iconURL, size: 20)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(app.name)
+                            .lineLimit(1)
+                        Text(app.bundleID)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                } else {
+                    Text(AppStoreConnectLocalization.string("No App Selected"))
+                        .foregroundStyle(.secondary)
+                }
+            default:
+                Text(viewModel.selectedVersion?.versionString ?? AppStoreConnectLocalization.string("No Version"))
+                    .foregroundStyle(.secondary)
+                Text(viewModel.selectedLocalization?.locale ?? AppStoreConnectLocalization.string("No Locale"))
+                    .foregroundStyle(.secondary)
+            }
 
             Spacer()
 
@@ -143,6 +162,8 @@ struct AppStoreConnectView: View {
                     switch viewModel.page {
                     case .account:
                         await viewModel.testConnection()
+                    case .apps:
+                        await viewModel.loadApps()
                     case .versions:
                         await viewModel.loadVersions()
                     case .metadata:
@@ -247,6 +268,11 @@ struct AppStoreConnectView: View {
 
     private var appsPage: some View {
         VStack(spacing: 0) {
+            pageHeader(
+                title: AppStoreConnectLocalization.string("Apps"),
+                subtitle: AppStoreConnectLocalization.string("Browse and select an App Store Connect app")
+            )
+
             HStack {
                 AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(AppStoreConnectLocalization.string("Search by name, bundle ID, or SKU")))
                     .frame(maxWidth: 420)
@@ -260,20 +286,30 @@ struct AppStoreConnectView: View {
             }
             .padding()
 
-            List(selection: Binding(
-                get: { viewModel.selectedApp?.id },
-                set: { id in
-                    if let id, let app = viewModel.apps.first(where: { $0.id == id }) {
-                        viewModel.selectApp(app)
+            if viewModel.filteredApps.isEmpty {
+                AppEmptyState(
+                    icon: "square.grid.2x2",
+                    title: AppStoreConnectLocalization.string("No Apps"),
+                    description: viewModel.credentials.isComplete
+                        ? AppStoreConnectLocalization.string("Load apps from App Store Connect or adjust your search.")
+                        : AppStoreConnectLocalization.string("Configure API credentials on the Account page first.")
+                )
+            } else {
+                List(selection: Binding(
+                    get: { viewModel.selectedApp?.id },
+                    set: { id in
+                        if let id, let app = viewModel.apps.first(where: { $0.id == id }) {
+                            viewModel.selectApp(app)
+                        }
+                    }
+                )) {
+                    ForEach(viewModel.filteredApps) { app in
+                        AppStoreAppRow(app: app)
+                            .tag(app.id)
                     }
                 }
-            )) {
-                ForEach(viewModel.filteredApps) { app in
-                    AppStoreAppRow(app: app)
-                        .tag(app.id)
-                }
+                .listStyle(.inset)
             }
-            .listStyle(.inset)
         }
     }
 
@@ -768,7 +804,7 @@ private struct AppStoreAppPicker: View {
 
     private func appRow(_ app: AppStoreApp) -> some View {
         AppListRow(isSelected: viewModel.selectedApp?.id == app.id, action: {
-            viewModel.selectApp(app)
+            viewModel.selectApp(app, openVersions: true)
             onSelect()
         }) {
             HStack(spacing: 10) {
