@@ -231,6 +231,14 @@ final class SPMCompiler: Sendable {
                     guard isLinkInput(entry, excludingProductNames: previewedTargetName.map { [$0] } ?? []) else {
                         continue
                     }
+                    if isDependencyTargetObjectFile(
+                        entry,
+                        previewedTargetName: previewedTargetName,
+                        dependencyTargets: allowedTargets
+                    ) {
+                        inputs.append(entry.path)
+                        continue
+                    }
                     guard shouldLinkObjectFile(
                         entry,
                         packageDirectory: packageDirectory,
@@ -250,6 +258,14 @@ final class SPMCompiler: Sendable {
                     guard isLinkInput(entry, excludingProductNames: previewedTargetName.map { [$0] } ?? []) else {
                         continue
                     }
+                    if isDependencyTargetObjectFile(
+                        entry,
+                        previewedTargetName: previewedTargetName,
+                        dependencyTargets: allowedTargets
+                    ) {
+                        inputs.append(entry.path)
+                        continue
+                    }
                     guard shouldLinkObjectFile(
                         entry,
                         packageDirectory: packageDirectory,
@@ -265,6 +281,22 @@ final class SPMCompiler: Sendable {
 
     private static func sourceFileName(forObjectFile url: URL) -> String {
         url.lastPathComponent.replacingOccurrences(of: ".swift.o", with: ".swift")
+    }
+
+    private static func isDependencyTargetObjectFile(
+        _ objectFile: URL,
+        previewedTargetName: String?,
+        dependencyTargets: Set<String>?
+    ) -> Bool {
+        guard let previewedTargetName,
+              let dependencyTargets else {
+            return false
+        }
+
+        return dependencyTargets.contains { dependency in
+            dependency != previewedTargetName
+                && objectFile.path.contains("/\(dependency).build/")
+        }
     }
 
     private static func isSPMGeneratedLinkObject(_ objectFile: URL) -> Bool {

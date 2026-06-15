@@ -294,7 +294,38 @@ public extension LumiPreviewFacade {
                 inputs: swiftcInputs,
                 output: dylibURL
             )
+
+            // Ad-hoc sign the dylib so it can be loaded by the sandboxed host app.
+            // Without this, dlopen fails with "different Team IDs" on macOS.
+            try await adHocSign(dylibURL: dylibURL)
+
             return dylibURL
+        }
+
+        /// 对编译产物执行 ad-hoc 代码签名，使其能被宿主应用通过 dlopen 加载。
+        private func adHocSign(dylibURL: URL) async throws {
+            let process = Process()
+            process.launchPath = "/usr/bin/codesign"
+            process.arguments = [
+                "--force",
+                "--sign", "-",
+                "--timestamp=none",
+                dylibURL.path
+            ]
+            let stderrPipe = Pipe()
+            process.standardError = stderrPipe
+            process.standardOutput = Pipe()
+
+            try process.run()
+            await waitForExit(process)
+
+            guard process.terminationStatus == 0 else {
+                let stderr = String(
+                    data: stderrPipe.fileHandleForReading.readDataToEndOfFile(),
+                    encoding: .utf8
+                ) ?? ""
+                throw BuildError.swiftcFailed(stderr: "codesign failed: \(stderr)")
+            }
         }
 
         public func discoverPreviews(fileURL: URL, sourceText: String) -> [PreviewSummary] {
