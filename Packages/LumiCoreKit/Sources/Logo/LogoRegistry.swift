@@ -20,6 +20,9 @@ public final class LogoRegistry: ObservableObject {
     ///
     /// - Parameter items: 来自各插件的 Logo 贡献
     public func register(_ items: [LumiLogoItem]) {
-        bestItem = items.max(by: { $0.order < $1.order })
+        let newBest = items.max(by: { $0.order < $1.order })
+        Task { @MainActor [weak self] in
+            self?.bestItem = newBest
+        }
     }
 }
