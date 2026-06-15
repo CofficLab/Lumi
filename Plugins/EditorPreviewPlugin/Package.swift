@@ -42,11 +42,6 @@ let package = Package(
             resources: [
                 .process("Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "EditorPreviewPluginTests",
-            dependencies: ["EditorPreviewPlugin"],
-            path: "Tests"
         )
     ]
 )

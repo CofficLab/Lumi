@@ -105,7 +105,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             } else {
                 staticPreviewModeBadge
                 markdownTODOBadge
-                stringCatalogControls
+                stringCatalogInfoBadges
             }
 
             Spacer()
@@ -120,6 +120,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 statusBadge
 
                 entryDebugControls
+            } else {
+                stringCatalogActionButtons
             }
         }
         .padding(.horizontal, 12)
@@ -201,21 +203,28 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
     }
 
+    /// String Catalog 信息标签（纯展示，放在工具栏左侧）。
     @ViewBuilder
-    private var stringCatalogControls: some View {
+    private var stringCatalogInfoBadges: some View {
         if case .stringCatalog = viewModel.previewMode {
             if let catalog = currentStringCatalog {
-                let issues = catalog.translationIssues
-
-                if !issues.isEmpty {
-                    aiFixTranslationButton(issues: issues)
-                }
-
                 if catalog.staleEntryCount > 0 {
                     Label("\(catalog.staleEntryCount)", systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundStyle(.orange)
                         .help(LumiPluginLocalization.string("Stale String Catalog keys in the current file", bundle: .module))
+                }
+            }
+        }
+    }
+
+    /// String Catalog 操作按钮（放在工具栏右侧）。
+    @ViewBuilder
+    private var stringCatalogActionButtons: some View {
+        if case .stringCatalog = viewModel.previewMode {
+            if let catalog = currentStringCatalog {
+                if !catalog.translationIssues.isEmpty || catalog.staleEntryCount > 0 {
+                    aiFixStringCatalogButton(catalog: catalog)
                 }
 
                 Button {
@@ -253,44 +262,84 @@ public struct EditorPreviewDetailView: View, SuperLog {
     }
 
     @ViewBuilder
-    private func aiFixTranslationButton(issues: StringCatalog.TranslationIssuesSummary) -> some View {
+    private func aiFixStringCatalogButton(catalog: StringCatalog) -> some View {
+        let issueCount = catalog.translationIssues.totalCount + catalog.staleEntryCount
         Button {
-            sendFixTranslationMessage(issues: issues)
+            sendFixStringCatalogMessage(catalog: catalog)
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "sparkle")
-                Text("\(issues.totalCount)")
+                Text("\(issueCount)")
             }
             .font(.caption)
             .foregroundStyle(.purple)
         }
         .buttonStyle(.borderless)
-        .help(LumiPluginLocalization.string("Ask AI to fix translation issues", bundle: .module))
+        .help(LumiPluginLocalization.string("Ask AI to fix String Catalog issues", bundle: .module))
     }
 
-    private func sendFixTranslationMessage(issues: StringCatalog.TranslationIssuesSummary) {
+    private static let stringCatalogLLMMaxListedKeys = 15
+
+    private func sendFixStringCatalogMessage(catalog: StringCatalog) {
         guard let fileURL = currentFileURL else { return }
 
+        let issues = catalog.translationIssues
         let untranslated = issues.issues.filter { $0.kind == .untranslated }
         let missing = issues.issues.filter { $0.kind == .missing }
+        let staleKeys = catalog.staleEntryKeys
+        let hasTranslationIssues = !untranslated.isEmpty || !missing.isEmpty
+        let hasStaleEntries = !staleKeys.isEmpty
 
         var parts: [String] = []
-        parts.append("请修复文件 \(fileURL.path) 的翻译问题。")
+        if hasTranslationIssues && hasStaleEntries {
+            parts.append("请修复文件 \(fileURL.path) 的 String Catalog 问题（含翻译问题与废弃条目）。")
+        } else if hasStaleEntries {
+            parts.append("请处理文件 \(fileURL.path) 中的 String Catalog 废弃条目。")
+        } else {
+            parts.append("请修复文件 \(fileURL.path) 的翻译问题。")
+        }
 
         if !untranslated.isEmpty {
             let keys = Set(untranslated.map(\.key)).sorted()
-            parts.append("以下键值未翻译（翻译值与英文 key 相同）：\(keys.joined(separator: "、"))。")
+            parts.append("以下键值未翻译（翻译值与英文 key 相同）：\(Self.summarizedKeyList(keys))。")
         }
 
         if !missing.isEmpty {
             let keys = Set(missing.map(\.key)).sorted()
-            parts.append("以下键值缺少翻译：\(keys.joined(separator: "、"))。")
+            parts.append("以下键值缺少翻译：\(Self.summarizedKeyList(keys))。")
         }
 
-        parts.append("请将所有非源语言的翻译值替换为正确的中/繁体翻译，保持格式化字符串占位符不变。")
+        if hasStaleEntries {
+            if staleKeys.count <= Self.stringCatalogLLMMaxListedKeys {
+                parts.append(
+                    "以下键值为废弃条目（extractionState 为 stale，代码中可能已无引用），请直接删除，不要翻译：\(Self.summarizedKeyList(staleKeys))。"
+                )
+            } else {
+                parts.append(
+                    "当前文件有 \(staleKeys.count) 个废弃条目（extractionState 为 stale，代码中可能已无引用）。示例：\(Self.summarizedKeyList(staleKeys))。请批量删除所有 stale 条目，不要为它们补翻译。"
+                )
+            }
+        }
+
+        if hasTranslationIssues && hasStaleEntries {
+            parts.append("请补全翻译（保持格式化字符串占位符不变），并删除所有废弃条目。")
+        } else if hasTranslationIssues {
+            parts.append("请将所有非源语言的翻译值替换为正确的中/繁体翻译，保持格式化字符串占位符不变。")
+        } else {
+            parts.append("请删除所有废弃条目。")
+        }
 
         let message = parts.joined(separator: " ")
         EditorPreviewRuntimeBridge.addToChatHandler?(message, pluginContext)
+    }
+
+    private static func summarizedKeyList(_ keys: [String]) -> String {
+        guard !keys.isEmpty else { return "" }
+        if keys.count <= stringCatalogLLMMaxListedKeys {
+            return keys.joined(separator: "、")
+        }
+        let sample = keys.prefix(stringCatalogLLMMaxListedKeys).joined(separator: "、")
+        return "\(sample)…（共 \(keys.count) 个，此处仅列举前 \(stringCatalogLLMMaxListedKeys) 个）"
     }
 
     private var currentStringCatalog: StringCatalog? {
@@ -695,6 +744,37 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
     }
 
+    private func removeStaleStringCatalogEntry(key: String) {
+        guard let editorService else {
+            alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
+            return
+        }
+
+        do {
+            let removed = try viewModel.removeStaleStringCatalogEntry(
+                key: key,
+                fileURL: currentFileURL,
+                sourceText: sourceText,
+                editorService: editorService
+            )
+            if removed {
+                alert_success(
+                    String(
+                        format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
+                        1
+                    )
+                )
+            }
+        } catch {
+            alert_error(
+                String(
+                    format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
+                    error.localizedDescription
+                )
+            )
+        }
+    }
+
     @ViewBuilder
     private var statusBadge: some View {
         switch viewModel.status {
@@ -738,7 +818,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 )
                     .environmentObject(themeVM)
             case .stringCatalog:
-                EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
+                EditorPreviewStringCatalogContainer(
+                    sourceText: sourceText ?? "",
+                    onRemoveStaleEntry: removeStaleStringCatalogEntry
+                )
                     .environmentObject(themeVM)
             case .json:
                 EditorPreviewJSONView(jsonText: sourceText ?? "")
@@ -1388,6 +1471,7 @@ private struct EditorPreviewStringCatalogContainer: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     public let sourceText: String
+    public var onRemoveStaleEntry: ((String) -> Void)?
 
     public var body: some View {
         Group {
@@ -1399,7 +1483,10 @@ private struct EditorPreviewStringCatalogContainer: View {
             } else {
                 switch parseResult {
                 case let .success(catalog):
-                    EditorPreviewStringCatalogView(catalog: catalog)
+                    EditorPreviewStringCatalogView(
+                        catalog: catalog,
+                        onRemoveStaleEntry: onRemoveStaleEntry
+                    )
                         .environmentObject(themeVM)
                 case let .failure(error):
                     messageView(
@@ -1443,6 +1530,7 @@ private struct EditorPreviewStringCatalogView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     public let catalog: StringCatalog
+    public var onRemoveStaleEntry: ((String) -> Void)?
     @State private var selectedLanguageID: String?
 
     private var selectedLanguage: StringCatalog.Language {
@@ -1603,6 +1691,19 @@ private struct EditorPreviewStringCatalogView: View {
         .background(rowBackground(for: row))
         .overlay(alignment: .bottom) {
             Divider()
+        }
+        .contentShape(Rectangle())
+        .contextMenu {
+            if row.extractionState == "stale", let onRemoveStaleEntry {
+                Button(role: .destructive) {
+                    onRemoveStaleEntry(row.key)
+                } label: {
+                    Label(
+                        LumiPluginLocalization.string("Remove Stale Key", bundle: .module),
+                        systemImage: "trash"
+                    )
+                }
+            }
         }
     }
 

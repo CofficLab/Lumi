@@ -7,16 +7,17 @@
 
 import AppKit
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 
 extension TreeSitterClient {
     static func quickHighlight(
         string: String,
         theme: EditorTheme,
         font: NSFont,
-        language: CodeLanguage
+        language: EditorLanguageContext
     ) -> NSAttributedString? {
-        guard let parserLanguage = language.language, let query = TreeSitterModel.shared.query(for: language.id) else {
+        guard let parserLanguage = LanguageRegistry.shared.treeSitterLanguage(for: language),
+              let query = LanguageRegistry.shared.highlightQuery(for: language) else {
             return nil
         }
 

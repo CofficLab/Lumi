@@ -159,7 +159,7 @@ public final class EditorSettingsState: ObservableObject {
 
     /// 获取所有可用的语言 ID 列表
     public var availableLanguageIDs: [String] {
-        EditorLanguageID.all
+        _editorExtensionRegistry?.languageRegistry.availableLanguageIDs ?? []
     }
 
     /// 是否可以编辑作用域特定的覆盖设置

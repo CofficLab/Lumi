@@ -22,6 +22,7 @@ struct RootView<Content: View>: View {
                 dependencies.register(LumiEditorServicing.self, container.editorCoreService)
             }
         )
+        let _ = container.pluginService.registerPluginContributions(context: context)
         let overlays = container.pluginService.rootOverlays(context: context)
         overlays.reduce(AnyView(content)) { wrapped, overlay in
             overlay.apply(to: wrapped)

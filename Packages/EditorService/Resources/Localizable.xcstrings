@@ -12,28 +12,66 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : " cursors"
+            "value" : " 个光标"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : " cursors"
+            "value" : " 個游標"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : " cursors"
+            "value" : " 個游標"
           }
         }
       }
     },
     "%lld" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
     },
     "%lld%%" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        }
+      }
     },
     "Add Next Occurrence" : {
       "localizations" : {
@@ -46,19 +84,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Next Occurrence"
+            "value" : "添加下一个匹配项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Next Occurrence"
+            "value" : "加入下一個符合項目"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Next Occurrence"
+            "value" : "加入下一個符合項目"
           }
         }
       }
@@ -74,19 +112,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancel"
+            "value" : "取消"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancel"
+            "value" : "取消"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancel"
+            "value" : "取消"
           }
         }
       }
@@ -102,19 +140,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Additional Cursors"
+            "value" : "清除额外光标"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Additional Cursors"
+            "value" : "清除額外游標"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Additional Cursors"
+            "value" : "清除額外游標"
           }
         }
       }
@@ -130,19 +168,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Command Palette"
+            "value" : "命令面板"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Command Palette"
+            "value" : "命令面板"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Command Palette"
+            "value" : "命令面板"
           }
         }
       }
@@ -158,19 +196,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Down"
+            "value" : "向下复制行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Down"
+            "value" : "向下複製列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Down"
+            "value" : "向下複製列"
           }
         }
       }
@@ -186,19 +224,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Up"
+            "value" : "向上复制行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Up"
+            "value" : "向上複製列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy Line Up"
+            "value" : "向上複製列"
           }
         }
       }
@@ -214,19 +252,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document End"
+            "value" : "光标移至文档末尾"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document End"
+            "value" : "游標移至文件結尾"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document End"
+            "value" : "游標移至文件結尾"
           }
         }
       }
@@ -242,19 +280,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document Start"
+            "value" : "光标移至文档开头"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document Start"
+            "value" : "游標移至文件開頭"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Document Start"
+            "value" : "游標移至文件開頭"
           }
         }
       }
@@ -270,19 +308,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End"
+            "value" : "光标移至行尾"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End"
+            "value" : "游標移至列尾"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End"
+            "value" : "游標移至列尾"
           }
         }
       }
@@ -298,19 +336,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End Select"
+            "value" : "光标移至行尾并选择"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End Select"
+            "value" : "游標移至列尾並選取"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Line End Select"
+            "value" : "游標移至列尾並選取"
           }
         }
       }
@@ -326,19 +364,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Backward"
+            "value" : "光标移至上一段"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Backward"
+            "value" : "游標移至上一段"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Backward"
+            "value" : "游標移至上一段"
           }
         }
       }
@@ -354,19 +392,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Forward"
+            "value" : "光标移至下一段"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Forward"
+            "value" : "游標移至下一段"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Paragraph Forward"
+            "value" : "游標移至下一段"
           }
         }
       }
@@ -382,19 +420,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home"
+            "value" : "光标智能移至行首"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home"
+            "value" : "游標智慧移至列首"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home"
+            "value" : "游標智慧移至列首"
           }
         }
       }
@@ -410,19 +448,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home Select"
+            "value" : "光标智能移至行首并选择"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home Select"
+            "value" : "游標智慧移至列首並選取"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Smart Home Select"
+            "value" : "游標智慧移至列首並選取"
           }
         }
       }
@@ -438,19 +476,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left"
+            "value" : "光标左移一个单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left"
+            "value" : "游標左移一個字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left"
+            "value" : "游標左移一個字詞"
           }
         }
       }
@@ -466,19 +504,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left Select"
+            "value" : "光标左移并选择单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left Select"
+            "value" : "游標左移並選取字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Left Select"
+            "value" : "游標左移並選取字詞"
           }
         }
       }
@@ -494,19 +532,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right"
+            "value" : "光标右移一个单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right"
+            "value" : "游標右移一個字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right"
+            "value" : "游標右移一個字詞"
           }
         }
       }
@@ -522,19 +560,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right Select"
+            "value" : "光标右移并选择单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right Select"
+            "value" : "游標右移並選取字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cursor Word Right Select"
+            "value" : "游標右移並選取字詞"
           }
         }
       }
@@ -550,19 +588,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Line"
+            "value" : "删除行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Line"
+            "value" : "刪除列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Line"
+            "value" : "刪除列"
           }
         }
       }
@@ -578,19 +616,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Left"
+            "value" : "删除左侧单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Left"
+            "value" : "刪除左側字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Left"
+            "value" : "刪除左側字詞"
           }
         }
       }
@@ -606,19 +644,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Right"
+            "value" : "删除右侧单词"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Right"
+            "value" : "刪除右側字詞"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete Word Right"
+            "value" : "刪除右側字詞"
           }
         }
       }
@@ -634,19 +672,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editing..."
+            "value" : "编辑中…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editing..."
+            "value" : "編輯中…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editing..."
+            "value" : "編輯中…"
           }
         }
       }
@@ -662,19 +700,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a new symbol name:"
+            "value" : "输入新的符号名称："
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a new symbol name:"
+            "value" : "輸入新的符號名稱："
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter a new symbol name:"
+            "value" : "輸入新的符號名稱："
           }
         }
       }
@@ -690,19 +728,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File too large. Preview is truncated."
+            "value" : "文件过大，预览已截断。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File too large. Preview is truncated."
+            "value" : "文件過大，預覽已截斷。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File too large. Preview is truncated."
+            "value" : "文件過大，預覽已截斷。"
           }
         }
       }
@@ -718,19 +756,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find"
+            "value" : "查找"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find"
+            "value" : "搜尋"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find"
+            "value" : "搜尋"
           }
         }
       }
@@ -746,19 +784,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find All References"
+            "value" : "查找所有引用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find All References"
+            "value" : "搜尋所有引用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find All References"
+            "value" : "搜尋所有引用"
           }
         }
       }
@@ -774,19 +812,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Next"
+            "value" : "查找下一个"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Next"
+            "value" : "搜尋下一個"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Next"
+            "value" : "搜尋下一個"
           }
         }
       }
@@ -802,19 +840,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Previous"
+            "value" : "查找上一个"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Previous"
+            "value" : "搜尋上一個"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Previous"
+            "value" : "搜尋上一個"
           }
         }
       }
@@ -830,19 +868,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding declaration..."
+            "value" : "正在查找声明…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding declaration..."
+            "value" : "正在搜尋宣告…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding declaration..."
+            "value" : "正在搜尋宣告…"
           }
         }
       }
@@ -858,19 +896,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding definition..."
+            "value" : "正在查找定义…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding definition..."
+            "value" : "正在搜尋定義…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding definition..."
+            "value" : "正在搜尋定義…"
           }
         }
       }
@@ -886,19 +924,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding implementation..."
+            "value" : "正在查找实现…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding implementation..."
+            "value" : "正在搜尋實作…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding implementation..."
+            "value" : "正在搜尋實作…"
           }
         }
       }
@@ -914,19 +952,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding type definition..."
+            "value" : "正在查找类型定义…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding type definition..."
+            "value" : "正在搜尋型別定義…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding type definition..."
+            "value" : "正在搜尋型別定義…"
           }
         }
       }
@@ -942,19 +980,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold All"
+            "value" : "全部折叠"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold All"
+            "value" : "全部摺疊"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold All"
+            "value" : "全部摺疊"
           }
         }
       }
@@ -970,19 +1008,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Current Block"
+            "value" : "折叠当前块"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Current Block"
+            "value" : "摺疊目前區塊"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Current Block"
+            "value" : "摺疊目前區塊"
           }
         }
       }
@@ -998,19 +1036,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 1"
+            "value" : "折叠级别 1"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 1"
+            "value" : "摺疊層級 1"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 1"
+            "value" : "摺疊層級 1"
           }
         }
       }
@@ -1026,19 +1064,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 2"
+            "value" : "折叠级别 2"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 2"
+            "value" : "摺疊層級 2"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fold Level 2"
+            "value" : "摺疊層級 2"
           }
         }
       }
@@ -1054,19 +1092,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Format Document"
+            "value" : "格式化文档"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Format Document"
+            "value" : "格式化文件"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Format Document"
+            "value" : "格式化文件"
           }
         }
       }
@@ -1082,19 +1120,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Go to Symbol in Workspace"
+            "value" : "在工作区中转到符号"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Go to Symbol in Workspace"
+            "value" : "在工作區中移至符號"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Go to Symbol in Workspace"
+            "value" : "在工作區中移至符號"
           }
         }
       }
@@ -1110,19 +1148,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Above"
+            "value" : "在上方插入行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Above"
+            "value" : "在上方插入列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Above"
+            "value" : "在上方插入列"
           }
         }
       }
@@ -1138,19 +1176,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Below"
+            "value" : "在下方插入行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Below"
+            "value" : "在下方插入列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert Line Below"
+            "value" : "在下方插入列"
           }
         }
       }
@@ -1166,19 +1204,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Down"
+            "value" : "向下移动行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Down"
+            "value" : "向下移動列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Down"
+            "value" : "向下移動列"
           }
         }
       }
@@ -1194,19 +1232,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Up"
+            "value" : "向上移动行"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Up"
+            "value" : "向上移動列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move Line Up"
+            "value" : "向上移動列"
           }
         }
       }
@@ -1222,19 +1260,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New name"
+            "value" : "新名称"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New name"
+            "value" : "新名稱"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New name"
+            "value" : "新名稱"
           }
         }
       }
@@ -1250,19 +1288,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Changes"
+            "value" : "无更改"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Changes"
+            "value" : "無變更"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Changes"
+            "value" : "無變更"
           }
         }
       }
@@ -1278,19 +1316,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No declaration found"
+            "value" : "未找到声明"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No declaration found"
+            "value" : "找不到宣告"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No declaration found"
+            "value" : "找不到宣告"
           }
         }
       }
@@ -1306,19 +1344,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No definition found"
+            "value" : "未找到定义"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No definition found"
+            "value" : "找不到定義"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No definition found"
+            "value" : "找不到定義"
           }
         }
       }
@@ -1334,19 +1372,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No implementation found"
+            "value" : "未找到实现"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No implementation found"
+            "value" : "找不到實作"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No implementation found"
+            "value" : "找不到實作"
           }
         }
       }
@@ -1362,19 +1400,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No type definition found"
+            "value" : "未找到类型定义"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No type definition found"
+            "value" : "找不到型別定義"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No type definition found"
+            "value" : "找不到型別定義"
           }
         }
       }
@@ -1390,19 +1428,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "确定"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "確定"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "確定"
           }
         }
       }
@@ -1418,19 +1456,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Editors"
+            "value" : "已打开的编辑器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Editors"
+            "value" : "已開啟的編輯器"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Editors"
+            "value" : "已開啟的編輯器"
           }
         }
       }
@@ -1446,19 +1484,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "打开搜索编辑器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "開啟搜尋編輯器"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Search Editor"
+            "value" : "開啟搜尋編輯器"
           }
         }
       }
@@ -1474,19 +1512,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outline"
+            "value" : "大纲"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outline"
+            "value" : "大綱"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outline"
+            "value" : "大綱"
           }
         }
       }
@@ -1502,19 +1540,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek Definition"
+            "value" : "查看定义"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek Definition"
+            "value" : "檢視定義"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek Definition"
+            "value" : "檢視定義"
           }
         }
       }
@@ -1530,19 +1568,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek References"
+            "value" : "查看引用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek References"
+            "value" : "檢視引用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peek References"
+            "value" : "檢視引用"
           }
         }
       }
@@ -1558,19 +1596,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Fix"
+            "value" : "快速修复"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Fix"
+            "value" : "快速修正"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Fix"
+            "value" : "快速修正"
           }
         }
       }
@@ -1586,19 +1624,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redo"
+            "value" : "重做"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redo"
+            "value" : "重做"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redo"
+            "value" : "重做"
           }
         }
       }
@@ -1614,19 +1652,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence"
+            "value" : "移除最后一个匹配项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence"
+            "value" : "移除最後一個符合項目"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence"
+            "value" : "移除最後一個符合項目"
           }
         }
       }
@@ -1642,19 +1680,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence Selection"
+            "value" : "移除最后一个匹配项选择"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence Selection"
+            "value" : "移除最後一個符合項目選取"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove Last Occurrence Selection"
+            "value" : "移除最後一個符合項目選取"
           }
         }
       }
@@ -1670,19 +1708,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename"
+            "value" : "重命名"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename"
+            "value" : "重新命名"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename"
+            "value" : "重新命名"
           }
         }
       }
@@ -1698,19 +1736,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename cancelled"
+            "value" : "重命名已取消"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename cancelled"
+            "value" : "重新命名已取消"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename cancelled"
+            "value" : "重新命名已取消"
           }
         }
       }
@@ -1726,19 +1764,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename completed, updated files:"
+            "value" : "重命名完成，已更新文件："
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename completed, updated files:"
+            "value" : "重新命名完成，已更新文件："
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename completed, updated files:"
+            "value" : "重新命名完成，已更新文件："
           }
         }
       }
@@ -1754,19 +1792,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename failed"
+            "value" : "重命名失败"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename failed"
+            "value" : "重新命名失敗"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename failed"
+            "value" : "重新命名失敗"
           }
         }
       }
@@ -1782,19 +1820,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename not applied"
+            "value" : "未应用重命名"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename not applied"
+            "value" : "未套用重新命名"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename not applied"
+            "value" : "未套用重新命名"
           }
         }
       }
@@ -1810,19 +1848,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename Symbol"
+            "value" : "重命名符号"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename Symbol"
+            "value" : "重新命名符號"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rename Symbol"
+            "value" : "重新命名符號"
           }
         }
       }
@@ -1838,19 +1876,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Renaming symbol..."
+            "value" : "正在重命名符号…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Renaming symbol..."
+            "value" : "正在重新命名符號…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Renaming symbol..."
+            "value" : "正在重新命名符號…"
           }
         }
       }
@@ -1866,19 +1904,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace"
+            "value" : "替换"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace"
+            "value" : "取代"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace"
+            "value" : "取代"
           }
         }
       }
@@ -1894,19 +1932,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace All"
+            "value" : "全部替换"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace All"
+            "value" : "全部取代"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Replace All"
+            "value" : "全部取代"
           }
         }
       }
@@ -1922,19 +1960,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save"
+            "value" : "保存"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save"
+            "value" : "儲存"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save"
+            "value" : "儲存"
           }
         }
       }
@@ -1950,19 +1988,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saved"
+            "value" : "已保存"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saved"
+            "value" : "已儲存"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saved"
+            "value" : "已儲存"
           }
         }
       }
@@ -1978,19 +2016,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saving..."
+            "value" : "正在保存…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saving..."
+            "value" : "正在儲存…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saving..."
+            "value" : "正在儲存…"
           }
         }
       }
@@ -2006,19 +2044,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in Files"
+            "value" : "在文件中搜索"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in Files"
+            "value" : "在文件中搜尋"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search in Files"
+            "value" : "在文件中搜尋"
           }
         }
       }
@@ -2034,19 +2072,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select All Occurrences"
+            "value" : "选择所有匹配项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select All Occurrences"
+            "value" : "選取所有符合項目"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select All Occurrences"
+            "value" : "選取所有符合項目"
           }
         }
       }
@@ -2062,19 +2100,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show Call Hierarchy"
+            "value" : "显示调用层次结构"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show Call Hierarchy"
+            "value" : "顯示呼叫階層"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show Call Hierarchy"
+            "value" : "顯示呼叫階層"
           }
         }
       }
@@ -2090,19 +2128,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Ascending"
+            "value" : "行升序排序"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Ascending"
+            "value" : "列遞增排序"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Ascending"
+            "value" : "列遞增排序"
           }
         }
       }
@@ -2118,19 +2156,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Descending"
+            "value" : "行降序排序"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Descending"
+            "value" : "列遞減排序"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort Lines Descending"
+            "value" : "列遞減排序"
           }
         }
       }
@@ -2146,19 +2184,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toggle Line Comment"
+            "value" : "切换行注释"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toggle Line Comment"
+            "value" : "切換列註解"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toggle Line Comment"
+            "value" : "切換列註解"
           }
         }
       }
@@ -2174,19 +2212,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transpose Characters"
+            "value" : "交换字符"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transpose Characters"
+            "value" : "交換字元"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transpose Characters"
+            "value" : "交換字元"
           }
         }
       }
@@ -2202,19 +2240,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Completion"
+            "value" : "触发补全"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Completion"
+            "value" : "觸發自動完成"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Completion"
+            "value" : "觸發自動完成"
           }
         }
       }
@@ -2230,19 +2268,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Parameter Hints"
+            "value" : "触发参数提示"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Parameter Hints"
+            "value" : "觸發參數提示"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trigger Parameter Hints"
+            "value" : "觸發參數提示"
           }
         }
       }
@@ -2258,19 +2296,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Undo"
+            "value" : "撤销"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Undo"
+            "value" : "復原"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Undo"
+            "value" : "復原"
           }
         }
       }
@@ -2286,19 +2324,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold All"
+            "value" : "全部展开"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold All"
+            "value" : "全部展開"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold All"
+            "value" : "全部展開"
           }
         }
       }
@@ -2314,19 +2352,19 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold Current Block"
+            "value" : "展开当前块"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold Current Block"
+            "value" : "展開目前區塊"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold Current Block"
+            "value" : "展開目前區塊"
           }
         }
       }

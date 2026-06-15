@@ -38,6 +38,11 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         findWorkspace(in: directory) != nil
     }
 
+    /// 从 `.xcscheme` 文件快速发现 scheme 名称。
+    public static func discoverSchemeNames(at projectLikeURL: URL) -> [String] {
+        XcodeSchemeDiscovery.discoverSchemeNames(at: projectLikeURL)
+    }
+
     // MARK: - 项目解析
 
     /// 解析一个 workspace / project，返回完整的上下文
@@ -125,6 +130,44 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         )
 
         return workspaceContext
+    }
+
+    /// 基于 `.xcscheme` 文件构建占位 workspace，供 UI 在 `xcodebuild -list` 完成前快速展示。
+    static func makePlaceholderWorkspaceContext(
+        workspaceURL: URL,
+        schemeNames: [String]
+    ) -> XcodeWorkspaceContext {
+        let name = workspaceURL.deletingPathExtension().lastPathComponent
+        let uniqueSchemes = uniquePreservingOrder(schemeNames)
+        let schemeContexts = uniqueSchemes.map { schemeName in
+            XcodeSchemeContext(
+                id: schemeName,
+                name: schemeName,
+                buildableTargets: [],
+                defaultConfiguration: "Debug",
+                activeConfiguration: "Debug"
+            )
+        }
+        let defaultConfigurations = [
+            XcodeBuildConfigurationContext(id: "Debug", name: "Debug"),
+            XcodeBuildConfigurationContext(id: "Release", name: "Release"),
+        ]
+        let projectContext = XcodeProjectContext(
+            id: workspaceURL.path,
+            name: name,
+            path: workspaceURL,
+            targets: [],
+            buildConfigurations: defaultConfigurations,
+            schemes: schemeContexts
+        )
+        return XcodeWorkspaceContext(
+            id: workspaceURL.path,
+            name: name,
+            path: workspaceURL,
+            projects: [projectContext],
+            schemes: schemeContexts,
+            activeScheme: nil
+        )
     }
 
     /// 解析 scheme 列表
@@ -247,7 +290,7 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         }
     }
 
-    static func uniquePreservingOrder(_ values: [String]) -> [String] {
+    public static func uniquePreservingOrder(_ values: [String]) -> [String] {
         var seen: Set<String> = []
         var result: [String] = []
         for value in values where seen.insert(value).inserted {

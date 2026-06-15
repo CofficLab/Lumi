@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 import EditorTextView
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 import OSLog
 
 /// This class manages fetching syntax highlights from providers, and applying those styles to the editor.
@@ -59,12 +59,17 @@ import OSLog
 /// +-------------------------------+
 /// ```
 ///
+public enum LanguageTransitionPolicy {
+    case preserveAttributesUntilReplace
+    case clearAll
+}
+
 @MainActor
 class Highlighter: NSObject {
     static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
 
     /// The current language of the editor.
-    private var language: CodeLanguage
+    private var language: EditorLanguageContext
 
     /// The text view to highlight
     private weak var textView: TextView?
@@ -90,6 +95,8 @@ class Highlighter: NSObject {
     /// Flag to track if visible range has actually changed
     private var lastVisibleRange: NSRange?
 
+    private var treeSitterStateObserver: NSObjectProtocol?
+
     // MARK: - Init
 
     init(
@@ -97,7 +104,7 @@ class Highlighter: NSObject {
         minimapView: MinimapView?,
         providers: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
-        language: CodeLanguage
+        language: EditorLanguageContext
     ) {
         self.language = language
         self.textView = textView
@@ -124,6 +131,14 @@ class Highlighter: NSObject {
                 language: language
             )
         }
+
+        treeSitterStateObserver = NotificationCenter.default.addObserver(
+            forName: TreeSitterClient.Constants.stateDidUpdate,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.invalidate()
+        }
     }
 
     // MARK: - Public
@@ -140,18 +155,48 @@ class Highlighter: NSObject {
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
-    public func setLanguage(language: CodeLanguage) {
+    public func setLanguage(
+        language: EditorLanguageContext,
+        policy: LanguageTransitionPolicy = .preserveAttributesUntilReplace
+    ) {
         guard let textView = self.textView else { return }
 
-        // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
-        // something immediately.
-        textView.textStorage.setAttributes(
-            attributeProvider?.attributesFor(nil) ?? [:],
-            range: NSRange(location: 0, length: textView.textStorage.length)
-        )
-        textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+        self.language = language
+
+        if policy == .clearAll {
+            textView.textStorage.setAttributes(
+                attributeProvider?.attributesFor(nil) ?? [:],
+                range: NSRange(location: 0, length: textView.textStorage.length)
+            )
+            textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+            highlightProviders.forEach { $0.invalidate() }
+        }
 
         highlightProviders.forEach { $0.setLanguage(language: language) }
+    }
+
+    public func exportSnapshot(highlightRevision: Int, key: DocumentHighlightKey) -> DocumentHighlightSnapshot? {
+        guard let providerState = highlightProviders.first else { return nil }
+        let runs = styleContainer.exportHighlightRanges(providerId: providerState.id)
+        guard !runs.isEmpty else { return nil }
+        return DocumentHighlightSnapshot(key: key, highlightRevision: highlightRevision, runs: runs)
+    }
+
+    public func markSnapshotRestored(
+        key: DocumentHighlightKey,
+        content: String,
+        highlightRevision: Int,
+        runs: [HighlightRange]? = nil
+    ) {
+        guard key.matches(content: content) else { return }
+        let restoredRuns = runs ?? styleContainer.exportHighlightRanges(providerId: highlightProviders.first?.id ?? 0)
+        guard !restoredRuns.isEmpty else { return }
+        let snapshot = DocumentHighlightSnapshot(
+            key: key,
+            highlightRevision: highlightRevision,
+            runs: restoredRuns
+        )
+        highlightProviders.forEach { $0.restore(snapshot: snapshot) }
     }
 
     /// Updates the highlight providers the highlighter is using, removing any that don't appear in the given array,
@@ -217,6 +262,9 @@ class Highlighter: NSObject {
     }
 
     deinit {
+        if let treeSitterStateObserver {
+            NotificationCenter.default.removeObserver(treeSitterStateObserver)
+        }
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProviders = []

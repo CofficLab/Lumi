@@ -1,3 +1,4 @@
+import AgentToolKit
 import EditorService
 import LumiCoreKit
 import LumiUI
@@ -26,6 +27,11 @@ public actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     public nonisolated var instanceLabel: String { Self.id }
     public static let shared = EditorPreviewPlugin()
+
+    @MainActor
+    public func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [CleanStringCatalogTool(), InspectStringCatalogTool()]
+    }
 
     @MainActor
     public func configureRuntime(context: PluginRuntimeContext) {

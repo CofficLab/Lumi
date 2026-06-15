@@ -57,6 +57,7 @@ import RegistryManagerPlugin
 import AppStoreConnectPlugin
 import TerminalPlugin
 import MenuBarManagerPlugin
+import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import AppUpdateStatusBarPlugin
 import AppLoadedPluginsPlugin
@@ -99,7 +100,7 @@ import CodeReviewPlugin
 import AgentDelayMessagePlugin
 import AppIconDesignerPlugin
 import EditorPanelPlugin
-import EditorXcodePlugin
+import EditorSwiftPlugin
 import EditorBreadcrumbNavPlugin
 import EditorTabStripPlugin
 import EditorStickySymbolBarPlugin
@@ -120,6 +121,8 @@ import EditorRailCallHierarchyPlugin
 import LLMAvailabilityPlugin
 import ConversationNewPlugin
 import DisplayControlPlugin
+import LogoSmartLightPlugin
+import LogoCofficPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -146,6 +149,7 @@ public enum LumiPluginRegistry {
         ThemeDraculaPlugin.self,
         ThemeStatusBarPlugin.self,
         OnboardingPlugin.self,
+        QuickFileSearchPlugin.self,
         QuickLauncherPlugin.self,
         AppUpdateStatusBarPlugin.self,
         DeviceInfoPlugin.self,
@@ -209,7 +213,7 @@ public enum LumiPluginRegistry {
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
         EditorPanelPlugin.self,
-        EditorXcodePlugin.self,
+        EditorSwiftPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         EditorTabStripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,
@@ -247,6 +251,8 @@ public enum LumiPluginRegistry {
         DelayMessagePlugin.self,
         LLMAvailabilityPlugin.self,
         AppIconDesignerPlugin.self,
-        DisplayControlPlugin.self
+        DisplayControlPlugin.self,
+        LogoSmartLightPlugin.self,
+        LogoCofficPlugin.self
     ]
 }

@@ -186,4 +186,35 @@ struct StringCatalogTranslationIssuesTests {
         let issues = catalog.translationIssues
         #expect(issues.isEmpty)
     }
+
+    @Test
+    func listsStaleEntryKeysSorted() throws {
+        let catalog = try StringCatalogParser.parse("""
+        {
+          "sourceLanguage": "en",
+          "strings": {
+            "Beta": {
+              "extractionState": "stale",
+              "localizations": {
+                "en": { "stringUnit": { "state": "translated", "value": "Beta" } }
+              }
+            },
+            "Alpha": {
+              "extractionState": "stale",
+              "localizations": {
+                "en": { "stringUnit": { "state": "translated", "value": "Alpha" } }
+              }
+            },
+            "Live": {
+              "localizations": {
+                "en": { "stringUnit": { "state": "translated", "value": "Live" } }
+              }
+            }
+          }
+        }
+        """, locale: Locale(identifier: "en"))
+
+        #expect(catalog.staleEntryKeys == ["Alpha", "Beta"])
+        #expect(catalog.staleEntryCount == 2)
+    }
 }

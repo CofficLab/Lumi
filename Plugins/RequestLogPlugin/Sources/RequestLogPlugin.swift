@@ -11,7 +11,7 @@ public enum RequestLogPlugin: LumiPlugin {
     )
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .agent
-    public static let iconName = "doc.text.magnifyingglass"
+    public static let iconName = "list.clipboard.fill"
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import EditorLanguages
+import EditorLanguageRuntime
 import EditorTextView
 import OSLog
 
@@ -83,7 +83,7 @@ class HighlightProviderState {
         highlightProvider: HighlightProviding,
         textView: TextView,
         visibleRangeProvider: VisibleRangeProvider,
-        language: CodeLanguage
+        language: EditorLanguageContext
     ) {
         self.id = id
         self.delegate = delegate
@@ -94,10 +94,18 @@ class HighlightProviderState {
         highlightProvider.setUp(textView: textView, codeLanguage: language)
     }
 
-    func setLanguage(language: CodeLanguage) {
+    func setLanguage(language: EditorLanguageContext) {
         guard let textView else { return }
         highlightProvider?.setUp(textView: textView, codeLanguage: language)
-        invalidate()
+    }
+
+    func restore(snapshot: DocumentHighlightSnapshot) {
+        pendingSet.removeAll()
+        validSet.removeAll()
+        for run in snapshot.runs {
+            guard run.range.location != NSNotFound, run.range.length > 0 else { continue }
+            validSet.insert(integersIn: run.range)
+        }
     }
 
     /// Invalidates all pending and valid ranges, resetting the provider.
@@ -191,10 +199,10 @@ private extension HighlightProviderState {
                 guard let rangeToHighlight = self.currentDocumentRange(for: range), !rangeToHighlight.isEmpty else {
                     return
                 }
-                self.validSet.insert(range: rangeToHighlight)
 
                 switch result {
                 case .success(let highlights):
+                    self.validSet.insert(range: rangeToHighlight)
                     self.delegate?.applyHighlightResult(
                         provider: providerId,
                         highlights: self.clampedHighlights(highlights, to: rangeToHighlight),

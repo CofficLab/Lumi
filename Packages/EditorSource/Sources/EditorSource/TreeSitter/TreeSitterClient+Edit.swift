@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 
 extension TreeSitterClient {
     /// Applies the given edit to the current state and calls the editState's completion handler.
@@ -29,7 +29,7 @@ extension TreeSitterClient {
         for (idx, layer) in state.layers.enumerated().reversed() {
             if Task.isCancelled { return IndexSet() }
 
-            if layer.id != state.primaryLayer.id {
+            if layer.id != state.primaryLayer.highlightLanguageId {
                 applyEditTo(layer: layer, edits: edits)
 
                 if layer.ranges.isEmpty {

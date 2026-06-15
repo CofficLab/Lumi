@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftTreeSitter
 
 // Functions for querying and navigating the tree-sitter node tree. These functions should throw if not able to be
@@ -14,13 +14,13 @@ import SwiftTreeSitter
 
 extension TreeSitterClient {
     public struct NodeResult {
-        let id: TreeSitterLanguage
+        let id: String
         let language: Language
         public let node: Node
     }
 
     public struct QueryResult {
-        let id: TreeSitterLanguage
+        let id: String
         let cursor: ResolvingQueryMatchSequence<QueryCursor>
     }
 
@@ -105,7 +105,7 @@ extension TreeSitterClient {
     ///   - query: The query to perform.
     ///   - matchingLanguages: A set of languages to limit the query to. Leave empty to not filter out any layers.
     /// - Returns: Any matching nodes from the query.
-    public func query(_ query: Query, matchingLanguages: Set<TreeSitterLanguage> = []) throws -> [QueryResult] {
+    public func query(_ query: Query, matchingLanguages: Set<String> = []) throws -> [QueryResult] {
         try executor.execSync({
             guard let readCallback = self.readCallback else { return [] }
             var result: [QueryResult] = []
@@ -126,7 +126,7 @@ extension TreeSitterClient {
     ///   - query: The query to perform.
     ///   - matchingLanguages: A set of languages to limit the query to. Leave empty to not filter out any layers.
     /// - Returns: Any matching nodes from the query.
-    public func query(_ query: Query, matchingLanguages: Set<TreeSitterLanguage> = []) async throws -> [QueryResult] {
+    public func query(_ query: Query, matchingLanguages: Set<String> = []) async throws -> [QueryResult] {
         try await executor.exec {
             guard let readCallback = self.readCallback else { return [] }
             var result: [QueryResult] = []

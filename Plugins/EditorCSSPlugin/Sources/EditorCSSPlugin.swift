@@ -18,6 +18,12 @@ public actor EditorCSSPlugin: SuperPlugin {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorCSSPluginDescriptor.css)
+        registry.registerLanguage(EditorCSSPluginDescriptor.scss)
+        registry.registerLanguage(EditorCSSPluginDescriptor.sass)
+        registry.registerLanguage(EditorCSSPluginDescriptor.less)
+        registry.registerGrammarProvider(EditorCSSPluginGrammarProvider())
+
         registry.registerCompletionContributor(CSSCompletionContributor())
         registry.registerHoverContributor(CSSHoverContributor())
     }

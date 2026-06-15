@@ -28,10 +28,10 @@ extension TextViewController {
 
     /// Returns a `TextualIndenter` based on available language configuration.
     private func getTextIndenter() -> TextualIndenter {
-        switch language.id {
-        case .python:
+        switch language.languageId {
+        case "python":
             return TextualIndenter(patterns: TextualIndenter.pythonPatterns)
-        case .ruby:
+        case "ruby":
             return TextualIndenter(patterns: TextualIndenter.rubyPatterns)
         default:
             return TextualIndenter(patterns: TextualIndenter.basicPatterns)
@@ -75,7 +75,7 @@ extension TextViewController {
     }
 
     private func setUpTagFilter() {
-        guard let treeSitterClient, language.id.shouldProcessTags() else { return }
+        guard let treeSitterClient, language.highlightLanguageId.shouldProcessTags() else { return }
         textFilters.append(TagFilter(
             language: self.language,
             indentOption: configuration.behavior.indentOption,

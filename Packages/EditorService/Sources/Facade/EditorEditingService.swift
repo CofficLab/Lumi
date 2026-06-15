@@ -11,7 +11,7 @@ public final class EditorEditingService {
     public var cursorLine: Int { state.cursorLine }
     public var cursorColumn: Int { state.cursorColumn }
     var totalLines: Int { state.totalLines }
-    public var detectedLanguage: CodeLanguage? { state.detectedLanguage }
+    public var detectedLanguage: EditorLanguageContext? { state.detectedLanguage }
     var canUndo: Bool { state.canUndo }
     var canRedo: Bool { state.canRedo }
     var multiCursorState: MultiCursorState { state.multiCursorState }

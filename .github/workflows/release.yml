@@ -191,24 +191,6 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Restore EditorLanguages Framework
-        id: codeedit-languages-cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            Packages/EditorLanguages/CodeLanguagesContainer.xcframework
-            Packages/EditorLanguages/CodeLanguagesContainer.xcframework.zip
-          key: ${{ runner.os }}-xcode-26.3-codeedit-languages-${{ hashFiles('Packages/EditorLanguages/Package.resolved', 'Packages/EditorLanguages/CodeLanguages-Container/CodeLanguages-Container.xcodeproj/project.pbxproj', 'Packages/EditorLanguages/build_framework.sh') }}
-
-      - name: Build EditorLanguages Framework
-        if: steps.codeedit-languages-cache.outputs.cache-hit != 'true'
-        run: |
-          cd Packages/EditorLanguages
-          ./build_framework.sh
-
-      - name: Check EditorLanguages Framework
-        run: .github/scripts/check-codeedit-languages-framework.sh
-
       - name: Cache SPM Packages
         id: spm-cache
         uses: actions/cache@v5
@@ -574,8 +556,15 @@ jobs:
           if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
             NOTES="## Release ${{ env.tag }}\n\nInitial release"
           else
-            NOTES="## Release ${{ env.tag }}\n\n### Changes since v$PREVIOUS_TAG\n"
-            NOTES="$NOTES\n$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' | sort | uniq | head -20)"
+            CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
+              | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
+              | grep -Ev '^- 👷 CI:' \
+              | sort -u \
+              | head -20)
+            if [ -z "$CHANGES" ]; then
+              CHANGES="- Maintenance and stability improvements"
+            fi
+            NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
           fi
 
           echo -e "$NOTES" > changelog.md

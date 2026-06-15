@@ -127,6 +127,9 @@ public struct StatusBarHoverContainer<Content: View, Detail: View>: View {
             view.popover(isPresented: $isPresented, arrowEdge: arrowEdge) {
                 popoverContent
             }
+            .onChange(of: coordinator.visibleID) { _, newValue in
+                isPresented = newValue == id
+            }
         } else {
             view
         }

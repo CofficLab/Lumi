@@ -7,7 +7,7 @@
 
 import AppKit
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 import SwiftUI
 import Combine
 import TextFormation
@@ -65,8 +65,8 @@ public class TextViewController: NSViewController {
         }
     }
 
-    /// The associated `CodeLanguage`
-    public var language: CodeLanguage {
+    /// The associated `EditorLanguageContext`
+    public var language: EditorLanguageContext {
         didSet {
             highlighter?.setLanguage(language: language)
             setUpTextFormation()
@@ -172,6 +172,24 @@ public class TextViewController: NSViewController {
 
     var highlighter: Highlighter?
 
+    public func exportHighlightSnapshot(highlightRevision: Int, key: DocumentHighlightKey) -> DocumentHighlightSnapshot? {
+        highlighter?.exportSnapshot(highlightRevision: highlightRevision, key: key)
+    }
+
+    public func restoreHighlightSnapshot(
+        key: DocumentHighlightKey,
+        content: String,
+        highlightRevision: Int,
+        runs: [HighlightRange]? = nil
+    ) {
+        highlighter?.markSnapshotRestored(
+            key: key,
+            content: content,
+            highlightRevision: highlightRevision,
+            runs: runs
+        )
+    }
+
     /// The tree sitter client managed by the source editor.
     ///
     /// This will be `nil` if another highlighter provider is passed to the source editor.
@@ -208,7 +226,7 @@ public class TextViewController: NSViewController {
 
     public init(
         string: String,
-        language: CodeLanguage,
+        language: EditorLanguageContext,
         configuration: SourceEditorConfiguration,
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],

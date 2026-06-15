@@ -3,16 +3,16 @@ import SwiftUI
 import AppKit
 import EditorSource
 import EditorTextView
-import EditorLanguages
+import EditorLanguageRuntime
 
 @MainActor
 public struct SourceEditorAdapter {
     public init() {}
 
-    public func resolvedLanguage(for state: EditorState) -> CodeLanguage {
+    public func resolvedLanguage(for state: EditorState) -> EditorLanguageContext {
         state.detectedLanguage
-            ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" }
-            ?? CodeLanguage.allLanguages[0]
+            ?? LanguageRegistry.shared.context(for: "swift")
+            ?? .plainText
     }
 
     public func activeHighlightProviders(

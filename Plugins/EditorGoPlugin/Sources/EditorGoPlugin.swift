@@ -48,6 +48,22 @@ public actor EditorGoPlugin: SuperPlugin, SuperLog {
 
     @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         guard let registry = registry as? EditorExtensionRegistry else { return }
+        registry.registerLanguage(EditorGoPluginDescriptor.go)
+        registry.registerLanguage(EditorGoPluginDescriptor.goMod)
+        registry.registerGrammarProvider(EditorGoGrammarProvider())
+        registry.registerGrammarProvider(EditorGoModGrammarProvider())
+
+        if let config = GoLSPConfig.resolve() {
+            LSPConfig.registerServerProvider(for: "go") {
+                LSPConfig.ServerConfig(
+                    languageId: "go",
+                    execPath: config.goplsPath,
+                    arguments: config.serverArguments,
+                    env: config.processEnvironment
+                )
+            }
+        }
+
         let buildManager = GoBuildManager()
         let testManager = GoTestManager()
         registry.registerLanguageIntegrationCapability(

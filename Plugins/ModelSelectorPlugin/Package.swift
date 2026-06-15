@@ -24,6 +24,7 @@ let package = Package(
             name: "ModelSelectorPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],

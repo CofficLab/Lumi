@@ -23,6 +23,7 @@ struct PanelBottomView: View {
             SplitViewHeightPersistence(
                 storageKey: LayoutStorageKey.bottomPanelHeight(viewContainerID: viewContainerID)
             )
+            .id(layoutState.bottomPanelFocusGeneration)
         }
         .onAppear {
             ensureValidSelection()

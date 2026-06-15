@@ -1,5 +1,6 @@
 import Foundation
 import LanguageServerProtocol
+import EditorLanguageRuntime
 
 /// Pure LSP action policies shared by host apps.
 public enum EditorLSPActionPolicy {
@@ -10,43 +11,9 @@ public enum EditorLSPActionPolicy {
         case findingImplementation
     }
 
+    @MainActor
     public static func languageID(forFileExtension ext: String) -> String? {
-        let mapping: [String: String] = [
-            "swift": "swift",
-            "py": "python",
-            "js": "javascript",
-            "ts": "typescript",
-            "jsx": "javascript",
-            "tsx": "typescript",
-            "astro": "typescript",
-            "vue": "typescript",
-            "svelte": "typescript",
-            "rs": "rust",
-            "go": "go",
-            "c": "c",
-            "cpp": "cpp",
-            "h": "c",
-            "hpp": "cpp",
-            "m": "objective-c",
-            "mm": "objective-cpp",
-            "rb": "ruby",
-            "java": "java",
-            "kt": "kotlin",
-            "php": "php",
-            "sh": "bash",
-            "json": "json",
-            "yaml": "yaml",
-            "yml": "yaml",
-            "xml": "xml",
-            "html": "html",
-            "css": "css",
-            "scss": "scss",
-            "sass": "sass",
-            "less": "less",
-            "md": "markdown",
-            "sql": "sql"
-        ]
-        return mapping[ext.lowercased()]
+        LanguageRegistry.shared.lspLanguageId(forExtension: ext)
     }
 
     public static func statusMessageKey(for kind: EditorLSPActionJumpKind) -> StatusMessageKey {

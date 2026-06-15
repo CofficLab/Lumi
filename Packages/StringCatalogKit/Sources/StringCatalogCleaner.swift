@@ -31,6 +31,32 @@ public enum StringCatalogCleaner {
         }
         root["strings"] = strings
 
+        return try StringCatalogCleanResult(
+            source: serializeCatalogRoot(root),
+            removedCount: staleKeys.count
+        )
+    }
+
+    public static func removingStaleEntry(withKey key: String, from source: String) throws -> StringCatalogCleanResult {
+        let data = Data(source.utf8)
+        let object = try JSONSerialization.jsonObject(with: data)
+        guard var root = object as? [String: Any],
+              var strings = root["strings"] as? [String: Any],
+              let entry = strings[key] as? [String: Any],
+              entry["extractionState"] as? String == "stale" else {
+            return StringCatalogCleanResult(source: source, removedCount: 0)
+        }
+
+        strings.removeValue(forKey: key)
+        root["strings"] = strings
+
+        return try StringCatalogCleanResult(
+            source: serializeCatalogRoot(root),
+            removedCount: 1
+        )
+    }
+
+    private static func serializeCatalogRoot(_ root: [String: Any]) throws -> String {
         let outputData = try JSONSerialization.data(
             withJSONObject: root,
             options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -39,7 +65,6 @@ public enum StringCatalogCleaner {
         if !output.hasSuffix("\n") {
             output.append("\n")
         }
-
-        return StringCatalogCleanResult(source: output, removedCount: staleKeys.count)
+        return output
     }
 }

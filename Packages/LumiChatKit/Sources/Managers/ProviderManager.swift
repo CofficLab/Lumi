@@ -51,9 +51,11 @@ final class ProviderManager {
 
         if let conversationID,
            let index = service.conversations.firstIndex(where: { $0.id == conversationID }) {
-            service.conversations[index].providerID = info.id
-            service.conversations[index].modelName = normalized
-            service.conversations[index].updatedAt = Date()
+            var conversations = service.conversations
+            conversations[index].providerID = info.id
+            conversations[index].modelName = normalized
+            conversations[index].updatedAt = Date()
+            service.conversations = conversations
         }
 
         service.persist()

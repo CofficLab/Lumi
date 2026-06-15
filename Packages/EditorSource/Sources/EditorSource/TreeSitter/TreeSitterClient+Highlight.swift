@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftTreeSitter
-import EditorLanguages
+import EditorLanguageRuntime
 
 extension TreeSitterClient {
     func queryHighlightsForRange(range: NSRange) -> [HighlightRange] {
@@ -16,7 +16,7 @@ extension TreeSitterClient {
         var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
 
-        for layer in state.layers where layer.id != state.primaryLayer.id {
+        for layer in state.layers where layer.id != state.primaryLayer.highlightLanguageId {
             // Query injected only if a layer's ranges intersects with `range`
             for layerRange in layer.ranges {
                 if let rangeIntersection = range.intersection(layerRange) {
@@ -40,7 +40,17 @@ extension TreeSitterClient {
             highlights.append(contentsOf: queryResult)
         }
 
-        return highlights
+        return HighlightRangeOverlapResolver.resolveOverlaps(
+            highlights.enumerated().map { index, highlight in
+                HighlightRangeOverlapResolver.PrioritizedHighlight(
+                    range: highlight.range,
+                    capture: highlight.capture,
+                    modifiers: highlight.modifiers,
+                    priority: index
+                )
+            },
+            in: range
+        )
     }
 
     /// Queries the given language layer for any highlights.
@@ -68,13 +78,23 @@ extension TreeSitterClient {
         var highlights: [HighlightRange] = []
 
         // See https://github.com/CodeEditApp/CodeEditSourceEditor/pull/228
-        if layer.id == .jsdoc {
+        if layer.id == "jsdoc" {
             highlights.append(HighlightRange(range: range, capture: .comment))
         }
 
         highlights += highlightsFromCursor(cursor: queryCursor, includedRange: range)
 
-        return highlights
+        return HighlightRangeOverlapResolver.resolveOverlaps(
+            highlights.enumerated().map { index, highlight in
+                HighlightRangeOverlapResolver.PrioritizedHighlight(
+                    range: highlight.range,
+                    capture: highlight.capture,
+                    modifiers: highlight.modifiers,
+                    priority: index
+                )
+            },
+            in: range
+        )
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
@@ -88,34 +108,21 @@ extension TreeSitterClient {
         includedRange: NSRange
     ) -> [HighlightRange] {
         guard let readCallback else { return [] }
-        var ranges: [NSRange: Int] = [:]
-        return cursor
-            .resolve(with: .init(textProvider: readCallback)) // Resolve our cursor against the query
+        let prioritized = cursor
+            .resolve(with: .init(textProvider: readCallback))
             .flatMap { $0.captures }
-            .reversed() // SwiftTreeSitter returns captures in the reverse order of what we need to filter with.
-            .compactMap { capture in
-                let range = capture.range
-                let index = capture.index
-
-                // Lower indexed captures are favored over higher, this is why we reverse it above
-                if let existingLevel = ranges[range], existingLevel <= index {
-                    return nil
-                }
-
+            .compactMap { capture -> HighlightRangeOverlapResolver.PrioritizedHighlight? in
                 guard let captureName = CaptureName.fromString(capture.name) else {
                     return nil
                 }
-
-                // Update the filter level to the current index since it's lower and a 'valid' capture
-                ranges[range] = index
-
-                // Validate range and capture name
-                let intersectionRange = range.intersection(includedRange) ?? .zero
-                guard intersectionRange.length > 0 else {
-                    return nil
-                }
-
-                return HighlightRange(range: intersectionRange, capture: captureName)
+                return HighlightRangeOverlapResolver.PrioritizedHighlight(
+                    range: capture.range,
+                    capture: captureName,
+                    modifiers: [],
+                    priority: capture.index
+                )
             }
+
+        return HighlightRangeOverlapResolver.resolveOverlaps(prioritized, in: includedRange)
     }
 }

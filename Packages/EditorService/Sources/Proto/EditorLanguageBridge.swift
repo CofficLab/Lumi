@@ -1,1 +1,1 @@
-@_exported @preconcurrency import EditorLanguages
+@_exported @preconcurrency import EditorLanguageRuntime

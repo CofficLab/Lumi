@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import EditorLanguages
+import EditorLanguageRuntime
 import EditorKernel
 import LanguageServerProtocol
 
@@ -12,7 +12,7 @@ import LanguageServerProtocol
 /// ## 职责范围
 /// - 文件 URL、内容（NSTextStorage）、文件名/扩展名
 /// - 文件类型检测（文本/二进制、是否可编辑/截断）
-/// - 语言检测（CodeLanguage）
+/// - 语言检测（EditorLanguageContext）
 /// - 编辑状态（未保存变更、保存状态）
 /// - 文件总行数
 ///
@@ -36,7 +36,7 @@ final class EditorFileState: ObservableObject {
     @Published var fileExtension: String = ""
 
     /// 检测到的语言
-    @Published var detectedLanguage: CodeLanguage?
+    @Published var detectedLanguage: EditorLanguageContext?
 
     // MARK: - 文件类型
 
