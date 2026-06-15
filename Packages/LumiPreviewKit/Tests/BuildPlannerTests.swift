@@ -22,7 +22,7 @@ struct BuildPlannerTests {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("Sources/LumiPreviewKit/Scanner/LumiPreviewFacade.PreviewScanner.swift")
+            .appendingPathComponent("Sources/Scanner/PreviewScanner.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(packageDirectory, targetName) = result else {
@@ -37,14 +37,16 @@ struct BuildPlannerTests {
     func planLumiUIPackage() {
         let planner = LumiPreviewFacade.BuildPlanner()
         // 通过 #filePath 向上推导到 Lumi 根目录，再定位 LumiUI
-        let lumiRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()  // LumiPreviewKitTests
-            .deletingLastPathComponent()  // Tests
-            .deletingLastPathComponent()  // LumiPreviewKit
-            .deletingLastPathComponent()  // Packages
-            .deletingLastPathComponent()  // Lumi (root)
-        let fileURL = lumiRoot
-            .appendingPathComponent("Packages/LumiUI/Sources/LumiUI/DesignSystem/ColorTokens.swift")
+        let packagesRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let packageDirectory = packagesRoot.appendingPathComponent("LumiUI")
+        let fileURL = packageDirectory.appendingPathComponent("Sources/Components/AppAvatar.swift")
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            Issue.record("LumiUI fixture is unavailable at \(fileURL.path)")
+            return
+        }
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(packageDirectory, targetName) = result else {
@@ -53,6 +55,13 @@ struct BuildPlannerTests {
         }
         #expect(packageDirectory.lastPathComponent == "LumiUI")
         #expect(targetName == "LumiUI")
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            packageDirectory: packageDirectory,
+            targetName: targetName
+        )
+        #expect(sources.contains(fileURL.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(sources.count > 1, "LumiUI target should expose multiple Swift sources for preview inlining")
     }
 
     @Test("LumiPreviewHostApp 可执行 target 能被正确识别")

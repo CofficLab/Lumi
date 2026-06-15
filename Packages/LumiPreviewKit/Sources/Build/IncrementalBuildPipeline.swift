@@ -919,12 +919,14 @@ public extension LumiPreviewFacade {
         /// produces "'module' is inaccessible due to 'internal' protection level".
         private static func replaceBundleModuleReferences(in lines: inout [String]) {
             for index in lines.indices {
-                if lines[index].contains("Bundle.module") {
-                    lines[index] = lines[index].replacingOccurrences(
-                        of: "Bundle.module",
-                        with: "Bundle.main"
-                    )
+                var line = lines[index]
+                if line.contains("Bundle.module") {
+                    line = line.replacingOccurrences(of: "Bundle.module", with: "Bundle.main")
                 }
+                if line.contains("bundle: .module") {
+                    line = line.replacingOccurrences(of: "bundle: .module", with: "bundle: .main")
+                }
+                lines[index] = line
             }
         }
 

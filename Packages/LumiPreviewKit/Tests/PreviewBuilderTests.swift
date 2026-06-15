@@ -305,7 +305,7 @@ final class PreviewBuilderTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         let previewFileURL = repositoryRoot
-            .appendingPathComponent("LumiUI/Sources/LumiUI/Components/AppButton.swift")
+            .appendingPathComponent("Packages/LumiUI/Sources/Components/AppAvatar.swift")
         guard FileManager.default.fileExists(atPath: previewFileURL.path) else {
             throw XCTSkip("LumiUI real package fixture is unavailable at \(previewFileURL.path)")
         }
@@ -330,7 +330,7 @@ final class PreviewBuilderTests: XCTestCase {
         }
 
         XCTAssertFalse(result.usedCache)
-        XCTAssertEqual(result.primaryTitle, "Preview 1")
+        XCTAssertEqual(result.primaryTitle, "AppAvatar")
         XCTAssertTrue(FileManager.default.fileExists(atPath: result.dylibURL.path))
 
         guard let handle = dlopen(result.dylibURL.path, RTLD_NOW | RTLD_LOCAL) else {

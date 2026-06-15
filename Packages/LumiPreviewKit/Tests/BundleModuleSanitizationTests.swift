@@ -207,6 +207,98 @@ struct BundleModuleSanitizationTests {
         )
     }
 
+    @Test("SPM target with path . and sources Sources inlines sibling files for preview entry")
+    func lumiUILikePackageLayoutInlinesAllTargetSources() async throws {
+        let packageDirectory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let sourcesDirectory = packageDirectory.appendingPathComponent("Sources", isDirectory: true)
+        let supportDirectory = sourcesDirectory.appendingPathComponent("Support", isDirectory: true)
+        let componentsDirectory = sourcesDirectory.appendingPathComponent("Components", isDirectory: true)
+        try FileManager.default.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: componentsDirectory, withIntermediateDirectories: true)
+
+        let sharedSourceURL = supportDirectory.appendingPathComponent("SharedTokens.swift")
+        try """
+        enum SharedTokens {
+            static let radius = 8
+        }
+        """.write(to: sharedSourceURL, atomically: true, encoding: .utf8)
+
+        let previewSourceURL = componentsDirectory.appendingPathComponent("SharedPreviewView.swift")
+        try """
+        import SwiftUI
+
+        struct SharedPreviewView: View {
+            var body: some View {
+                RoundedRectangle(cornerRadius: CGFloat(SharedTokens.radius))
+                    .frame(width: 80, height: 40)
+            }
+        }
+
+        #Preview("Shared Preview") {
+            SharedPreviewView()
+        }
+        """.write(to: previewSourceURL, atomically: true, encoding: .utf8)
+
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "LumiUILikeFixture",
+            platforms: [.macOS(.v14)],
+            targets: [
+                .target(
+                    name: "LumiUILikeFixture",
+                    path: ".",
+                    sources: ["Sources"]
+                )
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+
+        try runSwiftBuild(packageDirectory: packageDirectory, targetName: "LumiUILikeFixture")
+
+        let sourceText = try String(contentsOf: previewSourceURL, encoding: .utf8)
+        let discovery = try #require(
+            LumiPreviewFacade.PreviewScanner()
+                .scan(fileURL: previewSourceURL, sourceText: sourceText)
+                .first
+        )
+
+        let entryURL = try await LumiPreviewFacade.PreviewEntryBuilder().buildEntry(
+            for: discovery,
+            configuration: .empty,
+            buildStrategy: .spm(
+                packageDirectory: packageDirectory,
+                targetName: "LumiUILikeFixture"
+            ),
+            forceSourceInclude: true
+        )
+
+        let targetSourcesDirectory = entryURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("TargetSources", isDirectory: true)
+        let inlinedSources = try FileManager.default.contentsOfDirectory(
+            at: targetSourcesDirectory,
+            includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "swift" }
+
+        #expect(inlinedSources.count >= 2)
+        #expect(inlinedSources.contains { $0.lastPathComponent.hasSuffix(sharedSourceURL.lastPathComponent) })
+        #expect(inlinedSources.contains { $0.lastPathComponent.hasSuffix(previewSourceURL.lastPathComponent) })
+
+        guard let handle = dlopen(entryURL.path, RTLD_NOW | RTLD_LOCAL) else {
+            let message = dlerror().map { String(cString: $0) } ?? "unknown dlopen error"
+            Issue.record("Failed to open preview entry dylib: \(message)")
+            return
+        }
+        defer { dlclose(handle) }
+
+        #expect(dlsym(handle, LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName) != nil)
+    }
+
     private func runSwiftBuild(packageDirectory: URL, targetName: String) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")

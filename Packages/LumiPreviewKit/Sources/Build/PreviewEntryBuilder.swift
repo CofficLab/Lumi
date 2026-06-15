@@ -86,13 +86,22 @@ final class PreviewEntryBuilder: Sendable {
         buildStrategy: BuildStrategy? = nil,
         forceSourceInclude: Bool = false
     ) async throws -> URL {
+        let inlinedTargetSourceURLs = sourceFiles(
+            for: discovery,
+            buildStrategy: buildStrategy,
+            forceSourceInclude: forceSourceInclude
+        )
         let generatedSources = try viewEntrySources(
             for: discovery,
             configuration: configuration,
             buildStrategy: buildStrategy,
-            forceSourceInclude: forceSourceInclude
+            forceSourceInclude: forceSourceInclude,
+            inlinedTargetSourceURLs: inlinedTargetSourceURLs
         )
-        let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
+        let compilerArguments = try await viewEntryCompilerArguments(
+            for: buildStrategy,
+            inliningTargetSources: !inlinedTargetSourceURLs.isEmpty
+        )
         let fingerprint = Self.fingerprint(
             discovery: discovery,
             configuration: configuration,
@@ -171,7 +180,10 @@ final class PreviewEntryBuilder: Sendable {
             .joined()
     }
 
-    private func viewEntryCompilerArguments(for buildStrategy: BuildStrategy?) async throws -> [String] {
+    private func viewEntryCompilerArguments(
+        for buildStrategy: BuildStrategy?,
+        inliningTargetSources: Bool = false
+    ) async throws -> [String] {
         var arguments: [String]
         switch buildStrategy {
         case .spm(let packageDirectory, let targetName):
@@ -179,6 +191,12 @@ final class PreviewEntryBuilder: Sendable {
                 packageDirectory: packageDirectory,
                 targetName: targetName
             )
+            if inliningTargetSources {
+                arguments = Self.filterDependencyOnlyLinkInputs(
+                    arguments,
+                    previewedTargetName: targetName
+                )
+            }
         case .xcode(let projectURL, let scheme, let configuration):
             arguments = try await xcodeCompiler.previewCompilerArguments(
                 projectURL: projectURL,
@@ -192,6 +210,22 @@ final class PreviewEntryBuilder: Sendable {
         return arguments
     }
 
+    /// When target sources are compiled into the preview entry, drop link inputs
+    /// from the previewed target itself to avoid duplicate symbols. Dependency
+    /// target objects (for example `LumiCoreKit`) must remain linked.
+    private static func filterDependencyOnlyLinkInputs(
+        _ arguments: [String],
+        previewedTargetName: String
+    ) -> [String] {
+        let excludedBuildComponent = "/\(previewedTargetName).build/"
+        return arguments.filter { argument in
+            guard argument.hasSuffix(".o") || argument.hasSuffix(".a") else {
+                return true
+            }
+            return !argument.contains(excludedBuildComponent)
+        }
+    }
+
     private struct GeneratedSource {
         let fileName: String
         let content: String
@@ -201,9 +235,10 @@ final class PreviewEntryBuilder: Sendable {
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
         buildStrategy: BuildStrategy?,
-        forceSourceInclude: Bool = false
+        forceSourceInclude: Bool = false,
+        inlinedTargetSourceURLs: [URL]? = nil
     ) throws -> [GeneratedSource] {
-        let targetSourceURLs = sourceFiles(
+        let targetSourceURLs = inlinedTargetSourceURLs ?? sourceFiles(
             for: discovery,
             buildStrategy: buildStrategy,
             forceSourceInclude: forceSourceInclude
@@ -381,26 +416,12 @@ final class PreviewEntryBuilder: Sendable {
         targetName: String,
         currentSourceURL: URL
     ) -> [URL] {
-        let targetDirectory = packageDirectory
-            .appendingPathComponent("Sources", isDirectory: true)
-            .appendingPathComponent(targetName, isDirectory: true)
-        guard let enumerator = FileManager.default.enumerator(
-            at: targetDirectory,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return [currentSourceURL]
-        }
-
-        var sourceURLs: [URL] = []
-        for case let url as URL in enumerator where url.pathExtension == "swift" {
-            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
-            if values?.isRegularFile != false {
-                sourceURLs.append(url)
-            }
-        }
+        let sourceURLs = BuildPlanner.swiftSourceFiles(
+            packageDirectory: packageDirectory,
+            targetName: targetName
+        )
         if sourceURLs.isEmpty {
-            sourceURLs.append(currentSourceURL)
+            return [currentSourceURL]
         }
         return sourceURLs
     }
@@ -506,12 +527,14 @@ final class PreviewEntryBuilder: Sendable {
     /// produces "'module' is inaccessible due to 'internal' protection level".
     private static func replaceBundleModuleReferences(in lines: inout [String]) {
         for index in lines.indices {
-            if lines[index].contains("Bundle.module") {
-                lines[index] = lines[index].replacingOccurrences(
-                    of: "Bundle.module",
-                    with: "Bundle.main"
-                )
+            var line = lines[index]
+            if line.contains("Bundle.module") {
+                line = line.replacingOccurrences(of: "Bundle.module", with: "Bundle.main")
             }
+            if line.contains("bundle: .module") {
+                line = line.replacingOccurrences(of: "bundle: .module", with: "bundle: .main")
+            }
+            lines[index] = line
         }
     }
 
