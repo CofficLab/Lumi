@@ -454,6 +454,119 @@ struct PluginAppStoreConnectTests {
     }
 
     @Test
+    func connectCacheExpiresEntriesAfterTTL() {
+        let cache = ConnectCache(ttl: 10, maxEntries: 8)
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        cache.set("key", data: Data("value".utf8), now: now)
+        #expect(cache.get("key", now: now.addingTimeInterval(5)) != nil)
+        #expect(cache.get("key", now: now.addingTimeInterval(11)) == nil)
+    }
+
+    @Test
+    func connectCacheEvictsOldestEntryAtCapacity() {
+        let cache = ConnectCache(ttl: 60, maxEntries: 2)
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        let t1 = t0.addingTimeInterval(1)
+        let t2 = t0.addingTimeInterval(2)
+
+        cache.set("a", data: Data("a".utf8), now: t0)
+        cache.set("b", data: Data("b".utf8), now: t1)
+        cache.set("c", data: Data("c".utf8), now: t2)
+
+        #expect(cache.get("a", now: t2) == nil)
+        #expect(cache.get("b", now: t2) != nil)
+        #expect(cache.get("c", now: t2) != nil)
+    }
+
+    @Test
+    func connectClientReusesCachedGETResponses() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var count = 0
+        }
+        let counter = RequestCounter()
+        let response = """
+        {
+          "data": [{
+            "id": "app-1",
+            "type": "apps",
+            "attributes": {
+              "name": "Lumi",
+              "bundleId": "com.coffic.lumi",
+              "sku": "LUMI",
+              "primaryLocale": "en-US",
+              "platform": "IOS"
+            }
+          }]
+        }
+        """.data(using: .utf8)!
+        let session = MockURLProtocol.makeSession { _ in
+            counter.count += 1
+            return (200, response)
+        }
+        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let credentials = AppStoreConnectCredentials(
+            issuerID: "issuer-test",
+            keyID: "ABC123DEFG",
+            privateKey: P256.Signing.PrivateKey().pemRepresentation
+        )
+        let client = ConnectClient(
+            credentialsProvider: { credentials },
+            session: session,
+            cache: cache
+        )
+
+        _ = try await client.listApps(limit: 1)
+        _ = try await client.listApps(limit: 1)
+
+        #expect(counter.count == 1)
+    }
+
+    @Test
+    func connectClientBypassesCacheWhenNetworkOnly() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var count = 0
+        }
+        let counter = RequestCounter()
+        let response = """
+        {
+          "data": [{
+            "id": "app-1",
+            "type": "apps",
+            "attributes": {
+              "name": "Lumi",
+              "bundleId": "com.coffic.lumi",
+              "sku": "LUMI",
+              "primaryLocale": "en-US",
+              "platform": "IOS"
+            }
+          }]
+        }
+        """.data(using: .utf8)!
+        let session = MockURLProtocol.makeSession { _ in
+            counter.count += 1
+            return (200, response)
+        }
+        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let credentials = AppStoreConnectCredentials(
+            issuerID: "issuer-test",
+            keyID: "ABC123DEFG",
+            privateKey: P256.Signing.PrivateKey().pemRepresentation
+        )
+        let client = ConnectClient(
+            credentialsProvider: { credentials },
+            session: session,
+            cache: cache
+        )
+
+        _ = try await client.listApps(limit: 1)
+        client.fetchPolicy = .networkOnly
+        _ = try await client.listApps(limit: 1)
+
+        #expect(counter.count == 2)
+    }
+
+    @Test
     func clientRejectsMissingCredentialsBeforeSendingRequest() async throws {
         let session = MockURLProtocol.makeSession { _ in
             Issue.record("Request should not be sent when credentials are incomplete")

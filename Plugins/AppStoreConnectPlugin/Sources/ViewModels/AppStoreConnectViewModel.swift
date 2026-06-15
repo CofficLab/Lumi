@@ -127,10 +127,12 @@ final class AppStoreConnectViewModel: ObservableObject {
         connectionStatus = credentials.isComplete
             ? AppStoreConnectLocalization.string("Credentials configured")
             : AppStoreConnectLocalization.string("Credentials incomplete")
+        client.invalidateCache()
     }
 
     func disconnect() {
         credentialStore.clear()
+        client.invalidateCache()
         credentials = AppStoreConnectCredentials(issuerID: "", keyID: "", privateKey: "")
         hasStoredPrivateKey = false
         connectionStatus = AppStoreConnectLocalization.string("Not connected")
@@ -148,9 +150,38 @@ final class AppStoreConnectViewModel: ObservableObject {
     }
 
     func testConnection() async {
-        await runBusy {
+        await runBusy(forceRefresh: true) {
             try await client.testConnection()
             connectionStatus = AppStoreConnectLocalization.string("Connected")
+        }
+    }
+
+    func refreshCurrentPage() async {
+        await runBusy(forceRefresh: true) {
+            switch page {
+            case .account:
+                try await client.testConnection()
+                connectionStatus = AppStoreConnectLocalization.string("Connected")
+            case .apps:
+                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                apps = try await client.listApps(search: query.isEmpty ? nil : query)
+                connectionStatus = AppStoreConnectLocalization.string("Connected")
+            case .versions:
+                guard let app = selectedApp else { return }
+                versions = try await client.listVersions(appID: app.id)
+            case .metadata:
+                try await reloadLocalizationsFromNetwork()
+            case .screenshots:
+                try await reloadScreenshotSetsFromNetwork()
+            case .xcodeCloud:
+                if selectedCiWorkflow != nil {
+                    try await reloadSelectedCiWorkflowDetailFromNetwork()
+                } else if selectedCiProduct != nil {
+                    try await reloadCiWorkflowsFromNetwork()
+                } else {
+                    try await reloadCiProductsFromNetwork()
+                }
+            }
         }
     }
 
@@ -285,9 +316,9 @@ final class AppStoreConnectViewModel: ObservableObject {
         }
     }
 
-    func loadScreenshotSets() async {
+    func loadScreenshotSets(forceRefresh: Bool = false) async {
         guard let localizationID = selectedLocalizationID else { return }
-        await runBusy {
+        await runBusy(forceRefresh: forceRefresh) {
             try await applyScreenshotPayload(
                 try await client.loadScreenshotSets(localizationID: localizationID)
             )
@@ -310,8 +341,8 @@ final class AppStoreConnectViewModel: ObservableObject {
         screenshots = loaded
     }
 
-    func reloadScreenshotsForSelectedDisplayType() async {
-        await runBusy {
+    func reloadScreenshotsForSelectedDisplayType(forceRefresh: Bool = false) async {
+        await runBusy(forceRefresh: forceRefresh) {
             alignSelectedScreenshotDisplayType()
             try await loadScreenshots()
         }
@@ -532,15 +563,78 @@ final class AppStoreConnectViewModel: ObservableObject {
         ciWorkflowExportJSON = value
     }
 
-    private func runBusy(_ operation: () async throws -> Void) async {
+    private func runBusy(forceRefresh: Bool = false, _ operation: () async throws -> Void) async {
         isBusy = true
         errorMessage = nil
-        defer { isBusy = false }
+        let previousPolicy = client.fetchPolicy
+        if forceRefresh {
+            client.fetchPolicy = .networkOnly
+        }
+        defer {
+            client.fetchPolicy = previousPolicy
+            isBusy = false
+        }
         do {
             try await operation()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func reloadLocalizationsFromNetwork() async throws {
+        guard let version = selectedVersion else { return }
+        let preferredLocalizationID = selectedLocalizationID
+        localizations = try await client.listLocalizations(versionID: version.id)
+        if let preferredLocalizationID,
+           localizations.contains(where: { $0.id == preferredLocalizationID }) {
+            selectedLocalizationID = preferredLocalizationID
+        } else if let primaryLocale = selectedApp?.primaryLocale,
+                  let match = localizations.first(where: { $0.locale == primaryLocale }) {
+            selectedLocalizationID = match.id
+        } else {
+            selectedLocalizationID = localizations.first?.id
+        }
+        editedLocalization = localizations.first { $0.id == selectedLocalizationID }
+        metadataIsDirty = false
+        if let localizationID = selectedLocalizationID {
+            try await applyScreenshotPayload(
+                try await client.loadScreenshotSets(localizationID: localizationID)
+            )
+        }
+    }
+
+    private func reloadScreenshotSetsFromNetwork() async throws {
+        guard let localizationID = selectedLocalizationID else { return }
+        try await applyScreenshotPayload(
+            try await client.loadScreenshotSets(localizationID: localizationID)
+        )
+    }
+
+    private func reloadCiProductsFromNetwork() async throws {
+        ciProducts = try await client.listCiProducts()
+        selectBestCiProduct()
+        if selectedCiProduct != nil {
+            try await reloadCiWorkflowsFromNetwork()
+        }
+    }
+
+    private func reloadCiWorkflowsFromNetwork() async throws {
+        guard let product = selectedCiProduct else { return }
+        ciWorkflows = try await client.listCiWorkflows(productID: product.id)
+        if let current = selectedCiWorkflow,
+           !ciWorkflows.contains(where: { $0.id == current.id }) {
+            selectedCiWorkflow = ciWorkflows.first
+        }
+        updateCiWorkflowExportJSON()
+    }
+
+    private func reloadSelectedCiWorkflowDetailFromNetwork() async throws {
+        guard let workflow = selectedCiWorkflow else { return }
+        let detail = try await client.readCiWorkflow(id: workflow.id)
+        selectedCiWorkflowDetail = detail
+        replaceCiWorkflow(detail)
+        ciBuildRuns = try await client.listCiBuildRuns(workflowID: detail.id)
+        updateCiWorkflowExportJSON()
     }
 }
 

@@ -157,35 +157,12 @@ struct MainView: View {
             Spacer()
 
             AppButton(AppStoreConnectLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                Task { await refreshCurrentPage() }
+                Task { await viewModel.refreshCurrentPage() }
             }
             .disabled(!viewModel.credentials.isComplete || viewModel.isBusy)
         }
         .font(.caption)
         .padding(.horizontal)
         .frame(height: 44)
-    }
-
-    private func refreshCurrentPage() async {
-        switch viewModel.page {
-        case .account:
-            await viewModel.testConnection()
-        case .apps:
-            await viewModel.loadApps()
-        case .versions:
-            await viewModel.loadVersions()
-        case .metadata:
-            await viewModel.loadLocalizations()
-        case .screenshots:
-            await viewModel.loadScreenshotSets()
-        case .xcodeCloud:
-            if viewModel.selectedCiWorkflow != nil {
-                await viewModel.loadSelectedCiWorkflowDetail()
-            } else if viewModel.selectedCiProduct != nil {
-                await viewModel.loadCiWorkflows()
-            } else {
-                await viewModel.loadCiProducts()
-            }
-        }
     }
 }

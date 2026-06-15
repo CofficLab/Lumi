@@ -28,13 +28,21 @@ final class ConnectClient: @unchecked Sendable {
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
     private let session: URLSession
+    private let cache: ConnectCache
+    var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
         credentialsProvider: @escaping @Sendable () -> AppStoreConnectCredentials,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        cache: ConnectCache = .shared
     ) {
         self.credentialsProvider = credentialsProvider
         self.session = session
+        self.cache = cache
+    }
+
+    func invalidateCache() {
+        cache.clear()
     }
 
     func testConnection() async throws {
@@ -260,6 +268,11 @@ final class ConnectClient: @unchecked Sendable {
             throw AppStoreConnectClientError.invalidURL
         }
 
+        let cacheKey = makeCacheKey(method: method, path: path, queryItems: queryItems)
+        if method == "GET", fetchPolicy == .cacheFirst, let cached = cache.get(cacheKey) {
+            return try decodeResponse(cached)
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
@@ -278,9 +291,29 @@ final class ConnectClient: @unchecked Sendable {
             throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: httpResponse.statusCode))
         }
 
+        if method == "GET" {
+            cache.set(cacheKey, data: data)
+        } else {
+            cache.clear()
+        }
+
+        return try decodeResponse(data)
+    }
+
+    private func decodeResponse<T: Decodable>(_ data: Data) throws -> T {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(T.self, from: data)
+    }
+
+    private func makeCacheKey(method: String, path: String, queryItems: [URLQueryItem]) -> String {
+        let credentials = credentialsProvider()
+        let account = "\(credentials.issuerID)|\(credentials.keyID)"
+        let query = queryItems
+            .sorted { $0.name == $1.name ? ($0.value ?? "") < ($1.value ?? "") : $0.name < $1.name }
+            .map { "\($0.name)=\($0.value ?? "")" }
+            .joined(separator: "&")
+        return "\(account)|\(method)|\(path)|\(query)"
     }
 
     private func apiErrorMessage(from data: Data, statusCode: Int) -> String {

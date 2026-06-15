@@ -74,7 +74,7 @@ struct ScreenshotsPage: View {
                 title: AppStoreConnectLocalization.string("Failed to Load Screenshot Sets"),
                 description: error,
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
-                action: { Task { await viewModel.loadScreenshotSets() } }
+                action: { Task { await viewModel.loadScreenshotSets(forceRefresh: true) } }
             )
         } else if viewModel.screenshotSets.isEmpty, !hasScreenshotContent {
             AppEmptyState(
@@ -82,7 +82,7 @@ struct ScreenshotsPage: View {
                 title: AppStoreConnectLocalization.string("No Screenshot Sets"),
                 description: AppStoreConnectLocalization.string("Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type."),
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
-                action: { Task { await viewModel.loadScreenshotSets() } }
+                action: { Task { await viewModel.loadScreenshotSets(forceRefresh: true) } }
             )
         } else if viewModel.selectedScreenshotSet == nil, !hasScreenshotContent {
             AppEmptyState(
@@ -98,7 +98,7 @@ struct ScreenshotsPage: View {
                 title: AppStoreConnectLocalization.string("No Screenshots"),
                 description: AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."),
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
-                action: { Task { await viewModel.reloadScreenshotsForSelectedDisplayType() } }
+                action: { Task { await viewModel.reloadScreenshotsForSelectedDisplayType(forceRefresh: true) } }
             )
         } else {
             VStack(spacing: 0) {
@@ -109,7 +109,7 @@ struct ScreenshotsPage: View {
                             HStack {
                                 Spacer()
                                 AppButton(AppStoreConnectLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                                    Task { await viewModel.loadScreenshotSets() }
+                                    Task { await viewModel.loadScreenshotSets(forceRefresh: true) }
                                 }
                                 .disabled(viewModel.isBusy)
                             }
