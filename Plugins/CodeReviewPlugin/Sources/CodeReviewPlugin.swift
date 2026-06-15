@@ -17,4 +17,9 @@ public enum CodeReviewPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [RunReviewTool().asLumiAgentTool()]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(CodeReviewAboutView())
+    }
 }

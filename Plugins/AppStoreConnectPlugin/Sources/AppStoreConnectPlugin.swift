@@ -45,6 +45,11 @@ public enum AppStoreConnectPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(AppStoreConnectAboutView())
+    }
 }
 
 enum AppStoreConnectLocalization {

@@ -18,4 +18,9 @@ public enum ProjectIssueScannerPlugin: LumiPlugin {
         bootstrapFromLumiCoreIfNeeded()
         return [IssueHintChatMiddleware()]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(ProjectIssueScannerAboutView())
+    }
 }

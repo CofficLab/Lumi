@@ -28,6 +28,11 @@ public enum DockerManagerPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(DockerManagerAboutView())
+    }
 }
 
 enum PluginDockerManagerLocalization {
