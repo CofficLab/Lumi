@@ -30,4 +30,9 @@ public enum AppManagerPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(AppManagerAboutView())
+    }
 }
