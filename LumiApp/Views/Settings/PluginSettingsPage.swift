@@ -221,7 +221,7 @@ private struct PluginSettingsDetailView: View {
 
                 AppDivider()
 
-                if let detail = row.plugin.settingsDetailView(context: settingsContext) {
+                if let detail = row.plugin.aboutView(context: settingsContext) {
                     detail
                 } else {
                     defaultDetail
