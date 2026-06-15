@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 工作区符号编辑器插件。
 ///
 /// 该插件负责把 `WorkspaceSymbolProvider` 注册到编辑器扩展注册中心，

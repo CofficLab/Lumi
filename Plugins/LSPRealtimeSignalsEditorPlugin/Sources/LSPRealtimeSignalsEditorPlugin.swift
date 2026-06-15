@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 实时信号编辑器插件。
 ///
 /// 该插件向编辑器注册 `LSPRealtimeInteractionContributor`，用于把编辑器中的实时交互事件

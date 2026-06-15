@@ -43,6 +43,27 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
             )
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "puzzlepiece.extension", title: "App Plugins", description: "Show loaded app plugins in status bar"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates App Plugins into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable App Plugins in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }
 
 enum PluginAppLoadedPluginsLocalization {

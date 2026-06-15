@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// CSS 语言编辑器插件：提供 CSS 补全和悬浮提示

@@ -37,6 +37,27 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
             )
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "safari", title: "Open Remote Repository", description: "Displays a button in the header to open the current project's remote repository in browser"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Open Remote Repository into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Open Remote Repository in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }
 
 // MARK: - Status Bar View

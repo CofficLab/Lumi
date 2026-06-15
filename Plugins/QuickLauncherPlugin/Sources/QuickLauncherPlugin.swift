@@ -24,4 +24,25 @@ public enum QuickLauncherPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "app.grid", title: "Quick Launcher", description: "Quick access to system apps and utilities"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Quick Launcher into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Quick Launcher in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }

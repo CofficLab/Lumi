@@ -1,5 +1,7 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 import SuperLogKit
 import os
 

@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
 /// 多光标命令编辑器插件：添加多光标编辑的上下文菜单操作
 public actor EditorMultiCursorCommandsPlugin: SuperPlugin {

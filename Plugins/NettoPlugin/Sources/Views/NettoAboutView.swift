@@ -40,9 +40,9 @@ struct NettoAboutView: View {
                     title: L("How It Works"),
                     steps: [
                         L("Monitors network connection requests from applications"),
-                        L"Applies rules based on your configuration",
-                        L"Blocks or allows traffic according to permissions",
-                        L"Logs network activity for review"
+                        L("Applies rules based on your configuration"),
+                        L("Blocks or allows traffic according to permissions"),
+                        L("Logs network activity for review")
                     ]
                 )
 

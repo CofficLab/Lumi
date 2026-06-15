@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 public enum IdleTimePlugin: LumiPlugin {
@@ -52,4 +51,25 @@ public enum IdleTimePlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "moon.zzz", title: "Idle Time", description: "Infer rest windows for background scheduling"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Idle Time into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Idle Time in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }

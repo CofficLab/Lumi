@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP Sheet 编辑器插件。
 ///
 /// 该插件向编辑器注册 `LSPSheetContributor`，负责提供与 LSP 功能相关的 Sheet/弹窗容器，

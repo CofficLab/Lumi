@@ -50,9 +50,9 @@ struct RegistryManagerAboutView: View {
                 TipsCard(
                     title: L("Tips"),
                     tips: [
-                        L"Use regional mirrors for faster downloads",
-                        L"Regularly update registry cache for latest packages",
-                        L"Configure authentication for private registries"
+                        L("Use regional mirrors for faster downloads"),
+                        L("Regularly update registry cache for latest packages"),
+                        L("Configure authentication for private registries")
                     ]
                 )
             }

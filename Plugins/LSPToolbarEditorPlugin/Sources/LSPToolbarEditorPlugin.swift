@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 工具栏编辑器插件。
 ///
 /// 该插件向编辑器注册 `LSPToolbarContributor`，用于向编辑器工具栏或状态区域贡献 LSP 相关状态项，

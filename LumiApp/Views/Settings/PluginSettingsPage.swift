@@ -300,3 +300,23 @@ private struct PluginSettingsRowModel: Identifiable {
     var category: LumiPluginCategory { plugin.category }
     var policy: LumiPluginPolicy { plugin.policy }
 }
+
+private struct DefaultPluginAboutView: View {
+    @LumiTheme private var theme
+    let pluginName: String
+    let pluginDescription: String
+    let iconName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("插件说明")
+                .font(.appBodyEmphasized)
+                .foregroundStyle(theme.textPrimary)
+
+            Text(pluginDescription.isEmpty ? "该插件暂未提供自定义介绍视图。" : pluginDescription)
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}

@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 import os
 
 /// 延时消息插件：在未来某个时刻自动恢复对话。
@@ -20,4 +21,25 @@ public enum DelayMessagePlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [DelayMessageTool().asLumiAgentTool()]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "clock.badge", title: "Delay Message", description: "Schedule delayed messages to resume conversations automatically."),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Delay Message into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Delay Message in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }

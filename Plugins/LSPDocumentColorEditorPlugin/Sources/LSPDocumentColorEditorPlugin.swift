@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 /// LSP 文档颜色编辑器插件。
 ///
 /// 该插件对应 LSP 的 `textDocument/documentColor` 和 `textDocument/colorPresentation` 能力，

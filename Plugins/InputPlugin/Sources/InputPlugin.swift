@@ -28,4 +28,25 @@ public enum InputPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "keyboard", title: "Input Manager", description: "Manage input-related behaviors"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Input Manager into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Input Manager in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }

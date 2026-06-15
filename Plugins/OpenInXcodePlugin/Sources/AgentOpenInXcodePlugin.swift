@@ -30,6 +30,27 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
             )
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "hammer", title: "Open in Xcode", description: "Displays a button in the header to open the current project in Xcode"),
+                .init(icon: "arrow.up.right.square", title: "Quick Access", description: "Adds a status bar action to open the current project externally"),
+                .init(icon: "folder", title: "Project Aware", description: "Uses the active project path from the current workspace")
+            ],
+            steps: [
+                "Enable the plugin in plugin settings",
+                "Open a project in Lumi",
+                "Use the status bar button to launch the external app"
+            ],
+            tips: [
+                "Make sure the target application is installed on your Mac",
+                "The action uses the currently opened project path"
+            ]
+        )
+    }
+
 }
 
 private enum XcodeOpener {

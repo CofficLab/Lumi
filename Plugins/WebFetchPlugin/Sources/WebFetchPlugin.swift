@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LumiCoreKit
+import SwiftUI
 
 /// Web Fetch 插件。
 ///
@@ -26,6 +27,27 @@ public enum WebFetchPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [WebFetchTool().asLumiAgentTool()]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "globe", title: "Web Fetch", description: "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Web Fetch into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Web Fetch in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }
 
 enum PluginWebFetchLocalization {

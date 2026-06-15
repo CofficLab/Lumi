@@ -1,4 +1,5 @@
 import LumiCoreKit
+import SwiftUI
 
 /// 空闲时扫描项目问题，并在发送消息时向 LLM 提示已知问题。
 public enum ProjectIssueScannerPlugin: LumiPlugin {

@@ -1,7 +1,6 @@
 import EditorBottomCallHierarchyPlugin
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 public enum EditorRailCallHierarchyPanelPlugin: LumiPlugin {
@@ -36,4 +35,25 @@ public enum EditorRailCallHierarchyPanelPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "point.3.connected.trianglepath.dotted", title: "Editor Rail Call Hierarchy", description: "Call hierarchy tab in the editor rail."),
+                .init(icon: "sidebar.left", title: "Side Rail", description: "Adds a panel to the editor side rail"),
+                .init(icon: "doc.text", title: "File Context", description: "Shows information related to the active editor file")
+            ],
+            steps: [
+                "Enable the plugin in plugin settings",
+                "Open a file in the code editor",
+                "Select the rail tab provided by this plugin"
+            ],
+            tips: [
+                "Collapse the rail when you need more editor space",
+                "Combine with other rail plugins for a richer workflow"
+            ]
+        )
+    }
+
 }

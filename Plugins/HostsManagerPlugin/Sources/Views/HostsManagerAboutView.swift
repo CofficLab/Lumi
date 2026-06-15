@@ -40,9 +40,9 @@ struct HostsManagerAboutView: View {
                     title: L("How It Works"),
                     steps: [
                         L("Reads the system hosts file with proper permissions"),
-                        L"Parses and displays entries in an organized list",
-                        L"Allows adding, editing, and removing entries",
-                        L"Writes changes back to the hosts file"
+                        L("Parses and displays entries in an organized list"),
+                        L("Allows adding, editing, and removing entries"),
+                        L("Writes changes back to the hosts file")
                     ]
                 )
 

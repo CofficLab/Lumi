@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 
 public enum CodeReviewPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled

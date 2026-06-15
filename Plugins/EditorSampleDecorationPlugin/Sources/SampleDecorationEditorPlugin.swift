@@ -1,6 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
 /// 编辑器 decoration 样例插件：演示 git-like 与 custom gutter decoration 的接入方式。
 public actor SampleDecorationEditorPlugin: SuperPlugin {

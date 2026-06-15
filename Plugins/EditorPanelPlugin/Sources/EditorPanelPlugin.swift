@@ -2,7 +2,6 @@ import AgentToolKit
 import EditorService
 import EditorTabStripPlugin
 import LumiCoreKit
-import LumiUI
 import os
 import SwiftUI
 
@@ -51,4 +50,25 @@ public enum EditorPanelPlugin: LumiPlugin {
             SetCurrentFileTool().asLumiAgentTool(),
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "chevron.left.forwardslash.chevron.right", title: "Code Editor", description: "Provides Code Editor capabilities in Lumi."),
+                .init(icon: "chevron.left.forwardslash.chevron.right", title: "Editor Extension", description: "Extends the built-in code editor"),
+                .init(icon: "paintbrush", title: "Language Support", description: "Improves editing for specific file types")
+            ],
+            steps: [
+                "Enable the plugin in plugin settings",
+                "Open a supported file in the editor",
+                "Use the editor features provided by this plugin"
+            ],
+            tips: [
+                "Keep only the editor extensions you actively use enabled",
+                "Some features depend on language tooling being available"
+            ]
+        )
+    }
+
 }

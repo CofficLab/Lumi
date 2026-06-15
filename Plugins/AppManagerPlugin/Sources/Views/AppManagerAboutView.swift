@@ -61,7 +61,7 @@ struct AppManagerAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        PluginAppManagerLocalization.string(key, bundle: .module, locale: locale)
+        PluginAppManagerLocalization.string(key)
     }
 }
 

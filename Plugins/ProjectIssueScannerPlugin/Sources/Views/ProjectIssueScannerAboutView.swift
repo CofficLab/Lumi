@@ -39,10 +39,10 @@ struct ProjectIssueScannerAboutView: View {
                 HowItWorksCard(
                     title: L("How It Works"),
                     steps: [
-                        L"Monitors system idle time to trigger scans",
-                        L"Analyzes project files for common issues",
-                        L"Stores detected issues in a local database",
-                        L"Provides hints to LLM during chat sessions"
+                        L("Monitors system idle time to trigger scans"),
+                        L("Analyzes project files for common issues"),
+                        L("Stores detected issues in a local database"),
+                        L("Provides hints to LLM during chat sessions")
                     ]
                 )
 
@@ -50,9 +50,9 @@ struct ProjectIssueScannerAboutView: View {
                 TipsCard(
                     title: L("Tips"),
                     tips: [
-                        L"Enable during development for proactive issue detection",
-                        L"Review detected issues regularly",
-                        L"Configure scan sensitivity in plugin settings"
+                        L("Enable during development for proactive issue detection"),
+                        L("Review detected issues regularly"),
+                        L("Configure scan sensitivity in plugin settings")
                     ]
                 )
             }

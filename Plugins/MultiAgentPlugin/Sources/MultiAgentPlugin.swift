@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 import os
 
 /// 多智能体插件：创建和收集子智能体工具。
@@ -24,4 +25,25 @@ public enum MultiAgentPlugin: LumiPlugin {
             CollectAgentsTool().asLumiAgentTool(),
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "person.3.fill", title: "Multi Agent", description: "Spawn parallel sub-agents with independent LLM providers and models"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Multi Agent into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Multi Agent in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }

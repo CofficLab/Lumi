@@ -48,6 +48,27 @@ public enum CaffeinatePlugin: LumiPlugin {
             CaffeinateTurnOffDisplayTool().asLumiAgentTool(),
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            features: [
+                .init(icon: "bolt", title: "Anti-Sleep", description: "Prevent system sleep with timer and manual control"),
+                .init(icon: "puzzlepiece.extension", title: "Lumi Integration", description: "Integrates Anti-Sleep into the Lumi workspace"),
+                .init(icon: "gearshape", title: "Configurable", description: "Enable or disable from plugin settings")
+            ],
+            steps: [
+                "Enable Anti-Sleep in plugin settings",
+                "The plugin registers its contributions when enabled",
+                "Use the features provided in the Lumi workspace"
+            ],
+            tips: [
+                "Toggle the plugin off if you do not need this feature",
+                "Check plugin settings for additional options"
+            ]
+        )
+    }
+
 }
 
 enum PluginCaffeinateLocalization {
