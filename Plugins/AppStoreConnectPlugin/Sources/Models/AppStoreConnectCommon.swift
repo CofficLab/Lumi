@@ -17,6 +17,25 @@ struct AppStoreConnectRelationship: Decodable {
     let data: AppStoreConnectResourceIdentifier?
 }
 
+struct AppStoreConnectToManyRelationship: Decodable {
+    let data: [AppStoreConnectResourceIdentifier]
+
+    enum CodingKeys: String, CodingKey {
+        case data
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let items = try? container.decode([AppStoreConnectResourceIdentifier].self, forKey: .data) {
+            data = items
+        } else if let item = try? container.decode(AppStoreConnectResourceIdentifier.self, forKey: .data) {
+            data = [item]
+        } else {
+            data = []
+        }
+    }
+}
+
 struct AppStoreConnectResourceIdentifier: Decodable {
     let type: String
     let id: String

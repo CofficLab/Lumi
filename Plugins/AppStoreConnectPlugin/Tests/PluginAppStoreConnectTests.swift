@@ -118,7 +118,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciBuildRunCreatePayloadIncludesWorkflowAndBranch() throws {
-        let body = try AppStoreConnectClient.makeCiBuildRunCreateBody(
+        let body = try ConnectClient.makeCiBuildRunCreateBody(
             workflowID: "workflow-1",
             branch: " main "
         )
@@ -137,7 +137,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciWorkflowEnabledUpdatePayloadOnlyPatchesEnabledState() throws {
-        let body = try AppStoreConnectClient.makeCiWorkflowEnabledUpdateBody(id: "workflow-1", isEnabled: false)
+        let body = try ConnectClient.makeCiWorkflowEnabledUpdateBody(id: "workflow-1", isEnabled: false)
         let object = try JSONSerialization.jsonObject(with: body) as? [String: Any]
         let data = try #require(object?["data"] as? [String: Any])
         let attributes = try #require(data["attributes"] as? [String: Any])
@@ -200,7 +200,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func ciBuildRunCreatePayloadOmitsEmptyBranch() throws {
-        let body = try AppStoreConnectClient.makeCiBuildRunCreateBody(
+        let body = try ConnectClient.makeCiBuildRunCreateBody(
             workflowID: "workflow-1",
             branch: "   "
         )
@@ -208,6 +208,140 @@ struct PluginAppStoreConnectTests {
         let data = try #require(object?["data"] as? [String: Any])
 
         #expect(data["attributes"] == nil)
+    }
+
+    @Test
+    func appScreenshotDecodesImageAsset() throws {
+        let json = """
+        {
+          "id": "shot-1",
+          "type": "appScreenshots",
+          "attributes": {
+            "fileName": "screenshot-1.png",
+            "fileSize": 1024,
+            "imageAsset": {
+              "templateUrl": "https://example.com/{w}x{h}.{f}",
+              "width": 1284,
+              "height": 2778
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        let screenshot = try JSONDecoder().decode(AppScreenshot.self, from: json)
+
+        #expect(screenshot.id == "shot-1")
+        #expect(screenshot.fileName == "screenshot-1.png")
+        #expect(screenshot.fileSize == 1024)
+        #expect(screenshot.previewURL?.absoluteString == "https://example.com/1284x2778.png")
+    }
+
+    @Test
+    func loadScreenshotSetsFallsBackToFilterEndpoint() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var paths: [String] = []
+        }
+        let counter = RequestCounter()
+        let session = MockURLProtocol.makeSession { request in
+            counter.paths.append(request.url?.path ?? "")
+            if request.url?.path.contains("/appStoreVersionLocalizations/") == true {
+                return (200, Data("{\"data\":[]}".utf8))
+            }
+            #expect(request.url?.path == "/v1/appScreenshotSets")
+            #expect(request.url?.query?.contains("filter%5BappStoreVersionLocalization%5D=loc-1") == true)
+            #expect(request.url?.query?.contains("include=appScreenshots") == true)
+
+            return (
+                200,
+                """
+                {
+                  "data": [{
+                    "id": "set-1",
+                    "type": "appScreenshotSets",
+                    "attributes": { "screenshotDisplayType": "APP_IPHONE_65" },
+                    "relationships": {
+                      "appScreenshots": {
+                        "data": [{ "type": "appScreenshots", "id": "shot-1" }]
+                      }
+                    }
+                  }],
+                  "included": [{
+                    "id": "shot-1",
+                    "type": "appScreenshots",
+                    "attributes": {
+                      "fileName": "screen.png",
+                      "fileSize": 512,
+                      "imageAsset": {
+                        "templateUrl": "https://example.com/{w}x{h}.{f}",
+                        "width": 100,
+                        "height": 200
+                      }
+                    }
+                  }]
+                }
+                """.data(using: .utf8)!
+            )
+        }
+        let client = ConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let payload = try await client.loadScreenshotSets(localizationID: "loc-1")
+
+        #expect(counter.paths.count == 2)
+        #expect(payload.sets.count == 1)
+        #expect(payload.sets.first?.screenshotDisplayType == "APP_IPHONE_65")
+        #expect(payload.screenshotsBySetID["set-1"]?.count == 1)
+        #expect(payload.screenshotsBySetID["set-1"]?.first?.fileName == "screen.png")
+    }
+
+    @Test
+    func listScreenshotsBuildsExpectedRequest() async throws {
+        final class RequestCounter: @unchecked Sendable {
+            var paths: [String] = []
+        }
+        let counter = RequestCounter()
+        let session = MockURLProtocol.makeSession { request in
+            counter.paths.append(request.url?.path ?? "")
+            if request.url?.path == "/v1/appScreenshotSets/set-1/appScreenshots" {
+                return (200, Data("{\"data\":[]}".utf8))
+            }
+            #expect(request.url?.path == "/v1/appScreenshots")
+            #expect(request.url?.query?.contains("filter%5BappScreenshotSet%5D=set-1") == true)
+
+            return (
+                200,
+                """
+                {
+                  "data": [{
+                    "id": "shot-1",
+                    "type": "appScreenshots",
+                    "attributes": {
+                      "fileName": "screenshot-1.png",
+                      "fileSize": 2048,
+                      "imageAsset": {
+                        "templateUrl": "https://example.com/{w}x{h}.{f}",
+                        "width": 120,
+                        "height": 120
+                      }
+                    }
+                  }]
+                }
+                """.data(using: .utf8)!
+            )
+        }
+        let client = ConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let screenshots = try await client.listScreenshots(screenshotSetID: "set-1")
+
+        #expect(counter.paths.count == 2)
+        #expect(screenshots.count == 1)
+        #expect(screenshots.first?.fileName == "screenshot-1.png")
+        #expect(screenshots.first?.previewURL?.absoluteString == "https://example.com/120x120.png")
     }
 
     @Test
@@ -253,7 +387,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )
@@ -309,7 +443,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )
@@ -325,7 +459,7 @@ struct PluginAppStoreConnectTests {
             Issue.record("Request should not be sent when credentials are incomplete")
             return (200, #"{"data":[]}"#.data(using: .utf8)!)
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: {
                 AppStoreConnectCredentials(issuerID: "", keyID: "key", privateKey: "private")
             },
@@ -358,7 +492,7 @@ struct PluginAppStoreConnectTests {
                 """.data(using: .utf8)!
             )
         }
-        let client = AppStoreConnectClient(
+        let client = ConnectClient(
             credentialsProvider: { Self.validCredentials() },
             session: session
         )

@@ -13,8 +13,20 @@ struct ScreenshotsPage: View {
             )
 
             HStack {
+                if !viewModel.localizations.isEmpty {
+                    Picker(AppStoreConnectLocalization.string("Locale"), selection: Binding(
+                        get: { viewModel.selectedLocalizationID ?? "" },
+                        set: { viewModel.selectLocalization(id: $0) }
+                    )) {
+                        ForEach(viewModel.localizations) { localization in
+                            Text(localization.locale).tag(localization.id)
+                        }
+                    }
+                    .frame(width: 180)
+                }
+
                 Picker(AppStoreConnectLocalization.string("Display"), selection: $viewModel.selectedScreenshotDisplayType) {
-                    ForEach(viewModel.screenshotDisplayTypes, id: \.self) { type in
+                    ForEach(viewModel.availableScreenshotDisplayTypes, id: \.self) { type in
                         Text(type).tag(type)
                     }
                 }
@@ -37,6 +49,13 @@ struct ScreenshotsPage: View {
 
             screenshotsMainContent
         }
+        .onChange(of: viewModel.selectedScreenshotDisplayType) { _, _ in
+            Task { await viewModel.reloadScreenshotsForSelectedDisplayType() }
+        }
+    }
+
+    private var hasScreenshotContent: Bool {
+        !viewModel.screenshots.isEmpty || !viewModel.pendingScreenshots.isEmpty
     }
 
     @ViewBuilder
@@ -48,8 +67,8 @@ struct ScreenshotsPage: View {
                 description: AppStoreConnectLocalization.string("Select a version and load metadata before managing screenshots.")
             )
         } else if let error = viewModel.errorMessage,
-                  viewModel.screenshotSets.isEmpty,
-                  viewModel.pendingScreenshots.isEmpty {
+                  !hasScreenshotContent,
+                  viewModel.screenshotSets.isEmpty {
             AppEmptyState(
                 icon: "exclamationmark.triangle",
                 title: AppStoreConnectLocalization.string("Failed to Load Screenshot Sets"),
@@ -57,13 +76,29 @@ struct ScreenshotsPage: View {
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
                 action: { Task { await viewModel.loadScreenshotSets() } }
             )
-        } else if viewModel.screenshotSets.isEmpty, viewModel.pendingScreenshots.isEmpty {
+        } else if viewModel.screenshotSets.isEmpty, !hasScreenshotContent {
             AppEmptyState(
                 icon: "photo.on.rectangle",
                 title: AppStoreConnectLocalization.string("No Screenshot Sets"),
                 description: AppStoreConnectLocalization.string("Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type."),
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
                 action: { Task { await viewModel.loadScreenshotSets() } }
+            )
+        } else if viewModel.selectedScreenshotSet == nil, !hasScreenshotContent {
+            AppEmptyState(
+                icon: "photo.on.rectangle.angled",
+                title: AppStoreConnectLocalization.string("No Screenshot Set for Display Type"),
+                description: AppStoreConnectLocalization.string("Create a screenshot set for the selected display type, or switch to another device size."),
+                actionTitle: AppStoreConnectLocalization.string("Ensure Screenshot Set"),
+                action: { Task { await viewModel.ensureScreenshotSet() } }
+            )
+        } else if !hasScreenshotContent {
+            AppEmptyState(
+                icon: "photo",
+                title: AppStoreConnectLocalization.string("No Screenshots"),
+                description: AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."),
+                actionTitle: AppStoreConnectLocalization.string("Refresh"),
+                action: { Task { await viewModel.reloadScreenshotsForSelectedDisplayType() } }
             )
         } else {
             VStack(spacing: 0) {
@@ -87,91 +122,26 @@ struct ScreenshotsPage: View {
                 ScreenshotSetSummary(sets: viewModel.screenshotSets)
 
                 List {
-                    ForEach(viewModel.pendingScreenshots) { screenshot in
-                        PendingScreenshotRow(screenshot: screenshot) {
-                            viewModel.removeScreenshot(screenshot)
+                    if !viewModel.screenshots.isEmpty {
+                        Section(AppStoreConnectLocalization.string("App Store Connect")) {
+                            ForEach(viewModel.screenshots) { screenshot in
+                                RemoteScreenshotRow(screenshot: screenshot)
+                            }
+                        }
+                    }
+
+                    if !viewModel.pendingScreenshots.isEmpty {
+                        Section(AppStoreConnectLocalization.string("Pending Upload")) {
+                            ForEach(viewModel.pendingScreenshots) { screenshot in
+                                PendingScreenshotRow(screenshot: screenshot) {
+                                    viewModel.removeScreenshot(screenshot)
+                                }
+                            }
                         }
                     }
                 }
                 .listStyle(.inset)
             }
-        }
-    }
-}
-
-struct ScreenshotSetSummary: View {
-    let sets: [ScreenshotSet]
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack {
-                if sets.isEmpty {
-                    Text(AppStoreConnectLocalization.string("No screenshot sets loaded"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(sets) { set in
-                        Text(set.screenshotDisplayType)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.secondary.opacity(0.12), in: Capsule())
-                    }
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
-        }
-    }
-}
-
-struct PendingScreenshotRow: View {
-    let screenshot: PendingScreenshot
-    let onRemove: () -> Void
-
-    var body: some View {
-        AppListRow {
-            HStack(spacing: 12) {
-                Image(systemName: "photo")
-                    .font(.title3)
-                    .frame(width: 28)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(screenshot.fileName)
-                        .font(.body.weight(.medium))
-                        .lineLimit(1)
-                    Text("\(screenshot.width) x \(screenshot.height) · \(screenshot.displayType)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                status
-
-                AppIconButton(systemImage: "trash", tint: .red, action: onRemove)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var status: some View {
-        switch screenshot.status {
-        case .ready:
-            Label(AppStoreConnectLocalization.string("Ready"), systemImage: "checkmark.circle")
-                .foregroundStyle(.green)
-        case .invalid(let message):
-            Label(message, systemImage: "xmark.octagon")
-                .foregroundStyle(.red)
-        case .uploading:
-            Label(AppStoreConnectLocalization.string("Uploading"), systemImage: "arrow.up.circle")
-                .foregroundStyle(.secondary)
-        case .uploaded:
-            Label(AppStoreConnectLocalization.string("Uploaded"), systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .failed(let message):
-            Label(message, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
         }
     }
 }

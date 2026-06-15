@@ -3,19 +3,26 @@ import Foundation
 struct ScreenshotSet: Identifiable, Equatable, Decodable {
     let id: String
     let screenshotDisplayType: String
+    let screenshotIDs: [String]
 
     enum CodingKeys: String, CodingKey {
         case id
         case attributes
+        case relationships
     }
 
     enum AttributeKeys: String, CodingKey {
         case screenshotDisplayType
     }
 
-    init(id: String, screenshotDisplayType: String) {
+    enum RelationshipKeys: String, CodingKey {
+        case appScreenshots
+    }
+
+    init(id: String, screenshotDisplayType: String, screenshotIDs: [String] = []) {
         self.id = id
         self.screenshotDisplayType = screenshotDisplayType
+        self.screenshotIDs = screenshotIDs
     }
 
     init(from decoder: Decoder) throws {
@@ -23,7 +30,18 @@ struct ScreenshotSet: Identifiable, Equatable, Decodable {
         id = try container.decode(String.self, forKey: .id)
         let attributes = try container.nestedContainer(keyedBy: AttributeKeys.self, forKey: .attributes)
         screenshotDisplayType = try attributes.decodeIfPresent(String.self, forKey: .screenshotDisplayType) ?? "UNKNOWN"
+        if let relationships = try? container.nestedContainer(keyedBy: RelationshipKeys.self, forKey: .relationships),
+           let screenshots = try? relationships.decode(AppStoreConnectToManyRelationship.self, forKey: .appScreenshots) {
+            screenshotIDs = screenshots.data.map(\.id)
+        } else {
+            screenshotIDs = []
+        }
     }
+}
+
+struct ScreenshotSetsPayload {
+    let sets: [ScreenshotSet]
+    let screenshotsBySetID: [String: [AppScreenshot]]
 }
 
 struct AppScreenshot: Identifiable, Decodable {

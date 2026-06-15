@@ -137,41 +137,8 @@
         }
       }
     },
-    "Apps" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apps"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 列表"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 列表"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 列表"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 列表"
-          }
-        }
-      }
-    },
     "Add Screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -235,6 +202,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App Store"
+          }
+        }
+      }
+    },
+    "App Store Connect" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
           }
         }
       }
@@ -409,6 +411,74 @@
         }
       }
     },
+    "Apps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 列表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 列表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 列表"
+          }
+        }
+      }
+    },
+    "Browse and select an App Store Connect app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse and select an App Store Connect app"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览并选择 App Store Connect 中的应用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽並選擇 App Store Connect 中的應用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽並選擇 App Store Connect 中的應用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽並選擇 App Store Connect 中的應用"
+          }
+        }
+      }
+    },
     "Choose an App Store Connect app" : {
       "localizations" : {
         "en" : {
@@ -473,6 +543,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按一下儲存憑證，然後測試連線。Lumi 會把這些值存入鑰匙圈，並用它們產生短期 JWT 權杖。"
+          }
+        }
+      }
+    },
+    "Configure API credentials on the Account page first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure API credentials on the Account page first."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先在账户页配置 API 凭据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先在帳戶頁配置 API 憑據。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先在帳戶頁配置 API 憑據。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先在帳戶頁配置 API 憑據。"
           }
         }
       }
@@ -575,6 +679,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "複製 Issuer ID 和 Key ID"
+          }
+        }
+      }
+    },
+    "Create a screenshot set for the selected display type, or switch to another device size." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a screenshot set for the selected display type, or switch to another device size."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为当前显示类型创建截图集，或切换到其他设备尺寸。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為目前顯示類型建立截圖集，或切換到其他裝置尺寸。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為目前顯示類型建立截圖集，或切換到其他裝置尺寸。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為目前顯示類型建立截圖集，或切換到其他裝置尺寸。"
           }
         }
       }
@@ -818,6 +957,7 @@
       }
     },
     "Display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -988,6 +1128,7 @@
       }
     },
     "Ensure Screenshot Set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1017,6 +1158,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "確保截圖集存在"
+          }
+        }
+      }
+    },
+    "Failed to Load Screenshot Sets" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load Screenshot Sets"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图集加载失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截圖集載入失敗"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截圖集載入失敗"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截圖集載入失敗"
           }
         }
       }
@@ -1429,6 +1605,41 @@
         }
       }
     },
+    "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 App Store Connect 加载截图集，或为当前显示类型创建截图集。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
+          }
+        }
+      }
+    },
     "Locale" : {
       "localizations" : {
         "en" : {
@@ -1634,74 +1845,6 @@
         }
       }
     },
-    "Browse and select an App Store Connect app" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse and select an App Store Connect app"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览并选择 App Store Connect 中的应用"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽並選擇 App Store Connect 中的應用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽並選擇 App Store Connect 中的應用"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽並選擇 App Store Connect 中的應用"
-          }
-        }
-      }
-    },
-    "Configure API credentials on the Account page first." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure API credentials on the Account page first."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先在账户页配置 API 凭据。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先在帳戶頁配置 API 憑據。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先在帳戶頁配置 API 憑據。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先在帳戶頁配置 API 憑據。"
-          }
-        }
-      }
-    },
     "No App Selected" : {
       "localizations" : {
         "en" : {
@@ -1804,6 +1947,41 @@
         }
       }
     },
+    "No Localization Selected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Localization Selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择本地化"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇本地化"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇本地化"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇本地化"
+          }
+        }
+      }
+    },
     "No Localizations" : {
       "localizations" : {
         "en" : {
@@ -1838,75 +2016,43 @@
         }
       }
     },
-    "Failed to Load Screenshot Sets" : {
+    "No Screenshot Set for Display Type" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Load Screenshot Sets"
+            "value" : "No Screenshot Set for Display Type"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "截图集加载失败"
+            "value" : "当前显示类型没有截图集"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "截圖集載入失敗"
+            "value" : "目前顯示類型沒有截圖集"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "截圖集載入失敗"
+            "value" : "目前顯示類型沒有截圖集"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "截圖集載入失敗"
-          }
-        }
-      }
-    },
-    "No Localization Selected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Localization Selected"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择本地化"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未選擇本地化"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未選擇本地化"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未選擇本地化"
+            "value" : "目前顯示類型沒有截圖集"
           }
         }
       }
     },
     "No Screenshot Sets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1940,75 +2086,8 @@
         }
       }
     },
-    "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从 App Store Connect 加载截图集，或为当前显示类型创建截图集。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從 App Store Connect 載入截圖集，或為目前顯示類型建立截圖集。"
-          }
-        }
-      }
-    },
-    "Select a version and load metadata before managing screenshots." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a version and load metadata before managing screenshots."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先选择版本并加载元数据，再管理截图。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先選擇版本並載入元數據，再管理截圖。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先選擇版本並載入元數據，再管理截圖。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先選擇版本並載入元數據，再管理截圖。"
-          }
-        }
-      }
-    },
     "No screenshot sets loaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2038,6 +2117,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未載入截圖集"
+          }
+        }
+      }
+    },
+    "No Screenshots" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Screenshots"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无截图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無截圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無截圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無截圖"
           }
         }
       }
@@ -2144,6 +2258,41 @@
         }
       }
     },
+    "On App Store Connect" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On App Store Connect"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在 App Store Connect"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在 App Store Connect"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在 App Store Connect"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已在 App Store Connect"
+          }
+        }
+      }
+    },
     "Open App Store Connect API Keys" : {
       "localizations" : {
         "en" : {
@@ -2246,6 +2395,41 @@
         }
       }
     },
+    "Pending Upload" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pending Upload"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待上传"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待上傳"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待上傳"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待上傳"
+          }
+        }
+      }
+    },
     "Private Key (.p8)" : {
       "localizations" : {
         "en" : {
@@ -2315,6 +2499,7 @@
       }
     },
     "Ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2650,6 +2835,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "安全提示"
+          }
+        }
+      }
+    },
+    "Select a version and load metadata before managing screenshots." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a version and load metadata before managing screenshots."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选择版本并加载元数据，再管理截图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇版本並載入元數據，再管理截圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇版本並載入元數據，再管理截圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇版本並載入元數據，再管理截圖。"
           }
         }
       }
@@ -2995,6 +3215,41 @@
         }
       }
     },
+    "This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该截图集在 App Store Connect 上为空。可在此添加截图，或在 App Store Connect 网页上传。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此截圖集在 App Store Connect 上為空。可在此新增截圖，或在 App Store Connect 網頁上傳。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此截圖集在 App Store Connect 上為空。可在此新增截圖，或在 App Store Connect 網頁上傳。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此截圖集在 App Store Connect 上為空。可在此新增截圖，或在 App Store Connect 網頁上傳。"
+          }
+        }
+      }
+    },
     "Unsaved changes" : {
       "localizations" : {
         "en" : {
@@ -3064,6 +3319,7 @@
       }
     },
     "Uploaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3098,6 +3354,7 @@
       }
     },
     "Uploading" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3166,6 +3423,7 @@
       }
     },
     "Validate and prepare screenshots for the selected localization" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

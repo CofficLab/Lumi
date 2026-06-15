@@ -58,6 +58,8 @@ final class AppStoreConnectViewModel: ObservableObject {
     @Published var editedLocalization: AppStoreVersionLocalization?
     @Published var pendingScreenshots: [PendingScreenshot] = []
     @Published var screenshotSets: [ScreenshotSet] = []
+    @Published var screenshots: [AppScreenshot] = []
+    @Published var screenshotsBySetID: [String: [AppScreenshot]] = [:]
     @Published var selectedScreenshotDisplayType = "APP_IPHONE_67"
     @Published var metadataIsDirty = false
     @Published var ciProducts: [CiProduct] = []
@@ -79,15 +81,22 @@ final class AppStoreConnectViewModel: ObservableObject {
         "APP_DESKTOP"
     ]
 
-    private let credentialStore: AppStoreConnectCredentialStore
-    private let client: AppStoreConnectClient
+    var availableScreenshotDisplayTypes: [String] {
+        let loaded = screenshotSets.map(\.screenshotDisplayType)
+        let merged = loaded + screenshotDisplayTypes
+        var seen = Set<String>()
+        return merged.filter { seen.insert($0).inserted }
+    }
 
-    init(credentialStore: AppStoreConnectCredentialStore = .shared) {
+    private let credentialStore: CredentialStore
+    private let client: ConnectClient
+
+    init(credentialStore: CredentialStore = .shared) {
         self.credentialStore = credentialStore
         let loadedCredentials = credentialStore.load()
         self.credentials = loadedCredentials
         self.hasStoredPrivateKey = !loadedCredentials.privateKey.isEmpty
-        self.client = AppStoreConnectClient(credentialsProvider: { credentialStore.load() })
+        self.client = ConnectClient(credentialsProvider: { credentialStore.load() })
         if loadedCredentials.isComplete {
             connectionStatus = AppStoreConnectLocalization.string("Credentials configured")
         }
@@ -106,6 +115,10 @@ final class AppStoreConnectViewModel: ObservableObject {
     var selectedLocalization: AppStoreVersionLocalization? {
         guard let selectedLocalizationID else { return nil }
         return localizations.first { $0.id == selectedLocalizationID }
+    }
+
+    var selectedScreenshotSet: ScreenshotSet? {
+        screenshotSets.first { $0.screenshotDisplayType == selectedScreenshotDisplayType }
     }
 
     func saveCredentials() {
@@ -129,6 +142,8 @@ final class AppStoreConnectViewModel: ObservableObject {
         editedLocalization = nil
         pendingScreenshots = []
         screenshotSets = []
+        screenshots = []
+        screenshotsBySetID = [:]
         clearXcodeCloudState()
     }
 
@@ -167,8 +182,12 @@ final class AppStoreConnectViewModel: ObservableObject {
             await loadVersions()
         case .metadata where localizations.isEmpty && selectedVersion != nil:
             await loadLocalizations()
-        case .screenshots where screenshotSets.isEmpty && selectedLocalizationID != nil:
-            await loadScreenshotSets()
+        case .screenshots:
+            if localizations.isEmpty, selectedVersion != nil {
+                await loadLocalizations()
+            } else if selectedLocalizationID != nil {
+                await loadScreenshotSets()
+            }
         case .xcodeCloud where ciProducts.isEmpty:
             await loadCiProducts()
         default:
@@ -186,6 +205,8 @@ final class AppStoreConnectViewModel: ObservableObject {
             editedLocalization = nil
             pendingScreenshots = []
             screenshotSets = []
+            screenshots = []
+            screenshotsBySetID = [:]
             clearXcodeCloudSelection()
         }
         if openVersions {
@@ -211,18 +232,31 @@ final class AppStoreConnectViewModel: ObservableObject {
         editedLocalization = nil
         pendingScreenshots = []
         screenshotSets = []
+        screenshots = []
+        screenshotsBySetID = [:]
         Task { await loadLocalizations() }
     }
 
     func loadLocalizations() async {
         guard let version = selectedVersion else { return }
+        let preferredLocalizationID = selectedLocalizationID
         await runBusy {
             localizations = try await client.listLocalizations(versionID: version.id)
-            selectedLocalizationID = localizations.first?.id
-            editedLocalization = localizations.first
+            if let preferredLocalizationID,
+               localizations.contains(where: { $0.id == preferredLocalizationID }) {
+                selectedLocalizationID = preferredLocalizationID
+            } else if let primaryLocale = selectedApp?.primaryLocale,
+                      let match = localizations.first(where: { $0.locale == primaryLocale }) {
+                selectedLocalizationID = match.id
+            } else {
+                selectedLocalizationID = localizations.first?.id
+            }
+            editedLocalization = localizations.first { $0.id == selectedLocalizationID }
             metadataIsDirty = false
             if let localizationID = selectedLocalizationID {
-                screenshotSets = try await client.listScreenshotSets(localizationID: localizationID)
+                try await applyScreenshotPayload(
+                    try await client.loadScreenshotSets(localizationID: localizationID)
+                )
             }
         }
     }
@@ -254,8 +288,55 @@ final class AppStoreConnectViewModel: ObservableObject {
     func loadScreenshotSets() async {
         guard let localizationID = selectedLocalizationID else { return }
         await runBusy {
-            screenshotSets = try await client.listScreenshotSets(localizationID: localizationID)
+            try await applyScreenshotPayload(
+                try await client.loadScreenshotSets(localizationID: localizationID)
+            )
         }
+    }
+
+    func loadScreenshots() async throws {
+        guard let set = selectedScreenshotSet else {
+            screenshots = []
+            return
+        }
+
+        if let cached = screenshotsBySetID[set.id] {
+            screenshots = cached
+            return
+        }
+
+        let loaded = try await client.listScreenshots(screenshotSetID: set.id)
+        screenshotsBySetID[set.id] = loaded
+        screenshots = loaded
+    }
+
+    func reloadScreenshotsForSelectedDisplayType() async {
+        await runBusy {
+            alignSelectedScreenshotDisplayType()
+            try await loadScreenshots()
+        }
+    }
+
+    private func applyScreenshotPayload(_ payload: ScreenshotSetsPayload) async throws {
+        screenshotSets = payload.sets
+        screenshotsBySetID = payload.screenshotsBySetID
+        alignSelectedScreenshotDisplayType()
+        try await loadScreenshots()
+
+        if screenshots.isEmpty {
+            for set in screenshotSets where screenshotsBySetID[set.id] == nil {
+                let loaded = try await client.listScreenshots(screenshotSetID: set.id)
+                if !loaded.isEmpty {
+                    screenshotsBySetID[set.id] = loaded
+                }
+            }
+            try await loadScreenshots()
+        }
+    }
+
+    private func alignSelectedScreenshotDisplayType() {
+        guard selectedScreenshotSet == nil, let first = screenshotSets.first else { return }
+        selectedScreenshotDisplayType = first.screenshotDisplayType
     }
 
     func addScreenshotFiles(_ urls: [URL]) {
@@ -302,6 +383,10 @@ final class AppStoreConnectViewModel: ObservableObject {
                 displayType: selectedScreenshotDisplayType
             )
             screenshotSets.append(set)
+            if set.screenshotDisplayType == selectedScreenshotDisplayType {
+                screenshotsBySetID[set.id] = []
+                try await loadScreenshots()
+            }
         }
     }
 

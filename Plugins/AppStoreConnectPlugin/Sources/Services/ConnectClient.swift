@@ -24,7 +24,7 @@ enum AppStoreConnectClientError: LocalizedError {
     }
 }
 
-final class AppStoreConnectClient: @unchecked Sendable {
+final class ConnectClient: @unchecked Sendable {
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
     private let session: URLSession
@@ -119,44 +119,6 @@ final class AppStoreConnectClient: @unchecked Sendable {
         let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
             path: "/v1/appStoreVersionLocalizations/\(localization.id)",
             method: "PATCH",
-            body: body
-        )
-        return response.data
-    }
-
-    func listScreenshotSets(localizationID: String) async throws -> [ScreenshotSet] {
-        let query = [
-            URLQueryItem(name: "limit", value: "100"),
-            URLQueryItem(name: "fields[appScreenshotSets]", value: "screenshotDisplayType")
-        ]
-        let response: AppStoreConnectListResponse<ScreenshotSet> = try await request(
-            path: "/v1/appStoreVersionLocalizations/\(localizationID)/appScreenshotSets",
-            queryItems: query
-        )
-        return response.data
-    }
-
-    func createScreenshotSet(localizationID: String, displayType: String) async throws -> ScreenshotSet {
-        let payload: [String: Any] = [
-            "data": [
-                "type": "appScreenshotSets",
-                "attributes": [
-                    "screenshotDisplayType": displayType
-                ],
-                "relationships": [
-                    "appStoreVersionLocalization": [
-                        "data": [
-                            "type": "appStoreVersionLocalizations",
-                            "id": localizationID
-                        ]
-                    ]
-                ]
-            ]
-        ]
-        let body = try JSONSerialization.data(withJSONObject: payload)
-        let response: AppStoreConnectSingleResponse<ScreenshotSet> = try await request(
-            path: "/v1/appScreenshotSets",
-            method: "POST",
             body: body
         )
         return response.data
@@ -281,7 +243,7 @@ final class AppStoreConnectClient: @unchecked Sendable {
         return try JSONSerialization.data(withJSONObject: payload)
     }
 
-    private func request<T: Decodable>(
+    func request<T: Decodable>(
         path: String,
         method: String = "GET",
         queryItems: [URLQueryItem] = [],
