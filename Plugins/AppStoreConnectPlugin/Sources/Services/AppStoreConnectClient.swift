@@ -165,7 +165,9 @@ final class AppStoreConnectClient: @unchecked Sendable {
     func listCiProducts() async throws -> [CiProduct] {
         let query = [
             URLQueryItem(name: "limit", value: "200"),
-            URLQueryItem(name: "fields[ciProducts]", value: "name,createdDate,productType,bundleId,app,primaryApp,workflows"),
+            // App Store Connect API rejects `primaryApp` in fields[ciProducts] (invalid field name).
+            // Keep `include=primaryApp` for relationship resolution when available.
+            URLQueryItem(name: "fields[ciProducts]", value: "name,createdDate,productType,bundleId,app,workflows"),
             URLQueryItem(name: "include", value: "app,primaryApp")
         ]
         let response: AppStoreConnectListResponse<CiProduct> = try await request(

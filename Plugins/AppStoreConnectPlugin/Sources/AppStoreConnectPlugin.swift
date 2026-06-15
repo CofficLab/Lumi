@@ -28,7 +28,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
                 title: AppStoreConnectLocalization.string("Select App"),
                 placement: .center
             ) {
-                AppStoreConnectToolbarAppPicker()
+                ToolbarAppPicker()
             }
         ]
     }
@@ -41,7 +41,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                AppStoreConnectView()
+                MainView()
             }
         ]
     }
