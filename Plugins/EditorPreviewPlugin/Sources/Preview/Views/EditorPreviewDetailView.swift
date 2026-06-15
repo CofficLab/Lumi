@@ -902,7 +902,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
                     PreviewFailureView(
                         failure: failure,
                         buildLogURL: viewModel.lastBuildLogURL,
-                        onRetry: { viewModel.retryBuild() }
+                        onRetry: { viewModel.retryBuild() },
+                        onAskAI: { sendPreviewFailureToChat(failure: failure) }
                     )
                 }
 
@@ -938,6 +939,37 @@ public struct EditorPreviewDetailView: View, SuperLog {
             return failure
         }
         return nil
+    }
+
+    private func sendPreviewFailureToChat(failure: EditorPreviewViewModel.EntryFailure) {
+        let prompt = LumiPluginLocalization.string(
+            "Please analyze whether this Swift #Preview failure is caused by a Lumi bug or a problem in the current project, and explain how to fix it:",
+            bundle: .module
+        )
+
+        var lines = [prompt, ""]
+
+        if let fileURL = currentFileURL {
+            lines.append("File: \(fileURL.path)")
+        }
+
+        lines.append("Failure: \(failure.title) (\(failure.kind.rawValue))")
+
+        if let preview = viewModel.availablePreviews.first(where: { $0.index == viewModel.selectedPreviewIndex }) {
+            lines.append("Preview: \(preview.title) (index \(preview.index))")
+        } else if !viewModel.availablePreviews.isEmpty {
+            lines.append("Preview index: \(viewModel.selectedPreviewIndex)")
+        }
+
+        lines.append("")
+        lines.append(failure.message)
+
+        if let buildLogURL = viewModel.lastBuildLogURL {
+            lines.append("")
+            lines.append("Build log: \(buildLogURL.path)")
+        }
+
+        EditorPreviewRuntimeBridge.addToChatHandler?(lines.joined(separator: "\n"), pluginContext)
     }
 
     private var buildingFileName: String? {

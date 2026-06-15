@@ -10,6 +10,7 @@ struct PreviewFailureView: View {
     let failure: EditorPreviewViewModel.EntryFailure
     let buildLogURL: URL?
     var onRetry: (() -> Void)?
+    var onAskAI: (() -> Void)?
 
     @State private var isCopied = false
 
@@ -58,6 +59,22 @@ struct PreviewFailureView: View {
                 }
                 .buttonStyle(.borderless)
                 .help(LumiPluginLocalization.string("Copy error message to clipboard", bundle: .module))
+
+                if onAskAI != nil {
+                    Button {
+                        onAskAI?()
+                    } label: {
+                        Label(
+                            LumiPluginLocalization.string("Ask AI", bundle: .module),
+                            systemImage: "sparkle"
+                        )
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption)
+                        .foregroundStyle(.purple)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(LumiPluginLocalization.string("Ask AI to analyze preview failure", bundle: .module))
+                }
             }
 
             ScrollView {

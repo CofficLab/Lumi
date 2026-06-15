@@ -34,7 +34,8 @@ LANGUAGES = {
     "dockerfile": ("EditorDockerfilePlugin", "dockerfile", "Dockerfile", ["Dockerfile"], "https://github.com/camdencheek/tree-sitter-dockerfile.git", "TreeSitterDockerfile", "tree_sitter_dockerfile", "main"),
     "zig": ("EditorZigPlugin", "zig", "Zig", ["zig"], "https://github.com/maxxnino/tree-sitter-zig.git", "TreeSitterZig", "tree_sitter_zig", "main"),
     "agda": ("EditorAgdaPlugin", "agda", "Agda", ["agda"], "https://github.com/tree-sitter/tree-sitter-agda.git", "TreeSitterAgda", "tree_sitter_agda", "master"),
-    "ocaml": ("EditorOCamlPlugin", "ocaml", "OCaml", ["ml"], "https://github.com/tree-sitter/tree-sitter-ocaml.git", "TreeSitterOCaml", "tree_sitter_ocaml", "master"),
+    # OCaml: vendored in EditorOCamlPlugin/Vendor/TreeSitterOCaml (upstream examples/ submodules break SPM)
+    "ocaml": ("EditorOCamlPlugin", "ocaml", "OCaml", ["ml"], "Vendor/TreeSitterOCaml", "TreeSitterOCaml", "tree_sitter_ocaml", "master"),
     "julia": ("EditorJuliaPlugin", "julia", "Julia", ["jl"], "https://github.com/tree-sitter/tree-sitter-julia.git", "TreeSitterJulia", "tree_sitter_julia", "master"),
     "perl": ("EditorPerlPlugin", "perl", "Perl", ["pl", "pm"], "https://github.com/tree-sitter-perl/tree-sitter-perl.git", "TreeSitterPerl", "tree_sitter_perl", "master"),
     "regex": ("EditorRegexPlugin", "regex", "Regex", ["regex"], "https://github.com/tree-sitter/tree-sitter-regex.git", "TreeSitterRegex", "tree_sitter_regex", "master"),

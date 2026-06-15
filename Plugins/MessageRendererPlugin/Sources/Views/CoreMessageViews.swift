@@ -75,11 +75,7 @@ struct CoreMessageView: View {
             }
 
             if !message.content.isEmpty {
-                Text(message.content)
-                    .font(.appBody)
-                    .foregroundColor(theme.textPrimary)
-                    .lineSpacing(3)
-                    .textSelection(.enabled)
+                CollapsiblePlainText(text: message.content)
             }
         }
         .appMessageBubble(role: .user, isError: message.isError)
@@ -87,7 +83,7 @@ struct CoreMessageView: View {
 
     @ViewBuilder
     private var assistantContent: some View {
-        CollapsibleAssistantContent(message: message, shouldHideAssistantBody: shouldHideAssistantBody)
+        AssistantMessageContent(message: message, shouldHideAssistantBody: shouldHideAssistantBody)
     }
 
     @ViewBuilder
@@ -754,14 +750,45 @@ struct StatusMessageView: View {
     }
 }
 
-private struct CollapsibleAssistantContent: View {
+private struct CollapsiblePlainText: View {
+    @LumiTheme private var theme
+
+    let text: String
+    @State private var isCollapsed = true
+
+    private let collapseLineLimit = 40
+
+    var body: some View {
+        let lines = text.components(separatedBy: .newlines)
+        let shouldCollapse = lines.count > collapseLineLimit
+        let rendered = shouldCollapse && isCollapsed
+            ? lines.prefix(collapseLineLimit).joined(separator: "\n") + "\n..."
+            : text
+
+        VStack(alignment: .leading, spacing: 6) {
+            Text(rendered)
+                .font(.appBody)
+                .foregroundColor(theme.textPrimary)
+                .lineSpacing(3)
+                .textSelection(.enabled)
+
+            if shouldCollapse {
+                Button(isCollapsed ? LumiPluginLocalization.string("Show more", bundle: .module) : LumiPluginLocalization.string("Show less", bundle: .module)) {
+                    isCollapsed.toggle()
+                }
+                .buttonStyle(.plain)
+                .font(.appCaption)
+                .foregroundColor(theme.primary)
+            }
+        }
+    }
+}
+
+private struct AssistantMessageContent: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
     let shouldHideAssistantBody: Bool
-    @State private var isCollapsed = true
-
-    private let collapseLineLimit = 40
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -776,28 +803,13 @@ private struct CollapsibleAssistantContent: View {
             }
 
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideAssistantBody {
-                let lines = message.content.components(separatedBy: .newlines)
-                let shouldCollapse = lines.count > collapseLineLimit
-                let rendered = shouldCollapse && isCollapsed
-                    ? lines.prefix(collapseLineLimit).joined(separator: "\n") + "\n..."
-                    : message.content
-
                 MarkdownBlockRenderer(
-                    markdown: rendered,
+                    markdown: message.content,
                     theme: ChatMarkdownTheme.make(from: theme)
                 )
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .font(.appBody)
-
-                if shouldCollapse {
-                    Button(isCollapsed ? "Show more" : "Show less") {
-                        isCollapsed.toggle()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.appCaption)
-                    .foregroundColor(theme.primary)
-                }
             }
 
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {

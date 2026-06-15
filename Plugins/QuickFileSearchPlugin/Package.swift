@@ -37,7 +37,10 @@ let package = Package(
         ),
         .testTarget(
             name: "QuickFileSearchPluginTests",
-            dependencies: ["QuickFileSearchPlugin"],
+            dependencies: [
+                "QuickFileSearchPlugin",
+                .product(name: "EditorService", package: "EditorService"),
+            ],
             path: "Tests"
         )
     ]

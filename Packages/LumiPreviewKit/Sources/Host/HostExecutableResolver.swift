@@ -132,14 +132,15 @@ public extension LumiPreviewFacade {
         }
 
         private static func sourcePackageDirectory(filePath: String = #filePath) -> URL? {
-            let fileURL = URL(fileURLWithPath: filePath)
-            let packageURL = fileURL
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-
-            return packageURL.lastPathComponent == "LumiPreviewKit" ? packageURL : nil
+            var directory = URL(fileURLWithPath: filePath).deletingLastPathComponent()
+            while directory.path != "/" {
+                if directory.lastPathComponent == "LumiPreviewKit",
+                   FileManager.default.fileExists(atPath: directory.appendingPathComponent("Package.swift").path) {
+                    return directory
+                }
+                directory.deleteLastPathComponent()
+            }
+            return nil
         }
     }
 }
