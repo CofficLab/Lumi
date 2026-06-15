@@ -37,7 +37,7 @@ struct AppsPage: View {
                     get: { viewModel.selectedApp?.id },
                     set: { id in
                         if let id, let app = viewModel.apps.first(where: { $0.id == id }) {
-                            viewModel.selectApp(app)
+                            viewModel.selectApp(app, openDistribution: true)
                         }
                     }
                 )) {

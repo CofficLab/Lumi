@@ -95,7 +95,7 @@ struct AppPicker: View {
 
     private func appRow(_ app: AppStoreApp) -> some View {
         AppListRow(isSelected: viewModel.selectedApp?.id == app.id, action: {
-            viewModel.selectApp(app, openVersions: true)
+            viewModel.selectApp(app, openDistribution: true)
             onSelect()
         }) {
             HStack(spacing: 10) {

@@ -620,6 +620,58 @@ struct PluginAppStoreConnectTests {
         }
     }
 
+    @Test
+    func sidebarVersionsFiltersPlatformAndDeduplicatesByVersionString() {
+        let versions = [
+            AppStoreVersion(
+                id: "ready-old",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 1)
+            ),
+            AppStoreVersion(
+                id: "ready-new",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 2)
+            ),
+            AppStoreVersion(
+                id: "prepare",
+                platform: "IOS",
+                versionString: "2.2.28",
+                appStoreState: "PREPARE_FOR_SUBMISSION",
+                appVersionState: "PREPARE_FOR_SUBMISSION",
+                createdDate: Date(timeIntervalSince1970: 0)
+            ),
+            AppStoreVersion(
+                id: "mac",
+                platform: "MAC_OS",
+                versionString: "2.2.28",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 3)
+            ),
+            AppStoreVersion(
+                id: "latest",
+                platform: "IOS",
+                versionString: "3.4.3",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_DISTRIBUTION",
+                createdDate: Date(timeIntervalSince1970: 10)
+            )
+        ]
+
+        let sidebar = AppStoreVersion.sidebarVersions(from: versions, appPlatform: "IOS")
+
+        #expect(sidebar.count == 2)
+        #expect(sidebar[0].id == "latest")
+        #expect(sidebar[1].id == "prepare")
+    }
+
     private static func validCredentials() -> AppStoreConnectCredentials {
         AppStoreConnectCredentials(
             issuerID: UUID().uuidString,

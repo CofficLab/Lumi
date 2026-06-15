@@ -9,9 +9,7 @@ final class AppStoreConnectViewModel: ObservableObject {
     enum Page: String, CaseIterable, Identifiable {
         case account
         case apps
-        case versions
-        case metadata
-        case screenshots
+        case distribution
         case xcodeCloud
 
         var id: String { rawValue }
@@ -20,9 +18,7 @@ final class AppStoreConnectViewModel: ObservableObject {
             switch self {
             case .account: return AppStoreConnectLocalization.string("Account")
             case .apps: return AppStoreConnectLocalization.string("Apps")
-            case .versions: return AppStoreConnectLocalization.string("Versions")
-            case .metadata: return AppStoreConnectLocalization.string("Metadata")
-            case .screenshots: return AppStoreConnectLocalization.string("Screenshots")
+            case .distribution: return AppStoreConnectLocalization.string("Distribution")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
         }
@@ -31,16 +27,13 @@ final class AppStoreConnectViewModel: ObservableObject {
             switch self {
             case .account: return "key"
             case .apps: return "square.grid.2x2"
-            case .versions: return "clock.arrow.circlepath"
-            case .metadata: return "text.alignleft"
-            case .screenshots: return "photo.on.rectangle"
+            case .distribution: return "shippingbox"
             case .xcodeCloud: return "cloud"
             }
         }
     }
 
     static let generalPages: [Page] = [.account, .apps]
-    static let appPages: [Page] = [.versions, .metadata, .screenshots, .xcodeCloud]
 
     @Published var page: Page = .account
     @Published var credentials: AppStoreConnectCredentials
@@ -121,6 +114,10 @@ final class AppStoreConnectViewModel: ObservableObject {
         screenshotSets.first { $0.screenshotDisplayType == selectedScreenshotDisplayType }
     }
 
+    var sidebarVersions: [AppStoreVersion] {
+        AppStoreVersion.sidebarVersions(from: versions, appPlatform: selectedApp?.platform)
+    }
+
     func saveCredentials() {
         credentialStore.save(credentials)
         hasStoredPrivateKey = !credentials.privateKey.isEmpty
@@ -166,13 +163,8 @@ final class AppStoreConnectViewModel: ObservableObject {
                 let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
                 apps = try await client.listApps(search: query.isEmpty ? nil : query)
                 connectionStatus = AppStoreConnectLocalization.string("Connected")
-            case .versions:
-                guard let app = selectedApp else { return }
-                versions = try await client.listVersions(appID: app.id)
-            case .metadata:
-                try await reloadLocalizationsFromNetwork()
-            case .screenshots:
-                try await reloadScreenshotSetsFromNetwork()
+            case .distribution:
+                try await reloadDistributionFromNetwork()
             case .xcodeCloud:
                 if selectedCiWorkflow != nil {
                     try await reloadSelectedCiWorkflowDetailFromNetwork()
@@ -209,14 +201,12 @@ final class AppStoreConnectViewModel: ObservableObject {
         switch page {
         case .apps where apps.isEmpty:
             await loadApps()
-        case .versions where versions.isEmpty && selectedApp != nil:
-            await loadVersions()
-        case .metadata where localizations.isEmpty && selectedVersion != nil:
-            await loadLocalizations()
-        case .screenshots:
-            if localizations.isEmpty, selectedVersion != nil {
+        case .distribution:
+            if versions.isEmpty, selectedApp != nil {
+                await loadVersions()
+            } else if localizations.isEmpty, selectedVersion != nil {
                 await loadLocalizations()
-            } else if selectedLocalizationID != nil {
+            } else if selectedLocalizationID != nil, screenshotSets.isEmpty {
                 await loadScreenshotSets()
             }
         case .xcodeCloud where ciProducts.isEmpty:
@@ -226,7 +216,7 @@ final class AppStoreConnectViewModel: ObservableObject {
         }
     }
 
-    func selectApp(_ app: AppStoreApp, openVersions: Bool = false) {
+    func selectApp(_ app: AppStoreApp, openDistribution: Bool = false) {
         let appChanged = selectedApp?.id != app.id
         selectedApp = app
         if appChanged {
@@ -240,17 +230,21 @@ final class AppStoreConnectViewModel: ObservableObject {
             screenshotsBySetID = [:]
             clearXcodeCloudSelection()
         }
-        if openVersions {
-            page = .versions
+        if openDistribution {
+            page = .distribution
         }
         Task { await loadVersions() }
+    }
+
+    func openDistribution(for version: AppStoreVersion) {
+        selectVersion(version)
     }
 
     func loadVersions() async {
         guard let app = selectedApp else { return }
         await runBusy {
             versions = try await client.listVersions(appID: app.id)
-            selectedVersion = versions.first
+            selectedVersion = sidebarVersions.first
             if selectedVersion != nil {
                 await loadLocalizations()
             }
@@ -259,6 +253,7 @@ final class AppStoreConnectViewModel: ObservableObject {
 
     func selectVersion(_ version: AppStoreVersion) {
         selectedVersion = version
+        page = .distribution
         localizations = []
         editedLocalization = nil
         pendingScreenshots = []
@@ -579,6 +574,19 @@ final class AppStoreConnectViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func reloadDistributionFromNetwork() async throws {
+        if let app = selectedApp {
+            versions = try await client.listVersions(appID: app.id)
+            if let selectedVersion,
+               sidebarVersions.contains(where: { $0.id == selectedVersion.id }) {
+                self.selectedVersion = sidebarVersions.first { $0.id == selectedVersion.id }
+            } else {
+                selectedVersion = sidebarVersions.first
+            }
+        }
+        try await reloadLocalizationsFromNetwork()
     }
 
     private func reloadLocalizationsFromNetwork() async throws {
