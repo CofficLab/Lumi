@@ -1,8 +1,8 @@
 import Foundation
 import Security
 
-final class AppStoreConnectCredentialStore: @unchecked Sendable {
-    static let shared = AppStoreConnectCredentialStore()
+final class CredentialStore: @unchecked Sendable {
+    static let shared = CredentialStore()
     private let service = "com.coffic.lumi.appstoreconnect"
 
     private enum Keys {
