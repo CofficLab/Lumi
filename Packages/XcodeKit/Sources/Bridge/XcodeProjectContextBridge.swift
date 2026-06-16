@@ -89,8 +89,12 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .store(in: &cancellables)
         provider.$buildContextStatus
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateCache()
+            .sink { [weak self] status in
+                if case .available = status {
+                    self?.updateCacheNow()
+                } else {
+                    self?.updateCache()
+                }
             }
             .store(in: &cancellables)
         provider.$resolutionProgress
@@ -103,6 +107,16 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateCache()
+            }
+            .store(in: &cancellables)
+        provider.$semanticIndexStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                if case .ready = status {
+                    self?.updateCacheNow()
+                } else {
+                    self?.updateCache()
+                }
             }
             .store(in: &cancellables)
         if Self.verbose {

@@ -110,7 +110,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
                     }
                 }
                 group.addTask(priority: .background) {
-                    let store = XcodeBuildServerStore(storageRootURL: AppConfig.getDBFolderURL())
+                    let store = EditorSwiftBuildServerStore.makeStore()
                     let success = await EditorXcodeProjectPreloader.preloadProject(project, store: store)
                     return (project, success)
                 }

@@ -1,0 +1,201 @@
+import Foundation
+import os
+
+enum XcodeSemanticIndexRunner {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index")
+
+    struct Request: Sendable, Equatable {
+        let workspaceURL: URL
+        let scheme: String
+        let configuration: String
+        let destinationQuery: String
+        let storeDirectory: URL
+        let derivedDataDirectory: URL
+        let xcodeBuildServerPath: String
+        let buildRoot: String?
+    }
+
+    static func compileDatabaseURL(in storeDirectory: URL) -> URL {
+        storeDirectory.appendingPathComponent(".compile", isDirectory: false)
+    }
+
+    static func isCompileDatabaseFresh(
+        compileDatabaseURL: URL,
+        buildServerJSONURL: URL
+    ) -> Bool {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: compileDatabaseURL.path),
+              fileManager.fileExists(atPath: buildServerJSONURL.path) else {
+            return false
+        }
+        guard let compileAttributes = try? fileManager.attributesOfItem(atPath: compileDatabaseURL.path),
+              let buildServerAttributes = try? fileManager.attributesOfItem(atPath: buildServerJSONURL.path),
+              let compileModified = compileAttributes[.modificationDate] as? Date,
+              let buildServerModified = buildServerAttributes[.modificationDate] as? Date else {
+            return false
+        }
+        return compileModified >= buildServerModified
+    }
+
+    static func syncCompileDatabaseFromDerivedData(_ request: Request) async -> Bool {
+        guard isBuildRootUnderDerivedData(request) else {
+            return false
+        }
+
+        guard let buildRoot = request.buildRoot?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !buildRoot.isEmpty else {
+            return false
+        }
+
+        let compileURL = compileDatabaseURL(in: request.storeDirectory)
+        return await runCommand(
+            executablePath: request.xcodeBuildServerPath,
+            arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
+            workingDirectory: request.storeDirectory
+        )
+    }
+
+    static func buildAndParseCompileDatabase(_ request: Request) async -> Bool {
+        let compileURL = compileDatabaseURL(in: request.storeDirectory)
+        let logURL = request.storeDirectory.appendingPathComponent("semantic-index-build.log")
+
+        let buildSucceeded = await runXcodeBuildCapturingLog(request: request, logURL: logURL)
+        guard buildSucceeded else {
+            logger.error("Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
+            return false
+        }
+
+        return await runCommand(
+            executablePath: request.xcodeBuildServerPath,
+            arguments: ["parse", "-o", compileURL.path, logURL.path],
+            workingDirectory: request.storeDirectory
+        )
+    }
+
+    static func discoverBuildRoot(in derivedDataDirectory: URL) -> String? {
+        let fileManager = FileManager.default
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: derivedDataDirectory,
+            includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        let candidates = entries.filter { url in
+            guard (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
+                return false
+            }
+            let buildPath = url.appendingPathComponent("Build").path
+            let logsPath = url.appendingPathComponent("Logs").path
+            return fileManager.fileExists(atPath: buildPath) || fileManager.fileExists(atPath: logsPath)
+        }
+
+        return candidates.max { lhs, rhs in
+            let lhsDate = (try? lhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let rhsDate = (try? rhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return lhsDate < rhsDate
+        }?.path
+    }
+
+    static func isBuildRootUnderDerivedData(_ request: Request) -> Bool {
+        guard let buildRoot = request.buildRoot?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !buildRoot.isEmpty else {
+            return false
+        }
+
+        let managedPrefix = request.derivedDataDirectory.standardizedFileURL.path
+        let normalizedBuildRoot = URL(fileURLWithPath: buildRoot).standardizedFileURL.path
+        return normalizedBuildRoot == managedPrefix || normalizedBuildRoot.hasPrefix(managedPrefix + "/")
+    }
+
+    private static func runXcodeBuildCapturingLog(request: Request, logURL: URL) async -> Bool {
+        var arguments = ["xcodebuild"]
+        if request.workspaceURL.pathExtension == "xcworkspace" {
+            arguments.append(contentsOf: ["-workspace", request.workspaceURL.path])
+        } else {
+            arguments.append(contentsOf: ["-project", request.workspaceURL.path])
+        }
+        arguments.append(contentsOf: [
+            "-scheme", request.scheme,
+            "-configuration", request.configuration,
+            "-destination", request.destinationQuery,
+            "-derivedDataPath", request.derivedDataDirectory.path,
+            "build",
+        ])
+
+        return await runCommand(
+            executablePath: "/usr/bin/xcodebuild",
+            arguments: arguments,
+            workingDirectory: request.storeDirectory,
+            combinedLogURL: logURL
+        )
+    }
+
+    private static func runCommand(
+        executablePath: String,
+        arguments: [String],
+        workingDirectory: URL,
+        combinedLogURL: URL? = nil
+    ) async -> Bool {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let fileManager = FileManager.default
+                if !fileManager.fileExists(atPath: workingDirectory.path) {
+                    do {
+                        try fileManager.createDirectory(
+                            at: workingDirectory,
+                            withIntermediateDirectories: true
+                        )
+                    } catch {
+                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        continuation.resume(returning: false)
+                        return
+                    }
+                }
+
+                let process = Process()
+                process.executableURL = URL(filePath: executablePath)
+                process.arguments = arguments
+                process.currentDirectoryURL = workingDirectory
+
+                var outputHandle: FileHandle?
+                var errorHandle: FileHandle?
+
+                if let combinedLogURL {
+                    fileManager.createFile(atPath: combinedLogURL.path, contents: nil)
+                    guard let stdoutHandle = try? FileHandle(forWritingTo: combinedLogURL),
+                          let stderrHandle = try? FileHandle(forWritingTo: combinedLogURL) else {
+                        continuation.resume(returning: false)
+                        return
+                    }
+                    stdoutHandle.seekToEndOfFile()
+                    stderrHandle.seekToEndOfFile()
+                    outputHandle = stdoutHandle
+                    errorHandle = stderrHandle
+                    process.standardOutput = stdoutHandle
+                    process.standardError = stderrHandle
+                } else {
+                    process.standardOutput = FileHandle.nullDevice
+                    process.standardError = FileHandle.nullDevice
+                }
+
+                defer {
+                    try? outputHandle?.close()
+                    try? errorHandle?.close()
+                }
+
+                do {
+                    try process.run()
+                } catch {
+                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                process.waitUntilExit()
+                continuation.resume(returning: process.terminationStatus == 0)
+            }
+        }
+    }
+}

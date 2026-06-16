@@ -191,6 +191,52 @@ final class EditorProjectContextLSPRefreshPolicyTests: XCTestCase {
     }
 }
 
+final class LSPDiagnosticBuildContextPolicyTests: XCTestCase {
+    private func makeDiagnostic(message: String) -> Diagnostic {
+        Diagnostic(
+            range: LSPRange(
+                start: Position(line: 0, character: 0),
+                end: Position(line: 0, character: 1)
+            ),
+            severity: .error,
+            message: message
+        )
+    }
+
+    func testSuppressesNoSuchModuleBeforeBuildContextReady() {
+        let diagnostic = makeDiagnostic(message: "No such module 'LumiCoreKit'")
+
+        XCTAssertFalse(
+            LSPDiagnosticBuildContextPolicy.shouldPublishDiagnostic(
+                diagnostic,
+                buildServerPathAvailable: false
+            )
+        )
+    }
+
+    func testPublishesNoSuchModuleAfterBuildContextReady() {
+        let diagnostic = makeDiagnostic(message: "No such module 'LumiCoreKit'")
+
+        XCTAssertTrue(
+            LSPDiagnosticBuildContextPolicy.shouldPublishDiagnostic(
+                diagnostic,
+                buildServerPathAvailable: true
+            )
+        )
+    }
+
+    func testPublishesOtherDiagnosticsBeforeBuildContextReady() {
+        let diagnostic = makeDiagnostic(message: "Cannot find type 'Foo' in scope")
+
+        XCTAssertTrue(
+            LSPDiagnosticBuildContextPolicy.shouldPublishDiagnostic(
+                diagnostic,
+                buildServerPathAvailable: false
+            )
+        )
+    }
+}
+
 @MainActor
 final class TrackingLSPClient: SuperEditorLSPClient {
     private(set) var refreshCallCount = 0

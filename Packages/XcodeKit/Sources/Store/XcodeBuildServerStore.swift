@@ -5,37 +5,38 @@ import os
 /// Build Server 配置存储
 ///
 /// 管理多个项目的 `buildServer.json` 文件。
-/// 存储位置由 `storageRootURL` 决定，每个项目通过其 workspace 路径的 MD5 哈希来区分。
+/// 存储位置为插件专属目录（`AppConfig.getPluginDBFolderURL(pluginName:)`），
+/// 每个项目通过其 workspace 路径的 MD5 哈希分子目录区分。
 public final class XcodeBuildServerStore: @unchecked Sendable {
 
     // MARK: - Constants
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.build-server-store")
 
-    private let pluginDirName = "EditorXcodePlugin"
     private let fileName = "buildServer.json"
     private let corruptFileName = "buildServer.corrupt.json"
 
-    /// 存储根路径（由外部注入）
-    public let storageRootURL: URL
+    /// 插件专属存储目录（由插件注入，遵循 plugin-storage-rules）
+    public let pluginDirectoryURL: URL
 
     // MARK: - Init
 
+    public init(pluginDirectoryURL: URL) {
+        self.pluginDirectoryURL = pluginDirectoryURL
+    }
+
+    /// 兼容旧调用方；`storageRootURL` 应传入插件目录而非 Application Support 根目录。
+    @available(*, deprecated, renamed: "init(pluginDirectoryURL:)")
     public init(storageRootURL: URL) {
-        self.storageRootURL = storageRootURL
+        self.pluginDirectoryURL = storageRootURL
     }
 
     // MARK: - Project Directory
 
-    /// 插件存储根目录
-    private var rootDirectoryURL: URL {
-        storageRootURL.appendingPathComponent(pluginDirName, isDirectory: true)
-    }
-
     /// 根据项目路径生成专属目录
     private func directoryURL(forWorkspace workspacePath: String) -> URL {
         let projectHash = workspacePath.md5Hash
-        return rootDirectoryURL
+        return pluginDirectoryURL
             .appendingPathComponent(projectHash, isDirectory: true)
     }
 
@@ -71,12 +72,64 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
 
         let storedWorkspacePath = json["workspace"] as? String ?? ""
         let scheme = json["scheme"] as? String ?? ""
+        let buildRoot = json["build_root"] as? String
 
         return Config(
             buildServerJSONPath: url.path,
             workspacePath: storedWorkspacePath,
-            scheme: scheme
+            scheme: scheme,
+            buildRoot: buildRoot
         )
+    }
+
+    /// Reads build server metadata used for semantic indexing.
+    public func loadMetadata(forWorkspace workspacePath: String) -> Metadata? {
+        let url = fileURL(forWorkspace: workspacePath)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+
+        guard let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        let storedWorkspacePath = json["workspace"] as? String ?? ""
+        let scheme = json["scheme"] as? String ?? ""
+        let buildRoot = json["build_root"] as? String
+        let storeDirectory = directoryURL(forWorkspace: workspacePath)
+
+        return Metadata(
+            buildServerJSONPath: url.path,
+            workspacePath: storedWorkspacePath,
+            scheme: scheme,
+            buildRoot: buildRoot,
+            storeDirectory: storeDirectory,
+            compileDatabasePath: storeDirectory.appendingPathComponent(".compile", isDirectory: false).path
+        )
+    }
+
+    public func compileDatabaseURL(forWorkspace workspacePath: String) -> URL {
+        directoryURL(forWorkspace: workspacePath)
+            .appendingPathComponent(".compile", isDirectory: false)
+    }
+
+    /// Plugin-local DerivedData root for a workspace (`<hash>/DerivedData/`).
+    public func derivedDataDirectory(forWorkspace workspacePath: String) -> URL {
+        directoryURL(forWorkspace: workspacePath)
+            .appendingPathComponent("DerivedData", isDirectory: true)
+    }
+
+    /// Whether `build_root` lives under this workspace's plugin-local DerivedData.
+    public func isManagedBuildRoot(_ buildRoot: String?, forWorkspace workspacePath: String) -> Bool {
+        guard let buildRoot = buildRoot?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !buildRoot.isEmpty else {
+            return false
+        }
+
+        let managedPrefix = derivedDataDirectory(forWorkspace: workspacePath).standardizedFileURL.path
+        let normalizedBuildRoot = URL(fileURLWithPath: buildRoot).standardizedFileURL.path
+        return normalizedBuildRoot == managedPrefix || normalizedBuildRoot.hasPrefix(managedPrefix + "/")
     }
 
     // MARK: - Write
@@ -97,6 +150,31 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             Self.logger.error("Create build server store directory failed: \(error.localizedDescription)")
         }
         return dir
+    }
+
+    /// Updates `build_root` in an existing buildServer.json after a plugin-local build.
+    @discardableResult
+    public func updateBuildRoot(forWorkspace workspacePath: String, buildRoot: String) -> Bool {
+        let url = fileURL(forWorkspace: workspacePath)
+        guard FileManager.default.fileExists(atPath: url.path),
+              var json = (try? Data(contentsOf: url)).flatMap({
+                  try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
+              }) else {
+            return false
+        }
+
+        json["build_root"] = buildRoot
+        guard let data = try? JSONSerialization.data(withJSONObject: json) else {
+            return false
+        }
+
+        do {
+            try data.write(to: url, options: .atomic)
+            return true
+        } catch {
+            Self.logger.error("Update build_root failed: \(error.localizedDescription)")
+            return false
+        }
     }
 
     // MARK: - Validate
@@ -126,7 +204,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     /// 清理所有项目的 buildServer.json
     public func removeAll() {
         do {
-            try FileManager.default.removeItem(at: rootDirectoryURL)
+            try FileManager.default.removeItem(at: pluginDirectoryURL)
         } catch {
             Self.logger.error("Remove all build server stores failed: \(error.localizedDescription)")
         }
@@ -155,11 +233,43 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         public let buildServerJSONPath: String
         public let workspacePath: String
         public let scheme: String
+        public let buildRoot: String?
 
-        public init(buildServerJSONPath: String, workspacePath: String, scheme: String) {
+        public init(
+            buildServerJSONPath: String,
+            workspacePath: String,
+            scheme: String,
+            buildRoot: String? = nil
+        ) {
             self.buildServerJSONPath = buildServerJSONPath
             self.workspacePath = workspacePath
             self.scheme = scheme
+            self.buildRoot = buildRoot
+        }
+    }
+
+    public struct Metadata: Equatable, Sendable {
+        public let buildServerJSONPath: String
+        public let workspacePath: String
+        public let scheme: String
+        public let buildRoot: String?
+        public let storeDirectory: URL
+        public let compileDatabasePath: String
+
+        public init(
+            buildServerJSONPath: String,
+            workspacePath: String,
+            scheme: String,
+            buildRoot: String?,
+            storeDirectory: URL,
+            compileDatabasePath: String
+        ) {
+            self.buildServerJSONPath = buildServerJSONPath
+            self.workspacePath = workspacePath
+            self.scheme = scheme
+            self.buildRoot = buildRoot
+            self.storeDirectory = storeDirectory
+            self.compileDatabasePath = compileDatabasePath
         }
     }
 }

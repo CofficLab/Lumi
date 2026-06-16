@@ -32,6 +32,7 @@ enum XcodeProjectStatusPresentation {
     static func semanticStatusText(
         indexingTask: ProgressTask?,
         buildContextStatus: XcodeBuildContextProvider.BuildContextStatus,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted,
         resolutionProgress: BuildContextResolutionProgress? = nil,
         now: Date = Date()
     ) -> String {
@@ -41,12 +42,16 @@ enum XcodeProjectStatusPresentation {
         if case .resolving = buildContextStatus, let resolutionProgress {
             return localizedResolutionProgressText(resolutionProgress, now: now)
         }
+        if case .available = buildContextStatus {
+            return localizedSemanticIndexStatusText(for: semanticIndexStatus)
+        }
         return localizedSemanticStatusText(for: buildContextStatus)
     }
 
     static func semanticStatusDescription(
         indexingTask: ProgressTask?,
         buildContextStatusDescription: String,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted,
         resolutionProgress: BuildContextResolutionProgress? = nil,
         now: Date = Date()
     ) -> String {
@@ -62,6 +67,9 @@ enum XcodeProjectStatusPresentation {
         }
         if let resolutionProgress {
             return localizedResolutionProgressDetail(resolutionProgress, now: now)
+        }
+        if buildContextStatusDescription.contains("Available") {
+            return localizedSemanticIndexStatusDescription(for: semanticIndexStatus)
         }
         return buildContextStatusDescription
     }
@@ -139,14 +147,19 @@ enum XcodeProjectStatusPresentation {
     static func semanticStatusAppearance(
         isIndexing: Bool,
         isResolving: Bool = false,
-        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+        isSemanticIndexing: Bool = false,
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted
     ) -> SemanticStatusAppearance {
-        if isIndexing { return .indexing }
+        if isIndexing || isSemanticIndexing { return .indexing }
         if isResolving { return .resolving }
         switch buildContextStatus {
         case .unknown: return .unknown
         case .resolving: return .resolving
-        case .available: return .available
+        case .available:
+            if case .failed = semanticIndexStatus { return .unavailable }
+            if case .ready = semanticIndexStatus { return .available }
+            return .resolving
         case .unavailable: return .unavailable
         case .needsResync: return .needsResync
         }
@@ -333,11 +346,37 @@ enum XcodeProjectStatusPresentation {
         case .resolving:
             return LumiPluginLocalization.string("Resolving...", bundle: .module)
         case .available:
-            return LumiPluginLocalization.string("Ready", bundle: .module)
+            return LumiPluginLocalization.string("Config Ready", bundle: .module)
         case .unavailable:
             return LumiPluginLocalization.string("Error", bundle: .module)
         case .needsResync:
             return LumiPluginLocalization.string("Needs Sync", bundle: .module)
+        }
+    }
+
+    static func localizedSemanticIndexStatusText(for status: XcodeSemanticIndexStatus) -> String {
+        switch status {
+        case .notStarted:
+            return LumiPluginLocalization.string("Config Ready", bundle: .module)
+        case .indexing:
+            return LumiPluginLocalization.string("Indexing Project...", bundle: .module)
+        case .ready:
+            return LumiPluginLocalization.string("Ready", bundle: .module)
+        case .failed:
+            return LumiPluginLocalization.string("Index Failed", bundle: .module)
+        }
+    }
+
+    static func localizedSemanticIndexStatusDescription(for status: XcodeSemanticIndexStatus) -> String {
+        switch status {
+        case .notStarted:
+            return LumiPluginLocalization.string("Build context is ready. Semantic indexing has not started.", bundle: .module)
+        case .indexing:
+            return LumiPluginLocalization.string("Building compile database for SourceKit...", bundle: .module)
+        case .ready:
+            return LumiPluginLocalization.string("Build context and semantic index are ready.", bundle: .module)
+        case .failed(let reason):
+            return reason
         }
     }
 }

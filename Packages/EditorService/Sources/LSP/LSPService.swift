@@ -1205,6 +1205,18 @@ public final class LSPService: ObservableObject, SuperLog {
         }
     }
     
+    private func isBuildContextReadyForDiagnostics() -> Bool {
+        guard let root = projectRootPath,
+              let languageId = activeLanguageId,
+              let buildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: root) else {
+            return false
+        }
+        let compileDatabasePath = (buildServerPath as NSString)
+            .deletingLastPathComponent
+            .appending("/.compile")
+        return FileManager.default.fileExists(atPath: compileDatabasePath)
+    }
+
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
         guard let currentURI else { return }
         guard params.uri == currentURI else { return }
@@ -1215,6 +1227,10 @@ public final class LSPService: ObservableObject, SuperLog {
             return
         }
         diagnosticsStabilizationDeadline = nil
-        currentDiagnostics = params.diagnostics
+        let buildServerReady = isBuildContextReadyForDiagnostics()
+        currentDiagnostics = LSPDiagnosticBuildContextPolicy.filteredDiagnostics(
+            params.diagnostics,
+            buildServerPathAvailable: buildServerReady
+        )
     }
 }

@@ -71,16 +71,38 @@ import XcodeKit
 
 @MainActor
 @Test func semanticStatusTextUsesBuildContextWhenNotIndexing() {
-    let ready = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .available(
-        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
-    ))
-    #expect(!ready.isEmpty)
-    #expect(ready == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .available(
-        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
-    )))
+    let configReady = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .notStarted
+    )
+    #expect(configReady == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .notStarted))
+
+    let ready = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .ready
+    )
+    #expect(ready == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .ready))
 
     let resolving = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .resolving)
     #expect(resolving == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .resolving))
+}
+
+@MainActor
+@Test func semanticStatusTextShowsProjectIndexingState() {
+    let indexing = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .indexing
+    )
+    #expect(indexing == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .indexing))
 }
 
 @MainActor

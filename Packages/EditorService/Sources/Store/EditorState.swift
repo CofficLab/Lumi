@@ -1186,10 +1186,13 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 编辑器扩展安装完成后重新绑定 registry 能力（LSP client、providers 等）。
     public func refreshExtensionProviders() {
         documentHighlightCoordinator.bumpHighlightRevision()
-        applyExtensionProvidersFromRegistry(rebindCurrentDocument: true)
+        applyExtensionProvidersFromRegistry(rebindCurrentDocument: false)
         commandController.refreshCoreCommandRegistrations(in: self)
         observeProjectContextChanges()
-        catchUpProjectContextAfterExtensionRegistration()
+        Task { @MainActor in
+            await catchUpProjectContextAfterExtensionRegistration()
+            syncCurrentDocumentWithLSPClientIfNeeded()
+        }
         NotificationCenter.default.post(
             name: EditorHostEnvironment.current.notifications.editorExtensionProvidersDidChange,
             object: self
@@ -1197,9 +1200,9 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// Replays project-context side effects missed before Swift plugin reconfigured notifications.
-    private func catchUpProjectContextAfterExtensionRegistration() {
+    private func catchUpProjectContextAfterExtensionRegistration() async {
         refreshProjectContextSnapshot()
-        refreshLSPAfterProjectContextChange()
+        await refreshLSPAfterProjectContextChangeIfNeeded()
     }
 
     private func applyExtensionProvidersFromRegistry(rebindCurrentDocument: Bool) {
@@ -1261,26 +1264,28 @@ public final class EditorState: ObservableObject, SuperLog {
 
     private func observeProjectContextChanges() {
         projectContextCancellable?.cancel()
-        projectContextCancellable = NotificationCenter.default
-            .publisher(for: EditorHostEnvironment.current.notifications.projectContextDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    await self?.handleProjectContextDidChangeForTesting()
-                }
+        let notificationNames = Array(
+            Set([
+                EditorHostEnvironment.current.notifications.projectContextDidChange,
+                Notification.Name("lumiEditorProjectContextDidChange"),
+                Notification.Name("EditorProjectContextDidChange"),
+            ])
+        )
+        projectContextCancellable = Publishers.MergeMany(
+            notificationNames.map { NotificationCenter.default.publisher(for: $0) }
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            Task { @MainActor in
+                await self?.handleProjectContextDidChangeForTesting()
             }
+        }
     }
 
     func handleProjectContextDidChangeForTesting() async {
         refreshProjectContextSnapshot()
         updateSemanticReadinessFeedback()
         await refreshLSPAfterProjectContextChangeIfNeeded()
-    }
-
-    private func refreshLSPAfterProjectContextChange() {
-        Task {
-            await refreshLSPAfterProjectContextChangeIfNeeded()
-        }
     }
 
     private func refreshLSPAfterProjectContextChangeIfNeeded() async {

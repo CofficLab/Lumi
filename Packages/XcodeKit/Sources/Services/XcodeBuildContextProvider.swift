@@ -27,6 +27,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     @Published public private(set) var buildServerJSONPath: String?
     @Published public private(set) var isGeneratingBuildServer: Bool = false
+    @Published public private(set) var semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted
 
     // MARK: - Cache
 
@@ -38,6 +39,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// xcode-build-server 路径缓存
     private var xcodeBuildServerPath: String?
+
+    private var semanticIndexTask: Task<Void, Never>?
 
     // MARK: - Dependencies
 
@@ -340,12 +343,83 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         buildContextStatus = Self.buildServerGenerationStatus(success: success, config: config)
         if case .available = buildContextStatus {
             clearResolutionProgress()
+            scheduleSemanticIndexing(workspaceURL: workspaceURL)
         } else if case .unavailable = buildContextStatus {
             clearResolutionProgress()
+            semanticIndexStatus = .notStarted
         }
         if let config {
             buildServerJSONPath = config.buildServerJSONPath
             if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
+        }
+    }
+
+    private func scheduleSemanticIndexing(workspaceURL: URL) {
+        semanticIndexTask?.cancel()
+        semanticIndexTask = Task { [weak self] in
+            await self?.runSemanticIndexing(workspaceURL: workspaceURL)
+        }
+    }
+
+    private func runSemanticIndexing(workspaceURL: URL) async {
+        guard !Task.isCancelled else { return }
+        guard let serverPath = xcodeBuildServerPath else {
+            semanticIndexStatus = .failed("xcode-build-server not installed")
+            return
+        }
+
+        let storeDirectory = store.ensureDirectory(forWorkspace: workspaceURL.path)
+        guard let metadata = store.loadMetadata(forWorkspace: workspaceURL.path) else {
+            semanticIndexStatus = .failed("buildServer.json is missing")
+            return
+        }
+
+        let compileURL = URL(fileURLWithPath: metadata.compileDatabasePath)
+        let buildServerURL = URL(fileURLWithPath: metadata.buildServerJSONPath)
+        if XcodeSemanticIndexRunner.isCompileDatabaseFresh(
+            compileDatabaseURL: compileURL,
+            buildServerJSONURL: buildServerURL
+        ) {
+            semanticIndexStatus = .ready
+            return
+        }
+
+        semanticIndexStatus = .indexing
+
+        let derivedDataDirectory = store.derivedDataDirectory(forWorkspace: workspaceURL.path)
+        try? FileManager.default.createDirectory(
+            at: derivedDataDirectory,
+            withIntermediateDirectories: true
+        )
+
+        let request = XcodeSemanticIndexRunner.Request(
+            workspaceURL: workspaceURL,
+            scheme: activeScheme?.name ?? metadata.scheme,
+            configuration: activeConfiguration ?? activeScheme?.activeConfiguration ?? "Debug",
+            destinationQuery: activeDestination?.destinationQuery
+                ?? activeScheme?.activeDestination?.destinationQuery
+                ?? Self.defaultDestination().destinationQuery,
+            storeDirectory: storeDirectory,
+            derivedDataDirectory: derivedDataDirectory,
+            xcodeBuildServerPath: serverPath,
+            buildRoot: metadata.buildRoot
+        )
+
+        if store.isManagedBuildRoot(metadata.buildRoot, forWorkspace: workspaceURL.path),
+           await XcodeSemanticIndexRunner.syncCompileDatabaseFromDerivedData(request) {
+            semanticIndexStatus = .ready
+            return
+        }
+
+        guard !Task.isCancelled else { return }
+
+        if await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request) {
+            if let buildRoot = XcodeSemanticIndexRunner.discoverBuildRoot(in: derivedDataDirectory) {
+                _ = store.updateBuildRoot(forWorkspace: workspaceURL.path, buildRoot: buildRoot)
+            }
+            semanticIndexStatus = .ready
+        } else {
+            semanticIndexStatus = .failed("Unable to build semantic index")
         }
     }
 
@@ -459,9 +533,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 使所有缓存失效
     public func invalidateAllContexts() {
+        semanticIndexTask?.cancel()
+        semanticIndexTask = nil
         buildSettingsCache.removeAll()
         targetMatchCache.removeAll()
         clearResolutionProgress()
+        semanticIndexStatus = .notStarted
         buildContextStatus = .needsResync
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }

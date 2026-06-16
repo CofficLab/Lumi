@@ -30,7 +30,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
     public nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor lazy var buildContextProvider = XcodeBuildContextProvider(
-        store: XcodeBuildServerStore(storageRootURL: AppConfig.getDBFolderURL())
+        store: EditorSwiftBuildServerStore.makeStore()
     )
     @MainActor private lazy var projectContextCapability = XcodeProjectContextCapabilityAdapter()
     @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
