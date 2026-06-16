@@ -28,11 +28,6 @@ extension AppStoreVersion {
     }
 
     static func sidebarVersions(from versions: [AppStoreVersion], appPlatform: String?) -> [AppStoreVersion] {
-        // Log input for debugging
-        print("[sidebarVersions] Input: \(versions.count) versions, appPlatform: \(appPlatform ?? "nil")")
-        print("[sidebarVersions] Input platforms: \(versions.map(\.platform))")
-        print("[sidebarVersions] Input versionStrings: \(versions.map(\.versionString))")
-        
         // Do not filter by platform or deduplicate by versionString.
         // Apps often have versions across multiple platforms (iOS, macOS, visionOS),
         // and the same version number can exist on different platforms with
@@ -40,12 +35,7 @@ extension AppStoreVersion {
         let sorted = versions.sorted {
             ($0.createdDate ?? .distantPast) > ($1.createdDate ?? .distantPast)
         }
-        
-        // Log output for debugging
-        print("[sidebarVersions] Output: \(sorted.count) versions")
-        print("[sidebarVersions] Output platforms: \(sorted.map(\.platform))")
-        print("[sidebarVersions] Output versionStrings: \(sorted.map(\.versionString))")
-        
+
         return sorted
     }
 }

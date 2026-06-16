@@ -39,12 +39,21 @@ struct VersionsSection: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(viewModel.sidebarVersions) { version in
-                            SidebarVersionRow(
-                                version: version,
-                                isSelected: isVersionSelected(version)
-                            ) {
-                                viewModel.openDistribution(for: version)
+                        ForEach(groupedSidebarVersions, id: \.platform) { group in
+                            Text(platformDisplayName(group.platform))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.top, 10)
+                                .padding(.bottom, 4)
+
+                            ForEach(group.versions, id: \.id) { version in
+                                SidebarVersionRow(
+                                    version: version,
+                                    isSelected: isVersionSelected(version)
+                                ) {
+                                    viewModel.openDistribution(for: version)
+                                }
                             }
                         }
                     }
@@ -57,24 +66,39 @@ struct VersionsSection: View {
 
     // MARK: - Private
 
+    private let platformOrder: [String] = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+
     private var platformTitle: String {
-        guard let app = viewModel.selectedApp else {
-            return AppStoreConnectLocalization.string("App Versions")
-        }
-        let versions = viewModel.sidebarVersions
-        // Derive platform label from versions when available.
-        // When an iOS app has Mac Catalyst versions, the API returns platform=IOS
-        // for the app but MAC_OS for each version.
-        if let firstVersion = versions.first {
-            switch firstVersion.platform.normalizedASCPlatform {
-            case "MAC_OS": return AppStoreConnectLocalization.string("macOS App")
-            case "IOS": return AppStoreConnectLocalization.string("iOS App")
-            case "TV_OS": return AppStoreConnectLocalization.string("tvOS App")
-            case "VISION_OS": return AppStoreConnectLocalization.string("visionOS App")
-            default: break
+        AppStoreConnectLocalization.string("App Versions")
+    }
+
+    private var groupedSidebarVersions: [(platform: String, versions: [AppStoreVersion])] {
+        let grouped = Dictionary(grouping: viewModel.sidebarVersions, by: { $0.platform.normalizedASCPlatform })
+        return grouped
+            .map { (platform: $0.key, versions: $0.value) }
+            .sorted { lhs, rhs in
+                platformSortIndex(lhs.platform) < platformSortIndex(rhs.platform)
             }
+    }
+
+    private func platformSortIndex(_ platform: String) -> Int {
+        let normalized = platform.normalizedASCPlatform
+        return platformOrder.firstIndex(of: normalized) ?? Int.max
+    }
+
+    private func platformDisplayName(_ platform: String) -> String {
+        switch platform.normalizedASCPlatform {
+        case "MAC_OS":
+            return AppStoreConnectLocalization.string("macOS")
+        case "IOS":
+            return AppStoreConnectLocalization.string("iOS")
+        case "TV_OS":
+            return AppStoreConnectLocalization.string("tvOS")
+        case "VISION_OS":
+            return AppStoreConnectLocalization.string("visionOS")
+        default:
+            return platform
         }
-        return AppStoreConnectLocalization.string("%@ App", app.platformLabel)
     }
 
     private func isVersionSelected(_ version: AppStoreVersion) -> Bool {
