@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct VersionsSection: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -16,6 +16,16 @@ struct VersionsSection: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                Button {
+                    Task { await viewModel.loadVersions() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .disabled(viewModel.isBusy)
+                .help(AppStoreConnectLocalization.string("Refresh"))
             }
             .padding(.horizontal, 12)
             .padding(.top, 0)

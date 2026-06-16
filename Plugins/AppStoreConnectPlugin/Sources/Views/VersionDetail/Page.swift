@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct DistributionPage: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
     @Binding var importingScreenshots: Bool
 
     var body: some View {

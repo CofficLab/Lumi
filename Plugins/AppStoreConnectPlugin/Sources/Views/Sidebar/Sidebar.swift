@@ -2,12 +2,12 @@ import LumiUI
 import SwiftUI
 
 struct Sidebar: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if viewModel.selectedApp != nil {
-                SidebarVersionsSection(viewModel: viewModel)
+                VersionsSection(viewModel: viewModel)
                     .padding(.top, 6)
             }
 
@@ -36,7 +36,7 @@ struct Sidebar: View {
         }
     }
 
-    private func sidebarButton(_ page: AppStoreConnectViewModel.Page) -> some View {
+    private func sidebarButton(_ page: ConnectViewModel.Page) -> some View {
         Button {
             viewModel.navigate(to: page)
         } label: {

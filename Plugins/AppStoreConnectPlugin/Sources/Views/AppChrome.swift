@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct AppChrome: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,11 +19,11 @@ struct AppChrome: View {
 
                 if viewModel.selectedApp != nil {
                     Picker("", selection: Binding(
-                        get: { viewModel.page == .xcodeCloud ? AppStoreConnectViewModel.Page.xcodeCloud : .distribution },
+                        get: { viewModel.page == .xcodeCloud ? ConnectViewModel.Page.xcodeCloud : .distribution },
                         set: { viewModel.navigate(to: $0) }
                     )) {
-                        Text(AppStoreConnectLocalization.string("Distribution")).tag(AppStoreConnectViewModel.Page.distribution)
-                        Text(AppStoreConnectLocalization.string("Xcode Cloud")).tag(AppStoreConnectViewModel.Page.xcodeCloud)
+                        Text(AppStoreConnectLocalization.string("Distribution")).tag(ConnectViewModel.Page.distribution)
+                        Text(AppStoreConnectLocalization.string("Xcode Cloud")).tag(ConnectViewModel.Page.xcodeCloud)
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 320)
