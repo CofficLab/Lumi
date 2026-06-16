@@ -115,7 +115,7 @@ import XcodeKit
         semanticIndexStatus: .failed("error: no such module 'LumiCoreKit'")
     )
     #expect(failed.contains(XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .failed(""))))
-    #expect(failed.contains("LumiCoreKit"))
+    #expect(!failed.contains("LumiCoreKit"))
 }
 
 @MainActor

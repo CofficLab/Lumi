@@ -26,8 +26,10 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
     @Published var indexingTask: ProgressTask?
+    @Published var semanticIndexLogExcerpt: String?
     private var notificationCancellable: AnyCancellable?
     private var semanticRefreshTask: Task<Void, Never>?
+    private var semanticLogPollingTask: Task<Void, Never>?
 
     private var provider: XcodeBuildContextProvider?
     private var providerSubscriptionsBound = false
@@ -35,6 +37,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     deinit {
         semanticRefreshTask?.cancel()
+        semanticLogPollingTask?.cancel()
     }
 
     private init() {
@@ -85,6 +88,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+        refreshSemanticIndexLogIfNeeded()
     }
 
     private func bindProviderSubscriptionsIfNeeded() {
@@ -124,6 +128,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 self?.semanticIndexStatus = status
+                self?.handleSemanticIndexStatusChange()
             }
             .store(in: &cancellables)
 
@@ -146,6 +151,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 self.configurations = Array(Set(workspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
                 self.activeScheme = workspace?.activeScheme?.name
                 self.activeConfiguration = workspace?.activeScheme?.activeConfiguration
+                self.refreshSemanticIndexLogIfNeeded()
             }
             .store(in: &cancellables)
 
@@ -366,5 +372,64 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             semanticIndexStatus: semanticIndexStatus
         )
         return XcodeProjectStatusPresentation.color(for: appearance)
+    }
+
+    private func handleSemanticIndexStatusChange() {
+        switch semanticIndexStatus {
+        case .indexing:
+            startSemanticLogPolling()
+        case .failed, .ready, .notStarted:
+            stopSemanticLogPolling()
+            refreshSemanticIndexLogIfNeeded()
+        }
+    }
+
+    private func startSemanticLogPolling() {
+        guard semanticLogPollingTask == nil else { return }
+        semanticLogPollingTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                self?.refreshSemanticIndexLogIfNeeded()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    private func stopSemanticLogPolling() {
+        semanticLogPollingTask?.cancel()
+        semanticLogPollingTask = nil
+    }
+
+    private func refreshSemanticIndexLogIfNeeded() {
+        switch semanticIndexStatus {
+        case .indexing, .failed:
+            guard let logURL = semanticIndexLogURL() else {
+                semanticIndexLogExcerpt = nil
+                return
+            }
+            semanticIndexLogExcerpt = readLogExcerpt(from: logURL)
+        case .notStarted, .ready:
+            semanticIndexLogExcerpt = nil
+        }
+    }
+
+    private func semanticIndexLogURL() -> URL? {
+        let workspacePath = provider?.currentWorkspace?.path.path
+            ?? latestEditorSnapshot?.workspacePath
+        guard let workspacePath, !workspacePath.isEmpty else { return nil }
+        return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
+            .appendingPathComponent("semantic-index-build.log", isDirectory: false)
+    }
+
+    private func readLogExcerpt(from logURL: URL) -> String? {
+        guard let content = try? String(contentsOf: logURL, encoding: .utf8),
+              !content.isEmpty else {
+            return nil
+        }
+        let lines = content
+            .split(whereSeparator: \.isNewline)
+            .map(String.init)
+            .suffix(40)
+        guard !lines.isEmpty else { return nil }
+        return lines.joined(separator: "\n")
     }
 }

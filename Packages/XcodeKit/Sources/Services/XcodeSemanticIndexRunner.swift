@@ -117,7 +117,7 @@ enum XcodeSemanticIndexRunner {
     }
 
     private static func runXcodeBuildCapturingLog(request: Request, logURL: URL) async -> Bool {
-        var arguments = ["xcodebuild"]
+        var arguments: [String] = []
         if request.workspaceURL.pathExtension == "xcworkspace" {
             arguments.append(contentsOf: ["-workspace", request.workspaceURL.path])
         } else {

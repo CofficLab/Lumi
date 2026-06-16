@@ -67,10 +67,12 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                         .frame(width: 8, height: 8)
                 }
 
-                Text(statusText(at: context.date))
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.textSecondary)
-                    .lineLimit(1)
+                if !viewModel.showsActivityIndicator {
+                    Text(statusText(at: context.date))
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                }
             }
             .help(viewModel.semanticStatusDescription)
         }
@@ -167,6 +169,7 @@ public struct XcodeProjectStatusBar: View, SuperLog {
 public struct XcodeProjectStatusDetailView: View {
     @ObservedObject var viewModel: XcodeProjectStatusBarViewModel
     @State private var copiedSemanticError = false
+    @State private var copiedIndexLog = false
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -184,6 +187,9 @@ public struct XcodeProjectStatusDetailView: View {
             detailRow(LumiPluginLocalization.string("Semantic Index", bundle: .module), viewModel.semanticStatusDescription)
             if let failureReason = viewModel.semanticIndexFailureReason {
                 semanticIndexErrorSection(failureReason)
+            }
+            if let logExcerpt = viewModel.semanticIndexLogExcerpt {
+                semanticIndexLogSection(logExcerpt)
             }
 
             if let progress = viewModel.resolutionProgress {
@@ -341,6 +347,53 @@ public struct XcodeProjectStatusDetailView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             copiedSemanticError = false
+        }
+    }
+
+    @ViewBuilder
+    private func semanticIndexLogSection(_ logExcerpt: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(LumiPluginLocalization.string("Index Build Log", bundle: .module))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            ScrollView {
+                Text(logExcerpt)
+                    .font(.system(size: 11, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 140)
+            .padding(8)
+            .background(Color.white.opacity(0.04))
+            .cornerRadius(6)
+
+            HStack {
+                Spacer()
+                Button {
+                    copyIndexLog(logExcerpt)
+                } label: {
+                    Text(
+                        copiedIndexLog
+                            ? LumiPluginLocalization.string("Copied", bundle: .module)
+                            : LumiPluginLocalization.string("Copy Log", bundle: .module)
+                    )
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.blue)
+            }
+        }
+    }
+
+    private func copyIndexLog(_ logText: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(logText, forType: .string)
+        copiedIndexLog = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            copiedIndexLog = false
         }
     }
 
