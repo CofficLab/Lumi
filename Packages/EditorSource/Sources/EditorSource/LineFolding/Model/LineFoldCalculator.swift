@@ -21,6 +21,20 @@ actor LineFoldCalculator {
     private var valueStreamContinuation: AsyncStream<LineFoldStorage>.Continuation
     private var textChangedTask: Task<Void, Never>?
 
+    /// Builds a safe fold range clamped to current document length.
+    /// Returns nil if the resulting range is invalid.
+    private func makeSafeFold(
+        depth: Int,
+        lowerBound: Int,
+        upperBound: Int,
+        documentLength: Int
+    ) -> LineFoldStorage.RawFold? {
+        let clampedLower = max(0, min(lowerBound, documentLength))
+        let clampedUpper = max(0, min(upperBound, documentLength))
+        guard clampedLower <= clampedUpper else { return nil }
+        return LineFoldStorage.RawFold(depth: depth, range: clampedLower..<clampedUpper)
+    }
+
     /// Create a new calculator object that listens to a given stream for text changes.
     /// - Parameters:
     ///   - foldProvider: The object to use to calculate fold regions.
@@ -58,7 +72,6 @@ actor LineFoldCalculator {
     /// indent increases from the previous line, we start a new fold. If it decreases we end the fold we were in.
     private func buildFoldsForDocument() async {
         guard let controller = self.controller, let foldProvider = self.foldProvider else { return }
-        let documentRange = await controller.textView.documentRange
         var foldCache: [LineFoldStorage.RawFold] = []
         // Depth: Open range
         var openFolds: [Int: LineFoldStorage.RawFold] = [:]
@@ -82,12 +95,14 @@ actor LineFoldCalculator {
                     // End open folds > received depth
                     for openFold in openFolds.values.filter({ $0.depth > lineInfo.depth }) {
                         openFolds.removeValue(forKey: openFold.depth)
-                        foldCache.append(
-                            LineFoldStorage.RawFold(
-                                depth: openFold.depth,
-                                range: openFold.range.lowerBound..<lineInfo.rangeIndice
-                            )
-                        )
+                        if let safeFold = makeSafeFold(
+                            depth: openFold.depth,
+                            lowerBound: openFold.range.lowerBound,
+                            upperBound: lineInfo.rangeIndice,
+                            documentLength: await controller.textView.documentRange.length
+                        ) {
+                            foldCache.append(safeFold)
+                        }
                     }
                 }
 
@@ -96,16 +111,23 @@ actor LineFoldCalculator {
         }
 
         // Clean up any hanging folds.
+        let finalDocumentLength = await controller.textView.documentRange.length
         for fold in openFolds.values {
-            foldCache.append(
-                LineFoldStorage.RawFold(
-                    depth: fold.depth,
-                    range: fold.range.lowerBound..<documentRange.length
-                )
-            )
+            if let safeFold = makeSafeFold(
+                depth: fold.depth,
+                lowerBound: fold.range.lowerBound,
+                upperBound: finalDocumentLength,
+                documentLength: finalDocumentLength
+            ) {
+                foldCache.append(safeFold)
+            }
         }
 
-        await yieldNewStorage(newFolds: foldCache, controller: controller, documentRange: documentRange)
+        await yieldNewStorage(
+            newFolds: foldCache,
+            controller: controller,
+            documentRange: NSRange(location: 0, length: finalDocumentLength)
+        )
     }
 
     /// Yield a new storage value on the value stream using a new set of folds.
