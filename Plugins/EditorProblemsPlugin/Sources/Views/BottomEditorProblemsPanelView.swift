@@ -68,7 +68,8 @@ public struct BottomEditorProblemsPanelView: View {
                                 panelCard(
                                     title: problem.title,
                                     subtitle: problem.message,
-                                    badge: LumiPluginLocalization.string("Project", bundle: .module)
+                                    badge: LumiPluginLocalization.string("Project", bundle: .module),
+                                    severity: problem.severity.toDiagnosticSeverity()
                                 )
                                 ProblemAskAIButton {
                                     sendProblemToChat(problem)
@@ -89,7 +90,8 @@ public struct BottomEditorProblemsPanelView: View {
                                     panelCard(
                                         title: "\(service.files.relativeFilePath):\(line):\(column)",
                                         subtitle: diagnostic.message,
-                                        badge: diagnostic.source ?? "LSP"
+                                        badge: diagnostic.source ?? "LSP",
+                                        severity: diagnostic.severity
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -112,9 +114,14 @@ public struct BottomEditorProblemsPanelView: View {
             .foregroundColor(theme.textSecondary)
     }
 
-    private func panelCard(title: String, subtitle: String, badge: String) -> some View {
+    private func panelCard(title: String, subtitle: String, badge: String, severity: DiagnosticSeverity? = nil) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 8) {
+                Image(systemName: severityIcon(for: severity))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(severityColor(for: severity))
+                    .frame(width: 14)
+
                 Text(title)
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
@@ -127,7 +134,7 @@ public struct BottomEditorProblemsPanelView: View {
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(theme.textPrimary.opacity(0.08))
+                            .fill(severityColor(for: severity).opacity(0.12))
                     )
             }
 
@@ -137,7 +144,26 @@ public struct BottomEditorProblemsPanelView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
-        .appSurface(style: .custom(theme.textPrimary.opacity(0.035)), cornerRadius: 10)
+        .appSurface(style: .custom(severityColor(for: severity).opacity(0.06)), cornerRadius: 10)
+    }
+
+    private func severityIcon(for severity: DiagnosticSeverity?) -> String {
+        switch severity {
+        case .error: "xmark.circle.fill"
+        case .warning: "exclamationmark.triangle.fill"
+        case .information: "info.circle.fill"
+        case .hint: "info.circle"
+        case .none: "info.circle.fill"
+        }
+    }
+
+    private func severityColor(for severity: DiagnosticSeverity?) -> SwiftUI.Color {
+        switch severity {
+        case .error: theme.error
+        case .warning: theme.warning
+        case .information: theme.info
+        case .hint, .none: theme.textSecondary
+        }
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {
@@ -172,5 +198,15 @@ public struct BottomEditorProblemsPanelView: View {
             ProblemsAddToChat.message(for: problem, prompt: problemPrompt),
             windowId: service.state.windowId
         )
+    }
+}
+
+private extension EditorSemanticAvailabilitySeverity {
+    func toDiagnosticSeverity() -> DiagnosticSeverity {
+        switch self {
+        case .error: .error
+        case .warning: .warning
+        case .info: .information
+        }
     }
 }

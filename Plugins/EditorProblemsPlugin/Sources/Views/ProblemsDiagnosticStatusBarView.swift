@@ -119,8 +119,8 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
                                         title: problem.title,
                                         message: problem.message,
                                         badge: LumiPluginLocalization.string("Project", bundle: .module),
-                                        systemImage: "exclamationmark.triangle.fill",
-                                        tint: theme.warning,
+                                        systemImage: severityIcon(for: problem.severity.toDiagnosticSeverity()),
+                                        tint: severityColor(for: problem.severity.toDiagnosticSeverity()),
                                         askAI: {
                                             sendProblemToChat(problem)
                                         }
@@ -257,7 +257,9 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
         switch severity {
         case .error: "xmark.circle.fill"
         case .warning: "exclamationmark.triangle.fill"
-        case .information, .hint, .none: "info.circle.fill"
+        case .information: "info.circle.fill"
+        case .hint: "info.circle"
+        case .none: "info.circle.fill"
         }
     }
 
@@ -265,7 +267,18 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
         switch severity {
         case .error: theme.error
         case .warning: theme.warning
-        case .information, .hint, .none: theme.textSecondary
+        case .information: theme.info
+        case .hint, .none: theme.textSecondary
+        }
+    }
+}
+
+private extension EditorSemanticAvailabilitySeverity {
+    func toDiagnosticSeverity() -> DiagnosticSeverity {
+        switch self {
+        case .error: .error
+        case .warning: .warning
+        case .info: .information
         }
     }
 }
