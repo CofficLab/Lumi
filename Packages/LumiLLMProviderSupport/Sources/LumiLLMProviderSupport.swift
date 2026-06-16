@@ -87,6 +87,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             content: await state.accumulatedContentChunks.joined(),
             providerID: Self.info.id,
             modelName: request.model,
+            metadata: await Self.tokenMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }
@@ -106,6 +107,13 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+    }
+
+    fileprivate static func tokenMetadata(from state: StreamingState) async -> [String: String] {
+        LumiMessageTokenMetadata.metadata(
+            inputTokens: await state.inputTokens,
+            outputTokens: await state.outputTokens
+        )
     }
 
     fileprivate static func processStreamChunk(
@@ -149,6 +157,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
             if let error = parsed.error {
                 await state.setError(error)
+            }
+
+            if parsed.inputTokens != nil || parsed.outputTokens != nil {
+                await state.updateTokens(input: parsed.inputTokens, output: parsed.outputTokens)
             }
 
             if parsed.isDone {
@@ -240,6 +252,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
             content: await state.accumulatedContentChunks.joined(),
             providerID: Self.info.id,
             modelName: request.model,
+            metadata: await OpenAICompatibleLumiProvider.tokenMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }

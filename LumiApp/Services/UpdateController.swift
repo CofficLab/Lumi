@@ -6,11 +6,19 @@ import Sparkle
 final class UpdateController: NSObject, SPUUpdaterDelegate {
     static let shared = UpdateController()
 
-    private lazy var updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
-        updaterDelegate: self,
-        userDriverDelegate: nil
-    )
+    private lazy var updaterController: SPUStandardUpdaterController = {
+        let controller = SPUStandardUpdaterController(
+            startingUpdater: false,
+            updaterDelegate: self,
+            userDriverDelegate: nil
+        )
+        // 同步设置正确的 feed URL，避免使用 Info.plist 中的默认值
+        controller.updater.setFeedURL(primaryFeedURL)
+        os_log(.info, "[UpdateController] Initial feed URL: %{public}@", primaryFeedURL.absoluteString)
+        // 启动 updater
+        controller.startUpdater()
+        return controller
+    }()
 
     private var pendingImmediateInstallHandler: (() -> Void)?
 
@@ -106,6 +114,8 @@ final class UpdateController: NSObject, SPUUpdaterDelegate {
     }
 
     func checkForUpdates() {
+        // 确保 feed URL 已设置（通过访问 lazy var 触发初始化）
+        _ = updaterController
         updaterController.checkForUpdates(nil)
     }
 

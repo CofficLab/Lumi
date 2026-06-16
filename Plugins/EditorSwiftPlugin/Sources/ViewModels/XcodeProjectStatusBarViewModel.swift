@@ -1,4 +1,5 @@
 import Combine
+import AppKit
 import EditorService
 import SuperLogKit
 import SwiftUI
@@ -20,12 +21,16 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     @Published var activeDestination: String?
     @Published var buildContextStatus: XcodeBuildContextProvider.BuildContextStatus = .unknown
     @Published var buildContextStatusDescription = LumiPluginLocalization.string("Not Initialized", bundle: .module)
+    @Published var resolutionProgress: BuildContextResolutionProgress?
+    @Published var semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted
     @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
     @Published var indexingTask: ProgressTask?
+    @Published var semanticIndexLogExcerpt: String?
     private var notificationCancellable: AnyCancellable?
     private var semanticRefreshTask: Task<Void, Never>?
+    private var semanticLogPollingTask: Task<Void, Never>?
 
     private var provider: XcodeBuildContextProvider?
     private var providerSubscriptionsBound = false
@@ -33,6 +38,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     deinit {
         semanticRefreshTask?.cancel()
+        semanticLogPollingTask?.cancel()
     }
 
     private init() {
@@ -75,12 +81,15 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             configurations = cached.configurations
         }
         buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
+        resolutionProgress = bridge.buildContextProvider?.resolutionProgress
+        semanticIndexStatus = bridge.buildContextProvider?.semanticIndexStatus ?? .notStarted
         semanticReport = XcodeProjectStatusPresentation.makeSemanticReport(
             snapshot: bridge.latestEditorSnapshot,
             cachedState: bridge.cachedState,
             buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+        refreshSemanticIndexLogIfNeeded()
     }
 
     private func bindProviderSubscriptionsIfNeeded() {
@@ -108,6 +117,26 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 self?.buildContextStatus = status
                 self?.buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(status)
+                if case .resolving = status {
+                    // Keep progress updates while resolving.
+                } else {
+                    self?.resolutionProgress = nil
+                }
+            }
+            .store(in: &cancellables)
+
+        provider.$semanticIndexStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                self?.semanticIndexStatus = status
+                self?.handleSemanticIndexStatusChange()
+            }
+            .store(in: &cancellables)
+
+        provider.$resolutionProgress
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] progress in
+                self?.resolutionProgress = progress
             }
             .store(in: &cancellables)
 
@@ -123,6 +152,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 self.configurations = Array(Set(workspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
                 self.activeScheme = workspace?.activeScheme?.name
                 self.activeConfiguration = workspace?.activeScheme?.activeConfiguration
+                self.refreshSemanticIndexLogIfNeeded()
             }
             .store(in: &cancellables)
 
@@ -256,6 +286,25 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
+    public func openCacheDirectory() {
+        guard let directory = currentWorkspaceStoreDirectory() else { return }
+        NSWorkspace.shared.open(directory)
+    }
+
+    public func reindexNow() {
+        guard let workspacePath = currentWorkspacePath() else { return }
+        EditorSwiftStorage.purgeBuildCaches(forWorkspacePath: workspacePath)
+        semanticIndexLogExcerpt = nil
+        resyncBuildContext()
+    }
+
+    public func clearIndexData() {
+        guard let workspacePath = currentWorkspacePath() else { return }
+        EditorSwiftStorage.clearWorkspaceData(forWorkspacePath: workspacePath)
+        semanticIndexLogExcerpt = nil
+        resyncBuildContext()
+    }
+
     private func scheduleSemanticRefresh() {
         semanticRefreshTask?.cancel()
         semanticRefreshTask = Task { @MainActor [weak self] in
@@ -279,29 +328,139 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
+    public var isResolvingBuildContext: Bool {
+        if case .resolving = buildContextStatus { return true }
+        return false
+    }
+
+    public var isSemanticIndexing: Bool {
+        if case .indexing = semanticIndexStatus { return true }
+        return false
+    }
+
     public var isIndexing: Bool {
         indexingTask != nil
     }
 
-    public var semanticStatusText: String {
+    public var showsActivityIndicator: Bool {
+        // Toolbar activity should only reflect Xcode context lifecycle.
+        isResolvingBuildContext || isSemanticIndexing
+    }
+
+    public func semanticStatusText(now: Date = Date()) -> String {
         XcodeProjectStatusPresentation.semanticStatusText(
             indexingTask: indexingTask,
-            buildContextStatus: buildContextStatus
+            buildContextStatus: buildContextStatus,
+            semanticIndexStatus: semanticIndexStatus,
+            resolutionProgress: resolutionProgress,
+            now: now
         )
     }
 
     public var semanticStatusDescription: String {
         XcodeProjectStatusPresentation.semanticStatusDescription(
             indexingTask: indexingTask,
-            buildContextStatusDescription: buildContextStatusDescription
+            buildContextStatusDescription: buildContextStatusDescription,
+            semanticIndexStatus: semanticIndexStatus,
+            resolutionProgress: resolutionProgress
         )
+    }
+
+    public var semanticIndexFailureReason: String? {
+        guard case .failed(let reason) = semanticIndexStatus else { return nil }
+        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    public var schemePlaceholderText: String {
+        XcodeProjectStatusPresentation.resolvingSchemePlaceholder(
+            activeScheme: activeScheme,
+            resolutionProgress: resolutionProgress
+        )
+    }
+
+    public var resolutionProgressDetailText: String? {
+        guard let resolutionProgress else { return nil }
+        return XcodeProjectStatusPresentation.localizedResolutionProgressDetail(resolutionProgress)
     }
 
     public var semanticStatusColor: Color {
         let appearance = XcodeProjectStatusPresentation.semanticStatusAppearance(
             isIndexing: isIndexing,
-            buildContextStatus: buildContextStatus
+            isResolving: isResolvingBuildContext,
+            isSemanticIndexing: isSemanticIndexing,
+            buildContextStatus: buildContextStatus,
+            semanticIndexStatus: semanticIndexStatus
         )
         return XcodeProjectStatusPresentation.color(for: appearance)
+    }
+
+    private func handleSemanticIndexStatusChange() {
+        switch semanticIndexStatus {
+        case .indexing:
+            startSemanticLogPolling()
+        case .failed, .ready, .notStarted:
+            stopSemanticLogPolling()
+            refreshSemanticIndexLogIfNeeded()
+        }
+    }
+
+    private func startSemanticLogPolling() {
+        guard semanticLogPollingTask == nil else { return }
+        semanticLogPollingTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                self?.refreshSemanticIndexLogIfNeeded()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    private func stopSemanticLogPolling() {
+        semanticLogPollingTask?.cancel()
+        semanticLogPollingTask = nil
+    }
+
+    private func refreshSemanticIndexLogIfNeeded() {
+        switch semanticIndexStatus {
+        case .indexing, .failed:
+            guard let logURL = semanticIndexLogURL() else {
+                semanticIndexLogExcerpt = nil
+                return
+            }
+            semanticIndexLogExcerpt = readLogExcerpt(from: logURL)
+        case .notStarted, .ready:
+            semanticIndexLogExcerpt = nil
+        }
+    }
+
+    private func semanticIndexLogURL() -> URL? {
+        let workspacePath = currentWorkspacePath()
+        guard let workspacePath, !workspacePath.isEmpty else { return nil }
+        return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
+            .appendingPathComponent("semantic-index-build.log", isDirectory: false)
+    }
+
+    private func currentWorkspacePath() -> String? {
+        provider?.currentWorkspace?.path.path ?? latestEditorSnapshot?.workspacePath
+    }
+
+    private func currentWorkspaceStoreDirectory() -> URL? {
+        guard let workspacePath = currentWorkspacePath(), !workspacePath.isEmpty else {
+            return nil
+        }
+        return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
+    }
+
+    private func readLogExcerpt(from logURL: URL) -> String? {
+        guard let content = try? String(contentsOf: logURL, encoding: .utf8),
+              !content.isEmpty else {
+            return nil
+        }
+        let lines = content
+            .split(whereSeparator: \.isNewline)
+            .map(String.init)
+            .suffix(40)
+        guard !lines.isEmpty else { return nil }
+        return lines.joined(separator: "\n")
     }
 }

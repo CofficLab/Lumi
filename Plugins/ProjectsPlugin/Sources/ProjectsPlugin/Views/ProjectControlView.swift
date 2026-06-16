@@ -48,6 +48,12 @@ struct ProjectControlView: View {
         .onChange(of: store.currentProject?.path) { _, newPath in
             syncProjectPath(newPath)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiOpenExternalProject)) { notification in
+            guard let path = notification.userInfo?[LumiOpenProjectUserInfoKey.path] as? String else {
+                return
+            }
+            try? store.addProject(path: path, select: true)
+        }
         .accessibilityLabel(LumiPluginLocalization.string("Projects", bundle: .module))
     }
 

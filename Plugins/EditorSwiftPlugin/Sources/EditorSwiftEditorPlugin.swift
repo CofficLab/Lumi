@@ -30,7 +30,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
     public nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor lazy var buildContextProvider = XcodeBuildContextProvider(
-        store: XcodeBuildServerStore(storageRootURL: AppConfig.getDBFolderURL())
+        store: EditorSwiftBuildServerStore.makeStore()
     )
     @MainActor private lazy var projectContextCapability = XcodeProjectContextCapabilityAdapter()
     @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
@@ -55,6 +55,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         }
 
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
+        EditorSwiftHostEnvironmentConfiguration.apply()
         if SwiftPluginLog.verbose {
             SwiftPluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
         }

@@ -17,6 +17,7 @@ public struct XcodeEditorContextSnapshot: Sendable, Equatable {
     public let currentFileTarget: String?
     public let currentFileMatchedTargets: [String]
     public let currentFileIsInTarget: Bool
+    public let isTargetMembershipResolved: Bool
 
     public init(
         projectPath: String,
@@ -33,7 +34,8 @@ public struct XcodeEditorContextSnapshot: Sendable, Equatable {
         currentFilePath: String?,
         currentFileTarget: String?,
         currentFileMatchedTargets: [String],
-        currentFileIsInTarget: Bool
+        currentFileIsInTarget: Bool,
+        isTargetMembershipResolved: Bool = false
     ) {
         self.projectPath = projectPath
         self.workspaceName = workspaceName
@@ -50,6 +52,7 @@ public struct XcodeEditorContextSnapshot: Sendable, Equatable {
         self.currentFileTarget = currentFileTarget
         self.currentFileMatchedTargets = currentFileMatchedTargets
         self.currentFileIsInTarget = currentFileIsInTarget
+        self.isTargetMembershipResolved = isTargetMembershipResolved
     }
 }
 

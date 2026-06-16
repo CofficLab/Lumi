@@ -35,6 +35,7 @@ public final class LSPService: ObservableObject, SuperLog {
     private var serverStartTask: Task<LanguageServer?, Never>?
     private var serverStartSignature: String?
     private var lifecycleGeneration: UInt64 = 0
+    private var activeBuildServerPath: String?
     
     private var changeDebounceTimer: Timer?
     private var pendingChanges: [LanguageServer.DocumentChange] = []
@@ -98,11 +99,24 @@ public final class LSPService: ObservableObject, SuperLog {
     }
 
     private func ensureServer(for languageId: String, projectPath: String) async -> LanguageServer? {
-        if let server, activeLanguageId == languageId, projectRootPath == projectPath {
+        let requestedBuildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: projectPath)
+        if LSPServerLifecyclePolicy.canReuseExistingServer(
+            hasServer: server != nil,
+            activeLanguageId: activeLanguageId,
+            requestedLanguageId: languageId,
+            activeProjectPath: projectRootPath,
+            requestedProjectPath: projectPath,
+            activeBuildServerPath: activeBuildServerPath,
+            requestedBuildServerPath: requestedBuildServerPath
+        ) {
             return server
         }
 
-        let signature = "\(languageId)|\(projectPath)"
+        let signature = LSPServerLifecyclePolicy.startTaskSignature(
+            languageId: languageId,
+            projectPath: projectPath,
+            buildServerPath: requestedBuildServerPath
+        )
         if let serverStartTask, serverStartSignature == signature {
             return await serverStartTask.value
         }
@@ -170,6 +184,7 @@ public final class LSPService: ObservableObject, SuperLog {
         
         let workspaceFolders = Self.makeWorkspaceFolders(for: languageId, projectPath: projectPath)
         let initializationOptions = Self.makeInitializationOptions(for: languageId, projectPath: projectPath)
+        activeBuildServerPath = Self.buildServerPath(from: initializationOptions)
         
         do {
             let newServer = try await LanguageServer.create(
@@ -237,6 +252,20 @@ public final class LSPService: ObservableObject, SuperLog {
             result[entry.key] = .string(String(describing: entry.value))
         })
     }
+
+    static func currentBuildServerPath(for languageId: String, projectPath: String) -> String? {
+        guard let capability = languageIntegrationCapability(for: languageId, projectPath: projectPath),
+              let options = capability.initializationOptions(for: languageId, projectPath: projectPath) else {
+            return nil
+        }
+        return LSPServerLifecyclePolicy.buildServerPath(from: options)
+    }
+
+    static func buildServerPath(from initializationOptions: LanguageServerProtocol.LSPAny?) -> String? {
+        guard case .hash(let values) = initializationOptions else { return nil }
+        guard case .string(let buildServerPath)? = values["buildServerPath"] else { return nil }
+        return LSPServerLifecyclePolicy.buildServerPath(from: ["buildServerPath": buildServerPath])
+    }
     
     // MARK: - Document Lifecycle
     
@@ -282,17 +311,14 @@ public final class LSPService: ObservableObject, SuperLog {
             && server != nil
             && activeLanguageId == languageId
 
-        if server == nil || activeLanguageId != languageId {
-            if let root = projectRootPath {
-                _ = await ensureServer(for: languageId, projectPath: root)
-            } else {
-                if Self.verbose {
-                                    Self.logger.warning("\(Self.t)无项目根目录")
-                }
-                return
+        guard let root = projectRootPath else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)无项目根目录")
             }
+            return
         }
-        
+
+        _ = await ensureServer(for: languageId, projectPath: root)
         guard let server else { return }
 
         if let previousURI, previousURI != uri {
@@ -934,6 +960,45 @@ public final class LSPService: ObservableObject, SuperLog {
     
     public let progressProvider = LSPProgressProvider()
 
+    /// Re-evaluates initialization options and reopens the active document when build context changes.
+    public func refreshOpenDocumentForUpdatedProjectContext() async {
+        guard let languageId = activeLanguageId,
+              let root = projectRootPath,
+              let uri = currentURI,
+              let text = latestDocumentSnapshot else {
+            return
+        }
+
+        let requestedBuildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: root)
+        if requestedBuildServerPath != activeBuildServerPath, server != nil {
+            lifecycleGeneration += 1
+            try? await server?.shutdown()
+            server = nil
+            activeBuildServerPath = nil
+        }
+
+        _ = await ensureServer(for: languageId, projectPath: root)
+        guard let server else { return }
+
+        currentDiagnostics = []
+        pendingChanges.removeAll()
+        diagnosticsStabilizationDeadline = nil
+
+        do {
+            try? await server.closeDocument(uri: uri)
+            try await server.openDocument(
+                uri: uri,
+                languageId: languageId,
+                text: text,
+                version: currentVersion
+            )
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)刷新文档上下文失败: \(error)")
+            }
+        }
+    }
+
     // MARK: - Recovery
 
     private func recoverServerIfNeeded(after error: Error) async -> Bool {
@@ -1034,6 +1099,7 @@ public final class LSPService: ObservableObject, SuperLog {
         isAvailable = false
         isInitializing = false
         projectRootPath = nil
+        activeBuildServerPath = nil
         latestDocumentSnapshot = nil
         pendingChanges.removeAll()
         diagnosticsStabilizationDeadline = nil
@@ -1139,6 +1205,18 @@ public final class LSPService: ObservableObject, SuperLog {
         }
     }
     
+    private func readyBuildServerPathForDiagnostics() -> String? {
+        guard let root = projectRootPath,
+              let languageId = activeLanguageId,
+              let buildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: root) else {
+            return nil
+        }
+        let compileDatabasePath = (buildServerPath as NSString)
+            .deletingLastPathComponent
+            .appending("/.compile")
+        return FileManager.default.fileExists(atPath: compileDatabasePath) ? buildServerPath : nil
+    }
+
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
         guard let currentURI else { return }
         guard params.uri == currentURI else { return }
@@ -1149,6 +1227,14 @@ public final class LSPService: ObservableObject, SuperLog {
             return
         }
         diagnosticsStabilizationDeadline = nil
-        currentDiagnostics = params.diagnostics
+        let readyBuildServerPath = readyBuildServerPathForDiagnostics()
+        let knownModuleNames = readyBuildServerPath.map {
+            LSPDiagnosticBuildContextPolicy.knownModuleNames(inCompileDatabaseForBuildServerPath: $0)
+        } ?? []
+        currentDiagnostics = LSPDiagnosticBuildContextPolicy.filteredDiagnostics(
+            params.diagnostics,
+            buildServerPathAvailable: readyBuildServerPath != nil,
+            knownModuleNames: knownModuleNames
+        )
     }
 }

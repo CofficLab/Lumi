@@ -31,17 +31,29 @@ enum XcodeProjectStatusPresentation {
 
     static func semanticStatusText(
         indexingTask: ProgressTask?,
-        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted,
+        resolutionProgress: BuildContextResolutionProgress? = nil,
+        now: Date = Date()
     ) -> String {
         if let indexingTask {
             return localizedIndexingTaskText(indexingTask)
+        }
+        if case .resolving = buildContextStatus, let resolutionProgress {
+            return localizedResolutionProgressText(resolutionProgress, now: now)
+        }
+        if case .available = buildContextStatus {
+            return localizedSemanticIndexStatusText(for: semanticIndexStatus)
         }
         return localizedSemanticStatusText(for: buildContextStatus)
     }
 
     static func semanticStatusDescription(
         indexingTask: ProgressTask?,
-        buildContextStatusDescription: String
+        buildContextStatusDescription: String,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted,
+        resolutionProgress: BuildContextResolutionProgress? = nil,
+        now: Date = Date()
     ) -> String {
         if let indexingTask {
             var parts = [LumiPluginLocalization.string("Swift semantic indexing in progress", bundle: .module)]
@@ -53,18 +65,101 @@ enum XcodeProjectStatusPresentation {
             }
             return parts.joined(separator: " · ")
         }
+        if let resolutionProgress {
+            return localizedResolutionProgressDetail(resolutionProgress, now: now)
+        }
+        if buildContextStatusDescription.contains("Available") {
+            return localizedSemanticIndexStatusDescription(for: semanticIndexStatus)
+        }
         return buildContextStatusDescription
+    }
+
+    static func resolvingSchemePlaceholder(
+        activeScheme: String?,
+        resolutionProgress: BuildContextResolutionProgress?
+    ) -> String {
+        if let activeScheme {
+            return activeScheme
+        }
+        if let resolutionProgress {
+            return localizedResolutionProgressText(resolutionProgress)
+        }
+        return LumiPluginLocalization.string("Resolving build context...", bundle: .module)
+    }
+
+    static func localizedResolutionProgressText(
+        _ progress: BuildContextResolutionProgress,
+        now: Date = Date()
+    ) -> String {
+        var text = localizedResolutionPhaseTitle(progress.phase)
+        if let currentItem = progress.currentItem, !currentItem.isEmpty {
+            text += " · \(currentItem)"
+        } else if let detail = progress.detail, !detail.isEmpty {
+            text += " · \(detail)"
+        }
+        if progress.showsElapsedTime(at: now) {
+            let elapsed = BuildContextResolutionProgress.formattedElapsed(since: progress.startedAt, now: now)
+            text += " (\(elapsed))"
+        }
+        return text
+    }
+
+    static func localizedResolutionProgressDetail(
+        _ progress: BuildContextResolutionProgress,
+        now: Date = Date()
+    ) -> String {
+        var parts = [localizedResolutionPhaseTitle(progress.phase)]
+        if let detail = progress.detail, !detail.isEmpty {
+            parts.append(detail)
+        }
+        if let currentItem = progress.currentItem, !currentItem.isEmpty {
+            parts.append(currentItem)
+        }
+        if progress.showsElapsedTime(at: now) {
+            let elapsed = BuildContextResolutionProgress.formattedElapsed(since: progress.startedAt, now: now)
+            parts.append(
+                String(
+                    format: LumiPluginLocalization.string("Elapsed %@", bundle: .module),
+                    elapsed
+                )
+            )
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    static func localizedResolutionPhaseTitle(_ phase: BuildContextResolutionProgress.Phase) -> String {
+        switch phase {
+        case .locatingWorkspace:
+            return LumiPluginLocalization.string("Locating workspace...", bundle: .module)
+        case .discoveringSchemes:
+            return LumiPluginLocalization.string("Discovering schemes...", bundle: .module)
+        case .parsingProjectMembership:
+            return LumiPluginLocalization.string("Parsing project membership...", bundle: .module)
+        case .runningXcodebuildList:
+            return LumiPluginLocalization.string("Running xcodebuild -list...", bundle: .module)
+        case .selectingScheme:
+            return LumiPluginLocalization.string("Selecting scheme...", bundle: .module)
+        case .generatingBuildServer:
+            return LumiPluginLocalization.string("Generating buildServer.json...", bundle: .module)
+        }
     }
 
     static func semanticStatusAppearance(
         isIndexing: Bool,
-        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+        isResolving: Bool = false,
+        isSemanticIndexing: Bool = false,
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus,
+        semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted
     ) -> SemanticStatusAppearance {
-        if isIndexing { return .indexing }
+        if isIndexing || isSemanticIndexing { return .indexing }
+        if isResolving { return .resolving }
         switch buildContextStatus {
         case .unknown: return .unknown
         case .resolving: return .resolving
-        case .available: return .available
+        case .available:
+            if case .failed = semanticIndexStatus { return .unavailable }
+            if case .ready = semanticIndexStatus { return .available }
+            return .resolving
         case .unavailable: return .unavailable
         case .needsResync: return .needsResync
         }
@@ -251,11 +346,39 @@ enum XcodeProjectStatusPresentation {
         case .resolving:
             return LumiPluginLocalization.string("Resolving...", bundle: .module)
         case .available:
-            return LumiPluginLocalization.string("Ready", bundle: .module)
+            return LumiPluginLocalization.string("Config Ready", bundle: .module)
         case .unavailable:
             return LumiPluginLocalization.string("Error", bundle: .module)
         case .needsResync:
             return LumiPluginLocalization.string("Needs Sync", bundle: .module)
         }
     }
+
+    static func localizedSemanticIndexStatusText(for status: XcodeSemanticIndexStatus) -> String {
+        switch status {
+        case .notStarted:
+            return LumiPluginLocalization.string("Config Ready", bundle: .module)
+        case .indexing:
+            return LumiPluginLocalization.string("Indexing Project...", bundle: .module)
+        case .ready:
+            return LumiPluginLocalization.string("Ready", bundle: .module)
+        case .failed:
+            // 工具栏空间有限，这里只展示简短状态，由弹出的详情视图展示完整错误。
+            return LumiPluginLocalization.string("Index Failed", bundle: .module)
+        }
+    }
+
+    static func localizedSemanticIndexStatusDescription(for status: XcodeSemanticIndexStatus) -> String {
+        switch status {
+        case .notStarted:
+            return LumiPluginLocalization.string("Build context is ready. Semantic indexing has not started.", bundle: .module)
+        case .indexing:
+            return LumiPluginLocalization.string("Building compile database for SourceKit...", bundle: .module)
+        case .ready:
+            return LumiPluginLocalization.string("Build context and semantic index are ready.", bundle: .module)
+        case .failed(let reason):
+            return reason
+        }
+    }
+
 }

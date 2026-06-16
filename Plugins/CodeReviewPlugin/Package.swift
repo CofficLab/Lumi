@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

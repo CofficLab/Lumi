@@ -116,7 +116,7 @@ public final class CPUService: ObservableObject, SuperLog {
         let currentTicks = Array(UnsafeBufferPointer(start: processorInfo, count: Int(processorMsgCount)))
 
         var totalUsage = 0.0
-        var coreUsage: [Double] = []
+        var logicalCoreUsage: [Double] = []
         var totalUser: Int64 = 0
         var totalSystem: Int64 = 0
         var totalIdle: Int64 = 0
@@ -135,7 +135,7 @@ public final class CPUService: ObservableObject, SuperLog {
                 let total = user + system + nice + idle
                 let usage = total > 0 ? Double(inUse) / Double(total) * 100.0 : 0.0
 
-                coreUsage.append(usage)
+                logicalCoreUsage.append(usage)
                 totalUsage += usage
 
                 totalUser += Int64(user)
@@ -147,6 +147,25 @@ public final class CPUService: ObservableObject, SuperLog {
             if processorCount > 0 {
                 totalUsage /= Double(processorCount)
             }
+        }
+
+        // 将逻辑核心使用率聚合为物理核心使用率
+        let physicalCoreCount = DeviceData.physicalCoreCount()
+        let coreUsage: [Double]
+        if physicalCoreCount > 0 && physicalCoreCount < logicalCoreUsage.count {
+            // 超线程情况：每 N 个逻辑核心聚合成 1 个物理核心
+            let logicalPerPhysical = logicalCoreUsage.count / physicalCoreCount
+            var aggregatedUsage: [Double] = []
+            for i in 0..<physicalCoreCount {
+                let startIdx = i * logicalPerPhysical
+                let endIdx = min(startIdx + logicalPerPhysical, logicalCoreUsage.count)
+                let sum = logicalCoreUsage[startIdx..<endIdx].reduce(0, +)
+                aggregatedUsage.append(sum / Double(endIdx - startIdx))
+            }
+            coreUsage = aggregatedUsage
+        } else {
+            // 无超线程或获取失败：直接使用逻辑核心
+            coreUsage = logicalCoreUsage
         }
 
         let allTicks = totalUser + totalSystem + totalNice + totalIdle

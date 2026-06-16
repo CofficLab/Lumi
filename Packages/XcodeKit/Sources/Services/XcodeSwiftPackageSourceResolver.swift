@@ -4,7 +4,10 @@ import XcodeProj
 /// 将 Xcode target 关联的 Swift Package 源码纳入 target 文件归属。
 enum XcodeSwiftPackageSourceResolver {
 
-    static func resolveTargetSourceFiles(projectURL: URL) -> [String: Set<String>] {
+    static func resolveTargetSourceFiles(
+        projectURL: URL,
+        onScanProgress: (@Sendable (String) -> Void)? = nil
+    ) -> [String: Set<String>] {
         guard let xcodeProj = try? XcodeProj(pathString: projectURL.path),
               let project = try? xcodeProj.pbxproj.rootProject() ?? xcodeProj.pbxproj.projects.first else {
             return [:]
@@ -26,7 +29,12 @@ enum XcodeSwiftPackageSourceResolver {
                     continue
                 }
                 for reachableRoot in SwiftPackageManifestParser.localTransitivePackageRoots(from: packageRoot) {
-                    files.formUnion(enumeratePackageSourceFiles(packageRoot: reachableRoot))
+                    files.formUnion(
+                        enumeratePackageSourceFiles(
+                            packageRoot: reachableRoot,
+                            onScanProgress: onScanProgress
+                        )
+                    )
                 }
             }
             if !files.isEmpty {
@@ -53,12 +61,19 @@ enum XcodeSwiftPackageSourceResolver {
         return regex.firstMatch(in: text, range: range) != nil
     }
 
-    static func enumeratePackageSourceFiles(packageRoot: URL) -> Set<String> {
+    static func enumeratePackageSourceFiles(
+        packageRoot: URL,
+        onScanProgress: (@Sendable (String) -> Void)? = nil
+    ) -> Set<String> {
         let targetRoots = SwiftPackageManifestParser.regularTargetSourceRoots(packageRoot: packageRoot)
         if targetRoots.isEmpty {
             let sourcesRoot = packageRoot.appendingPathComponent("Sources")
             guard FileManager.default.fileExists(atPath: sourcesRoot.path) else { return [] }
-            return XcodeProjectFileEnumerator.enumerateFiles(in: sourcesRoot, excluding: [])
+            return XcodeProjectFileEnumerator.enumerateFiles(
+                in: sourcesRoot,
+                excluding: [],
+                onScanProgress: onScanProgress
+            )
         }
 
         return targetRoots.reduce(into: Set<String>()) { partial, root in
@@ -69,17 +84,26 @@ enum XcodeSwiftPackageSourceResolver {
                 rootURL = packageRoot.appendingPathComponent(root.relativePath)
             }
             partial.formUnion(
-                XcodeProjectFileEnumerator.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths)
+                XcodeProjectFileEnumerator.enumerateFiles(
+                    in: rootURL,
+                    excluding: root.excludedRelativePaths,
+                    onScanProgress: onScanProgress
+                )
             )
         }
     }
 }
 
 enum XcodeProjectFileEnumerator {
-    static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
+    static func enumerateFiles(
+        in rootURL: URL,
+        excluding excludedRelativePaths: Set<String>,
+        onScanProgress: (@Sendable (String) -> Void)? = nil
+    ) -> Set<String> {
+        let scanReporter: ThrottledScanProgressReporter? = onScanProgress == nil ? nil : ThrottledScanProgressReporter()
         if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
            values.isRegularFile == true {
-            return excludedRelativePaths.isEmpty ? [rootURL.standardizedFileURL.path] : []
+            return excludedRelativePaths.isEmpty ? [XcodeProjectResolver.normalizedMembershipPath(for: rootURL)] : []
         }
 
         guard let enumerator = FileManager.default.enumerator(
@@ -101,7 +125,11 @@ enum XcodeProjectFileEnumerator {
                 continue
             }
             if values?.isRegularFile == true {
-                files.insert(fileURL.standardizedFileURL.path)
+                let normalizedPath = XcodeProjectResolver.normalizedMembershipPath(for: fileURL)
+                files.insert(normalizedPath)
+                if let onScanProgress, let scanReporter {
+                    scanReporter.report(normalizedPath, handler: onScanProgress)
+                }
             }
         }
         return files

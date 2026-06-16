@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public protocol FileLogConfiguration: Sendable {
     func logsDirectory() -> URL
@@ -6,11 +7,6 @@ public protocol FileLogConfiguration: Sendable {
 
 struct DefaultFileLogConfiguration: FileLogConfiguration {
     func logsDirectory() -> URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
-        return appSupport
-            .appendingPathComponent(bundleID, isDirectory: true)
-            .appendingPathComponent("FileLog", isDirectory: true)
+        AppConfig.getPluginDBFolderURL(pluginName: "FileLog")
     }
 }

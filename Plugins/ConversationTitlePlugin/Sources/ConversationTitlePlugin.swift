@@ -1,6 +1,8 @@
+import LumiChatKit
 import LumiCoreKit
+import SwiftUI
 
-/// Conversation Title Plugin: inject title drift hints during chat sends.
+/// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.
 public enum ConversationTitlePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let category: LumiPluginCategory = .agent
@@ -24,6 +26,21 @@ public enum ConversationTitlePlugin: LumiPlugin {
     ) {
         ConversationTitleRuntimeBridge.chatServiceProvider = chatServiceProvider
         ConversationTitleNotificationObserver.start()
+    }
+
+    @MainActor
+    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+        guard context.showsChatSection,
+              let coordinator = context.resolve(ChatSectionCoordinator.self)
+        else {
+            return []
+        }
+
+        return [
+            LumiChatSectionItem(id: "\(info.id).header", order: 81) {
+                ConversationTitleSectionView(coordinator: coordinator)
+            }
+        ]
     }
 
     @MainActor

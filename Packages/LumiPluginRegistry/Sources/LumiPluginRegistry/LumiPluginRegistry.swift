@@ -104,20 +104,15 @@ import EditorSwiftPlugin
 import EditorBreadcrumbNavPlugin
 import EditorTabStripPlugin
 import EditorStickySymbolBarPlugin
-import EditorBottomProblemsPlugin
-import EditorBottomReferencesPlugin
-import EditorBottomSearchPlugin
-import EditorBottomSymbolsPlugin
-import EditorBottomCallHierarchyPlugin
+import EditorProblemsPlugin
+import EditorReferencesPlugin
+import EditorSearchPlugin
+import EditorSymbolsPlugin
+import EditorCallHierarchyPlugin
 import EditorPreviewPlugin
-import EditorBottomTerminalPlugin
-import EditorRailFileTreePlugin
-import EditorOutlineRailPlugin
-import EditorRailProblemsPlugin
-import EditorRailReferencesPlugin
-import EditorRailSearchPlugin
-import EditorRailSymbolsPlugin
-import EditorRailCallHierarchyPlugin
+import EditorTerminalPlugin
+import EditorFileTreePlugin
+import EditorOutlinePlugin
 import LLMAvailabilityPlugin
 import ConversationNewPlugin
 import DisplayControlPlugin
@@ -217,20 +212,15 @@ public enum LumiPluginRegistry {
         EditorBreadcrumbHeaderPlugin.self,
         EditorTabStripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,
-        EditorBottomProblemsPanelPlugin.self,
-        EditorBottomReferencesPanelPlugin.self,
-        EditorBottomSearchPanelPlugin.self,
-        EditorBottomSymbolsPanelPlugin.self,
-        EditorBottomCallHierarchyPanelPlugin.self,
+        EditorProblemsPanelPlugin.self,
+        EditorReferencesPanelPlugin.self,
+        EditorSearchPanelPlugin.self,
+        EditorSymbolsPanelPlugin.self,
+        EditorCallHierarchyPanelPlugin.self,
         EditorPreviewBottomPanelPlugin.self,
-        EditorBottomTerminalPanelPlugin.self,
-        EditorRailFileTreePanelPlugin.self,
-        EditorRailOutlinePanelPlugin.self,
-        EditorRailProblemsPanelPlugin.self,
-        EditorRailReferencesPanelPlugin.self,
-        EditorRailSearchPanelPlugin.self,
-        EditorRailSymbolsPanelPlugin.self,
-        EditorRailCallHierarchyPanelPlugin.self,
+        EditorTerminalPanelPlugin.self,
+        EditorFileTreePanelPlugin.self,
+        EditorOutlinePanelPlugin.self,
         AutoTaskPlugin.self,
         GitHubPlugin.self,
         IdleTimePlugin.self,

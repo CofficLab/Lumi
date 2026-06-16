@@ -125,14 +125,27 @@ public final class EditorPanelService: ObservableObject {
     /// 项目上下文警告信息（用于文件信息 Banner 显示）
     public func projectContextWarningMessage(service: EditorService) -> String? {
         guard let snapshot = service.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
+        return Self.projectContextWarningMessage(
+            snapshot: snapshot,
+            hasCurrentFile: service.files.currentFileURL != nil
+        )
+    }
+
+    nonisolated static func projectContextWarningMessage(
+        snapshot: EditorProjectContextSnapshot,
+        hasCurrentFile: Bool
+    ) -> String? {
         switch snapshot.contextStatus {
         case .unavailable, .needsResync:
             return LumiPluginLocalization.string("Project semantic context is not ready, cross-file semantic capabilities may be unstable.", bundle: .module)
+        case .resolving, .unknown:
+            return nil
         default:
             break
         }
-        guard service.files.currentFileURL != nil else { return nil }
+        guard hasCurrentFile else { return nil }
         if !snapshot.currentFileIsInTarget {
+            guard snapshot.isTargetMembershipResolved else { return nil }
             return LumiPluginLocalization.string("Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", bundle: .module)
         }
         if let activeScheme = snapshot.activeScheme,

@@ -18,6 +18,15 @@ struct SidebarVersionRow: View {
                     .font(.callout.weight(isSelected ? .semibold : .regular))
                     .lineLimit(1)
 
+                // Platform badge
+                Text(version.platformLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.secondary.opacity(0.12))
+                    .cornerRadius(3)
+
                 Spacer(minLength: 0)
 
                 Text(version.shortStateLabel)

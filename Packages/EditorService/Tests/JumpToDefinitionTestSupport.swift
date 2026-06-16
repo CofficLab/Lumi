@@ -185,6 +185,8 @@ final class MockJumpToDefinitionLSPClient: SuperEditorLSPClient {
         openedFiles.append((uri, languageId, version))
     }
 
+    func refreshOpenDocumentForUpdatedProjectContext() async {}
+
     func requestCompletion(line: Int, character: Int) async -> [CompletionItem] { [] }
     func requestCompletionDebounced(line: Int, character: Int) async -> [CompletionItem] { [] }
     func completionTriggerCharacters() -> Set<String> { [] }

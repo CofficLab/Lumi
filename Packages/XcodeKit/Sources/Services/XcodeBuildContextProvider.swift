@@ -23,9 +23,11 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     @Published public private(set) var activeConfiguration: String?
     @Published public private(set) var activeDestination: XcodeDestinationContext?
     @Published public var buildContextStatus: BuildContextStatus = .unknown
+    @Published public private(set) var resolutionProgress: BuildContextResolutionProgress?
 
     @Published public private(set) var buildServerJSONPath: String?
     @Published public private(set) var isGeneratingBuildServer: Bool = false
+    @Published public private(set) var semanticIndexStatus: XcodeSemanticIndexStatus = .notStarted
 
     // MARK: - Cache
 
@@ -37,6 +39,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// xcode-build-server 路径缓存
     private var xcodeBuildServerPath: String?
+
+    private var semanticIndexTask: Task<Void, Never>?
 
     // MARK: - Dependencies
 
@@ -111,7 +115,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 打开/识别一个 Xcode 项目
     public func openProject(at projectURL: URL) async {
+        let reportProgress = makeProgressReporter()
+
+        reportProgress(.init(phase: .locatingWorkspace, detail: projectURL.lastPathComponent))
+
         guard FileManager.default.fileExists(atPath: projectURL.path) else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("Project path does not exist: \(projectURL.path)")
             return
         }
@@ -123,21 +132,35 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: projectURL.path)
         }
         guard let workspaceURL else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("No .xcodeproj / .xcworkspace found")
             return
         }
 
         buildContextStatus = .resolving
+        reportProgress(.init(phase: .discoveringSchemes, detail: workspaceURL.lastPathComponent))
 
+        let progressHandler = reportProgress
         let fastSchemeNames = await Task.detached(priority: .userInitiated) {
             XcodeSchemeDiscovery.discoverSchemeNames(at: workspaceURL)
+        }.value
+
+        reportProgress(.init(phase: .parsingProjectMembership, detail: workspaceURL.lastPathComponent))
+        let targetSourceFiles = await Task.detached(priority: .userInitiated) {
+            XcodeProjectResolver.resolveTargetSourceFiles(
+                projectLikeURL: workspaceURL,
+                onScanProgress: { path in
+                    progressHandler(.init(phase: .parsingProjectMembership, currentItem: URL(fileURLWithPath: path).lastPathComponent))
+                }
+            )
         }.value
 
         var selectedSchemeName: String?
         if !fastSchemeNames.isEmpty {
             let placeholder = XcodeProjectResolver.makePlaceholderWorkspaceContext(
                 workspaceURL: workspaceURL,
-                schemeNames: fastSchemeNames
+                schemeNames: fastSchemeNames,
+                targetSourceFiles: targetSourceFiles
             )
             applyWorkspaceContext(placeholder)
             if let bestScheme = Self.selectBestScheme(
@@ -146,12 +169,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 targets: []
             ) {
                 selectedSchemeName = bestScheme.name
-                await setActiveScheme(bestScheme)
+                reportProgress(.init(phase: .selectingScheme, detail: bestScheme.name))
+                await setActiveScheme(bestScheme, reportProgress: reportProgress)
             }
         }
 
-        guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
+        guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL, onProgress: reportProgress) else {
             if fastSchemeNames.isEmpty {
+                clearResolutionProgress()
                 buildContextStatus = .unavailable("Unable to parse project")
             }
             return
@@ -171,7 +196,10 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             )
         }()
 
-        guard let schemeToActivate else { return }
+        guard let schemeToActivate else {
+            clearResolutionProgress()
+            return
+        }
 
         if activeScheme?.name == schemeToActivate.name,
            case .available = buildContextStatus {
@@ -184,9 +212,31 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             activeDestination = resolvedScheme.activeDestination
             currentWorkspace?.activeScheme = resolvedScheme
             currentWorkspace?.activeDestination = resolvedScheme.activeDestination
+            clearResolutionProgress()
         } else {
-            await setActiveScheme(schemeToActivate)
+            reportProgress(.init(phase: .selectingScheme, detail: schemeToActivate.name))
+            await setActiveScheme(schemeToActivate, reportProgress: reportProgress)
         }
+    }
+
+    private func makeProgressReporter() -> (@Sendable (BuildContextResolutionProgress.Update) -> Void) {
+        { [weak self] update in
+            Task { @MainActor in
+                self?.applyResolutionProgressUpdate(update)
+            }
+        }
+    }
+
+    private func applyResolutionProgressUpdate(_ update: BuildContextResolutionProgress.Update) {
+        guard case .resolving = buildContextStatus else { return }
+        resolutionProgress = BuildContextResolutionProgress(
+            updating: resolutionProgress,
+            with: update
+        )
+    }
+
+    private func clearResolutionProgress() {
+        resolutionProgress = nil
     }
 
     private func applyWorkspaceContext(_ workspaceContext: XcodeWorkspaceContext) {
@@ -200,6 +250,13 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 设置 active scheme
     public func setActiveScheme(_ scheme: XcodeSchemeContext) async {
+        await setActiveScheme(scheme, reportProgress: nil)
+    }
+
+    private func setActiveScheme(
+        _ scheme: XcodeSchemeContext,
+        reportProgress: (@Sendable (BuildContextResolutionProgress.Update) -> Void)?
+    ) async {
         guard let workspace = currentWorkspace else { return }
         let resolvedScheme = Self.resolvedSchemeSelection(
             scheme,
@@ -220,7 +277,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         // 重新生成 buildServer.json
         await generateBuildServerJSON(
             workspaceURL: workspace.path,
-            scheme: resolvedScheme.name
+            scheme: resolvedScheme.name,
+            reportProgress: reportProgress
         )
     }
 
@@ -239,7 +297,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         if let workspace = currentWorkspace {
             await generateBuildServerJSON(
                 workspaceURL: workspace.path,
-                scheme: scheme.name
+                scheme: scheme.name,
+                reportProgress: nil
             )
         }
     }
@@ -248,11 +307,39 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 生成 buildServer.json
     public func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
+        await generateBuildServerJSON(workspaceURL: workspaceURL, scheme: scheme, reportProgress: nil)
+    }
+
+    private func generateBuildServerJSON(
+        workspaceURL: URL,
+        scheme: String,
+        reportProgress: (@Sendable (BuildContextResolutionProgress.Update) -> Void)?
+    ) async {
         guard let serverPath = xcodeBuildServerPath else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("xcode-build-server not installed, please run: brew install xcode-build-server")
             return
         }
 
+        // Reuse an existing buildServer.json for the same scheme instead of regenerating it.
+        //
+        // `xcode-build-server config` rewrites the file on every launch, bumping its modification
+        // date. `isCompileDatabaseFresh` compares `.compile` against that date, so a rewrite makes a
+        // perfectly good compile database look stale and forces a re-index. Because the project is
+        // already built, that re-index is *incremental* and its xcactivitylog only contains the few
+        // recompiled targets — so `xcode-build-server parse` shrinks a complete `.compile` down to a
+        // partial one, and unrelated files start reporting spurious "No such module" errors.
+        if Self.canReuseBuildServerConfig(store.load(forWorkspace: workspaceURL.path), requestedScheme: scheme) {
+            let existing = store.load(forWorkspace: workspaceURL.path)!
+            buildServerJSONPath = existing.buildServerJSONPath
+            buildContextStatus = .available(XcodeBuildServerConfig(from: existing))
+            clearResolutionProgress()
+            scheduleSemanticIndexing(workspaceURL: workspaceURL)
+            if Self.verbose { Self.logger.info("\(Self.t)复用已有 buildServer.json（scheme 未变）: \(existing.buildServerJSONPath, privacy: .public)") }
+            return
+        }
+
+        reportProgress?(.init(phase: .generatingBuildServer, detail: scheme))
         isGeneratingBuildServer = true
 
         let isProject = workspaceURL.pathExtension == "xcodeproj"
@@ -272,10 +359,97 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         let config = success ? store.load(forWorkspace: workspaceURL.path) : nil
         buildContextStatus = Self.buildServerGenerationStatus(success: success, config: config)
+        if case .available = buildContextStatus {
+            clearResolutionProgress()
+            scheduleSemanticIndexing(workspaceURL: workspaceURL)
+        } else if case .unavailable = buildContextStatus {
+            clearResolutionProgress()
+            semanticIndexStatus = .notStarted
+        }
         if let config {
             buildServerJSONPath = config.buildServerJSONPath
             if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
         }
+    }
+
+    private func scheduleSemanticIndexing(workspaceURL: URL) {
+        semanticIndexTask?.cancel()
+        semanticIndexTask = Task { [weak self] in
+            await self?.runSemanticIndexing(workspaceURL: workspaceURL)
+        }
+    }
+
+    private func runSemanticIndexing(workspaceURL: URL) async {
+        guard !Task.isCancelled else { return }
+        guard let serverPath = xcodeBuildServerPath else {
+            semanticIndexStatus = .failed("xcode-build-server not installed")
+            return
+        }
+
+        let storeDirectory = store.ensureDirectory(forWorkspace: workspaceURL.path)
+        guard let metadata = store.loadMetadata(forWorkspace: workspaceURL.path) else {
+            semanticIndexStatus = .failed("buildServer.json is missing")
+            return
+        }
+
+        let compileURL = URL(fileURLWithPath: metadata.compileDatabasePath)
+        let buildServerURL = URL(fileURLWithPath: metadata.buildServerJSONPath)
+        if XcodeSemanticIndexRunner.isCompileDatabaseFresh(
+            compileDatabaseURL: compileURL,
+            buildServerJSONURL: buildServerURL
+        ) {
+            semanticIndexStatus = .ready
+            return
+        }
+
+        semanticIndexStatus = .indexing
+
+        let derivedDataDirectory = store.derivedDataDirectory(forWorkspace: workspaceURL.path)
+        try? FileManager.default.createDirectory(
+            at: derivedDataDirectory,
+            withIntermediateDirectories: true
+        )
+
+        let request = XcodeSemanticIndexRunner.Request(
+            workspaceURL: workspaceURL,
+            scheme: activeScheme?.name ?? metadata.scheme,
+            configuration: activeConfiguration ?? activeScheme?.activeConfiguration ?? "Debug",
+            destinationQuery: activeDestination?.destinationQuery
+                ?? activeScheme?.activeDestination?.destinationQuery
+                ?? Self.defaultDestination().destinationQuery,
+            storeDirectory: storeDirectory,
+            derivedDataDirectory: derivedDataDirectory,
+            xcodeBuildServerPath: serverPath,
+            buildRoot: metadata.buildRoot
+        )
+
+        // Always rebuild + parse when the compile database needs regenerating. The previous
+        // "parse-only" shortcut re-parsed whatever xcactivitylog already existed, which — after an
+        // incremental build — only covers a handful of targets and yields a partial `.compile`.
+        // `buildAndParseCompileDatabase` performs a clean build so the parsed log is complete.
+        guard !Task.isCancelled else { return }
+
+        if let failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request) {
+            semanticIndexStatus = .failed(failureReason)
+        } else {
+            if let buildRoot = XcodeSemanticIndexRunner.discoverBuildRoot(in: derivedDataDirectory) {
+                _ = store.updateBuildRoot(forWorkspace: workspaceURL.path, buildRoot: buildRoot)
+            }
+            semanticIndexStatus = .ready
+        }
+    }
+
+    /// Whether an existing `buildServer.json` can be reused as-is for the requested scheme.
+    ///
+    /// Reusing it (instead of re-running `xcode-build-server config`) keeps the file's modification
+    /// date stable, which prevents the freshness check from spuriously invalidating a complete
+    /// `.compile` and triggering an incremental re-index that would corrupt it.
+    static func canReuseBuildServerConfig(
+        _ config: XcodeBuildServerStore.Config?,
+        requestedScheme: String
+    ) -> Bool {
+        guard let config, !config.scheme.isEmpty else { return false }
+        return config.scheme == requestedScheme
     }
 
     public static func buildServerGenerationStatus(
@@ -302,14 +476,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     public func findTargetsForFile(fileURL: URL) -> [XcodeTargetContext] {
         guard let workspace = currentWorkspace else { return [] }
 
-        let filePath = fileURL.path
+        let filePath = XcodeProjectResolver.normalizedMembershipPath(for: fileURL)
         if let cached = targetMatchCache[filePath] {
             return cached
         }
         var matches: [XcodeTargetContext] = []
         for project in workspace.projects {
             for target in project.targets {
-                if target.sourceFiles.contains(filePath) {
+                if XcodeProjectResolver.targetMembershipContains(fileURL: fileURL, sourceFiles: target.sourceFiles) {
                     matches.append(target)
                 }
             }
@@ -388,8 +562,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 使所有缓存失效
     public func invalidateAllContexts() {
+        semanticIndexTask?.cancel()
+        semanticIndexTask = nil
         buildSettingsCache.removeAll()
         targetMatchCache.removeAll()
+        clearResolutionProgress()
+        semanticIndexStatus = .notStarted
         buildContextStatus = .needsResync
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }

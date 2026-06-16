@@ -45,9 +45,14 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     // MARK: - 项目解析
 
+    public typealias ResolutionProgressHandler = @Sendable (BuildContextResolutionProgress.Update) -> Void
+
     /// 解析一个 workspace / project，返回完整的上下文
     /// 此方法会调用 xcodebuild -list -json 获取结构化数据
-    public func resolve(workspaceURL: URL) async -> XcodeWorkspaceContext? {
+    public func resolve(
+        workspaceURL: URL,
+        onProgress: ResolutionProgressHandler? = nil
+    ) async -> XcodeWorkspaceContext? {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let isWorkspace = workspaceURL.pathExtension == "xcworkspace"
         guard isProject || isWorkspace else {
@@ -60,6 +65,11 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let name = workspaceURL.deletingPathExtension().lastPathComponent
         let projectPath = isProject ? workspaceURL : nil
         let workspacePath = isWorkspace ? workspaceURL : nil
+
+        onProgress?(.init(
+            phase: .runningXcodebuildList,
+            detail: workspaceURL.lastPathComponent
+        ))
 
         // 获取 xcodebuild -list -json 输出
         guard let listResult = await fetchBuildList(workspaceURL: workspacePath, projectURL: projectPath) else {
@@ -76,8 +86,20 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
         let projectLikePath = workspaceURL.path
-        let targetSourceFiles = await Task.detached(priority: .userInitiated) { @Sendable in
-            Self.resolveTargetSourceFiles(projectLikeURL: URL(fileURLWithPath: projectLikePath))
+        let scanProgressHandler: (@Sendable (String) -> Void)? = {
+            guard let onProgress else { return nil }
+            return { path in
+                onProgress(.init(
+                    phase: .parsingProjectMembership,
+                    currentItem: URL(fileURLWithPath: path).lastPathComponent
+                ))
+            }
+        }()
+        let targetSourceFiles: [String: Set<String>] = await Task.detached(priority: .userInitiated) { @Sendable in
+            Self.resolveTargetSourceFiles(
+                projectLikeURL: URL(fileURLWithPath: projectLikePath),
+                onScanProgress: scanProgressHandler
+            )
         }.value
 
         let targetContexts = targetNames.map { targetName in
@@ -135,15 +157,18 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
     /// 基于 `.xcscheme` 文件构建占位 workspace，供 UI 在 `xcodebuild -list` 完成前快速展示。
     static func makePlaceholderWorkspaceContext(
         workspaceURL: URL,
-        schemeNames: [String]
+        schemeNames: [String],
+        targetSourceFiles: [String: Set<String>] = [:]
     ) -> XcodeWorkspaceContext {
         let name = workspaceURL.deletingPathExtension().lastPathComponent
         let uniqueSchemes = uniquePreservingOrder(schemeNames)
+        let targetNames = targetSourceFiles.keys.sorted()
+        let buildableTargets = targetNames.isEmpty ? uniqueSchemes : targetNames
         let schemeContexts = uniqueSchemes.map { schemeName in
             XcodeSchemeContext(
                 id: schemeName,
                 name: schemeName,
-                buildableTargets: [],
+                buildableTargets: buildableTargets,
                 defaultConfiguration: "Debug",
                 activeConfiguration: "Debug"
             )
@@ -152,11 +177,20 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             XcodeBuildConfigurationContext(id: "Debug", name: "Debug"),
             XcodeBuildConfigurationContext(id: "Release", name: "Release"),
         ]
+        let targets = targetNames.map { targetName in
+            XcodeTargetContext(
+                id: targetName,
+                name: targetName,
+                productType: nil,
+                buildConfigurations: defaultConfigurations,
+                sourceFiles: targetSourceFiles[targetName] ?? []
+            )
+        }
         let projectContext = XcodeProjectContext(
             id: workspaceURL.path,
             name: name,
             path: workspaceURL,
-            targets: [],
+            targets: targets,
             buildConfigurations: defaultConfigurations,
             schemes: schemeContexts
         )
@@ -250,7 +284,10 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     // MARK: - 工具方法
 
-    static func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
+    static func resolveTargetSourceFiles(
+        projectLikeURL: URL,
+        onScanProgress: (@Sendable (String) -> Void)? = nil
+    ) -> [String: Set<String>] {
         let projectURL: URL
         if projectLikeURL.pathExtension == "xcodeproj" {
             projectURL = projectLikeURL
@@ -279,7 +316,13 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
                 } else {
                     rootURL = projectRoot.appendingPathComponent(root.rootPath)
                 }
-                partial.formUnion(XcodeProjectFileEnumerator.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
+                partial.formUnion(
+                    XcodeProjectFileEnumerator.enumerateFiles(
+                        in: rootURL,
+                        excluding: root.excludedRelativePaths,
+                        onScanProgress: onScanProgress
+                    )
+                )
             }
             result[item.key] = files
             }
@@ -287,7 +330,10 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
         }
 
-        let swiftPackageFiles = XcodeSwiftPackageSourceResolver.resolveTargetSourceFiles(projectURL: projectURL)
+        let swiftPackageFiles = XcodeSwiftPackageSourceResolver.resolveTargetSourceFiles(
+            projectURL: projectURL,
+            onScanProgress: onScanProgress
+        )
         for (targetName, files) in swiftPackageFiles {
             result[targetName, default: []].formUnion(files)
         }
@@ -311,6 +357,23 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
         guard filePath.hasPrefix(rootPrefix) else { return fileURL.lastPathComponent }
         return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    /// Canonical path used when matching files to target membership.
+    static func normalizedMembershipPath(for fileURL: URL) -> String {
+        normalizedMembershipPath(fileURL.resolvingSymlinksInPath().path)
+    }
+
+    static func normalizedMembershipPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let resolved = URL(fileURLWithPath: trimmed).resolvingSymlinksInPath().path
+        return resolved != "/" && resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+
+    static func targetMembershipContains(fileURL: URL, sourceFiles: some Collection<String>) -> Bool {
+        let lookupPath = normalizedMembershipPath(for: fileURL)
+        return sourceFiles.contains { normalizedMembershipPath($0) == lookupPath }
     }
 
     private static func normalizedPath(_ path: String) -> String {
