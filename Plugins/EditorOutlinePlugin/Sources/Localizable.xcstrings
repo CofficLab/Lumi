@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Editor Rail Outline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

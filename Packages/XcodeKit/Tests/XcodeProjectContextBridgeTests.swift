@@ -83,7 +83,7 @@ final class XcodeProjectContextBridgeNotificationTests: XCTestCase {
             configurations: [],
             projectPath: nil
         )
-        
+
         XCTAssertNil(state.workspaceFolders)
         XCTAssertNil(state.buildServerPath)
         XCTAssertNil(state.activeScheme)
@@ -91,5 +91,17 @@ final class XcodeProjectContextBridgeNotificationTests: XCTestCase {
         XCTAssertFalse(state.isInitialized)
         XCTAssertTrue(state.schemes.isEmpty)
         XCTAssertTrue(state.configurations.isEmpty)
+    }
+
+    @MainActor
+    func testShouldHaveBuildContextUsesLiveProjectFlag() {
+        let bridge = XcodeProjectContextBridge.shared
+        defer { bridge.projectClosed() }
+
+        bridge.projectClosed()
+        XCTAssertFalse(bridge.shouldHaveBuildContext)
+
+        bridge.isXcodeProject = true
+        XCTAssertTrue(bridge.shouldHaveBuildContext)
     }
 }

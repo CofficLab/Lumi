@@ -217,6 +217,10 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         )
         cachedState = state
         NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
+        NotificationCenter.default.post(
+            name: Notification.Name("EditorProjectContextDidChange"),
+            object: nil
+        )
         NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
 
@@ -265,7 +269,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         buildServerJSONPath ?? cachedState?.buildServerPath
     }
     public var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "Not Initialized" }
-    public var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
+    public var shouldHaveBuildContext: Bool { isXcodeProject }
 
     public func makeInitializationOptions() -> [String: Any]? {
         guard shouldHaveBuildContext else { return nil }

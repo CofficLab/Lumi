@@ -35,9 +35,6 @@
         }
       }
     },
-    "Editor Bottom Search" : {
-
-    },
     "Enter a query and press Return" : {
       "localizations" : {
         "en" : {
@@ -309,9 +306,6 @@
           }
         }
       }
-    },
-    "Search panel in the editor bottom area." : {
-
     },
     "Searching workspace…" : {
       "localizations" : {

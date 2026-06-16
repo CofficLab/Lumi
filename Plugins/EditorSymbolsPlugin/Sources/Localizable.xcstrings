@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Editor Bottom Symbols" : {
-
-    },
     "Symbols" : {
       "localizations" : {
         "en" : {
@@ -37,9 +34,6 @@
           }
         }
       }
-    },
-    "Symbols panel in the editor bottom area." : {
-
     },
     "Workspace Symbols" : {
       "localizations" : {

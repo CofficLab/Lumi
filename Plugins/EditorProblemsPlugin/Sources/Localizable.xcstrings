@@ -4,6 +4,40 @@
     "%lld" : {
 
     },
+    "Ask AI to fix this problem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI to fix this problem"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让 AI 修复此问题"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 修復此問題"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 修復此問題"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓 AI 修復此問題"
+          }
+        }
+      }
+    },
     "Current file" : {
       "localizations" : {
         "en" : {
@@ -71,9 +105,6 @@
           }
         }
       }
-    },
-    "Editor Bottom Problems" : {
-
     },
     "No Problems" : {
       "localizations" : {
@@ -177,6 +208,40 @@
         }
       }
     },
+    "Please help me fix the following problem:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please help me fix the following problem:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请帮我修复以下问题："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請幫我修復以下問題："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請幫我修復以下問題："
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請幫我修復以下問題："
+          }
+        }
+      }
+    },
     "Problems" : {
       "localizations" : {
         "en" : {
@@ -245,9 +310,6 @@
         }
       }
     },
-    "Problems panel in the editor bottom area." : {
-
-    },
     "Project" : {
       "localizations" : {
         "en" : {
@@ -312,74 +374,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "專案情境"
-          }
-        }
-      }
-    },
-    "Ask AI to fix this problem" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ask AI to fix this problem"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "让 AI 修复此问题"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 修復此問題"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 修復此問題"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 修復此問題"
-          }
-        }
-      }
-    },
-    "Please help me fix the following problem:" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please help me fix the following problem:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请帮我修复以下问题："
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請幫我修復以下問題："
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請幫我修復以下問題："
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請幫我修復以下問題："
           }
         }
       }

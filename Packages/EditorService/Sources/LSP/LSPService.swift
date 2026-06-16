@@ -969,6 +969,14 @@ public final class LSPService: ObservableObject, SuperLog {
             return
         }
 
+        let requestedBuildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: root)
+        if requestedBuildServerPath != activeBuildServerPath, server != nil {
+            lifecycleGeneration += 1
+            try? await server?.shutdown()
+            server = nil
+            activeBuildServerPath = nil
+        }
+
         _ = await ensureServer(for: languageId, projectPath: root)
         guard let server else { return }
 
@@ -977,6 +985,7 @@ public final class LSPService: ObservableObject, SuperLog {
         diagnosticsStabilizationDeadline = nil
 
         do {
+            try? await server.closeDocument(uri: uri)
             try await server.openDocument(
                 uri: uri,
                 languageId: languageId,

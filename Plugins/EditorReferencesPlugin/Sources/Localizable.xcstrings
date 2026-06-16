@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Editor Bottom References" : {
-
-    },
     "No References" : {
       "localizations" : {
         "en" : {
@@ -139,9 +136,6 @@
           }
         }
       }
-    },
-    "References panel in the editor bottom area." : {
-
     }
   },
   "version" : "1.0"
