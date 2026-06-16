@@ -31,7 +31,10 @@ extension AppStoreVersion {
         let filtered: [AppStoreVersion]
         if let appPlatform {
             let platform = appPlatform.normalizedASCPlatform
-            filtered = versions.filter { $0.normalizedPlatform == platform }
+            let platformMatched = versions.filter { $0.normalizedPlatform == platform }
+            // Fallback: if no versions match the app's platform (e.g. iOS app with Mac Catalyst versions),
+            // show all versions instead of an empty list.
+            filtered = platformMatched.isEmpty ? versions : platformMatched
         } else {
             filtered = versions
         }

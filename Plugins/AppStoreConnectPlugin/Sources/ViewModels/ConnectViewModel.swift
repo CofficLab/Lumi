@@ -1,9 +1,15 @@
 import AppKit
 import Combine
 import Foundation
+import os
+import SuperLogKit
 
 @MainActor
-final class ConnectViewModel: ObservableObject {
+final class ConnectViewModel: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🏪"
+    nonisolated static let verbose = true
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect")
+
     static let shared = ConnectViewModel()
 
     enum Page: String, CaseIterable, Identifiable {
@@ -241,12 +247,29 @@ final class ConnectViewModel: ObservableObject {
     }
 
     func loadVersions() async {
-        guard let app = selectedApp else { return }
+        guard let app = selectedApp else {
+            Self.logger.warning("\(self.t)loadVersions skipped: no selectedApp")
+            return
+        }
+        Self.logger.info("\(self.t)loadVersions starting for app: \(app.name) (id: \(app.id), platform: \(app.platform ?? "nil"))")
         await runBusy {
-            versions = try await client.listVersions(appID: app.id)
-            selectedVersion = sidebarVersions.first
+            let rawVersions = try await client.listVersions(appID: app.id)
+            Self.logger.info("\(self.t)raw versions fetched: \(rawVersions.count)")
+            versions = rawVersions
+            let versionCount = versions.count
+            let filteredVersions = sidebarVersions
+            Self.logger.info("\(self.t)versions set: \(versionCount), platform filter: \(app.platform ?? "nil")")
+            Self.logger.info("\(self.t)sidebarVersions after filter: \(filteredVersions.count)")
+            if Self.verbose {
+                filteredVersions.forEach { v in
+                    Self.logger.info("\(self.t)  - \(v.versionString) (state: \(v.appStoreState), platform: \(v.platform))")
+                }
+            }
+            selectedVersion = filteredVersions.first
             if selectedVersion != nil {
                 await loadLocalizations()
+            } else {
+                Self.logger.warning("\(self.t)no sidebarVersions to select")
             }
         }
     }
@@ -572,6 +595,7 @@ final class ConnectViewModel: ObservableObject {
         do {
             try await operation()
         } catch {
+            Self.logger.error("\(self.t)operation failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
         // Ensure loading state lasts at least 1 second so the UI doesn't flash
@@ -579,6 +603,7 @@ final class ConnectViewModel: ObservableObject {
         if remaining > .zero {
             try? await Task.sleep(for: remaining)
         }
+        Self.logger.info("\(self.t)runBusy completed in \((ContinuousClock.now - startTime).formatted())")
         isBusy = false
     }
 
