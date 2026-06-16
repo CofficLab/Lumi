@@ -1,13 +1,19 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ChatTimelineStatusBarView: View {
-    let chatService: any LumiChatServicing
+    @ObservedObject private var chatService: ChatService
+
+    init(chatService: ChatService) {
+        self._chatService = ObservedObject(wrappedValue: chatService)
+    }
 
     var body: some View {
         let conversationID = chatService.selectedConversationID
         let count = conversationID.map { chatService.messages(for: $0).count } ?? 0
+        let contextUsage = conversationID.map { chatService.conversationContextUsage(for: $0) }
 
         StatusBarHoverContainer(
             detailView: ChatTimelineDetailView(chatService: chatService),
@@ -19,6 +25,12 @@ struct ChatTimelineStatusBarView: View {
                     .font(.appMicroEmphasized)
                 Text("\(count)")
                     .font(.appMicro)
+
+                if let contextUsage, contextUsage.currentTokens > 0 {
+                    Divider().frame(height: 12)
+                    Text(contextUsage.label)
+                        .font(.appMicro)
+                }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -28,13 +40,21 @@ struct ChatTimelineStatusBarView: View {
 
 private struct ChatTimelineDetailView: View {
     @LumiTheme private var theme
-    let chatService: any LumiChatServicing
+    @ObservedObject private var chatService: ChatService
+
+    init(chatService: ChatService) {
+        self._chatService = ObservedObject(wrappedValue: chatService)
+    }
 
     var body: some View {
+        let contextUsage = chatService.selectedConversationID.map {
+            chatService.conversationContextUsage(for: $0)
+        }
+
         StatusBarPopoverScaffold(
             title: "Conversation Timeline",
             systemImage: "timeline.selection",
-            subtitle: "Recent messages",
+            subtitle: timelineSubtitle(contextUsage: contextUsage),
             headerAccessory: { EmptyView() },
             content: {
             ScrollView {
@@ -61,6 +81,16 @@ private struct ChatTimelineDetailView: View {
             },
             footer: { EmptyView() }
         )
+    }
+
+    private func timelineSubtitle(contextUsage: LumiConversationContextUsage?) -> String {
+        guard let contextUsage, contextUsage.currentTokens > 0 else {
+            return "Recent messages"
+        }
+        if contextUsage.limit > 0 {
+            return "Context \(contextUsage.label)"
+        }
+        return "Context \(LumiConversationContextUsage.formatToken(contextUsage.currentTokens))"
     }
 }
 

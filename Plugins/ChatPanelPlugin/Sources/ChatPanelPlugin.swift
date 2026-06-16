@@ -17,7 +17,7 @@ public enum ChatPanelPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         guard context.isChatSectionVisible,
-              let chatService = context.resolve(LumiChatServicing.self)
+              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
         else {
             return []
         }

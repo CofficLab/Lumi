@@ -7,6 +7,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let defaultModel: String
     public let availableModels: [String]
     public let isLocal: Bool
+    public let contextWindowSizes: [String: Int]
 
     public init(
         id: String,
@@ -14,7 +15,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         description: String = "",
         defaultModel: String,
         availableModels: [String],
-        isLocal: Bool = false
+        isLocal: Bool = false,
+        contextWindowSizes: [String: Int] = [:]
     ) {
         self.id = id
         self.displayName = displayName
@@ -22,6 +24,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.defaultModel = defaultModel
         self.availableModels = availableModels
         self.isLocal = isLocal
+        self.contextWindowSizes = contextWindowSizes
     }
 }
 

@@ -178,6 +178,9 @@ import Testing
         func generateEphemeralCompletion(messages: [LumiChatMessage], model: String, conversationID: UUID) async throws -> LumiChatMessage {
             throw NSError(domain: "test", code: 1)
         }
+        func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage {
+            .init(currentTokens: 0, limit: 0)
+        }
     }
 
     let hidden = LumiPluginContext(

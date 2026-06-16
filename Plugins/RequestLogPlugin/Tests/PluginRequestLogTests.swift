@@ -252,6 +252,12 @@ private final class MockChatService: LumiChatServicing {
     func deleteMessage(id: UUID, in conversationID: UUID) {}
     func resendMessage(id: UUID, in conversationID: UUID) async {}
     func send(_ text: String, in conversationID: UUID?) async {}
+    func generateEphemeralCompletion(messages: [LumiChatMessage], model: String, conversationID: UUID) async throws -> LumiChatMessage {
+        LumiChatMessage(conversationID: conversationID, role: .assistant, content: "")
+    }
+    func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage {
+        .init(currentTokens: 0, limit: 0)
+    }
 }
 
 private final class MockRequestLogHistory: RequestLogHistoryQuerying, @unchecked Sendable {

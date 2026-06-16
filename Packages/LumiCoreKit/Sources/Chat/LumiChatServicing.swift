@@ -62,4 +62,5 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
         model: String,
         conversationID: UUID
     ) async throws -> LumiChatMessage
+    func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage
 }
