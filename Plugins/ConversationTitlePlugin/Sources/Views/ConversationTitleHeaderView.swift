@@ -18,9 +18,7 @@ struct ConversationTitleHeaderView: View {
                 .lineLimit(1)
 
             if isSending {
-                ProgressView()
-                    .controlSize(.small)
-                    .scaleEffect(0.72)
+                BreathingPulseIndicator(color: theme.primary)
             }
 
             Spacer()
@@ -28,5 +26,26 @@ struct ConversationTitleHeaderView: View {
         .padding(.horizontal, 16)
         .frame(height: 40)
         .appSurface(style: .toolbar, cornerRadius: 0)
+    }
+}
+
+/// 呼吸式脉冲动画指示器
+private struct BreathingPulseIndicator: View {
+    let color: Color
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .fill(color.opacity(0.3))
+            .frame(width: 8, height: 8)
+            .scaleEffect(isAnimating ? 1.8 : 1.0)
+            .opacity(isAnimating ? 0 : 0.5)
+            .animation(
+                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
+                value: isAnimating
+            )
+            .onAppear {
+                isAnimating = true
+            }
     }
 }
