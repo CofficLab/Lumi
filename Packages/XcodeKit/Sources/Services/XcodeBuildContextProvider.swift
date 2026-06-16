@@ -132,12 +132,16 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let fastSchemeNames = await Task.detached(priority: .userInitiated) {
             XcodeSchemeDiscovery.discoverSchemeNames(at: workspaceURL)
         }.value
+        let targetSourceFiles = await Task.detached(priority: .userInitiated) {
+            XcodeProjectResolver.resolveTargetSourceFiles(projectLikeURL: workspaceURL)
+        }.value
 
         var selectedSchemeName: String?
         if !fastSchemeNames.isEmpty {
             let placeholder = XcodeProjectResolver.makePlaceholderWorkspaceContext(
                 workspaceURL: workspaceURL,
-                schemeNames: fastSchemeNames
+                schemeNames: fastSchemeNames,
+                targetSourceFiles: targetSourceFiles
             )
             applyWorkspaceContext(placeholder)
             if let bestScheme = Self.selectBestScheme(
@@ -302,14 +306,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     public func findTargetsForFile(fileURL: URL) -> [XcodeTargetContext] {
         guard let workspace = currentWorkspace else { return [] }
 
-        let filePath = fileURL.path
+        let filePath = XcodeProjectResolver.normalizedMembershipPath(for: fileURL)
         if let cached = targetMatchCache[filePath] {
             return cached
         }
         var matches: [XcodeTargetContext] = []
         for project in workspace.projects {
             for target in project.targets {
-                if target.sourceFiles.contains(filePath) {
+                if XcodeProjectResolver.targetMembershipContains(fileURL: fileURL, sourceFiles: target.sourceFiles) {
                     matches.append(target)
                 }
             }

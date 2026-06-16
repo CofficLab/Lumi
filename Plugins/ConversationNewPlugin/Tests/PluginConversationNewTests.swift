@@ -130,4 +130,7 @@ private final class MockChatService: LumiChatServicing {
     func generateEphemeralCompletion(messages: [LumiChatMessage], model: String, conversationID: UUID) async throws -> LumiChatMessage {
         LumiChatMessage(conversationID: conversationID, role: .assistant, content: "")
     }
+    func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage {
+        .init(currentTokens: 0, limit: 0)
+    }
 }

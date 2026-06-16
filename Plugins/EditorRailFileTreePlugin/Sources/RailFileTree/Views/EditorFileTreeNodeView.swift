@@ -6,12 +6,10 @@ import SwiftUI
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
 public struct EditorFileTreeNodeView: View {
     @EnvironmentObject private var editorContext: EditorContext
+    @EnvironmentObject private var selectionState: EditorFileTreeSelectionState
     @LumiTheme private var uiTheme
     public let url: URL
     public let depth: Int
-
-    /// 当前选中的文件 URL，用于高亮选中行
-    public let selectedURL: URL?
 
     /// 选中某个文件节点的回调
     public let onSelect: (URL) -> Void
@@ -86,7 +84,6 @@ public struct EditorFileTreeNodeView: View {
     public init(
         url: URL,
         depth: Int,
-        selectedURL: URL? = nil,
         onSelect: @escaping (URL) -> Void,
         windowId: UUID? = nil,
         refreshToken: Int = 0,
@@ -97,7 +94,6 @@ public struct EditorFileTreeNodeView: View {
     ) {
         self.url = url
         self.depth = depth
-        self.selectedURL = selectedURL
         self.onSelect = onSelect
         self.windowId = windowId
         self.refreshToken = refreshToken
@@ -128,7 +124,7 @@ public struct EditorFileTreeNodeView: View {
     // MARK: - Body
 
     public var body: some View {
-        let isSelected = EditorFileTreePathFormatter.isSameFile(selectedURL, url)
+        let isSelected = selectionState.isSelected(url)
         guard let chrome = editorContext.activeChromeTheme else {
             return AnyView(Color.clear)
         }
@@ -180,14 +176,14 @@ public struct EditorFileTreeNodeView: View {
                 .onTapGesture { handleTap() }
                 .onHover { hovering in isHovering = hovering }
                 .confirmationDialog(
-                    String(format: LumiPluginLocalization.string("Are you sure you want to delete \"%@\"?", bundle: .module), fileName),
+                    deleteConfirmationTitle,
                     isPresented: $showDeleteConfirmation,
                     titleVisibility: .visible
                 ) {
-                    Button(LumiPluginLocalization.string("Move to Trash", bundle: .module), role: .destructive) { deleteItem() }
+                    Button(deleteConfirmationActionLabel, role: .destructive) { deleteItems() }
                     Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
                 } message: {
-                    Text(LumiPluginLocalization.string("This item will be moved to the Trash.", bundle: .module))
+                    Text(deleteConfirmationMessage)
                 }
                 .alert(LumiPluginLocalization.string("New File", bundle: .module), isPresented: $showNewFileSheet) {
                     TextField(LumiPluginLocalization.string("File name", bundle: .module), text: $newItemName)
@@ -218,7 +214,6 @@ public struct EditorFileTreeNodeView: View {
                                 EditorFileTreeNodeView(
                                     url: childURL,
                                     depth: depth + 1,
-                                    selectedURL: selectedURL,
                                     onSelect: onSelect,
                                     windowId: windowId,
                                     refreshToken: refreshToken,
@@ -233,6 +228,7 @@ public struct EditorFileTreeNodeView: View {
                 }
             }
             .onAppear {
+                selectionState.trackVisible(url)
                 if isDirectory && isExpanded && children.isEmpty {
                     loadChildren()
                 }
@@ -244,6 +240,7 @@ public struct EditorFileTreeNodeView: View {
                 handleRefreshTokenChange(newValue)
             }
             .onDisappear {
+                selectionState.untrackVisible(url)
                 loadChildrenTask?.cancel()
                 loadChildrenTask = nil
             }
@@ -254,7 +251,7 @@ public struct EditorFileTreeNodeView: View {
 
     @ViewBuilder
     private var contextMenuContent: some View {
-        if isDirectory {
+        if !isBatchAction && isDirectory {
             Button {
                 newItemName = ""
                 showNewFileSheet = true
@@ -270,40 +267,51 @@ public struct EditorFileTreeNodeView: View {
             Divider()
         }
 
-        Button {
-            newItemName = fileName
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { showRenameSheet = true }
-        } label: {
-            Label(LumiPluginLocalization.string("Rename", bundle: .module), systemImage: "pencil")
+        if !isBatchAction {
+            Button {
+                newItemName = fileName
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { showRenameSheet = true }
+            } label: {
+                Label(LumiPluginLocalization.string("Rename", bundle: .module), systemImage: "pencil")
+            }
+
+            Divider()
         }
 
-        Divider()
         Button { addToConversation() } label: {
-            Label(LumiPluginLocalization.string("Add to Conversation", bundle: .module), systemImage: "bubble.left.and.bubble.right")
+            Label(addToConversationLabel, systemImage: "bubble.left.and.bubble.right")
         }
-        Button { openInFinder() } label: { Label(LumiPluginLocalization.string("Reveal in Finder", bundle: .module), systemImage: "finder") }
-        Button { openInVSCode() } label: { Label(LumiPluginLocalization.string("Open in VS Code", bundle: .module), systemImage: "chevron.left.forwardslash.chevron.right") }
-        Button { openInTerminal() } label: { Label(LumiPluginLocalization.string("Open in Terminal", bundle: .module), systemImage: "terminal") }
-        Button { copyPath() } label: { Label(LumiPluginLocalization.string("Copy Path", bundle: .module), systemImage: "doc.on.doc") }
+        if !isBatchAction {
+            Button { openInFinder() } label: { Label(LumiPluginLocalization.string("Reveal in Finder", bundle: .module), systemImage: "finder") }
+            Button { openInVSCode() } label: { Label(LumiPluginLocalization.string("Open in VS Code", bundle: .module), systemImage: "chevron.left.forwardslash.chevron.right") }
+            Button { openInTerminal() } label: { Label(LumiPluginLocalization.string("Open in Terminal", bundle: .module), systemImage: "terminal") }
+            Button { copyPath() } label: { Label(LumiPluginLocalization.string("Copy Path", bundle: .module), systemImage: "doc.on.doc") }
+        }
         Divider()
-        Button(role: .destructive) { showDeleteConfirmation = true } label: {
-            Label(LumiPluginLocalization.string("Move to Trash", bundle: .module), systemImage: "trash")
+        if !batchActionURLs.isEmpty {
+            Button(role: .destructive) { showDeleteConfirmation = true } label: {
+                Label(moveToTrashLabel, systemImage: "trash")
+            }
         }
     }
 
     // MARK: - Event Handler
 
     private func handleTap() {
-        if isDirectory {
-            isExpanded.toggle()
-            persistExpansionState()
-            notifyExpansionChanged(isExpanded: isExpanded)
-            if isExpanded && children.isEmpty {
-                loadChildren()
+        selectionState.handleTap(
+            url: url,
+            isDirectory: isDirectory,
+            modifiers: ModifierFlags.currentClick,
+            onOpenFile: { onSelect(url) },
+            onToggleExpand: {
+                isExpanded.toggle()
+                persistExpansionState()
+                notifyExpansionChanged(isExpanded: isExpanded)
+                if isExpanded && children.isEmpty {
+                    loadChildren()
+                }
             }
-        } else {
-            onSelect(url)
-        }
+        )
     }
 
     private func handleRefreshTokenChange(_ newValue: Int) {
@@ -402,6 +410,69 @@ public struct EditorFileTreeNodeView: View {
             return isHovering ? uiTheme.textPrimary.opacity(0.06) : Color.clear
         }
     }
+
+    private var batchActionURLs: [URL] {
+        let targets = selectionState.actionTargets(for: url)
+        guard !projectRootPath.isEmpty else { return targets }
+
+        let rootPath = EditorFileTreePathFormatter.normalizedFilePath(
+            URL(fileURLWithPath: projectRootPath)
+        )
+        return targets.filter {
+            EditorFileTreePathFormatter.normalizedFilePath($0) != rootPath
+        }
+    }
+
+    private var isBatchAction: Bool {
+        batchActionURLs.count > 1
+    }
+
+    private var addToConversationLabel: String {
+        if isBatchAction {
+            return String(
+                format: LumiPluginLocalization.string("Add %lld Items to Conversation", bundle: .module),
+                batchActionURLs.count
+            )
+        }
+        return LumiPluginLocalization.string("Add to Conversation", bundle: .module)
+    }
+
+    private var moveToTrashLabel: String {
+        if isBatchAction {
+            return String(
+                format: LumiPluginLocalization.string("Move %lld Items to Trash", bundle: .module),
+                batchActionURLs.count
+            )
+        }
+        return LumiPluginLocalization.string("Move to Trash", bundle: .module)
+    }
+
+    private var deleteConfirmationTitle: String {
+        if isBatchAction {
+            return String(
+                format: LumiPluginLocalization.string("Are you sure you want to delete %lld items?", bundle: .module),
+                batchActionURLs.count
+            )
+        }
+        return String(
+            format: LumiPluginLocalization.string("Are you sure you want to delete \"%@\"?", bundle: .module),
+            fileName
+        )
+    }
+
+    private var deleteConfirmationMessage: String {
+        if isBatchAction {
+            return String(
+                format: LumiPluginLocalization.string("These %lld items will be moved to the Trash.", bundle: .module),
+                batchActionURLs.count
+            )
+        }
+        return LumiPluginLocalization.string("This item will be moved to the Trash.", bundle: .module)
+    }
+
+    private var deleteConfirmationActionLabel: String {
+        moveToTrashLabel
+    }
 }
 
 private struct FileTreeIconMetadata {
@@ -484,8 +555,10 @@ extension EditorFileTreeNodeView {
         }
     }
 
-    private func deleteItem() {
-        if EditorFileTreeService.trashItem(at: url) {
+    private func deleteItems() {
+        guard !batchActionURLs.isEmpty else { return }
+        if EditorFileTreeService.trashItems(at: batchActionURLs) > 0 {
+            selectionState.clearSelection()
             notifyTreeMutation()
         }
     }
@@ -512,7 +585,7 @@ extension EditorFileTreeNodeView {
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
     private func addToConversation() {
-        editorContext.addToConversation(fileURL: url, windowId: windowId)
+        editorContext.addToConversation(fileURLs: batchActionURLs, windowId: windowId)
     }
 }
 
@@ -524,8 +597,8 @@ extension EditorFileTreeNodeView {
     return EditorFileTreeNodeView(
         url: testURL,
         depth: 0,
-        selectedURL: nil,
         onSelect: { _ in }
     )
+    .environmentObject(EditorFileTreeSelectionState())
     .frame(width: 250, height: 400)
 }

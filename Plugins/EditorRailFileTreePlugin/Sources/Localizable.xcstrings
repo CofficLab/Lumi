@@ -69,6 +69,40 @@
         }
       }
     },
+    "Add %lld Items to Conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld Items to Conversation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 %lld 项到对话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入 %lld 項到對話"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入 %lld 項到對話"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入 %lld 項到對話"
+          }
+        }
+      }
+    },
     "Are you sure you want to delete \"%@\"?": {
       "localizations": {
         "en": {
@@ -99,6 +133,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "確定要刪除 \"%@\" 嗎？"
+          }
+        }
+      }
+    },
+    "Are you sure you want to delete %lld items?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to delete %lld items?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除 %lld 项吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除 %lld 項嗎？"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除 %lld 項嗎？"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除 %lld 項嗎？"
           }
         }
       }
@@ -635,6 +703,40 @@
         }
       }
     },
+    "Move %lld Items to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %lld Items to Trash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 %lld 项移到废纸篓"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 %lld 項移到垃圾桶"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 %lld 項移到垃圾桶"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 %lld 項移到垃圾桶"
+          }
+        }
+      }
+    },
     "New File": {
       "localizations": {
         "en": {
@@ -1073,6 +1175,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "該項目將被移到垃圾桶。"
+          }
+        }
+      }
+    },
+    "These %lld items will be moved to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These %lld items will be moved to the Trash."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这 %lld 项将被移到废纸篓。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這 %lld 項將被移到垃圾桶。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這 %lld 項將被移到垃圾桶。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這 %lld 項將被移到垃圾桶。"
           }
         }
       }

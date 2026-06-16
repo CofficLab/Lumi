@@ -216,6 +216,15 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         messageManager.hasEarlierMessages(for: conversationID, beforeMessageID: beforeMessageID)
     }
 
+    public func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage {
+        LumiConversationContextCalculator.usage(
+            messages: messages(for: conversationID),
+            providerID: providerID(for: conversationID),
+            modelName: modelName(for: conversationID),
+            providerInfos: providerInfos
+        )
+    }
+
     public func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? {
         messageRenderers.first { $0.canRender(message) }
     }

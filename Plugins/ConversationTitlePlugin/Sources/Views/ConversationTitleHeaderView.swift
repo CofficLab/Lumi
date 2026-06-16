@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-struct ChatHeaderView: View {
+struct ConversationTitleHeaderView: View {
     @LumiTheme private var theme
 
     let title: String

@@ -279,6 +279,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         let matchedTargets = currentFileURL.flatMap { fileURL in
             buildContextProvider?.findTargetsForFile(fileURL: fileURL).map(\.name).sorted()
         } ?? []
+        let isTargetMembershipResolved = buildContextProvider?.currentWorkspace?.projects.contains {
+            $0.targets.contains { !$0.sourceFiles.isEmpty }
+        } ?? false
         return XcodeEditorContextSnapshot(
             projectPath: cachedState.projectPath ?? "",
             workspaceName: workspaceName,
@@ -294,7 +297,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             currentFilePath: currentFileURL?.path,
             currentFileTarget: preferredTarget,
             currentFileMatchedTargets: matchedTargets,
-            currentFileIsInTarget: !matchedTargets.isEmpty
+            currentFileIsInTarget: !matchedTargets.isEmpty,
+            isTargetMembershipResolved: isTargetMembershipResolved
         )
     }
 

@@ -105,6 +105,17 @@ public enum EditorFileTreeService {
         FileTreeService.trashItem(at: url)
     }
 
+    /// 批量移入废纸篓，自动跳过嵌套子路径。
+    @discardableResult
+    public static func trashItems(at urls: [URL]) -> Int {
+        let targets = EditorFileTreePathFormatter.topLevelURLs(from: urls)
+        var successCount = 0
+        for url in targets where trashItem(at: url) {
+            successCount += 1
+        }
+        return successCount
+    }
+
     // MARK: - 外部应用（插件特有，依赖 AppKit）
 
     /// 在终端中打开指定路径

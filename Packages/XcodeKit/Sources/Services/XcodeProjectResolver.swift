@@ -135,15 +135,18 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
     /// 基于 `.xcscheme` 文件构建占位 workspace，供 UI 在 `xcodebuild -list` 完成前快速展示。
     static func makePlaceholderWorkspaceContext(
         workspaceURL: URL,
-        schemeNames: [String]
+        schemeNames: [String],
+        targetSourceFiles: [String: Set<String>] = [:]
     ) -> XcodeWorkspaceContext {
         let name = workspaceURL.deletingPathExtension().lastPathComponent
         let uniqueSchemes = uniquePreservingOrder(schemeNames)
+        let targetNames = targetSourceFiles.keys.sorted()
+        let buildableTargets = targetNames.isEmpty ? uniqueSchemes : targetNames
         let schemeContexts = uniqueSchemes.map { schemeName in
             XcodeSchemeContext(
                 id: schemeName,
                 name: schemeName,
-                buildableTargets: [],
+                buildableTargets: buildableTargets,
                 defaultConfiguration: "Debug",
                 activeConfiguration: "Debug"
             )
@@ -152,11 +155,20 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             XcodeBuildConfigurationContext(id: "Debug", name: "Debug"),
             XcodeBuildConfigurationContext(id: "Release", name: "Release"),
         ]
+        let targets = targetNames.map { targetName in
+            XcodeTargetContext(
+                id: targetName,
+                name: targetName,
+                productType: nil,
+                buildConfigurations: defaultConfigurations,
+                sourceFiles: targetSourceFiles[targetName] ?? []
+            )
+        }
         let projectContext = XcodeProjectContext(
             id: workspaceURL.path,
             name: name,
             path: workspaceURL,
-            targets: [],
+            targets: targets,
             buildConfigurations: defaultConfigurations,
             schemes: schemeContexts
         )
@@ -311,6 +323,23 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let rootPrefix = rootPath == "/" ? "/" : rootPath + "/"
         guard filePath.hasPrefix(rootPrefix) else { return fileURL.lastPathComponent }
         return String(filePath.dropFirst(rootPrefix.count))
+    }
+
+    /// Canonical path used when matching files to target membership.
+    static func normalizedMembershipPath(for fileURL: URL) -> String {
+        normalizedMembershipPath(fileURL.resolvingSymlinksInPath().path)
+    }
+
+    static func normalizedMembershipPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let resolved = URL(fileURLWithPath: trimmed).resolvingSymlinksInPath().path
+        return resolved != "/" && resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+
+    static func targetMembershipContains(fileURL: URL, sourceFiles: some Collection<String>) -> Bool {
+        let lookupPath = normalizedMembershipPath(for: fileURL)
+        return sourceFiles.contains { normalizedMembershipPath($0) == lookupPath }
     }
 
     private static func normalizedPath(_ path: String) -> String {

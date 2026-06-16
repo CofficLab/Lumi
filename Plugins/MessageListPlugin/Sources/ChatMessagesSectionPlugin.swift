@@ -24,7 +24,7 @@ public enum ChatMessagesSectionPlugin: LumiPlugin {
         }
 
         return [
-            LumiChatSectionItem(id: info.id, order: info.order) {
+            LumiChatSectionItem(id: info.id, order: info.order, fillsRemainingHeight: true) {
                 ChatMessagesSectionView(coordinator: coordinator)
             }
         ]

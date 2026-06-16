@@ -51,17 +51,24 @@ public final class EditorContext: ObservableObject {
 
     /// 将文件路径加入当前窗口的对话输入区（与拖入输入区行为一致，由 Chat 侧处理图片附件）。
     public func addToConversation(fileURL: URL, windowId: UUID?) {
-        let standardized = fileURL.standardizedFileURL
-        let resolvedWindowId = windowId ?? service.state.windowId
-        var userInfo: [String: Any] = ["fileURL": standardized.path]
-        if let resolvedWindowId {
-            userInfo["windowId"] = resolvedWindowId
+        addToConversation(fileURLs: [fileURL], windowId: windowId)
+    }
+
+    /// 将多个文件路径加入当前窗口的对话输入区。
+    public func addToConversation(fileURLs: [URL], windowId: UUID?) {
+        for fileURL in fileURLs {
+            let standardized = fileURL.standardizedFileURL
+            let resolvedWindowId = windowId ?? service.state.windowId
+            var userInfo: [String: Any] = ["fileURL": standardized.path]
+            if let resolvedWindowId {
+                userInfo["windowId"] = resolvedWindowId
+            }
+            NotificationCenter.default.post(
+                name: Self.addToChatNotificationName,
+                object: nil,
+                userInfo: userInfo
+            )
         }
-        NotificationCenter.default.post(
-            name: Self.addToChatNotificationName,
-            object: nil,
-            userInfo: userInfo
-        )
     }
 
     private func bindFileTreeHighlightToEditorCurrentFile() {

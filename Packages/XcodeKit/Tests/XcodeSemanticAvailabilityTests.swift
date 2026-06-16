@@ -68,6 +68,27 @@ final class XcodeSemanticAvailabilityTests: XCTestCase {
         XCTAssertTrue(report.reasons[0].message.contains("MyFile.swift"))
     }
 
+    func testInspectFileContextNotInTargetSkippedWhileResolving() {
+        let workspaceInput = XcodeSemanticAvailability.WorkspaceInspectionInput(
+            isXcodeProject: true,
+            isInitialized: true,
+            buildContextStatus: .resolving
+        )
+        let input = XcodeSemanticAvailability.FileInspectionInput(
+            workspace: workspaceInput,
+            fileName: "AppBootstrap.swift",
+            activeScheme: "Lumi",
+            activeDestinationName: "My Mac",
+            matchedTargets: [],
+            compatibleTargets: [],
+            preferredTarget: nil
+        )
+
+        let report = XcodeSemanticAvailability.inspectCurrentFileContext(input: input)
+
+        XCTAssertFalse(report.reasons.contains { $0.id == "file-not-in-target" })
+    }
+
     func testInspectFileContextExcludedByScheme() {
         let workspaceInput = XcodeSemanticAvailability.WorkspaceInspectionInput(isXcodeProject: true, isInitialized: true, buildContextStatus: .unknown)
         let input = XcodeSemanticAvailability.FileInspectionInput(workspace: workspaceInput, fileName: "MyFile.swift", activeScheme: "App", activeDestinationName: "My Mac", matchedTargets: ["Tests"], compatibleTargets: [], preferredTarget: nil)

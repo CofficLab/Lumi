@@ -151,7 +151,8 @@ final class ProviderManager {
                     providerId: info.id,
                     providerDisplayName: info.displayName,
                     model: model,
-                    availability: .available
+                    availability: .available,
+                    contextWindowSizes: info.contextWindowSizes
                 )
             }
         }

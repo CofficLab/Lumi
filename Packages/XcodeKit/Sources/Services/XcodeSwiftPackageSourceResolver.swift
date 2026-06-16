@@ -79,7 +79,7 @@ enum XcodeProjectFileEnumerator {
     static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
         if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
            values.isRegularFile == true {
-            return excludedRelativePaths.isEmpty ? [rootURL.standardizedFileURL.path] : []
+            return excludedRelativePaths.isEmpty ? [XcodeProjectResolver.normalizedMembershipPath(for: rootURL)] : []
         }
 
         guard let enumerator = FileManager.default.enumerator(
@@ -101,7 +101,7 @@ enum XcodeProjectFileEnumerator {
                 continue
             }
             if values?.isRegularFile == true {
-                files.insert(fileURL.standardizedFileURL.path)
+                files.insert(XcodeProjectResolver.normalizedMembershipPath(for: fileURL))
             }
         }
         return files
