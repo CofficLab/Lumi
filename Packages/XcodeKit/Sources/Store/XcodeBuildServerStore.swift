@@ -153,6 +153,11 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     }
 
     /// Updates `build_root` in an existing buildServer.json after a plugin-local build.
+    ///
+    /// Skips the write when `build_root` is already up to date. Rewriting the file would bump its
+    /// modification date past the freshly generated `.compile`, making the freshness check
+    /// (`isCompileDatabaseFresh`) treat the compile database as stale on the next launch and trigger
+    /// an endless re-index loop.
     @discardableResult
     public func updateBuildRoot(forWorkspace workspacePath: String, buildRoot: String) -> Bool {
         let url = fileURL(forWorkspace: workspacePath)
@@ -161,6 +166,11 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
                   try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
               }) else {
             return false
+        }
+
+        if let existingBuildRoot = json["build_root"] as? String,
+           Self.normalizedPath(existingBuildRoot) == Self.normalizedPath(buildRoot) {
+            return true
         }
 
         json["build_root"] = buildRoot
@@ -208,6 +218,11 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         } catch {
             Self.logger.error("Remove all build server stores failed: \(error.localizedDescription)")
         }
+    }
+
+    static func normalizedPath(_ path: String) -> String {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        return URL(fileURLWithPath: trimmed).standardizedFileURL.path
     }
 
     private func corruptFileURL(forWorkspace workspacePath: String) -> URL {

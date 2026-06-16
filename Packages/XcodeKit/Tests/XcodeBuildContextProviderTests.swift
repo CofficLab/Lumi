@@ -4,6 +4,44 @@ import XCTest
 @MainActor
 final class XcodeBuildContextProviderTests: XCTestCase {
     
+    // MARK: - canReuseBuildServerConfig Tests
+
+    func testCanReuseBuildServerConfigWhenSchemeMatches() {
+        let config = XcodeBuildServerStore.Config(
+            buildServerJSONPath: "/tmp/buildServer.json",
+            workspacePath: "/tmp/App.xcodeproj",
+            scheme: "Lumi"
+        )
+        XCTAssertTrue(
+            XcodeBuildContextProvider.canReuseBuildServerConfig(config, requestedScheme: "Lumi")
+        )
+    }
+
+    func testCannotReuseBuildServerConfigWhenSchemeDiffers() {
+        let config = XcodeBuildServerStore.Config(
+            buildServerJSONPath: "/tmp/buildServer.json",
+            workspacePath: "/tmp/App.xcodeproj",
+            scheme: "Lumi"
+        )
+        XCTAssertFalse(
+            XcodeBuildContextProvider.canReuseBuildServerConfig(config, requestedScheme: "OtherScheme")
+        )
+    }
+
+    func testCannotReuseBuildServerConfigWhenMissingOrEmpty() {
+        XCTAssertFalse(
+            XcodeBuildContextProvider.canReuseBuildServerConfig(nil, requestedScheme: "Lumi")
+        )
+        let emptyScheme = XcodeBuildServerStore.Config(
+            buildServerJSONPath: "/tmp/buildServer.json",
+            workspacePath: "/tmp/App.xcodeproj",
+            scheme: ""
+        )
+        XCTAssertFalse(
+            XcodeBuildContextProvider.canReuseBuildServerConfig(emptyScheme, requestedScheme: "Lumi")
+        )
+    }
+
     // MARK: - selectBestScheme Tests
     
     func testSelectBestSchemeEmptyReturnsNil() {

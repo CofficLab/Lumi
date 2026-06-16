@@ -321,6 +321,24 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             return
         }
 
+        // Reuse an existing buildServer.json for the same scheme instead of regenerating it.
+        //
+        // `xcode-build-server config` rewrites the file on every launch, bumping its modification
+        // date. `isCompileDatabaseFresh` compares `.compile` against that date, so a rewrite makes a
+        // perfectly good compile database look stale and forces a re-index. Because the project is
+        // already built, that re-index is *incremental* and its xcactivitylog only contains the few
+        // recompiled targets — so `xcode-build-server parse` shrinks a complete `.compile` down to a
+        // partial one, and unrelated files start reporting spurious "No such module" errors.
+        if Self.canReuseBuildServerConfig(store.load(forWorkspace: workspaceURL.path), requestedScheme: scheme) {
+            let existing = store.load(forWorkspace: workspaceURL.path)!
+            buildServerJSONPath = existing.buildServerJSONPath
+            buildContextStatus = .available(XcodeBuildServerConfig(from: existing))
+            clearResolutionProgress()
+            scheduleSemanticIndexing(workspaceURL: workspaceURL)
+            if Self.verbose { Self.logger.info("\(Self.t)复用已有 buildServer.json（scheme 未变）: \(existing.buildServerJSONPath, privacy: .public)") }
+            return
+        }
+
         reportProgress?(.init(phase: .generatingBuildServer, detail: scheme))
         isGeneratingBuildServer = true
 
@@ -405,12 +423,10 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             buildRoot: metadata.buildRoot
         )
 
-        if store.isManagedBuildRoot(metadata.buildRoot, forWorkspace: workspaceURL.path),
-           await XcodeSemanticIndexRunner.syncCompileDatabaseFromDerivedData(request) {
-            semanticIndexStatus = .ready
-            return
-        }
-
+        // Always rebuild + parse when the compile database needs regenerating. The previous
+        // "parse-only" shortcut re-parsed whatever xcactivitylog already existed, which — after an
+        // incremental build — only covers a handful of targets and yields a partial `.compile`.
+        // `buildAndParseCompileDatabase` performs a clean build so the parsed log is complete.
         guard !Task.isCancelled else { return }
 
         if let failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request) {
@@ -421,6 +437,19 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             }
             semanticIndexStatus = .ready
         }
+    }
+
+    /// Whether an existing `buildServer.json` can be reused as-is for the requested scheme.
+    ///
+    /// Reusing it (instead of re-running `xcode-build-server config`) keeps the file's modification
+    /// date stable, which prevents the freshness check from spuriously invalidating a complete
+    /// `.compile` and triggering an incremental re-index that would corrupt it.
+    static func canReuseBuildServerConfig(
+        _ config: XcodeBuildServerStore.Config?,
+        requestedScheme: String
+    ) -> Bool {
+        guard let config, !config.scheme.isEmpty else { return false }
+        return config.scheme == requestedScheme
     }
 
     public static func buildServerGenerationStatus(

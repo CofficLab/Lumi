@@ -97,6 +97,29 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         let updated = try JSONSerialization.jsonObject(with: Data(contentsOf: fileURL)) as? [String: Any]
         XCTAssertEqual(updated?["build_root"] as? String, newBuildRoot)
     }
+
+    func testUpdateBuildRootSkipsRewriteWhenUnchanged() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let fileURL = directory.appendingPathComponent("buildServer.json")
+
+        let buildRoot = store.derivedDataDirectory(forWorkspace: workspacePath).path
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "MyScheme",
+            "build_root": buildRoot,
+        ]
+        try JSONSerialization.data(withJSONObject: json).write(to: fileURL)
+
+        let before = try FileManager.default.attributesOfItem(atPath: fileURL.path)[.modificationDate] as? Date
+        // Re-applying the same build_root (even with a trailing slash) must not rewrite the file,
+        // otherwise the file's mtime would jump ahead of `.compile` and trigger an endless re-index.
+        Thread.sleep(forTimeInterval: 0.02)
+        XCTAssertTrue(store.updateBuildRoot(forWorkspace: workspacePath, buildRoot: buildRoot + "/"))
+        let after = try FileManager.default.attributesOfItem(atPath: fileURL.path)[.modificationDate] as? Date
+
+        XCTAssertEqual(before, after, "Unchanged build_root must not rewrite buildServer.json")
+    }
     
     // MARK: - load Tests
     

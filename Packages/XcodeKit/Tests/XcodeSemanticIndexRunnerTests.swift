@@ -11,6 +11,53 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
         )
     }
 
+    func testXcodebuildArgumentsPerformCleanBuild() {
+        let request = XcodeSemanticIndexRunner.Request(
+            workspaceURL: URL(fileURLWithPath: "/tmp/Example.xcodeproj"),
+            scheme: "Lumi",
+            configuration: "Debug",
+            destinationQuery: "platform=macOS",
+            storeDirectory: URL(fileURLWithPath: "/tmp/store"),
+            derivedDataDirectory: URL(fileURLWithPath: "/tmp/store/DerivedData"),
+            xcodeBuildServerPath: "/opt/homebrew/bin/xcode-build-server",
+            buildRoot: nil
+        )
+
+        let args = XcodeSemanticIndexRunner.xcodebuildArguments(for: request)
+
+        XCTAssertEqual(
+            Array(args.suffix(2)),
+            ["clean", "build"],
+            "Semantic index must clean build so xcode-build-server parse captures every target"
+        )
+        let cleanIndex = try? XCTUnwrap(args.firstIndex(of: "clean"))
+        let buildIndex = try? XCTUnwrap(args.firstIndex(of: "build"))
+        XCTAssertNotNil(cleanIndex)
+        XCTAssertNotNil(buildIndex)
+        if let cleanIndex, let buildIndex {
+            XCTAssertLessThan(cleanIndex, buildIndex)
+        }
+        XCTAssertTrue(args.contains("-project"))
+        XCTAssertTrue(args.contains("/tmp/Example.xcodeproj"))
+    }
+
+    func testXcodebuildArgumentsUseWorkspaceFlagForWorkspaces() {
+        let request = XcodeSemanticIndexRunner.Request(
+            workspaceURL: URL(fileURLWithPath: "/tmp/Example.xcworkspace"),
+            scheme: "Lumi",
+            configuration: "Debug",
+            destinationQuery: "platform=macOS",
+            storeDirectory: URL(fileURLWithPath: "/tmp/store"),
+            derivedDataDirectory: URL(fileURLWithPath: "/tmp/store/DerivedData"),
+            xcodeBuildServerPath: "/opt/homebrew/bin/xcode-build-server",
+            buildRoot: nil
+        )
+
+        let args = XcodeSemanticIndexRunner.xcodebuildArguments(for: request)
+        XCTAssertTrue(args.contains("-workspace"))
+        XCTAssertFalse(args.contains("-project"))
+    }
+
     func testCompileDatabaseFreshWhenNewerThanBuildServerJSON() throws {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("XcodeSemanticIndexRunnerTests-\(UUID().uuidString)", isDirectory: true)
@@ -189,6 +236,27 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
                 atPath: tempDirectory.appendingPathComponent("semantic-index-build.log").path
             )
         )
+    }
+
+    func testRunCommandCapturingOutputDrainsLargeStderrWithoutDeadlock() async throws {
+        // Regression: `xcode-build-server parse` emits hundreds of KB to stderr on large projects.
+        // The kernel pipe buffer is ~64KB, so if the parent waits for exit before draining the pipe,
+        // the child blocks on write and the call deadlocks. Emit ~200KB to stderr and require the call
+        // to complete and capture the full output. Pre-fix this test hangs indefinitely.
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("capture-large-stderr-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let line = String(repeating: "x", count: 49)
+        let result = await XcodeSemanticIndexRunner.runCommandCapturingOutput(
+            executablePath: "/bin/sh",
+            arguments: ["-c", "for i in $(seq 1 5000); do echo \(line) 1>&2; done"],
+            workingDirectory: tempDirectory
+        )
+
+        XCTAssertTrue(result.succeeded)
+        XCTAssertGreaterThan(result.output.utf8.count, 65_536)
     }
 
     func testNormalizedFailureReasonPrefersErrorLine() {

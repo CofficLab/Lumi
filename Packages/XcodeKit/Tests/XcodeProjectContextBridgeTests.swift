@@ -104,4 +104,40 @@ final class XcodeProjectContextBridgeNotificationTests: XCTestCase {
         bridge.isXcodeProject = true
         XCTAssertTrue(bridge.shouldHaveBuildContext)
     }
+
+    // MARK: - buildServerPath gating on .compile
+
+    func testCompileDatabaseNotReadyWhenMissing() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BridgeCompileGating-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let buildServerJSONPath = directory.appendingPathComponent("buildServer.json").path
+        FileManager.default.createFile(atPath: buildServerJSONPath, contents: Data("{}".utf8))
+
+        XCTAssertFalse(
+            XcodeProjectContextBridge.isCompileDatabaseReady(forBuildServerJSONPath: buildServerJSONPath),
+            "buildServer.json without a sibling .compile must be treated as not ready"
+        )
+    }
+
+    func testCompileDatabaseReadyWhenSiblingExists() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BridgeCompileGating-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let buildServerJSONPath = directory.appendingPathComponent("buildServer.json").path
+        FileManager.default.createFile(atPath: buildServerJSONPath, contents: Data("{}".utf8))
+        FileManager.default.createFile(
+            atPath: directory.appendingPathComponent(".compile").path,
+            contents: Data("[]".utf8)
+        )
+
+        XCTAssertTrue(
+            XcodeProjectContextBridge.isCompileDatabaseReady(forBuildServerJSONPath: buildServerJSONPath),
+            "A .compile next to buildServer.json must mark the build server as ready for sourcekit-lsp"
+        )
+    }
 }

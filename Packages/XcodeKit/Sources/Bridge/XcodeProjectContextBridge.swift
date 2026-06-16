@@ -288,11 +288,44 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     public func makeInitializationOptions() -> [String: Any]? {
         guard shouldHaveBuildContext else { return nil }
         var options: [String: Any] = [:]
-        if let buildServerPath = getBuildServerPath() { options["buildServerPath"] = buildServerPath }
+        if let buildServerPath = lspReadyBuildServerPath() { options["buildServerPath"] = buildServerPath }
         if let scheme = cachedActiveScheme { options["scheme"] = scheme }
         if let configuration = cachedState?.activeConfiguration { options["configuration"] = configuration }
         if let destination = activeDestinationQuery { options["destination"] = destination }
         return options.isEmpty ? nil : options
+    }
+
+    /// Returns the `buildServer.json` path **only after** its compile database (`.compile`)
+    /// has been generated.
+    ///
+    /// `xcode-build-server config` writes `buildServer.json` almost instantly, but the actual
+    /// per-file compiler arguments live in the sibling `.compile`, which is produced later by the
+    /// (potentially slow) semantic-index build. If we advertise `buildServerPath` before `.compile`
+    /// exists, sourcekit-lsp binds to an empty build server, falls back to default arguments that
+    /// cannot find local SwiftPM modules (e.g. `LumiCoreKit`), caches those fallback arguments, and
+    /// emits a spurious `No such module` diagnostic.
+    ///
+    /// Because the path value never changes between the `config` step and index completion, the LSP
+    /// refresh path (`refreshOpenDocumentForUpdatedProjectContext`) would never see a change and thus
+    /// never restart sourcekit-lsp, so the stale diagnostic would persist. Gating on `.compile`
+    /// makes the value transition `nil → path` exactly when the index becomes ready, which triggers a
+    /// real sourcekit-lsp restart that reads the complete compile database.
+    private func lspReadyBuildServerPath() -> String? {
+        guard let buildServerPath = getBuildServerPath() else { return nil }
+        guard Self.isCompileDatabaseReady(forBuildServerJSONPath: buildServerPath) else { return nil }
+        return buildServerPath
+    }
+
+    /// Whether the `.compile` compile database sitting next to a `buildServer.json` exists.
+    ///
+    /// This matches the readiness criterion used by `LSPService.isBuildContextReadyForDiagnostics`,
+    /// keeping "build server advertised to sourcekit-lsp" and "module diagnostics un-suppressed"
+    /// in lockstep.
+    nonisolated static func isCompileDatabaseReady(forBuildServerJSONPath buildServerJSONPath: String) -> Bool {
+        let compileDatabasePath = (buildServerJSONPath as NSString)
+            .deletingLastPathComponent
+            .appending("/.compile")
+        return FileManager.default.fileExists(atPath: compileDatabasePath)
     }
 
     public func makeEditorContextSnapshot(currentFileURL: URL? = nil) -> XcodeEditorContextSnapshot? {

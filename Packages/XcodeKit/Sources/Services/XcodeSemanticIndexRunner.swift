@@ -67,18 +67,28 @@ enum XcodeSemanticIndexRunner {
             return failureReasonFromBuildLog(logURL) ?? "xcodebuild failed"
         }
 
-        // Prefer parsing from derived-data build root because it is more stable than log parsing.
+        // Try parsing from the derived-data build root first (binary xcactivitylog extraction).
+        //
+        // Write to a temp file and only promote it to `.compile` once validated: on some Xcode
+        // versions the xcactivitylog extractor silently yields an *empty* database (exit 0, zero
+        // entries). Parsing straight into `.compile` would clobber a good database with that empty
+        // result, so we keep `.compile` untouched until the text-log fallback (below) succeeds.
         if let buildRoot = discoverBuildRoot(in: request.derivedDataDirectory) {
+            let stagingURL = request.storeDirectory.appendingPathComponent(".compile.parse-s.tmp")
             let derivedParse = await runCommand(
                 executablePath: request.xcodeBuildServerPath,
-                arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
+                arguments: ["parse", "-s", buildRoot, "-o", stagingURL.path],
                 workingDirectory: request.storeDirectory
             )
-            if derivedParse, let issue = validateCompileDatabase(at: compileURL, scheme: request.scheme) {
-                logger.error("Semantic index parse(-s) produced invalid compile DB: \(issue, privacy: .public)")
+            if derivedParse, validateCompileDatabase(at: stagingURL, scheme: request.scheme) == nil {
+                try? FileManager.default.removeItem(at: compileURL)
+                if (try? FileManager.default.moveItem(at: stagingURL, to: compileURL)) != nil {
+                    return nil
+                }
             } else if derivedParse {
-                return nil
+                logger.error("Semantic index parse(-s) produced invalid compile DB; falling back to log parse")
             }
+            try? FileManager.default.removeItem(at: stagingURL)
         }
 
         let parseResult = await runCommandCapturingOutput(
@@ -141,7 +151,14 @@ enum XcodeSemanticIndexRunner {
         return normalizedBuildRoot == managedPrefix || normalizedBuildRoot.hasPrefix(managedPrefix + "/")
     }
 
-    private static func runXcodeBuildCapturingLog(request: Request, logURL: URL) async -> Bool {
+    /// Builds the `xcodebuild` arguments for a semantic-index build.
+    ///
+    /// A `clean build` is used on purpose: `xcode-build-server parse` reconstructs `.compile` from
+    /// the build's xcactivitylog, which only contains the targets that were actually (re)compiled.
+    /// On an already-built DerivedData an incremental build would log just a few targets and produce
+    /// a partial compile database, so files in unbuilt targets would fall back and report spurious
+    /// "No such module" errors. Cleaning first guarantees every target is compiled and logged.
+    static func xcodebuildArguments(for request: Request) -> [String] {
         var arguments: [String] = []
         if request.workspaceURL.pathExtension == "xcworkspace" {
             arguments.append(contentsOf: ["-workspace", request.workspaceURL.path])
@@ -153,8 +170,14 @@ enum XcodeSemanticIndexRunner {
             "-configuration", request.configuration,
             "-destination", request.destinationQuery,
             "-derivedDataPath", request.derivedDataDirectory.path,
+            "clean",
             "build",
         ])
+        return arguments
+    }
+
+    private static func runXcodeBuildCapturingLog(request: Request, logURL: URL) async -> Bool {
+        let arguments = xcodebuildArguments(for: request)
 
         return await runCommand(
             executablePath: "/usr/bin/xcodebuild",
@@ -231,7 +254,7 @@ enum XcodeSemanticIndexRunner {
         }
     }
 
-    private static func runCommandCapturingOutput(
+    static func runCommandCapturingOutput(
         executablePath: String,
         arguments: [String],
         workingDirectory: URL
@@ -269,8 +292,12 @@ enum XcodeSemanticIndexRunner {
                     return
                 }
 
-                process.waitUntilExit()
+                // Drain the pipe *before* waiting for exit. The kernel pipe buffer is only ~64KB, so a
+                // verbose child (e.g. `xcode-build-server parse` on a large project emits hundreds of KB
+                // to stderr) fills it, blocks on write, and never exits — deadlocking `waitUntilExit()`.
+                // `readDataToEndOfFile()` keeps emptying the buffer until the child closes the pipe on exit.
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
                 let output = String(data: data, encoding: .utf8) ?? ""
                 continuation.resume(returning: (process.terminationStatus == 0, output))
             }
