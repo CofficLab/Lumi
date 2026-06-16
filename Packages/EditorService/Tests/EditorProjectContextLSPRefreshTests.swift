@@ -225,6 +225,18 @@ final class LSPDiagnosticBuildContextPolicyTests: XCTestCase {
         )
     }
 
+    func testSuppressesKnownModuleDiagnosticAfterBuildContextReady() {
+        let diagnostic = makeDiagnostic(message: "No such module 'MagicKit'")
+
+        XCTAssertFalse(
+            LSPDiagnosticBuildContextPolicy.shouldPublishDiagnostic(
+                diagnostic,
+                buildServerPathAvailable: true,
+                knownModuleNames: ["MagicKit"]
+            )
+        )
+    }
+
     func testPublishesOtherDiagnosticsBeforeBuildContextReady() {
         let diagnostic = makeDiagnostic(message: "Cannot find type 'Foo' in scope")
 

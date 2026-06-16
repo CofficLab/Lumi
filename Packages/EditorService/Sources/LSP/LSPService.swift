@@ -1205,16 +1205,16 @@ public final class LSPService: ObservableObject, SuperLog {
         }
     }
     
-    private func isBuildContextReadyForDiagnostics() -> Bool {
+    private func readyBuildServerPathForDiagnostics() -> String? {
         guard let root = projectRootPath,
               let languageId = activeLanguageId,
               let buildServerPath = Self.currentBuildServerPath(for: languageId, projectPath: root) else {
-            return false
+            return nil
         }
         let compileDatabasePath = (buildServerPath as NSString)
             .deletingLastPathComponent
             .appending("/.compile")
-        return FileManager.default.fileExists(atPath: compileDatabasePath)
+        return FileManager.default.fileExists(atPath: compileDatabasePath) ? buildServerPath : nil
     }
 
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
@@ -1227,10 +1227,14 @@ public final class LSPService: ObservableObject, SuperLog {
             return
         }
         diagnosticsStabilizationDeadline = nil
-        let buildServerReady = isBuildContextReadyForDiagnostics()
+        let readyBuildServerPath = readyBuildServerPathForDiagnostics()
+        let knownModuleNames = readyBuildServerPath.map {
+            LSPDiagnosticBuildContextPolicy.knownModuleNames(inCompileDatabaseForBuildServerPath: $0)
+        } ?? []
         currentDiagnostics = LSPDiagnosticBuildContextPolicy.filteredDiagnostics(
             params.diagnostics,
-            buildServerPathAvailable: buildServerReady
+            buildServerPathAvailable: readyBuildServerPath != nil,
+            knownModuleNames: knownModuleNames
         )
     }
 }

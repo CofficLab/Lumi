@@ -7,20 +7,55 @@ enum LSPDiagnosticBuildContextPolicy {
         message.localizedCaseInsensitiveContains("no such module")
     }
 
+    static func noSuchModuleName(from message: String) -> String? {
+        guard isNoSuchModuleDiagnostic(message),
+              let start = message.firstIndex(of: "'") else {
+            return nil
+        }
+        let nameStart = message.index(after: start)
+        guard let end = message[nameStart...].firstIndex(of: "'") else {
+            return nil
+        }
+        let name = message[nameStart..<end].trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
+    }
+
     static func shouldPublishDiagnostic(
         _ diagnostic: Diagnostic,
-        buildServerPathAvailable: Bool
+        buildServerPathAvailable: Bool,
+        knownModuleNames: Set<String> = []
     ) -> Bool {
-        guard !buildServerPathAvailable else { return true }
-        return !isNoSuchModuleDiagnostic(diagnostic.message)
+        guard let missingModuleName = noSuchModuleName(from: diagnostic.message) else {
+            return true
+        }
+        guard buildServerPathAvailable else { return false }
+        return !knownModuleNames.contains(missingModuleName)
     }
 
     static func filteredDiagnostics(
         _ diagnostics: [Diagnostic],
-        buildServerPathAvailable: Bool
+        buildServerPathAvailable: Bool,
+        knownModuleNames: Set<String> = []
     ) -> [Diagnostic] {
         diagnostics.filter {
-            shouldPublishDiagnostic($0, buildServerPathAvailable: buildServerPathAvailable)
+            shouldPublishDiagnostic(
+                $0,
+                buildServerPathAvailable: buildServerPathAvailable,
+                knownModuleNames: knownModuleNames
+            )
         }
+    }
+
+    static func knownModuleNames(inCompileDatabaseForBuildServerPath buildServerPath: String) -> Set<String> {
+        let compileDatabasePath = (buildServerPath as NSString)
+            .deletingLastPathComponent
+            .appending("/.compile")
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)),
+              let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            return []
+        }
+        return Set(entries.compactMap { entry in
+            (entry["module_name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        }.filter { !$0.isEmpty })
     }
 }
