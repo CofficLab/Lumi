@@ -20,6 +20,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     @Published var activeDestination: String?
     @Published var buildContextStatus: XcodeBuildContextProvider.BuildContextStatus = .unknown
     @Published var buildContextStatusDescription = LumiPluginLocalization.string("Not Initialized", bundle: .module)
+    @Published var resolutionProgress: BuildContextResolutionProgress?
     @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
@@ -75,6 +76,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             configurations = cached.configurations
         }
         buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
+        resolutionProgress = bridge.buildContextProvider?.resolutionProgress
         semanticReport = XcodeProjectStatusPresentation.makeSemanticReport(
             snapshot: bridge.latestEditorSnapshot,
             cachedState: bridge.cachedState,
@@ -108,6 +110,18 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 self?.buildContextStatus = status
                 self?.buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(status)
+                if case .resolving = status {
+                    // Keep progress updates while resolving.
+                } else {
+                    self?.resolutionProgress = nil
+                }
+            }
+            .store(in: &cancellables)
+
+        provider.$resolutionProgress
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] progress in
+                self?.resolutionProgress = progress
             }
             .store(in: &cancellables)
 
@@ -279,27 +293,52 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
+    public var isResolvingBuildContext: Bool {
+        if case .resolving = buildContextStatus { return true }
+        return false
+    }
+
     public var isIndexing: Bool {
         indexingTask != nil
     }
 
-    public var semanticStatusText: String {
+    public var showsActivityIndicator: Bool {
+        isIndexing || isResolvingBuildContext
+    }
+
+    public func semanticStatusText(now: Date = Date()) -> String {
         XcodeProjectStatusPresentation.semanticStatusText(
             indexingTask: indexingTask,
-            buildContextStatus: buildContextStatus
+            buildContextStatus: buildContextStatus,
+            resolutionProgress: resolutionProgress,
+            now: now
         )
     }
 
     public var semanticStatusDescription: String {
         XcodeProjectStatusPresentation.semanticStatusDescription(
             indexingTask: indexingTask,
-            buildContextStatusDescription: buildContextStatusDescription
+            buildContextStatusDescription: buildContextStatusDescription,
+            resolutionProgress: resolutionProgress
         )
+    }
+
+    public var schemePlaceholderText: String {
+        XcodeProjectStatusPresentation.resolvingSchemePlaceholder(
+            activeScheme: activeScheme,
+            resolutionProgress: resolutionProgress
+        )
+    }
+
+    public var resolutionProgressDetailText: String? {
+        guard let resolutionProgress else { return nil }
+        return XcodeProjectStatusPresentation.localizedResolutionProgressDetail(resolutionProgress)
     }
 
     public var semanticStatusColor: Color {
         let appearance = XcodeProjectStatusPresentation.semanticStatusAppearance(
             isIndexing: isIndexing,
+            isResolving: isResolvingBuildContext,
             buildContextStatus: buildContextStatus
         )
         return XcodeProjectStatusPresentation.color(for: appearance)

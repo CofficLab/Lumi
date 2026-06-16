@@ -93,6 +93,12 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
                 self?.updateCache()
             }
             .store(in: &cancellables)
+        provider.$resolutionProgress
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateCache()
+            }
+            .store(in: &cancellables)
         provider.$buildServerJSONPath
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

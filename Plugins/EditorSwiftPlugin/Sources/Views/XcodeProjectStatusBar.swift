@@ -54,22 +54,25 @@ public struct XcodeProjectStatusBar: View, SuperLog {
     // MARK: - Build Context 状态指示器
 
     private var buildContextIndicator: some View {
-        HStack(spacing: 4) {
-            if viewModel.isIndexing {
-                ProgressView()
-                    .controlSize(.small)
-                    .scaleEffect(0.7)
-            } else {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-            }
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 4) {
+                if viewModel.showsActivityIndicator {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.7)
+                } else {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 8, height: 8)
+                }
 
-            Text(statusText)
-                .font(.system(size: 11))
-                .foregroundStyle(theme.textSecondary)
+                Text(statusText(at: context.date))
+                    .font(.system(size: 11))
+                    .foregroundStyle(theme.textSecondary)
+                    .lineLimit(1)
+            }
+            .help(viewModel.semanticStatusDescription)
         }
-        .help(viewModel.semanticStatusDescription)
     }
 
     static func titleToolbarSecondaryTextColor(theme: any LumiUITheme) -> Color {
@@ -101,10 +104,22 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                     .lineLimit(1)
             }
         } else if viewModel.isXcodeProject {
-            Text(viewModel.activeScheme ?? LumiPluginLocalization.string("Resolving build context...", bundle: .module))
-                .lineLimit(1)
-                .foregroundStyle(.secondary)
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(schemePlaceholderText(at: context.date))
+                    .lineLimit(1)
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+
+    private func schemePlaceholderText(at date: Date) -> String {
+        if let activeScheme = viewModel.activeScheme {
+            return activeScheme
+        }
+        if viewModel.isResolvingBuildContext {
+            return viewModel.semanticStatusText(now: date)
+        }
+        return viewModel.schemePlaceholderText
     }
 
     @ViewBuilder
@@ -143,8 +158,8 @@ public struct XcodeProjectStatusBar: View, SuperLog {
         viewModel.semanticStatusColor
     }
 
-    private var statusText: String {
-        viewModel.semanticStatusText
+    private func statusText(at date: Date) -> String {
+        viewModel.semanticStatusText(now: date)
     }
 }
 
@@ -164,6 +179,30 @@ public struct XcodeProjectStatusDetailView: View {
             detailRow(LumiPluginLocalization.string("Configuration", bundle: .module), viewModel.activeConfiguration ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
             detailRow(LumiPluginLocalization.string("Destination", bundle: .module), viewModel.activeDestination ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
             detailRow(LumiPluginLocalization.string("Build Context", bundle: .module), viewModel.buildContextStatusDescription)
+
+            if let progress = viewModel.resolutionProgress {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    detailRow(
+                        LumiPluginLocalization.string("Resolution Progress", bundle: .module),
+                        XcodeProjectStatusPresentation.localizedResolutionProgressDetail(
+                            progress,
+                            now: context.date
+                        )
+                    )
+                }
+            } else if viewModel.isResolvingBuildContext {
+                detailRow(
+                    LumiPluginLocalization.string("Resolution Progress", bundle: .module),
+                    LumiPluginLocalization.string("Resolving build context...", bundle: .module)
+                )
+            }
+
+            if viewModel.isIndexing, let indexingTask = viewModel.indexingTask {
+                detailRow(
+                    LumiPluginLocalization.string("Indexing", bundle: .module),
+                    XcodeProjectStatusPresentation.localizedIndexingTaskText(indexingTask)
+                )
+            }
 
             HStack {
                 Spacer()

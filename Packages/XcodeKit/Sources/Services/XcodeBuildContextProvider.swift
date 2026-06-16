@@ -23,6 +23,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     @Published public private(set) var activeConfiguration: String?
     @Published public private(set) var activeDestination: XcodeDestinationContext?
     @Published public var buildContextStatus: BuildContextStatus = .unknown
+    @Published public private(set) var resolutionProgress: BuildContextResolutionProgress?
 
     @Published public private(set) var buildServerJSONPath: String?
     @Published public private(set) var isGeneratingBuildServer: Bool = false
@@ -111,7 +112,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 打开/识别一个 Xcode 项目
     public func openProject(at projectURL: URL) async {
+        let reportProgress = makeProgressReporter()
+
+        reportProgress(.init(phase: .locatingWorkspace, detail: projectURL.lastPathComponent))
+
         guard FileManager.default.fileExists(atPath: projectURL.path) else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("Project path does not exist: \(projectURL.path)")
             return
         }
@@ -123,17 +129,27 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: projectURL.path)
         }
         guard let workspaceURL else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("No .xcodeproj / .xcworkspace found")
             return
         }
 
         buildContextStatus = .resolving
+        reportProgress(.init(phase: .discoveringSchemes, detail: workspaceURL.lastPathComponent))
 
+        let progressHandler = reportProgress
         let fastSchemeNames = await Task.detached(priority: .userInitiated) {
             XcodeSchemeDiscovery.discoverSchemeNames(at: workspaceURL)
         }.value
+
+        reportProgress(.init(phase: .parsingProjectMembership, detail: workspaceURL.lastPathComponent))
         let targetSourceFiles = await Task.detached(priority: .userInitiated) {
-            XcodeProjectResolver.resolveTargetSourceFiles(projectLikeURL: workspaceURL)
+            XcodeProjectResolver.resolveTargetSourceFiles(
+                projectLikeURL: workspaceURL,
+                onScanProgress: { path in
+                    progressHandler(.init(phase: .parsingProjectMembership, currentItem: URL(fileURLWithPath: path).lastPathComponent))
+                }
+            )
         }.value
 
         var selectedSchemeName: String?
@@ -150,12 +166,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 targets: []
             ) {
                 selectedSchemeName = bestScheme.name
-                await setActiveScheme(bestScheme)
+                reportProgress(.init(phase: .selectingScheme, detail: bestScheme.name))
+                await setActiveScheme(bestScheme, reportProgress: reportProgress)
             }
         }
 
-        guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
+        guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL, onProgress: reportProgress) else {
             if fastSchemeNames.isEmpty {
+                clearResolutionProgress()
                 buildContextStatus = .unavailable("Unable to parse project")
             }
             return
@@ -175,7 +193,10 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             )
         }()
 
-        guard let schemeToActivate else { return }
+        guard let schemeToActivate else {
+            clearResolutionProgress()
+            return
+        }
 
         if activeScheme?.name == schemeToActivate.name,
            case .available = buildContextStatus {
@@ -188,9 +209,31 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             activeDestination = resolvedScheme.activeDestination
             currentWorkspace?.activeScheme = resolvedScheme
             currentWorkspace?.activeDestination = resolvedScheme.activeDestination
+            clearResolutionProgress()
         } else {
-            await setActiveScheme(schemeToActivate)
+            reportProgress(.init(phase: .selectingScheme, detail: schemeToActivate.name))
+            await setActiveScheme(schemeToActivate, reportProgress: reportProgress)
         }
+    }
+
+    private func makeProgressReporter() -> (@Sendable (BuildContextResolutionProgress.Update) -> Void) {
+        { [weak self] update in
+            Task { @MainActor in
+                self?.applyResolutionProgressUpdate(update)
+            }
+        }
+    }
+
+    private func applyResolutionProgressUpdate(_ update: BuildContextResolutionProgress.Update) {
+        guard case .resolving = buildContextStatus else { return }
+        resolutionProgress = BuildContextResolutionProgress(
+            updating: resolutionProgress,
+            with: update
+        )
+    }
+
+    private func clearResolutionProgress() {
+        resolutionProgress = nil
     }
 
     private func applyWorkspaceContext(_ workspaceContext: XcodeWorkspaceContext) {
@@ -204,6 +247,13 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 设置 active scheme
     public func setActiveScheme(_ scheme: XcodeSchemeContext) async {
+        await setActiveScheme(scheme, reportProgress: nil)
+    }
+
+    private func setActiveScheme(
+        _ scheme: XcodeSchemeContext,
+        reportProgress: (@Sendable (BuildContextResolutionProgress.Update) -> Void)?
+    ) async {
         guard let workspace = currentWorkspace else { return }
         let resolvedScheme = Self.resolvedSchemeSelection(
             scheme,
@@ -224,7 +274,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         // 重新生成 buildServer.json
         await generateBuildServerJSON(
             workspaceURL: workspace.path,
-            scheme: resolvedScheme.name
+            scheme: resolvedScheme.name,
+            reportProgress: reportProgress
         )
     }
 
@@ -243,7 +294,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         if let workspace = currentWorkspace {
             await generateBuildServerJSON(
                 workspaceURL: workspace.path,
-                scheme: scheme.name
+                scheme: scheme.name,
+                reportProgress: nil
             )
         }
     }
@@ -252,11 +304,21 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// 生成 buildServer.json
     public func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
+        await generateBuildServerJSON(workspaceURL: workspaceURL, scheme: scheme, reportProgress: nil)
+    }
+
+    private func generateBuildServerJSON(
+        workspaceURL: URL,
+        scheme: String,
+        reportProgress: (@Sendable (BuildContextResolutionProgress.Update) -> Void)?
+    ) async {
         guard let serverPath = xcodeBuildServerPath else {
+            clearResolutionProgress()
             buildContextStatus = .unavailable("xcode-build-server not installed, please run: brew install xcode-build-server")
             return
         }
 
+        reportProgress?(.init(phase: .generatingBuildServer, detail: scheme))
         isGeneratingBuildServer = true
 
         let isProject = workspaceURL.pathExtension == "xcodeproj"
@@ -276,6 +338,11 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         let config = success ? store.load(forWorkspace: workspaceURL.path) : nil
         buildContextStatus = Self.buildServerGenerationStatus(success: success, config: config)
+        if case .available = buildContextStatus {
+            clearResolutionProgress()
+        } else if case .unavailable = buildContextStatus {
+            clearResolutionProgress()
+        }
         if let config {
             buildServerJSONPath = config.buildServerJSONPath
             if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
@@ -394,6 +461,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     public func invalidateAllContexts() {
         buildSettingsCache.removeAll()
         targetMatchCache.removeAll()
+        clearResolutionProgress()
         buildContextStatus = .needsResync
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }

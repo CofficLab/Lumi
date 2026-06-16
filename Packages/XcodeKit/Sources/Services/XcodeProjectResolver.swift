@@ -45,9 +45,14 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     // MARK: - 项目解析
 
+    public typealias ResolutionProgressHandler = @Sendable (BuildContextResolutionProgress.Update) -> Void
+
     /// 解析一个 workspace / project，返回完整的上下文
     /// 此方法会调用 xcodebuild -list -json 获取结构化数据
-    public func resolve(workspaceURL: URL) async -> XcodeWorkspaceContext? {
+    public func resolve(
+        workspaceURL: URL,
+        onProgress: ResolutionProgressHandler? = nil
+    ) async -> XcodeWorkspaceContext? {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let isWorkspace = workspaceURL.pathExtension == "xcworkspace"
         guard isProject || isWorkspace else {
@@ -60,6 +65,11 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let name = workspaceURL.deletingPathExtension().lastPathComponent
         let projectPath = isProject ? workspaceURL : nil
         let workspacePath = isWorkspace ? workspaceURL : nil
+
+        onProgress?(.init(
+            phase: .runningXcodebuildList,
+            detail: workspaceURL.lastPathComponent
+        ))
 
         // 获取 xcodebuild -list -json 输出
         guard let listResult = await fetchBuildList(workspaceURL: workspacePath, projectURL: projectPath) else {
@@ -76,8 +86,20 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
         let projectLikePath = workspaceURL.path
-        let targetSourceFiles = await Task.detached(priority: .userInitiated) { @Sendable in
-            Self.resolveTargetSourceFiles(projectLikeURL: URL(fileURLWithPath: projectLikePath))
+        let scanProgressHandler: (@Sendable (String) -> Void)? = {
+            guard let onProgress else { return nil }
+            return { path in
+                onProgress(.init(
+                    phase: .parsingProjectMembership,
+                    currentItem: URL(fileURLWithPath: path).lastPathComponent
+                ))
+            }
+        }()
+        let targetSourceFiles: [String: Set<String>] = await Task.detached(priority: .userInitiated) { @Sendable in
+            Self.resolveTargetSourceFiles(
+                projectLikeURL: URL(fileURLWithPath: projectLikePath),
+                onScanProgress: scanProgressHandler
+            )
         }.value
 
         let targetContexts = targetNames.map { targetName in
@@ -262,7 +284,10 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     // MARK: - 工具方法
 
-    static func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
+    static func resolveTargetSourceFiles(
+        projectLikeURL: URL,
+        onScanProgress: (@Sendable (String) -> Void)? = nil
+    ) -> [String: Set<String>] {
         let projectURL: URL
         if projectLikeURL.pathExtension == "xcodeproj" {
             projectURL = projectLikeURL
@@ -291,7 +316,13 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
                 } else {
                     rootURL = projectRoot.appendingPathComponent(root.rootPath)
                 }
-                partial.formUnion(XcodeProjectFileEnumerator.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
+                partial.formUnion(
+                    XcodeProjectFileEnumerator.enumerateFiles(
+                        in: rootURL,
+                        excluding: root.excludedRelativePaths,
+                        onScanProgress: onScanProgress
+                    )
+                )
             }
             result[item.key] = files
             }
@@ -299,7 +330,10 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             Self.logger.warning("\(Self.t)无法解析 pbxproj 文件归属: \(projectURL.path, privacy: .public)")
         }
 
-        let swiftPackageFiles = XcodeSwiftPackageSourceResolver.resolveTargetSourceFiles(projectURL: projectURL)
+        let swiftPackageFiles = XcodeSwiftPackageSourceResolver.resolveTargetSourceFiles(
+            projectURL: projectURL,
+            onScanProgress: onScanProgress
+        )
         for (targetName, files) in swiftPackageFiles {
             result[targetName, default: []].formUnion(files)
         }

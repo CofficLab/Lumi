@@ -1,5 +1,6 @@
 @testable import EditorSwiftPlugin
 import EditorService
+import Foundation
 import Testing
 import XcodeKit
 
@@ -80,6 +81,39 @@ import XcodeKit
 
     let resolving = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .resolving)
     #expect(resolving == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .resolving))
+}
+
+@MainActor
+@Test func semanticStatusTextPrefersResolutionProgressWhileResolving() {
+    let startedAt = Date(timeIntervalSinceReferenceDate: 100)
+    let progress = BuildContextResolutionProgress(
+        phase: .runningXcodebuildList,
+        detail: "Lumi.xcodeproj",
+        startedAt: startedAt
+    )
+    let text = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .resolving,
+        resolutionProgress: progress,
+        now: Date(timeIntervalSinceReferenceDate: 103)
+    )
+    #expect(text.contains("xcodebuild"))
+    #expect(text.contains("3s"))
+}
+
+@MainActor
+@Test func semanticStatusTextShowsScanningFileDuringMembershipParsing() {
+    let progress = BuildContextResolutionProgress(
+        phase: .parsingProjectMembership,
+        detail: "Lumi.xcodeproj",
+        currentItem: "RootView.swift"
+    )
+    let text = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .resolving,
+        resolutionProgress: progress
+    )
+    #expect(text.contains("RootView.swift"))
 }
 
 @MainActor
