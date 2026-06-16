@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.2.3</title>
-            <pubDate>Tue, 16 Jun 2026 04:23:25 +0000</pubDate>
-            <sparkle:version>226</sparkle:version>
-            <sparkle:shortVersionString>4.2.3</sparkle:shortVersionString>
+            <title>4.3.0</title>
+            <pubDate>Tue, 16 Jun 2026 16:20:51 +0000</pubDate>
+            <sparkle:version>227</sparkle:version>
+            <sparkle:shortVersionString>4.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.2.3</h2>
-<h3>Changes since v4.2.2</h3>
+            <description><![CDATA[<h2>Release v4.3.0</h2>
+<h3>Changes since v4.2.3</h3>
 <ul>
-<li>docs(appstoreconnect): add App Store Connect API reference documentation</li>
-<li>feat(app-manager): add aboutView for AppManagerPlugin</li>
-<li>feat(appstoreconnect): adopt version-centric distribution layout</li>
-<li>feat(appstoreconnect): cache GET responses to speed up repeat loads</li>
-<li>feat(chat): move conversation title header to ConversationTitlePlugin</li>
-<li>feat(chat): restore context token usage in status bar timeline</li>
-<li>feat(display-control): add dedicated about view for plugin introduction</li>
-<li>feat(file-tree): add VS Code-style multi-select with batch actions</li>
-<li>feat(plugins): add aboutView for all visible plugins</li>
-<li>feat(plugins): add shared PluginAboutView and aboutView for configurable plugins</li>
-<li>feat(plugins): localize AboutView for Simplified and Traditional Chinese</li>
-<li>feat(settings): add DefaultPluginAboutView for all plugins</li>
-<li>feat(update): add release notes display in Sparkle update dialog</li>
-<li>feat(xcodekit): include local Swift Package sources in target file resolution</li>
-<li>fix(appstoreconnect): load remote screenshots and extract screenshot API</li>
-<li>fix(appstoreconnect): restore app list and toolbar picker flows</li>
-<li>fix(chat): keep conversation visible when loading earlier messages</li>
-<li>fix(ci): pin Sparkle appcast output path for release workflow</li>
-<li>fix(logo): defer <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/published/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/published">@published</a> update to avoid SwiftUI warning</li>
-<li>fix(lsp): restart SourceKit server when buildServerPath changes</li>
+<li>docs(device-info): add function enhancement proposals based on web research</li>
+<li>feat: enhance LSP diagnostic filtering, suppress false positives for known modules</li>
+<li>feat(app): centralize plugin storage paths in AppConfig</li>
+<li>feat(app): support opening projects from external apps and URL scheme</li>
+<li>feat(editor-swift): add status popover tools and robust semantic index diagnostics</li>
+<li>feat(xcode): show granular build context resolution progress in toolbar</li>
+<li>feat(xcode): track semantic index readiness across editor status</li>
+<li>fix: add debug info to VersionsSection for troubleshooting platform filtering</li>
+<li>fix: clean Localizable.xcstrings — remove 31 stale entries and fix missing translations</li>
+<li>fix: compile error in sidebarVersions logging (removed .unique())</li>
+<li>fix: derive sidebar platform title from version platform instead of app platform</li>
+<li>fix: enhance version display with platform labels and add comprehensive debugging</li>
+<li>fix: fallback to all versions when platform filter returns empty</li>
+<li>fix: show all platform versions in sidebar without deduplication</li>
+<li>fix(device-info): aggregate logical CPU usage by physical cores</li>
+<li>fix(editor-outline-rail): add Chinese translations for Localizable.xcstrings</li>
+<li>fix(editor-source): guard invalid fold ranges during async rebuild</li>
+<li>fix(editor-swift): localize semantic index labels and scope loading indicator</li>
+<li>fix(lsp): refresh SourceKit when build context becomes ready</li>
+<li>fix(lsp): restart SourceKit when buildServerPath becomes available</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.2.3</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.3.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.2.3/Lumi_4.2.3_arm64.dmg" length="46423582" type="application/octet-stream" sparkle:edSignature="FjVc7NP8vyMAj7im8rV28wubo6DuvH5QgrBanPP2t+MdHpzM+BKNVqUJcF3NDF3w4OkXS4jsrHXJ1fWdHqeJCg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.3.0/Lumi_4.3.0_arm64.dmg" length="46155774" type="application/octet-stream" sparkle:edSignature="RQE5DhzaK5cTds+a8UEZfd8Y9BTUNkRwY01tYb4HIkyjMViDB8Gm1vCNAG0IbuMpoYD4SgnO/PuM5QF2ULObAA=="/>
         </item>
     </channel>
 </rss>
