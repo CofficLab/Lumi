@@ -254,8 +254,6 @@ public struct OnboardingRootOverlay<Content: View>: View {
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
     @Environment(\.colorScheme) private var colorScheme
-    @State private var selectedPluginIDs: Set<String> = []
-    @State private var hasLoadedPluginSelection = false
 
     // MARK: - 页面数据
 
@@ -269,170 +267,49 @@ private struct OnboardingSheetView: View {
         let tip: String?
     }
 
-    private struct OnboardingPluginOption: Identifiable {
-        let id: String
-        let name: String
-        let description: String
-        let icon: String
-        let defaultEnabled: Bool
-    }
-
     private struct Feature {
         let icon: String
         let title: String
         let description: String
     }
 
-    private var configurablePlugins: [OnboardingPluginOption] {
-        []
-    }
-
     private var pages: [OnboardingPage] {
-        var items = [
+        [
             OnboardingPage(
                 id: "welcome",
                 icon: "sparkles",
                 iconGradient: [Color.blue, Color.purple],
-                title: "欢迎使用 Lumi",
-                subtitle: "你的 AI 驱动个人桌面助手",
+                title: LumiPluginLocalization.string("欢迎使用 Lumi", bundle: .module),
+                subtitle: LumiPluginLocalization.string("你的 AI 驱动个人桌面助手", bundle: .module),
                 features: [
                     Feature(
                         icon: "brain",
-                        title: "智能对话",
+                        title: LumiPluginLocalization.string("智能对话", bundle: .module),
                         description: LumiPluginLocalization.string("支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
                     ),
                     Feature(
                         icon: "hammer.circle",
-                        title: "Agent 能力",
+                        title: LumiPluginLocalization.string("Agent 能力", bundle: .module),
                         description: LumiPluginLocalization.string("自动执行文件操作、命令行、Git 等任务", bundle: .module)
                     ),
                     Feature(
                         icon: "rectangle.3.group",
-                        title: "多会话并行",
+                        title: LumiPluginLocalization.string("多会话并行", bundle: .module),
                         description: LumiPluginLocalization.string("同时处理多个独立任务，互不干扰", bundle: .module)
                     )
                 ],
                 tip: nil
             ),
             OnboardingPage(
-                id: "project-context",
-                icon: "folder.badge.gearshape",
-                iconGradient: [Color.orange, Color.red],
-                title: "项目与上下文",
-                subtitle: "让 AI 理解你的代码和项目结构",
-                features: [
-                    Feature(
-                        icon: "arrow.down.doc",
-                        title: "拖拽添加项目",
-                        description: LumiPluginLocalization.string("将文件夹拖入对话区即可设为当前项目", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "doc.text.magnifyingglass",
-                        title: "智能上下文",
-                        description: LumiPluginLocalization.string("自动分析项目结构、代码依赖和文件内容", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "chevron.left.slash.chevron.right",
-                        title: "代码选区",
-                        description: LumiPluginLocalization.string("在编辑器中选中代码，Lumi 会自动获取选中内容", bundle: .module)
-                    )
-                ],
-                tip: "最近使用的项目会自动保存，方便快速切换"
-            ),
-            OnboardingPage(
-                id: "agent-tools",
-                icon: "wand.and.stars",
-                iconGradient: [Color.purple, Color.pink],
-                title: "Agent 工具执行",
-                subtitle: "让 AI 不仅仅是聊天，更能真正帮你完成任务",
-                features: [
-                    Feature(
-                        icon: "terminal",
-                        title: "命令执行",
-                        description: LumiPluginLocalization.string("在安全沙箱中执行 Shell 命令，自动处理权限请求", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "doc.badge.gearshape",
-                        title: "文件操作",
-                        description: LumiPluginLocalization.string("读取、创建、编辑文件，自动保存更改", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "arrow.triangle.2.circlepath",
-                        title: "Git 集成",
-                        description: LumiPluginLocalization.string("查看仓库状态、提交历史，协助代码管理", bundle: .module)
-                    )
-                ],
-                tip: "高风险操作会请求你的确认，确保安全可靠"
-            ),
-            OnboardingPage(
                 id: "plugins",
                 icon: "puzzlepiece.extension",
                 iconGradient: [Color.cyan, Color.blue],
-                title: "插件系统",
-                subtitle: "通过插件扩展 Lumi 的无限可能",
-                features: [
-                    Feature(
-                        icon: "gearshape.2",
-                        title: "内置插件",
-                        description: LumiPluginLocalization.string("文件浏览器、最近项目、设置中心等开箱即用", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "arrow.up.bin",
-                        title: "灵活启用/禁用",
-                        description: LumiPluginLocalization.string("在设置中按需管理插件，优化性能和体验", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "square.and.arrow.up",
-                        title: "Finder 集成",
-                        description: LumiPluginLocalization.string("右键菜单快速操作，与 Finder 无缝协作", bundle: .module)
-                    )
-                ],
-                tip: "更多插件可在设置中心的「插件」标签页管理"
-            ),
-            OnboardingPage(
-                id: "quick-start",
-                icon: "gearshape",
-                iconGradient: [Color.gray, Color.secondary],
-                title: "快速开始",
-                subtitle: "完成设置，开始你的 AI 之旅",
-                features: [
-                    Feature(
-                        icon: "cpu",
-                        title: "选择模型",
-                        description: LumiPluginLocalization.string("配置本地模型或云端 API，选择适合你的 AI 引擎", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "paintpalette",
-                        title: "自定义主题",
-                        description: LumiPluginLocalization.string("深色/浅色模式，多种主题风格随心切换", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "plus.circle",
-                        title: "创建会话",
-                        description: LumiPluginLocalization.string("点击新建按钮或按 ⌘N，开始第一个对话", bundle: .module)
-                    )
-                ],
-                tip: "所有设置均可随时在设置中心调整"
+                title: LumiPluginLocalization.string("插件可自由开关", bundle: .module),
+                subtitle: LumiPluginLocalization.string("在设置中随时开启或关闭插件，按需定制你的工作台", bundle: .module),
+                features: [],
+                tip: LumiPluginLocalization.string("设置 → 插件，或按 ⌘, 打开设置", bundle: .module)
             )
         ]
-
-        if !configurablePlugins.isEmpty,
-           let quickStartIndex = items.firstIndex(where: { $0.id == "quick-start" }) {
-            items.insert(
-                OnboardingPage(
-                    id: "plugin-selection",
-                    icon: "puzzlepiece.extension.fill",
-                    iconGradient: [Color.indigo, Color.cyan],
-                    title: LumiPluginLocalization.string("选择你的插件", bundle: .module),
-                    subtitle: LumiPluginLocalization.string("先启用常用扩展，之后也可以在设置中调整", bundle: .module),
-                    features: [],
-                    tip: LumiPluginLocalization.string("插件选择会在完成引导后立即生效", bundle: .module)
-                ),
-                at: quickStartIndex
-            )
-        }
-
-        return items
     }
 
     // MARK: - Body
@@ -471,7 +348,7 @@ private struct OnboardingSheetView: View {
                 bottomBar(isLastPage: isLastPage)
             }
         }
-        .frame(width: 780, height: 560)
+        .frame(width: 640, height: 480)
         .background(.clear)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
@@ -495,9 +372,6 @@ private struct OnboardingSheetView: View {
             y: 20
         )
         .interactiveDismissDisabled()
-            .onAppear {
-                loadPluginSelectionIfNeeded()
-            }
             .alert(
                 LumiPluginLocalization.string("无法保存新手引导状态", bundle: .module),
                 isPresented: Binding(
@@ -591,78 +465,22 @@ private struct OnboardingSheetView: View {
     /// 页面内容
     private func pageContent(_ page: OnboardingPage) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 图标和标题
             headerSection(page)
 
-            if page.id == "plugin-selection" {
-                pluginSelectionSection
-                    .padding(.top, 28)
-            } else {
-                // 功能特性列表
+            if !page.features.isEmpty {
                 featuresSection(page)
                     .padding(.top, 28)
             }
 
-            // 提示卡片
             if let tip = page.tip {
                 tipCard(tip)
-                    .padding(.top, 24)
+                    .padding(.top, page.features.isEmpty ? 32 : 24)
             }
 
             Spacer(minLength: 0)
         }
         .opacity(viewModel.isTransitioning ? 0 : 1)
         .offset(x: viewModel.isTransitioning ? -20 : 0)
-    }
-
-    private var pluginSelectionSection: some View {
-        VStack(spacing: 12) {
-            ForEach(configurablePlugins) { plugin in
-                pluginSelectionRow(plugin)
-            }
-        }
-    }
-
-    private func pluginSelectionRow(_ plugin: OnboardingPluginOption) -> some View {
-        let isSelected = selectedPluginIDs.contains(plugin.id)
-
-        return Button {
-            togglePluginSelection(plugin.id)
-        } label: {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(.quinary.opacity(0.5))
-                        .frame(width: 36, height: 36)
-
-                    Image(systemName: plugin.icon)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.primary)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(plugin.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(plugin.description)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(isSelected ? .green : .secondary.opacity(0.6))
-            }
-            .padding(14)
-            .contentShape(Rectangle())
-            .background(.quinary.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
     }
 
     /// 头部区域
@@ -805,7 +623,7 @@ private struct OnboardingSheetView: View {
             // 下一步/开始使用按钮
             Button {
                 if isLastPage {
-                    completeOnboarding()
+                    viewModel.complete()
                 } else {
                     viewModel.nextStep(totalSteps: pages.count)
                 }
@@ -837,28 +655,6 @@ private struct OnboardingSheetView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
-    }
-
-    private func loadPluginSelectionIfNeeded(force: Bool = false) {
-        guard force || !hasLoadedPluginSelection else { return }
-        selectedPluginIDs = []
-        hasLoadedPluginSelection = true
-    }
-
-    private func togglePluginSelection(_ pluginID: String) {
-        if selectedPluginIDs.contains(pluginID) {
-            selectedPluginIDs.remove(pluginID)
-        } else {
-            selectedPluginIDs.insert(pluginID)
-        }
-    }
-
-    private func applyPluginSelection() {
-    }
-
-    private func completeOnboarding() {
-        applyPluginSelection()
-        viewModel.complete()
     }
 
     private var safePageIndex: Int {

@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// HTML 编辑器插件

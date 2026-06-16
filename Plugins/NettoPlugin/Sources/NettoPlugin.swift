@@ -25,4 +25,9 @@ public enum NettoPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(NettoAboutView())
+    }
 }

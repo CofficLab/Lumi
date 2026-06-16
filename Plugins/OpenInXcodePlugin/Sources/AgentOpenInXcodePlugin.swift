@@ -30,6 +30,17 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
             )
         ]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .openIn
+        )
+    }
+
 }
 
 private enum XcodeOpener {

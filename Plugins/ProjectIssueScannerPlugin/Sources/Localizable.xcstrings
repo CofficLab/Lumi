@@ -1,433 +1,933 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    ":%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ":%lld"
+  "sourceLanguage": "en",
+  "strings": {
+    ":%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ":%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ":%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ":%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ":%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ":%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ":%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ":%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ":%lld"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ":%lld"
           }
         }
       }
     },
-    "%@ has %lld lines." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ has %2$lld lines."
+    "%@ has %lld lines.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ has %2$lld lines."
           }
         }
       }
     },
-    "%lld" : {
-
-    },
-    "%lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld"
+    "%lld": {},
+    "%lld/%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld"
           }
         }
       }
     },
-    "A catch block swallows errors without handling or logging them." : {
-
-    },
-    "Click Scan Now to check for potential issues." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Scan Now to check for potential issues."
+    "A catch block swallows errors without handling or logging them.": {},
+    "Click Scan Now to check for potential issues.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Scan Now to check for potential issues."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「立即扫描」检查潜在问题。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击「立即扫描」检查潜在问题。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即掃描」檢查潛在問題。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即掃描」檢查潛在問題。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即掃描」檢查潛在問題。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即掃描」檢查潛在問題。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即掃描」檢查潛在問題。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即掃描」檢查潛在問題。"
           }
         }
       }
     },
-    "Idle" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idle"
+    "Idle": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空闲"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         }
       }
     },
-    "No issues found" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No issues found"
+    "No issues found": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No issues found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未发现问题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未发现问题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未發現問題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未發現問題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未發現問題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未發現問題"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未發現問題"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未發現問題"
           }
         }
       }
     },
-    "Project Issue Scanner" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project Issue Scanner"
+    "Project Issue Scanner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Issue Scanner"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目问题扫描"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目问题扫描"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題掃描"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題掃描"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題掃描"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題掃描"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題掃描"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題掃描"
           }
         }
       }
     },
-    "Project Issues" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project Issues"
+    "Project Issues": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Issues"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目问题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目问题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "專案問題"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "專案問題"
           }
         }
       }
     },
-    "Ready" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ready"
+    "Ready": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就绪"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就绪"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒"
           }
         }
       }
     },
-    "Scan Now" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scan Now"
+    "Scan Now": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan Now"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即扫描"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即扫描"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即掃描"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即掃描"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即掃描"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即掃描"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即掃描"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即掃描"
           }
         }
       }
     },
-    "Scanning" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scanning"
+    "Scanning": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "扫描中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描中"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掃描中"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掃描中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描中"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掃描中"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描中"
           }
         }
       }
     },
-    "Scanning project issues..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scanning project issues..."
+    "Scanning project issues...": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning project issues..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在扫描项目问题…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在扫描项目问题…"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在掃描專案問題…"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描專案問題…"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在掃描專案問題…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描專案問題…"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在掃描專案問題…"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在掃描專案問題…"
           }
         }
       }
     },
-    "Scans for project issues during idle time and hints them to the LLM." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scans for project issues during idle time and hints them to the LLM."
+    "Scans for project issues during idle time and hints them to the LLM.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scans for project issues during idle time and hints them to the LLM."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在空闲时扫描项目中的潜在问题，并在对话时提示给 LLM。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在空闲时扫描项目中的潜在问题，并在对话时提示给 LLM。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在閒置時掃描專案中的潛在問題，並在對話時提示給 LLM。"
           }
         }
       }
     },
-    "Showing top %lld of %lld issues, sorted by severity." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Showing top %1$lld of %2$lld issues, sorted by severity."
+    "Showing top %lld of %lld issues, sorted by severity.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Showing top %1$lld of %2$lld issues, sorted by severity."
           }
         }
       }
     },
-    "供应商" : {
-
+    "供应商": {},
+    "模型": {},
+    "模型选择": {},
+    "Configure scan sensitivity in plugin settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure scan sensitivity in plugin settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件设置中配置扫描灵敏度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在插件設定中設定掃描靈敏度"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在外掛設定中設定掃描靈敏度"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在外掛設定中設定掃描靈敏度"
+          }
+        }
+      }
     },
-    "模型" : {
-
+    "Provides contextual hints to the LLM about known issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides contextual hints to the LLM about known issues"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向 LLM 提供已知问题的上下文提示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向 LLM 提供已知問題的上下文提示"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向 LLM 提供已知問題的上下文提示"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向 LLM 提供已知問題的上下文提示"
+          }
+        }
+      }
     },
-    "模型选择" : {
-
+    "Maintains a list of detected issues for reference": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maintains a list of detected issues for reference"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "维护已检测问题列表供参考"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "維護已偵測問題列表供參考"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "維護已偵測問題列表供參考"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "維護已偵測問題列表供參考"
+          }
+        }
+      }
+    },
+    "AI-Powered Hints": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Powered Hints"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能提示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能提示"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能提示"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能提示"
+          }
+        }
+      }
+    },
+    "Background Processing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Processing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台处理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景處理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景處理"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景處理"
+          }
+        }
+      }
+    },
+    "Runs scans in the background without disrupting your workflow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs scans in the background without disrupting your workflow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在后台运行扫描，不干扰你的工作流"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在背景執行掃描，不干擾你的工作流程"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在背景執行掃描，不干擾你的工作流程"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在背景執行掃描，不干擾你的工作流程"
+          }
+        }
+      }
+    },
+    "Analyzes project files for common issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzes project files for common issues"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分析项目文件中的常见问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分析專案檔案中的常見問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分析專案檔案中的常見問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分析專案檔案中的常見問題"
+          }
+        }
+      }
+    },
+    "Idle-Time Scanning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle-Time Scanning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲时扫描"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置時掃描"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置時掃描"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置時掃描"
+          }
+        }
+      }
+    },
+    "Monitors system idle time to trigger scans": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitors system idle time to trigger scans"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "监控系统空闲时间以触发扫描"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監控系統閒置時間以觸發掃描"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監控系統閒置時間以觸發掃描"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監控系統閒置時間以觸發掃描"
+          }
+        }
+      }
+    },
+    "Stores detected issues in a local database": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stores detected issues in a local database"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将检测到的问题存储在本地数据库"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將偵測到的問題儲存在本機資料庫"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將偵測到的問題儲存在本機資料庫"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將偵測到的問題儲存在本機資料庫"
+          }
+        }
+      }
+    },
+    "Issue Tracking": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue Tracking"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "问题跟踪"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "問題追蹤"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "問題追蹤"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "問題追蹤"
+          }
+        }
+      }
+    },
+    "Provides hints to LLM during chat sessions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides hints to LLM during chat sessions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在聊天会话期间向 LLM 提供提示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在聊天工作階段期間向 LLM 提供提示"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在聊天工作階段期間向 LLM 提供提示"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在聊天工作階段期間向 LLM 提供提示"
+          }
+        }
+      }
+    },
+    "Enable during development for proactive issue detection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable during development for proactive issue detection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发期间启用以主动检测问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發期間啟用以主動偵測問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發期間啟用以主動偵測問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發期間啟用以主動偵測問題"
+          }
+        }
+      }
+    },
+    "Review detected issues regularly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review detected issues regularly"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定期查看检测到的问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定期查看偵測到的問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定期查看偵測到的問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定期查看偵測到的問題"
+          }
+        }
+      }
+    },
+    "Automatically scans for project issues when the system is idle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically scans for project issues when the system is idle"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在系统空闲时自动扫描项目问题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在系統閒置時自動掃描專案問題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在系統閒置時自動掃描專案問題"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在系統閒置時自動掃描專案問題"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

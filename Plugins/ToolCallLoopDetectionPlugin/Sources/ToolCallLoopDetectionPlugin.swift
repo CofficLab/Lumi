@@ -2,6 +2,7 @@ import Foundation
 import LumiCoreKit
 import SuperLogKit
 import os
+import LumiUI
 import SwiftUI
 
 /// 工具调用循环检测插件

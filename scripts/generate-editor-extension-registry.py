@@ -16,7 +16,7 @@ REGISTRY = os.path.join(
 INFRA_PLUGINS = [
     "EditorSwiftPlugin",
     "LSPServiceEditorPlugin",
-    "LSPRealtimeSignalsEditorPlugin",
+    "LSPRealtimeSignalsPlugin",
     "LSPSheetsEditorPlugin",
     "LSPToolbarEditorPlugin",
     "LSPCodeActionEditorPlugin",

@@ -1,5 +1,7 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 import SuperLogKit
 import os
 
@@ -49,5 +51,15 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
                 NetworkMenuBarPopupView()
             }
         ]
+    }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .manager
+        )
     }
 }

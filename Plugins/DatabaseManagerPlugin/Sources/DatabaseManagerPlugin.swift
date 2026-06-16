@@ -40,4 +40,9 @@ public enum DatabaseManagerPlugin: LumiPlugin {
             DatabaseSampleTableTool().asLumiAgentTool(),
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(DatabaseManagerAboutView())
+    }
 }

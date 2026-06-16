@@ -1,6 +1,5 @@
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 public enum EditorBottomCallHierarchyPanelPlugin: LumiPlugin {
@@ -34,4 +33,15 @@ public enum EditorBottomCallHierarchyPanelPlugin: LumiPlugin {
             }
         ]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .editorBottom
+        )
+    }
+
 }

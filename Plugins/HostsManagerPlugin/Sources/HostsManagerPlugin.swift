@@ -28,4 +28,9 @@ public enum HostsManagerPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(HostsManagerAboutView())
+    }
 }

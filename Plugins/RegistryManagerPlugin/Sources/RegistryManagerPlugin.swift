@@ -25,4 +25,9 @@ public enum RegistryManagerPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(RegistryManagerAboutView())
+    }
 }

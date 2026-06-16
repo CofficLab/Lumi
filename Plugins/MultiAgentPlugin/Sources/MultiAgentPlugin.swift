@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import SwiftUI
 import os
 
 /// 多智能体插件：创建和收集子智能体工具。
@@ -24,4 +25,15 @@ public enum MultiAgentPlugin: LumiPlugin {
             CollectAgentsTool().asLumiAgentTool(),
         ]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
+        )
+    }
+
 }

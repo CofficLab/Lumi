@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LumiCoreKit
+import SwiftUI
 
 /// Web Search 插件。
 ///
@@ -27,6 +28,17 @@ public enum WebSearchPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [WebSearchTool().asLumiAgentTool()]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
+        )
+    }
+
 }
 
 enum PluginWebSearchLocalization {

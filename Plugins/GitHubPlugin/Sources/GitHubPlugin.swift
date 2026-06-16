@@ -74,7 +74,7 @@ public enum GitHubPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
         bootstrapIfNeeded()
         return AnyView(GitHubPluginSettingsView())
     }

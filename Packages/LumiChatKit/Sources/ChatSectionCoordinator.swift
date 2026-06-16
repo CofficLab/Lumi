@@ -35,22 +35,11 @@ public final class ChatSectionCoordinator: ObservableObject {
     }
 
     public func displayedMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        let transientStatus = chatService.transientStatusMessage(for: conversationID)
-        let page: [LumiChatMessage]
-        if let oldestVisibleMessageID {
-            page = chatService.visibleMessages(
-                for: conversationID,
-                limit: 10,
-                beforeMessageID: oldestVisibleMessageID
-            )
-        } else {
-            let persisted = chatService.messages(for: conversationID).filter {
-                $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
-            }
-            page = Array(persisted.suffix(10))
-        }
+        let persisted = persistedDisplayMessages(for: conversationID)
+        let startIndex = visibleMessageStartIndex(in: persisted)
+        let page = Array(persisted[startIndex...])
 
-        guard let transientStatus else {
+        guard let transientStatus = chatService.transientStatusMessage(for: conversationID) else {
             return page
         }
         return page + [transientStatus]
@@ -62,14 +51,14 @@ public final class ChatSectionCoordinator: ObservableObject {
 
     public func loadEarlierMessages() {
         guard let selectedID = selectedConversationID else { return }
-        let persisted = chatService.messages(for: selectedID).filter { $0.role != .tool && $0.role != .status }
-        if let oldestVisibleMessageID {
-            if let index = persisted.firstIndex(where: { $0.id == oldestVisibleMessageID }), index > 0 {
-                self.oldestVisibleMessageID = persisted[max(0, index - 10)].id
-            }
-        } else if let first = persisted.first {
-            oldestVisibleMessageID = first.id
-        }
+        let persisted = persistedDisplayMessages(for: selectedID)
+        guard !persisted.isEmpty else { return }
+
+        let currentStartIndex = visibleMessageStartIndex(in: persisted)
+        guard currentStartIndex > 0 else { return }
+
+        let newStartIndex = max(0, currentStartIndex - messagePageSize)
+        oldestVisibleMessageID = persisted[newStartIndex].id
     }
 
     public func send() {
@@ -195,6 +184,21 @@ public final class ChatSectionCoordinator: ObservableObject {
     }
 
     private static let exactSlashCommands = ["/clear", "/help", "/model"]
+    private let messagePageSize = 10
+
+    private func persistedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        chatService.messages(for: conversationID).filter {
+            $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+        }
+    }
+
+    private func visibleMessageStartIndex(in persisted: [LumiChatMessage]) -> Int {
+        if let oldestVisibleMessageID,
+           let index = persisted.firstIndex(where: { $0.id == oldestVisibleMessageID }) {
+            return index
+        }
+        return max(0, persisted.count - messagePageSize)
+    }
 
     private func bindChatService() {
         chatService.objectWillChange

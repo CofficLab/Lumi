@@ -2,7 +2,6 @@ import AgentToolKit
 import EditorService
 import EditorTabStripPlugin
 import LumiCoreKit
-import LumiUI
 import os
 import SwiftUI
 
@@ -51,4 +50,15 @@ public enum EditorPanelPlugin: LumiPlugin {
             SetCurrentFileTool().asLumiAgentTool(),
         ]
     }
+
+        @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .editor
+        )
+    }
+
 }

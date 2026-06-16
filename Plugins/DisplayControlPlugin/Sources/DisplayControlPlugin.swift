@@ -30,8 +30,8 @@ public enum DisplayControlPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func settingsDetailView(context: LumiPluginContext) -> AnyView? {
-        AnyView(DisplayControlView())
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(DisplayControlAboutView())
     }
 
     @MainActor
