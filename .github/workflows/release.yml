@@ -476,14 +476,23 @@ jobs:
             cp "$DMG_FILE" "$APPCAST_INPUT/"
 
             echo "🔑 Generating appcast for $arch..."
-            cd "$SPARKLE_BIN"
-            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | ./generate_appcast --ed-key-file - "$APPCAST_INPUT"
+            APPCAST_FILE="$APPCAST_INPUT/appcast.xml"
+            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | "$SPARKLE_BIN/generate_appcast" \
+              --ed-key-file - \
+              -o "$APPCAST_FILE" \
+              "$APPCAST_INPUT"
+
+            if [ ! -f "$APPCAST_FILE" ]; then
+              echo "❌ Appcast not generated at $APPCAST_FILE"
+              ls -la "$APPCAST_INPUT" || true
+              exit 1
+            fi
 
             # 替换 enclosure url 为正确的下载链接
             DMG_FILENAME=$(basename "$DMG_FILE")
             DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
             DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$DMG_URL_ENCODED"
-            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_INPUT/appcast.xml"
+            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_FILE"
 
             # 注入 release notes HTML 到 appcast
             if [ -n "${RELEASE_NOTES_HTML:-}" ]; then
@@ -492,7 +501,7 @@ jobs:
               export RELEASE_NOTES_LINK="${{ env.RELEASE_NOTES_LINK }}"
               
               # 替换 enclosure url
-              perl -i -pe 'if (!$done) { s/(enclosure url=")[^"]*/$1.$ENV{u}/e && ($done=1) }' "$APPCAST_INPUT/appcast.xml"
+              perl -i -pe 'if (!$done) { s/(enclosure url=")[^"]*/$1.$ENV{u}/e && ($done=1) }' "$APPCAST_FILE"
               
               # 注入 description 和 fullReleaseNotesLink
               perl -i -0777 -pe '
@@ -502,13 +511,13 @@ jobs:
                   my $insert = qq{\n            <description><![CDATA[$notes]]></description>\n            <sparkle:fullReleaseNotesLink>$link</sparkle:fullReleaseNotesLink>};
                   s/(<sparkle:minimumSystemVersion>[^<]+<\/sparkle:minimumSystemVersion>)(?!\s*<description)/$1$insert/s;
                 }
-              ' "$APPCAST_INPUT/appcast.xml"
+              ' "$APPCAST_FILE"
               
               echo "✅ Release notes injected for $arch"
             fi
 
             # 输出到根目录
-            cp "$APPCAST_INPUT/appcast.xml" "${{ github.workspace }}/appcast-${arch}.xml"
+            cp "$APPCAST_FILE" "${{ github.workspace }}/appcast-${arch}.xml"
 
             echo "✅ appcast-${arch}.xml generated:"
             cat "${{ github.workspace }}/appcast-${arch}.xml"
