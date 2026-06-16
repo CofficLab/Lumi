@@ -363,6 +363,7 @@ enum XcodeProjectStatusPresentation {
         case .ready:
             return LumiPluginLocalization.string("Ready", bundle: .module)
         case .failed:
+            // 工具栏空间有限，这里只展示简短状态，由弹出的详情视图展示完整错误。
             return LumiPluginLocalization.string("Index Failed", bundle: .module)
         }
     }
@@ -379,4 +380,5 @@ enum XcodeProjectStatusPresentation {
             return reason
         }
     }
+
 }

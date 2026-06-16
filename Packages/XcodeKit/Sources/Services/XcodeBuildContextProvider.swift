@@ -413,13 +413,13 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         guard !Task.isCancelled else { return }
 
-        if await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request) {
+        if let failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request) {
+            semanticIndexStatus = .failed(failureReason)
+        } else {
             if let buildRoot = XcodeSemanticIndexRunner.discoverBuildRoot(in: derivedDataDirectory) {
                 _ = store.updateBuildRoot(forWorkspace: workspaceURL.path, buildRoot: buildRoot)
             }
             semanticIndexStatus = .ready
-        } else {
-            semanticIndexStatus = .failed("Unable to build semantic index")
         }
     }
 

@@ -3,6 +3,7 @@ import SuperLogKit
 import LumiUI
 import XcodeKit
 import LumiCoreKit
+import AppKit
 
 /// Xcode 项目状态栏视图
 public struct XcodeProjectStatusBar: View, SuperLog {
@@ -165,6 +166,7 @@ public struct XcodeProjectStatusBar: View, SuperLog {
 
 public struct XcodeProjectStatusDetailView: View {
     @ObservedObject var viewModel: XcodeProjectStatusBarViewModel
+    @State private var copiedSemanticError = false
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -179,6 +181,10 @@ public struct XcodeProjectStatusDetailView: View {
             detailRow(LumiPluginLocalization.string("Configuration", bundle: .module), viewModel.activeConfiguration ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
             detailRow(LumiPluginLocalization.string("Destination", bundle: .module), viewModel.activeDestination ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
             detailRow(LumiPluginLocalization.string("Build Context", bundle: .module), viewModel.buildContextStatusDescription)
+            detailRow(LumiPluginLocalization.string("Semantic Index", bundle: .module), viewModel.semanticStatusDescription)
+            if let failureReason = viewModel.semanticIndexFailureReason {
+                semanticIndexErrorSection(failureReason)
+            }
 
             if let progress = viewModel.resolutionProgress {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -291,6 +297,50 @@ public struct XcodeProjectStatusDetailView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func semanticIndexErrorSection(_ reason: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(LumiPluginLocalization.string("Index Error Details", bundle: .module))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            Text(reason)
+                .font(.system(size: 11))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(Color.red.opacity(0.08))
+                .cornerRadius(6)
+
+            HStack {
+                Spacer()
+                Button {
+                    copyToPasteboard(reason)
+                } label: {
+                    Text(
+                        copiedSemanticError
+                            ? LumiPluginLocalization.string("Copied", bundle: .module)
+                            : LumiPluginLocalization.string("Copy Error", bundle: .module)
+                    )
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.blue)
+            }
+        }
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        copiedSemanticError = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            copiedSemanticError = false
         }
     }
 

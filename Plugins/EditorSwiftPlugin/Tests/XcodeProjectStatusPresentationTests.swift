@@ -106,6 +106,19 @@ import XcodeKit
 }
 
 @MainActor
+@Test func semanticStatusTextIncludesFailureReason() {
+    let failed = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .failed("error: no such module 'LumiCoreKit'")
+    )
+    #expect(failed.contains(XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .failed(""))))
+    #expect(failed.contains("LumiCoreKit"))
+}
+
+@MainActor
 @Test func semanticStatusTextPrefersResolutionProgressWhileResolving() {
     let startedAt = Date(timeIntervalSinceReferenceDate: 100)
     let progress = BuildContextResolutionProgress(

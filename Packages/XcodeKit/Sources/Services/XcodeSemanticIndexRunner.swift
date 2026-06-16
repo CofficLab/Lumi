@@ -3,6 +3,7 @@ import os
 
 enum XcodeSemanticIndexRunner {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index")
+    private static let fallbackFailureReason = "Unable to build semantic index"
 
     struct Request: Sendable, Equatable {
         let workspaceURL: URL
@@ -55,21 +56,27 @@ enum XcodeSemanticIndexRunner {
         )
     }
 
-    static func buildAndParseCompileDatabase(_ request: Request) async -> Bool {
+    static func buildAndParseCompileDatabase(_ request: Request) async -> String? {
         let compileURL = compileDatabaseURL(in: request.storeDirectory)
         let logURL = request.storeDirectory.appendingPathComponent("semantic-index-build.log")
 
         let buildSucceeded = await runXcodeBuildCapturingLog(request: request, logURL: logURL)
         guard buildSucceeded else {
             logger.error("Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
-            return false
+            return failureReasonFromBuildLog(logURL) ?? "xcodebuild failed"
         }
 
-        return await runCommand(
+        let parseResult = await runCommandCapturingOutput(
             executablePath: request.xcodeBuildServerPath,
             arguments: ["parse", "-o", compileURL.path, logURL.path],
             workingDirectory: request.storeDirectory
         )
+        if parseResult.succeeded {
+            return nil
+        }
+
+        let parseMessage = normalizedFailureReason(parseResult.output)
+        return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
     }
 
     static func discoverBuildRoot(in derivedDataDirectory: URL) -> String? {
@@ -197,5 +204,77 @@ enum XcodeSemanticIndexRunner {
                 continuation.resume(returning: process.terminationStatus == 0)
             }
         }
+    }
+
+    private static func runCommandCapturingOutput(
+        executablePath: String,
+        arguments: [String],
+        workingDirectory: URL
+    ) async -> (succeeded: Bool, output: String) {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let fileManager = FileManager.default
+                if !fileManager.fileExists(atPath: workingDirectory.path) {
+                    do {
+                        try fileManager.createDirectory(
+                            at: workingDirectory,
+                            withIntermediateDirectories: true
+                        )
+                    } catch {
+                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        continuation.resume(returning: (false, ""))
+                        return
+                    }
+                }
+
+                let process = Process()
+                process.executableURL = URL(filePath: executablePath)
+                process.arguments = arguments
+                process.currentDirectoryURL = workingDirectory
+
+                let pipe = Pipe()
+                process.standardOutput = pipe
+                process.standardError = pipe
+
+                do {
+                    try process.run()
+                } catch {
+                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    continuation.resume(returning: (false, ""))
+                    return
+                }
+
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                continuation.resume(returning: (process.terminationStatus == 0, output))
+            }
+        }
+    }
+
+    static func failureReasonFromBuildLog(_ logURL: URL) -> String? {
+        guard let content = try? String(contentsOf: logURL, encoding: .utf8) else {
+            return nil
+        }
+        return normalizedFailureReason(content)
+    }
+
+    static func normalizedFailureReason(_ raw: String) -> String {
+        let lines = raw
+            .split(whereSeparator: \.isNewline)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !lines.isEmpty else {
+            return fallbackFailureReason
+        }
+
+        let important = lines.reversed().first { line in
+            line.localizedCaseInsensitiveContains("error:") ||
+                line.localizedCaseInsensitiveContains("failed") ||
+                line.localizedCaseInsensitiveContains("no such module") ||
+                line.localizedCaseInsensitiveContains("command")
+        } ?? lines.last!
+        return important
     }
 }

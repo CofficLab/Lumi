@@ -103,8 +103,8 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
             buildRoot: nil
         )
 
-        let built = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request)
-        XCTAssertFalse(built)
+        let failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request)
+        XCTAssertNotNil(failureReason)
     }
 
     func testProcessRunWithSharedLogHandleMatchesRunnerBehavior() throws {
@@ -170,13 +170,23 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
             buildRoot: nil
         )
 
-        let built = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request)
-        XCTAssertFalse(built)
+        let failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request)
+        XCTAssertNotNil(failureReason)
         XCTAssertTrue(
             FileManager.default.fileExists(
                 atPath: tempDirectory.appendingPathComponent("semantic-index-build.log").path
             )
         )
+    }
+
+    func testNormalizedFailureReasonPrefersErrorLine() {
+        let raw = """
+        note: building target
+        some verbose output
+        error: no such module 'LumiCoreKit'
+        """
+        let reason = XcodeSemanticIndexRunner.normalizedFailureReason(raw)
+        XCTAssertEqual(reason, "error: no such module 'LumiCoreKit'")
     }
 }
 #endif

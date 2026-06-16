@@ -339,6 +339,12 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         )
     }
 
+    public var semanticIndexFailureReason: String? {
+        guard case .failed(let reason) = semanticIndexStatus else { return nil }
+        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     public var schemePlaceholderText: String {
         XcodeProjectStatusPresentation.resolvingSchemePlaceholder(
             activeScheme: activeScheme,
