@@ -12,13 +12,6 @@ struct ChatMessagesSectionView: View {
         let isSending = coordinator.chatService.isSending(for: selectedID)
 
         VStack(spacing: 0) {
-            ChatHeaderView(
-                title: coordinator.selectedTitle(for: selectedID),
-                isSending: isSending
-            )
-
-            MessageListDivider()
-
             ChatMessageListView(
                 messages: messages,
                 isSending: isSending,

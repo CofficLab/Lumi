@@ -25,8 +25,11 @@ struct ChatSectionView: View {
     ) -> AnyView {
         AnyView(
             VStack(spacing: 0) {
+                let hasExplicitPrimaryStack = stackItems.contains(where: \.fillsRemainingHeight)
+
                 ForEach(Array(stackItems.enumerated()), id: \.element.id) { index, item in
-                    let isPrimaryStack = index == 0
+                    let isPrimaryStack = item.fillsRemainingHeight
+                        || (!hasExplicitPrimaryStack && index == 0)
 
                     item.makeView()
                         .frame(maxWidth: .infinity, alignment: .top)

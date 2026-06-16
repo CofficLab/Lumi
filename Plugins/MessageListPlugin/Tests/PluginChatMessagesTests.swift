@@ -44,4 +44,5 @@ import Testing
     )
 
     #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).count == 1)
+    #expect(ChatMessagesSectionPlugin.chatSectionItems(context: context).first?.fillsRemainingHeight == true)
 }
