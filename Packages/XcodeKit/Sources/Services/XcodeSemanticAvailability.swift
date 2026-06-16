@@ -148,6 +148,9 @@ public enum XcodeSemanticAvailability {
         }
 
         if input.matchedTargets.isEmpty {
+            if case .resolving = input.workspace.buildContextStatus {
+                return Report(reasons: reasons)
+            }
             reasons.append(
                 Reason(
                     id: "file-not-in-target",

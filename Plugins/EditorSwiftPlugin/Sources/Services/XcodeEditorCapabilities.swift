@@ -118,7 +118,8 @@ public final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectConte
             currentFilePath: snapshot.currentFilePath,
             currentFilePrimaryTarget: snapshot.currentFileTarget,
             currentFileMatchedTargets: snapshot.currentFileMatchedTargets,
-            currentFileIsInTarget: snapshot.currentFileIsInTarget
+            currentFileIsInTarget: snapshot.currentFileIsInTarget,
+            isTargetMembershipResolved: snapshot.isTargetMembershipResolved
         )
     }
 
@@ -153,7 +154,8 @@ public final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectConte
                 currentFilePath: snapshot.currentFilePath,
                 currentFileTarget: snapshot.currentFilePrimaryTarget,
                 currentFileMatchedTargets: snapshot.currentFileMatchedTargets,
-                currentFileIsInTarget: snapshot.currentFileIsInTarget
+                currentFileIsInTarget: snapshot.currentFileIsInTarget,
+                isTargetMembershipResolved: snapshot.isTargetMembershipResolved
             )
         )
     }
