@@ -188,5 +188,29 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
         let reason = XcodeSemanticIndexRunner.normalizedFailureReason(raw)
         XCTAssertEqual(reason, "error: no such module 'LumiCoreKit'")
     }
+
+    func testCompileDatabaseHasEntriesReturnsFalseForEmptyArray() throws {
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("compile-db-empty-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let compileURL = tempDirectory.appendingPathComponent(".compile")
+        try Data("[]".utf8).write(to: compileURL)
+
+        XCTAssertFalse(XcodeSemanticIndexRunner.compileDatabaseHasEntries(at: compileURL))
+    }
+
+    func testCompileDatabaseHasEntriesReturnsTrueForNonEmptyArray() throws {
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("compile-db-nonempty-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let compileURL = tempDirectory.appendingPathComponent(".compile")
+        try Data("[{\"file\":\"a.swift\"}]".utf8).write(to: compileURL)
+
+        XCTAssertTrue(XcodeSemanticIndexRunner.compileDatabaseHasEntries(at: compileURL))
+    }
 }
 #endif

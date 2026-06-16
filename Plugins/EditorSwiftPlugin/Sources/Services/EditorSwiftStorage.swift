@@ -24,4 +24,10 @@ public enum EditorSwiftStorage {
         try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
+
+    public static func clearWorkspaceData(forWorkspacePath workspacePath: String) {
+        let directory = projectStoreDirectory(forWorkspacePath: workspacePath)
+        try? FileManager.default.removeItem(at: directory)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
 }

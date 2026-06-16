@@ -49,11 +49,12 @@ enum XcodeSemanticIndexRunner {
         }
 
         let compileURL = compileDatabaseURL(in: request.storeDirectory)
-        return await runCommand(
+        let synced = await runCommand(
             executablePath: request.xcodeBuildServerPath,
             arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
             workingDirectory: request.storeDirectory
         )
+        return synced && compileDatabaseHasEntries(at: compileURL)
     }
 
     static func buildAndParseCompileDatabase(_ request: Request) async -> String? {
@@ -71,10 +72,13 @@ enum XcodeSemanticIndexRunner {
             arguments: ["parse", "-o", compileURL.path, logURL.path],
             workingDirectory: request.storeDirectory
         )
-        if parseResult.succeeded {
+        if parseResult.succeeded, compileDatabaseHasEntries(at: compileURL) {
             return nil
         }
 
+        if parseResult.succeeded {
+            return "semantic compile database is empty"
+        }
         let parseMessage = normalizedFailureReason(parseResult.output)
         return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
     }
@@ -276,5 +280,13 @@ enum XcodeSemanticIndexRunner {
                 line.localizedCaseInsensitiveContains("command")
         } ?? lines.last!
         return important
+    }
+
+    static func compileDatabaseHasEntries(at compileURL: URL) -> Bool {
+        guard let data = try? Data(contentsOf: compileURL),
+              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            return false
+        }
+        return !array.isEmpty
     }
 }

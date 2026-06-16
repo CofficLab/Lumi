@@ -1,4 +1,5 @@
 import Combine
+import AppKit
 import EditorService
 import SuperLogKit
 import SwiftUI
@@ -285,6 +286,25 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
+    public func openCacheDirectory() {
+        guard let directory = currentWorkspaceStoreDirectory() else { return }
+        NSWorkspace.shared.open(directory)
+    }
+
+    public func reindexNow() {
+        guard let workspacePath = currentWorkspacePath() else { return }
+        EditorSwiftStorage.purgeBuildCaches(forWorkspacePath: workspacePath)
+        semanticIndexLogExcerpt = nil
+        resyncBuildContext()
+    }
+
+    public func clearIndexData() {
+        guard let workspacePath = currentWorkspacePath() else { return }
+        EditorSwiftStorage.clearWorkspaceData(forWorkspacePath: workspacePath)
+        semanticIndexLogExcerpt = nil
+        resyncBuildContext()
+    }
+
     private func scheduleSemanticRefresh() {
         semanticRefreshTask?.cancel()
         semanticRefreshTask = Task { @MainActor [weak self] in
@@ -414,11 +434,21 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     }
 
     private func semanticIndexLogURL() -> URL? {
-        let workspacePath = provider?.currentWorkspace?.path.path
-            ?? latestEditorSnapshot?.workspacePath
+        let workspacePath = currentWorkspacePath()
         guard let workspacePath, !workspacePath.isEmpty else { return nil }
         return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
             .appendingPathComponent("semantic-index-build.log", isDirectory: false)
+    }
+
+    private func currentWorkspacePath() -> String? {
+        provider?.currentWorkspace?.path.path ?? latestEditorSnapshot?.workspacePath
+    }
+
+    private func currentWorkspaceStoreDirectory() -> URL? {
+        guard let workspacePath = currentWorkspacePath(), !workspacePath.isEmpty else {
+            return nil
+        }
+        return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
     }
 
     private func readLogExcerpt(from logURL: URL) -> String? {
