@@ -61,22 +61,20 @@ struct VersionsSection: View {
         guard let app = viewModel.selectedApp else {
             return AppStoreConnectLocalization.string("App Versions")
         }
-        // If versions exist, derive platform label from the first version's platform.
-        // This handles cases where an iOS app has Mac Catalyst versions (API returns
-        // platform=IOS for the app but MAC_OS for each version).
-        let effectivePlatform: String
-        if let firstVersion = viewModel.sidebarVersions.first {
-            effectivePlatform = firstVersion.platform.normalizedASCPlatform
-        } else {
-            effectivePlatform = app.platform.normalizedASCPlatform
+        let versions = viewModel.sidebarVersions
+        // Derive platform label from versions when available.
+        // When an iOS app has Mac Catalyst versions, the API returns platform=IOS
+        // for the app but MAC_OS for each version.
+        if let firstVersion = versions.first {
+            switch firstVersion.platform.normalizedASCPlatform {
+            case "MAC_OS": return AppStoreConnectLocalization.string("macOS App")
+            case "IOS": return AppStoreConnectLocalization.string("iOS App")
+            case "TV_OS": return AppStoreConnectLocalization.string("tvOS App")
+            case "VISION_OS": return AppStoreConnectLocalization.string("visionOS App")
+            default: break
+            }
         }
-        switch effectivePlatform {
-        case "MAC_OS": return AppStoreConnectLocalization.string("macOS App")
-        case "IOS": return AppStoreConnectLocalization.string("iOS App")
-        case "TV_OS": return AppStoreConnectLocalization.string("tvOS App")
-        case "VISION_OS": return AppStoreConnectLocalization.string("visionOS App")
-        default: return AppStoreConnectLocalization.string("%@ App", app.platformLabel)
-        }
+        return AppStoreConnectLocalization.string("%@ App", app.platformLabel)
     }
 
     private func isVersionSelected(_ version: AppStoreVersion) -> Bool {

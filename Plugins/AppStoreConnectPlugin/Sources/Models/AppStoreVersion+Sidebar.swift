@@ -28,28 +28,11 @@ extension AppStoreVersion {
     }
 
     static func sidebarVersions(from versions: [AppStoreVersion], appPlatform: String?) -> [AppStoreVersion] {
-        let filtered: [AppStoreVersion]
-        if let appPlatform {
-            let platform = appPlatform.normalizedASCPlatform
-            let platformMatched = versions.filter { $0.normalizedPlatform == platform }
-            // Fallback: if no versions match the app's platform (e.g. iOS app with Mac Catalyst versions),
-            // show all versions instead of an empty list.
-            filtered = platformMatched.isEmpty ? versions : platformMatched
-        } else {
-            filtered = versions
-        }
-
-        let grouped = Dictionary(grouping: filtered, by: \.versionString)
-        let representatives = grouped.values.compactMap { group in
-            group.max { lhs, rhs in
-                if lhs.sidebarSortPriority != rhs.sidebarSortPriority {
-                    return lhs.sidebarSortPriority < rhs.sidebarSortPriority
-                }
-                return (lhs.createdDate ?? .distantPast) < (rhs.createdDate ?? .distantPast)
-            }
-        }
-
-        return representatives.sorted {
+        // Do not filter by platform or deduplicate by versionString.
+        // Apps often have versions across multiple platforms (iOS, macOS, visionOS),
+        // and the same version number can exist on different platforms with
+        // different states. Users need to see and manage all of them.
+        return versions.sorted {
             ($0.createdDate ?? .distantPast) > ($1.createdDate ?? .distantPast)
         }
     }
