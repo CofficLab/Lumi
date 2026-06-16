@@ -323,7 +323,8 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     }
 
     public var showsActivityIndicator: Bool {
-        isIndexing || isResolvingBuildContext || isSemanticIndexing
+        // Toolbar activity should only reflect Xcode context lifecycle.
+        isResolvingBuildContext || isSemanticIndexing
     }
 
     public func semanticStatusText(now: Date = Date()) -> String {
