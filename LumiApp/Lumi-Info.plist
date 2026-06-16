@@ -14,5 +14,31 @@
 	<string>https://s.kuaiyizhi.cn/lumi/appcast-arm64.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>VRFIJExvMCeneBRzxR6mu2zPN9ggOUr0LNlcKYOb27o=</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Folder</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.folder</string>
+			</array>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+		</dict>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.coffic.lumi</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lumi</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
