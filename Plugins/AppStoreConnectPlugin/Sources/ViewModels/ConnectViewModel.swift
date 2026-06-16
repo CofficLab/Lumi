@@ -559,6 +559,7 @@ final class ConnectViewModel: ObservableObject {
     }
 
     private func runBusy(forceRefresh: Bool = false, _ operation: () async throws -> Void) async {
+        let startTime = ContinuousClock.now
         isBusy = true
         errorMessage = nil
         let previousPolicy = client.fetchPolicy
@@ -567,13 +568,18 @@ final class ConnectViewModel: ObservableObject {
         }
         defer {
             client.fetchPolicy = previousPolicy
-            isBusy = false
         }
         do {
             try await operation()
         } catch {
             errorMessage = error.localizedDescription
         }
+        // Ensure loading state lasts at least 1 second so the UI doesn't flash
+        let remaining: Duration = .seconds(1) - (ContinuousClock.now - startTime)
+        if remaining > .zero {
+            try? await Task.sleep(for: remaining)
+        }
+        isBusy = false
     }
 
     private func reloadDistributionFromNetwork() async throws {
