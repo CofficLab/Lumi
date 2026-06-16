@@ -193,6 +193,7 @@ private final class MockEnumCompletionLSPClient: SuperEditorLSPClient {
     func contentDidChange(range: LSPRange, text: String, version: Int) {}
     func replaceDocument(_ content: String, version: Int) {}
     func openFile(uri: String, languageId: String, content: String, version: Int) async {}
+    func refreshOpenDocumentForUpdatedProjectContext() async {}
 
     func requestCompletion(line: Int, character: Int) async -> [CompletionItem] {
         requestCompletionCalled = true

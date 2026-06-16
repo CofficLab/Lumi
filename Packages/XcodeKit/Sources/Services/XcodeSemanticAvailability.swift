@@ -104,7 +104,10 @@ public enum XcodeSemanticAvailability {
 
         var reasons: [Reason] = []
 
-        if !input.isInitialized {
+        if !isWorkspaceContextReady(
+            isInitialized: input.isInitialized,
+            buildContextStatus: input.buildContextStatus
+        ) {
             reasons.append(
                 Reason(
                     id: "server-not-started",
@@ -375,7 +378,11 @@ public enum XcodeSemanticAvailability {
             return nil
         }
 
-        if let cached = contextProvider.cachedState, !cached.isInitialized {
+        if let cached = contextProvider.cachedState,
+           !isWorkspaceContextReady(
+               isInitialized: cached.isInitialized,
+               buildContextStatus: contextProvider.buildContextProvider?.buildContextStatus ?? .unknown
+           ) {
             return .serverNotStarted
         }
 
@@ -457,6 +464,15 @@ public enum XcodeSemanticAvailability {
     }
 
     // MARK: - Private Helpers
+
+    private static func isWorkspaceContextReady(
+        isInitialized: Bool,
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+    ) -> Bool {
+        if isInitialized { return true }
+        if case .available = buildContextStatus { return true }
+        return false
+    }
 
     private static func makeWorkspaceInspectionInput(contextProvider: any XcodeContextProviding) -> WorkspaceInspectionInput {
         WorkspaceInspectionInput(

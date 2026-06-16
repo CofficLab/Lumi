@@ -55,6 +55,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         }
 
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
+        EditorSwiftHostEnvironmentConfiguration.apply()
         if SwiftPluginLog.verbose {
             SwiftPluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
         }

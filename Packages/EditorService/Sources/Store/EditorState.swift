@@ -1188,10 +1188,18 @@ public final class EditorState: ObservableObject, SuperLog {
         documentHighlightCoordinator.bumpHighlightRevision()
         applyExtensionProvidersFromRegistry(rebindCurrentDocument: true)
         commandController.refreshCoreCommandRegistrations(in: self)
+        observeProjectContextChanges()
+        catchUpProjectContextAfterExtensionRegistration()
         NotificationCenter.default.post(
             name: EditorHostEnvironment.current.notifications.editorExtensionProvidersDidChange,
             object: self
         )
+    }
+
+    /// Replays project-context side effects missed before Swift plugin reconfigured notifications.
+    private func catchUpProjectContextAfterExtensionRegistration() {
+        refreshProjectContextSnapshot()
+        refreshLSPAfterProjectContextChange()
     }
 
     private func applyExtensionProvidersFromRegistry(rebindCurrentDocument: Bool) {
@@ -1255,11 +1263,36 @@ public final class EditorState: ObservableObject, SuperLog {
         projectContextCancellable?.cancel()
         projectContextCancellable = NotificationCenter.default
             .publisher(for: EditorHostEnvironment.current.notifications.projectContextDidChange)
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshProjectContextSnapshot()
-                self?.updateSemanticReadinessFeedback()
+                Task { @MainActor in
+                    await self?.handleProjectContextDidChangeForTesting()
+                }
             }
+    }
+
+    func handleProjectContextDidChangeForTesting() async {
+        refreshProjectContextSnapshot()
+        updateSemanticReadinessFeedback()
+        await refreshLSPAfterProjectContextChangeIfNeeded()
+    }
+
+    private func refreshLSPAfterProjectContextChange() {
+        Task {
+            await refreshLSPAfterProjectContextChangeIfNeeded()
+        }
+    }
+
+    private func refreshLSPAfterProjectContextChangeIfNeeded() async {
+        guard EditorProjectContextLSPRefreshPolicy.shouldRefreshOpenDocument(
+            isStructuredProject: projectContextSnapshot?.isStructuredProject == true,
+            contextStatus: currentProjectContextStatus,
+            hasOpenFile: currentFileURL != nil
+        ) else {
+            return
+        }
+
+        await lspClient.refreshOpenDocumentForUpdatedProjectContext()
     }
 
     private func observeSettingsChanges() {

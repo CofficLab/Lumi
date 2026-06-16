@@ -21,6 +21,19 @@ final class XcodeSemanticAvailabilityTests: XCTestCase {
         XCTAssertTrue(report.hasBlockingIssue)
     }
 
+    func testInspectWorkspaceAvailableDespiteUninitializedCache() {
+        let status = XcodeBuildContextProvider.BuildContextStatus.available(
+            .init(buildServerJSONPath: "/path/buildServer.json", workspacePath: "/ws", scheme: "Lumi")
+        )
+        let input = XcodeSemanticAvailability.WorkspaceInspectionInput(
+            isXcodeProject: true,
+            isInitialized: false,
+            buildContextStatus: status
+        )
+        let report = XcodeSemanticAvailability.inspectWorkspaceContext(input: input)
+        XCTAssertFalse(report.reasons.contains { $0.id == "server-not-started" })
+    }
+
     func testInspectWorkspaceContextUnavailable() {
         let status = XcodeBuildContextProvider.BuildContextStatus.unavailable("Build tool missing")
         let input = XcodeSemanticAvailability.WorkspaceInspectionInput(isXcodeProject: true, isInitialized: true, buildContextStatus: status)

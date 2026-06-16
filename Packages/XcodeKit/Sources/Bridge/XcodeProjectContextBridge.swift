@@ -261,7 +261,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         return cachedWorkspaceFolders
     }
 
-    public func getBuildServerPath() -> String? { cachedState?.buildServerPath }
+    public func getBuildServerPath() -> String? {
+        buildServerJSONPath ?? cachedState?.buildServerPath
+    }
     public var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "Not Initialized" }
     public var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
 

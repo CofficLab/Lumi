@@ -13,6 +13,7 @@ public protocol SuperEditorLSPClient: AnyObject {
     // MARK: - 文件生命周期
     func setProjectRootPath(_ path: String?)
     func openFile(uri: String, languageId: String, content: String, version: Int) async
+    func refreshOpenDocumentForUpdatedProjectContext() async
     func closeFile()
     func updateDocumentSnapshot(_ content: String)
     func contentDidChange(range: LSPRange, text: String, version: Int)
@@ -88,6 +89,7 @@ public protocol SuperEditorLSPClient: AnyObject {
 final class NullLSPClient: SuperEditorLSPClient {
     func setProjectRootPath(_ path: String?) {}
     func openFile(uri: String, languageId: String, content: String, version: Int) async {}
+    func refreshOpenDocumentForUpdatedProjectContext() async {}
     func closeFile() {}
     func updateDocumentSnapshot(_ content: String) {}
     func contentDidChange(range: LSPRange, text: String, version: Int) {}

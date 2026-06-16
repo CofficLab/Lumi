@@ -90,6 +90,10 @@ public class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
         lspService.setProjectRootPath(path)
     }
     
+    public func refreshOpenDocumentForUpdatedProjectContext() async {
+        await lspService.refreshOpenDocumentForUpdatedProjectContext()
+    }
+
     /// 打开文件时调用
     public func openFile(uri: String, languageId: String, content: String, version: Int = 0) async {
         fileSessionGeneration.invalidate()

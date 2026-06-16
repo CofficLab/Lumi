@@ -114,7 +114,8 @@ public final class LSPService: ObservableObject, SuperLog {
 
         let signature = LSPServerLifecyclePolicy.startTaskSignature(
             languageId: languageId,
-            projectPath: projectPath
+            projectPath: projectPath,
+            buildServerPath: requestedBuildServerPath
         )
         if let serverStartTask, serverStartSignature == signature {
             return await serverStartTask.value
@@ -310,17 +311,14 @@ public final class LSPService: ObservableObject, SuperLog {
             && server != nil
             && activeLanguageId == languageId
 
-        if server == nil || activeLanguageId != languageId {
-            if let root = projectRootPath {
-                _ = await ensureServer(for: languageId, projectPath: root)
-            } else {
-                if Self.verbose {
-                                    Self.logger.warning("\(Self.t)无项目根目录")
-                }
-                return
+        guard let root = projectRootPath else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)无项目根目录")
             }
+            return
         }
-        
+
+        _ = await ensureServer(for: languageId, projectPath: root)
         guard let server else { return }
 
         if let previousURI, previousURI != uri {
@@ -961,6 +959,36 @@ public final class LSPService: ObservableObject, SuperLog {
     // MARK: - Progress Notifications
     
     public let progressProvider = LSPProgressProvider()
+
+    /// Re-evaluates initialization options and reopens the active document when build context changes.
+    public func refreshOpenDocumentForUpdatedProjectContext() async {
+        guard let languageId = activeLanguageId,
+              let root = projectRootPath,
+              let uri = currentURI,
+              let text = latestDocumentSnapshot else {
+            return
+        }
+
+        _ = await ensureServer(for: languageId, projectPath: root)
+        guard let server else { return }
+
+        currentDiagnostics = []
+        pendingChanges.removeAll()
+        diagnosticsStabilizationDeadline = nil
+
+        do {
+            try await server.openDocument(
+                uri: uri,
+                languageId: languageId,
+                text: text,
+                version: currentVersion
+            )
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)刷新文档上下文失败: \(error)")
+            }
+        }
+    }
 
     // MARK: - Recovery
 

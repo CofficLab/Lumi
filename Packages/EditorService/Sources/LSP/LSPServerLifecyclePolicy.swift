@@ -2,8 +2,13 @@ import Foundation
 
 /// Pure lifecycle rules for deciding when an existing SourceKit-LSP process can be reused.
 enum LSPServerLifecyclePolicy {
-    static func startTaskSignature(languageId: String, projectPath: String) -> String {
-        "\(languageId)|\(projectPath)"
+    static func startTaskSignature(
+        languageId: String,
+        projectPath: String,
+        buildServerPath: String? = nil
+    ) -> String {
+        let buildServerComponent = buildServerPath ?? "<none>"
+        return "\(languageId)|\(projectPath)|\(buildServerComponent)"
     }
 
     static func buildServerPath(from options: [String: String]?) -> String? {
@@ -43,5 +48,35 @@ enum LSPServerLifecyclePolicy {
         hasServer
             && activeLanguageId == requestedLanguageId
             && activeProjectPath == requestedProjectPath
+    }
+
+    /// Mirrors pre-fix `openDocument`, which skipped `ensureServer` whenever a server was already running.
+    static func legacyOpenDocumentWouldSkipEnsureServer(
+        hasServer: Bool,
+        activeLanguageId: String?,
+        requestedLanguageId: String
+    ) -> Bool {
+        hasServer && activeLanguageId == requestedLanguageId
+    }
+
+    /// Current `openDocument` always re-evaluates server reuse via `ensureServer`.
+    static func openDocumentShouldEnsureServer(
+        hasServer: Bool,
+        activeLanguageId: String?,
+        requestedLanguageId: String,
+        activeProjectPath: String?,
+        requestedProjectPath: String,
+        activeBuildServerPath: String?,
+        requestedBuildServerPath: String?
+    ) -> Bool {
+        !canReuseExistingServer(
+            hasServer: hasServer,
+            activeLanguageId: activeLanguageId,
+            requestedLanguageId: requestedLanguageId,
+            activeProjectPath: activeProjectPath,
+            requestedProjectPath: requestedProjectPath,
+            activeBuildServerPath: activeBuildServerPath,
+            requestedBuildServerPath: requestedBuildServerPath
+        )
     }
 }
