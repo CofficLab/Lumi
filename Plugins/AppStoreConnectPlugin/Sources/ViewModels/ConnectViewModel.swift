@@ -121,7 +121,14 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     var sidebarVersions: [AppStoreVersion] {
-        AppStoreVersion.sidebarVersions(from: versions, appPlatform: selectedApp?.platform)
+        let result = AppStoreVersion.sidebarVersions(from: versions, appPlatform: selectedApp?.platform)
+        if Self.verbose {
+            Self.logger.info("\(self.t)sidebarVersions computed: \(result.count) versions for app: \(selectedApp?.name ?? "nil") (platform: \(selectedApp?.platform ?? "nil"))")
+            if result.isEmpty && !versions.isEmpty {
+                Self.logger.warning("\(self.t)sidebarVersions is empty but raw versions count is \(versions.count). Input platforms: \(versions.map(\.platform).unique())")
+            }
+        }
+        return result
     }
 
     func saveCredentials() {
