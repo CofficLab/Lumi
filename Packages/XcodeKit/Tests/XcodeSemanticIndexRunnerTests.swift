@@ -69,6 +69,18 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
         )
     }
 
+    func testDiscoverBuildRootUsesDerivedDataRootWhenBuildFolderExistsDirectly() throws {
+        let derivedData = FileManager.default.temporaryDirectory
+            .appendingPathComponent("discover-build-root-direct-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: derivedData.appendingPathComponent("Build"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: derivedData) }
+
+        XCTAssertEqual(
+            URL(fileURLWithPath: XcodeSemanticIndexRunner.discoverBuildRoot(in: derivedData) ?? "").standardizedFileURL,
+            derivedData.standardizedFileURL
+        )
+    }
+
     func testSyncRequiresManagedBuildRoot() async {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("managed-build-root-\(UUID().uuidString)", isDirectory: true)
@@ -211,6 +223,40 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
         try Data("[{\"file\":\"a.swift\"}]".utf8).write(to: compileURL)
 
         XCTAssertTrue(XcodeSemanticIndexRunner.compileDatabaseHasEntries(at: compileURL))
+    }
+
+    func testValidateCompileDatabaseRejectsMissingSchemeModule() throws {
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("compile-db-scheme-missing-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let compileURL = tempDirectory.appendingPathComponent(".compile")
+        try Data("""
+        [
+          {"module_name":"EditorSwiftPlugin","command":"swiftc -module-name EditorSwiftPlugin "}
+        ]
+        """.utf8).write(to: compileURL)
+
+        let issue = XcodeSemanticIndexRunner.validateCompileDatabase(at: compileURL, scheme: "Lumi")
+        XCTAssertNotNil(issue)
+        XCTAssertTrue(issue?.contains("Lumi") == true)
+    }
+
+    func testValidateCompileDatabaseAcceptsSchemeModule() throws {
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("compile-db-scheme-present-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let compileURL = tempDirectory.appendingPathComponent(".compile")
+        try Data("""
+        [
+          {"module_name":"Lumi","command":"swiftc -module-name Lumi "}
+        ]
+        """.utf8).write(to: compileURL)
+
+        XCTAssertNil(XcodeSemanticIndexRunner.validateCompileDatabase(at: compileURL, scheme: "Lumi"))
     }
 }
 #endif

@@ -54,7 +54,7 @@ enum XcodeSemanticIndexRunner {
             arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
             workingDirectory: request.storeDirectory
         )
-        return synced && compileDatabaseHasEntries(at: compileURL)
+        return synced && validateCompileDatabase(at: compileURL, scheme: request.scheme) == nil
     }
 
     static func buildAndParseCompileDatabase(_ request: Request) async -> String? {
@@ -67,17 +67,31 @@ enum XcodeSemanticIndexRunner {
             return failureReasonFromBuildLog(logURL) ?? "xcodebuild failed"
         }
 
+        // Prefer parsing from derived-data build root because it is more stable than log parsing.
+        if let buildRoot = discoverBuildRoot(in: request.derivedDataDirectory) {
+            let derivedParse = await runCommand(
+                executablePath: request.xcodeBuildServerPath,
+                arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
+                workingDirectory: request.storeDirectory
+            )
+            if derivedParse, let issue = validateCompileDatabase(at: compileURL, scheme: request.scheme) {
+                logger.error("Semantic index parse(-s) produced invalid compile DB: \(issue, privacy: .public)")
+            } else if derivedParse {
+                return nil
+            }
+        }
+
         let parseResult = await runCommandCapturingOutput(
             executablePath: request.xcodeBuildServerPath,
             arguments: ["parse", "-o", compileURL.path, logURL.path],
             workingDirectory: request.storeDirectory
         )
-        if parseResult.succeeded, compileDatabaseHasEntries(at: compileURL) {
-            return nil
+        if parseResult.succeeded, let issue = validateCompileDatabase(at: compileURL, scheme: request.scheme) {
+            return issue
         }
 
         if parseResult.succeeded {
-            return "semantic compile database is empty"
+            return nil
         }
         let parseMessage = normalizedFailureReason(parseResult.output)
         return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
@@ -85,6 +99,13 @@ enum XcodeSemanticIndexRunner {
 
     static func discoverBuildRoot(in derivedDataDirectory: URL) -> String? {
         let fileManager = FileManager.default
+        // Xcode can place Build/Logs directly under -derivedDataPath.
+        let directBuildPath = derivedDataDirectory.appendingPathComponent("Build").path
+        let directLogsPath = derivedDataDirectory.appendingPathComponent("Logs").path
+        if fileManager.fileExists(atPath: directBuildPath) || fileManager.fileExists(atPath: directLogsPath) {
+            return derivedDataDirectory.path
+        }
+
         guard let entries = try? fileManager.contentsOfDirectory(
             at: derivedDataDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
@@ -288,5 +309,30 @@ enum XcodeSemanticIndexRunner {
             return false
         }
         return !array.isEmpty
+    }
+
+    static func validateCompileDatabase(at compileURL: URL, scheme: String) -> String? {
+        guard let data = try? Data(contentsOf: compileURL),
+              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+              !array.isEmpty else {
+            return "semantic compile database is empty"
+        }
+
+        let includesSchemeModule = array.contains { entry in
+            let moduleName = (entry["module_name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if moduleName == scheme { return true }
+            let command = (entry["command"] as? String) ?? ""
+            return command.contains("-module-name \(scheme) ")
+        }
+        guard includesSchemeModule else {
+            let moduleNames = Array(Set(array.compactMap { ($0["module_name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) }))
+                .filter { !$0.isEmpty }
+                .sorted()
+            let listed = moduleNames.prefix(5).joined(separator: ", ")
+            return listed.isEmpty
+                ? "semantic compile database does not include scheme module '\(scheme)'"
+                : "semantic compile database missing module '\(scheme)' (found: \(listed))"
+        }
+        return nil
     }
 }
