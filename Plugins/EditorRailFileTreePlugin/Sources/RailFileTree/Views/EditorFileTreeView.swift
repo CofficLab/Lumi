@@ -22,6 +22,9 @@ public struct EditorFileTreeView: View, SuperLog {
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = EditorFileTreeRefreshCoordinator()
 
+    /// 文件树多选状态
+    @StateObject private var selectionState = EditorFileTreeSelectionState()
+
     /// Swift Package Dependencies 数据源
     @StateObject private var packageStore = EditorPackageDependencyStore()
 
@@ -32,10 +35,6 @@ public struct EditorFileTreeView: View, SuperLog {
 
     /// 打开文件任务，连续点击时取消较早的请求，避免乱序完成。
     @State private var openFileTask: Task<Void, Never>?
-
-    private var highlightedFileURL: URL? {
-        editorContext.resolvedFileTreeHighlightURL()
-    }
 
     private var showPackageDependencies: Bool {
         guard !projectVM.currentProjectPath.isEmpty else { return false }
@@ -54,7 +53,6 @@ public struct EditorFileTreeView: View, SuperLog {
                         EditorFileTreeNodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
-                            selectedURL: highlightedFileURL,
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
@@ -86,7 +84,18 @@ public struct EditorFileTreeView: View, SuperLog {
                 }
             }
         }
+        .environmentObject(selectionState)
         .frame(maxHeight: .infinity)
+        .onChange(of: editorContext.fileTreeHighlightedFileURL) { _, url in
+            if let url {
+                selectionState.syncFromEditorHighlight(url)
+            } else {
+                selectionState.clearSelection()
+            }
+        }
+        .onChange(of: rootRefreshToken) { _, _ in
+            selectionState.resetVisibleOrder()
+        }
         .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
@@ -132,6 +141,8 @@ public struct EditorFileTreeView: View, SuperLog {
         packageStore.setProjectRootPath(projectVM.currentProjectPath)
         openFileTask?.cancel()
         openFileTask = nil
+        selectionState.clearSelection()
+        selectionState.resetVisibleOrder()
         editorContext.syncFileTreeHighlightFromEditor()
         rootRefreshToken += 1
         if Self.verbose {
@@ -145,6 +156,8 @@ public struct EditorFileTreeView: View, SuperLog {
             packageStore.setProjectRootPath(projectVM.currentProjectPath)
             if editorContext.fileTreeHighlightedFileURL == nil {
                 editorContext.syncFileTreeHighlightFromEditor()
+            } else if let highlighted = editorContext.fileTreeHighlightedFileURL {
+                selectionState.syncFromEditorHighlight(highlighted)
             }
             if rootRefreshToken == 0 {
                 rootRefreshToken = 1

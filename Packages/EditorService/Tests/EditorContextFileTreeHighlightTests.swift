@@ -65,6 +65,34 @@ final class EditorContextFileTreeHighlightTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    func testAddMultipleFilesToConversationPostsOneNotificationPerFile() {
+        let service = makeService()
+        let context = EditorContext(service: service)
+        let windowId = UUID()
+        let fileA = URL(fileURLWithPath: "/tmp/project/Sources/A.swift")
+        let fileB = URL(fileURLWithPath: "/tmp/project/Sources/B.swift")
+        let expectation = expectation(description: "addToChat notifications")
+        expectation.expectedFulfillmentCount = 2
+
+        var receivedPaths: [String] = []
+        let observer = NotificationCenter.default.addObserver(
+            forName: EditorContext.addToChatNotificationName,
+            object: nil,
+            queue: .main
+        ) { notification in
+            if let path = notification.userInfo?["fileURL"] as? String {
+                receivedPaths.append(path)
+            }
+            expectation.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        context.addToConversation(fileURLs: [fileA, fileB], windowId: windowId)
+        wait(for: [expectation], timeout: 1)
+
+        XCTAssertEqual(Set(receivedPaths), Set([fileA.path, fileB.path]))
+    }
+
     func testTreeSelectionStillWorksBeforeEditorCurrentFileCatchesUp() {
         let service = makeService()
         let context = EditorContext(service: service)

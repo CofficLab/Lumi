@@ -48,6 +48,17 @@ enum EditorFileTreePathFormatter {
         return normalizedFilePath(lhs) == normalizedFilePath(rhs)
     }
 
+    /// 批量操作时去掉被其它选中目录包含的子路径。
+    static func topLevelURLs(from urls: [URL]) -> [URL] {
+        let paths = Set(urls.map { normalizedFilePath($0) })
+        return urls.filter { url in
+            let path = normalizedFilePath(url)
+            return !paths.contains { ancestor in
+                ancestor != path && path.hasPrefix(ancestor + "/")
+            }
+        }
+    }
+
     private static func normalizedPath(_ path: String) -> String {
         let standardized = (path as NSString).standardizingPath
         guard standardized.count > 1 else { return standardized }
