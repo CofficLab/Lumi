@@ -3,8 +3,8 @@ import Combine
 import Foundation
 
 @MainActor
-final class AppStoreConnectViewModel: ObservableObject {
-    static let shared = AppStoreConnectViewModel()
+final class ConnectViewModel: ObservableObject {
+    static let shared = ConnectViewModel()
 
     enum Page: String, CaseIterable, Identifiable {
         case account

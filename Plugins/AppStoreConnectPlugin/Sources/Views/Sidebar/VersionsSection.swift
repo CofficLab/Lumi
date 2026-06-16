@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-struct SidebarVersionsSection: View {
+struct VersionsSection: View {
     @ObservedObject var viewModel: AppStoreConnectViewModel
 
     var body: some View {
