@@ -123,6 +123,7 @@ struct ScreenshotsSection: View {
                 ScreenshotFilmstrip(
                     screenshots: viewModel.screenshots,
                     pendingScreenshots: viewModel.pendingScreenshots,
+                    displayType: viewModel.selectedScreenshotDisplayType,
                     onRemovePending: { viewModel.removeScreenshot($0) }
                 )
             }
