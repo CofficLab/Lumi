@@ -1,5 +1,6 @@
 @testable import EditorSwiftPlugin
 import EditorService
+import Foundation
 import Testing
 import XcodeKit
 
@@ -70,16 +71,84 @@ import XcodeKit
 
 @MainActor
 @Test func semanticStatusTextUsesBuildContextWhenNotIndexing() {
-    let ready = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .available(
-        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
-    ))
-    #expect(!ready.isEmpty)
-    #expect(ready == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .available(
-        .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
-    )))
+    let configReady = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .notStarted
+    )
+    #expect(configReady == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .notStarted))
+
+    let ready = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .ready
+    )
+    #expect(ready == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .ready))
 
     let resolving = XcodeProjectStatusPresentation.semanticStatusText(indexingTask: nil, buildContextStatus: .resolving)
     #expect(resolving == XcodeProjectStatusPresentation.localizedSemanticStatusText(for: .resolving))
+}
+
+@MainActor
+@Test func semanticStatusTextShowsProjectIndexingState() {
+    let indexing = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .indexing
+    )
+    #expect(indexing == XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .indexing))
+}
+
+@MainActor
+@Test func semanticStatusTextIncludesFailureReason() {
+    let failed = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .available(
+            .init(buildServerJSONPath: "/tmp", workspacePath: "/tmp", scheme: "App")
+        ),
+        semanticIndexStatus: .failed("error: no such module 'LumiCoreKit'")
+    )
+    #expect(failed.contains(XcodeProjectStatusPresentation.localizedSemanticIndexStatusText(for: .failed(""))))
+    #expect(!failed.contains("LumiCoreKit"))
+}
+
+@MainActor
+@Test func semanticStatusTextPrefersResolutionProgressWhileResolving() {
+    let startedAt = Date(timeIntervalSinceReferenceDate: 100)
+    let progress = BuildContextResolutionProgress(
+        phase: .runningXcodebuildList,
+        detail: "Lumi.xcodeproj",
+        startedAt: startedAt
+    )
+    let text = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .resolving,
+        resolutionProgress: progress,
+        now: Date(timeIntervalSinceReferenceDate: 103)
+    )
+    #expect(text.contains("xcodebuild"))
+    #expect(text.contains("3s"))
+}
+
+@MainActor
+@Test func semanticStatusTextShowsScanningFileDuringMembershipParsing() {
+    let progress = BuildContextResolutionProgress(
+        phase: .parsingProjectMembership,
+        detail: "Lumi.xcodeproj",
+        currentItem: "RootView.swift"
+    )
+    let text = XcodeProjectStatusPresentation.semanticStatusText(
+        indexingTask: nil,
+        buildContextStatus: .resolving,
+        resolutionProgress: progress
+    )
+    #expect(text.contains("RootView.swift"))
 }
 
 @MainActor

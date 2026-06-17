@@ -11,7 +11,7 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
         try? FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
-        store = XcodeBuildServerStore(storageRootURL: tempDirectory)
+        store = XcodeBuildServerStore(pluginDirectoryURL: tempDirectory)
     }
     
     override func tearDown() {
@@ -26,7 +26,7 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         let directory = store.ensureDirectory(forWorkspace: workspacePath)
         
         XCTAssertTrue(FileManager.default.fileExists(atPath: directory.path))
-        XCTAssertTrue(directory.path.contains("EditorXcodePlugin"))
+        XCTAssertTrue(directory.path.hasPrefix(tempDirectory.path))
     }
     
     func testEnsureDirectoryIdempotent() {
@@ -45,6 +45,160 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         let dir2 = store.ensureDirectory(forWorkspace: workspace2)
         
         XCTAssertNotEqual(dir1, dir2)
+    }
+
+    func testDerivedDataDirectoryIsUnderProjectStore() {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let storeDirectory = store.ensureDirectory(forWorkspace: workspacePath)
+        let derivedDataDirectory = store.derivedDataDirectory(forWorkspace: workspacePath)
+
+        XCTAssertEqual(
+            derivedDataDirectory.deletingLastPathComponent(),
+            storeDirectory
+        )
+        XCTAssertEqual(derivedDataDirectory.lastPathComponent, "DerivedData")
+    }
+
+    func testIsManagedBuildRootAcceptsPluginLocalPath() {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let derivedDataDirectory = store.derivedDataDirectory(forWorkspace: workspacePath)
+        let buildRoot = derivedDataDirectory
+            .appendingPathComponent("Lumi-abc123", isDirectory: true)
+            .path
+
+        XCTAssertTrue(store.isManagedBuildRoot(buildRoot, forWorkspace: workspacePath))
+    }
+
+    func testIsManagedBuildRootRejectsSystemDerivedData() {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let buildRoot = "/Users/test/Library/Developer/Xcode/DerivedData/Lumi-abc123"
+
+        XCTAssertFalse(store.isManagedBuildRoot(buildRoot, forWorkspace: workspacePath))
+    }
+
+    func testUpdateBuildRootPersistsValue() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let fileURL = directory.appendingPathComponent("buildServer.json")
+
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "MyScheme",
+            "build_root": "/old/path"
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        try data.write(to: fileURL)
+
+        let newBuildRoot = store.derivedDataDirectory(forWorkspace: workspacePath)
+            .appendingPathComponent("Lumi-newhash", isDirectory: true)
+            .path
+        XCTAssertTrue(store.updateBuildRoot(forWorkspace: workspacePath, buildRoot: newBuildRoot))
+
+        let updated = try JSONSerialization.jsonObject(with: Data(contentsOf: fileURL)) as? [String: Any]
+        XCTAssertEqual(updated?["build_root"] as? String, newBuildRoot)
+    }
+
+    func testSyncParsedCompileDatabaseSettingsMarksManualAndIndexStore() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let fileURL = directory.appendingPathComponent("buildServer.json")
+        let compileURL = directory.appendingPathComponent(".compile")
+        try Data("[]".utf8).write(to: compileURL)
+
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "MyScheme",
+            "kind": "xcode",
+            "build_root": "/old/path",
+        ]
+        try JSONSerialization.data(withJSONObject: json).write(to: fileURL)
+
+        let derivedData = store.derivedDataDirectory(forWorkspace: workspacePath)
+        let buildRoot = derivedData.path
+        let indexStorePath = XcodeBuildServerStore.defaultIndexStorePath(forDerivedDataDirectory: derivedData).path
+
+        XCTAssertTrue(
+            store.syncParsedCompileDatabaseSettings(
+                forWorkspace: workspacePath,
+                buildRoot: buildRoot,
+                indexStorePath: indexStorePath
+            )
+        )
+
+        let updated = try JSONSerialization.jsonObject(with: Data(contentsOf: fileURL)) as? [String: Any]
+        XCTAssertEqual(updated?["kind"] as? String, "manual")
+        XCTAssertEqual(updated?["build_root"] as? String, buildRoot)
+        XCTAssertEqual(updated?["indexStorePath"] as? String, indexStorePath)
+        XCTAssertTrue(store.publishCompileDatabaseForBSP(forWorkspace: workspacePath))
+    }
+
+    func testPublishCompileDatabaseForBSPCreatesCompileFileAlias() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let compileURL = directory.appendingPathComponent(".compile")
+        let bspURL = directory.appendingPathComponent(".compile_file")
+        try Data("[]".utf8).write(to: compileURL)
+
+        XCTAssertTrue(store.publishCompileDatabaseForBSP(forWorkspace: workspacePath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: bspURL.path))
+        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: bspURL.path)
+        XCTAssertEqual(URL(fileURLWithPath: destination).lastPathComponent, ".compile")
+    }
+
+    func testPublishBSPManifestToLSPWorkspaceRootCreatesSymlinks() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let projectRoot = tempRoot.appendingPathComponent("LumiRepo", isDirectory: true)
+        let xcodeproj = projectRoot.appendingPathComponent("Lumi.xcodeproj", isDirectory: true)
+        let workspacePath = xcodeproj.appendingPathComponent("project.xcworkspace").path
+        try FileManager.default.createDirectory(at: xcodeproj, withIntermediateDirectories: true)
+
+        let storeDirectory = store.ensureDirectory(forWorkspace: workspacePath)
+        let buildServerURL = storeDirectory.appendingPathComponent("buildServer.json")
+        let compileURL = storeDirectory.appendingPathComponent(".compile")
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "Lumi",
+            "kind": "manual",
+        ]
+        try JSONSerialization.data(withJSONObject: json).write(to: buildServerURL)
+        try Data("[]".utf8).write(to: compileURL)
+
+        XCTAssertTrue(store.publishCompileDatabaseForBSP(forWorkspace: workspacePath))
+
+        let lspBuildServer = projectRoot.appendingPathComponent("buildServer.json")
+        let lspCompileFile = projectRoot.appendingPathComponent(".compile_file")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lspBuildServer.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lspCompileFile.path))
+
+        store.unpublishBSPManifestFromLSPWorkspaceRoot(forWorkspace: workspacePath)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lspBuildServer.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lspCompileFile.path))
+
+        try? FileManager.default.removeItem(at: tempRoot)
+    }
+
+    func testUpdateBuildRootSkipsRewriteWhenUnchanged() throws {
+        let workspacePath = "/Users/test/MyProject.xcworkspace"
+        let directory = store.ensureDirectory(forWorkspace: workspacePath)
+        let fileURL = directory.appendingPathComponent("buildServer.json")
+
+        let buildRoot = store.derivedDataDirectory(forWorkspace: workspacePath).path
+        let json: [String: Any] = [
+            "workspace": workspacePath,
+            "scheme": "MyScheme",
+            "build_root": buildRoot,
+        ]
+        try JSONSerialization.data(withJSONObject: json).write(to: fileURL)
+
+        let before = try FileManager.default.attributesOfItem(atPath: fileURL.path)[.modificationDate] as? Date
+        // Re-applying the same build_root (even with a trailing slash) must not rewrite the file,
+        // otherwise the file's mtime would jump ahead of `.compile` and trigger an endless re-index.
+        Thread.sleep(forTimeInterval: 0.02)
+        XCTAssertTrue(store.updateBuildRoot(forWorkspace: workspacePath, buildRoot: buildRoot + "/"))
+        let after = try FileManager.default.attributesOfItem(atPath: fileURL.path)[.modificationDate] as? Date
+
+        XCTAssertEqual(before, after, "Unchanged build_root must not rewrite buildServer.json")
     }
     
     // MARK: - load Tests
@@ -185,8 +339,7 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         
         store.removeAll()
         
-        let rootDir = store.storageRootURL.appendingPathComponent("EditorXcodePlugin")
-        XCTAssertFalse(FileManager.default.fileExists(atPath: rootDir.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempDirectory.path))
     }
     
     // MARK: - Config Model Tests

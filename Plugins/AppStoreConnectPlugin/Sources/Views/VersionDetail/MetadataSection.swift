@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct MetadataSection: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -14,6 +14,16 @@ struct MetadataSection: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal)
+            .appStoreConnectAddToChatMenu(
+                entityType: "metadataSection",
+                entityID: viewModel.selectedLocalizationID ?? "none",
+                title: "Metadata",
+                sourceView: "VersionDetail.MetadataSection",
+                fields: [
+                    "hasLocalizations": viewModel.localizations.isEmpty ? "false" : "true",
+                    "selectedLocalizationID": viewModel.selectedLocalizationID ?? "-"
+                ]
+            )
 
             if viewModel.localizations.isEmpty {
                 InlineEmptyState(
@@ -22,6 +32,16 @@ struct MetadataSection: View {
                     description: AppStoreConnectLocalization.string("Select a version and refresh to load localizations.")
                 )
                 .padding(.horizontal)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "metadataEmptyState",
+                    entityID: "no-localizations",
+                    title: "No Localizations",
+                    sourceView: "VersionDetail.MetadataSection",
+                    fields: [
+                        "selectedVersionID": viewModel.selectedVersion?.id ?? "-",
+                        "selectedVersionString": viewModel.selectedVersion?.versionString ?? "-"
+                    ]
+                )
             } else {
                 MetadataEditor(viewModel: viewModel)
             }
@@ -30,7 +50,7 @@ struct MetadataSection: View {
 }
 
 struct MetadataEditor: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -41,7 +61,18 @@ struct MetadataEditor: View {
             field(AppStoreConnectLocalization.string("Support URL"), limit: 255, text: binding(\.supportURL))
             field(AppStoreConnectLocalization.string("Marketing URL"), limit: 255, text: binding(\.marketingURL))
         }
+        .disabled(viewModel.isMetadataReadOnly)
         .padding(.horizontal)
+        .appStoreConnectAddToChatMenu(
+            entityType: "metadataEditor",
+            entityID: viewModel.editedLocalization?.id ?? viewModel.selectedLocalizationID ?? "none",
+            title: viewModel.editedLocalization?.locale ?? "Metadata Editor",
+            sourceView: "VersionDetail.MetadataEditor",
+            fields: [
+                "isDirty": viewModel.metadataIsDirty ? "true" : "false",
+                "locale": viewModel.editedLocalization?.locale ?? "-"
+            ]
+        )
     }
 
     private func binding(_ keyPath: WritableKeyPath<AppStoreVersionLocalization, String>) -> Binding<String> {

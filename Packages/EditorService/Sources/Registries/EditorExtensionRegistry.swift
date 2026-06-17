@@ -311,6 +311,13 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         bestMatch(in: projectContextCapabilities.filter { $0.canHandleProject(at: projectPath) })
     }
 
+    /// 关闭所有已注册的项目上下文（切换项目时确保 Xcode bridge 等单例状态被清理）
+    public func closeAllProjectContexts() {
+        for capability in projectContextCapabilities {
+            capability.projectClosed()
+        }
+    }
+
     /// 按语言和项目路径查找最匹配的语言集成能力
     public func languageIntegrationCapability(
         for languageId: String,

@@ -95,7 +95,7 @@ public final class EditorPanelCoordinator: ObservableObject {
 
     /// 处理项目路径变化
     public func handleProjectPathChange(oldPath: String, newPath: String) {
-        guard let panelService, let service else { return }
+        guard let panelService, let service, let projectVM else { return }
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info(
@@ -107,6 +107,7 @@ public final class EditorPanelCoordinator: ObservableObject {
         if service.files.hasUnsavedChanges { service.files.saveNow() }
         service.sessions.closeAllSessions()
         service.files.loadFile(from: nil)
+        service.projectRootPath = projectRootPath(from: projectVM)
         panelService.refreshProjectContext(for: newPath, service: service)
     }
 

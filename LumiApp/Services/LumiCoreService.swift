@@ -7,9 +7,10 @@ final class LumiCoreService {
     let coreDatabaseDirectory: URL
 
     init() {
-        self.dataRootDirectory = Self.makeDataRootDirectory()
+        let dataRootDirectory = Self.makeDataRootDirectory()
+        AppConfig.configure(dataRootDirectory: dataRootDirectory)
+        self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = Self.makeCoreDatabaseDirectory(in: dataRootDirectory)
-        LumiCore.configure(dataRootDirectory: dataRootDirectory)
     }
 
     private static func makeDataRootDirectory() -> URL {

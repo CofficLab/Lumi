@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Lumi}/Packages/LumiPreviewKit",
+            "name": "Debug LumiPreviewHostApp (Packages/LumiPreviewKit)",
+            "target": "LumiPreviewHostApp",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug LumiPreviewHostApp (Packages/LumiPreviewKit)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Lumi}/Packages/LumiPreviewKit",
+            "name": "Release LumiPreviewHostApp (Packages/LumiPreviewKit)",
+            "target": "LumiPreviewHostApp",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release LumiPreviewHostApp (Packages/LumiPreviewKit)"
+        }
+    ]
+}

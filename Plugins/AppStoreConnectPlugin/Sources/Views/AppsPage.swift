@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct AppsPage: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
         VStack(spacing: 0) {

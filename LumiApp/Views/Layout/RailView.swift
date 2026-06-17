@@ -21,7 +21,6 @@ struct RailView: View {
         VStack(spacing: 0) {
             if showsTabBar {
                 railTabBar
-                AppDivider()
             }
             railContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -42,20 +41,23 @@ struct RailView: View {
     }
 
     private var railTabBar: some View {
-        AppTabBar(
-            tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
-            selectedTab: Binding(
-                get: { layoutState.activeRailTabID },
-                set: { newValue in
-                    layoutState.activeRailTabID = newValue
-                    layoutState.persistActiveRailTabID()
-                }
-            ),
-            showText: false
-        )
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(height: 40)
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        ) {
+            AppTabBar(
+                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                selectedTab: Binding(
+                    get: { layoutState.activeRailTabID },
+                    set: { newValue in
+                        layoutState.activeRailTabID = newValue
+                        layoutState.persistActiveRailTabID()
+                    }
+                ),
+                showText: false
+            )
+        }
     }
 
     @ViewBuilder

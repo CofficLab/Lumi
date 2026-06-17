@@ -16,10 +16,25 @@ public struct BreadcrumbNavHeaderView: View {
     }
 
     public var body: some View {
-        // 仅在有文件打开时显示
-        if let fileURL = service.files.currentFileURL, projectVM.isProjectSelected {
+        // 仅在当前文件属于当前项目时显示，避免跨项目残留显示。
+        if let fileURL = service.files.currentFileURL,
+           projectVM.isProjectSelected,
+           isFileInCurrentProject(fileURL) {
             BreadcrumbNavPathView(fileURL: fileURL, service: service)
         }
+    }
+
+    private func isFileInCurrentProject(_ fileURL: URL) -> Bool {
+        let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Self.isFile(fileURL, inProjectPath: projectPath)
+    }
+
+    static func isFile(_ fileURL: URL, inProjectPath rawProjectPath: String) -> Bool {
+        let projectPath = rawProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !projectPath.isEmpty else { return false }
+        let projectRoot = URL(fileURLWithPath: projectPath).standardizedFileURL.path
+        let filePath = fileURL.standardizedFileURL.path
+        return filePath == projectRoot || filePath.hasPrefix(projectRoot + "/")
     }
 }
 
@@ -111,6 +126,11 @@ public struct BreadcrumbNavPathView: View {
                                 truncatedCrumbWidth: item.index == 0
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
+                                    let rawProjectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    guard !rawProjectPath.isEmpty else { return }
+                                    guard BreadcrumbNavHeaderView.isFile(url, inProjectPath: rawProjectPath) else {
+                                        return
+                                    }
                                     Task { @MainActor in
                                         await service.refreshProjectContext(for: projectVM.currentProjectPath)
                                         service.sessions.open(at: url)

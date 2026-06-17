@@ -27,6 +27,16 @@ struct RemoteScreenshotRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "screenshot",
+            entityID: screenshot.id,
+            title: screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName,
+            sourceView: "RemoteScreenshotRow",
+            fields: [
+                "fileSize": screenshot.fileSize.map(String.init) ?? "-",
+                "previewURL": screenshot.previewURL?.absoluteString ?? "-"
+            ]
+        )
     }
 
     @ViewBuilder

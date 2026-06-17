@@ -1,5 +1,13 @@
 import Foundation
 
+public enum LumiCurrentProjectPathUserInfoKey {
+    public static let path = "path"
+}
+
+public extension Notification.Name {
+    static let lumiCurrentProjectPathDidChange = Notification.Name("lumi.currentProjectPathDidChange")
+}
+
 public protocol LumiCurrentProjectPathProviding: Sendable {
     var currentProjectPath: String { get }
 }
@@ -22,7 +30,14 @@ public final class LumiCurrentProjectPathStore: LumiCurrentProjectPathStoring, @
 
     public func setCurrentProjectPath(_ newValue: String) {
         lock.lock()
+        let changed = path != newValue
         path = newValue
         lock.unlock()
+        guard changed else { return }
+        NotificationCenter.default.post(
+            name: .lumiCurrentProjectPathDidChange,
+            object: nil,
+            userInfo: [LumiCurrentProjectPathUserInfoKey.path: newValue]
+        )
     }
 }

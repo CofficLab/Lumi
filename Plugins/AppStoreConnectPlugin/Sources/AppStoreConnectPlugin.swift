@@ -19,6 +19,25 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [
+            ListAppStoreConnectAppsTool(),
+            ListAppStoreConnectVersionsTool(),
+            ListAppStoreConnectLocalizationsTool(),
+            ListAppStoreConnectScreenshotSetsTool(),
+            ListAppStoreConnectScreenshotsTool(),
+            ListAppStoreConnectCiProductsTool(),
+            ListAppStoreConnectCiWorkflowsTool(),
+            ReadAppStoreConnectCiWorkflowTool(),
+            ListAppStoreConnectCiBuildRunsTool(),
+            UpdateAppStoreConnectLocalizationTool(),
+            CreateAppStoreConnectScreenshotSetTool(),
+            StartAppStoreConnectCiBuildRunTool(),
+            SetAppStoreConnectCiWorkflowEnabledTool()
+        ]
+    }
+
+    @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         guard context.activeSectionID == info.id else { return [] }
 
@@ -35,11 +54,16 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
+        let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
+        AppStoreConnectAddToChat.currentProjectPathProvider = {
+            projectPathProvider?.currentProjectPath ?? ""
+        }
+        return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
-                systemImage: iconName
+                systemImage: iconName,
+                chatSection: .narrow
             ) {
                 MainView()
             }

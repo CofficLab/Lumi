@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import ShellKit
 import Testing
 @testable import ToolCorePlugin
 
@@ -124,6 +125,22 @@ import Testing
     )
 
     #expect(output.contains("error-message"))
+}
+
+@Test func shellToolTimesOutLongRunningCommand() async throws {
+    let tool = ShellTool(commandTimeout: 0.2)
+    let context = LumiToolExecutionContext(
+        conversationID: UUID(),
+        toolCallID: "call-timeout",
+        toolName: "run_command"
+    )
+
+    await #expect(throws: ShellError.self) {
+        _ = try await tool.execute(
+            arguments: ["command": .string("sleep 2")],
+            context: context
+        )
+    }
 }
 
 @Test func shellToolReturnsSuccessMessageWhenEmptyOutput() async throws {

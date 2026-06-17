@@ -207,13 +207,13 @@ final class XcodeSwiftPackageSourceResolverTests: XCTestCase {
 
         let result = XcodeProjectResolver.resolveTargetSourceFiles(projectLikeURL: projectURL)
         let pluginFile = repoRoot
-            .appendingPathComponent("Plugins/EditorBottomProblemsPlugin/Sources/EditorBottomProblemsPlugin.swift")
+            .appendingPathComponent("Plugins/EditorProblemsPlugin/Sources/EditorProblemsPlugin.swift")
             .path
         let memoryPluginFile = repoRoot
             .appendingPathComponent("Plugins/MemoryPlugin/Sources/MemoryPlugin.swift")
             .path
 
-        XCTAssertTrue(result["Lumi"]?.contains(pluginFile) == true, "Expected EditorBottomProblemsPlugin to belong to Lumi target")
+        XCTAssertTrue(result["Lumi"]?.contains(pluginFile) == true, "Expected EditorProblemsPlugin to belong to Lumi target")
         XCTAssertTrue(result["Lumi"]?.contains(memoryPluginFile) == true, "Expected MemoryPlugin to belong to Lumi target")
     }
 

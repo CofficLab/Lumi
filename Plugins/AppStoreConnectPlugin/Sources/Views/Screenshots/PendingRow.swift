@@ -28,6 +28,18 @@ struct PendingScreenshotRow: View {
                 AppIconButton(systemImage: "trash", tint: .red, action: onRemove)
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "pendingScreenshot",
+            entityID: screenshot.id.uuidString,
+            title: screenshot.fileName,
+            sourceView: "PendingScreenshotRow",
+            fields: [
+                "displayType": screenshot.displayType,
+                "height": String(screenshot.height),
+                "status": statusLabel,
+                "width": String(screenshot.width)
+            ]
+        )
     }
 
     @ViewBuilder
@@ -48,6 +60,21 @@ struct PendingScreenshotRow: View {
         case .failed(let message):
             Label(message, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.red)
+        }
+    }
+
+    private var statusLabel: String {
+        switch screenshot.status {
+        case .ready:
+            return "ready"
+        case .invalid(let message):
+            return "invalid: \(message)"
+        case .uploading:
+            return "uploading"
+        case .uploaded:
+            return "uploaded"
+        case .failed(let message):
+            return "failed: \(message)"
         }
     }
 }

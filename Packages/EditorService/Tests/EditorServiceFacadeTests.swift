@@ -165,6 +165,27 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertTrue(service.files.hasUnsavedChanges)
     }
 
+    func testRefreshProjectContextClosesPreviousContextWhenSwitchingToNonXcodeProject() async {
+        let registry = EditorExtensionRegistry()
+        let capability = TrackingProjectContextCapability(handledProjectPaths: ["/tmp/Lumi"])
+        registry.registerProjectContextCapability(capability)
+
+        let service = EditorService(editorExtensionRegistry: registry)
+
+        await service.refreshProjectContext(for: "/tmp/Lumi")
+        XCTAssertEqual(capability.openedPaths, ["/tmp/Lumi"])
+        XCTAssertEqual(capability.closeCount, 0)
+
+        await service.refreshProjectContext(for: "/tmp/GitOK")
+        XCTAssertEqual(
+            capability.closeCount,
+            1,
+            "Switching away from an Xcode project must close the previous context even when the new project has no capability"
+        )
+        XCTAssertEqual(capability.openedPaths, ["/tmp/Lumi"])
+        XCTAssertEqual(service.projectRootPath, "/tmp/GitOK")
+    }
+
     func testClearingEditorInvalidatesPendingFileLoads() async throws {
         let service = makeService()
         let directory = FileManager.default.temporaryDirectory
@@ -199,5 +220,38 @@ final class EditorServiceFacadeTests: XCTestCase {
         }
         XCTFail("Timed out waiting for \(description)")
     }
+}
+
+@MainActor
+private final class TrackingProjectContextCapability: SuperEditorProjectContextCapability {
+    let id = "tracking.project.context"
+    private let handledProjectPaths: Set<String>
+    private(set) var closeCount = 0
+    private(set) var openedPaths: [String] = []
+
+    init(handledProjectPaths: Set<String>) {
+        self.handledProjectPaths = handledProjectPaths
+    }
+
+    func canHandleProject(at path: String?) -> Bool {
+        guard let path else { return false }
+        return handledProjectPaths.contains(path)
+    }
+
+    func projectOpened(at path: String) async {
+        openedPaths.append(path)
+    }
+
+    func projectClosed() {
+        closeCount += 1
+    }
+
+    func resyncProjectContext() async {}
+
+    func makeEditorContextSnapshot(currentFileURL: URL?) -> EditorProjectContextSnapshot? {
+        nil
+    }
+
+    func updateLatestEditorSnapshot(_ snapshot: EditorProjectContextSnapshot?) {}
 }
 #endif

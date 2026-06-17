@@ -1,15 +1,20 @@
 import SwiftUI
 import SuperLogKit
 import LumiUI
-import XcodeKit
 import LumiCoreKit
+import XcodeKit
 
 /// Xcode 项目状态栏视图
 public struct XcodeProjectStatusBar: View, SuperLog {
     public nonisolated static let emoji = "🔨"
 
     @LumiTheme private var theme
-    @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
+    @ObservedObject private var viewModel: XcodeProjectStatusBarViewModel
+
+    public init(viewModel: XcodeProjectStatusBarViewModel? = nil) {
+        let resolved = viewModel ?? EditorSwiftWindowScopeRegistry.activeStatusBarViewModel
+        _viewModel = ObservedObject(wrappedValue: resolved)
+    }
 
     public var body: some View {
         Group {
@@ -54,22 +59,27 @@ public struct XcodeProjectStatusBar: View, SuperLog {
     // MARK: - Build Context 状态指示器
 
     private var buildContextIndicator: some View {
-        HStack(spacing: 4) {
-            if viewModel.isIndexing {
-                ProgressView()
-                    .controlSize(.small)
-                    .scaleEffect(0.7)
-            } else {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-            }
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 4) {
+                if viewModel.showsActivityIndicator {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.7)
+                } else {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 8, height: 8)
+                }
 
-            Text(statusText)
-                .font(.system(size: 11))
-                .foregroundStyle(theme.textSecondary)
+                if !viewModel.showsActivityIndicator {
+                    Text(statusText(at: context.date))
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+            .help(viewModel.semanticStatusDescription)
         }
-        .help(viewModel.semanticStatusDescription)
     }
 
     static func titleToolbarSecondaryTextColor(theme: any LumiUITheme) -> Color {
@@ -101,10 +111,22 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                     .lineLimit(1)
             }
         } else if viewModel.isXcodeProject {
-            Text(viewModel.activeScheme ?? LumiPluginLocalization.string("Resolving build context...", bundle: .module))
-                .lineLimit(1)
-                .foregroundStyle(.secondary)
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(schemePlaceholderText(at: context.date))
+                    .lineLimit(1)
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+
+    private func schemePlaceholderText(at date: Date) -> String {
+        if let activeScheme = viewModel.activeScheme {
+            return activeScheme
+        }
+        if viewModel.isResolvingBuildContext {
+            return viewModel.semanticStatusText(now: date)
+        }
+        return viewModel.schemePlaceholderText
     }
 
     @ViewBuilder
@@ -143,173 +165,11 @@ public struct XcodeProjectStatusBar: View, SuperLog {
         viewModel.semanticStatusColor
     }
 
-    private var statusText: String {
-        viewModel.semanticStatusText
+    private func statusText(at date: Date) -> String {
+        viewModel.semanticStatusText(now: date)
     }
 }
-
-public struct XcodeProjectStatusDetailView: View {
-    @ObservedObject var viewModel: XcodeProjectStatusBarViewModel
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(LumiPluginLocalization.string("Xcode Context", bundle: .module))
-                    .font(.system(size: 13, weight: .semibold))
-                Spacer()
-                buildStatusBadge
-            }
-
-            detailRow(LumiPluginLocalization.string("Scheme", bundle: .module), viewModel.activeScheme ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
-            detailRow(LumiPluginLocalization.string("Configuration", bundle: .module), viewModel.activeConfiguration ?? LumiPluginLocalization.string("Not Selected", bundle: .module))
-            detailRow(LumiPluginLocalization.string("Destination", bundle: .module), viewModel.activeDestination ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
-            detailRow(LumiPluginLocalization.string("Build Context", bundle: .module), viewModel.buildContextStatusDescription)
-
-            HStack {
-                Spacer()
-                Button {
-                    viewModel.resyncBuildContext()
-                } label: {
-                    if viewModel.isResyncingBuildContext {
-                        HStack(spacing: 6) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text(LumiPluginLocalization.string("Re-resolving...", bundle: .module))
-                        }
-                    } else {
-                        Text(LumiPluginLocalization.string("Re-resolve Build Context", bundle: .module))
-                    }
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.blue)
-                .disabled(viewModel.isResyncingBuildContext)
-            }
-
-            Divider()
-
-            if let snapshot = viewModel.latestEditorSnapshot {
-                detailRow(LumiPluginLocalization.string("Workspace", bundle: .module), snapshot.workspaceName)
-                detailRow(LumiPluginLocalization.string("Current File", bundle: .module), snapshot.currentFilePath ?? LumiPluginLocalization.string("No File Open", bundle: .module))
-                detailRow(LumiPluginLocalization.string("Preferred Target", bundle: .module), snapshot.currentFileTarget ?? LumiPluginLocalization.string("Undetermined", bundle: .module))
-                detailRow(
-                    LumiPluginLocalization.string("Matched Targets", bundle: .module),
-                    snapshot.currentFileMatchedTargets.isEmpty ? LumiPluginLocalization.string("None", bundle: .module) : snapshot.currentFileMatchedTargets.joined(separator: ", ")
-                )
-                detailRow(
-                    LumiPluginLocalization.string("Scheme Targets", bundle: .module),
-                    snapshot.activeSchemeBuildableTargets.isEmpty ? LumiPluginLocalization.string("None", bundle: .module) : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
-                )
-                if !viewModel.semanticReport.reasons.isEmpty {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(LumiPluginLocalization.string("Semantic Availability", bundle: .module))
-                            .font(.system(size: 12, weight: .semibold))
-                        ForEach(viewModel.semanticReport.reasons) { reason in
-                            reasonRow(reason)
-                        }
-                    }
-                }
-            } else {
-                Text(LumiPluginLocalization.string("No editor context snapshot available.", bundle: .module))
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var buildStatusBadge: some View {
-        Text(viewModel.buildContextStatusDescription)
-            .font(.system(size: 10, weight: .medium))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.white.opacity(0.08))
-            .cornerRadius(6)
-    }
-
-    private func detailRow(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 12))
-                .textSelection(.enabled)
-        }
-    }
-
-    private func reasonRow(_ reason: XcodeSemanticAvailability.Reason) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Circle()
-                .fill(color(for: reason.severity))
-                .frame(width: 8, height: 8)
-                .padding(.top, 4)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(reason.title)
-                    .font(.system(size: 11, weight: .medium))
-                Text(reason.message)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
-        switch severity {
-        case .info: return .blue
-        case .warning: return .orange
-        case .error: return .red
-        }
-    }
-}
-
-public struct XcodeFileNotInTargetWarning: View {
-    public let fileName: String
-    public let onDismiss: () -> Void
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                Text(LumiPluginLocalization.string("File Not Registered in Project", bundle: .module))
-                    .font(.headline)
-            }
-
-            Text(
-                String(
-                    format: LumiPluginLocalization.string("\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", bundle: .module),
-                    fileName
-                )
-            )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 12) {
-                Button(LumiPluginLocalization.string("Got It", bundle: .module), action: onDismiss)
-                    .buttonStyle(.bordered)
-
-                Button(LumiPluginLocalization.string("Open in Xcode", bundle: .module)) {
-                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "")
-                }
-                .buttonStyle(.borderless)
-            }
-        }
-        .padding()
-        .background(Color(.windowBackgroundColor))
-        .cornerRadius(8)
-    }
-}
-
 #Preview {
-    VStack {
-        XcodeProjectStatusBar()
-            .padding()
-
-        Divider()
-
-        XcodeFileNotInTargetWarning(fileName: "MyFile.swift") { }
-            .padding()
-    }
+    XcodeProjectStatusBar()
+        .padding()
 }

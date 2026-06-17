@@ -8,6 +8,17 @@ struct AppStoreVersion: Identifiable, Equatable, Decodable {
     let appVersionState: String
     let createdDate: Date?
 
+    /// Human-readable platform label
+    var platformLabel: String {
+        switch platform.normalizedASCPlatform {
+        case "MAC_OS": return "macOS"
+        case "IOS": return "iOS"
+        case "TV_OS": return "tvOS"
+        case "VISION_OS": return "visionOS"
+        default: return platform
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case attributes

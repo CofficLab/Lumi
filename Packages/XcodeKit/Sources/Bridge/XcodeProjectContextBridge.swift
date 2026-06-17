@@ -22,6 +22,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     /// 项目根路径
     private var currentProjectPath: String?
+    /// 当前打开的项目根路径（供 UI 校验缓存是否仍对应当前项目）
+    public var activeProjectPath: String? { currentProjectPath }
     private var currentWorkspaceURL: URL?
     private var cachedWorkspaceFolders: [[String: String]]?
 
@@ -30,6 +32,11 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     /// 正在初始化中，防止并发 projectOpened 重复执行
     private var isInitializingInProgress = false
+
+    /// 初始化进行中又收到新的 `projectOpened` 时，记录最新路径并在当前轮次结束后继续打开
+    private var pendingProjectOpenPath: String?
+
+    private let filesystemWatcher = ProjectFilesystemWatcher()
 
     /// updateCache 防抖 Task（合并短时间内的多次 Combine 回调为一次通知广播）
     private var cacheDebounceTask: Task<Void, Never>?
@@ -89,6 +96,16 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .store(in: &cancellables)
         provider.$buildContextStatus
             .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                if case .available = status {
+                    self?.updateCacheNow()
+                } else {
+                    self?.updateCache()
+                }
+            }
+            .store(in: &cancellables)
+        provider.$resolutionProgress
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateCache()
             }
@@ -97,6 +114,20 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateCache()
+            }
+            .store(in: &cancellables)
+        provider.$semanticIndexStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                if case .ready = status {
+                    self?.updateCacheNow()
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                } else if case .failed = status {
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                    self?.updateCache()
+                } else {
+                    self?.updateCache()
+                }
             }
             .store(in: &cancellables)
         if Self.verbose {
@@ -108,16 +139,52 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     // MARK: - 项目打开
 
     public func projectOpened(at path: String) async {
-        if currentProjectPath == path, isInitialized {
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) projectOpened path=\(path, privacy: .public) currentProjectPath=\(self.currentProjectPath ?? "nil", privacy: .public) activeProjectPath=\(self.activeProjectPath ?? "nil", privacy: .public)"
+            )
+        }
+        if currentProjectPath == path, isInitialized, !isInitializingInProgress {
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t) projectOpened short-circuit (same project) cachedActiveScheme=\(self.cachedActiveScheme ?? "nil", privacy: .public) activeScheme=\(self.activeScheme ?? "nil", privacy: .public)"
+                )
+            }
             updateCacheNow()
             return
         }
-        // 防止多个并发的 Task 同时进入初始化流程
-        guard !isInitializingInProgress else { return }
+
+        if isInitializingInProgress {
+            pendingProjectOpenPath = path
+            return
+        }
+
+        var pathToOpen: String? = path
+        while let nextPath = pathToOpen {
+            pendingProjectOpenPath = nil
+            await openProjectInternal(at: nextPath)
+            pathToOpen = pendingProjectOpenPath
+        }
+    }
+
+    private func openProjectInternal(at path: String) async {
+        guard !isInitializingInProgress else {
+            pendingProjectOpenPath = path
+            return
+        }
         isInitializingInProgress = true
         defer { isInitializingInProgress = false }
 
+        if let currentProjectPath, currentProjectPath != path {
+            projectClosed()
+        }
+
         currentProjectPath = path
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) openProjectInternal set currentProjectPath=\(path, privacy: .public)"
+            )
+        }
         let provider = _buildContextProvider as? XcodeBuildContextProvider
         let inspection = await XcodeProjectBackgroundQuery.inspectProject(path: path, store: provider?.store)
         self.isXcodeProject = inspection.isXcodeProject
@@ -129,14 +196,40 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         if inspection.isXcodeProject {
+            SemanticIndexPreloadCoordinator.pause()
+            updateCacheNow()
+            guard !shouldAbortOpen(for: path) else { return }
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
+            guard !shouldAbortOpen(for: path) else { return }
+            if let workspaceURL = inspection.workspaceURL {
+                filesystemWatcher.onNeedsResync = { [weak self] in
+                    guard let self else { return }
+                    self.buildContextProvider?.buildContextStatus = .needsResync
+                    self.updateCacheNow()
+                }
+                filesystemWatcher.watch(workspaceURL: workspaceURL)
+            }
+        } else {
+            filesystemWatcher.stop()
         }
 
         isInitialized = true
         updateCacheNow()
     }
 
+    private func shouldAbortOpen(for path: String) -> Bool {
+        if currentProjectPath != path { return true }
+        guard let pending = pendingProjectOpenPath else { return false }
+        return pending != path
+    }
+
     public func projectClosed() {
+        filesystemWatcher.stop()
+        if let workspacePath = currentWorkspaceURL?.path,
+           let provider = _buildContextProvider as? XcodeBuildContextProvider {
+            provider.store.unpublishBSPManifestFromLSPWorkspaceRoot(forWorkspace: workspacePath)
+        }
+
         currentProjectPath = nil
         currentWorkspaceURL = nil
         cachedWorkspaceFolders = nil
@@ -149,6 +242,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
         cachedState = nil
         latestEditorSnapshot = nil
+        updateCacheNow()
         if Self.verbose {
                     Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
         }
@@ -192,6 +286,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         cacheDebounceTask?.cancel()
         cacheDebounceTask = nil
 
+        let providerActiveScheme = buildContextProvider?.currentWorkspace?.activeScheme?.name
+        let providerWorkspaceName = buildContextProvider?.currentWorkspace?.name
+        let providerWorkspacePath = buildContextProvider?.currentWorkspace?.path.path
         let schemes = buildContextProvider?.currentWorkspace?.schemes.map(\.name) ?? []
         let configurations = buildContextProvider?.currentWorkspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? []
         let state = BridgeCachedState(
@@ -210,7 +307,16 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             projectPath: currentProjectPath
         )
         cachedState = state
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) updateCacheNow projectPath=\(self.currentProjectPath ?? "nil", privacy: .public) activeProjectPath=\(self.activeProjectPath ?? "nil", privacy: .public) activeScheme=\(self.activeScheme ?? "nil", privacy: .public) cachedActiveScheme=\(self.cachedActiveScheme ?? "nil", privacy: .public) provider.activeScheme=\(providerActiveScheme ?? "nil", privacy: .public) provider.workspace=\(providerWorkspaceName ?? "nil", privacy: .public) provider.workspacePath=\(providerWorkspacePath ?? "nil", privacy: .public)"
+            )
+        }
         NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
+        NotificationCenter.default.post(
+            name: Notification.Name("EditorProjectContextDidChange"),
+            object: nil
+        )
         NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
 
@@ -255,18 +361,66 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         return cachedWorkspaceFolders
     }
 
-    public func getBuildServerPath() -> String? { cachedState?.buildServerPath }
+    public func getBuildServerPath() -> String? {
+        buildServerJSONPath ?? cachedState?.buildServerPath
+    }
     public var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "Not Initialized" }
-    public var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
+    public var shouldHaveBuildContext: Bool { isXcodeProject }
 
     public func makeInitializationOptions() -> [String: Any]? {
         guard shouldHaveBuildContext else { return nil }
         var options: [String: Any] = [:]
-        if let buildServerPath = getBuildServerPath() { options["buildServerPath"] = buildServerPath }
+        if let buildServerPath = lspReadyBuildServerPath() { options["buildServerPath"] = buildServerPath }
+        if let buildServerKind = Self.buildServerKind(forBuildServerJSONPath: getBuildServerPath()) {
+            options["buildServerKind"] = buildServerKind
+        }
         if let scheme = cachedActiveScheme { options["scheme"] = scheme }
         if let configuration = cachedState?.activeConfiguration { options["configuration"] = configuration }
         if let destination = activeDestinationQuery { options["destination"] = destination }
         return options.isEmpty ? nil : options
+    }
+
+    /// Returns the `buildServer.json` path **only after** its compile database (`.compile`)
+    /// has been generated.
+    ///
+    /// `xcode-build-server config` writes `buildServer.json` almost instantly, but the actual
+    /// per-file compiler arguments live in the sibling `.compile`, which is produced later by the
+    /// (potentially slow) semantic-index build. If we advertise `buildServerPath` before `.compile`
+    /// exists, sourcekit-lsp binds to an empty build server, falls back to default arguments that
+    /// cannot find local SwiftPM modules (e.g. `LumiCoreKit`), caches those fallback arguments, and
+    /// emits a spurious `No such module` diagnostic.
+    ///
+    /// Because the path value never changes between the `config` step and index completion, the LSP
+    /// refresh path (`refreshOpenDocumentForUpdatedProjectContext`) would never see a change and thus
+    /// never restart sourcekit-lsp, so the stale diagnostic would persist. Gating on `.compile`
+    /// makes the value transition `nil → path` exactly when the index becomes ready, which triggers a
+    /// real sourcekit-lsp restart that reads the complete compile database.
+    private func lspReadyBuildServerPath() -> String? {
+        guard let buildServerPath = getBuildServerPath() else { return nil }
+        guard Self.isCompileDatabaseReady(forBuildServerJSONPath: buildServerPath) else { return nil }
+        return buildServerPath
+    }
+
+    /// Whether the `.compile` compile database sitting next to a `buildServer.json` exists.
+    ///
+    /// This matches the readiness criterion used by `LSPService.isBuildContextReadyForDiagnostics`,
+    /// keeping "build server advertised to sourcekit-lsp" and "module diagnostics un-suppressed"
+    /// in lockstep.
+    nonisolated static func isCompileDatabaseReady(forBuildServerJSONPath buildServerJSONPath: String) -> Bool {
+        let compileDatabasePath = (buildServerJSONPath as NSString)
+            .deletingLastPathComponent
+            .appending("/.compile")
+        return FileManager.default.fileExists(atPath: compileDatabasePath)
+    }
+
+    nonisolated static func buildServerKind(forBuildServerJSONPath buildServerJSONPath: String?) -> String? {
+        guard let buildServerJSONPath,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: buildServerJSONPath)),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        let kind = (json["kind"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return kind.isEmpty ? nil : kind
     }
 
     public func makeEditorContextSnapshot(currentFileURL: URL? = nil) -> XcodeEditorContextSnapshot? {

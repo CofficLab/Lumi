@@ -322,8 +322,9 @@ public final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability
                             SwiftPluginLog.logger.info("\(self.t)inspectCurrentFileContext 完成，reasons: \(report.reasons.count)")
             }
         }
+        let localizedReport = XcodeProjectStatusPresentation.localizedSemanticReport(report)
         return EditorSemanticAvailabilityReport(
-            reasons: report.reasons.map { reason in
+            reasons: localizedReport.reasons.map { reason in
                 EditorSemanticAvailabilityReason(
                     id: reason.id,
                     severity: mapSeverity(reason.severity),

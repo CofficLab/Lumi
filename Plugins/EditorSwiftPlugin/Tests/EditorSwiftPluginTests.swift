@@ -36,7 +36,7 @@ import Testing
     let items = EditorSwiftPlugin.titleToolbarItems(context: visibleContext)
     #expect(items.count == 1)
     #expect(items[0].id == "EditorSwift.xcode-scheme")
-    #expect(items[0].placement == .center)
+    #expect(items[0].placement == .leading)
 }
 
 @MainActor

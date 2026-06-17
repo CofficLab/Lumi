@@ -30,6 +30,16 @@ struct VersionStatusBanner: View {
                     .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "versionStatusBanner",
+            entityID: version.id,
+            title: version.versionString,
+            sourceView: "VersionDetail.StatusBanner",
+            fields: [
+                "appStoreState": version.appStoreState,
+                "platform": version.platform
+            ]
+        )
         .padding(.horizontal)
         .padding(.top, 12)
     }

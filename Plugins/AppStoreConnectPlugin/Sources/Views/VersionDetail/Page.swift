@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct DistributionPage: View {
-    @ObservedObject var viewModel: AppStoreConnectViewModel
+    @ObservedObject var viewModel: ConnectViewModel
     @Binding var importingScreenshots: Bool
 
     var body: some View {
@@ -66,6 +66,16 @@ struct DistributionPage: View {
                 Spacer()
             }
             .padding(.horizontal)
+            .appStoreConnectAddToChatMenu(
+                entityType: "localization",
+                entityID: viewModel.selectedLocalizationID ?? "none",
+                title: viewModel.selectedLocalization?.locale ?? "None",
+                sourceView: "DistributionPage.localePicker",
+                fields: [
+                    "availableCount": String(viewModel.localizations.count),
+                    "selectedLocale": viewModel.selectedLocalization?.locale ?? "-"
+                ]
+            )
         }
     }
 }

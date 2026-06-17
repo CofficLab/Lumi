@@ -12,8 +12,11 @@ public struct ShellTool: LumiAgentTool {
     private static let highRiskCommands: Set<String> = [
         "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"
     ]
+    private let commandTimeout: TimeInterval
 
-    public init() {}
+    public init(commandTimeout: TimeInterval = 120) {
+        self.commandTimeout = commandTimeout
+    }
 
     public var inputSchema: LumiJSONValue {
         .object([
@@ -58,6 +61,7 @@ public struct ShellTool: LumiAgentTool {
 
         let options = ShellOptions(
             workingDirectory: context.currentProjectPath,
+            timeout: commandTimeout,
             throwsOnError: false
         )
         let result = try await ShellExecutor.execute(

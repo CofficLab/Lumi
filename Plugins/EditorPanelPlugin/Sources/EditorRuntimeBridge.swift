@@ -1,4 +1,4 @@
-import EditorBottomTerminalPlugin
+import EditorTerminalPlugin
 import EditorPreviewPlugin
 import EditorService
 import EditorStickySymbolBarPlugin
