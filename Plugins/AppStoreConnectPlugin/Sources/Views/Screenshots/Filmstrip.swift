@@ -62,6 +62,7 @@ struct ScreenshotFilmstrip: View {
 private struct FilmstripRemoteCard: View {
     let screenshot: AppScreenshot
     let layout: FilmstripLayout
+    @State private var isHovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -73,15 +74,6 @@ private struct FilmstripRemoteCard: View {
                         .stroke(Color.secondary.opacity(0.2))
                 )
 
-            Text(screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName)
-                .font(.caption2)
-                .lineLimit(1)
-                .frame(width: layout.cardWidth, alignment: .leading)
-
-            Label(AppStoreConnectLocalization.string("On App Store Connect"), systemImage: "icloud")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
         }
         .appStoreConnectAddToChatMenu(
             entityType: "screenshot",
@@ -93,6 +85,14 @@ private struct FilmstripRemoteCard: View {
                 "previewURL": screenshot.previewURL?.absoluteString ?? "-"
             ]
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.accentColor.opacity(isHovering ? 0.28 : 0), lineWidth: 1)
+                .animation(.easeInOut(duration: 0.12), value: isHovering)
+        }
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 
     @ViewBuilder
@@ -144,11 +144,6 @@ private struct FilmstripPendingCard: View {
                 AppIconButton(systemImage: "xmark", tint: .secondary, action: onRemove)
                     .padding(4)
             }
-
-            Text(screenshot.fileName)
-                .font(.caption2)
-                .lineLimit(1)
-                .frame(width: layout.cardWidth, alignment: .leading)
 
             Text(pendingStatusLabel)
                 .font(.caption2)

@@ -75,7 +75,6 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     let title: String
     let sourceView: String
     let fields: [String: String]
-    @State private var isHovering = false
     @State private var currentProjectPath = ""
     @State private var isLumiProjectCached = false
     @State private var downloadErrorMessage: String?
@@ -83,19 +82,6 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isHovering ? Color.accentColor.opacity(0.08) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(isHovering ? Color.accentColor.opacity(0.45) : .clear, lineWidth: 1)
-            )
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.12)) {
-                    isHovering = hovering
-                }
-            }
             .onAppear {
                 if let provider = AppStoreConnectAddToChat.currentProjectPathProvider {
                     currentProjectPath = provider()
