@@ -7,16 +7,6 @@ struct AppChrome: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 16) {
-                if let app = viewModel.selectedApp {
-                    IconView(url: app.iconURL, size: 28)
-                    Text(app.name)
-                        .font(.headline)
-                        .lineLimit(1)
-                } else {
-                    Text(AppStoreConnectLocalization.string("App Store"))
-                        .font(.headline)
-                }
-
                 if viewModel.selectedApp != nil {
                     Picker("", selection: Binding(
                         get: { viewModel.page == .xcodeCloud ? ConnectViewModel.Page.xcodeCloud : .distribution },
