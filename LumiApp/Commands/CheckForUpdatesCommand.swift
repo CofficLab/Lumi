@@ -14,7 +14,7 @@ private struct CheckForUpdatesMenuItem: View {
     @StateObject private var viewModel = CheckForUpdatesViewModel()
 
     var body: some View {
-        Button("检查更新...") {
+        Button(String(localized: "Check for Updates...")) {
             UpdateController.shared.checkForUpdates()
         }
         .disabled(!viewModel.canCheckForUpdates)
