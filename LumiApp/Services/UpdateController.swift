@@ -1,9 +1,13 @@
 import AppKit
-import OSLog
+import SuperLogKit
+import os
 import Sparkle
 
 @MainActor
-final class UpdateController: NSObject, SPUUpdaterDelegate {
+final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
+    nonisolated static let emoji = "⬆️"
+
     static let shared = UpdateController()
 
     private lazy var updaterController: SPUStandardUpdaterController = {
@@ -14,7 +18,7 @@ final class UpdateController: NSObject, SPUUpdaterDelegate {
         )
         // 同步设置正确的 feed URL，避免使用 Info.plist 中的默认值
         controller.updater.setFeedURL(primaryFeedURL)
-        os_log(.info, "[UpdateController] Initial feed URL: %{public}@", primaryFeedURL.absoluteString)
+        Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
         // 启动 updater
         controller.startUpdater()
         return controller
@@ -79,7 +83,7 @@ final class UpdateController: NSObject, SPUUpdaterDelegate {
         // setFeedURL 必须在主线程调用
         await MainActor.run {
             updaterController.updater.setFeedURL(url)
-            os_log(.info, "[UpdateController] Feed URL set to: %{public}@", url.absoluteString)
+            Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
         }
     }
 
@@ -87,12 +91,12 @@ final class UpdateController: NSObject, SPUUpdaterDelegate {
     private func detectFeedURL() async -> URL {
         // 先尝试主 URL（自有服务器）
         if await isURLReachable(primaryFeedURL) {
-            os_log(.info, "[UpdateController] Primary feed reachable")
+            Self.logger.info("\(self.t)Primary feed reachable")
             return primaryFeedURL
         }
 
         // fallback 到 GitHub
-        os_log(.info, "[UpdateController] Primary unreachable, using GitHub fallback")
+        Self.logger.info("\(self.t)Primary unreachable, using GitHub fallback")
         return fallbackFeedURL
     }
 
