@@ -4,8 +4,11 @@ import SwiftUI
 @MainActor
 enum AppStoreConnectAddToChat {
     private static let notificationName = Notification.Name("addToChat")
+    fileprivate static let projectPathDidChangeNotification = Notification.Name("lumi.currentProjectPathDidChange")
+    fileprivate static let projectPathUserInfoKey = "path"
     private static var lastPostedAtByKey: [String: Date] = [:]
     private static let dedupeInterval: TimeInterval = 1.5
+    static var currentProjectPathProvider: (@MainActor () -> String)?
 
     enum PostMode: String {
         case reference
@@ -73,6 +76,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     let sourceView: String
     let fields: [String: String]
     @State private var isHovering = false
+    @State private var currentProjectPath = ""
 
     func body(content: Content) -> some View {
         content
@@ -88,6 +92,16 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.12)) {
                     isHovering = hovering
+                }
+            }
+            .onAppear {
+                if let provider = AppStoreConnectAddToChat.currentProjectPathProvider {
+                    currentProjectPath = provider()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AppStoreConnectAddToChat.projectPathDidChangeNotification)) { notification in
+                if let path = notification.userInfo?[AppStoreConnectAddToChat.projectPathUserInfoKey] as? String {
+                    currentProjectPath = path
                 }
             }
             .contextMenu {
@@ -111,28 +125,38 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                         mode: .analyze
                     )
                 }
-                Divider()
-                Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
-                    AppStoreConnectAddToChat.post(
-                        entityType: entityType,
-                        entityID: entityID,
-                        title: title,
-                        sourceView: sourceView,
-                        fields: fields,
-                        mode: .devReference
-                    )
-                }
-                Button(AppStoreConnectLocalization.string("添加开发上下文并分析")) {
-                    AppStoreConnectAddToChat.post(
-                        entityType: entityType,
-                        entityID: entityID,
-                        title: title,
-                        sourceView: sourceView,
-                        fields: fields,
-                        mode: .devAnalyze
-                    )
+                if isLumiProject {
+                    Divider()
+                    Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
+                        AppStoreConnectAddToChat.post(
+                            entityType: entityType,
+                            entityID: entityID,
+                            title: title,
+                            sourceView: sourceView,
+                            fields: fields,
+                            mode: .devReference
+                        )
+                    }
+                    Button(AppStoreConnectLocalization.string("添加开发上下文并分析")) {
+                        AppStoreConnectAddToChat.post(
+                            entityType: entityType,
+                            entityID: entityID,
+                            title: title,
+                            sourceView: sourceView,
+                            fields: fields,
+                            mode: .devAnalyze
+                        )
+                    }
                 }
             }
+    }
+
+    private var isLumiProject: Bool {
+        let trimmed = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let url = URL(fileURLWithPath: trimmed)
+        let markerURL = url.appendingPathComponent(".lumi-project", isDirectory: false)
+        return FileManager.default.fileExists(atPath: markerURL.path)
     }
 }
 

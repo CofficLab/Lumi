@@ -54,7 +54,10 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
+        AppStoreConnectAddToChat.currentProjectPathProvider = {
+            context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+        }
+        return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,

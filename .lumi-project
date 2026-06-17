@@ -1,0 +1,11 @@
+Lumi core project marker
+
+This file marks the repository as the canonical Lumi application project.
+
+Agent features and development-only UI (such as \"Add Dev Context to Chat\") can use
+the presence of this file to detect that they are running inside Lumi itself,
+instead of a user project that merely embeds Lumi components.
+
+Do not reference machine-specific paths or secrets here. The file is intentionally
+simple and text-only so that it is safe to commit and easy to check for in tools.
+
