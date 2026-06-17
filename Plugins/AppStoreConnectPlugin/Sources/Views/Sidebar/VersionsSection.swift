@@ -61,6 +61,11 @@ struct VersionsSection: View {
                 .frame(maxHeight: .infinity)
             }
         }
+        .task {
+            if viewModel.sidebarVersions.isEmpty, viewModel.selectedApp != nil {
+                await viewModel.loadVersions()
+            }
+        }
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
