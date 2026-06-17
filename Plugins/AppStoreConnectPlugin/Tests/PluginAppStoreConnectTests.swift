@@ -672,6 +672,70 @@ struct PluginAppStoreConnectTests {
         #expect(sidebar[1].id == "prepare")
     }
 
+    @MainActor
+    @Test
+    func availableScreenshotDisplayTypesUseSelectedVersionPlatformDefaults() {
+        let viewModel = ConnectViewModel()
+        viewModel.selectedApp = AppStoreApp(
+            id: "app-1",
+            name: "Test",
+            bundleID: "com.example.test",
+            sku: "test",
+            primaryLocale: "en-US",
+            platform: "IOS"
+        )
+        viewModel.selectedVersion = AppStoreVersion(
+            id: "version-1",
+            platform: "MAC_OS",
+            versionString: "1.0.0",
+            appStoreState: "PREPARE_FOR_SUBMISSION",
+            appVersionState: "PREPARE_FOR_SUBMISSION",
+            createdDate: nil
+        )
+
+        let types = viewModel.availableScreenshotDisplayTypes
+
+        #expect(types.contains("APP_DESKTOP"))
+        #expect(types.contains("APP_IPHONE_67") == false)
+    }
+
+    @MainActor
+    @Test
+    func availableScreenshotDisplayTypesUseTvOSDefaults() {
+        let viewModel = ConnectViewModel()
+        viewModel.selectedVersion = AppStoreVersion(
+            id: "version-tv",
+            platform: "TV_OS",
+            versionString: "1.0.0",
+            appStoreState: "PREPARE_FOR_SUBMISSION",
+            appVersionState: "PREPARE_FOR_SUBMISSION",
+            createdDate: nil
+        )
+
+        let types = viewModel.availableScreenshotDisplayTypes
+
+        #expect(types.contains("APP_APPLE_TV"))
+        #expect(types.contains("APP_IPHONE_67") == false)
+    }
+
+    @MainActor
+    @Test
+    func availableScreenshotDisplayTypesUseVisionOSWithoutIOSFallback() {
+        let viewModel = ConnectViewModel()
+        viewModel.selectedVersion = AppStoreVersion(
+            id: "version-vision",
+            platform: "VISION_OS",
+            versionString: "1.0.0",
+            appStoreState: "PREPARE_FOR_SUBMISSION",
+            appVersionState: "PREPARE_FOR_SUBMISSION",
+            createdDate: nil
+        )
+
+        let types = viewModel.availableScreenshotDisplayTypes
+
+        #expect(types.contains("APP_IPHONE_67") == false)
+    }
+
     private static func validCredentials() -> AppStoreConnectCredentials {
         AppStoreConnectCredentials(
             issuerID: UUID().uuidString,

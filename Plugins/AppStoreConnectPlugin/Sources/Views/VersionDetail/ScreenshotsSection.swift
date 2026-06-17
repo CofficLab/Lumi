@@ -161,6 +161,7 @@ enum ScreenshotDisplayFormatting {
         case "APP_IPAD_PRO_3GEN_129": return "12.9\" iPad"
         case "APP_IPAD_PRO_3GEN_11": return "11\" iPad"
         case "APP_DESKTOP": return "Mac"
+        case "APP_APPLE_TV": return "Apple TV"
         default: return type
         }
     }

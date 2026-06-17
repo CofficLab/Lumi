@@ -70,19 +70,39 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     @Published var ciSourceBranchOrTag = ""
     @Published var ciWorkflowExportJSON = ""
 
-    let screenshotDisplayTypes = [
+    private static let screenshotDisplayTypesByPlatform: [String: [String]] = [
+        "IOS": [
+            "APP_IPHONE_67",
+            "APP_IPHONE_65",
+            "APP_IPHONE_61",
+            "APP_IPHONE_58",
+            "APP_IPAD_PRO_3GEN_129",
+            "APP_IPAD_PRO_3GEN_11"
+        ],
+        "MAC_OS": [
+            "APP_DESKTOP"
+        ],
+        "TV_OS": [
+            "APP_APPLE_TV"
+        ],
+        // App Store Connect currently has no stable visionOS-specific default type here.
+        // Keep it empty to avoid incorrectly showing iOS tabs; existing remote sets still appear.
+        "VISION_OS": []
+    ]
+
+    private static let fallbackScreenshotDisplayTypes = [
         "APP_IPHONE_67",
         "APP_IPHONE_65",
         "APP_IPHONE_61",
         "APP_IPHONE_58",
         "APP_IPAD_PRO_3GEN_129",
-        "APP_IPAD_PRO_3GEN_11",
-        "APP_DESKTOP"
+        "APP_IPAD_PRO_3GEN_11"
     ]
 
     var availableScreenshotDisplayTypes: [String] {
         let loaded = screenshotSets.map(\.screenshotDisplayType)
-        let merged = loaded + screenshotDisplayTypes
+        let defaults = defaultScreenshotDisplayTypesForSelectedPlatform()
+        let merged = loaded + defaults
         var seen = Set<String>()
         return merged.filter { seen.insert($0).inserted }
     }
@@ -395,6 +415,14 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     private func alignSelectedScreenshotDisplayType() {
         guard selectedScreenshotSet == nil, let first = screenshotSets.first else { return }
         selectedScreenshotDisplayType = first.screenshotDisplayType
+    }
+
+    private func defaultScreenshotDisplayTypesForSelectedPlatform() -> [String] {
+        let platform = (selectedVersion?.platform ?? selectedApp?.platform ?? "IOS").uppercased()
+        if let types = Self.screenshotDisplayTypesByPlatform[platform] {
+            return types
+        }
+        return Self.fallbackScreenshotDisplayTypes
     }
 
     func addScreenshotFiles(_ urls: [URL]) {
