@@ -404,15 +404,24 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     }
 
     public func warmSemanticIndex(workspaceURL: URL) {
-        scheduleSemanticIndexing(workspaceURL: workspaceURL)
+        scheduleSemanticIndexing(workspaceURL: workspaceURL, priority: .preload)
     }
 
-    private func scheduleSemanticIndexing(workspaceURL: URL) {
+    private func scheduleSemanticIndexing(
+        workspaceURL: URL,
+        priority: SemanticIndexJobPriority = .activeWorkspace
+    ) {
+        if priority == .preload, SemanticIndexJobController.shared.hasActiveWorkspaceJob {
+            return
+        }
         semanticIndexTask?.cancel()
         semanticIndexTask = Task { [weak self] in
             guard let self else { return }
-            let (_, generation) = SemanticIndexJobController.shared.beginJob()
-            let result = await SemanticIndexJobController.shared.run(generation: generation) {
+            let (_, generation) = SemanticIndexJobController.shared.beginJob(priority: priority)
+            let result = await SemanticIndexJobController.shared.run(
+                generation: generation,
+                priority: priority
+            ) {
                 await self.executeSemanticIndexing(workspaceURL: workspaceURL)
             }
             if result.wasCancelled { return }
@@ -420,6 +429,10 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 self.semanticIndexStatus = .failed(failureReason)
             }
         }
+    }
+
+    private func scheduleSemanticIndexing(workspaceURL: URL) {
+        scheduleSemanticIndexing(workspaceURL: workspaceURL, priority: .activeWorkspace)
     }
 
     private func executeSemanticIndexing(workspaceURL: URL) async -> SemanticIndexJobResult {
@@ -454,7 +467,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             store.clearInterruptedIndexingFlag(forWorkspace: workspaceURL.path)
         }
 
-        if XcodeSemanticIndexRunner.isCompileDatabaseValid(
+        if await CompileDatabaseValidator.isValidForOpen(
             manifest: manifest,
             compileDatabaseURL: compileURL,
             scheme: scheme,
@@ -515,14 +528,14 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         guard !Task.isCancelled else { return SemanticIndexJobResult(wasCancelled: true) }
 
-        guard SemanticIndexResourceManager.acquireXcodebuildSlot() else {
+        guard SemanticIndexResourceManager.acquireXcodebuildSlot(priority: .activeWorkspace) else {
             return SemanticIndexJobResult(failureReason: "Another semantic index build is already running")
         }
         defer { SemanticIndexResourceManager.releaseXcodebuildSlot() }
 
         let startedAt = Date()
         SemanticIndexResourceManager.markWorkspaceAccessed(workspaceURL.path)
-        _ = SemanticIndexResourceManager.enforceDiskQuota(in: store.pluginDirectoryURL)
+        _ = await SemanticIndexResourceManager.enforceDiskQuotaAsync(in: store.pluginDirectoryURL)
 
         let rebuildStrategy = SemanticIndexRebuildPolicy.strategy(
             manifest: manifest,
@@ -560,7 +573,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         } else {
             _ = store.publishCompileDatabaseForBSP(forWorkspace: workspaceURL.path)
         }
-        _ = store.finalizeManifestAfterIndexing(
+        _ = await store.finalizeManifestAfterIndexing(
             forWorkspace: workspaceURL.path,
             scheme: scheme,
             configuration: configuration,
@@ -570,7 +583,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             compileDatabaseURL: compileURL
         )
         clearResolutionProgress()
-        let entryCount = IndexManifest.makeCompileDatabaseInfo(at: compileURL, scheme: scheme)?.entryCount ?? 0
+        let entryCount = (await CompileDatabaseValidator.makeCompileDatabaseInfo(at: compileURL, scheme: scheme))?.entryCount ?? 0
         SemanticIndexMetrics.recordIndexCompleted(
             workspacePath: workspaceURL.path,
             duration: Date().timeIntervalSince(startedAt),

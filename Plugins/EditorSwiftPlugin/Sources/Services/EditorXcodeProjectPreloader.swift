@@ -23,8 +23,14 @@ enum EditorXcodeProjectPreloader {
     public static func preloadProject(
         _ project: Project,
         store: XcodeBuildServerStore,
-        provider: XcodeBuildContextProvider?
+        activeProjectPath: String?
     ) async -> Bool {
+        guard SemanticIndexPreloadCoordinator.shouldContinuePreloading(
+            activeProjectPath: activeProjectPath,
+            projectPath: project.path
+        ) else {
+            return false
+        }
         if SwiftPluginLog.verbose {
             SwiftPluginLog.logger.info("\(logPrefix)开始预加载项目：\(project.name)，path=\(project.path)")
         }
@@ -55,7 +61,7 @@ enum EditorXcodeProjectPreloader {
         let configuration = "Debug"
         let destination = XcodeBuildContextProvider.defaultDestination().destinationQuery
 
-        if IndexManifestValidation.isCompileDatabaseValid(
+        if await IndexManifestValidation.isCompileDatabaseValidAsync(
             manifest: manifest,
             compileDatabaseURL: compileURL,
             scheme: scheme ?? manifest?.scheme ?? "",
@@ -67,8 +73,7 @@ enum EditorXcodeProjectPreloader {
             return true
         }
 
-        provider?.warmSemanticIndex(workspaceURL: workspaceURL)
-        return true
+        return await SemanticIndexBackgroundIndexer.warmIfNeeded(workspaceURL: workspaceURL, store: store)
     }
 
     private static func generateBuildServer(for workspaceURL: URL, projectName: String, store: XcodeBuildServerStore) async -> Bool {

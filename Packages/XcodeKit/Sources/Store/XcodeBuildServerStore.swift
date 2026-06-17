@@ -180,8 +180,11 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         inputs: IndexManifest.InputFingerprints,
         toolchain: IndexManifest.ToolchainInfo,
         compileDatabaseURL: URL
-    ) -> IndexManifest? {
-        guard let compileInfo = IndexManifest.makeCompileDatabaseInfo(at: compileDatabaseURL, scheme: scheme) else {
+    ) async -> IndexManifest? {
+        guard let compileInfo = await CompileDatabaseValidator.makeCompileDatabaseInfo(
+            at: compileDatabaseURL,
+            scheme: scheme
+        ) else {
             return nil
         }
         let manifest = IndexManifest(

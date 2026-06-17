@@ -120,11 +120,21 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
                 }
                 group.addTask(priority: .background) {
                     let store = EditorSwiftBuildServerStore.makeStore()
-                    let provider = await MainActor.run { XcodeProjectContextBridge.shared.buildContextProvider }
+                    let activePath = await MainActor.run {
+                        XcodeProjectContextBridge.shared.activeProjectPath
+                    }
+                    guard await MainActor.run(body: {
+                        SemanticIndexPreloadCoordinator.shouldContinuePreloading(
+                            activeProjectPath: activePath,
+                            projectPath: project.path
+                        )
+                    }) else {
+                        return (project, false)
+                    }
                     let success = await EditorXcodeProjectPreloader.preloadProject(
                         project,
                         store: store,
-                        provider: provider
+                        activeProjectPath: activePath
                     )
                     return (project, success)
                 }

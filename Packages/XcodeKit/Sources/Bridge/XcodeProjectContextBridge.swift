@@ -121,6 +121,10 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .sink { [weak self] status in
                 if case .ready = status {
                     self?.updateCacheNow()
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                } else if case .failed = status {
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                    self?.updateCache()
                 } else {
                     self?.updateCache()
                 }
@@ -177,6 +181,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         if inspection.isXcodeProject {
+            SemanticIndexPreloadCoordinator.pause()
             updateCacheNow()
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
             if let workspaceURL = inspection.workspaceURL {

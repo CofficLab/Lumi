@@ -109,6 +109,8 @@ public struct XcodeProjectStatusDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .onAppear { viewModel.detailPanelDidAppear() }
+        .onDisappear { viewModel.detailPanelDidDisappear() }
     }
 
     private var buildStatusBadge: some View {

@@ -1,6 +1,15 @@
 import Foundation
 import os
 
+public enum SemanticIndexJobPriority: Int, Sendable, Comparable {
+    case preload = 0
+    case activeWorkspace = 1
+
+    public static func < (lhs: SemanticIndexJobPriority, rhs: SemanticIndexJobPriority) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
 public struct SemanticIndexJobResult: Sendable, Equatable {
     public var failureReason: String?
     public var wasCancelled: Bool
@@ -22,15 +31,24 @@ public final class SemanticIndexJobController {
 
     private var currentJobID: UUID?
     private var currentGeneration: UInt64 = 0
+    private var currentPriority: SemanticIndexJobPriority = .preload
     private var runningTask: Task<SemanticIndexJobResult, Never>?
     private var activeProcess: Process?
 
     private init() {}
 
-    public func beginJob() -> (jobID: UUID, generation: UInt64) {
+    public var hasActiveWorkspaceJob: Bool {
+        runningTask != nil && currentPriority == .activeWorkspace
+    }
+
+    public func beginJob(priority: SemanticIndexJobPriority = .activeWorkspace) -> (jobID: UUID, generation: UInt64) {
+        if priority == .activeWorkspace, runningTask != nil, currentPriority == .preload {
+            cancelCurrentJob()
+        }
         currentGeneration &+= 1
         let jobID = UUID()
         currentJobID = jobID
+        currentPriority = priority
         return (jobID, currentGeneration)
     }
 
@@ -42,10 +60,16 @@ public final class SemanticIndexJobController {
 
     public func run(
         generation: UInt64,
+        priority: SemanticIndexJobPriority = .activeWorkspace,
         operation: @escaping @Sendable () async -> SemanticIndexJobResult
     ) async -> SemanticIndexJobResult {
+        if priority == .activeWorkspace, runningTask != nil, currentPriority == .preload {
+            cancelCurrentJob()
+        }
+
         runningTask?.cancel()
         terminateActiveProcess()
+        currentPriority = priority
 
         let task = Task {
             await withTaskCancellationHandler {

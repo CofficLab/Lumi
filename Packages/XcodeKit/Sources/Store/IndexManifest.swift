@@ -36,11 +36,18 @@ public struct IndexManifest: Codable, Equatable, Sendable {
         public var entryCount: Int
         public var includesSchemeModule: Bool
         public var contentHash: String?
+        public var fileSizeBytes: Int64?
 
-        public init(entryCount: Int, includesSchemeModule: Bool, contentHash: String? = nil) {
+        public init(
+            entryCount: Int,
+            includesSchemeModule: Bool,
+            contentHash: String? = nil,
+            fileSizeBytes: Int64? = nil
+        ) {
             self.entryCount = entryCount
             self.includesSchemeModule = includesSchemeModule
             self.contentHash = contentHash
+            self.fileSizeBytes = fileSizeBytes
         }
     }
 
@@ -118,7 +125,7 @@ public enum IndexManifestValidation {
         case indexingInterrupted
     }
 
-    public static func invalidationReason(
+    public static func invalidationReasonMetadataOnly(
         manifest: IndexManifest?,
         compileDatabaseURL: URL,
         scheme: String,
@@ -147,12 +154,66 @@ public enum IndexManifestValidation {
             if manifest.inputs != inputs { return .inputFingerprintChanged }
             return .toolchainChanged
         }
-        if let issue = XcodeSemanticIndexRunner.validateCompileDatabase(at: compileDatabaseURL, scheme: scheme) {
-            _ = issue
-            return .compileDatabaseInvalid
-        }
         guard manifest.hasValidCompileDatabase else { return .compileDatabaseInvalid }
+        if let expectedSize = manifest.compileDatabase?.fileSizeBytes {
+            let actualSize = (try? compileDatabaseURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? -1
+            if actualSize != expectedSize {
+                return .compileDatabaseInvalid
+            }
+        }
         return nil
+    }
+
+    public static func invalidationReason(
+        manifest: IndexManifest?,
+        compileDatabaseURL: URL,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) -> InvalidationReason? {
+        invalidationReasonMetadataOnly(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        )
+    }
+
+    public static func invalidationReasonAsync(
+        manifest: IndexManifest?,
+        compileDatabaseURL: URL,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) async -> InvalidationReason? {
+        if let metadataReason = invalidationReasonMetadataOnly(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        ) {
+            return metadataReason
+        }
+        let isValid = await CompileDatabaseValidator.isValidForOpen(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        )
+        return isValid ? nil : .compileDatabaseInvalid
     }
 
     public static func isCompileDatabaseValid(
@@ -165,6 +226,26 @@ public enum IndexManifestValidation {
         toolchain: IndexManifest.ToolchainInfo
     ) -> Bool {
         invalidationReason(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        ) == nil
+    }
+
+    public static func isCompileDatabaseValidAsync(
+        manifest: IndexManifest?,
+        compileDatabaseURL: URL,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) async -> Bool {
+        await invalidationReasonAsync(
             manifest: manifest,
             compileDatabaseURL: compileDatabaseURL,
             scheme: scheme,
@@ -201,7 +282,13 @@ extension IndexManifest {
         return CompileDatabaseInfo(
             entryCount: array.count,
             includesSchemeModule: includesSchemeModule,
-            contentHash: compileDatabaseContentHash(at: compileURL)
+            contentHash: compileDatabaseContentHash(at: compileURL),
+            fileSizeBytes: fileSizeBytes(at: compileURL)
         )
+    }
+
+    static func fileSizeBytes(at url: URL) -> Int64? {
+        guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else { return nil }
+        return Int64(size)
     }
 }

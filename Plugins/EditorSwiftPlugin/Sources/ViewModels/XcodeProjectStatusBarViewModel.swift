@@ -34,6 +34,11 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     private var notificationCancellable: AnyCancellable?
     private var semanticRefreshTask: Task<Void, Never>?
     private var semanticLogPollingTask: Task<Void, Never>?
+    private var capabilityRefreshTask: Task<Void, Never>?
+    private var lastBoundProjectPath: String?
+    private var isDetailPanelVisible = false
+    private var unchangedLogPollCount = 0
+    private var lastPolledLogExcerpt: String?
 
     private var provider: XcodeBuildContextProvider?
     private var providerSubscriptionsBound = false
@@ -124,8 +129,33 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
-        refreshSemanticIndexLogIfNeeded()
-        refreshCapabilityLevel()
+        scheduleCapabilityRefresh()
+    }
+
+    public func refreshPreflight(force: Bool = false) {
+        let preflight = XcodeBuildServerPreflightCache.runPreflight(forceRefresh: force)
+        preflightIssues = preflight.issues
+        scheduleCapabilityRefresh()
+    }
+
+    func detailPanelDidAppear() {
+        isDetailPanelVisible = true
+        refreshPreflight(force: true)
+        startSemanticLogPolling()
+    }
+
+    func detailPanelDidDisappear() {
+        isDetailPanelVisible = false
+        stopSemanticLogPolling()
+    }
+
+    private func scheduleCapabilityRefresh() {
+        capabilityRefreshTask?.cancel()
+        capabilityRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+            self?.refreshCapabilityLevel()
+        }
     }
 
     private func refreshCapabilityLevel() {
@@ -134,7 +164,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         let store = bridge.buildContextProvider?.store
         let compileURL = workspacePath.flatMap { store?.compileDatabaseURL(forWorkspace: $0) }
         let manifest = workspacePath.flatMap { store?.loadManifest(forWorkspace: $0) }
-        let preflight = XcodeBuildServerLocator.runPreflight()
+        let preflight = XcodeBuildServerPreflightCache.runPreflight()
         preflightIssues = preflight.issues
         capabilityLevel = SemanticCapabilityLevelResolver.resolve(
             isXcodeProject: bridge.isXcodeProject,
@@ -158,7 +188,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         let package = SemanticIndexDiagnosticsExporter.makePackage(
             workspacePath: workspacePath,
             store: store,
-            preflight: XcodeBuildServerLocator.runPreflight(),
+            preflight: XcodeBuildServerPreflightCache.runPreflight(forceRefresh: true),
             semanticIndexStatus: semanticIndexStatus,
             capabilityLevel: capabilityLevel
         )
@@ -223,6 +253,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 } else {
                     self?.resolutionProgress = nil
                 }
+                self?.scheduleCapabilityRefresh()
             }
             .store(in: &providerCancellables)
 
@@ -231,6 +262,12 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .sink { [weak self] status in
                 self?.semanticIndexStatus = status
                 self?.handleSemanticIndexStatusChange()
+                self?.scheduleCapabilityRefresh()
+                if case .ready = status {
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                } else if case .failed = status {
+                    SemanticIndexPreloadCoordinator.scheduleResume()
+                }
             }
             .store(in: &providerCancellables)
 
@@ -274,6 +311,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 self?.activeScheme = scheme?.name
                 self?.activeConfiguration = scheme?.activeConfiguration
+                self?.scheduleCapabilityRefresh()
             }
             .store(in: &providerCancellables)
 
@@ -318,10 +356,15 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 if SwiftPluginLog.verbose {
                     SwiftPluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
                 }
-                self?.resetProviderBindings()
-                self?.bindProviderSubscriptionsIfNeeded()
-                self?.syncBuildContextFromBridge()
-                self?.scheduleSemanticRefresh()
+                guard let self else { return }
+                let activePath = self.bridge.activeProjectPath
+                if self.lastBoundProjectPath != activePath {
+                    self.resetProviderBindings()
+                    self.lastBoundProjectPath = activePath
+                    self.bindProviderSubscriptionsIfNeeded()
+                }
+                self.syncBuildContextFromBridge()
+                self.scheduleSemanticRefresh()
             }
 
         NotificationCenter.default
@@ -525,19 +568,34 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     private func handleSemanticIndexStatusChange() {
         switch semanticIndexStatus {
         case .indexing:
-            startSemanticLogPolling()
+            if isDetailPanelVisible {
+                startSemanticLogPolling()
+            }
         case .failed, .ready, .notStarted:
             stopSemanticLogPolling()
-            refreshSemanticIndexLogIfNeeded()
+            if isDetailPanelVisible {
+                refreshSemanticIndexLogIfNeeded()
+            } else {
+                semanticIndexLogExcerpt = nil
+            }
         }
     }
 
     private func startSemanticLogPolling() {
+        guard isDetailPanelVisible else { return }
         guard semanticLogPollingTask == nil else { return }
+        unchangedLogPollCount = 0
         semanticLogPollingTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                self?.refreshSemanticIndexLogIfNeeded()
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self, self.isDetailPanelVisible else { break }
+                self.refreshSemanticIndexLogIfNeeded()
+                let interval: UInt64
+                if self.unchangedLogPollCount >= 3 {
+                    interval = 5_000_000_000
+                } else {
+                    interval = 2_000_000_000
+                }
+                try? await Task.sleep(nanoseconds: interval)
             }
         }
     }
@@ -554,9 +612,18 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 semanticIndexLogExcerpt = nil
                 return
             }
-            semanticIndexLogExcerpt = readLogExcerpt(from: logURL)
+            let excerpt = SemanticIndexLogReader.tailExcerpt(at: logURL)
+            if excerpt == lastPolledLogExcerpt {
+                unchangedLogPollCount += 1
+            } else {
+                unchangedLogPollCount = 0
+                lastPolledLogExcerpt = excerpt
+            }
+            semanticIndexLogExcerpt = excerpt
         case .notStarted, .ready:
             semanticIndexLogExcerpt = nil
+            lastPolledLogExcerpt = nil
+            unchangedLogPollCount = 0
         }
     }
 
@@ -576,18 +643,5 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             return nil
         }
         return EditorSwiftStorage.projectStoreDirectory(forWorkspacePath: workspacePath)
-    }
-
-    private func readLogExcerpt(from logURL: URL) -> String? {
-        guard let content = try? String(contentsOf: logURL, encoding: .utf8),
-              !content.isEmpty else {
-            return nil
-        }
-        let lines = content
-            .split(whereSeparator: \.isNewline)
-            .map(String.init)
-            .suffix(40)
-        guard !lines.isEmpty else { return nil }
-        return lines.joined(separator: "\n")
     }
 }

@@ -58,20 +58,15 @@ public enum SemanticCapabilityLevelResolver {
         }
 
         guard let compileDatabaseURL,
-              let scheme,
               FileManager.default.fileExists(atPath: compileDatabaseURL.path) else {
             return .singleFileInference
         }
 
         if let manifest, manifest.hasValidCompileDatabase {
-            if let issue = XcodeSemanticIndexRunner.validateCompileDatabase(at: compileDatabaseURL, scheme: scheme) {
-                _ = issue
-                return .partialIndex
-            }
             return .fullIndex
         }
 
-        if XcodeSemanticIndexRunner.compileDatabaseHasEntries(at: compileDatabaseURL) {
+        if FileManager.default.fileExists(atPath: compileDatabaseURL.path) {
             return .partialIndex
         }
         return .singleFileInference
