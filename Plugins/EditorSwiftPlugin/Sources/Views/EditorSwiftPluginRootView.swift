@@ -1,3 +1,4 @@
+import AppKit
 import LumiCoreKit
 import os
 import SuperLogKit
@@ -16,6 +17,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
+    @StateObject private var windowScope = EditorSwiftWindowScope()
 
     enum PreloadStatus: Sendable {
         case idle
@@ -25,6 +27,13 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     public var body: some View {
         content
+            .environmentObject(windowScope.statusBarViewModel)
+            .background {
+                WindowScopeRegistration(scope: windowScope)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                preloadStatusView
+            }
             .onAppear {
                 if SwiftPluginLog.verbose {
                     if SwiftPluginLog.verbose {
@@ -111,7 +120,12 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
                 }
                 group.addTask(priority: .background) {
                     let store = EditorSwiftBuildServerStore.makeStore()
-                    let success = await EditorXcodeProjectPreloader.preloadProject(project, store: store)
+                    let provider = await MainActor.run { XcodeProjectContextBridge.shared.buildContextProvider }
+                    let success = await EditorXcodeProjectPreloader.preloadProject(
+                        project,
+                        store: store,
+                        provider: provider
+                    )
                     return (project, success)
                 }
                 activeTasks += 1
@@ -142,6 +156,54 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
                     SwiftPluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var preloadStatusView: some View {
+        switch preloadStatus {
+        case .idle:
+            EmptyView()
+        case .loading(let count):
+            Text(LumiPluginLocalization.string("Prewarming \(count) Xcode projects…", bundle: .module))
+                .font(.caption2)
+                .padding(6)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(8)
+        case .completed(let success, let failed):
+            Text(LumiPluginLocalization.string("Prewarm done: \(success) ok, \(failed) failed", bundle: .module))
+                .font(.caption2)
+                .padding(6)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(8)
+        }
+    }
+}
+
+private struct WindowScopeRegistration: NSViewRepresentable {
+    let scope: EditorSwiftWindowScope
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            if let window = view.window {
+                EditorSwiftWindowScopeRegistry.register(scope, forWindowNumber: window.windowNumber)
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let window = nsView.window {
+            EditorSwiftWindowScopeRegistry.register(scope, forWindowNumber: window.windowNumber)
+        }
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
+        if let window = nsView.window {
+            EditorSwiftWindowScopeRegistry.unregister(windowNumber: window.windowNumber)
         }
     }
 }

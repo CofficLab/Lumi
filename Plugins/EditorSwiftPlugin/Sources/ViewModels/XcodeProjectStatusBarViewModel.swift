@@ -13,6 +13,7 @@ import LumiCoreKit
 public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     public static let shared = XcodeProjectStatusBarViewModel()
 
+    private let session: XcodeProjectContextSession
     @Published var isXcodeProject = false
     @Published var activeScheme: String?
     @Published var schemes: [String] = []
@@ -28,6 +29,8 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     @Published var isResyncingBuildContext = false
     @Published var indexingTask: ProgressTask?
     @Published var semanticIndexLogExcerpt: String?
+    @Published private(set) var capabilityLevel: SemanticCapabilityLevel = .syntaxOnly
+    @Published private(set) var preflightIssues: [String] = []
     private var notificationCancellable: AnyCancellable?
     private var semanticRefreshTask: Task<Void, Never>?
     private var semanticLogPollingTask: Task<Void, Never>?
@@ -42,7 +45,8 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         semanticLogPollingTask?.cancel()
     }
 
-    private init() {
+    init(session: XcodeProjectContextSession = XcodeProjectContextSession()) {
+        self.session = session
         if SwiftPluginLog.verbose {
             if SwiftPluginLog.verbose {
                             SwiftPluginLog.logger.info("\(Self.t) 初始化开始（单例）")
@@ -69,8 +73,10 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         }
     }
 
+    private var bridge: XcodeProjectContextBridge { session.bridge }
+
     private func syncBuildContextFromBridge() {
-        let bridge = XcodeProjectContextBridge.shared
+        let bridge = bridge
         if !bridge.isXcodeProject {
             isXcodeProject = false
             resetProviderBindings()
@@ -119,6 +125,50 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
         refreshSemanticIndexLogIfNeeded()
+        refreshCapabilityLevel()
+    }
+
+    private func refreshCapabilityLevel() {
+        let bridge = bridge
+        let workspacePath = bridge.activeProjectPath
+        let store = bridge.buildContextProvider?.store
+        let compileURL = workspacePath.flatMap { store?.compileDatabaseURL(forWorkspace: $0) }
+        let manifest = workspacePath.flatMap { store?.loadManifest(forWorkspace: $0) }
+        let preflight = XcodeBuildServerLocator.runPreflight()
+        preflightIssues = preflight.issues
+        capabilityLevel = SemanticCapabilityLevelResolver.resolve(
+            isXcodeProject: bridge.isXcodeProject,
+            buildServerAvailable: bridge.buildServerJSONPath != nil || preflight.xcodeBuildServerPath != nil,
+            semanticIndexStatus: semanticIndexStatus,
+            manifest: manifest,
+            compileDatabaseURL: compileURL,
+            scheme: activeScheme
+        )
+    }
+
+    public var capabilityLevelDescription: String {
+        XcodeProjectStatusPresentation.localizedCapabilityLevelDescription(capabilityLevel)
+    }
+
+    public func exportDiagnostics() {
+        guard let workspacePath = currentWorkspacePath(),
+              let store = bridge.buildContextProvider?.store else {
+            return
+        }
+        let package = SemanticIndexDiagnosticsExporter.makePackage(
+            workspacePath: workspacePath,
+            store: store,
+            preflight: XcodeBuildServerLocator.runPreflight(),
+            semanticIndexStatus: semanticIndexStatus,
+            capabilityLevel: capabilityLevel
+        )
+        if let url = SemanticIndexDiagnosticsExporter.exportToDownloads(package) {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
+    }
+
+    func resetDisplayedStateForTesting() {
+        clearDisplayedProjectState()
     }
 
     private func clearDisplayedProjectState() {
@@ -144,7 +194,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     }
 
     private func bindProviderSubscriptionsIfNeeded() {
-        let bridge = XcodeProjectContextBridge.shared
+        let bridge = bridge
         guard !providerSubscriptionsBound, let provider = bridge.buildContextProvider else {
             if SwiftPluginLog.verbose, bridge.buildContextProvider == nil {
                 SwiftPluginLog.logger.warning("\(Self.t) buildContextProvider 为空，等待后续绑定")
@@ -340,7 +390,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             }
         }
         Task.detached { [weak self] in
-            await XcodeProjectContextBridge.shared.resyncBuildContext()
+            await self?.session.resyncBuildContext()
             await self?.finishResyncBuildContext()
         }
     }
@@ -372,7 +422,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     }
 
     private func shouldApplyProviderWorkspace(_ workspace: XcodeWorkspaceContext?) -> Bool {
-        let bridge = XcodeProjectContextBridge.shared
+        let bridge = bridge
         guard let activePath = bridge.activeProjectPath else { return workspace == nil }
         guard let workspace else { return true }
         let workspaceRoot = workspace.path.deletingLastPathComponent().standardizedFileURL.path

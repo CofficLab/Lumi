@@ -34,7 +34,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
                 title: LumiPluginLocalization.string("Xcode Scheme", bundle: .module),
                 placement: .leading
             ) {
-                XcodeProjectStatusBar()
+                XcodeProjectStatusBar(viewModel: EditorSwiftWindowScopeRegistry.activeStatusBarViewModel)
             }
         ]
     }

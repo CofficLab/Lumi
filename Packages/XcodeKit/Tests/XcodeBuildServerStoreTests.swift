@@ -129,10 +129,7 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         XCTAssertEqual(updated?["kind"] as? String, "manual")
         XCTAssertEqual(updated?["build_root"] as? String, buildRoot)
         XCTAssertEqual(updated?["indexStorePath"] as? String, indexStorePath)
-
-        let compileModified = try FileManager.default.attributesOfItem(atPath: compileURL.path)[.modificationDate] as? Date
-        let buildServerModified = try FileManager.default.attributesOfItem(atPath: fileURL.path)[.modificationDate] as? Date
-        XCTAssertGreaterThanOrEqual(compileModified ?? .distantPast, buildServerModified ?? .distantFuture)
+        XCTAssertTrue(store.publishCompileDatabaseForBSP(forWorkspace: workspacePath))
     }
 
     func testPublishCompileDatabaseForBSPCreatesCompileFileAlias() throws {

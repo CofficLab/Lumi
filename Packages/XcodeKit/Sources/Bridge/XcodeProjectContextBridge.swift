@@ -36,6 +36,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     /// 初始化进行中又收到新的 `projectOpened` 时，记录最新路径并在当前轮次结束后继续打开
     private var pendingProjectOpenPath: String?
 
+    private let filesystemWatcher = ProjectFilesystemWatcher()
+
     /// updateCache 防抖 Task（合并短时间内的多次 Combine 回调为一次通知广播）
     private var cacheDebounceTask: Task<Void, Never>?
 
@@ -175,11 +177,18 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         if inspection.isXcodeProject {
-            if let provider = _buildContextProvider as? XcodeBuildContextProvider {
-                provider.invalidateAllContexts()
-            }
             updateCacheNow()
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
+            if let workspaceURL = inspection.workspaceURL {
+                filesystemWatcher.onNeedsResync = { [weak self] in
+                    guard let self else { return }
+                    self.buildContextProvider?.buildContextStatus = .needsResync
+                    self.updateCacheNow()
+                }
+                filesystemWatcher.watch(workspaceURL: workspaceURL)
+            }
+        } else {
+            filesystemWatcher.stop()
         }
 
         isInitialized = true
@@ -187,6 +196,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     }
 
     public func projectClosed() {
+        filesystemWatcher.stop()
         if let workspacePath = currentWorkspaceURL?.path,
            let provider = _buildContextProvider as? XcodeBuildContextProvider {
             provider.store.unpublishBSPManifestFromLSPWorkspaceRoot(forWorkspace: workspacePath)

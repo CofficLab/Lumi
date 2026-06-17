@@ -38,6 +38,26 @@ enum XcodeSemanticIndexRunner {
         return compileModified >= buildServerModified
     }
 
+    static func isCompileDatabaseValid(
+        manifest: IndexManifest?,
+        compileDatabaseURL: URL,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) -> Bool {
+        IndexManifestValidation.isCompileDatabaseValid(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        )
+    }
+
     static func syncCompileDatabaseFromDerivedData(_ request: Request) async -> Bool {
         guard isBuildRootUnderDerivedData(request) else {
             return false
@@ -248,7 +268,14 @@ enum XcodeSemanticIndexRunner {
                     return
                 }
 
+                Task { @MainActor in
+                    SemanticIndexJobController.shared.registerProcess(process)
+                }
+
                 process.waitUntilExit()
+                Task { @MainActor in
+                    SemanticIndexJobController.shared.clearProcessRegistration()
+                }
                 continuation.resume(returning: process.terminationStatus == 0)
             }
         }

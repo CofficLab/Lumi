@@ -55,6 +55,9 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         }
 
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
+        if let bundledTool = Bundle.module.url(forResource: "xcode-build-server", withExtension: nil, subdirectory: "Tools") {
+            XcodeBuildServerLocator.bundledToolPath = bundledTool.path
+        }
         EditorSwiftHostEnvironmentConfiguration.apply()
         if SwiftPluginLog.verbose {
             SwiftPluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")

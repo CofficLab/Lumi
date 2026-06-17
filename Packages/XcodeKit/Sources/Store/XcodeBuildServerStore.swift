@@ -15,6 +15,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
 
     private let fileName = "buildServer.json"
     private let corruptFileName = "buildServer.corrupt.json"
+    private let manifestFileName = IndexManifest.fileName
 
     /// 插件专属存储目录（由插件注入，遵循 plugin-storage-rules）
     public let pluginDirectoryURL: URL
@@ -112,6 +113,96 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
     public func compileDatabaseURL(forWorkspace workspacePath: String) -> URL {
         directoryURL(forWorkspace: workspacePath)
             .appendingPathComponent(".compile", isDirectory: false)
+    }
+
+    public func manifestURL(forWorkspace workspacePath: String) -> URL {
+        directoryURL(forWorkspace: workspacePath)
+            .appendingPathComponent(manifestFileName, isDirectory: false)
+    }
+
+    public func loadManifest(forWorkspace workspacePath: String) -> IndexManifest? {
+        let url = manifestURL(forWorkspace: workspacePath)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try? decoder.decode(IndexManifest.self, from: data)
+    }
+
+    @discardableResult
+    public func saveManifest(_ manifest: IndexManifest, forWorkspace workspacePath: String) -> Bool {
+        _ = ensureDirectory(forWorkspace: workspacePath)
+        let url = manifestURL(forWorkspace: workspacePath)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        guard let data = try? encoder.encode(manifest) else { return false }
+        do {
+            try data.write(to: url, options: .atomic)
+            return true
+        } catch {
+            Self.logger.error("Save index manifest failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    public func markIndexingInProgress(
+        forWorkspace workspacePath: String,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) {
+        var manifest = loadManifest(forWorkspace: workspacePath) ?? IndexManifest(
+            workspacePath: workspacePath,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        )
+        manifest.workspacePath = workspacePath
+        manifest.scheme = scheme
+        manifest.configuration = configuration
+        manifest.destination = destination
+        manifest.inputs = inputs
+        manifest.toolchain = toolchain
+        manifest.indexingInProgress = true
+        saveManifest(manifest, forWorkspace: workspacePath)
+    }
+
+    @discardableResult
+    public func finalizeManifestAfterIndexing(
+        forWorkspace workspacePath: String,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo,
+        compileDatabaseURL: URL
+    ) -> IndexManifest? {
+        guard let compileInfo = IndexManifest.makeCompileDatabaseInfo(at: compileDatabaseURL, scheme: scheme) else {
+            return nil
+        }
+        let manifest = IndexManifest(
+            workspacePath: workspacePath,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain,
+            compileDatabase: compileInfo,
+            builtAt: Date(),
+            indexingInProgress: false
+        )
+        saveManifest(manifest, forWorkspace: workspacePath)
+        return manifest
+    }
+
+    public func clearInterruptedIndexingFlag(forWorkspace workspacePath: String) {
+        guard var manifest = loadManifest(forWorkspace: workspacePath) else { return }
+        manifest.indexingInProgress = false
+        saveManifest(manifest, forWorkspace: workspacePath)
     }
 
     /// Filename that `xcode-build-server` reads when `buildServer.json` has `kind: manual`.
@@ -337,7 +428,6 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         if existingKind == "manual",
            existingBuildRoot == normalizedBuildRoot,
            existingIndexStorePath == normalizedIndexStorePath {
-            preserveCompileDatabaseFreshness(forWorkspace: workspacePath)
             _ = publishCompileDatabaseForBSP(forWorkspace: workspacePath)
             return true
         }
@@ -352,31 +442,12 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
 
         do {
             try data.write(to: url, options: .atomic)
-            preserveCompileDatabaseFreshness(forWorkspace: workspacePath)
             _ = publishCompileDatabaseForBSP(forWorkspace: workspacePath)
             return true
         } catch {
             Self.logger.error("Sync parsed compile database settings failed: \(error.localizedDescription)")
             return false
         }
-    }
-
-    /// Keeps `.compile` at least as new as `buildServer.json` after we rewrite the latter.
-    private func preserveCompileDatabaseFreshness(forWorkspace workspacePath: String) {
-        let compileURL = compileDatabaseURL(forWorkspace: workspacePath)
-        let buildServerURL = fileURL(forWorkspace: workspacePath)
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: compileURL.path),
-              fileManager.fileExists(atPath: buildServerURL.path),
-              let buildServerModified = try? buildServerURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-              let compileModified = try? compileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-              compileModified < buildServerModified else {
-            return
-        }
-        try? fileManager.setAttributes(
-            [.modificationDate: buildServerModified.addingTimeInterval(1)],
-            ofItemAtPath: compileURL.path
-        )
     }
 
     // MARK: - Validate

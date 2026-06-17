@@ -9,7 +9,12 @@ public struct XcodeProjectStatusBar: View, SuperLog {
     public nonisolated static let emoji = "🔨"
 
     @LumiTheme private var theme
-    @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
+    @ObservedObject private var viewModel: XcodeProjectStatusBarViewModel
+
+    public init(viewModel: XcodeProjectStatusBarViewModel? = nil) {
+        let resolved = viewModel ?? EditorSwiftWindowScopeRegistry.activeStatusBarViewModel
+        _viewModel = ObservedObject(wrappedValue: resolved)
+    }
 
     public var body: some View {
         Group {

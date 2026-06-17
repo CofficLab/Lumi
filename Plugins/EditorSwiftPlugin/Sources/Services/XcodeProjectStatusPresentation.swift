@@ -74,6 +74,15 @@ enum XcodeProjectStatusPresentation {
         return buildContextStatusDescription
     }
 
+    static func localizedCapabilityLevelDescription(_ level: SemanticCapabilityLevel) -> String {
+        var text = level.displayName
+        let restricted = level.restrictedFeatures
+        if !restricted.isEmpty {
+            text += " — " + restricted.joined(separator: ", ")
+        }
+        return text
+    }
+
     static func resolvingSchemePlaceholder(
         activeScheme: String?,
         resolutionProgress: BuildContextResolutionProgress?
@@ -141,6 +150,8 @@ enum XcodeProjectStatusPresentation {
             return LumiPluginLocalization.string("Selecting scheme...", bundle: .module)
         case .generatingBuildServer:
             return LumiPluginLocalization.string("Generating buildServer.json...", bundle: .module)
+        case .indexingCompileDatabase:
+            return LumiPluginLocalization.string("Building semantic index...", bundle: .module)
         }
     }
 

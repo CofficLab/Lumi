@@ -1,0 +1,3 @@
+#!/bin/sh
+# Bundled fallback: delegates to xcode-build-server on PATH (release builds ship a signed binary here).
+exec xcode-build-server "$@"
