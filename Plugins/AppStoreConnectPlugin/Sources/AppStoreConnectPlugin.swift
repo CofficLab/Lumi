@@ -39,7 +39,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
-                systemImage: iconName
+                systemImage: iconName,
+                chatSection: .narrow
             ) {
                 MainView()
             }
