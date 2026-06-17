@@ -96,32 +96,34 @@ public struct EditorTabHeaderView: View {
     // MARK: - 子视图
 
     private var tabList: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(visibleTabs) { tab in
-                    EditorTabItemView(
-                        service: service,
-                        tab: tab,
-                        theme: theme,
-                        onStartDrag: beginTabDrag,
-                        onDropBefore: dropDraggedTabInActiveStrip
-                    )
-                }
-
-                Color.clear
-                    .frame(width: 24, height: 28)
-                    .contentShape(Rectangle())
-                    .onDrop(of: [.plainText], isTargeted: nil) { _ in
-                        dropDraggedTabInActiveStrip(before: nil)
-                        return true
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .custom(theme.workspaceBackgroundColor()),
+            padding: EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6)
+        ) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(visibleTabs) { tab in
+                        EditorTabItemView(
+                            service: service,
+                            tab: tab,
+                            theme: theme,
+                            onStartDrag: beginTabDrag,
+                            onDropBefore: dropDraggedTabInActiveStrip
+                        )
                     }
+
+                    Color.clear
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                        .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                            dropDraggedTabInActiveStrip(before: nil)
+                            return true
+                        }
+                }
+                // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
         }
-        // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
-        .frame(height: 40)
-        .background(theme.workspaceBackgroundColor())
     }
 
     // MARK: - 操作方法

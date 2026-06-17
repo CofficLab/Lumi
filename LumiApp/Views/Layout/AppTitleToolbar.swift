@@ -17,35 +17,31 @@ struct AppTitleToolbar: View {
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }
 
-        ZStack {
-            WindowDragRegion()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        AppToolbarContainer(height: height, backgroundStyle: .toolbar, padding: .init(top: 0, leading: 0, bottom: 0, trailing: 0)) {
+            ZStack {
+                WindowDragRegion()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            HStack(spacing: 8) {
-                Color.clear
-                    .frame(width: trafficLightReserveWidth, height: height)
-                    .accessibilityHidden(true)
+                HStack(spacing: 8) {
+                    Color.clear
+                        .frame(width: trafficLightReserveWidth, height: height)
+                        .accessibilityHidden(true)
 
-                toolbarGroup(leadingItems)
+                    toolbarGroup(leadingItems)
 
-                Spacer(minLength: 12)
+                    Spacer(minLength: 12)
 
-                toolbarGroup(trailingItems)
+                    toolbarGroup(trailingItems)
+                }
+                .padding(.trailing, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                toolbarGroup(centerItems)
+                    .frame(maxWidth: 420)
+                    .padding(.horizontal, trafficLightReserveWidth + 12)
             }
-            .padding(.trailing, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            toolbarGroup(centerItems)
-                .frame(maxWidth: 420)
-                .padding(.horizontal, trafficLightReserveWidth + 12)
         }
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
         .foregroundStyle(theme.textPrimary)
-        .appSurface(style: .toolbar, cornerRadius: 0)
-        .overlay(alignment: .bottom) {
-            AppDivider()
-        }
     }
 
     private func toolbarGroup(_ items: [LumiTitleToolbarItem]) -> some View {
