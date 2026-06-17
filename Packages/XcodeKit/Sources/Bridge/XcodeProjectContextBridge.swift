@@ -157,6 +157,11 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     }
 
     public func projectClosed() {
+        if let workspacePath = currentWorkspaceURL?.path,
+           let provider = _buildContextProvider as? XcodeBuildContextProvider {
+            provider.store.unpublishBSPManifestFromLSPWorkspaceRoot(forWorkspace: workspacePath)
+        }
+
         currentProjectPath = nil
         currentWorkspaceURL = nil
         cachedWorkspaceFolders = nil
@@ -289,6 +294,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         guard shouldHaveBuildContext else { return nil }
         var options: [String: Any] = [:]
         if let buildServerPath = lspReadyBuildServerPath() { options["buildServerPath"] = buildServerPath }
+        if let buildServerKind = Self.buildServerKind(forBuildServerJSONPath: getBuildServerPath()) {
+            options["buildServerKind"] = buildServerKind
+        }
         if let scheme = cachedActiveScheme { options["scheme"] = scheme }
         if let configuration = cachedState?.activeConfiguration { options["configuration"] = configuration }
         if let destination = activeDestinationQuery { options["destination"] = destination }
@@ -326,6 +334,16 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             .deletingLastPathComponent
             .appending("/.compile")
         return FileManager.default.fileExists(atPath: compileDatabasePath)
+    }
+
+    nonisolated static func buildServerKind(forBuildServerJSONPath buildServerJSONPath: String?) -> String? {
+        guard let buildServerJSONPath,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: buildServerJSONPath)),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        let kind = (json["kind"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return kind.isEmpty ? nil : kind
     }
 
     public func makeEditorContextSnapshot(currentFileURL: URL? = nil) -> XcodeEditorContextSnapshot? {

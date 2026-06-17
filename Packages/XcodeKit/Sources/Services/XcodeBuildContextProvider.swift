@@ -399,6 +399,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             buildServerJSONURL: buildServerURL
         ) {
             semanticIndexStatus = .ready
+            _ = store.publishCompileDatabaseForBSP(forWorkspace: workspaceURL.path)
             return
         }
 
@@ -433,7 +434,16 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             semanticIndexStatus = .failed(failureReason)
         } else {
             if let buildRoot = XcodeSemanticIndexRunner.discoverBuildRoot(in: derivedDataDirectory) {
-                _ = store.updateBuildRoot(forWorkspace: workspaceURL.path, buildRoot: buildRoot)
+                let indexStorePath = XcodeBuildServerStore
+                    .defaultIndexStorePath(forDerivedDataDirectory: derivedDataDirectory)
+                    .path
+                _ = store.syncParsedCompileDatabaseSettings(
+                    forWorkspace: workspaceURL.path,
+                    buildRoot: buildRoot,
+                    indexStorePath: indexStorePath
+                )
+            } else {
+                _ = store.publishCompileDatabaseForBSP(forWorkspace: workspaceURL.path)
             }
             semanticIndexStatus = .ready
         }

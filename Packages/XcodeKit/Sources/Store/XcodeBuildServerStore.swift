@@ -114,6 +114,120 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             .appendingPathComponent(".compile", isDirectory: false)
     }
 
+    /// Filename that `xcode-build-server` reads when `buildServer.json` has `kind: manual`.
+    ///
+    /// `xcode-build-server parse` writes `.compile`, but the BSP server looks for `.compile_file`
+    /// in manual mode. Without this alias the server falls back to single-file inference and reports
+    /// spurious `Cannot find 'Foo' in scope` for same-module symbols.
+    public func bspCompileDatabaseURL(forWorkspace workspacePath: String) -> URL {
+        directoryURL(forWorkspace: workspacePath)
+            .appendingPathComponent(".compile_file", isDirectory: false)
+    }
+
+    /// Creates `.compile_file` → `.compile` so `xcode-build-server` can load the parsed database.
+    @discardableResult
+    public func publishCompileDatabaseForBSP(forWorkspace workspacePath: String) -> Bool {
+        let compileURL = compileDatabaseURL(forWorkspace: workspacePath)
+        let bspURL = bspCompileDatabaseURL(forWorkspace: workspacePath)
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: compileURL.path) else {
+            return false
+        }
+
+        do {
+            if fileManager.fileExists(atPath: bspURL.path) {
+                try fileManager.removeItem(at: bspURL)
+            }
+            try fileManager.createSymbolicLink(atPath: bspURL.path, withDestinationPath: compileURL.path)
+            _ = publishBSPManifestToLSPWorkspaceRoot(forWorkspace: workspacePath)
+            return true
+        } catch {
+            Self.logger.error("Publish BSP compile database alias failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Directory where SourceKit-LSP searches for `buildServer.json` (the LSP workspace root).
+    ///
+    /// SourceKit-LSP only reads `<workspaceRoot>/buildServer.json` (or `.bsp/`). It does not honor
+    /// custom `buildServerPath` initialization options, so we symlink our plugin-store manifest
+    /// into the project root that sourcekit-lsp uses as `projectRoot`.
+    public func lspWorkspaceRootURL(forWorkspace workspacePath: String) -> URL? {
+        Self.lspWorkspaceRootURL(forBuildServerJSONAt: fileURL(forWorkspace: workspacePath).path)
+    }
+
+    public static func lspWorkspaceRootURL(forBuildServerJSONAt buildServerJSONPath: String) -> URL? {
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: buildServerJSONPath)),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let workspace = (json["workspace"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !workspace.isEmpty else {
+            return nil
+        }
+        return resolveLSPWorkspaceRoot(fromWorkspacePath: workspace)
+    }
+
+    private static func resolveLSPWorkspaceRoot(fromWorkspacePath workspace: String) -> URL? {
+        let workspaceURL = URL(fileURLWithPath: workspace)
+        if workspaceURL.lastPathComponent == "project.xcworkspace",
+           workspaceURL.deletingLastPathComponent().pathExtension == "xcodeproj" {
+            return workspaceURL.deletingLastPathComponent().deletingLastPathComponent()
+        }
+        switch workspaceURL.pathExtension {
+        case "xcworkspace", "xcodeproj":
+            return workspaceURL.deletingLastPathComponent()
+        default:
+            return workspaceURL.deletingLastPathComponent()
+        }
+    }
+
+    /// Symlinks `buildServer.json` and `.compile_file` into the LSP workspace root for SourceKit-LSP.
+    @discardableResult
+    public func publishBSPManifestToLSPWorkspaceRoot(forWorkspace workspacePath: String) -> Bool {
+        guard let lspRoot = lspWorkspaceRootURL(forWorkspace: workspacePath) else {
+            return false
+        }
+
+        let storeDirectory = directoryURL(forWorkspace: workspacePath)
+        let fileManager = FileManager.default
+        let mappings: [(URL, URL)] = [
+            (lspRoot.appendingPathComponent("buildServer.json"), storeDirectory.appendingPathComponent("buildServer.json")),
+            (lspRoot.appendingPathComponent(".compile_file"), bspCompileDatabaseURL(forWorkspace: workspacePath)),
+        ]
+
+        for (linkURL, targetURL) in mappings {
+            guard fileManager.fileExists(atPath: targetURL.path) else {
+                return false
+            }
+
+            do {
+                if fileManager.fileExists(atPath: linkURL.path) {
+                    try fileManager.removeItem(at: linkURL)
+                }
+                try fileManager.createSymbolicLink(atPath: linkURL.path, withDestinationPath: targetURL.path)
+            } catch {
+                Self.logger.error("Publish LSP workspace BSP manifest failed: \(error.localizedDescription)")
+                return false
+            }
+        }
+
+        return true
+    }
+
+    /// Removes LSP workspace-root symlinks created by `publishBSPManifestToLSPWorkspaceRoot`.
+    public func unpublishBSPManifestFromLSPWorkspaceRoot(forWorkspace workspacePath: String) {
+        guard let lspRoot = lspWorkspaceRootURL(forWorkspace: workspacePath) else { return }
+        let fileManager = FileManager.default
+        for name in ["buildServer.json", ".compile_file"] {
+            let linkURL = lspRoot.appendingPathComponent(name)
+            guard fileManager.fileExists(atPath: linkURL.path),
+                  let values = try? linkURL.resourceValues(forKeys: [.isSymbolicLinkKey]),
+                  values.isSymbolicLink == true else {
+                continue
+            }
+            try? fileManager.removeItem(at: linkURL)
+        }
+    }
+
     /// Plugin-local DerivedData root for a workspace (`<hash>/DerivedData/`).
     public func derivedDataDirectory(forWorkspace workspacePath: String) -> URL {
         directoryURL(forWorkspace: workspacePath)
@@ -185,6 +299,84 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             Self.logger.error("Update build_root failed: \(error.localizedDescription)")
             return false
         }
+    }
+
+    /// Default Index Store path produced by `xcodebuild` for a plugin-local DerivedData root.
+    public static func defaultIndexStorePath(forDerivedDataDirectory derivedDataDirectory: URL) -> URL {
+        derivedDataDirectory
+            .appendingPathComponent("Index.noindex", isDirectory: true)
+            .appendingPathComponent("DataStore", isDirectory: true)
+    }
+
+    /// Points `buildServer.json` at the parsed `.compile` database.
+    ///
+    /// `xcode-build-server parse -o <path>` writes `.compile` but leaves `kind: xcode`, so the BSP
+    /// keeps reading (often empty) xcactivitylog data instead of the parsed database. After semantic
+    /// indexing we must switch to `kind: manual` and record `indexStorePath`, matching what the
+    /// tool does when `parse` is run without `-o`.
+    @discardableResult
+    public func syncParsedCompileDatabaseSettings(
+        forWorkspace workspacePath: String,
+        buildRoot: String,
+        indexStorePath: String
+    ) -> Bool {
+        let url = fileURL(forWorkspace: workspacePath)
+        guard FileManager.default.fileExists(atPath: url.path),
+              var json = (try? Data(contentsOf: url)).flatMap({
+                  try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
+              }) else {
+            return false
+        }
+
+        let normalizedBuildRoot = Self.normalizedPath(buildRoot)
+        let normalizedIndexStorePath = Self.normalizedPath(indexStorePath)
+        let existingKind = (json["kind"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let existingBuildRoot = (json["build_root"] as? String).map(Self.normalizedPath)
+        let existingIndexStorePath = (json["indexStorePath"] as? String).map(Self.normalizedPath)
+
+        if existingKind == "manual",
+           existingBuildRoot == normalizedBuildRoot,
+           existingIndexStorePath == normalizedIndexStorePath {
+            preserveCompileDatabaseFreshness(forWorkspace: workspacePath)
+            _ = publishCompileDatabaseForBSP(forWorkspace: workspacePath)
+            return true
+        }
+
+        json["kind"] = "manual"
+        json["build_root"] = buildRoot
+        json["indexStorePath"] = indexStorePath
+
+        guard let data = try? JSONSerialization.data(withJSONObject: json) else {
+            return false
+        }
+
+        do {
+            try data.write(to: url, options: .atomic)
+            preserveCompileDatabaseFreshness(forWorkspace: workspacePath)
+            _ = publishCompileDatabaseForBSP(forWorkspace: workspacePath)
+            return true
+        } catch {
+            Self.logger.error("Sync parsed compile database settings failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Keeps `.compile` at least as new as `buildServer.json` after we rewrite the latter.
+    private func preserveCompileDatabaseFreshness(forWorkspace workspacePath: String) {
+        let compileURL = compileDatabaseURL(forWorkspace: workspacePath)
+        let buildServerURL = fileURL(forWorkspace: workspacePath)
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: compileURL.path),
+              fileManager.fileExists(atPath: buildServerURL.path),
+              let buildServerModified = try? buildServerURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+              let compileModified = try? compileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+              compileModified < buildServerModified else {
+            return
+        }
+        try? fileManager.setAttributes(
+            [.modificationDate: buildServerModified.addingTimeInterval(1)],
+            ofItemAtPath: compileURL.path
+        )
     }
 
     // MARK: - Validate

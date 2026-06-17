@@ -140,4 +140,20 @@ final class XcodeProjectContextBridgeNotificationTests: XCTestCase {
             "A .compile next to buildServer.json must mark the build server as ready for sourcekit-lsp"
         )
     }
+
+    func testBuildServerKindReadsManualFromJSON() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BridgeBuildServerKind-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let buildServerJSONPath = directory.appendingPathComponent("buildServer.json").path
+        let json: [String: Any] = ["kind": "manual"]
+        try JSONSerialization.data(withJSONObject: json).write(to: URL(fileURLWithPath: buildServerJSONPath))
+
+        XCTAssertEqual(
+            XcodeProjectContextBridge.buildServerKind(forBuildServerJSONPath: buildServerJSONPath),
+            "manual"
+        )
+    }
 }
