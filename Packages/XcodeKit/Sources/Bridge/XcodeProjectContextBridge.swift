@@ -22,6 +22,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     /// 项目根路径
     private var currentProjectPath: String?
+    /// 当前打开的项目根路径（供 UI 校验缓存是否仍对应当前项目）
+    public var activeProjectPath: String? { currentProjectPath }
     private var currentWorkspaceURL: URL?
     private var cachedWorkspaceFolders: [[String: String]]?
 
@@ -30,6 +32,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     /// 正在初始化中，防止并发 projectOpened 重复执行
     private var isInitializingInProgress = false
+
+    /// 初始化进行中又收到新的 `projectOpened` 时，记录最新路径并在当前轮次结束后继续打开
+    private var pendingProjectOpenPath: String?
 
     /// updateCache 防抖 Task（合并短时间内的多次 Combine 回调为一次通知广播）
     private var cacheDebounceTask: Task<Void, Never>?
@@ -128,14 +133,35 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     // MARK: - 项目打开
 
     public func projectOpened(at path: String) async {
-        if currentProjectPath == path, isInitialized {
+        if currentProjectPath == path, isInitialized, !isInitializingInProgress {
             updateCacheNow()
             return
         }
-        // 防止多个并发的 Task 同时进入初始化流程
-        guard !isInitializingInProgress else { return }
+
+        if isInitializingInProgress {
+            pendingProjectOpenPath = path
+            return
+        }
+
+        var pathToOpen: String? = path
+        while let nextPath = pathToOpen {
+            pendingProjectOpenPath = nil
+            await openProjectInternal(at: nextPath)
+            pathToOpen = pendingProjectOpenPath
+        }
+    }
+
+    private func openProjectInternal(at path: String) async {
+        guard !isInitializingInProgress else {
+            pendingProjectOpenPath = path
+            return
+        }
         isInitializingInProgress = true
         defer { isInitializingInProgress = false }
+
+        if let currentProjectPath, currentProjectPath != path {
+            projectClosed()
+        }
 
         currentProjectPath = path
         let provider = _buildContextProvider as? XcodeBuildContextProvider
@@ -149,6 +175,10 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         if inspection.isXcodeProject {
+            if let provider = _buildContextProvider as? XcodeBuildContextProvider {
+                provider.invalidateAllContexts()
+            }
+            updateCacheNow()
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
         }
 
@@ -174,6 +204,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
         cachedState = nil
         latestEditorSnapshot = nil
+        updateCacheNow()
         if Self.verbose {
                     Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
         }

@@ -33,6 +33,8 @@ public final class EditorService: ObservableObject {
 
     private var activeSessionChangedObserver: ((EditorSession) -> Void)?
     private var nestedChangeCancellables = Set<AnyCancellable>()
+    private var isRefreshingProjectContext = false
+    private var pendingProjectContextRefreshPath: String??
 
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
@@ -89,15 +91,48 @@ public final class EditorService: ObservableObject {
     }
 
     public func refreshProjectContext(for projectPath: String?) async {
+        if isRefreshingProjectContext {
+            pendingProjectContextRefreshPath = projectPath
+            return
+        }
+
+        isRefreshingProjectContext = true
+        defer {
+            isRefreshingProjectContext = false
+            if let pendingPath = pendingProjectContextRefreshPath {
+                pendingProjectContextRefreshPath = nil
+                Task { @MainActor in
+                    await self.refreshProjectContext(for: pendingPath)
+                }
+            }
+        }
+
+        await performProjectContextRefresh(for: projectPath)
+    }
+
+    private func performProjectContextRefresh(for projectPath: String?) async {
         let trimmedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let previousPath = state.projectRootPath?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !trimmedPath.isEmpty else {
+            if let previousPath, !previousPath.isEmpty {
+                editorExtensionRegistry.closeAllProjectContexts()
+            }
             state.projectRootPath = nil
             state.refreshProjectContextSnapshot()
             return
         }
 
+        if let previousPath, !previousPath.isEmpty, previousPath != trimmedPath {
+            editorExtensionRegistry.closeAllProjectContexts()
+        }
+
         state.projectRootPath = trimmedPath
         await state.projectContextCapability?.projectOpened(at: trimmedPath)
+        guard state.projectRootPath?.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedPath else {
+            return
+        }
         state.refreshProjectContextSnapshot()
     }
 

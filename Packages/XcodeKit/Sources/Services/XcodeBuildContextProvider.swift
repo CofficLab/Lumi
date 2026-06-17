@@ -579,6 +579,11 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         clearResolutionProgress()
         semanticIndexStatus = .notStarted
         buildContextStatus = .needsResync
+        currentWorkspace = nil
+        activeScheme = nil
+        activeConfiguration = nil
+        activeDestination = nil
+        buildServerJSONPath = nil
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }
 

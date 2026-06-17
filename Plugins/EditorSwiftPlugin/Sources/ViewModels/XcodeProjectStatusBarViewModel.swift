@@ -35,6 +35,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     private var provider: XcodeBuildContextProvider?
     private var providerSubscriptionsBound = false
     private var cancellables = Set<AnyCancellable>()
+    private var providerCancellables = Set<AnyCancellable>()
 
     deinit {
         semanticRefreshTask?.cancel()
@@ -70,6 +71,28 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     private func syncBuildContextFromBridge() {
         let bridge = XcodeProjectContextBridge.shared
+        if !bridge.isXcodeProject {
+            isXcodeProject = false
+            resetProviderBindings()
+            clearDisplayedProjectState()
+            return
+        }
+
+        guard isBridgeCacheForActiveProject(bridge) else {
+            isXcodeProject = bridge.isXcodeProject
+            schemes = []
+            configurations = []
+            activeScheme = nil
+            activeConfiguration = nil
+            activeDestination = nil
+            buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
+            buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(
+                bridge.buildContextProvider?.buildContextStatus.displayDescription ?? "Not Initialized"
+            )
+            resolutionProgress = bridge.buildContextProvider?.resolutionProgress
+            return
+        }
+
         isXcodeProject = bridge.isXcodeProject
         activeScheme = bridge.activeScheme ?? bridge.cachedActiveScheme
         activeConfiguration = bridge.activeConfiguration
@@ -79,6 +102,12 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         if let cached = bridge.cachedState {
             schemes = cached.schemes
             configurations = cached.configurations
+        } else {
+            schemes = []
+            configurations = []
+            activeScheme = nil
+            activeConfiguration = nil
+            activeDestination = nil
         }
         buildContextStatus = bridge.buildContextProvider?.buildContextStatus ?? .unknown
         resolutionProgress = bridge.buildContextProvider?.resolutionProgress
@@ -90,6 +119,28 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
         refreshSemanticIndexLogIfNeeded()
+    }
+
+    private func clearDisplayedProjectState() {
+        schemes = []
+        configurations = []
+        activeScheme = nil
+        activeConfiguration = nil
+        activeDestination = nil
+        buildContextStatus = .unknown
+        buildContextStatusDescription = LumiPluginLocalization.string("Not Initialized", bundle: .module)
+        resolutionProgress = nil
+        semanticIndexStatus = .notStarted
+        latestEditorSnapshot = nil
+        semanticReport = XcodeSemanticAvailability.Report(reasons: [])
+        semanticIndexLogExcerpt = nil
+        indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+    }
+
+    private func resetProviderBindings() {
+        providerCancellables.removeAll()
+        providerSubscriptionsBound = false
+        provider = nil
     }
 
     private func bindProviderSubscriptionsIfNeeded() {
@@ -123,7 +174,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                     self?.resolutionProgress = nil
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$semanticIndexStatus
             .receive(on: DispatchQueue.main)
@@ -131,30 +182,37 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 self?.semanticIndexStatus = status
                 self?.handleSemanticIndexStatusChange()
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$resolutionProgress
             .receive(on: DispatchQueue.main)
             .sink { [weak self] progress in
                 self?.resolutionProgress = progress
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$currentWorkspace
             .receive(on: DispatchQueue.main)
             .sink { [weak self] workspace in
                 guard let self else { return }
-                let bridge = XcodeProjectContextBridge.shared
+                guard self.shouldApplyProviderWorkspace(workspace) else { return }
                 if SwiftPluginLog.verbose {
                     SwiftPluginLog.logger.info("\(Self.t) workspace 变化: \(workspace?.name ?? "nil")")
                 }
-                self.schemes = workspace?.schemes.map(\.name) ?? bridge.cachedState?.schemes ?? []
-                self.configurations = Array(Set(workspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
-                self.activeScheme = workspace?.activeScheme?.name
-                self.activeConfiguration = workspace?.activeScheme?.activeConfiguration
+                if let workspace {
+                    self.schemes = workspace.schemes.map(\.name)
+                    self.configurations = Array(Set(workspace.projects.flatMap(\.buildConfigurations).map(\.name))).sorted()
+                    self.activeScheme = workspace.activeScheme?.name
+                    self.activeConfiguration = workspace.activeScheme?.activeConfiguration
+                } else {
+                    self.schemes = []
+                    self.configurations = []
+                    self.activeScheme = nil
+                    self.activeConfiguration = nil
+                }
                 self.refreshSemanticIndexLogIfNeeded()
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$activeScheme
             .receive(on: DispatchQueue.main)
@@ -167,7 +225,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 self?.activeScheme = scheme?.name
                 self?.activeConfiguration = scheme?.activeConfiguration
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$activeConfiguration
             .receive(on: DispatchQueue.main)
@@ -179,7 +237,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 self?.activeConfiguration = configuration
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
         provider.$activeDestination
             .receive(on: DispatchQueue.main)
@@ -191,7 +249,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 self?.activeDestination = destination?.name
             }
-            .store(in: &cancellables)
+            .store(in: &providerCancellables)
 
     }
 
@@ -210,6 +268,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 if SwiftPluginLog.verbose {
                     SwiftPluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
                 }
+                self?.resetProviderBindings()
                 self?.bindProviderSubscriptionsIfNeeded()
                 self?.syncBuildContextFromBridge()
                 self?.scheduleSemanticRefresh()
@@ -303,6 +362,24 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         EditorSwiftStorage.clearWorkspaceData(forWorkspacePath: workspacePath)
         semanticIndexLogExcerpt = nil
         resyncBuildContext()
+    }
+
+    private func isBridgeCacheForActiveProject(_ bridge: XcodeProjectContextBridge) -> Bool {
+        guard let activePath = bridge.activeProjectPath else { return false }
+        guard let cachedPath = bridge.cachedState?.projectPath else { return true }
+        return URL(fileURLWithPath: cachedPath).standardizedFileURL.path
+            == URL(fileURLWithPath: activePath).standardizedFileURL.path
+    }
+
+    private func shouldApplyProviderWorkspace(_ workspace: XcodeWorkspaceContext?) -> Bool {
+        let bridge = XcodeProjectContextBridge.shared
+        guard let activePath = bridge.activeProjectPath else { return workspace == nil }
+        guard let workspace else { return true }
+        let workspaceRoot = workspace.path.deletingLastPathComponent().standardizedFileURL.path
+        let activeRoot = URL(fileURLWithPath: activePath).standardizedFileURL.path
+        return workspaceRoot == activeRoot
+            || workspaceRoot.hasPrefix(activeRoot + "/")
+            || activeRoot.hasPrefix(workspaceRoot + "/")
     }
 
     private func scheduleSemanticRefresh() {
