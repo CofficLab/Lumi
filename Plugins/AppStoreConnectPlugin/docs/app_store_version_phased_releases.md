@@ -151,6 +151,7 @@ DELETE /v1/appStoreVersionPhasedReleases/{id}
 ## Related Documentation
 
 - [App Store Versions API](app_store_versions.md)
+- [App Store Version Release Requests API](app_store_version_release_requests.md)
 - [App Store Connect API Reference](api-reference.md)
 
 ## Official Documentation

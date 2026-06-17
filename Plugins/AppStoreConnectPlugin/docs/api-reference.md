@@ -16,6 +16,7 @@
 - [Apps](apps.md) - Manage apps and app metadata
 - [App Store Versions](app_store_versions.md) - Manage App Store version information
 - [App Store Version Submissions](app_store_version_submissions.md) - Submit versions for review
+- [App Store Version Release Requests](app_store_version_release_requests.md) - Manually release approved versions
 - [App Store Version Phased Releases](app_store_version_phased_releases.md) - Manage phased releases
 - [App Store Version Localizations](app_store_version_localizations.md) - Manage version localizations (description, keywords, etc.)
 
