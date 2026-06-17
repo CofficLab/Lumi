@@ -10,6 +10,8 @@ enum AppStoreConnectAddToChat {
     enum PostMode: String {
         case reference
         case analyze
+        case devReference
+        case devAnalyze
     }
 
     static func post(
@@ -46,6 +48,14 @@ enum AppStoreConnectAddToChat {
         if mode == .analyze {
             lines.append("")
             lines.append("Task: Analyze this selected App Store Connect object and suggest the next best actions.")
+        } else if mode == .devReference || mode == .devAnalyze {
+            lines.append("")
+            lines.append("[Development Context]")
+            lines.append("targetArea: \(sourceView)")
+            lines.append("intent: UI/code refinement")
+            if mode == .devAnalyze {
+                lines.append("Task: Locate related SwiftUI code for this UI area and propose an implementation patch.")
+            }
         }
 
         NotificationCenter.default.post(
@@ -62,30 +72,67 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     let title: String
     let sourceView: String
     let fields: [String: String]
+    @State private var isHovering = false
 
     func body(content: Content) -> some View {
-        content.contextMenu {
-            Button(AppStoreConnectLocalization.string("添加到对话")) {
-                AppStoreConnectAddToChat.post(
-                    entityType: entityType,
-                    entityID: entityID,
-                    title: title,
-                    sourceView: sourceView,
-                    fields: fields,
-                    mode: .reference
-                )
+        content
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isHovering ? Color.accentColor.opacity(0.08) : .clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(isHovering ? Color.accentColor.opacity(0.45) : .clear, lineWidth: 1)
+            )
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.12)) {
+                    isHovering = hovering
+                }
             }
-            Button(AppStoreConnectLocalization.string("添加到对话并分析")) {
-                AppStoreConnectAddToChat.post(
-                    entityType: entityType,
-                    entityID: entityID,
-                    title: title,
-                    sourceView: sourceView,
-                    fields: fields,
-                    mode: .analyze
-                )
+            .contextMenu {
+                Button(AppStoreConnectLocalization.string("添加到对话")) {
+                    AppStoreConnectAddToChat.post(
+                        entityType: entityType,
+                        entityID: entityID,
+                        title: title,
+                        sourceView: sourceView,
+                        fields: fields,
+                        mode: .reference
+                    )
+                }
+                Button(AppStoreConnectLocalization.string("添加到对话并分析")) {
+                    AppStoreConnectAddToChat.post(
+                        entityType: entityType,
+                        entityID: entityID,
+                        title: title,
+                        sourceView: sourceView,
+                        fields: fields,
+                        mode: .analyze
+                    )
+                }
+                Divider()
+                Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
+                    AppStoreConnectAddToChat.post(
+                        entityType: entityType,
+                        entityID: entityID,
+                        title: title,
+                        sourceView: sourceView,
+                        fields: fields,
+                        mode: .devReference
+                    )
+                }
+                Button(AppStoreConnectLocalization.string("添加开发上下文并分析")) {
+                    AppStoreConnectAddToChat.post(
+                        entityType: entityType,
+                        entityID: entityID,
+                        title: title,
+                        sourceView: sourceView,
+                        fields: fields,
+                        mode: .devAnalyze
+                    )
+                }
             }
-        }
     }
 }
 
@@ -95,15 +142,20 @@ extension View {
         entityID: String,
         title: String,
         sourceView: String,
-        fields: [String: String] = [:]
+        fields: [String: String] = [:],
+        file: String = #fileID,
+        line: Int = #line
     ) -> some View {
-        modifier(
+        var enrichedFields = fields
+        enrichedFields["dev.fileID"] = file
+        enrichedFields["dev.line"] = String(line)
+        return modifier(
             AppStoreConnectAddToChatModifier(
                 entityType: entityType,
                 entityID: entityID,
                 title: title,
                 sourceView: sourceView,
-                fields: fields
+                fields: enrichedFields
             )
         )
     }
