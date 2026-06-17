@@ -34,11 +34,32 @@ struct XcodeCloudPage: View {
                     Task { await viewModel.loadCiProducts() }
                 }
                 .disabled(!viewModel.credentials.isComplete)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "uiActionButton",
+                    entityID: "xcodeCloud.loadProducts",
+                    title: "Load Products",
+                    sourceView: "XcodeCloudPage.toolbar",
+                    fields: [
+                        "actionID": "loadCiProducts",
+                        "disabled": (!viewModel.credentials.isComplete) ? "true" : "false"
+                    ]
+                )
 
                 AppButton(AppStoreConnectLocalization.string("Build Runs"), systemImage: "arrow.clockwise", size: .small) {
                     Task { await viewModel.loadCiBuildRuns() }
                 }
                 .disabled(viewModel.selectedCiWorkflow == nil)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "uiActionButton",
+                    entityID: "xcodeCloud.refreshBuildRuns",
+                    title: "Build Runs",
+                    sourceView: "XcodeCloudPage.toolbar",
+                    fields: [
+                        "actionID": "loadCiBuildRuns",
+                        "disabled": (viewModel.selectedCiWorkflow == nil) ? "true" : "false",
+                        "workflowID": viewModel.selectedCiWorkflow?.id ?? "-"
+                    ]
+                )
 
                 Spacer()
             }
@@ -131,6 +152,18 @@ struct XcodeCloudPage: View {
                                     Task { await viewModel.toggleSelectedCiWorkflowEnabled() }
                                 }
                                 .disabled(viewModel.selectedCiWorkflow == nil)
+                                .appStoreConnectAddToChatMenu(
+                                    entityType: "uiActionButton",
+                                    entityID: "xcodeCloud.toggleWorkflowEnabled",
+                                    title: workflow.isEnabled ? "Disable Workflow" : "Enable Workflow",
+                                    sourceView: "XcodeCloudPage.workflowDetail",
+                                    fields: [
+                                        "actionID": "toggleSelectedCiWorkflowEnabled",
+                                        "disabled": viewModel.selectedCiWorkflow == nil ? "true" : "false",
+                                        "workflowID": workflow.id,
+                                        "workflowIsEnabled": workflow.isEnabled ? "true" : "false"
+                                    ]
+                                )
 
                                 AppButton(AppStoreConnectLocalization.string("Copy Config"), systemImage: "doc.on.doc", size: .small) {
                                     viewModel.copySelectedCiWorkflowConfiguration()
@@ -163,6 +196,18 @@ struct XcodeCloudPage: View {
                                     Task { await viewModel.startCiBuildRun() }
                                 }
                                 .disabled(!workflow.isEnabled || viewModel.selectedCiWorkflow == nil)
+                                .appStoreConnectAddToChatMenu(
+                                    entityType: "uiActionButton",
+                                    entityID: "xcodeCloud.startBuild",
+                                    title: "Start Build",
+                                    sourceView: "XcodeCloudPage.startBuild",
+                                    fields: [
+                                        "actionID": "startCiBuildRun",
+                                        "disabled": (!workflow.isEnabled || viewModel.selectedCiWorkflow == nil) ? "true" : "false",
+                                        "sourceBranchOrTag": viewModel.ciSourceBranchOrTag,
+                                        "workflowID": workflow.id
+                                    ]
+                                )
                             }
                         }
                     }
@@ -196,6 +241,17 @@ struct XcodeCloudPage: View {
                                 Task { await viewModel.loadCiBuildRuns() }
                             }
                             .disabled(viewModel.selectedCiWorkflow == nil)
+                            .appStoreConnectAddToChatMenu(
+                                entityType: "uiActionButton",
+                                entityID: "xcodeCloud.recentBuildRuns.refresh",
+                                title: "Refresh",
+                                sourceView: "XcodeCloudPage.recentBuildRuns",
+                                fields: [
+                                    "actionID": "loadCiBuildRuns",
+                                    "disabled": (viewModel.selectedCiWorkflow == nil) ? "true" : "false",
+                                    "workflowID": viewModel.selectedCiWorkflow?.id ?? "-"
+                                ]
+                            )
                         }
 
                         if viewModel.ciBuildRuns.isEmpty {

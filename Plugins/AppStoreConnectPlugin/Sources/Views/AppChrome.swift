@@ -42,6 +42,18 @@ struct AppChrome: View {
                         Task { await viewModel.saveMetadata() }
                     }
                     .disabled(!viewModel.metadataIsDirty || viewModel.isBusy)
+                    .appStoreConnectAddToChatMenu(
+                        entityType: "uiActionButton",
+                        entityID: "distribution.saveMetadata",
+                        title: "Save Metadata",
+                        sourceView: "AppChrome",
+                        fields: [
+                            "actionID": "saveMetadata",
+                            "disabled": (!viewModel.metadataIsDirty || viewModel.isBusy) ? "true" : "false",
+                            "isBusy": viewModel.isBusy ? "true" : "false",
+                            "metadataIsDirty": viewModel.metadataIsDirty ? "true" : "false"
+                        ]
+                    )
                 }
             }
             .padding(.horizontal)

@@ -31,11 +31,32 @@ struct ScreenshotsSection: View {
                 importingScreenshots = true
             }
             .disabled(viewModel.selectedLocalizationID == nil)
+            .appStoreConnectAddToChatMenu(
+                entityType: "uiActionButton",
+                entityID: "screenshots.add",
+                title: "Add Screenshots",
+                sourceView: "VersionDetail.ScreenshotsSection",
+                fields: [
+                    "actionID": "addScreenshots",
+                    "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false"
+                ]
+            )
 
             AppButton(AppStoreConnectLocalization.string("Ensure Screenshot Set"), systemImage: "folder.badge.plus", size: .small) {
                 Task { await viewModel.ensureScreenshotSet() }
             }
             .disabled(viewModel.selectedLocalizationID == nil)
+            .appStoreConnectAddToChatMenu(
+                entityType: "uiActionButton",
+                entityID: "screenshots.ensureSet",
+                title: "Ensure Screenshot Set",
+                sourceView: "VersionDetail.ScreenshotsSection",
+                fields: [
+                    "actionID": "ensureScreenshotSet",
+                    "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false",
+                    "selectedDisplayType": viewModel.selectedScreenshotDisplayType
+                ]
+            )
         }
         .padding(.horizontal)
     }
