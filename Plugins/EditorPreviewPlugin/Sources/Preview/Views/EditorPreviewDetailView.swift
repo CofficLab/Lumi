@@ -175,6 +175,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
             Label(LumiPluginLocalization.string("PDF Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        case .xcassets:
+            Label(LumiPluginLocalization.string("Asset Catalog Preview", bundle: .module), systemImage: "folder.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         case let .unsupported(url):
             Label(url?.pathExtension.isEmpty == false ? url!.pathExtension.uppercased() : "File", systemImage: "doc")
                 .font(.caption)
@@ -466,7 +470,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         switch viewModel.previewMode {
         case .swift:
             return viewModel.status == .running && viewModel.currentFrame != nil
-        case .stringCatalog, .unsupported:
+        case .stringCatalog, .unsupported, .xcassets:
             return false
         default:
             return true
@@ -842,6 +846,9 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 )
             case let .pdf(url):
                 EditorPreviewPDFView(fileURL: url)
+                    .environmentObject(themeVM)
+            case let .xcassets(url):
+                EditorPreviewXCAssetsView(xcassetsURL: url)
                     .environmentObject(themeVM)
             case let .unsupported(url):
                 unsupportedPreview(url: url)
