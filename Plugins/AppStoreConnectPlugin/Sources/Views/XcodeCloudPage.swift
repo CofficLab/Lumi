@@ -251,6 +251,17 @@ struct CiWorkflowRow: View {
                 Spacer()
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "ciWorkflow",
+            entityID: workflow.id,
+            title: workflow.name,
+            sourceView: "XcodeCloudPage",
+            fields: [
+                "containerFilePath": workflow.containerFilePath,
+                "isEnabled": workflow.isEnabled ? "true" : "false",
+                "platformType": workflow.platformType
+            ]
+        )
     }
 }
 
@@ -308,6 +319,17 @@ struct CiBuildRunRow: View {
                 CiStatusBadge(text: statusText, color: statusColor)
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "ciBuildRun",
+            entityID: buildRun.id,
+            title: buildRun.number.map { "Build #\($0)" } ?? buildRun.id,
+            sourceView: "XcodeCloudPage",
+            fields: [
+                "completionStatus": buildRun.completionStatus ?? "-",
+                "executionProgress": buildRun.executionProgress,
+                "workflowID": buildRun.workflowID ?? "-"
+            ]
+        )
     }
 
     private var statusText: String {

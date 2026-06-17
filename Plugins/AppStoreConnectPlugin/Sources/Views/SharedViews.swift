@@ -148,6 +148,18 @@ struct AppRow: View {
                     .frame(width: 60, alignment: .trailing)
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "app",
+            entityID: app.id,
+            title: app.name,
+            sourceView: "AppsPage",
+            fields: [
+                "bundleID": app.bundleID,
+                "platform": app.platform,
+                "primaryLocale": app.primaryLocale,
+                "sku": app.sku
+            ]
+        )
     }
 }
 
@@ -175,5 +187,16 @@ struct VersionRow: View {
                     .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "version",
+            entityID: version.id,
+            title: version.versionString,
+            sourceView: "VersionRow",
+            fields: [
+                "appStoreState": version.appStoreState,
+                "appVersionState": version.appVersionState,
+                "platform": version.platform
+            ]
+        )
     }
 }

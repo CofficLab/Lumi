@@ -55,6 +55,16 @@ struct ScreenshotsSection: View {
                             .background(isSelected ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.10), in: Capsule())
                     }
                     .buttonStyle(.plain)
+                    .appStoreConnectAddToChatMenu(
+                        entityType: "screenshotDisplayType",
+                        entityID: type,
+                        title: ScreenshotDisplayFormatting.label(for: type),
+                        sourceView: "ScreenshotsSection.devicePicker",
+                        fields: [
+                            "displayType": type,
+                            "isSelected": isSelected ? "true" : "false"
+                        ]
+                    )
                 }
             }
             .padding(.horizontal)

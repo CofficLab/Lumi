@@ -47,6 +47,16 @@ private struct FilmstripRemoteCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "screenshot",
+            entityID: screenshot.id,
+            title: screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName,
+            sourceView: "ScreenshotFilmstrip",
+            fields: [
+                "fileSize": screenshot.fileSize.map(String.init) ?? "-",
+                "previewURL": screenshot.previewURL?.absoluteString ?? "-"
+            ]
+        )
     }
 
     @ViewBuilder
@@ -107,6 +117,17 @@ private struct FilmstripPendingCard: View {
                 .lineLimit(2)
                 .frame(width: 120, alignment: .leading)
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "pendingScreenshot",
+            entityID: screenshot.id.uuidString,
+            title: screenshot.fileName,
+            sourceView: "ScreenshotFilmstrip",
+            fields: [
+                "displayType": screenshot.displayType,
+                "height": String(screenshot.height),
+                "width": String(screenshot.width)
+            ]
+        )
     }
 
     private var pendingStatusLabel: String {

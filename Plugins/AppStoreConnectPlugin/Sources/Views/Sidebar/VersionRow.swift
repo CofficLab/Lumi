@@ -32,6 +32,16 @@ struct SidebarVersionRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .appStoreConnectAddToChatMenu(
+            entityType: "version",
+            entityID: version.id,
+            title: version.versionString,
+            sourceView: "SidebarVersionRow",
+            fields: [
+                "appStoreState": version.appStoreState,
+                "platform": version.platform
+            ]
+        )
     }
 }
 
