@@ -134,6 +134,31 @@ struct EditorTabRestoreRegressionTests {
         #expect(fixture.service.files.currentFileURL == fixture.primaryFile)
         #expect(fixture.service.files.canPreview)
     }
+
+    @Test func handleProjectPathChangeIgnoresLateRestoreFromPreviousProject() async {
+        let fixture = TabRestoreFixture()
+        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let oldProject = fixture.projectPath
+        let newProject = fixture.rootDirectory.appendingPathComponent("GitOK", isDirectory: true).path
+        try? FileManager.default.createDirectory(atPath: newProject, withIntermediateDirectories: true)
+
+        await fixture.persistTabs(
+            paths: [fixture.primaryFile.path],
+            activePath: fixture.primaryFile.path
+        )
+
+        coordinator.handleProjectPathChange(
+            oldPath: oldProject,
+            newPath: newProject,
+            sessionStore: fixture.sessionStore,
+            openFile: { url in await fixture.trackOpen(url) },
+            openFileSessionOnly: { url in fixture.trackSessionOnly(url) }
+        )
+
+        await yieldUntilRestoreTaskCompletes()
+        #expect(fixture.openedURLs.isEmpty)
+        #expect(fixture.sessionOnlyURLs.isEmpty)
+    }
 }
 
 // MARK: - Fixture
