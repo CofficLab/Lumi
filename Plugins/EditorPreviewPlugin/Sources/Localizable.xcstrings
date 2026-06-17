@@ -137,6 +137,9 @@
         }
       }
     },
+    "(%lld)" : {
+
+    },
     "(%lld%%)" : {
       "localizations" : {
         "en" : {
@@ -3003,6 +3006,40 @@
         }
       }
     },
+    "Please analyze whether this Swift #Preview failure is caused by a Lumi bug or a problem in the current project, and explain how to fix it:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please analyze whether this Swift #Preview failure is caused by a Lumi bug or a problem in the current project, and explain how to fix it:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请分析这次 Swift #Preview 预览失败是 Lumi 的 bug 还是当前项目的问题，并说明如何修复："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
+          }
+        }
+      }
+    },
     "Plist Preview" : {
       "localizations" : {
         "en" : {
@@ -3101,40 +3138,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "預覽動態庫載入失敗"
-          }
-        }
-      }
-    },
-    "Please analyze whether this Swift #Preview failure is caused by a Lumi bug or a problem in the current project, and explain how to fix it:" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please analyze whether this Swift #Preview failure is caused by a Lumi bug or a problem in the current project, and explain how to fix it:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请分析这次 Swift #Preview 预览失败是 Lumi 的 bug 还是当前项目的问题，并说明如何修复："
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請分析這次 Swift #Preview 預覽失敗是 Lumi 的 bug 還是當前專案的問題，並說明如何修復："
           }
         }
       }
