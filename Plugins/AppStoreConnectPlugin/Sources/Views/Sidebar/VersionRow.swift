@@ -52,6 +52,7 @@ private extension AppStoreVersion {
         if state.contains("PREPARE") { return AppStoreConnectLocalization.string("Prepare") }
         if state.contains("REJECT") { return AppStoreConnectLocalization.string("Rejected") }
         if state.contains("REVIEW") { return AppStoreConnectLocalization.string("In Review") }
+        if state.contains("REPLACED") { return AppStoreConnectLocalization.string("Replaced") }
         return appStoreStateLabel
     }
 
