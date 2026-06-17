@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.3.0</title>
-            <pubDate>Tue, 16 Jun 2026 16:20:51 +0000</pubDate>
-            <sparkle:version>227</sparkle:version>
-            <sparkle:shortVersionString>4.3.0</sparkle:shortVersionString>
+            <title>4.4.0</title>
+            <pubDate>Wed, 17 Jun 2026 11:32:53 +0000</pubDate>
+            <sparkle:version>228</sparkle:version>
+            <sparkle:shortVersionString>4.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.3.0</h2>
-<h3>Changes since v4.2.3</h3>
+            <description><![CDATA[<h2>Release v4.4.0</h2>
+<h3>Changes since v4.3.0</h3>
 <ul>
-<li>docs(device-info): add function enhancement proposals based on web research</li>
-<li>feat: enhance LSP diagnostic filtering, suppress false positives for known modules</li>
-<li>feat(app): centralize plugin storage paths in AppConfig</li>
-<li>feat(app): support opening projects from external apps and URL scheme</li>
-<li>feat(editor-swift): add status popover tools and robust semantic index diagnostics</li>
-<li>feat(xcode): show granular build context resolution progress in toolbar</li>
-<li>feat(xcode): track semantic index readiness across editor status</li>
-<li>fix: add debug info to VersionsSection for troubleshooting platform filtering</li>
-<li>fix: clean Localizable.xcstrings — remove 31 stale entries and fix missing translations</li>
-<li>fix: compile error in sidebarVersions logging (removed .unique())</li>
-<li>fix: derive sidebar platform title from version platform instead of app platform</li>
-<li>fix: enhance version display with platform labels and add comprehensive debugging</li>
-<li>fix: fallback to all versions when platform filter returns empty</li>
-<li>fix: show all platform versions in sidebar without deduplication</li>
-<li>fix(device-info): aggregate logical CPU usage by physical cores</li>
-<li>fix(editor-outline-rail): add Chinese translations for Localizable.xcstrings</li>
-<li>fix(editor-source): guard invalid fold ranges during async rebuild</li>
-<li>fix(editor-swift): localize semantic index labels and scope loading indicator</li>
-<li>fix(lsp): refresh SourceKit when build context becomes ready</li>
-<li>fix(lsp): restart SourceKit when buildServerPath becomes available</li>
+<li>feat: add App Store Connect add-to-chat context menus</li>
+<li>feat: add App Store Connect agent toolset</li>
+<li>feat: add AppToolbarContainer and unify toolbar styles</li>
+<li>feat: add dev context menus for App Store Connect actions</li>
+<li>feat: add development-focused add-to-chat menu section</li>
+<li>feat: auto-load versions when VersionsSection appears</li>
+<li>feat: gate dev context menu by Lumi project marker</li>
+<li>feat: harden EditorSwift semantic indexing with manifest cache and job control</li>
+<li>feat: localize check for updates menu item</li>
+<li>feat: reduce semantic index UI main-thread load</li>
+<li>fix: adapt screenshot container aspect ratio based on displayType</li>
+<li>fix: clear stale Xcode toolbar state when switching projects</li>
+<li>fix: enforce read-only metadata and robust screenshot loading</li>
+<li>fix: filter screenshot display tabs by selected platform</li>
+<li>fix: fix missing and untranslated entries in ConversationTitlePlugin Localizable.xcstrings</li>
+<li>fix: gate AppStoreConnect dev menu by selected project path</li>
+<li>fix: hide version detail edit actions for released versions</li>
+<li>fix: prevent stale project UI during project switching</li>
+<li>fix: remove app icon/name header and platform badge in AppStoreConnect sidebar</li>
+<li>fix: replace ProgressView with breathing pulse indicator in ConversationTitleHeaderView</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.3.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.4.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.3.0/Lumi_4.3.0_arm64.dmg" length="46155774" type="application/octet-stream" sparkle:edSignature="RQE5DhzaK5cTds+a8UEZfd8Y9BTUNkRwY01tYb4HIkyjMViDB8Gm1vCNAG0IbuMpoYD4SgnO/PuM5QF2ULObAA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.4.0/Lumi_4.4.0_arm64.dmg" length="45108950" type="application/octet-stream" sparkle:edSignature="L6K+49T3bDlVZhqmLfWcmQKW4AMz3O6W6VXVCUihjKEkZOpfk33Sp1hBr0F4/gxvYcQGblTC3Zb9nRsWVCjVDg=="/>
         </item>
     </channel>
 </rss>
