@@ -28,6 +28,7 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
     /// 当前跟踪的项目路径
     private var trackedProjectPath: String = ""
+    private var restoreToken = UUID()
 
     // MARK: - 订阅
 
@@ -39,6 +40,7 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         openFileSessionOnly: @MainActor @escaping (URL) -> Void
     ) {
         trackedProjectPath = projectPathProvider()
+        restoreToken = UUID()
 
         // 首次启动且 tabs 为空 → 等待项目路径就绪后从磁盘恢复
         if !hasRestored && sessionStore.tabs.isEmpty {
@@ -113,12 +115,15 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         }
 
         trackedProjectPath = newPath
+        restoreToken = UUID()
+        let currentToken = restoreToken
 
         // 恢复新项目的标签页
         guard !newPath.isEmpty else { return }
         Task { @MainActor [weak self] in
             await self?.restoreTabs(
                 forProject: newPath,
+                token: currentToken,
                 openFile: openFile,
                 openFileSessionOnly: openFileSessionOnly
             )
@@ -132,15 +137,18 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     /// 先加载上次活跃标签的内容，再为其余标签创建后台 session（不改变活跃标签）。
     public func restoreTabs(
         forProject projectPath: String,
+        token: UUID? = nil,
         openFile: @MainActor (URL) async -> Void,
         openFileSessionOnly: @MainActor (URL) -> Void
     ) async {
+        if let token, token != restoreToken { return }
         let (persistedTabs, activeTabPath) = store.loadTabs(forProject: projectPath)
 
         // 过滤掉不存在的文件
         let validURLs = persistedTabs.compactMap { tab -> URL? in
             guard let url = tab.fileURL,
-                  FileManager.default.isReadableFile(atPath: url.path) else {
+                  FileManager.default.isReadableFile(atPath: url.path),
+                  Self.isFile(url, inProjectPath: projectPath) else {
                 return nil
             }
             return url
@@ -158,8 +166,10 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         let backgroundURLs = validURLs.filter { $0.path != targetURL.path }
         for url in backgroundURLs {
+            if let token, token != restoreToken { return }
             openFileSessionOnly(url)
         }
+        if let token, token != restoreToken { return }
         await openFile(targetURL)
     }
 
@@ -184,6 +194,7 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
             hasRestored = true
             await restoreTabs(
                 forProject: path,
+                token: restoreToken,
                 openFile: openFile,
                 openFileSessionOnly: openFileSessionOnly
             )
@@ -198,5 +209,11 @@ public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     ) -> String? {
         guard let activeSessionID else { return nil }
         return tabs.first(where: { $0.sessionID == activeSessionID })?.fileURL?.path
+    }
+
+    nonisolated private static func isFile(_ url: URL, inProjectPath projectPath: String) -> Bool {
+        let normalizedProject = URL(fileURLWithPath: projectPath).standardizedFileURL.path
+        let normalizedFile = url.standardizedFileURL.path
+        return normalizedFile == normalizedProject || normalizedFile.hasPrefix(normalizedProject + "/")
     }
 }

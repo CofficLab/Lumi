@@ -35,6 +35,7 @@ public final class EditorService: ObservableObject {
     private var nestedChangeCancellables = Set<AnyCancellable>()
     private var isRefreshingProjectContext = false
     private var pendingProjectContextRefreshPath: String??
+    private var projectContextRefreshToken = UUID()
 
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
@@ -91,6 +92,9 @@ public final class EditorService: ObservableObject {
     }
 
     public func refreshProjectContext(for projectPath: String?) async {
+        projectContextRefreshToken = UUID()
+        let refreshToken = projectContextRefreshToken
+
         if isRefreshingProjectContext {
             pendingProjectContextRefreshPath = projectPath
             return
@@ -107,10 +111,10 @@ public final class EditorService: ObservableObject {
             }
         }
 
-        await performProjectContextRefresh(for: projectPath)
+        await performProjectContextRefresh(for: projectPath, refreshToken: refreshToken)
     }
 
-    private func performProjectContextRefresh(for projectPath: String?) async {
+    private func performProjectContextRefresh(for projectPath: String?, refreshToken: UUID) async {
         let trimmedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let previousPath = state.projectRootPath?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -130,6 +134,7 @@ public final class EditorService: ObservableObject {
 
         state.projectRootPath = trimmedPath
         await state.projectContextCapability?.projectOpened(at: trimmedPath)
+        guard projectContextRefreshToken == refreshToken else { return }
         guard state.projectRootPath?.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedPath else {
             return
         }

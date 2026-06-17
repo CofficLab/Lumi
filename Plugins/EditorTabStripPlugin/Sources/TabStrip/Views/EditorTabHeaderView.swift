@@ -90,7 +90,17 @@ public struct EditorTabHeaderView: View {
     }
 
     private var visibleTabs: [EditorTab] {
-        service.sessions.tabs
+        guard let projectRoot = normalizedProjectRoot else { return [] }
+        return service.sessions.tabs.filter { tab in
+            guard let fileURL = tab.fileURL else { return false }
+            return isFile(fileURL, inside: projectRoot)
+        }
+    }
+
+    private var normalizedProjectRoot: String? {
+        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path).standardizedFileURL.path
     }
 
     // MARK: - 子视图
@@ -148,6 +158,9 @@ public struct EditorTabHeaderView: View {
 
     /// 处理 SetCurrentFileTool 发出的通知，同步到编辑器
     private func handleCurrentFileDidChange(path: String) {
+        guard let projectRoot = normalizedProjectRoot else { return }
+        let targetPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        guard targetPath == projectRoot || targetPath.hasPrefix(projectRoot + "/") else { return }
         // 如果路径与当前文件相同，无需切换
         guard service.files.currentFileURL?.path != path else { return }
 
@@ -161,5 +174,10 @@ public struct EditorTabHeaderView: View {
             await service.refreshProjectContext(for: projectVM.currentProjectPath)
             service.sessions.open(at: url)
         }
+    }
+
+    private func isFile(_ fileURL: URL, inside projectRoot: String) -> Bool {
+        let normalized = fileURL.standardizedFileURL.path
+        return normalized == projectRoot || normalized.hasPrefix(projectRoot + "/")
     }
 }

@@ -36,6 +36,7 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     private var semanticLogPollingTask: Task<Void, Never>?
     private var capabilityRefreshTask: Task<Void, Never>?
     private var lastBoundProjectPath: String?
+    private var storeProjectPath: String?
     private var isDetailPanelVisible = false
     private var unchangedLogPollCount = 0
     private var lastPolledLogExcerpt: String?
@@ -82,6 +83,13 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     private func syncBuildContextFromBridge() {
         let bridge = bridge
+        if SwiftPluginLog.verbose {
+            let providerActiveScheme = bridge.buildContextProvider?.currentWorkspace?.activeScheme?.name
+            let providerWorkspaceName = bridge.buildContextProvider?.currentWorkspace?.name
+            SwiftPluginLog.logger.info(
+                "\(Self.t) syncBuildContextFromBridge enter activeProjectPath=\(bridge.activeProjectPath ?? "nil", privacy: .public) cached.projectPath=\(bridge.cachedState?.projectPath ?? "nil", privacy: .public) bridge.activeScheme=\(bridge.activeScheme ?? "nil", privacy: .public) bridge.cachedActiveScheme=\(bridge.cachedActiveScheme ?? "nil", privacy: .public) provider.activeScheme=\(providerActiveScheme ?? "nil", privacy: .public) provider.workspace=\(providerWorkspaceName ?? "nil", privacy: .public)"
+            )
+        }
         if !bridge.isXcodeProject {
             isXcodeProject = false
             resetProviderBindings()
@@ -89,7 +97,11 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             return
         }
 
-        guard isBridgeCacheForActiveProject(bridge) else {
+        let isCacheForActive = isBridgeCacheForActiveProject(bridge)
+        if SwiftPluginLog.verbose {
+            SwiftPluginLog.logger.info("\(Self.t) syncBuildContextFromBridge isCacheForActive=\(isCacheForActive)")
+        }
+        guard isCacheForActive else {
             isXcodeProject = bridge.isXcodeProject
             schemes = []
             configurations = []
@@ -101,6 +113,16 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 bridge.buildContextProvider?.buildContextStatus.displayDescription ?? "Not Initialized"
             )
             resolutionProgress = bridge.buildContextProvider?.resolutionProgress
+            return
+        }
+
+        guard isBridgeMatchingStoreProject(bridge) else {
+            clearSchemeDisplayState()
+            isXcodeProject = bridge.isXcodeProject
+            buildContextStatus = .resolving
+            buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(
+                XcodeBuildContextProvider.BuildContextStatus.resolving.displayDescription
+            )
             return
         }
 
@@ -349,6 +371,23 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
+        NotificationCenter.default
+            .publisher(for: .lumiCurrentProjectPathDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                let path = notification.userInfo?[LumiCurrentProjectPathUserInfoKey.path] as? String ?? ""
+                self.storeProjectPath = path
+                if path != (self.bridge.activeProjectPath ?? "") {
+                    self.clearSchemeDisplayState()
+                    self.buildContextStatus = .resolving
+                    self.buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(
+                        XcodeBuildContextProvider.BuildContextStatus.resolving.displayDescription
+                    )
+                }
+            }
+            .store(in: &cancellables)
+
         notificationCancellable = NotificationCenter.default
             .publisher(for: .lumiEditorProjectContextDidChange)
             .receive(on: DispatchQueue.main)
@@ -358,6 +397,11 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 }
                 guard let self else { return }
                 let activePath = self.bridge.activeProjectPath
+                if SwiftPluginLog.verbose {
+                    SwiftPluginLog.logger.info(
+                        "\(Self.t) projectContextDidChange activeProjectPath=\(activePath ?? "nil", privacy: .public) lastBoundProjectPath=\(self.lastBoundProjectPath ?? "nil", privacy: .public)"
+                    )
+                }
                 if self.lastBoundProjectPath != activePath {
                     self.resetProviderBindings()
                     self.lastBoundProjectPath = activePath
@@ -457,11 +501,29 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         resyncBuildContext()
     }
 
+    private func clearSchemeDisplayState() {
+        schemes = []
+        configurations = []
+        activeScheme = nil
+        activeConfiguration = nil
+        activeDestination = nil
+    }
+
     private func isBridgeCacheForActiveProject(_ bridge: XcodeProjectContextBridge) -> Bool {
         guard let activePath = bridge.activeProjectPath else { return false }
-        guard let cachedPath = bridge.cachedState?.projectPath else { return true }
+        guard let cachedPath = bridge.cachedState?.projectPath else { return false }
         return URL(fileURLWithPath: cachedPath).standardizedFileURL.path
             == URL(fileURLWithPath: activePath).standardizedFileURL.path
+    }
+
+    private func isBridgeMatchingStoreProject(_ bridge: XcodeProjectContextBridge) -> Bool {
+        guard let storePath = storeProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !storePath.isEmpty else {
+            return true
+        }
+        guard let activePath = bridge.activeProjectPath else { return false }
+        return URL(fileURLWithPath: activePath).standardizedFileURL.path
+            == URL(fileURLWithPath: storePath).standardizedFileURL.path
     }
 
     private func shouldApplyProviderWorkspace(_ workspace: XcodeWorkspaceContext?) -> Bool {

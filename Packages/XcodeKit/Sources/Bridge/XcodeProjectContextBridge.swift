@@ -139,7 +139,17 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     // MARK: - 项目打开
 
     public func projectOpened(at path: String) async {
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) projectOpened path=\(path, privacy: .public) currentProjectPath=\(self.currentProjectPath ?? "nil", privacy: .public) activeProjectPath=\(self.activeProjectPath ?? "nil", privacy: .public)"
+            )
+        }
         if currentProjectPath == path, isInitialized, !isInitializingInProgress {
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t) projectOpened short-circuit (same project) cachedActiveScheme=\(self.cachedActiveScheme ?? "nil", privacy: .public) activeScheme=\(self.activeScheme ?? "nil", privacy: .public)"
+                )
+            }
             updateCacheNow()
             return
         }
@@ -170,6 +180,11 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         currentProjectPath = path
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) openProjectInternal set currentProjectPath=\(path, privacy: .public)"
+            )
+        }
         let provider = _buildContextProvider as? XcodeBuildContextProvider
         let inspection = await XcodeProjectBackgroundQuery.inspectProject(path: path, store: provider?.store)
         self.isXcodeProject = inspection.isXcodeProject
@@ -183,7 +198,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         if inspection.isXcodeProject {
             SemanticIndexPreloadCoordinator.pause()
             updateCacheNow()
+            guard !shouldAbortOpen(for: path) else { return }
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
+            guard !shouldAbortOpen(for: path) else { return }
             if let workspaceURL = inspection.workspaceURL {
                 filesystemWatcher.onNeedsResync = { [weak self] in
                     guard let self else { return }
@@ -198,6 +215,12 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
         isInitialized = true
         updateCacheNow()
+    }
+
+    private func shouldAbortOpen(for path: String) -> Bool {
+        if currentProjectPath != path { return true }
+        guard let pending = pendingProjectOpenPath else { return false }
+        return pending != path
     }
 
     public func projectClosed() {
@@ -263,6 +286,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         cacheDebounceTask?.cancel()
         cacheDebounceTask = nil
 
+        let providerActiveScheme = buildContextProvider?.currentWorkspace?.activeScheme?.name
+        let providerWorkspaceName = buildContextProvider?.currentWorkspace?.name
+        let providerWorkspacePath = buildContextProvider?.currentWorkspace?.path.path
         let schemes = buildContextProvider?.currentWorkspace?.schemes.map(\.name) ?? []
         let configurations = buildContextProvider?.currentWorkspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? []
         let state = BridgeCachedState(
@@ -281,6 +307,11 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
             projectPath: currentProjectPath
         )
         cachedState = state
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t) updateCacheNow projectPath=\(self.currentProjectPath ?? "nil", privacy: .public) activeProjectPath=\(self.activeProjectPath ?? "nil", privacy: .public) activeScheme=\(self.activeScheme ?? "nil", privacy: .public) cachedActiveScheme=\(self.cachedActiveScheme ?? "nil", privacy: .public) provider.activeScheme=\(providerActiveScheme ?? "nil", privacy: .public) provider.workspace=\(providerWorkspaceName ?? "nil", privacy: .public) provider.workspacePath=\(providerWorkspacePath ?? "nil", privacy: .public)"
+            )
+        }
         NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
         NotificationCenter.default.post(
             name: Notification.Name("EditorProjectContextDidChange"),
