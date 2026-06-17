@@ -77,6 +77,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     let fields: [String: String]
     @State private var isHovering = false
     @State private var currentProjectPath = ""
+    @State private var isLumiProjectCached = false
 
     func body(content: Content) -> some View {
         content
@@ -98,10 +99,12 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                 if let provider = AppStoreConnectAddToChat.currentProjectPathProvider {
                     currentProjectPath = provider()
                 }
+                refreshLumiProjectGate()
             }
             .onReceive(NotificationCenter.default.publisher(for: AppStoreConnectAddToChat.projectPathDidChangeNotification)) { notification in
                 if let path = notification.userInfo?[AppStoreConnectAddToChat.projectPathUserInfoKey] as? String {
                     currentProjectPath = path
+                    refreshLumiProjectGate()
                 }
             }
             .contextMenu {
@@ -125,7 +128,13 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                         mode: .analyze
                     )
                 }
-                if isLumiProject {
+                if let urlString = fields["previewURL"], !urlString.isEmpty, urlString != "-", let url = URL(string: urlString) {
+                    Divider()
+                    Button(AppStoreConnectLocalization.string("在浏览器打开图片")) {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                if isLumiProjectCached {
                     Divider()
                     Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
                         AppStoreConnectAddToChat.post(
@@ -151,12 +160,44 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
             }
     }
 
-    private var isLumiProject: Bool {
-        let trimmed = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func refreshLumiProjectGate() {
+        isLumiProjectCached = evaluateLumiProject()
+    }
+
+    private func evaluateLumiProject() -> Bool {
+        let effectiveProjectPath: String = {
+            if !currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return currentProjectPath
+            }
+            // In case this modifier instance hasn't received onAppear yet,
+            // fallback to provider immediately to avoid gating-by-empty-path.
+            return AppStoreConnectAddToChat.currentProjectPathProvider?() ?? ""
+        }()
+        return evaluateLumiProject(from: effectiveProjectPath)
+    }
+
+    private func evaluateLumiProject(from path: String) -> Bool {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
-        let url = URL(fileURLWithPath: trimmed)
-        let markerURL = url.appendingPathComponent(".lumi-project", isDirectory: false)
-        return FileManager.default.fileExists(atPath: markerURL.path)
+        let fileManager = FileManager.default
+        let baseURL = URL(fileURLWithPath: trimmed)
+        var currentURL = baseURL.standardizedFileURL
+
+        // currentProjectPath can point to a nested workspace directory instead of repo root.
+        // Walk up parent directories to find the Lumi marker file.
+        for _ in 0..<12 {
+            let markerURL = currentURL.appendingPathComponent(".lumi-project", isDirectory: false)
+            if fileManager.fileExists(atPath: markerURL.path) {
+                return true
+            }
+
+            let parentURL = currentURL.deletingLastPathComponent()
+            if parentURL.path == currentURL.path {
+                break
+            }
+            currentURL = parentURL
+        }
+        return false
     }
 }
 
