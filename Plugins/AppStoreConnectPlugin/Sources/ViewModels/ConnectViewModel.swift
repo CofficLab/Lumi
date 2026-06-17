@@ -431,6 +431,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func addScreenshotFiles(_ urls: [URL]) {
+        guard !isMetadataReadOnly else { return }
         var newItems: [PendingScreenshot] = []
         for url in urls {
             guard let image = NSImage(contentsOf: url),
@@ -460,11 +461,12 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func removeScreenshot(_ screenshot: PendingScreenshot) {
+        guard !isMetadataReadOnly else { return }
         pendingScreenshots.removeAll { $0.id == screenshot.id }
     }
 
     func ensureScreenshotSet() async {
-        guard let localizationID = selectedLocalizationID else { return }
+        guard let localizationID = selectedLocalizationID, !isMetadataReadOnly else { return }
         await runBusy {
             if screenshotSets.contains(where: { $0.screenshotDisplayType == selectedScreenshotDisplayType }) {
                 return

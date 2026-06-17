@@ -37,7 +37,7 @@ struct AppChrome: View {
                 }
                 .disabled(!viewModel.credentials.isComplete || viewModel.isBusy)
 
-                if viewModel.page == .distribution {
+                if viewModel.page == .distribution, !viewModel.isMetadataReadOnly {
                     AppButton(AppStoreConnectLocalization.string("Save Metadata"), systemImage: "square.and.arrow.down", style: .primary, size: .small) {
                         Task { await viewModel.saveMetadata() }
                     }

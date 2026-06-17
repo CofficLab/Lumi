@@ -5,6 +5,10 @@ struct ScreenshotsSection: View {
     @ObservedObject var viewModel: ConnectViewModel
     @Binding var importingScreenshots: Bool
 
+    private var isReadOnly: Bool {
+        viewModel.isMetadataReadOnly
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader
@@ -27,36 +31,38 @@ struct ScreenshotsSection: View {
 
             Spacer()
 
-            AppButton(AppStoreConnectLocalization.string("Add Screenshots"), systemImage: "plus", size: .small) {
-                importingScreenshots = true
-            }
-            .disabled(viewModel.selectedLocalizationID == nil)
-            .appStoreConnectAddToChatMenu(
-                entityType: "uiActionButton",
-                entityID: "screenshots.add",
-                title: "Add Screenshots",
-                sourceView: "VersionDetail.ScreenshotsSection",
-                fields: [
-                    "actionID": "addScreenshots",
-                    "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false"
-                ]
-            )
+            if !isReadOnly {
+                AppButton(AppStoreConnectLocalization.string("Add Screenshots"), systemImage: "plus", size: .small) {
+                    importingScreenshots = true
+                }
+                .disabled(viewModel.selectedLocalizationID == nil)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "uiActionButton",
+                    entityID: "screenshots.add",
+                    title: "Add Screenshots",
+                    sourceView: "VersionDetail.ScreenshotsSection",
+                    fields: [
+                        "actionID": "addScreenshots",
+                        "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false"
+                    ]
+                )
 
-            AppButton(AppStoreConnectLocalization.string("Ensure Screenshot Set"), systemImage: "folder.badge.plus", size: .small) {
-                Task { await viewModel.ensureScreenshotSet() }
+                AppButton(AppStoreConnectLocalization.string("Ensure Screenshot Set"), systemImage: "folder.badge.plus", size: .small) {
+                    Task { await viewModel.ensureScreenshotSet() }
+                }
+                .disabled(viewModel.selectedLocalizationID == nil)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "uiActionButton",
+                    entityID: "screenshots.ensureSet",
+                    title: "Ensure Screenshot Set",
+                    sourceView: "VersionDetail.ScreenshotsSection",
+                    fields: [
+                        "actionID": "ensureScreenshotSet",
+                        "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false",
+                        "selectedDisplayType": viewModel.selectedScreenshotDisplayType
+                    ]
+                )
             }
-            .disabled(viewModel.selectedLocalizationID == nil)
-            .appStoreConnectAddToChatMenu(
-                entityType: "uiActionButton",
-                entityID: "screenshots.ensureSet",
-                title: "Ensure Screenshot Set",
-                sourceView: "VersionDetail.ScreenshotsSection",
-                fields: [
-                    "actionID": "ensureScreenshotSet",
-                    "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false",
-                    "selectedDisplayType": viewModel.selectedScreenshotDisplayType
-                ]
-            )
         }
         .padding(.horizontal)
     }
@@ -119,18 +125,28 @@ struct ScreenshotsSection: View {
                 action: { Task { await viewModel.loadScreenshotSets(forceRefresh: true) } }
             )
         } else if viewModel.selectedScreenshotSet == nil, !hasScreenshotContent {
-            emptyState(
-                icon: "photo.on.rectangle.angled",
-                title: AppStoreConnectLocalization.string("No Screenshot Set for Display Type"),
-                description: AppStoreConnectLocalization.string("Create a screenshot set for the selected display type, or switch to another device size."),
-                actionTitle: AppStoreConnectLocalization.string("Ensure Screenshot Set"),
-                action: { Task { await viewModel.ensureScreenshotSet() } }
-            )
+            if isReadOnly {
+                emptyState(
+                    icon: "photo.on.rectangle.angled",
+                    title: AppStoreConnectLocalization.string("No Screenshot Set for Display Type"),
+                    description: AppStoreConnectLocalization.string("Switch to another device size.")
+                )
+            } else {
+                emptyState(
+                    icon: "photo.on.rectangle.angled",
+                    title: AppStoreConnectLocalization.string("No Screenshot Set for Display Type"),
+                    description: AppStoreConnectLocalization.string("Create a screenshot set for the selected display type, or switch to another device size."),
+                    actionTitle: AppStoreConnectLocalization.string("Ensure Screenshot Set"),
+                    action: { Task { await viewModel.ensureScreenshotSet() } }
+                )
+            }
         } else if !hasScreenshotContent {
             emptyState(
                 icon: "photo",
                 title: AppStoreConnectLocalization.string("No Screenshots"),
-                description: AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."),
+                description: isReadOnly
+                    ? AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect.")
+                    : AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."),
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
                 action: { Task { await viewModel.reloadScreenshotsForSelectedDisplayType(forceRefresh: true) } }
             )
@@ -143,7 +159,7 @@ struct ScreenshotsSection: View {
 
                 ScreenshotFilmstrip(
                     screenshots: viewModel.screenshots,
-                    pendingScreenshots: viewModel.pendingScreenshots,
+                    pendingScreenshots: isReadOnly ? [] : viewModel.pendingScreenshots,
                     displayType: viewModel.selectedScreenshotDisplayType,
                     onRemovePending: { viewModel.removeScreenshot($0) }
                 )
