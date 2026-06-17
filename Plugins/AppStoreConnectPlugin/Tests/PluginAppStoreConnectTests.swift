@@ -736,6 +736,32 @@ struct PluginAppStoreConnectTests {
         #expect(types.contains("APP_IPHONE_67") == false)
     }
 
+    @MainActor
+    @Test
+    func pluginExposesAgentTools() {
+        let context = LumiPluginContext(
+            activeSectionID: AppStoreConnectPlugin.id,
+            activeSectionTitle: AppStoreConnectPlugin.displayName
+        )
+        let tools = AppStoreConnectPlugin.agentTools(context: context)
+
+        #expect(!tools.isEmpty)
+        let IDs = tools.map { type(of: $0).info.id }
+        #expect(IDs.contains("app-store-connect.list-apps"))
+        #expect(IDs.contains("app-store-connect.list-versions"))
+        #expect(IDs.contains("app-store-connect.list-localizations"))
+        #expect(IDs.contains("app-store-connect.list-screenshot-sets"))
+        #expect(IDs.contains("app-store-connect.list-screenshots"))
+        #expect(IDs.contains("app-store-connect.list-ci-products"))
+        #expect(IDs.contains("app-store-connect.list-ci-workflows"))
+        #expect(IDs.contains("app-store-connect.read-ci-workflow"))
+        #expect(IDs.contains("app-store-connect.list-ci-build-runs"))
+        #expect(IDs.contains("app-store-connect.update-localization"))
+        #expect(IDs.contains("app-store-connect.create-screenshot-set"))
+        #expect(IDs.contains("app-store-connect.start-ci-build-run"))
+        #expect(IDs.contains("app-store-connect.set-ci-workflow-enabled"))
+    }
+
     private static func validCredentials() -> AppStoreConnectCredentials {
         AppStoreConnectCredentials(
             issuerID: UUID().uuidString,
