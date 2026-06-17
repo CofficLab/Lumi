@@ -61,6 +61,7 @@ struct MetadataEditor: View {
             field(AppStoreConnectLocalization.string("Support URL"), limit: 255, text: binding(\.supportURL))
             field(AppStoreConnectLocalization.string("Marketing URL"), limit: 255, text: binding(\.marketingURL))
         }
+        .disabled(viewModel.isMetadataReadOnly)
         .padding(.horizontal)
         .appStoreConnectAddToChatMenu(
             entityType: "metadataEditor",

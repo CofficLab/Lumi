@@ -78,6 +78,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
     @State private var isHovering = false
     @State private var currentProjectPath = ""
     @State private var isLumiProjectCached = false
+    @State private var downloadErrorMessage: String?
 
     func body(content: Content) -> some View {
         content
@@ -133,6 +134,9 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                     Button(AppStoreConnectLocalization.string("在浏览器打开图片")) {
                         NSWorkspace.shared.open(url)
                     }
+                    Button(AppStoreConnectLocalization.string("下载图片到下载目录")) {
+                        Task { await downloadImageToDownloads(from: url) }
+                    }
                 }
                 if isLumiProjectCached {
                     Divider()
@@ -157,6 +161,19 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                         )
                     }
                 }
+            }
+            .alert(
+                AppStoreConnectLocalization.string("Download Failed"),
+                isPresented: Binding(
+                    get: { downloadErrorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented { downloadErrorMessage = nil }
+                    }
+                )
+            ) {
+                Button(AppStoreConnectLocalization.string("OK"), role: .cancel) {}
+            } message: {
+                Text(downloadErrorMessage ?? "")
             }
     }
 
@@ -198,6 +215,42 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
             currentURL = parentURL
         }
         return false
+    }
+
+    private func downloadImageToDownloads(from url: URL) async {
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse,
+               !(200...299).contains(httpResponse.statusCode) {
+                throw URLError(.badServerResponse)
+            }
+            let savedURL = try saveToDownloads(data: data, sourceURL: url)
+            NSWorkspace.shared.activateFileViewerSelecting([savedURL])
+        } catch {
+            downloadErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func saveToDownloads(data: Data, sourceURL: URL) throws -> URL {
+        let fileManager = FileManager.default
+        let downloadsDirectory = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Downloads", isDirectory: true)
+        try fileManager.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true)
+
+        let baseName = sourceURL.deletingPathExtension().lastPathComponent.isEmpty
+            ? "app-store-connect-screenshot"
+            : sourceURL.deletingPathExtension().lastPathComponent
+        let ext = sourceURL.pathExtension.isEmpty ? "png" : sourceURL.pathExtension
+
+        var candidate = downloadsDirectory.appendingPathComponent("\(baseName).\(ext)", isDirectory: false)
+        var index = 1
+        while fileManager.fileExists(atPath: candidate.path) {
+            candidate = downloadsDirectory.appendingPathComponent("\(baseName)-\(index).\(ext)", isDirectory: false)
+            index += 1
+        }
+
+        try data.write(to: candidate, options: .atomic)
+        return candidate
     }
 }
 

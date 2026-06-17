@@ -2,17 +2,9 @@ import Foundation
 
 extension ConnectClient {
     func loadScreenshotSets(localizationID: String) async throws -> ScreenshotSetsPayload {
-        let nested = try await listScreenshotSets(
-            localizationID: localizationID,
-            useRelationshipEndpoint: true
-        )
-        if !nested.sets.isEmpty {
-            return nested
-        }
-        return try await listScreenshotSets(
-            localizationID: localizationID,
-            useRelationshipEndpoint: false
-        )
+        // Some ASC accounts reject GET_COLLECTION on appScreenshotSets.
+        // Use relationships + GET_INSTANCE only to avoid collection permission issues.
+        try await listScreenshotSetsViaRelationshipInstances(localizationID: localizationID)
     }
 
     func listScreenshots(screenshotSetID: String) async throws -> [AppScreenshot] {
@@ -53,36 +45,6 @@ extension ConnectClient {
             body: body
         )
         return response.data
-    }
-
-    private func listScreenshotSets(
-        localizationID: String,
-        useRelationshipEndpoint: Bool
-    ) async throws -> ScreenshotSetsPayload {
-        var query = [
-            URLQueryItem(name: "limit", value: "100"),
-            URLQueryItem(name: "fields[appScreenshotSets]", value: "screenshotDisplayType"),
-            URLQueryItem(name: "include", value: "appScreenshots"),
-            URLQueryItem(name: "fields[appScreenshots]", value: "fileName,fileSize,imageAsset"),
-            URLQueryItem(name: "limit[appScreenshots]", value: "10")
-        ]
-
-        let path: String
-        if useRelationshipEndpoint {
-            path = "/v1/appStoreVersionLocalizations/\(localizationID)/appScreenshotSets"
-        } else {
-            path = "/v1/appScreenshotSets"
-            query.append(URLQueryItem(name: "filter[appStoreVersionLocalization]", value: localizationID))
-        }
-
-        let response: AppStoreConnectListResponseWithIncluded<ScreenshotSet, AppScreenshot> = try await request(
-            path: path,
-            queryItems: query
-        )
-        return makeScreenshotSetsPayload(
-            sets: response.data,
-            includedScreenshots: response.included ?? []
-        )
     }
 
     private func listScreenshots(
@@ -127,4 +89,47 @@ extension ConnectClient {
 
         return ScreenshotSetsPayload(sets: sets, screenshotsBySetID: screenshotsBySetID)
     }
+
+    private func listScreenshotSetsViaRelationshipInstances(localizationID: String) async throws -> ScreenshotSetsPayload {
+        let relationshipResponse: AppStoreConnectRelationshipIdentifiersResponse = try await request(
+            path: "/v1/appStoreVersionLocalizations/\(localizationID)/relationships/appScreenshotSets",
+            queryItems: [
+                URLQueryItem(name: "limit", value: "100")
+            ]
+        )
+        let ids = relationshipResponse.data.map(\.id)
+        guard !ids.isEmpty else {
+            return ScreenshotSetsPayload(sets: [], screenshotsBySetID: [:])
+        }
+
+        var sets: [ScreenshotSet] = []
+        var includedScreenshots: [AppScreenshot] = []
+        for id in ids {
+            let response: AppStoreConnectSingleResponseWithIncluded<ScreenshotSet, AppScreenshot> = try await request(
+                path: "/v1/appScreenshotSets/\(id)",
+                queryItems: [
+                    URLQueryItem(name: "fields[appScreenshotSets]", value: "screenshotDisplayType"),
+                    URLQueryItem(name: "include", value: "appScreenshots"),
+                    URLQueryItem(name: "fields[appScreenshots]", value: "fileName,fileSize,imageAsset"),
+                    URLQueryItem(name: "limit[appScreenshots]", value: "10")
+                ]
+            )
+            sets.append(response.data)
+            includedScreenshots.append(contentsOf: response.included ?? [])
+        }
+
+        return makeScreenshotSetsPayload(
+            sets: sets,
+            includedScreenshots: includedScreenshots
+        )
+    }
+}
+
+private struct AppStoreConnectRelationshipIdentifiersResponse: Decodable {
+    let data: [AppStoreConnectResourceIdentifier]
+}
+
+private struct AppStoreConnectSingleResponseWithIncluded<T: Decodable, Included: Decodable>: Decodable {
+    let data: T
+    let included: [Included]?
 }

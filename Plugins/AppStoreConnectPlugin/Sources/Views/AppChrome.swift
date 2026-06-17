@@ -41,7 +41,7 @@ struct AppChrome: View {
                     AppButton(AppStoreConnectLocalization.string("Save Metadata"), systemImage: "square.and.arrow.down", style: .primary, size: .small) {
                         Task { await viewModel.saveMetadata() }
                     }
-                    .disabled(!viewModel.metadataIsDirty || viewModel.isBusy)
+                    .disabled(!viewModel.metadataIsDirty || viewModel.isBusy || viewModel.isMetadataReadOnly)
                     .appStoreConnectAddToChatMenu(
                         entityType: "uiActionButton",
                         entityID: "distribution.saveMetadata",
@@ -49,7 +49,7 @@ struct AppChrome: View {
                         sourceView: "AppChrome",
                         fields: [
                             "actionID": "saveMetadata",
-                            "disabled": (!viewModel.metadataIsDirty || viewModel.isBusy) ? "true" : "false",
+                            "disabled": (!viewModel.metadataIsDirty || viewModel.isBusy || viewModel.isMetadataReadOnly) ? "true" : "false",
                             "isBusy": viewModel.isBusy ? "true" : "false",
                             "metadataIsDirty": viewModel.metadataIsDirty ? "true" : "false"
                         ]

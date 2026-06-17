@@ -140,6 +140,11 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         screenshotSets.first { $0.screenshotDisplayType == selectedScreenshotDisplayType }
     }
 
+    var isMetadataReadOnly: Bool {
+        guard let selectedVersion else { return true }
+        return selectedVersion.appStoreState.uppercased() == "READY_FOR_SALE"
+    }
+
     var sidebarVersions: [AppStoreVersion] {
         let result = AppStoreVersion.sidebarVersions(from: versions, appPlatform: selectedApp?.platform)
         if Self.verbose {
@@ -352,7 +357,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func saveMetadata() async {
-        guard let editedLocalization else { return }
+        guard let editedLocalization, !isMetadataReadOnly else { return }
         await runBusy {
             let updated = try await client.updateLocalization(editedLocalization)
             if let index = localizations.firstIndex(where: { $0.id == updated.id }) {
