@@ -11,6 +11,8 @@ public struct LumiChatSectionItem: Identifiable {
     public let order: Int
     public let placement: LumiChatSectionPlacement
     public let fillsRemainingHeight: Bool
+    /// When `false`, the stack layout does not render a divider after this section (e.g. toolbar headers that draw their own bottom border).
+    public let showsTrailingDivider: Bool
     public let makeView: @MainActor () -> AnyView
 
     public init<Content: View>(
@@ -18,12 +20,14 @@ public struct LumiChatSectionItem: Identifiable {
         order: Int,
         placement: LumiChatSectionPlacement = .stack,
         fillsRemainingHeight: Bool = false,
+        showsTrailingDivider: Bool = true,
         @ViewBuilder content: @escaping @MainActor () -> Content
     ) {
         self.id = id
         self.order = order
         self.placement = placement
         self.fillsRemainingHeight = fillsRemainingHeight
+        self.showsTrailingDivider = showsTrailingDivider
         self.makeView = { AnyView(content()) }
     }
 }

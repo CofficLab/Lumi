@@ -20,9 +20,8 @@ struct MainView: View {
             Divider()
 
             VStack(spacing: 0) {
-                if viewModel.selectedApp != nil || viewModel.page == .account || viewModel.page == .apps {
-                    AppChrome(viewModel: viewModel)
-                    Divider()
+                if viewModel.page.showsTopBar {
+                    TopBar(viewModel: viewModel)
                 }
 
                 if let error = viewModel.errorMessage, shouldShowGlobalError {

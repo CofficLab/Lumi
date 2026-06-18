@@ -107,7 +107,8 @@ struct VersionsSection: View {
     }
 
     private func isVersionSelected(_ version: AppStoreVersion) -> Bool {
-        guard let selected = viewModel.selectedVersion else { return false }
+        guard viewModel.page == .distribution,
+              let selected = viewModel.selectedVersion else { return false }
         return version.id == selected.id
     }
 }

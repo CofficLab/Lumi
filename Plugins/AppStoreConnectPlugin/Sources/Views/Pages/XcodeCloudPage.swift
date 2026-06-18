@@ -5,7 +5,7 @@ struct XcodeCloudPage: View {
     @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
             PageHeader(
                 title: AppStoreConnectLocalization.string("Xcode Cloud"),
                 subtitle: viewModel.selectedApp.map { AppStoreConnectLocalization.string("Workflows and build runs for %@", $0.name) } ?? AppStoreConnectLocalization.string("Select an app first")
@@ -176,7 +176,7 @@ struct XcodeCloudPage: View {
                                 CiInfoCell(title: AppStoreConnectLocalization.string("Platform"), value: workflow.platformType)
                                 CiInfoCell(title: AppStoreConnectLocalization.string("Clean Build"), value: workflow.clean ? AppStoreConnectLocalization.string("Yes") : AppStoreConnectLocalization.string("No"))
                                 CiInfoCell(title: AppStoreConnectLocalization.string("Container"), value: workflow.containerFilePath.isEmpty ? "-" : workflow.containerFilePath)
-                                CiInfoCell(title: AppStoreConnectLocalization.string("Created"), value: workflow.createdDate.map(ViewFormatting.dateTimeFormatter.string(from:)) ?? "-")
+                                CiInfoCell(title: AppStoreConnectLocalization.string("Created"), value: workflow.createdDate.map(ViewFormatting.formatDateTime) ?? "-")
                             }
                         }
                     }
@@ -423,8 +423,8 @@ struct CiBuildRunRow: View {
     }
 
     private var timeSummary: String {
-        let created = buildRun.createdDate.map(ViewFormatting.dateTimeFormatter.string(from:)) ?? "-"
-        let finished = buildRun.finishedDate.map(ViewFormatting.dateTimeFormatter.string(from:))
+        let created = buildRun.createdDate.map(ViewFormatting.formatDateTime) ?? "-"
+        let finished = buildRun.finishedDate.map(ViewFormatting.formatDateTime)
         if let finished {
             return AppStoreConnectLocalization.string("Created %@ · Finished %@", created, finished)
         }

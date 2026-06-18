@@ -4,10 +4,7 @@ import SwiftUI
 struct ScreenshotsSection: View {
     @ObservedObject var viewModel: ConnectViewModel
     @Binding var importingScreenshots: Bool
-
-    private var isReadOnly: Bool {
-        viewModel.isMetadataReadOnly
-    }
+    var isEditable: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -24,14 +21,16 @@ struct ScreenshotsSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(AppStoreConnectLocalization.string("App Previews and Screenshots"))
                     .font(.title3.weight(.semibold))
-                Text(AppStoreConnectLocalization.string("Manage screenshots for the selected locale and device size"))
+                Text(isEditable
+                    ? AppStoreConnectLocalization.string("Manage screenshots for the selected locale and device size")
+                    : AppStoreConnectLocalization.string("Screenshots for the selected locale and device size"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            if !isReadOnly {
+            if isEditable {
                 AppButton(AppStoreConnectLocalization.string("Add Screenshots"), systemImage: "plus", size: .small) {
                     importingScreenshots = true
                 }
@@ -125,7 +124,7 @@ struct ScreenshotsSection: View {
                 action: { Task { await viewModel.loadScreenshotSets(forceRefresh: true) } }
             )
         } else if viewModel.selectedScreenshotSet == nil, !hasScreenshotContent {
-            if isReadOnly {
+            if !isEditable {
                 emptyState(
                     icon: "photo.on.rectangle.angled",
                     title: AppStoreConnectLocalization.string("No Screenshot Set for Display Type"),
@@ -144,7 +143,7 @@ struct ScreenshotsSection: View {
             emptyState(
                 icon: "photo",
                 title: AppStoreConnectLocalization.string("No Screenshots"),
-                description: isReadOnly
+                description: !isEditable
                     ? AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect.")
                     : AppStoreConnectLocalization.string("This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."),
                 actionTitle: AppStoreConnectLocalization.string("Refresh"),
@@ -159,7 +158,7 @@ struct ScreenshotsSection: View {
 
                 ScreenshotFilmstrip(
                     screenshots: viewModel.screenshots,
-                    pendingScreenshots: isReadOnly ? [] : viewModel.pendingScreenshots,
+                    pendingScreenshots: isEditable ? viewModel.pendingScreenshots : [],
                     displayType: viewModel.selectedScreenshotDisplayType,
                     onRemovePending: { viewModel.removeScreenshot($0) }
                 )

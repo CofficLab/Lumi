@@ -37,7 +37,7 @@ public enum ConversationTitlePlugin: LumiPlugin {
         }
 
         return [
-            LumiChatSectionItem(id: "\(info.id).header", order: 81) {
+            LumiChatSectionItem(id: "\(info.id).header", order: 81, showsTrailingDivider: false) {
                 ConversationTitleSectionView(coordinator: coordinator)
             }
         ]

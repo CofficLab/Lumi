@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-enum AppStoreConnectAddToChat {
+enum AddToChat {
     private static let notificationName = Notification.Name("addToChat")
     fileprivate static let projectPathDidChangeNotification = Notification.Name("lumi.currentProjectPathDidChange")
     fileprivate static let projectPathUserInfoKey = "path"
@@ -83,20 +83,20 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
         content
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .onAppear {
-                if let provider = AppStoreConnectAddToChat.currentProjectPathProvider {
+                if let provider = AddToChat.currentProjectPathProvider {
                     currentProjectPath = provider()
                 }
                 refreshLumiProjectGate()
             }
-            .onReceive(NotificationCenter.default.publisher(for: AppStoreConnectAddToChat.projectPathDidChangeNotification)) { notification in
-                if let path = notification.userInfo?[AppStoreConnectAddToChat.projectPathUserInfoKey] as? String {
+            .onReceive(NotificationCenter.default.publisher(for: AddToChat.projectPathDidChangeNotification)) { notification in
+                if let path = notification.userInfo?[AddToChat.projectPathUserInfoKey] as? String {
                     currentProjectPath = path
                     refreshLumiProjectGate()
                 }
             }
             .contextMenu {
                 Button(AppStoreConnectLocalization.string("添加到对话")) {
-                    AppStoreConnectAddToChat.post(
+                    AddToChat.post(
                         entityType: entityType,
                         entityID: entityID,
                         title: title,
@@ -106,7 +106,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                     )
                 }
                 Button(AppStoreConnectLocalization.string("添加到对话并分析")) {
-                    AppStoreConnectAddToChat.post(
+                    AddToChat.post(
                         entityType: entityType,
                         entityID: entityID,
                         title: title,
@@ -127,7 +127,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                 if isLumiProjectCached {
                     Divider()
                     Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
-                        AppStoreConnectAddToChat.post(
+                        AddToChat.post(
                             entityType: entityType,
                             entityID: entityID,
                             title: title,
@@ -137,7 +137,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                         )
                     }
                     Button(AppStoreConnectLocalization.string("添加开发上下文并分析")) {
-                        AppStoreConnectAddToChat.post(
+                        AddToChat.post(
                             entityType: entityType,
                             entityID: entityID,
                             title: title,
@@ -174,7 +174,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
             }
             // In case this modifier instance hasn't received onAppear yet,
             // fallback to provider immediately to avoid gating-by-empty-path.
-            return AppStoreConnectAddToChat.currentProjectPathProvider?() ?? ""
+            return AddToChat.currentProjectPathProvider?() ?? ""
         }()
         return evaluateLumiProject(from: effectiveProjectPath)
     }

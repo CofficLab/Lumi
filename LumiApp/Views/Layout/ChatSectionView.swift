@@ -36,13 +36,14 @@ struct ChatSectionView: View {
                         .frame(maxHeight: isPrimaryStack ? .infinity : nil, alignment: .top)
                         .layoutPriority(isPrimaryStack ? 1 : 0)
 
-                    if index < stackItems.count - 1 {
-                        GlassDivider()
+                    if index < stackItems.count - 1, item.showsTrailingDivider {
+                        AppDivider()
                     }
                 }
 
-                if !stackItems.isEmpty, !bottomItems.isEmpty {
-                    GlassDivider()
+                if !stackItems.isEmpty, !bottomItems.isEmpty,
+                   stackItems.last?.showsTrailingDivider ?? true {
+                    AppDivider()
                 }
 
                 ForEach(Array(bottomItems.enumerated()), id: \.element.id) { index, item in
@@ -50,7 +51,7 @@ struct ChatSectionView: View {
                         .frame(maxWidth: .infinity, alignment: .bottom)
 
                     if index < bottomItems.count - 1 {
-                        GlassDivider()
+                        AppDivider()
                     }
                 }
             }

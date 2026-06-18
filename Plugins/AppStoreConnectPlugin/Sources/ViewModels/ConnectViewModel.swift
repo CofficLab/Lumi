@@ -37,6 +37,13 @@ final class ConnectViewModel: ObservableObject, SuperLog {
             case .xcodeCloud: return "cloud"
             }
         }
+
+        var showsTopBar: Bool {
+            switch self {
+            case .account, .apps: return false
+            case .distribution, .xcodeCloud: return true
+            }
+        }
     }
 
     static let generalPages: [Page] = [.account, .apps]
@@ -140,9 +147,8 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         screenshotSets.first { $0.screenshotDisplayType == selectedScreenshotDisplayType }
     }
 
-    var isMetadataReadOnly: Bool {
-        guard let selectedVersion else { return true }
-        return selectedVersion.appStoreState.uppercased() == "READY_FOR_SALE"
+    var isReadOnlyVersion: Bool {
+        selectedVersion?.isReadOnlyVersion ?? false
     }
 
     var sidebarVersions: [AppStoreVersion] {
@@ -232,6 +238,9 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func navigate(to page: Page) {
+        if !page.showsTopBar {
+            selectedVersion = nil
+        }
         self.page = page
         Task { await preparePageIfNeeded(page) }
     }
@@ -357,7 +366,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func saveMetadata() async {
-        guard let editedLocalization, !isMetadataReadOnly else { return }
+        guard let editedLocalization, !isReadOnlyVersion else { return }
         await runBusy {
             let updated = try await client.updateLocalization(editedLocalization)
             if let index = localizations.firstIndex(where: { $0.id == updated.id }) {
@@ -365,6 +374,18 @@ final class ConnectViewModel: ObservableObject, SuperLog {
             }
             self.editedLocalization = updated
             metadataIsDirty = false
+        }
+    }
+
+    func releaseVersion(_ version: AppStoreVersion) async {
+        guard version.isPendingDeveloperRelease else { return }
+        await runBusy(forceRefresh: true) {
+            try await client.releaseVersion(versionID: version.id)
+            guard let app = selectedApp else { return }
+            versions = try await client.listVersions(appID: app.id)
+            if let updated = versions.first(where: { $0.id == version.id }) {
+                selectedVersion = updated
+            }
         }
     }
 
@@ -431,7 +452,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func addScreenshotFiles(_ urls: [URL]) {
-        guard !isMetadataReadOnly else { return }
+        guard !isReadOnlyVersion else { return }
         var newItems: [PendingScreenshot] = []
         for url in urls {
             guard let image = NSImage(contentsOf: url),
@@ -461,12 +482,12 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func removeScreenshot(_ screenshot: PendingScreenshot) {
-        guard !isMetadataReadOnly else { return }
+        guard !isReadOnlyVersion else { return }
         pendingScreenshots.removeAll { $0.id == screenshot.id }
     }
 
     func ensureScreenshotSet() async {
-        guard let localizationID = selectedLocalizationID, !isMetadataReadOnly else { return }
+        guard let localizationID = selectedLocalizationID, !isReadOnlyVersion else { return }
         await runBusy {
             if screenshotSets.contains(where: { $0.screenshotDisplayType == selectedScreenshotDisplayType }) {
                 return

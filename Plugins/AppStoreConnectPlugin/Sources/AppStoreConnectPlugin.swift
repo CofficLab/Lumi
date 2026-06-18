@@ -55,7 +55,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
-        AppStoreConnectAddToChat.currentProjectPathProvider = {
+        AddToChat.currentProjectPathProvider = {
             projectPathProvider?.currentProjectPath ?? ""
         }
         return [
@@ -72,7 +72,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(AppStoreConnectAboutView())
+        AnyView(AboutView())
     }
 }
 

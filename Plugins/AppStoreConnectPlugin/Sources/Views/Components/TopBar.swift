@@ -1,11 +1,13 @@
 import LumiUI
 import SwiftUI
 
-struct AppChrome: View {
+private let appStoreToolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+
+struct TopBar: View {
     @ObservedObject var viewModel: ConnectViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        AppToolbarContainer(padding: appStoreToolbarPadding) {
             HStack(spacing: 16) {
                 if viewModel.selectedApp != nil {
                     Picker("", selection: Binding(
@@ -37,11 +39,11 @@ struct AppChrome: View {
                 }
                 .disabled(!viewModel.credentials.isComplete || viewModel.isBusy)
 
-                if viewModel.page == .distribution, !viewModel.isMetadataReadOnly {
+                if viewModel.page == .distribution, !viewModel.isReadOnlyVersion {
                     AppButton(AppStoreConnectLocalization.string("Save Metadata"), systemImage: "square.and.arrow.down", style: .primary, size: .small) {
                         Task { await viewModel.saveMetadata() }
                     }
-                    .disabled(!viewModel.metadataIsDirty || viewModel.isBusy || viewModel.isMetadataReadOnly)
+                    .disabled(!viewModel.metadataIsDirty || viewModel.isBusy)
                     .appStoreConnectAddToChatMenu(
                         entityType: "uiActionButton",
                         entityID: "distribution.saveMetadata",
@@ -49,16 +51,13 @@ struct AppChrome: View {
                         sourceView: "AppChrome",
                         fields: [
                             "actionID": "saveMetadata",
-                            "disabled": (!viewModel.metadataIsDirty || viewModel.isBusy || viewModel.isMetadataReadOnly) ? "true" : "false",
+                            "disabled": (!viewModel.metadataIsDirty || viewModel.isBusy) ? "true" : "false",
                             "isBusy": viewModel.isBusy ? "true" : "false",
                             "metadataIsDirty": viewModel.metadataIsDirty ? "true" : "false"
                         ]
                     )
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
         }
-        .background(.bar)
     }
 }
