@@ -8,7 +8,7 @@ import SwiftUI
 /// ## 活跃状态
 ///
 /// 对话项支持两种活跃状态：
-/// - **处理中**：对话正在处理消息，图标会显示脉冲动画和主题色
+/// - **处理中**：对话正在处理消息，图标会显示脉冲涟漪动画和主题色，标题文字同步脉冲
 /// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
 public struct ConversationItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -26,6 +26,9 @@ public struct ConversationItemView: View {
 
     /// 是否显示删除确认对话框
     @State private var showDeleteConfirmation = false
+
+    /// 标题脉冲动画状态
+    @State private var titlePulsing = false
 
     /// 计算：对话是否在近期活跃时间窗口内有更新
     private var isRecentlyActive: Bool {
@@ -52,10 +55,17 @@ public struct ConversationItemView: View {
 
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
-                // 标题
+                // 标题（处理中时同步脉冲）
                 Text(conversation.displayTitle)
                     .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(isProcessing ? theme.primary : theme.textPrimary)
+                    .opacity(isProcessing && titlePulsing ? 0.4 : 1.0)
+                    .animation(
+                        isProcessing
+                            ? .easeOut(duration: 1.5).repeatForever(autoreverses: false)
+                            : .default,
+                        value: titlePulsing
+                    )
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -64,6 +74,14 @@ public struct ConversationItemView: View {
             }
 
             Spacer()
+        }
+        .onAppear {
+            if isProcessing {
+                titlePulsing = true
+            }
+        }
+        .onChange(of: isProcessing) {
+            titlePulsing = isProcessing
         }
         .contextMenu {
             Button(role: .destructive) {

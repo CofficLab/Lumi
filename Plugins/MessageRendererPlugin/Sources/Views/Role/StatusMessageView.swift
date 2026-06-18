@@ -4,7 +4,6 @@ import SwiftUI
 
 struct StatusMessageView: View {
     @LumiTheme private var theme
-    @State private var isBreathing = false
 
     let message: LumiChatMessage
 
@@ -12,10 +11,9 @@ struct StatusMessageView: View {
         CompactMessageHeaderView {
             HStack(alignment: .center, spacing: 8) {
                 ChatAvatarView(kind: .status)
-                    .scaleEffect(isBreathing ? 1.12 : 0.92)
-                    .opacity(isBreathing ? 1.0 : 0.55)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isBreathing)
-                    .onAppear { isBreathing = true }
+                    .overlay(alignment: .center) {
+                        PulseRipple(color: theme.primary)
+                    }
 
                 Text(message.content)
                     .font(.appCaption)
@@ -35,5 +33,26 @@ struct StatusMessageView: View {
                 MessageInfoButton(message: message)
             }
         }
+    }
+}
+
+/// 脉冲涟漪动画 —— 与对话列表 `ProcessingPulseIndicator` 风格一致。
+struct PulseRipple: View {
+    let color: Color
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .fill(color.opacity(0.3))
+            .scaleEffect(isAnimating ? 1.8 : 1.0)
+            .opacity(isAnimating ? 0 : 0.5)
+            .animation(
+                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
+                value: isAnimating
+            )
+            .onAppear {
+                isAnimating = true
+            }
+            .allowsHitTesting(false)
     }
 }
