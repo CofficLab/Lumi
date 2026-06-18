@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.4.0</title>
-            <pubDate>Wed, 17 Jun 2026 11:32:53 +0000</pubDate>
-            <sparkle:version>228</sparkle:version>
-            <sparkle:shortVersionString>4.4.0</sparkle:shortVersionString>
+            <title>4.5.0</title>
+            <pubDate>Thu, 18 Jun 2026 11:36:20 +0000</pubDate>
+            <sparkle:version>229</sparkle:version>
+            <sparkle:shortVersionString>4.5.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.4.0</h2>
-<h3>Changes since v4.3.0</h3>
+            <description><![CDATA[<h2>Release v4.5.0</h2>
+<h3>Changes since v4.4.0</h3>
 <ul>
-<li>feat: add App Store Connect add-to-chat context menus</li>
-<li>feat: add App Store Connect agent toolset</li>
-<li>feat: add AppToolbarContainer and unify toolbar styles</li>
-<li>feat: add dev context menus for App Store Connect actions</li>
-<li>feat: add development-focused add-to-chat menu section</li>
-<li>feat: auto-load versions when VersionsSection appears</li>
-<li>feat: gate dev context menu by Lumi project marker</li>
-<li>feat: harden EditorSwift semantic indexing with manifest cache and job control</li>
-<li>feat: localize check for updates menu item</li>
-<li>feat: reduce semantic index UI main-thread load</li>
-<li>fix: adapt screenshot container aspect ratio based on displayType</li>
-<li>fix: clear stale Xcode toolbar state when switching projects</li>
-<li>fix: enforce read-only metadata and robust screenshot loading</li>
-<li>fix: filter screenshot display tabs by selected platform</li>
-<li>fix: fix missing and untranslated entries in ConversationTitlePlugin Localizable.xcstrings</li>
-<li>fix: gate AppStoreConnect dev menu by selected project path</li>
-<li>fix: hide version detail edit actions for released versions</li>
-<li>fix: prevent stale project UI during project switching</li>
-<li>fix: remove app icon/name header and platform badge in AppStoreConnect sidebar</li>
-<li>fix: replace ProgressView with breathing pulse indicator in ConversationTitleHeaderView</li>
+<li>document:  update documentation</li>
+<li>feat: add xcassets asset catalog preview support</li>
+<li>feat(app-store-connect): add API disk cache and improve loading UX</li>
+<li>feat(app-store-connect): add create version flow with smart defaults</li>
+<li>feat(app-store-connect): add HTML cover art docs and agent tools</li>
+<li>feat(app-store-connect): add production screenshot preview cache</li>
+<li>feat(app-store-connect): improve cover art preview and toolbar styling</li>
+<li>feat(app-store-connect): persist selected app and add cover art scaffold</li>
+<li>feat(app-store-connect): refactor cover art around device families</li>
+<li>feat(app-store-connect): reorganize views and polish distribution workflow</li>
+<li>feat(chat-section): add header and toolbar chrome with plugin injection</li>
+<li>feat(editor-swift): add build and run for Xcode and SPM projects</li>
+<li>feat(editor-swift): show build logs in bottom panel instead of sheet</li>
+<li>feat(llm-provider-zhipu): enhance API request to mimic Claude Code behavior</li>
+<li>feat(message-list): add subtle gradient background to chat message area</li>
+<li>feat(model-selector): restore per-model TPS display from chat history</li>
+<li>feat(model-selector): show current model TPS in chat toolbar</li>
+<li>fix: normalize log messages to follow SuperLog convention</li>
+<li>fix(app-store-connect): adjust cover art page spacing and localization catalog</li>
+<li>fix(app-store-connect): hide screenshot device picker when only one size</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.4.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.4.0/Lumi_4.4.0_arm64.dmg" length="45108950" type="application/octet-stream" sparkle:edSignature="L6K+49T3bDlVZhqmLfWcmQKW4AMz3O6W6VXVCUihjKEkZOpfk33Sp1hBr0F4/gxvYcQGblTC3Zb9nRsWVCjVDg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.0/Lumi_4.5.0_arm64.dmg" length="46699900" type="application/octet-stream" sparkle:edSignature="El5cg+wf1WgcZz6pO4Xr5oYNcaUUSrbngJT8B+0Wu0hN7k5SHppU38jolHUDwgG7C+AbabdqETjR1i7s35MCAg=="/>
         </item>
     </channel>
 </rss>
