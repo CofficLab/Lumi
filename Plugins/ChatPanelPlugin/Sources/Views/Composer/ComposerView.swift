@@ -4,7 +4,7 @@ import LumiUI
 import SwiftUI
 import LumiCoreKit
 
-struct ComposerView<LanguagePicker: View, AutomationPicker: View, VerbosityPicker: View>: View {
+struct ComposerView: View {
     @LumiTheme private var theme
 
     @Binding var text: String
@@ -17,9 +17,6 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, VerbosityPicke
     let hasAttachments: Bool
     let leadingToolbarItems: [LumiChatSectionToolbarItem]
     let trailingToolbarItems: [LumiChatSectionToolbarItem]
-    @ViewBuilder let languagePicker: () -> LanguagePicker
-    @ViewBuilder let automationPicker: () -> AutomationPicker
-    @ViewBuilder let verbosityPicker: () -> VerbosityPicker
     let onAttachImage: () -> Void
     let onFileDrop: (URL) -> Void
     let onSend: () -> Void
@@ -53,10 +50,6 @@ struct ComposerView<LanguagePicker: View, AutomationPicker: View, VerbosityPicke
                 .frame(height: 1)
 
             HStack(spacing: 8) {
-                languagePicker()
-                automationPicker()
-                verbosityPicker()
-
                 ScreenshotButton(
                     screenshotState: screenshotState,
                     canAttach: hasConversation,

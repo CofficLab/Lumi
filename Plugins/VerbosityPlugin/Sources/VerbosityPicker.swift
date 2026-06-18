@@ -1,13 +1,21 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ChatVerbosityPicker: View {
+struct VerbosityPicker: View {
     @LumiTheme private var theme
+    @ObservedObject var chatService: ChatService
 
-    let selectedLevel: LumiResponseVerbosity
-    let onSelect: (LumiResponseVerbosity) -> Void
     @State private var isPopoverPresented = false
+
+    private var selectedConversationID: UUID? {
+        chatService.selectedConversationID
+    }
+
+    private var selectedLevel: LumiResponseVerbosity {
+        chatService.verbosity(for: selectedConversationID)
+    }
 
     var body: some View {
         Button {
@@ -27,8 +35,8 @@ struct ChatVerbosityPicker: View {
         .buttonStyle(.plain)
         .help(selectedLevel.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ChatVerbosityPopover(selectedLevel: selectedLevel) { level in
-                onSelect(level)
+            VerbosityPopover(selectedLevel: selectedLevel) { level in
+                chatService.setVerbosity(level, for: selectedConversationID)
                 isPopoverPresented = false
             }
         }
@@ -57,7 +65,7 @@ struct ChatVerbosityPicker: View {
     }
 }
 
-private struct ChatVerbosityPopover: View {
+private struct VerbosityPopover: View {
     @LumiTheme private var theme
 
     let selectedLevel: LumiResponseVerbosity
@@ -73,7 +81,7 @@ private struct ChatVerbosityPopover: View {
                 Button {
                     onSelect(level)
                 } label: {
-                    ChatVerbosityRow(level: level, isSelected: level == selectedLevel)
+                    VerbosityRow(level: level, isSelected: level == selectedLevel)
                 }
                 .buttonStyle(.plain)
             }
@@ -83,7 +91,7 @@ private struct ChatVerbosityPopover: View {
     }
 }
 
-private struct ChatVerbosityRow: View {
+private struct VerbosityRow: View {
     @LumiTheme private var theme
 
     let level: LumiResponseVerbosity

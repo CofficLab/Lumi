@@ -1,13 +1,13 @@
-import AgentToolKit
+import LumiCoreKit
 import SwiftUI
 
 struct LanguageRow: View {
-    let language: LanguagePreference
+    let language: LumiConversationLanguage
     let isSelected: Bool
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: language.iconName)
+            Image(systemName: language.toolbarIconName)
                 .font(.system(size: 13))
                 .frame(width: 18)
                 .foregroundColor(isSelected ? .blue : .secondary)

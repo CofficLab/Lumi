@@ -29,7 +29,7 @@ public enum ConversationTitlePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+    public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
         guard context.showsChatSection,
               let coordinator = context.resolve(ChatSectionCoordinator.self)
         else {
@@ -37,7 +37,7 @@ public enum ConversationTitlePlugin: LumiPlugin {
         }
 
         return [
-            LumiChatSectionItem(id: "\(info.id).header", order: 81, showsTrailingDivider: false) {
+            LumiChatSectionHeaderItem(id: "\(info.id).header", order: 81) {
                 ConversationTitleSectionView(coordinator: coordinator)
             }
         ]

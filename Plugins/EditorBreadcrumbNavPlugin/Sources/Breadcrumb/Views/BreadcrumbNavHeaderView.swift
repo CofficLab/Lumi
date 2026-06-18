@@ -16,12 +16,20 @@ public struct BreadcrumbNavHeaderView: View {
     }
 
     public var body: some View {
-        // 仅在当前文件属于当前项目时显示，避免跨项目残留显示。
-        if let fileURL = service.files.currentFileURL,
-           projectVM.isProjectSelected,
-           isFileInCurrentProject(fileURL) {
-            BreadcrumbNavPathView(fileURL: fileURL, service: service)
+        AppBreadcrumbBarContainer {
+            if let fileURL = service.files.currentFileURL,
+               projectVM.isProjectSelected,
+               isFileInCurrentProject(fileURL) {
+                breadcrumbPath(fileURL: fileURL)
+            } else {
+                Color.clear
+            }
         }
+    }
+
+    @ViewBuilder
+    private func breadcrumbPath(fileURL: URL) -> some View {
+        BreadcrumbNavPathView(fileURL: fileURL, service: service)
     }
 
     private func isFileInCurrentProject(_ fileURL: URL) -> Bool {
@@ -179,17 +187,6 @@ public struct BreadcrumbNavPathView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
-            .frame(height: 20)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(
-            theme.textTertiary.opacity(0.035)
-        )
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(theme.textTertiary.opacity(0.08))
-                .frame(height: 1)
         }
     }
 

@@ -4,19 +4,27 @@ import SwiftUI
 
 struct ChatSectionView: View {
     let layout: LumiChatSectionLayout
+    let toolbarBarItems: [LumiChatSectionToolbarBarItem]
+    let headerItems: [LumiChatSectionHeaderItem]
     let stackItems: [LumiChatSectionItem]
     let bottomItems: [LumiChatSectionItem]
     let rootContent: AnyView
 
     var body: some View {
-        rootContent
-            .frame(maxHeight: .infinity)
-            .frame(
-                minWidth: layout.minWidth,
-                idealWidth: layout.idealWidth,
-                maxWidth: layout.maximumWidth
-            )
-            .appSurface(style: .panel, cornerRadius: 0)
+        VStack(spacing: 0) {
+            ChatHeaderView(items: headerItems)
+            ChatToolbarView(items: toolbarBarItems)
+
+            rootContent
+                .frame(maxHeight: .infinity)
+        }
+        .frame(maxHeight: .infinity)
+        .frame(
+            minWidth: layout.minWidth,
+            idealWidth: layout.idealWidth,
+            maxWidth: layout.maximumWidth
+        )
+        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     static func makeRootContent(

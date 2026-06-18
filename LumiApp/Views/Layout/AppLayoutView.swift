@@ -47,6 +47,12 @@ struct AppLayoutView: View {
         let chatSectionToolbarItems = shouldShowChatSection
             ? pluginService.chatSectionToolbarItems(context: pluginContext)
             : []
+        let chatSectionToolbarBarItems = shouldShowChatSection
+            ? pluginService.chatSectionToolbarBarItems(context: pluginContext)
+            : []
+        let chatSectionHeaderItems = shouldShowChatSection
+            ? pluginService.chatSectionHeaderItems(context: pluginContext)
+            : []
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
         let railTabs = pluginService.panelRailTabItems(context: pluginContext)
@@ -91,6 +97,8 @@ struct AppLayoutView: View {
                         if shouldShowChatSection {
                             ChatSectionView(
                                 layout: chatSection,
+                                toolbarBarItems: chatSectionToolbarBarItems,
+                                headerItems: chatSectionHeaderItems,
                                 stackItems: chatSectionItems.filter { $0.placement == .stack },
                                 bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
                                 rootContent: pluginService.chatSectionRootWrapper(

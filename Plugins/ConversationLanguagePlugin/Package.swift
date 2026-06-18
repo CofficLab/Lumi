@@ -14,17 +14,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ConversationLanguagePlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [

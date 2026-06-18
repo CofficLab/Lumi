@@ -1,13 +1,21 @@
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ChatAutomationLevelPicker: View {
+struct AutomationLevelPicker: View {
     @LumiTheme private var theme
+    @ObservedObject var chatService: ChatService
 
-    let selectedLevel: LumiAutomationLevel
-    let onSelect: (LumiAutomationLevel) -> Void
     @State private var isPopoverPresented = false
+
+    private var selectedConversationID: UUID? {
+        chatService.selectedConversationID
+    }
+
+    private var selectedLevel: LumiAutomationLevel {
+        chatService.automationLevel(for: selectedConversationID)
+    }
 
     var body: some View {
         Button {
@@ -27,15 +35,15 @@ struct ChatAutomationLevelPicker: View {
         .buttonStyle(.plain)
         .help(selectedLevel.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ChatAutomationLevelPopover(selectedLevel: selectedLevel) { level in
-                onSelect(level)
+            AutomationLevelPopover(selectedLevel: selectedLevel) { level in
+                chatService.setAutomationLevel(level, for: selectedConversationID)
                 isPopoverPresented = false
             }
         }
     }
 }
 
-private struct ChatAutomationLevelPopover: View {
+private struct AutomationLevelPopover: View {
     @LumiTheme private var theme
 
     let selectedLevel: LumiAutomationLevel

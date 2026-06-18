@@ -132,6 +132,24 @@ final class PluginService: ObservableObject {
             .sorted { $0.order < $1.order }
     }
 
+    func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+        guard context.supportsChatSection else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.chatSectionToolbarBarItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
+    func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
+        guard context.supportsChatSection else { return [] }
+        return enabledPlugins
+            .flatMap { plugin in
+                plugin.chatSectionHeaderItems(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
     func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
         guard context.showsPanelChrome else { return [] }
         return enabledPlugins
