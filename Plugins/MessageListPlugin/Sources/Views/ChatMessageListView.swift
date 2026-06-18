@@ -19,9 +19,10 @@ struct ChatMessageListView: View {
     let onLoadEarlier: () -> Void
     let onQuickStart: (String) -> Void
     let automationLevel: LumiAutomationLevel
+    let verbosity: LumiResponseVerbosity
 
     var body: some View {
-        let visibleMessages = messages.filter { $0.role != .tool }
+        let visibleMessages = messages.filter(isVisibleMessage)
 
         Group {
             if visibleMessages.filter({ $0.role != .status }).isEmpty, !isSending {
@@ -37,6 +38,16 @@ struct ChatMessageListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(chatListBackground)
+    }
+
+    private func isVisibleMessage(_ message: LumiChatMessage) -> Bool {
+        if message.role == .tool {
+            return false
+        }
+        if verbosity == .brief, message.isToolExecutionOnly {
+            return false
+        }
+        return true
     }
 
     /// 消息列表的专属背景：纵向微渐变营造深度层次感。

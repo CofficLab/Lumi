@@ -271,3 +271,38 @@ import Testing
     #expect(visible.showsChatSection)
     #expect(visible.activeProviderID == "zhipu")
 }
+
+@Test func toolExecutionOnlyMessageDetection() {
+    let conversationID = UUID()
+
+    let substantiveReply = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "Here is the answer.",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(!substantiveReply.isToolExecutionOnly)
+
+    let toolSummary = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "正在执行 read_file",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(toolSummary.isToolExecutionOnly)
+
+    let emptyToolOnly = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(emptyToolOnly.isToolExecutionOnly)
+
+    let userMessage = LumiChatMessage(
+        conversationID: conversationID,
+        role: .user,
+        content: "hello"
+    )
+    #expect(!userMessage.isToolExecutionOnly)
+}
