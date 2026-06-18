@@ -205,11 +205,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
 
     private func downloadImageToDownloads(from url: URL) async {
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            if let httpResponse = response as? HTTPURLResponse,
-               !(200...299).contains(httpResponse.statusCode) {
-                throw URLError(.badServerResponse)
-            }
+            let data = try await ScreenshotImageCache.shared.data(for: url, screenshotID: entityID)
             let savedURL = try saveToDownloads(data: data, sourceURL: url)
             NSWorkspace.shared.activateFileViewerSelecting([savedURL])
         } catch {

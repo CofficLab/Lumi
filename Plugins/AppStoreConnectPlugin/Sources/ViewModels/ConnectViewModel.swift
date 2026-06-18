@@ -190,6 +190,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         screenshots = []
         screenshotsBySetID = [:]
         clearXcodeCloudState()
+        Task { await ScreenshotImageCache.shared.clear() }
     }
 
     func testConnection() async {
@@ -393,7 +394,8 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         guard let localizationID = selectedLocalizationID else { return }
         await runBusy(forceRefresh: forceRefresh) {
             try await applyScreenshotPayload(
-                try await client.loadScreenshotSets(localizationID: localizationID)
+                try await client.loadScreenshotSets(localizationID: localizationID),
+                pruneImageCache: forceRefresh
             )
         }
     }
@@ -421,7 +423,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         }
     }
 
-    private func applyScreenshotPayload(_ payload: ScreenshotSetsPayload) async throws {
+    private func applyScreenshotPayload(_ payload: ScreenshotSetsPayload, pruneImageCache: Bool = false) async throws {
         screenshotSets = payload.sets
         screenshotsBySetID = payload.screenshotsBySetID
         alignSelectedScreenshotDisplayType()
@@ -435,6 +437,33 @@ final class ConnectViewModel: ObservableObject, SuperLog {
                 }
             }
             try await loadScreenshots()
+        }
+
+        if pruneImageCache {
+            await pruneScreenshotImageCache()
+        }
+        prefetchScreenshotPreviews()
+    }
+
+    private func pruneScreenshotImageCache() async {
+        let keepingURLs = Set(
+            screenshotsBySetID.values
+                .flatMap { $0 }
+                .compactMap(\.previewURL)
+        )
+        await ScreenshotImageCache.shared.pruneEntries(keepingURLs: keepingURLs)
+    }
+
+    private func prefetchScreenshotPreviews() {
+        let items: [(url: URL, screenshotID: String?)] = screenshotsBySetID.values
+            .flatMap { $0 }
+            .compactMap { screenshot in
+                guard let url = screenshot.previewURL else { return nil }
+                return (url, screenshot.id)
+            }
+        guard !items.isEmpty else { return }
+        Task.detached(priority: .utility) {
+            await ScreenshotImageCache.shared.prefetch(urls: items)
         }
     }
 
@@ -702,7 +731,8 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         metadataIsDirty = false
         if let localizationID = selectedLocalizationID {
             try await applyScreenshotPayload(
-                try await client.loadScreenshotSets(localizationID: localizationID)
+                try await client.loadScreenshotSets(localizationID: localizationID),
+                pruneImageCache: true
             )
         }
     }
@@ -710,7 +740,8 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     private func reloadScreenshotSetsFromNetwork() async throws {
         guard let localizationID = selectedLocalizationID else { return }
         try await applyScreenshotPayload(
-            try await client.loadScreenshotSets(localizationID: localizationID)
+            try await client.loadScreenshotSets(localizationID: localizationID),
+            pruneImageCache: true
         )
     }
 

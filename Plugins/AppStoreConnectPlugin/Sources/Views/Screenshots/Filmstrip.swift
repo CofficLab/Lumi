@@ -98,15 +98,10 @@ private struct FilmstripRemoteCard: View {
     @ViewBuilder
     private var thumbnail: some View {
         if let previewURL = screenshot.previewURL {
-            AsyncImage(url: previewURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                case .empty:
-                    ProgressView().controlSize(.small)
-                default:
-                    placeholder
-                }
+            CachedScreenshotThumbnail(url: previewURL, screenshotID: screenshot.id, contentMode: .fill) {
+                ProgressView().controlSize(.small)
+            } failure: {
+                placeholder
             }
         } else {
             placeholder

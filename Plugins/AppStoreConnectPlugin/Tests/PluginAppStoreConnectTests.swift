@@ -237,25 +237,31 @@ struct PluginAppStoreConnectTests {
     }
 
     @Test
-    func loadScreenshotSetsFallsBackToFilterEndpoint() async throws {
+    func loadScreenshotSetsUsesRelationshipInstances() async throws {
         final class RequestCounter: @unchecked Sendable {
             var paths: [String] = []
         }
         let counter = RequestCounter()
         let session = MockURLProtocol.makeSession { request in
             counter.paths.append(request.url?.path ?? "")
-            if request.url?.path.contains("/appStoreVersionLocalizations/") == true {
-                return (200, Data("{\"data\":[]}".utf8))
+            if request.url?.path == "/v1/appStoreVersionLocalizations/loc-1/relationships/appScreenshotSets" {
+                return (
+                    200,
+                    """
+                    {
+                      "data": [{ "type": "appScreenshotSets", "id": "set-1" }]
+                    }
+                    """.data(using: .utf8)!
+                )
             }
-            #expect(request.url?.path == "/v1/appScreenshotSets")
-            #expect(request.url?.query?.contains("filter%5BappStoreVersionLocalization%5D=loc-1") == true)
+            #expect(request.url?.path == "/v1/appScreenshotSets/set-1")
             #expect(request.url?.query?.contains("include=appScreenshots") == true)
 
             return (
                 200,
                 """
                 {
-                  "data": [{
+                  "data": {
                     "id": "set-1",
                     "type": "appScreenshotSets",
                     "attributes": { "screenshotDisplayType": "APP_IPHONE_65" },
@@ -264,7 +270,7 @@ struct PluginAppStoreConnectTests {
                         "data": [{ "type": "appScreenshots", "id": "shot-1" }]
                       }
                     }
-                  }],
+                  },
                   "included": [{
                     "id": "shot-1",
                     "type": "appScreenshots",
@@ -621,7 +627,7 @@ struct PluginAppStoreConnectTests {
     }
 
     @Test
-    func sidebarVersionsFiltersPlatformAndDeduplicatesByVersionString() {
+    func sidebarVersionsReturnsAllPlatformsSortedByCreatedDate() {
         let versions = [
             AppStoreVersion(
                 id: "ready-old",
@@ -667,9 +673,12 @@ struct PluginAppStoreConnectTests {
 
         let sidebar = AppStoreVersion.sidebarVersions(from: versions, appPlatform: "IOS")
 
-        #expect(sidebar.count == 2)
+        #expect(sidebar.count == 5)
         #expect(sidebar[0].id == "latest")
-        #expect(sidebar[1].id == "prepare")
+        #expect(sidebar[1].id == "mac")
+        #expect(sidebar[2].id == "ready-new")
+        #expect(sidebar[3].id == "ready-old")
+        #expect(sidebar[4].id == "prepare")
     }
 
     @MainActor
