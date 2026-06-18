@@ -32,16 +32,6 @@
     "—" : {
 
     },
-    "%@ · %lld×%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$lld×%3$lld"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -122,6 +112,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld×%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld×%2$lld"
           }
         }
       }
@@ -1756,6 +1756,7 @@
       }
     },
     "Device Size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2542,22 +2543,6 @@
         }
       }
     },
-    "iPad" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "iPad" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "iPad" } },
-        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "iPad" } },
-        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "iPad" } }
-      }
-    },
-    "iPhone" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "iPhone" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "iPhone" } },
-        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "iPhone" } },
-        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "iPhone" } }
-      }
-    },
     "Invalid cover art slug: %@" : {
       "localizations" : {
         "en" : {
@@ -2638,6 +2623,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iOS"
+          }
+        }
+      }
+    },
+    "iPad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPad"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPad"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPad"
+          }
+        }
+      }
+    },
+    "iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
           }
         }
       }
@@ -3118,6 +3159,34 @@
         }
       }
     },
+    "Mac" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac"
+          }
+        }
+      }
+    },
     "macOS" : {
       "localizations" : {
         "en" : {
@@ -3229,14 +3298,6 @@
             "value" : "管理 App Store Connect 應用程式、中繼資料和截圖"
           }
         }
-      }
-    },
-    "Mac" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mac" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Mac" } },
-        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "Mac" } },
-        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "Mac" } }
       }
     },
     "Manual Release" : {

@@ -10,7 +10,7 @@ struct CoverArtPage: View {
     @State private var fileMonitor: DispatchSourceFileSystemObject?
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
             header
 
             if viewModel.selectedApp == nil {
