@@ -15,8 +15,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
-        .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
@@ -26,8 +24,6 @@ let package = Package(
             name: "LLMProviderZhipuPlugin",
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
@@ -41,9 +37,8 @@ let package = Package(
             name: "LLMProviderZhipuPluginTests",
             dependencies: [
                 "LLMProviderZhipuPlugin",
-                .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
             ],
             path: "Tests"
         )
