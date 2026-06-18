@@ -25,7 +25,7 @@ public final class SwiftBuildRunManager: ObservableObject, SuperLog {
     @Published public private(set) var lastDuration: TimeInterval = 0
     @Published public private(set) var lastError: String?
     @Published public private(set) var runDisabledReason: String?
-    @Published public var isOutputPresented = false
+    public var onPresentOutput: (() -> Void)?
 
     private let xcodeRunner = XcodeUserBuildRunner()
     private let spmRunner = SPMUserBuildRunner()
@@ -91,7 +91,7 @@ public final class SwiftBuildRunManager: ObservableObject, SuperLog {
             return
         }
 
-        isOutputPresented = true
+        onPresentOutput?()
         phase = .preflighting
         activeRunTask?.cancel()
         activeRunTask = Task {

@@ -28,6 +28,8 @@ public enum EditorSwiftPlugin: LumiPlugin {
             return []
         }
 
+        configureBuildOutputPresentation(context: context)
+
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).xcode-scheme",
@@ -40,11 +42,51 @@ public enum EditorSwiftPlugin: LumiPlugin {
     }
 
     @MainActor
+    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+        guard context.showsPanelChrome,
+              context.activeSectionID == editorPanelSectionID,
+              context.resolve(LumiEditorServicing.self) != nil
+        else {
+            return []
+        }
+
+        configureBuildOutputPresentation(context: context)
+
+        return [
+            LumiPanelBottomTabItem(
+                id: SwiftBuildPanelIDs.bottomTab,
+                order: 90,
+                title: LumiPluginLocalization.string("Build", bundle: .module),
+                systemImage: "play.fill"
+            ) {
+                SwiftBuildOutputView(
+                    buildRunManager: EditorSwiftWindowScopeRegistry.activeBuildRunManager
+                )
+            }
+        ]
+    }
+
+    @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
             AddSwiftPackageTool().asLumiAgentTool(),
             ListSwiftPackagesTool().asLumiAgentTool(),
             GenerateXcodeProjectTool().asLumiAgentTool(),
         ]
+    }
+
+    @MainActor
+    private static func configureBuildOutputPresentation(context: LumiPluginContext) {
+        guard context.showsPanelChrome,
+              let presenter = context.resolve(LumiBottomPanelLayoutPresenting.self)
+        else {
+            return
+        }
+
+        let tabID = SwiftBuildPanelIDs.bottomTab
+        let viewContainerID = context.activeSectionID
+        EditorSwiftWindowScopeRegistry.activeBuildRunManager.onPresentOutput = {
+            presenter.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
+        }
     }
 }

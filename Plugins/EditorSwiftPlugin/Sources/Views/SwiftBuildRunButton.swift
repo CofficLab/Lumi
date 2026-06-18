@@ -30,22 +30,9 @@ struct SwiftBuildRunButton: View {
                 .help(runHelpText)
             }
         }
-        .sheet(isPresented: $buildRunManager.isOutputPresented) {
-            buildOutputSheet
-        }
         .task(id: preflightRefreshKey) {
             await refreshPreflight()
         }
-    }
-
-    private var buildOutputSheet: some View {
-        VStack(spacing: 0) {
-            SwiftBuildOutputView(
-                buildRunManager: buildRunManager,
-                onClose: { buildRunManager.isOutputPresented = false }
-            )
-        }
-        .frame(minWidth: 640, minHeight: 320)
     }
 
     private func triggerRun() {

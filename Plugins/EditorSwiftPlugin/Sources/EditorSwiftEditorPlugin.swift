@@ -73,7 +73,6 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         registry.registerProjectContextCapability(projectContextCapability)
         registry.registerSemanticCapability(semanticCapability)
         registry.registerLanguageIntegrationCapability(languageIntegrationCapability)
-        registry.registerPanelContributor(SwiftBuildOutputPanelContributor())
         registry.registerCommandContributor(SwiftRunCommandContributor())
 
         if SwiftPluginLog.verbose {
