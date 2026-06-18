@@ -781,6 +781,238 @@ struct PluginAppStoreConnectTests {
         #expect(IDs.contains("app-store-connect.create-screenshot-set"))
         #expect(IDs.contains("app-store-connect.start-ci-build-run"))
         #expect(IDs.contains("app-store-connect.set-ci-workflow-enabled"))
+        #expect(IDs.contains("app-store-connect.create-version"))
+    }
+
+    @Test
+    func appStoreVersionCreatePayloadIncludesAppRelationship() throws {
+        let body = try ConnectClient.makeAppStoreVersionCreateBody(
+            appID: "app-1",
+            versionString: "1.2.0",
+            platform: "ios",
+            releaseType: "MANUAL"
+        )
+        let object = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let data = try #require(object?["data"] as? [String: Any])
+        let attributes = try #require(data["attributes"] as? [String: Any])
+        let relationships = try #require(data["relationships"] as? [String: Any])
+        let app = try #require(relationships["app"] as? [String: Any])
+        let appData = try #require(app["data"] as? [String: Any])
+
+        #expect(data["type"] as? String == "appStoreVersions")
+        #expect(attributes["versionString"] as? String == "1.2.0")
+        #expect(attributes["platform"] as? String == "IOS")
+        #expect(attributes["releaseType"] as? String == "MANUAL")
+        #expect(appData["id"] as? String == "app-1")
+    }
+
+    @Test
+    func appStoreVersionLocalizationCreatePayloadIncludesVersionRelationship() throws {
+        let attributes = AppStoreVersionLocalization.CreateAttributes(
+            promotionalText: "Promo",
+            description: "Desc",
+            keywords: "key",
+            whatsNew: "",
+            supportURL: "https://example.com/support",
+            marketingURL: "https://example.com"
+        )
+        let body = try ConnectClient.makeAppStoreVersionLocalizationCreateBody(
+            versionID: "version-1",
+            locale: "en-US",
+            attributes: attributes
+        )
+        let object = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let data = try #require(object?["data"] as? [String: Any])
+        let payloadAttributes = try #require(data["attributes"] as? [String: Any])
+        let relationships = try #require(data["relationships"] as? [String: Any])
+        let version = try #require(relationships["appStoreVersion"] as? [String: Any])
+        let versionData = try #require(version["data"] as? [String: Any])
+
+        #expect(data["type"] as? String == "appStoreVersionLocalizations")
+        #expect(payloadAttributes["locale"] as? String == "en-US")
+        #expect(payloadAttributes["description"] as? String == "Desc")
+        #expect(versionData["id"] as? String == "version-1")
+    }
+
+    @Test
+    func versionStringValidatorAcceptsCommonFormats() {
+        #expect(VersionStringValidator.isValid("1"))
+        #expect(VersionStringValidator.isValid("1.0"))
+        #expect(VersionStringValidator.isValid("2.3.1"))
+        #expect(VersionStringValidator.isValid("10.20.30"))
+        #expect(VersionStringValidator.isValid("1.0-beta") == false)
+        #expect(VersionStringValidator.isValid("") == false)
+    }
+
+    @Test
+    func suggestedNextVersionStringBumpsPatchOnSamePlatform() {
+        let versions = [
+            AppStoreVersion(
+                id: "ios-old",
+                platform: "IOS",
+                versionString: "2.1.0",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_SALE",
+                createdDate: Date(timeIntervalSince1970: 1)
+            ),
+            AppStoreVersion(
+                id: "ios-new",
+                platform: "IOS",
+                versionString: "2.3.4",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_SALE",
+                createdDate: Date(timeIntervalSince1970: 10)
+            ),
+            AppStoreVersion(
+                id: "mac",
+                platform: "MAC_OS",
+                versionString: "9.9.9",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_SALE",
+                createdDate: Date(timeIntervalSince1970: 3)
+            )
+        ]
+
+        #expect(AppStoreVersion.suggestedNextVersionString(for: "IOS", in: versions) == "2.3.5")
+        #expect(AppStoreVersion.suggestedNextVersionString(for: "MAC_OS", in: versions) == "9.9.10")
+        #expect(AppStoreVersion.suggestedNextVersionString(for: "TV_OS", in: versions) == "2.3.5")
+    }
+
+    @Test
+    func suggestedNextVersionStringSkipsExistingVersionOnPlatform() {
+        let versions = [
+            AppStoreVersion(
+                id: "ios-current",
+                platform: "IOS",
+                versionString: "2.3.5",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_SALE",
+                createdDate: nil
+            )
+        ]
+
+        #expect(AppStoreVersion.suggestedNextVersionString(for: "IOS", in: versions) == "2.3.6")
+    }
+
+    @Test
+    func suggestedNextVersionStringFallsBackToOneZeroZero() {
+        #expect(AppStoreVersion.suggestedNextVersionString(for: "IOS", in: []) == "1.0.0")
+    }
+
+    @Test
+    func validateCreateRejectsInProgressPlatform() {
+        let versions = [
+            AppStoreVersion(
+                id: "prepare",
+                platform: "IOS",
+                versionString: "1.0.0",
+                appStoreState: "PREPARE_FOR_SUBMISSION",
+                appVersionState: "PREPARE_FOR_SUBMISSION",
+                createdDate: nil
+            )
+        ]
+
+        #expect(throws: VersionCreateValidationError.self) {
+            try AppStoreVersion.validateCreate(
+                versionString: "1.0.1",
+                platform: "IOS",
+                versions: versions
+            )
+        }
+        #expect(AppStoreVersion.isPlatformAvailableForVersionCreate("MAC_OS", versions: versions))
+    }
+
+    @Test
+    func validateCreateRejectsDuplicateVersionStringOnPlatform() {
+        let versions = [
+            AppStoreVersion(
+                id: "ready",
+                platform: "IOS",
+                versionString: "1.0.0",
+                appStoreState: "READY_FOR_SALE",
+                appVersionState: "READY_FOR_SALE",
+                createdDate: nil
+            )
+        ]
+
+        #expect(throws: VersionCreateValidationError.self) {
+            try AppStoreVersion.validateCreate(
+                versionString: "1.0.0",
+                platform: "IOS",
+                versions: versions
+            )
+        }
+    }
+
+    @Test
+    func createVersionPostsToAppStoreVersionsEndpoint() async throws {
+        final class RequestRecorder: @unchecked Sendable {
+            var method: String?
+            var path: String?
+        }
+        let recorder = RequestRecorder()
+        let response = """
+        {
+          "data": {
+            "id": "version-new",
+            "type": "appStoreVersions",
+            "attributes": {
+              "platform": "IOS",
+              "versionString": "1.0.1",
+              "appStoreState": "PREPARE_FOR_SUBMISSION",
+              "appVersionState": "PREPARE_FOR_SUBMISSION",
+              "createdDate": "2026-06-18T10:00:00Z"
+            }
+          }
+        }
+        """.data(using: .utf8)!
+        let session = MockURLProtocol.makeSession { request in
+            recorder.method = request.httpMethod
+            recorder.path = request.url?.path
+            return (201, response)
+        }
+        let client = ConnectClient(
+            credentialsProvider: { Self.validCredentials() },
+            session: session
+        )
+
+        let created = try await client.createVersion(
+            appID: "app-1",
+            versionString: "1.0.1",
+            platform: "IOS"
+        )
+
+        #expect(recorder.method == "POST")
+        #expect(recorder.path == "/v1/appStoreVersions")
+        #expect(created.id == "version-new")
+        #expect(created.versionString == "1.0.1")
+    }
+
+    @MainActor
+    @Test
+    func canCreateVersionReflectsPlatformAvailability() {
+        let viewModel = VM()
+        viewModel.selectedApp = AppStoreApp(
+            id: "app-1",
+            name: "Test",
+            bundleID: "com.example.test",
+            sku: "test",
+            primaryLocale: "en-US",
+            platform: "IOS"
+        )
+        viewModel.versions = [
+            AppStoreVersion(
+                id: "prepare",
+                platform: "IOS",
+                versionString: "1.0.0",
+                appStoreState: "PREPARE_FOR_SUBMISSION",
+                appVersionState: "PREPARE_FOR_SUBMISSION",
+                createdDate: nil
+            )
+        ]
+
+        #expect(viewModel.isPlatformAvailableForVersionCreate("IOS") == false)
+        #expect(viewModel.canCreateVersion == false)
     }
 
     private static func validCredentials() -> AppStoreConnectCredentials {

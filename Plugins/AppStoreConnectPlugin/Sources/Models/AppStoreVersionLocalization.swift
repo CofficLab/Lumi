@@ -25,6 +25,42 @@ struct AppStoreVersionLocalization: Identifiable, Equatable, Decodable {
         case marketingURL = "marketingUrl"
     }
 
+    struct CreateAttributes: Equatable, Sendable {
+        var promotionalText: String
+        var description: String
+        var keywords: String
+        var whatsNew: String
+        var supportURL: String
+        var marketingURL: String
+
+        init(
+            promotionalText: String = "",
+            description: String = "",
+            keywords: String = "",
+            whatsNew: String = "",
+            supportURL: String = "",
+            marketingURL: String = ""
+        ) {
+            self.promotionalText = promotionalText
+            self.description = description
+            self.keywords = keywords
+            self.whatsNew = whatsNew
+            self.supportURL = supportURL
+            self.marketingURL = marketingURL
+        }
+
+        static func copiedMetadata(from localization: AppStoreVersionLocalization) -> CreateAttributes {
+            CreateAttributes(
+                promotionalText: localization.promotionalText,
+                description: localization.description,
+                keywords: localization.keywords,
+                whatsNew: "",
+                supportURL: localization.supportURL,
+                marketingURL: localization.marketingURL
+            )
+        }
+    }
+
     init(
         id: String,
         locale: String,

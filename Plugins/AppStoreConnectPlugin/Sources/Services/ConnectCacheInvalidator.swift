@@ -41,6 +41,27 @@ enum ConnectCacheInvalidator {
                 }
             }
 
+        case ("POST", "/v1/appStoreVersions"):
+            if let appID = extractAppID(fromVersionCreateBody: body) {
+                cache.invalidate(tags: [.app(appID)])
+                cache.invalidate(accountKey: accountKey) { entry in
+                    entry.path.contains("/appStoreVersions")
+                        || entry.path.contains("/v1/apps/\(appID)/")
+                }
+            } else {
+                cache.invalidate(accountKey: accountKey) { $0.path.contains("/appStoreVersions") }
+            }
+
+        case ("POST", "/v1/appStoreVersionLocalizations"):
+            if let versionID = extractVersionID(fromLocalizationCreateBody: body) {
+                cache.invalidate(tags: [.version(versionID)])
+                cache.invalidate(accountKey: accountKey) { entry in
+                    entry.tags.contains(.version(versionID))
+                        || entry.path.contains("/appStoreVersions/\(versionID)/appStoreVersionLocalizations")
+                        || entry.path.contains("/appStoreVersionLocalizations")
+                }
+            }
+
         case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/ciWorkflows/"):
             cache.invalidate(accountKey: accountKey) { entry in
                 entry.path.contains("/ciWorkflows") || entry.path.contains("/ciBuildRuns")
@@ -74,6 +95,32 @@ enum ConnectCacheInvalidator {
     }
 
     private static func extractVersionID(fromReleaseBody body: Data?) -> String? {
+        guard let body,
+              let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+              let data = json["data"] as? [String: Any],
+              let relationships = data["relationships"] as? [String: Any],
+              let version = relationships["appStoreVersion"] as? [String: Any],
+              let versionData = version["data"] as? [String: Any],
+              let id = versionData["id"] as? String else {
+            return nil
+        }
+        return id
+    }
+
+    private static func extractAppID(fromVersionCreateBody body: Data?) -> String? {
+        guard let body,
+              let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+              let data = json["data"] as? [String: Any],
+              let relationships = data["relationships"] as? [String: Any],
+              let app = relationships["app"] as? [String: Any],
+              let appData = app["data"] as? [String: Any],
+              let id = appData["id"] as? String else {
+            return nil
+        }
+        return id
+    }
+
+    private static func extractVersionID(fromLocalizationCreateBody body: Data?) -> String? {
         guard let body,
               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
               let data = json["data"] as? [String: Any],

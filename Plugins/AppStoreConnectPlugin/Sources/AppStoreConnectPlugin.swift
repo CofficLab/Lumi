@@ -23,6 +23,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
         [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
+            CreateAppStoreConnectVersionTool(),
             ListAppStoreConnectLocalizationsTool(),
             ListAppStoreConnectScreenshotSetsTool(),
             ListAppStoreConnectScreenshotsTool(),

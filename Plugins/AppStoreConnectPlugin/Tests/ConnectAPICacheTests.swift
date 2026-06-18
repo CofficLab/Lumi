@@ -164,6 +164,85 @@ struct ConnectAPICacheTests {
         #expect(cache.get(logicalKey: appsKey, fetchPolicy: .cacheFirst) == Self.sampleAppsJSON)
     }
 
+    @Test("create version mutation invalidates app version list cache")
+    func mutationInvalidatesVersionListScope() throws {
+        let directory = makeTemporaryCacheDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let accountKey = "issuer|key"
+        let versionsKey = "\(accountKey)|GET|/v1/apps/app-1/appStoreVersions|limit=100"
+        let appsKey = "\(accountKey)|GET|/v1/apps|limit=1"
+        let cache = ConnectAPICache(rootDirectory: directory)
+
+        cache.set(
+            logicalKey: versionsKey,
+            method: "GET",
+            path: "/v1/apps/app-1/appStoreVersions",
+            data: Self.sampleVersionsJSON
+        )
+        cache.set(
+            logicalKey: appsKey,
+            method: "GET",
+            path: "/v1/apps",
+            data: Self.sampleAppsJSON
+        )
+
+        let body = try ConnectClient.makeAppStoreVersionCreateBody(
+            appID: "app-1",
+            versionString: "1.0.1",
+            platform: "IOS",
+            releaseType: "AFTER_APPROVAL"
+        )
+        cache.invalidateAfterMutation(
+            method: "POST",
+            path: "/v1/appStoreVersions",
+            body: body,
+            accountKey: accountKey
+        )
+
+        #expect(cache.get(logicalKey: versionsKey, fetchPolicy: .cacheFirst) == nil)
+        #expect(cache.get(logicalKey: appsKey, fetchPolicy: .cacheFirst) == Self.sampleAppsJSON)
+    }
+
+    @Test("create localization mutation invalidates version localization list cache")
+    func mutationInvalidatesVersionLocalizationScope() throws {
+        let directory = makeTemporaryCacheDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let accountKey = "issuer|key"
+        let localizationsKey = "\(accountKey)|GET|/v1/appStoreVersions/version-1/appStoreVersionLocalizations|limit=100"
+        let appsKey = "\(accountKey)|GET|/v1/apps|limit=1"
+        let cache = ConnectAPICache(rootDirectory: directory)
+
+        cache.set(
+            logicalKey: localizationsKey,
+            method: "GET",
+            path: "/v1/appStoreVersions/version-1/appStoreVersionLocalizations",
+            data: Self.sampleAppsJSON
+        )
+        cache.set(
+            logicalKey: appsKey,
+            method: "GET",
+            path: "/v1/apps",
+            data: Self.sampleAppsJSON
+        )
+
+        let body = try ConnectClient.makeAppStoreVersionLocalizationCreateBody(
+            versionID: "version-1",
+            locale: "en-US",
+            attributes: AppStoreVersionLocalization.CreateAttributes()
+        )
+        cache.invalidateAfterMutation(
+            method: "POST",
+            path: "/v1/appStoreVersionLocalizations",
+            body: body,
+            accountKey: accountKey
+        )
+
+        #expect(cache.get(logicalKey: localizationsKey, fetchPolicy: .cacheFirst) == nil)
+        #expect(cache.get(logicalKey: appsKey, fetchPolicy: .cacheFirst) == Self.sampleAppsJSON)
+    }
+
     @Test("clear removes disk and index state")
     func clearRemovesAllPersistedData() {
         let directory = makeTemporaryCacheDirectory()

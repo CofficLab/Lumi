@@ -74,4 +74,101 @@ extension ConnectClient {
         )
         return response.data
     }
+
+    func createVersion(
+        appID: String,
+        versionString: String,
+        platform: String,
+        releaseType: String = "AFTER_APPROVAL"
+    ) async throws -> AppStoreVersion {
+        let body = try Self.makeAppStoreVersionCreateBody(
+            appID: appID,
+            versionString: versionString,
+            platform: platform,
+            releaseType: releaseType
+        )
+        Self.logger.info("[ConnectClient] createVersion(appID: \(appID), version: \(versionString), platform: \(platform))")
+        let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
+            path: "/v1/appStoreVersions",
+            method: "POST",
+            body: body
+        )
+        return response.data
+    }
+
+    func createLocalization(
+        versionID: String,
+        locale: String,
+        attributes: AppStoreVersionLocalization.CreateAttributes
+    ) async throws -> AppStoreVersionLocalization {
+        let body = try Self.makeAppStoreVersionLocalizationCreateBody(
+            versionID: versionID,
+            locale: locale,
+            attributes: attributes
+        )
+        Self.logger.info("[ConnectClient] createLocalization(versionID: \(versionID), locale: \(locale))")
+        let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
+            path: "/v1/appStoreVersionLocalizations",
+            method: "POST",
+            body: body
+        )
+        return response.data
+    }
+
+    static func makeAppStoreVersionCreateBody(
+        appID: String,
+        versionString: String,
+        platform: String,
+        releaseType: String
+    ) throws -> Data {
+        let payload: [String: Any] = [
+            "data": [
+                "type": "appStoreVersions",
+                "attributes": [
+                    "versionString": versionString,
+                    "platform": platform.normalizedASCPlatform,
+                    "releaseType": releaseType
+                ],
+                "relationships": [
+                    "app": [
+                        "data": [
+                            "type": "apps",
+                            "id": appID
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        return try JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static func makeAppStoreVersionLocalizationCreateBody(
+        versionID: String,
+        locale: String,
+        attributes: AppStoreVersionLocalization.CreateAttributes
+    ) throws -> Data {
+        let payload: [String: Any] = [
+            "data": [
+                "type": "appStoreVersionLocalizations",
+                "attributes": [
+                    "locale": locale,
+                    "promotionalText": attributes.promotionalText,
+                    "description": attributes.description,
+                    "keywords": attributes.keywords,
+                    "whatsNew": attributes.whatsNew,
+                    "supportUrl": attributes.supportURL,
+                    "marketingUrl": attributes.marketingURL
+                ],
+                "relationships": [
+                    "appStoreVersion": [
+                        "data": [
+                            "type": "appStoreVersions",
+                            "id": versionID
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        return try JSONSerialization.data(withJSONObject: payload)
+    }
 }
