@@ -3,7 +3,7 @@ import Foundation
 enum CoverArtStoreError: LocalizedError {
     case invalidProjectPath
     case invalidSlug(String)
-    case invalidDisplayType(String)
+    case invalidDeviceFamily(String)
     case alreadyExists(String)
     case notFound(String)
     case pathNotAllowed(String)
@@ -14,8 +14,8 @@ enum CoverArtStoreError: LocalizedError {
             return AppStoreConnectLocalization.string("Project path is missing or invalid.")
         case .invalidSlug(let slug):
             return AppStoreConnectLocalization.string("Invalid cover art slug: %@", slug)
-        case .invalidDisplayType(let type):
-            return AppStoreConnectLocalization.string("Unknown screenshot display type: %@", type)
+        case .invalidDeviceFamily(let family):
+            return AppStoreConnectLocalization.string("Unknown device family: %@", family)
         case .alreadyExists(let path):
             return AppStoreConnectLocalization.string("Cover art already exists at %@", path)
         case .notFound(let path):
@@ -109,12 +109,8 @@ struct CoverArtDocumentStore: @unchecked Sendable {
         appID: String,
         slug: String,
         title: String,
-        displayType: String
+        deviceFamily: CoverArtDeviceFamily
     ) throws -> CoverArtDocument {
-        guard let size = ScreenshotDisplaySpec.size(for: displayType) else {
-            throw CoverArtStoreError.invalidDisplayType(displayType)
-        }
-
         let normalizedSlug = try validatedSlug(slug)
         let directory = try documentDirectory(projectPath: projectPath, appID: appID, slug: normalizedSlug)
         guard !fileManager.fileExists(atPath: directory.path) else {
@@ -128,13 +124,11 @@ struct CoverArtDocumentStore: @unchecked Sendable {
         let manifest = CoverArtManifest(
             id: normalizedSlug,
             title: title,
-            displayType: displayType,
-            width: size.width,
-            height: size.height,
+            deviceFamily: deviceFamily,
             createdAt: now,
             updatedAt: now
         )
-        let html = CoverArtTemplateFactory.html(title: title, displayType: displayType, size: size)
+        let html = CoverArtTemplateFactory.html(title: title, deviceFamily: deviceFamily)
 
         try writeManifest(manifest, to: directory)
         try writeHTML(html, to: directory)

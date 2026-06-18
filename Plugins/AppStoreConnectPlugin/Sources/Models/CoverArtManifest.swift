@@ -3,14 +3,16 @@ import Foundation
 struct CoverArtManifest: Codable, Equatable, Identifiable, Sendable {
     let id: String
     var title: String
-    var displayType: String
-    var width: Int
-    var height: Int
+    var deviceFamily: CoverArtDeviceFamily
     var createdAt: Date
     var updatedAt: Date
 
     var htmlFileName: String { CoverArtDocumentStore.indexHTMLFileName }
     var manifestFileName: String { CoverArtDocumentStore.manifestFileName }
+
+    var previewSizes: [CoverArtPreviewSize] {
+        ScreenshotDisplaySpec.previewSizes(for: deviceFamily)
+    }
 }
 
 struct CoverArtDocument: Equatable, Sendable {

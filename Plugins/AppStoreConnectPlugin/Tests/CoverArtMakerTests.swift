@@ -11,13 +11,24 @@ struct CoverArtMakerTests {
         #expect(ScreenshotDisplaySpec.size(for: "APP_DESKTOP") == .init(width: 1280, height: 800))
     }
 
-    @Test("CoverArtTemplateFactory embeds display dimensions")
-    func templateContainsDimensions() {
-        let size = ScreenshotDisplaySpec.Size(width: 1290, height: 2796)
-        let html = CoverArtTemplateFactory.html(title: "Lumi", displayType: "APP_IPHONE_67", size: size)
-        #expect(html.contains("width: 1290px"))
-        #expect(html.contains("height: 2796px"))
-        #expect(html.contains("data-display-type=\"APP_IPHONE_67\""))
+    @Test("ScreenshotDisplaySpec groups preview sizes by device family")
+    func previewSizesByFamily() {
+        let iphoneSizes = ScreenshotDisplaySpec.previewSizes(for: .iphone)
+        #expect(iphoneSizes.count == 3)
+        #expect(iphoneSizes.contains { $0.displayType == "APP_IPHONE_67" && $0.width == 1290 })
+
+        let macSizes = ScreenshotDisplaySpec.previewSizes(for: .mac)
+        #expect(macSizes.count == 1)
+        #expect(macSizes.first?.displayType == "APP_DESKTOP")
+    }
+
+    @Test("CoverArtTemplateFactory uses responsive layout")
+    func templateIsResponsive() {
+        let html = CoverArtTemplateFactory.html(title: "Lumi", deviceFamily: .iphone)
+        #expect(html.contains("width: 100%"))
+        #expect(html.contains("height: 100%"))
+        #expect(html.contains("data-device-family=\"iphone\""))
+        #expect(html.contains("28vmin"))
     }
 
     @Test("CoverArtDocumentStore round-trips create read update delete")
@@ -31,9 +42,10 @@ struct CoverArtMakerTests {
             appID: "app-1",
             slug: "launch-cover",
             title: "Launch",
-            displayType: "APP_IPHONE_67"
+            deviceFamily: .iphone
         )
         #expect(created.manifest.title == "Launch")
+        #expect(created.manifest.deviceFamily == .iphone)
         #expect(created.html.contains("Launch"))
 
         let listed = try store.list(projectPath: root.path, appID: "app-1")
@@ -81,12 +93,13 @@ struct CoverArtMakerTests {
                 "appID": .string("app-1"),
                 "slug": .string("hero"),
                 "title": .string("Hero"),
-                "displayType": .string("APP_DESKTOP")
+                "deviceFamily": .string("mac")
             ],
             context: context
         )
         #expect(createResult.contains("Cover art created"))
         #expect(createResult.contains("slug=hero"))
+        #expect(createResult.contains("deviceFamily=mac"))
 
         let readResult = try await ReadAppStoreConnectCoverArtTool().execute(
             arguments: [
@@ -96,6 +109,7 @@ struct CoverArtMakerTests {
             context: context
         )
         #expect(readResult.contains("index.html"))
+        #expect(readResult.contains("deviceFamily=mac"))
 
         let updateResult = try await UpdateAppStoreConnectCoverArtTool().execute(
             arguments: [

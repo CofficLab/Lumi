@@ -81,6 +81,7 @@ final class VM: ObservableObject, SuperLog {
     @Published var ciWorkflowExportJSON = ""
     @Published var coverArtItems: [CoverArtManifest] = []
     @Published var selectedCoverArtSlug: String?
+    @Published var coverArtPreviewDisplayType: String?
     @Published var coverArtHTML = ""
     @Published var coverArtFileURL: URL?
     @Published var coverArtReloadToken = UUID()

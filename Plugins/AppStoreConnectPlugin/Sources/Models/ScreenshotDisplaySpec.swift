@@ -35,6 +35,20 @@ enum ScreenshotDisplaySpec {
         size(for: displayType)?.aspectRatio
     }
 
+    static func previewSizes(for family: CoverArtDeviceFamily) -> [CoverArtPreviewSize] {
+        var seenSizes = Set<String>()
+        return family.displayTypes.compactMap { displayType in
+            guard let size = size(for: displayType) else { return nil }
+            let key = "\(size.width)x\(size.height)"
+            guard seenSizes.insert(key).inserted else { return nil }
+            return CoverArtPreviewSize(
+                displayType: displayType,
+                width: size.width,
+                height: size.height
+            )
+        }
+    }
+
     static func defaultDisplayTypes(forPlatform platform: String) -> [String] {
         switch platform.uppercased() {
         case "MAC_OS":

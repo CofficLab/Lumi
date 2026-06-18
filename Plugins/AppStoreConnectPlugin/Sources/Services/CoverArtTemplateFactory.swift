@@ -1,20 +1,20 @@
 import Foundation
 
 enum CoverArtTemplateFactory {
-    static func html(title: String, displayType: String, size: ScreenshotDisplaySpec.Size) -> String {
+    static func html(title: String, deviceFamily: CoverArtDeviceFamily) -> String {
         let escapedTitle = escapeHTML(title.isEmpty ? "App Title" : title)
         return """
         <!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="utf-8" />
-          <meta name="viewport" content="width=\(size.width), height=\(size.height)" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>\(escapedTitle)</title>
           <style>
             html, body {
               margin: 0;
-              width: \(size.width)px;
-              height: \(size.height)px;
+              width: 100%;
+              height: 100%;
               overflow: hidden;
               font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             }
@@ -23,32 +23,32 @@ enum CoverArtTemplateFactory {
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              gap: 48px;
+              gap: 4.8vmin;
               background: linear-gradient(180deg, #f5f5f7 0%, #e8e8ed 100%);
               color: #1d1d1f;
             }
             .icon {
-              width: \(Int(Double(size.width) * 0.28))px;
-              height: \(Int(Double(size.width) * 0.28))px;
+              width: 28vmin;
+              height: 28vmin;
               border-radius: 22%;
               background: #ffffff;
-              box-shadow: 0 24px 60px rgba(0, 0, 0, 0.12);
+              box-shadow: 0 2.4vmin 6vmin rgba(0, 0, 0, 0.12);
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: \(Int(Double(size.width) * 0.12))px;
+              font-size: 12vmin;
             }
             h1 {
               margin: 0;
-              padding: 0 64px;
-              font-size: \(Int(Double(size.width) * 0.055))px;
+              padding: 0 6.4vmin;
+              font-size: clamp(28px, 5.5vmin, 96px);
               font-weight: 700;
               text-align: center;
               line-height: 1.15;
             }
           </style>
         </head>
-        <body data-display-type="\(displayType)">
+        <body data-device-family="\(deviceFamily.rawValue)">
           <div class="icon" aria-hidden="true">★</div>
           <h1>\(escapedTitle)</h1>
         </body>

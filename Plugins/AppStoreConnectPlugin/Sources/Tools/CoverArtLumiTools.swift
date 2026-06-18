@@ -39,14 +39,21 @@ private enum CoverArtToolSupport {
     }
 
     static func manifestSummary(_ manifest: CoverArtManifest, directory: URL) -> String {
-        [
+        let sizes = manifest.previewSizes
+            .map { "\($0.label) \($0.width)x\($0.height)" }
+            .joined(separator: ", ")
+        return [
             "- slug=\(manifest.id)",
             "title=\(manifest.title)",
-            "displayType=\(manifest.displayType)",
-            "size=\(manifest.width)x\(manifest.height)",
+            "deviceFamily=\(manifest.deviceFamily.rawValue)",
+            "previewSizes=[\(sizes)]",
             "updatedAt=\(ISO8601DateFormatter().string(from: manifest.updatedAt))",
             "path=\(directory.appendingPathComponent(CoverArtDocumentStore.indexHTMLFileName).path)"
         ].joined(separator: " ")
+    }
+
+    static func parseDeviceFamily(_ raw: String) -> CoverArtDeviceFamily? {
+        CoverArtDeviceFamily(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
     }
 }
 
@@ -133,6 +140,8 @@ struct ReadAppStoreConnectCoverArtTool: LumiAgentTool {
             \(CoverArtToolSupport.manifestSummary(document.manifest, directory: document.directoryURL))
             htmlPath=\(document.indexHTMLURL.path)
 
+            HTML must remain responsive within deviceFamily=\(document.manifest.deviceFamily.rawValue) and work at all preview sizes listed above.
+
             --- index.html ---
             \(document.html)
             """
@@ -156,10 +165,13 @@ struct CreateAppStoreConnectCoverArtTool: LumiAgentTool {
                 "appID": .object(["type": .string("string")]),
                 "slug": .object(["type": .string("string")]),
                 "title": .object(["type": .string("string")]),
-                "displayType": .object(["type": .string("string")]),
+                "deviceFamily": .object([
+                    "type": .string("string"),
+                    "description": .string("Device family: iphone, ipad, or mac.")
+                ]),
                 "projectPath": .object(["type": .string("string")])
             ]),
-            "required": .array([.string("appID"), .string("slug"), .string("displayType")])
+            "required": .array([.string("appID"), .string("slug"), .string("deviceFamily")])
         ])
     }
 
@@ -170,8 +182,9 @@ struct CreateAppStoreConnectCoverArtTool: LumiAgentTool {
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else { return "Missing appID." }
         guard let slug = CoverArtToolSupport.requireSlug(arguments) else { return "Missing slug." }
-        guard let displayType = arguments["displayType"]?.stringValue, !displayType.isEmpty else {
-            return "Missing displayType."
+        guard let deviceFamilyRaw = arguments["deviceFamily"]?.stringValue,
+              let deviceFamily = CoverArtToolSupport.parseDeviceFamily(deviceFamilyRaw) else {
+            return "Missing or invalid deviceFamily. Use iphone, ipad, or mac."
         }
         guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
             return "Missing project path."
@@ -186,7 +199,7 @@ struct CreateAppStoreConnectCoverArtTool: LumiAgentTool {
                 appID: appID,
                 slug: slug,
                 title: title,
-                displayType: displayType
+                deviceFamily: deviceFamily
             )
             return """
             Cover art created.
@@ -263,6 +276,10 @@ struct ExportAppStoreConnectCoverArtTool: LumiAgentTool {
             "properties": .object([
                 "appID": .object(["type": .string("string")]),
                 "slug": .object(["type": .string("string")]),
+                "displayType": .object([
+                    "type": .string("string"),
+                    "description": .string("Screenshot display type within the document device family, e.g. APP_IPHONE_67.")
+                ]),
                 "projectPath": .object(["type": .string("string")]),
                 "outputFileName": .object(["type": .string("string")])
             ]),
@@ -284,10 +301,15 @@ struct ExportAppStoreConnectCoverArtTool: LumiAgentTool {
         do {
             try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
             let document = try CoverArtToolSupport.store.read(projectPath: projectPath, appID: appID, slug: slug)
-            guard let expectedSize = ScreenshotDisplaySpec.size(for: document.manifest.displayType) else {
-                return "Unknown display type \(document.manifest.displayType)."
+            let previewSizes = document.manifest.previewSizes
+            let displayType = arguments["displayType"]?.stringValue ?? previewSizes.first?.displayType
+            guard let displayType,
+                  let previewSize = previewSizes.first(where: { $0.displayType == displayType }) else {
+                let available = previewSizes.map(\.displayType).joined(separator: ", ")
+                return "Missing or invalid displayType. Available: \(available)"
             }
 
+            let expectedSize = ScreenshotDisplaySpec.Size(width: previewSize.width, height: previewSize.height)
             let pngData = try await CoverArtHTMLExporter.exportPNG(
                 html: document.html,
                 fileURL: document.indexHTMLURL,
@@ -301,15 +323,16 @@ struct ExportAppStoreConnectCoverArtTool: LumiAgentTool {
             let fileName = arguments["outputFileName"]?.stringValue?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "/", with: "-")
-            let resolvedName = (fileName?.isEmpty == false ? fileName! : "\(slug)_\(document.manifest.displayType).png")
+            let resolvedName = (fileName?.isEmpty == false ? fileName! : "\(slug)_\(displayType).png")
             let outputURL = exportsDirectory.appendingPathComponent(resolvedName.hasSuffix(".png") ? resolvedName : "\(resolvedName).png")
             try pngData.write(to: outputURL, options: .atomic)
 
             return """
             Cover art exported.
             slug=\(slug)
-            displayType=\(document.manifest.displayType)
-            size=\(document.manifest.width)x\(document.manifest.height)
+            deviceFamily=\(document.manifest.deviceFamily.rawValue)
+            displayType=\(displayType)
+            size=\(previewSize.width)x\(previewSize.height)
             outputPath=\(outputURL.path)
             bytes=\(pngData.count)
             """

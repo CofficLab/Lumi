@@ -77,6 +77,7 @@ struct CoverArtPage: View {
                         AppButton(AppStoreConnectLocalization.string("Export PNG"), systemImage: "square.and.arrow.down", style: .primary, size: .small) {
                             Task { await viewModel.exportSelectedCoverArtPNG() }
                         }
+                        .disabled(viewModel.selectedCoverArtPreviewSize == nil)
                     }
                 }
             }
@@ -89,13 +90,12 @@ struct CoverArtPage: View {
                 .frame(width: 240)
 
             VStack(alignment: .leading, spacing: 8) {
-                if let manifest = viewModel.selectedCoverArtManifest {
-                    Text(
-                        "\(ScreenshotDisplayFormatting.label(for: manifest.displayType)) · \(manifest.width)×\(manifest.height)"
+                if viewModel.selectedCoverArtManifest != nil, !viewModel.coverArtPreviewSizes.isEmpty {
+                    CoverArtSizeStrip(
+                        sizes: viewModel.coverArtPreviewSizes,
+                        selectedDisplayType: viewModel.coverArtPreviewDisplayType,
+                        onSelect: { viewModel.selectCoverArtPreviewDisplayType($0) }
                     )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
                 }
 
                 if viewModel.selectedCoverArtManifest == nil {
@@ -107,16 +107,16 @@ struct CoverArtPage: View {
                         action: { showingCreateSheet = true }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let manifest = viewModel.selectedCoverArtManifest {
+                } else if let previewSize = viewModel.selectedCoverArtPreviewSize {
                     HTMLPreviewView(
                         htmlText: viewModel.coverArtHTML,
                         fileURL: viewModel.coverArtFileURL,
-                        contentSize: CGSize(width: manifest.width, height: manifest.height),
+                        contentSize: CGSize(width: previewSize.width, height: previewSize.height),
                         onWebViewResolved: { webView in
                             previewWebView = webView
                         }
                     )
-                    .id(viewModel.coverArtReloadToken)
+                    .id("\(viewModel.coverArtReloadToken.uuidString)-\(previewSize.displayType)")
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -135,6 +135,8 @@ struct CoverArtPage: View {
               let manifest = viewModel.selectedCoverArtManifest,
               let htmlPath = viewModel.coverArtFileURL?.path else { return }
 
+        let previewDisplayTypes = manifest.previewSizes.map(\.displayType).joined(separator: ", ")
+
         AddToChat.post(
             entityType: "coverArtDocument",
             entityID: manifest.id,
@@ -143,9 +145,8 @@ struct CoverArtPage: View {
             fields: [
                 "appID": app.id,
                 "slug": manifest.id,
-                "displayType": manifest.displayType,
-                "width": "\(manifest.width)",
-                "height": "\(manifest.height)",
+                "deviceFamily": manifest.deviceFamily.rawValue,
+                "previewDisplayTypes": previewDisplayTypes,
                 "htmlPath": htmlPath,
                 "projectPath": viewModel.currentProjectPath
             ],
@@ -196,7 +197,7 @@ private struct CoverArtListPanel: View {
                                 Text(item.title)
                                     .font(.callout.weight(viewModel.selectedCoverArtSlug == item.id ? .semibold : .regular))
                                     .lineLimit(1)
-                                Text(ScreenshotDisplayFormatting.label(for: item.displayType))
+                                Text(item.deviceFamily.localizedTitle)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -225,7 +226,7 @@ private struct CoverArtCreateSheet: View {
     @Binding var isPresented: Bool
     @State private var title = ""
     @State private var slug = ""
-    @State private var displayType = ""
+    @State private var deviceFamily = CoverArtDeviceFamily.iphone
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -247,11 +248,12 @@ private struct CoverArtCreateSheet: View {
                 text: $slug
             )
 
-            Picker(AppStoreConnectLocalization.string("Device Size"), selection: $displayType) {
-                ForEach(viewModel.coverArtDisplayTypes, id: \.self) { type in
-                    Text(ScreenshotDisplayFormatting.label(for: type)).tag(type)
+            Picker(AppStoreConnectLocalization.string("Device Family"), selection: $deviceFamily) {
+                ForEach(viewModel.coverArtDeviceFamilies) { family in
+                    Text(family.localizedTitle).tag(family)
                 }
             }
+            .pickerStyle(.segmented)
 
             HStack {
                 Spacer()
@@ -261,19 +263,17 @@ private struct CoverArtCreateSheet: View {
                 AppButton(AppStoreConnectLocalization.string("Create"), systemImage: "plus", style: .primary) {
                     let resolvedSlug = slug.isEmpty ? viewModel.suggestedCoverArtSlug(for: title) : slug
                     viewModel.createCoverArt(
-                        displayType: displayType,
+                        deviceFamily: deviceFamily,
                         title: title,
                         slug: resolvedSlug
                     )
                     isPresented = false
                 }
-                .disabled(displayType.isEmpty)
             }
         }
         .padding(20)
         .frame(width: 420)
         .onAppear {
-            displayType = viewModel.coverArtDisplayTypes.first ?? "APP_IPHONE_67"
             slug = viewModel.suggestedCoverArtSlug(for: title)
         }
     }
