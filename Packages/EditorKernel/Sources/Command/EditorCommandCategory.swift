@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 public enum EditorCommandCategory: String, CaseIterable, Sendable {
     case edit
@@ -15,25 +16,25 @@ public enum EditorCommandCategory: String, CaseIterable, Sendable {
     public var displayTitle: String {
         switch self {
         case .edit:
-            return "Edit"
+            return LumiPluginLocalization.string("Edit", bundle: .module)
         case .find:
-            return "Find"
+            return LumiPluginLocalization.string("Find", bundle: .module)
         case .navigation:
-            return "Navigation"
+            return LumiPluginLocalization.string("Navigation", bundle: .module)
         case .workbench:
-            return "Workbench"
+            return LumiPluginLocalization.string("Workbench", bundle: .module)
         case .multiCursor:
-            return "Multi-Cursor"
+            return LumiPluginLocalization.string("Multi-Cursor", bundle: .module)
         case .format:
-            return "Formatting"
+            return LumiPluginLocalization.string("Formatting", bundle: .module)
         case .lsp:
-            return "Language"
+            return LumiPluginLocalization.string("Language", bundle: .module)
         case .save:
-            return "Saving"
+            return LumiPluginLocalization.string("Saving", bundle: .module)
         case .chat:
-            return "Chat"
+            return LumiPluginLocalization.string("Chat", bundle: .module)
         case .other:
-            return "Other"
+            return LumiPluginLocalization.string("Other", bundle: .module)
         }
     }
 

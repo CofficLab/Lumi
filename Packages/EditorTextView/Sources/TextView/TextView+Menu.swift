@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import LumiCoreKit
 
 extension TextView {
     override public func menu(for event: NSEvent) -> NSMenu? {
@@ -14,9 +15,9 @@ extension TextView {
         let menu = NSMenu()
 
         menu.items = [
-            NSMenuItem(title: String(localized: "Cut", bundle: .module), action: #selector(cut(_:)), keyEquivalent: "x"),
-            NSMenuItem(title: String(localized: "Copy", bundle: .module), action: #selector(copy(_:)), keyEquivalent: "c"),
-            NSMenuItem(title: String(localized: "Paste", bundle: .module), action: #selector(paste(_:)), keyEquivalent: "v")
+            NSMenuItem(title: LumiPluginLocalization.string("Cut", bundle: .module), action: #selector(cut(_:)), keyEquivalent: "x"),
+            NSMenuItem(title: LumiPluginLocalization.string("Copy", bundle: .module), action: #selector(copy(_:)), keyEquivalent: "c"),
+            NSMenuItem(title: LumiPluginLocalization.string("Paste", bundle: .module), action: #selector(paste(_:)), keyEquivalent: "v")
         ]
 
         return menu

@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(path: "../EditorLanguageRuntime"),
+        .package(path: "../LumiCoreKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],
@@ -33,7 +35,10 @@ let package = Package(
         ),
         .testTarget(
             name: "EditorKernelTests",
-            dependencies: ["EditorKernel"],
+            dependencies: [
+                "EditorKernel",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests"
         )
     ]
