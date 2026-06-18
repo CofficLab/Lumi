@@ -171,7 +171,34 @@
         }
       }
     },
-    "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.": {},
+    "Contributes Zhipu GLM models and Zhipu-specific chat error renderers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
+        }
+      }
+    },
     "Copy": {
       "localizations": {
         "en": {
@@ -888,7 +915,34 @@
         }
       }
     },
-    "Zhipu AI GLM": {},
+    "Zhipu AI GLM": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zhipu AI GLM"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zhipu AI GLM"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zhipu AI GLM"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zhipu AI GLM"
+          }
+        }
+      }
+    },
     "Zhipu API Key required": {
       "localizations": {
         "en": {
@@ -991,7 +1045,34 @@
         }
       }
     },
-    "智谱": {},
+    "智谱": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智谱"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智谱"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智谱"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智谱"
+          }
+        }
+      }
+    },
     "智谱 AI (GLM)": {
       "extractionState": "stale",
       "localizations": {

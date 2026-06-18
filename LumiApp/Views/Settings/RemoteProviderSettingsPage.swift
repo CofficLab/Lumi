@@ -99,7 +99,7 @@ struct RemoteProviderSettingsPage: View {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(theme.success)
-                    Text("已保存")
+                    Text(String(localized: "已保存"))
                         .font(.appCaption)
                         .foregroundColor(theme.success)
                 }
@@ -114,7 +114,10 @@ struct RemoteProviderSettingsPage: View {
                 ForEach(Array(models.enumerated()), id: \.element) { index, model in
                     AppSettingsModelRow(
                         model: model,
-                        isDefault: selectedModel == model
+                        isDefault: selectedModel == model,
+                        supportsVision: selectedProvider?.modelCapabilities[model]?.supportsVision,
+                        supportsTools: selectedProvider?.modelCapabilities[model]?.supportsTools,
+                        supportsTTS: selectedProvider?.modelCapabilities[model]?.supportsTTS
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             selectedModel = model

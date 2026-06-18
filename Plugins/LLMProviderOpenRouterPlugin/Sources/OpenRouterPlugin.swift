@@ -45,6 +45,27 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
             "qwen/qwen3.6-plus",
             "stepfun/step-3.5-flash:free",
             "z-ai/glm-4.5-air:free"
+            ],
+            modelCapabilities: [
+                "alibaba/qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
+                "anthropic/claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
+                "anthropic/claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true),
+                "anthropic/claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true),
+                "bytedance-seed/seedream-4.5": .init(supportsVision: true, supportsTools: true),
+                "deepseek/deepseek-v3.1": .init(supportsVision: false, supportsTools: true),
+                "google/gemma-3-27b-it:free": .init(supportsVision: true, supportsTools: true),
+                "google/gemini-pro-2.5": .init(supportsVision: true, supportsTools: true),
+                "meta-llama/llama-3.3-70b-instruct": .init(supportsVision: false, supportsTools: true),
+                "minimax/minimax-m2.1": .init(supportsVision: false, supportsTools: true),
+                "minimax/minimax-m2.5:free": .init(supportsVision: false, supportsTools: true),
+                "nvidia/nemotron-3-super-120b-a12b:free": .init(supportsVision: false, supportsTools: true),
+                "openai/gpt-4o": .init(supportsVision: true, supportsTools: true),
+                "openai/gpt-5": .init(supportsVision: true, supportsTools: true),
+                "openai/gpt-5-mini": .init(supportsVision: true, supportsTools: true),
+                "openai/gpt-oss-20b:free": .init(supportsVision: false, supportsTools: true),
+                "qwen/qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
+                "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
+                "z-ai/glm-4.5-air:free": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

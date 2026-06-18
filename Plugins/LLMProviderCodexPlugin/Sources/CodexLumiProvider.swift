@@ -8,7 +8,11 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("OpenAI models via Codex CLI", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: ["gpt-5.5", "gpt-5.4-mini"],
-        isLocal: true
+        isLocal: true,
+        modelCapabilities: [
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
+        ]
     )
 
     private let cli: CodexCLI

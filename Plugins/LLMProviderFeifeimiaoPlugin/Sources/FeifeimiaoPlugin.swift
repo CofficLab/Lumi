@@ -31,6 +31,13 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
             "gpt-5.4-mini",
             "gpt-5.3",
             "gpt-5.2"
+            ],
+            modelCapabilities: [
+                "gpt-5.5": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.3": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.2": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

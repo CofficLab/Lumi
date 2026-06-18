@@ -25,6 +25,12 @@ struct ModelSelectorModelRow: View {
         self.onSelect = onSelect
     }
 
+    // MARK: - Derived
+
+    private var capabilities: LumiModelCapabilities? {
+        provider.modelCapabilities[model]
+    }
+
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
@@ -51,14 +57,42 @@ struct ModelSelectorModelRow: View {
                     }
                 }
 
-                HStack(spacing: 6) {
-                    AppTag(provider.displayName)
-                    AppTag(provider.id, systemImage: "cloud")
-                    Spacer()
+                // MARK: - 能力 Badge
+                if let capabilities {
+                    HStack(spacing: 6) {
+                        capabilityBadge(
+                            title: capabilities.supportsVision ? "Image" : "Text",
+                            systemImage: capabilities.supportsVision ? "photo" : "text.bubble"
+                        )
+
+                        if capabilities.supportsTools {
+                            capabilityBadge(title: "Tools", systemImage: "wrench.and.screwdriver")
+                        }
+
+                        if capabilities.supportsTTS {
+                            capabilityBadge(title: "TTS", systemImage: "waveform")
+                        }
+
+                        Spacer()
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        AppTag(provider.displayName)
+                        AppTag(provider.id, systemImage: "cloud")
+                        Spacer()
+                    }
                 }
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 8)
         }
+    }
+
+    // MARK: - Helper
+
+    @ViewBuilder
+    private func capabilityBadge(title: String, systemImage: String) -> some View {
+        AppTag(title, systemImage: systemImage, style: .subtle)
+            .help(title)
     }
 }

@@ -27,6 +27,9 @@ public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked S
             defaultModel: "gpt-5.5",
             availableModels: [
             "gpt-5.5"
+            ],
+            modelCapabilities: [
+                "gpt-5.5": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

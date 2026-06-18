@@ -28,6 +28,10 @@ public final class LPgptProvider: OpenAICompatibleLumiProvider, @unchecked Senda
             availableModels: [
             "gpt-5.4",
             "gpt-5.5"
+            ],
+            modelCapabilities: [
+                "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.5": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

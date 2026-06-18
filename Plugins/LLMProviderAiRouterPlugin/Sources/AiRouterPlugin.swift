@@ -37,6 +37,19 @@ public final class AiRouterProvider: OpenAICompatibleLumiProvider, @unchecked Se
             "gpt-5-codex",
             "gpt-5.1",
             "gpt-5.1-codex"
+            ],
+            modelCapabilities: [
+                "gpt-5": .init(supportsVision: true, supportsTools: true),
+                "gpt-5-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex-max": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex-mini": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.2": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.2-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }
