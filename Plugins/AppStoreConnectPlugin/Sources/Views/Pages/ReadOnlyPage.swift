@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct ReadOnlyPage: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
     let version: AppStoreVersion
 
     var body: some View {

@@ -4,18 +4,18 @@ import SwiftUI
 private let appStoreToolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 
 struct TopBar: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         AppToolbarContainer(padding: appStoreToolbarPadding) {
             HStack(spacing: 16) {
                 if viewModel.selectedApp != nil {
                     Picker("", selection: Binding(
-                        get: { viewModel.page == .xcodeCloud ? ConnectViewModel.Page.xcodeCloud : .distribution },
+                        get: { viewModel.page == .xcodeCloud ? VM.Page.xcodeCloud : .distribution },
                         set: { viewModel.navigate(to: $0) }
                     )) {
-                        Text(AppStoreConnectLocalization.string("Distribution")).tag(ConnectViewModel.Page.distribution)
-                        Text(AppStoreConnectLocalization.string("Xcode Cloud")).tag(ConnectViewModel.Page.xcodeCloud)
+                        Text(AppStoreConnectLocalization.string("Distribution")).tag(VM.Page.distribution)
+                        Text(AppStoreConnectLocalization.string("Xcode Cloud")).tag(VM.Page.xcodeCloud)
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 320)

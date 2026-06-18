@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct XcodeCloudPage: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         VStack(spacing: 12) {

@@ -692,7 +692,7 @@ struct PluginAppStoreConnectTests {
     @MainActor
     @Test
     func availableScreenshotDisplayTypesUseSelectedVersionPlatformDefaults() {
-        let viewModel = ConnectViewModel()
+        let viewModel = VM()
         viewModel.selectedApp = AppStoreApp(
             id: "app-1",
             name: "Test",
@@ -719,7 +719,7 @@ struct PluginAppStoreConnectTests {
     @MainActor
     @Test
     func availableScreenshotDisplayTypesUseTvOSDefaults() {
-        let viewModel = ConnectViewModel()
+        let viewModel = VM()
         viewModel.selectedVersion = AppStoreVersion(
             id: "version-tv",
             platform: "TV_OS",
@@ -738,7 +738,7 @@ struct PluginAppStoreConnectTests {
     @MainActor
     @Test
     func availableScreenshotDisplayTypesUseVisionOSWithoutIOSFallback() {
-        let viewModel = ConnectViewModel()
+        let viewModel = VM()
         viewModel.selectedVersion = AppStoreVersion(
             id: "version-vision",
             platform: "VISION_OS",

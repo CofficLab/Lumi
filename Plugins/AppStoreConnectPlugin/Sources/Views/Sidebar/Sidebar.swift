@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct Sidebar: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -38,7 +38,7 @@ struct Sidebar: View {
         }
     }
 
-    private func sidebarButton(_ page: ConnectViewModel.Page) -> some View {
+    private func sidebarButton(_ page: VM.Page) -> some View {
         Button {
             viewModel.navigate(to: page)
         } label: {

@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct VersionsSection: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

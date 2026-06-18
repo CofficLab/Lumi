@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct AccountPage: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
     @Binding var showingAccountGuide: Bool
 
     var body: some View {

@@ -3,11 +3,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct MainView: View {
-    @StateObject private var viewModel: ConnectViewModel
+    @StateObject private var viewModel: VM
     @State private var importingScreenshots = false
     @State private var showingAccountGuide = false
 
-    init(viewModel: ConnectViewModel = .shared) {
+    init(viewModel: VM = .shared) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 

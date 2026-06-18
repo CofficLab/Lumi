@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct EditablePage: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
     let version: AppStoreVersion
     @Binding var importingScreenshots: Bool
 

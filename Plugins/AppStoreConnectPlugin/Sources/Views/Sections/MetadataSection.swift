@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct MetadataSection: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -45,7 +45,7 @@ struct MetadataSection: View {
 }
 
 struct MetadataEditor: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {

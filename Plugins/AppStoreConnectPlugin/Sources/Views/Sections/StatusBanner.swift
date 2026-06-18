@@ -3,7 +3,7 @@ import SwiftUI
 
 struct VersionStatusBanner: View {
     let version: AppStoreVersion
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
     let localePickerSourceView: String
     @State private var showsReleaseConfirmation = false
 
