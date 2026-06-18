@@ -6,18 +6,23 @@ import LumiCoreKit
 struct ProjectsPopoverView: View {
     @ObservedObject var store: ProjectsStore
     @State private var isImporterPresented = false
+    @State private var searchText = ""
+
+    private var filteredProjects: [LumiProject] {
+        if searchText.isEmpty {
+            return store.projects
+        }
+        return store.projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
             projectList
-            Divider()
-            footer
         }
         .frame(width: 320)
         .frame(minHeight: 220, maxHeight: 420)
-        .appSurface(style: .popover, cornerRadius: 12, borderColor: Color.primary.opacity(0.08))
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: [.folder],
@@ -29,27 +34,25 @@ struct ProjectsPopoverView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(systemName: "folder")
-                .font(.system(size: 14, weight: .semibold))
+            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search", bundle: .module)))
 
-            Text(verbatim: LumiPluginLocalization.string("Projects", bundle: .module))
-                .font(.headline)
-
-            Spacer()
+            AppButton(LumiPluginLocalization.string("Add", bundle: .module), systemImage: "folder.badge.plus", size: .small) {
+                isImporterPresented = true
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder
     private var projectList: some View {
-        if store.projects.isEmpty {
+        if filteredProjects.isEmpty {
             AppEmptyState(icon: "folder.badge.plus", title: LumiPluginLocalization.string("No Projects", bundle: .module))
             .frame(maxWidth: .infinity, minHeight: 126)
         } else {
             ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(store.projects) { project in
+                LazyVStack(spacing: 4) {
+                    ForEach(filteredProjects) { project in
                         ProjectRowView(
                             project: project,
                             isSelected: store.currentProject?.path == project.path,
@@ -62,14 +65,6 @@ struct ProjectsPopoverView: View {
             }
             .frame(maxHeight: 300)
         }
-    }
-
-    private var footer: some View {
-        AppButton(LumiPluginLocalization.string("Open Folder...", bundle: .module), systemImage: "folder.badge.plus", style: .ghost, size: .small, fillsWidth: true) {
-            isImporterPresented = true
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
     }
 
     private func handleImport(_ result: Result<[URL], any Error>) {
