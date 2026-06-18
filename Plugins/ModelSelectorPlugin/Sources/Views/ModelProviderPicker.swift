@@ -47,19 +47,19 @@ struct ModelProviderPicker: View {
             )
         }
         .frame(maxWidth: 320, alignment: .leading)
-        .accessibilityLabel("Select Model")
+        .accessibilityLabel(LumiPluginLocalization.string("Select Model", bundle: .module))
     }
 
     private var providerLabel: String {
         if chatService.routingMode == .auto {
-            return "Auto · Router"
+            return LumiPluginLocalization.string("Auto · Router", bundle: .module)
         }
 
         let conversationID = chatService.selectedConversationID
         guard let providerID = chatService.providerID(for: conversationID),
               let provider = chatService.providerInfos.first(where: { $0.id == providerID })
         else {
-            return "Local Placeholder"
+            return LumiPluginLocalization.string("Local Placeholder", bundle: .module)
         }
 
         if let model = chatService.modelName(for: conversationID) {

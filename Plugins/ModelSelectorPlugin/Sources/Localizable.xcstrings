@@ -105,7 +105,38 @@
       }
     },
     "%lld models" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個模型"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個模型"
+          }
+        }
+      }
     },
     "%lld/%lld" : {
       "extractionState" : "stale",
@@ -142,6 +173,40 @@
         }
       }
     },
+    "Active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前"
+          }
+        }
+      }
+    },
     "All" : {
       "localizations" : {
         "en" : {
@@ -153,25 +218,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All"
+            "value" : "全部"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All"
+            "value" : "全部"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All"
+            "value" : "全部"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All"
+            "value" : "全部"
           }
         }
       }
@@ -187,25 +252,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto"
+            "value" : "自动"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto"
+            "value" : "自動"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto"
+            "value" : "自動"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto"
+            "value" : "自動"
+          }
+        }
+      }
+    },
+    "Auto · Router" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto · Router"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动 · 路由"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動 · 路由"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動 · 路由"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動 · 路由"
           }
         }
       }
@@ -221,25 +320,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability"
+            "value" : "可用性"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability"
+            "value" : "可用性"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability"
+            "value" : "可用性"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability"
+            "value" : "可用性"
           }
         }
       }
@@ -256,25 +355,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability has not been checked"
+            "value" : "尚未检查可用性"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability has not been checked"
+            "value" : "尚未檢查可用性"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability has not been checked"
+            "value" : "尚未檢查可用性"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Availability has not been checked"
+            "value" : "尚未檢查可用性"
+          }
+        }
+      }
+    },
+    "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用性根据本地聊天记录和服务商注册信息推断。可在「当前」标签页手动选择模型，或启用自动路由。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用性根據本地聊天記錄和服務商註冊資訊推斷。可在「目前」標籤頁手動選擇模型，或啟用自動路由。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用性根據本地聊天記錄和服務商註冊資訊推斷。可在「目前」標籤頁手動選擇模型，或啟用自動路由。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用性根據本地聊天記錄和服務商註冊資訊推斷。可在「目前」標籤頁手動選擇模型，或啟用自動路由。"
           }
         }
       }
@@ -291,31 +424,62 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available"
+            "value" : "可用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available"
+            "value" : "可用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available"
+            "value" : "可用"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available"
+            "value" : "可用"
           }
         }
       }
     },
     "Cancel" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
     },
     "Checking" : {
       "extractionState" : "stale",
@@ -329,25 +493,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking"
+            "value" : "检查中"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking"
+            "value" : "檢查中"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking"
+            "value" : "檢查中"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking"
+            "value" : "檢查中"
           }
         }
       }
@@ -364,25 +528,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking availability…"
+            "value" : "正在检查可用性…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking availability…"
+            "value" : "正在檢查可用性…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking availability…"
+            "value" : "正在檢查可用性…"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking availability…"
+            "value" : "正在檢查可用性…"
           }
         }
       }
@@ -399,25 +563,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking provider availability"
+            "value" : "正在检查服务商可用性"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking provider availability"
+            "value" : "正在檢查服務商可用性"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking provider availability"
+            "value" : "正在檢查服務商可用性"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking provider availability"
+            "value" : "正在檢查服務商可用性"
           }
         }
       }
@@ -434,25 +598,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking..."
+            "value" : "检查中..."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking..."
+            "value" : "檢查中..."
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking..."
+            "value" : "檢查中..."
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checking..."
+            "value" : "檢查中..."
           }
         }
       }
@@ -468,25 +632,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current Provider"
+            "value" : "当前服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current Provider"
+            "value" : "目前服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current Provider"
+            "value" : "目前服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current Provider"
+            "value" : "目前服務商"
           }
         }
       }
@@ -503,31 +667,62 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current selected provider"
+            "value" : "当前选中的服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current selected provider"
+            "value" : "目前選取的服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current selected provider"
+            "value" : "目前選取的服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current selected provider"
+            "value" : "目前選取的服務商"
           }
         }
       }
     },
     "Enable automatic routing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable automatic routing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用自动路由"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用自動路由"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用自動路由"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用自動路由"
+          }
+        }
+      }
     },
     "Fast" : {
       "localizations" : {
@@ -540,25 +735,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fast"
+            "value" : "快速"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fast"
+            "value" : "快速"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fast"
+            "value" : "快速"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fast"
+            "value" : "快速"
           }
         }
       }
@@ -574,25 +769,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Frequent"
+            "value" : "常用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Frequent"
+            "value" : "常用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Frequent"
+            "value" : "常用"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Frequent"
+            "value" : "常用"
+          }
+        }
+      }
+    },
+    "Frequent Models" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequent Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用模型"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用模型"
           }
         }
       }
@@ -609,25 +838,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Idle"
+            "value" : "空闲"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Idle"
+            "value" : "閒置"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Idle"
+            "value" : "閒置"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Idle"
+            "value" : "閒置"
           }
         }
       }
@@ -644,25 +873,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image"
+            "value" : "图像"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image"
+            "value" : "圖像"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image"
+            "value" : "圖像"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image"
+            "value" : "圖像"
           }
         }
       }
@@ -679,25 +908,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Use"
+            "value" : "使用中"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Use"
+            "value" : "使用中"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Use"
+            "value" : "使用中"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Use"
+            "value" : "使用中"
           }
         }
       }
@@ -714,25 +943,93 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading provider information…"
+            "value" : "正在加载服务商信息…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading provider information…"
+            "value" : "正在載入服務商資訊…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading provider information…"
+            "value" : "正在載入服務商資訊…"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading provider information…"
+            "value" : "正在載入服務商資訊…"
+          }
+        }
+      }
+    },
+    "Local Placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Placeholder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇"
+          }
+        }
+      }
+    },
+    "Lumi will choose a provider and model based on tools, message size, and availability." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi will choose a provider and model based on tools, message size, and availability."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 将根据工具、消息大小和可用性自动选择服务商和模型。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 將根據工具、訊息大小和可用性自動選擇服務商和模型。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 將根據工具、訊息大小和可用性自動選擇服務商和模型。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 將根據工具、訊息大小和可用性自動選擇服務商和模型。"
           }
         }
       }
@@ -748,25 +1045,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Model Selector"
+            "value" : "模型选择器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Model Selector"
+            "value" : "模型選擇器"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Model Selector"
+            "value" : "模型選擇器"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Model Selector"
+            "value" : "模型選擇器"
           }
         }
       }
@@ -783,25 +1080,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No LLM providers configured"
+            "value" : "未配置 LLM 服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No LLM providers configured"
+            "value" : "未設定 LLM 服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No LLM providers configured"
+            "value" : "未設定 LLM 服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No LLM providers configured"
+            "value" : "未設定 LLM 服務商"
+          }
+        }
+      }
+    },
+    "No Matching Models" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Matching Models"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配的模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有符合的模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有符合的模型"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有符合的模型"
           }
         }
       }
@@ -818,25 +1149,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Model Selected"
+            "value" : "未选择模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Model Selected"
+            "value" : "未選擇模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Model Selected"
+            "value" : "未選擇模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Model Selected"
+            "value" : "未選擇模型"
+          }
+        }
+      }
+    },
+    "No Provider Selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Provider Selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择服务商"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇服務商"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇服務商"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇服務商"
           }
         }
       }
@@ -852,25 +1217,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Providers"
+            "value" : "暂无服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Providers"
+            "value" : "暫無服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Providers"
+            "value" : "暫無服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Providers"
+            "value" : "暫無服務商"
           }
         }
       }
@@ -887,25 +1252,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No providers found"
+            "value" : "未找到服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No providers found"
+            "value" : "未找到服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No providers found"
+            "value" : "未找到服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No providers found"
+            "value" : "未找到服務商"
+          }
+        }
+      }
+    },
+    "No Usage History" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Usage History"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无使用记录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無使用記錄"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無使用記錄"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無使用記錄"
           }
         }
       }
@@ -922,25 +1321,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Other"
+            "value" : "其他"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Other"
+            "value" : "其他"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Other"
+            "value" : "其他"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Other"
+            "value" : "其他"
           }
         }
       }
@@ -957,25 +1356,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please add LLM providers in Settings to enable AI features."
+            "value" : "请在设置中添加 LLM 服务商以启用 AI 功能。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please add LLM providers in Settings to enable AI features."
+            "value" : "請在設定中新增 LLM 服務商以啟用 AI 功能。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please add LLM providers in Settings to enable AI features."
+            "value" : "請在設定中新增 LLM 服務商以啟用 AI 功能。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please add LLM providers in Settings to enable AI features."
+            "value" : "請在設定中新增 LLM 服務商以啟用 AI 功能。"
           }
         }
       }
@@ -992,25 +1391,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has available models"
+            "value" : "服务商有可用模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has available models"
+            "value" : "服務商有可用模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has available models"
+            "value" : "服務商有可用模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has available models"
+            "value" : "服務商有可用模型"
           }
         }
       }
@@ -1027,25 +1426,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has no available models"
+            "value" : "服务商没有可用模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has no available models"
+            "value" : "服務商沒有可用模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has no available models"
+            "value" : "服務商沒有可用模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provider has no available models"
+            "value" : "服務商沒有可用模型"
           }
         }
       }
@@ -1061,25 +1460,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Providers"
+            "value" : "服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Providers"
+            "value" : "服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Providers"
+            "value" : "服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Providers"
+            "value" : "服務商"
+          }
+        }
+      }
+    },
+    "Recently Used" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Used"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使用"
           }
         }
       }
@@ -1096,25 +1529,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recheck this provider"
+            "value" : "重新检查此服务商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recheck this provider"
+            "value" : "重新檢查此服務商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recheck this provider"
+            "value" : "重新檢查此服務商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recheck this provider"
+            "value" : "重新檢查此服務商"
           }
         }
       }
@@ -1131,31 +1564,62 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Refresh"
+            "value" : "刷新"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Refresh"
+            "value" : "重新整理"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Refresh"
+            "value" : "重新整理"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Refresh"
+            "value" : "重新整理"
           }
         }
       }
     },
     "Registered Providers" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registered Providers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已注册服务商"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已註冊服務商"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已註冊服務商"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已註冊服務商"
+          }
+        }
+      }
     },
     "Response Time" : {
       "extractionState" : "stale",
@@ -1169,25 +1633,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time"
+            "value" : "响应时间"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time"
+            "value" : "回應時間"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time"
+            "value" : "回應時間"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time"
+            "value" : "回應時間"
           }
         }
       }
@@ -1204,25 +1668,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time Help"
+            "value" : "响应时间说明"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time Help"
+            "value" : "回應時間說明"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time Help"
+            "value" : "回應時間說明"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Response Time Help"
+            "value" : "回應時間說明"
           }
         }
       }
@@ -1239,31 +1703,62 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Models"
+            "value" : "搜索模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Models"
+            "value" : "搜尋模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Models"
+            "value" : "搜尋模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Models"
+            "value" : "搜尋模型"
           }
         }
       }
     },
     "Search models or providers..." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search models or providers..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索模型或服务商..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋模型或服務商..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋模型或服務商..."
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋模型或服務商..."
+          }
+        }
+      }
     },
     "Search providers or models…" : {
       "extractionState" : "stale",
@@ -1277,25 +1772,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search providers or models…"
+            "value" : "搜索服务商或模型…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search providers or models…"
+            "value" : "搜尋服務商或模型…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search providers or models…"
+            "value" : "搜尋服務商或模型…"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search providers or models…"
+            "value" : "搜尋服務商或模型…"
           }
         }
       }
@@ -1311,25 +1806,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select LLM provider and model"
+            "value" : "选择 LLM 服务商和模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select LLM provider and model"
+            "value" : "選擇 LLM 服務商和模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select LLM provider and model"
+            "value" : "選擇 LLM 服務商和模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select LLM provider and model"
+            "value" : "選擇 LLM 服務商和模型"
           }
         }
       }
@@ -1345,25 +1840,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model"
+            "value" : "选择模型"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model"
+            "value" : "選擇模型"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model"
+            "value" : "選擇模型"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model"
+            "value" : "選擇模型"
           }
         }
       }
@@ -1380,25 +1875,59 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model Hint"
+            "value" : "选择模型提示"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model Hint"
+            "value" : "選擇模型提示"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model Hint"
+            "value" : "選擇模型提示"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Model Hint"
+            "value" : "選擇模型提示"
+          }
+        }
+      }
+    },
+    "Switch Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Model"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
           }
         }
       }
@@ -1415,25 +1944,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text"
+            "value" : "文本"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text"
+            "value" : "文字"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text"
+            "value" : "文字"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text"
+            "value" : "文字"
           }
         }
       }
@@ -1450,25 +1979,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tools"
+            "value" : "工具"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tools"
+            "value" : "工具"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tools"
+            "value" : "工具"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tools"
+            "value" : "工具"
           }
         }
       }
@@ -1485,25 +2014,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total"
+            "value" : "总计"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total"
+            "value" : "總計"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total"
+            "value" : "總計"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total"
+            "value" : "總計"
           }
         }
       }
@@ -1520,25 +2049,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTFT Help"
+            "value" : "首字延迟说明"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTFT Help"
+            "value" : "首字延遲說明"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTFT Help"
+            "value" : "首字延遲說明"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTFT Help"
+            "value" : "首字延遲說明"
           }
         }
       }
@@ -1555,25 +2084,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS"
+            "value" : "语音合成"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS"
+            "value" : "語音合成"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS"
+            "value" : "語音合成"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS"
+            "value" : "語音合成"
           }
         }
       }
@@ -1590,25 +2119,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unavailable"
+            "value" : "不可用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unavailable"
+            "value" : "不可用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unavailable"
+            "value" : "不可用"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unavailable"
+            "value" : "不可用"
           }
         }
       }
@@ -1625,31 +2154,62 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unknown"
+            "value" : "未知"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unknown"
+            "value" : "未知"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unknown"
+            "value" : "未知"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unknown"
+            "value" : "未知"
           }
         }
       }
     },
     "Usage Signals" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage Signals"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用信号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用訊號"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用訊號"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用訊號"
+          }
+        }
+      }
     },
     "最近一次路由" : {
       "extractionState" : "stale",
@@ -1657,7 +2217,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近一次路由"
+            "value" : "Last Route"
           }
         },
         "zh-Hans" : {
@@ -1686,13 +2246,47 @@
         }
       }
     },
+    "切换模型" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Model"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換模型"
+          }
+        }
+      }
+    },
     "启用 Auto 模型路由" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "启用 Auto 模型路由"
+            "value" : "Enable Auto Model Routing"
           }
         },
         "zh-Hans" : {
@@ -1727,7 +2321,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前为基础路由版本：不可用模型会被排除，已检测可用模型优先；未检测模型仍可作为候选。"
+            "value" : "Basic routing: unavailable models are excluded, verified models are preferred; untested models remain as candidates."
           }
         },
         "zh-Hans" : {
@@ -1739,19 +2333,19 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前為基础路由版本：不可用模型会被排除，已偵測可用模型优先；未偵測模型仍可作為候选。"
+            "value" : "目前為基礎路由版本：不可用模型會被排除，已偵測可用模型優先；未偵測模型仍可作為候選。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前為基础路由版本：不可用模型会被排除，已偵測可用模型优先；未偵測模型仍可作為候选。"
+            "value" : "目前為基礎路由版本：不可用模型會被排除，已偵測可用模型優先；未偵測模型仍可作為候選。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前為基础路由版本：不可用模型会被排除，已偵測可用模型优先；未偵測模型仍可作為候选。"
+            "value" : "目前為基礎路由版本：不可用模型會被排除，已偵測可用模型優先；未偵測模型仍可作為候選。"
           }
         }
       }
@@ -1762,7 +2356,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "根据消息内容、工具需求、模型能力和可用性自动选择模型。"
+            "value" : "Automatically select a model based on message content, tool requirements, model capabilities, and availability."
           }
         },
         "zh-Hans" : {
@@ -1774,19 +2368,19 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "根据消息內容、工具需求、模型能力和可用性自動選擇模型。"
+            "value" : "根據訊息內容、工具需求、模型能力和可用性自動選擇模型。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "根据消息內容、工具需求、模型能力和可用性自動選擇模型。"
+            "value" : "根據訊息內容、工具需求、模型能力和可用性自動選擇模型。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "根据消息內容、工具需求、模型能力和可用性自動選擇模型。"
+            "value" : "根據訊息內容、工具需求、模型能力和可用性自動選擇模型。"
           }
         }
       }
