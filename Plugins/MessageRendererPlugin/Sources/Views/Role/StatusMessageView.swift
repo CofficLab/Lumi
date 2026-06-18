@@ -11,7 +11,6 @@ struct StatusMessageView: View {
         CompactMessageHeaderView {
             HStack(alignment: .center, spacing: 8) {
                 ChatAvatarView(kind: .status)
-                AppIdentityRow(title: "Status")
 
                 ProgressView()
                     .controlSize(.small)
