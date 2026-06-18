@@ -103,11 +103,31 @@ private struct RecentActivityIndicator: View {
 // MARK: - View
 
 extension ConversationItemView {
-    /// 元数据区域：显示项目名称和相对时间
-    /// 当会话关联了项目时显示项目名，否则只显示时间
+    /// 元数据区域：显示模型信息、项目名称和相对时间
+    /// 当会话关联了模型时显示供应商/模型，关联了项目时显示项目名
     @ViewBuilder
     private var metadataSection: some View {
         HStack {
+            // 模型信息
+            if let modelName = conversation.modelName, !modelName.isEmpty {
+                if let providerID = conversation.providerID, !providerID.isEmpty {
+                    Text("\(providerID)/\(modelName)")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                } else {
+                    Text(modelName)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
+            }
+
+            // 项目信息
             if let projectPath = conversation.projectPath {
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
                 Text(projectName)
@@ -195,6 +215,15 @@ extension ConversationItemView {
     .padding()
 }
 
+#Preview("会话项 - 无模型信息") {
+    ConversationItemView(
+        conversation: ConversationListItem.example(providerID: nil, modelName: nil),
+        onDelete: {}
+    )
+    .frame(width: 200)
+    .padding()
+}
+
 // MARK: - ConversationListItem+Preview
 
 extension ConversationListItem {
@@ -202,14 +231,18 @@ extension ConversationListItem {
     public static func example(
         title: String = "示例对话",
         projectPath: String? = "/Users/example/project",
-        minutesAgo: Int = 30
+        minutesAgo: Int = 30,
+        providerID: String? = "anthropic",
+        modelName: String? = "claude-sonnet-4-20250514"
     ) -> ConversationListItem {
         ConversationListItem(
             id: UUID(),
             projectPath: projectPath,
             title: title,
             createdAt: Date().addingTimeInterval(-Double(minutesAgo + 30) * 60),
-            updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60)
+            updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60),
+            providerID: providerID,
+            modelName: modelName
         )
     }
 }
