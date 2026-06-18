@@ -328,13 +328,14 @@ private struct ChatSectionToolbarSync: View {
     let items: [LumiChatSectionToolbarItem]
     @ObservedObject var coordinator: ChatSectionCoordinator
 
+    private var syncKey: String {
+        items.map(\.id).joined(separator: "|")
+    }
+
     var body: some View {
         Color.clear
             .frame(width: 0, height: 0)
-            .onAppear {
-                coordinator.setChatSectionToolbarItems(items)
-            }
-            .onChange(of: items.map(\.id)) { _, _ in
+            .onChange(of: syncKey, initial: true) { _, _ in
                 coordinator.setChatSectionToolbarItems(items)
             }
     }
