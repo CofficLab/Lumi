@@ -29,7 +29,7 @@ struct CoverArtSidebarSection: View {
                 .padding(.vertical, 7)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    viewModel.isCoverArtMakerSelected
+                    viewModel.page == .coverArt
                         ? Color.accentColor.opacity(0.16)
                         : Color.clear,
                     in: RoundedRectangle(cornerRadius: 6, style: .continuous)

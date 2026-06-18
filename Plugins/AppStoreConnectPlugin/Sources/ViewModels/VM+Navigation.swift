@@ -13,6 +13,8 @@ extension VM {
                 connectionStatus = AppStoreConnectLocalization.string("Connected")
             case .distribution:
                 try await reloadDistributionFromNetwork()
+            case .coverArt:
+                break
             case .xcodeCloud:
                 if selectedCiWorkflow != nil {
                     try await reloadSelectedCiWorkflowDetailFromNetwork()
@@ -26,9 +28,8 @@ extension VM {
     }
 
     func navigate(to page: Page) {
-        if !page.showsTopBar {
+        if Self.generalPages.contains(page) {
             selectedVersion = nil
-            isCoverArtMakerSelected = false
         }
         self.page = page
         Task { await preparePageIfNeeded(page) }

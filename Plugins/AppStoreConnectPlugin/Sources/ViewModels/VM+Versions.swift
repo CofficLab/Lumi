@@ -30,7 +30,6 @@ extension VM {
     }
 
     func selectVersion(_ version: AppStoreVersion) {
-        isCoverArtMakerSelected = false
         selectedVersion = version
         page = .distribution
         localizations = []
@@ -47,8 +46,7 @@ extension VM {
     }
 
     func openCoverArtMaker() {
-        isCoverArtMakerSelected = true
-        page = .distribution
+        page = .coverArt
     }
 
     func releaseVersion(_ version: AppStoreVersion) async {

@@ -108,7 +108,6 @@ struct VersionsSection: View {
 
     private func isVersionSelected(_ version: AppStoreVersion) -> Bool {
         guard viewModel.page == .distribution,
-              !viewModel.isCoverArtMakerSelected,
               let selected = viewModel.selectedVersion else { return false }
         return version.id == selected.id
     }

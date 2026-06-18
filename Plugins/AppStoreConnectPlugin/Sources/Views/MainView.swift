@@ -76,6 +76,8 @@ struct MainView: View {
             AppsPage(viewModel: viewModel)
         case .distribution:
             DistributionPage(viewModel: viewModel, importingScreenshots: $importingScreenshots)
+        case .coverArt:
+            CoverArtPage(viewModel: viewModel)
         case .xcodeCloud:
             XcodeCloudPage(viewModel: viewModel)
         }

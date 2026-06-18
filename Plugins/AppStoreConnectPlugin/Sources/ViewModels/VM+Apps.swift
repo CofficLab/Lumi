@@ -16,7 +16,9 @@ extension VM {
         localStore.setSelectedAppID(app.id, for: credentials)
         if appChanged {
             selectedVersion = nil
-            isCoverArtMakerSelected = false
+            if page == .coverArt {
+                page = .distribution
+            }
             versions = []
             localizations = []
             editedLocalization = nil

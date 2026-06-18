@@ -16,6 +16,7 @@ final class VM: ObservableObject, SuperLog {
         case account
         case apps
         case distribution
+        case coverArt
         case xcodeCloud
 
         var id: String { rawValue }
@@ -25,6 +26,7 @@ final class VM: ObservableObject, SuperLog {
             case .account: return AppStoreConnectLocalization.string("Account")
             case .apps: return AppStoreConnectLocalization.string("Apps")
             case .distribution: return AppStoreConnectLocalization.string("Distribution")
+            case .coverArt: return AppStoreConnectLocalization.string("Cover Art Maker")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
         }
@@ -34,13 +36,14 @@ final class VM: ObservableObject, SuperLog {
             case .account: return "key"
             case .apps: return "square.grid.2x2"
             case .distribution: return "shippingbox"
+            case .coverArt: return "photo.artframe"
             case .xcodeCloud: return "cloud"
             }
         }
 
         var showsTopBar: Bool {
             switch self {
-            case .account, .apps: return false
+            case .account, .apps, .coverArt: return false
             case .distribution, .xcodeCloud: return true
             }
         }
@@ -76,7 +79,6 @@ final class VM: ObservableObject, SuperLog {
     @Published var ciBuildRuns: [CiBuildRun] = []
     @Published var ciSourceBranchOrTag = ""
     @Published var ciWorkflowExportJSON = ""
-    @Published var isCoverArtMakerSelected = false
 
     static let screenshotDisplayTypesByPlatform: [String: [String]] = [
         "IOS": [
