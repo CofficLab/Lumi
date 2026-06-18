@@ -800,6 +800,7 @@
       }
     },
     "Choose an App Store Connect app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

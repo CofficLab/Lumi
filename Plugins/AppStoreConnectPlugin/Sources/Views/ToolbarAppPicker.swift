@@ -13,27 +13,33 @@ public struct ToolbarAppPicker: View {
         Button {
             showingAppPicker.toggle()
         } label: {
-            HStack(spacing: 8) {
-                IconView(url: viewModel.selectedApp?.iconURL, size: 24)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(viewModel.selectedApp?.name ?? AppStoreConnectLocalization.string("Select App"))
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                    Text(viewModel.selectedApp?.bundleID ?? AppStoreConnectLocalization.string("Choose an App Store Connect app"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+            HStack(spacing: 6) {
+                IconView(url: viewModel.selectedApp?.iconURL, size: 18)
+
+                Text(viewModel.selectedApp?.name ?? AppStoreConnectLocalization.string("Select App"))
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 180)
+
                 Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 9, weight: .semibold))
+                    .rotationEffect(.degrees(showingAppPicker ? 180 : 0))
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .frame(width: 320)
-            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.vertical, 5)
+            .contentShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .background {
+            RoundedRectangle(cornerRadius: 7)
+                .fill(Color.primary.opacity(0.06))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
         .disabled(!viewModel.credentials.isComplete)
         .popover(isPresented: $showingAppPicker, arrowEdge: .bottom) {
             AppPicker(viewModel: viewModel) {
@@ -47,13 +53,31 @@ struct AppPicker: View {
     @ObservedObject var viewModel: VM
     let onSelect: () -> Void
 
+    @State private var isReloading = false
+
     var body: some View {
         VStack(spacing: 8) {
             pickerToolbar
             pickerContent
         }
         .padding(12)
-        .frame(width: 380)
+        .frame(width: 320)
+        .overlay {
+            if isReloading {
+                ZStack {
+                    Rectangle()
+                        .fill(.regularMaterial)
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .controlSize(.regular)
+                        Text(AppStoreConnectLocalization.string("Loading..."))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(12)
+            }
+        }
         .task {
             if viewModel.credentials.isComplete && viewModel.apps.isEmpty {
                 await viewModel.loadApps()
@@ -66,9 +90,18 @@ struct AppPicker: View {
             AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(AppStoreConnectLocalization.string("Search apps")))
 
             AppButton(AppStoreConnectLocalization.string("Reload"), systemImage: "arrow.clockwise", size: .small) {
-                Task { await viewModel.loadApps() }
+                Task {
+                    isReloading = true
+                    let start = Date()
+                    await viewModel.loadApps()
+                    let elapsed = Date().timeIntervalSince(start)
+                    if elapsed < 1.0 {
+                        try? await Task.sleep(nanoseconds: UInt64((1.0 - elapsed) * 1_000_000_000))
+                    }
+                    isReloading = false
+                }
             }
-            .disabled(viewModel.isBusy)
+            .disabled(isReloading)
         }
     }
 
@@ -99,28 +132,19 @@ struct AppPicker: View {
             onSelect()
         }) {
             HStack(spacing: 10) {
-                IconView(url: app.iconURL, size: 30)
+                IconView(url: app.iconURL, size: 20)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(app.name)
-                        .font(.callout.weight(.medium))
-                        .lineLimit(1)
-                    Text(app.bundleID)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Text(app.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
 
                 Spacer()
 
-                Text(app.primaryLocale)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
                 if viewModel.selectedApp?.id == app.id {
                     Image(systemName: "checkmark")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tint)
                 }
             }
         }
