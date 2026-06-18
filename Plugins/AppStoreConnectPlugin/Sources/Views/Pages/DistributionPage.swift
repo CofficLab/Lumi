@@ -13,6 +13,8 @@ struct DistributionPage: View {
                     title: AppStoreConnectLocalization.string("No App Selected"),
                     description: AppStoreConnectLocalization.string("Select an app from the Apps page or toolbar picker.")
                 )
+            } else if viewModel.isCoverArtMakerSelected {
+                CoverArtPage(viewModel: viewModel)
             } else if viewModel.selectedVersion == nil {
                 AppEmptyState(
                     icon: "number",

@@ -9,6 +9,8 @@ struct Sidebar: View {
             if viewModel.selectedApp != nil {
                 VersionsSection(viewModel: viewModel)
                     .padding(.top, 6)
+
+                CoverArtSidebarSection(viewModel: viewModel)
             }
 
             Spacer(minLength: 0)

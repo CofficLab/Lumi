@@ -34,7 +34,9 @@ struct TopBar: View {
                 }
                 .disabled(!viewModel.credentials.isComplete || viewModel.isBusy)
 
-                if viewModel.page == .distribution, !viewModel.isReadOnlyVersion {
+                if viewModel.page == .distribution,
+                   viewModel.selectedVersion != nil,
+                   !viewModel.isReadOnlyVersion {
                     AppButton(AppStoreConnectLocalization.string("Save Metadata"), systemImage: "square.and.arrow.down", style: .primary, size: .small) {
                         Task { await viewModel.saveMetadata() }
                     }

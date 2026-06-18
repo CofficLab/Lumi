@@ -76,6 +76,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     @Published var ciBuildRuns: [CiBuildRun] = []
     @Published var ciSourceBranchOrTag = ""
     @Published var ciWorkflowExportJSON = ""
+    @Published var isCoverArtMakerSelected = false
 
     private static let screenshotDisplayTypesByPlatform: [String: [String]] = [
         "IOS": [
@@ -116,9 +117,14 @@ final class ConnectViewModel: ObservableObject, SuperLog {
 
     private let credentialStore: CredentialStore
     private let client: ConnectClient
+    private let localStore: AppStoreConnectPluginLocalStore
 
-    init(credentialStore: CredentialStore = .shared) {
+    init(
+        credentialStore: CredentialStore = .shared,
+        localStore: AppStoreConnectPluginLocalStore = .shared
+    ) {
         self.credentialStore = credentialStore
+        self.localStore = localStore
         let loadedCredentials = credentialStore.load()
         self.credentials = loadedCredentials
         self.hasStoredPrivateKey = !loadedCredentials.privateKey.isEmpty
@@ -231,18 +237,14 @@ final class ConnectViewModel: ObservableObject, SuperLog {
             let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             apps = try await client.listApps(search: query.isEmpty ? nil : query)
             connectionStatus = AppStoreConnectLocalization.string("Connected")
-            if selectedApp == nil {
-                selectedApp = apps.first
-            } else if let selectedApp,
-                      !apps.contains(where: { $0.id == selectedApp.id }) {
-                self.selectedApp = apps.first
-            }
+            applyPersistedOrDefaultSelectedApp()
         }
     }
 
     func navigate(to page: Page) {
         if !page.showsTopBar {
             selectedVersion = nil
+            isCoverArtMakerSelected = false
         }
         self.page = page
         Task { await preparePageIfNeeded(page) }
@@ -271,8 +273,10 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     func selectApp(_ app: AppStoreApp, openDistribution: Bool = false) {
         let appChanged = selectedApp?.id != app.id
         selectedApp = app
+        localStore.setSelectedAppID(app.id, for: credentials)
         if appChanged {
             selectedVersion = nil
+            isCoverArtMakerSelected = false
             versions = []
             localizations = []
             editedLocalization = nil
@@ -290,6 +294,33 @@ final class ConnectViewModel: ObservableObject, SuperLog {
 
     func openDistribution(for version: AppStoreVersion) {
         selectVersion(version)
+    }
+
+    func openCoverArtMaker() {
+        isCoverArtMakerSelected = true
+        page = .distribution
+    }
+
+    private func applyPersistedOrDefaultSelectedApp() {
+        let target: AppStoreApp?
+        if let persistedID = localStore.selectedAppID(for: credentials),
+           let persisted = apps.first(where: { $0.id == persistedID }) {
+            target = persisted
+        } else if let current = selectedApp,
+                  apps.contains(where: { $0.id == current.id }) {
+            target = current
+        } else {
+            target = apps.first
+        }
+
+        guard let target else {
+            selectedApp = nil
+            return
+        }
+
+        if selectedApp?.id != target.id {
+            selectApp(target, openDistribution: false)
+        }
     }
 
     func loadVersions() async {
@@ -321,6 +352,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
     }
 
     func selectVersion(_ version: AppStoreVersion) {
+        isCoverArtMakerSelected = false
         selectedVersion = version
         page = .distribution
         localizations = []
