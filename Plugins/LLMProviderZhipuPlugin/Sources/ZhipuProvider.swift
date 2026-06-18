@@ -22,6 +22,16 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
                 "glm-4.6",
                 "glm-4.5",
                 "glm-4.5-air",
+            ],
+            modelCapabilities: [
+                "glm-5.2": .init(supportsVision: true, supportsTools: true),
+                "glm-5.1": .init(supportsVision: true, supportsTools: true),
+                "glm-5-turbo": .init(supportsVision: true, supportsTools: true),
+                "glm-5": .init(supportsVision: true, supportsTools: true),
+                "glm-4.7": .init(supportsVision: false, supportsTools: true),
+                "glm-4.6": .init(supportsVision: true, supportsTools: true),
+                "glm-4.5": .init(supportsVision: true, supportsTools: true),
+                "glm-4.5-air": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

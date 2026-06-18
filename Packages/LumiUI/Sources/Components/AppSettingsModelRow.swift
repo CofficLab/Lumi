@@ -7,33 +7,75 @@ public struct AppSettingsModelRow: View {
     let model: String
     let isDefault: Bool
     let defaultLabel: String
+    let supportsVision: Bool?
+    let supportsTools: Bool?
+    let supportsTTS: Bool?
     let onTap: () -> Void
 
     public init(
         model: String,
         isDefault: Bool,
         defaultLabel: String = "默认",
+        supportsVision: Bool? = nil,
+        supportsTools: Bool? = nil,
+        supportsTTS: Bool? = nil,
         onTap: @escaping () -> Void
     ) {
         self.model = model
         self.isDefault = isDefault
         self.defaultLabel = defaultLabel
+        self.supportsVision = supportsVision
+        self.supportsTools = supportsTools
+        self.supportsTTS = supportsTTS
         self.onTap = onTap
     }
 
     public var body: some View {
         AppListRow(isSelected: isDefault, action: onTap) {
-            HStack(spacing: 12) {
-                Text(model)
-                    .font(.appBody)
-                    .foregroundColor(theme.textPrimary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 0)
-                if isDefault {
-                    AppTag(defaultLabel, style: .accent)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 12) {
+                    Text(model)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                    if isDefault {
+                        AppTag(defaultLabel, style: .accent)
+                    }
+                }
+
+                // MARK: - 能力 Badge
+                if hasCapabilities {
+                    HStack(spacing: 6) {
+                        if let supportsVision {
+                            capabilityBadge(
+                                title: supportsVision ? "Image" : "Text",
+                                systemImage: supportsVision ? "photo" : "text.bubble"
+                            )
+                        }
+                        if let supportsTools, supportsTools {
+                            capabilityBadge(title: "Tools", systemImage: "wrench.and.screwdriver")
+                        }
+                        if let supportsTTS, supportsTTS {
+                            capabilityBadge(title: "TTS", systemImage: "waveform")
+                        }
+                        Spacer(minLength: 0)
+                    }
                 }
             }
         }
+    }
+
+    // MARK: - Private
+
+    private var hasCapabilities: Bool {
+        supportsVision != nil || (supportsTools == true) || (supportsTTS == true)
+    }
+
+    @ViewBuilder
+    private func capabilityBadge(title: String, systemImage: String) -> some View {
+        AppTag(title, systemImage: systemImage, style: .subtle)
+            .help(title)
     }
 }

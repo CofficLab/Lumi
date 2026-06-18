@@ -17,6 +17,13 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-4-turbo",
             "gpt-4",
             "gpt-3.5-turbo"
+        ],
+        modelCapabilities: [
+            "gpt-4o": .init(supportsVision: true, supportsTools: true),
+            "gpt-4o-mini": .init(supportsVision: true, supportsTools: true),
+            "gpt-4-turbo": .init(supportsVision: true, supportsTools: true),
+            "gpt-4": .init(supportsVision: false, supportsTools: true),
+            "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
         ]
     )
 

@@ -23,6 +23,17 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
                 "glm-5",
                 "MiniMax-M2.5",
                 "kimi-k2.5",
+            ],
+            modelCapabilities: [
+                "qwen3.5-plus": .init(supportsVision: true, supportsTools: true),
+                "qwen3.6-flash": .init(supportsVision: true, supportsTools: true),
+                "qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
+                "qwen3.7-plus": .init(supportsVision: true, supportsTools: true),
+                "qwen3.7-max": .init(supportsVision: true, supportsTools: true),
+                "glm-4.7": .init(supportsVision: false, supportsTools: true),
+                "glm-5": .init(supportsVision: true, supportsTools: true),
+                "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true),
+                "kimi-k2.5": .init(supportsVision: false, supportsTools: true)
             ]
         )
     }

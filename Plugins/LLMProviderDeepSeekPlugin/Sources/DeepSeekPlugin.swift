@@ -28,6 +28,10 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
             availableModels: [
             "deepseek-chat",
             "deepseek-coder"
+            ],
+            modelCapabilities: [
+                "deepseek-chat": .init(supportsVision: false, supportsTools: true),
+                "deepseek-coder": .init(supportsVision: false, supportsTools: true)
             ]
         )
     }
