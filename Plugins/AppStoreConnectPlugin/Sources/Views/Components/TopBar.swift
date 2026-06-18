@@ -23,11 +23,6 @@ struct TopBar: View {
 
                 Spacer()
 
-                Text(viewModel.connectionStatus)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
                 if viewModel.page == .distribution, viewModel.metadataIsDirty {
                     Text(AppStoreConnectLocalization.string("Unsaved changes"))
                         .font(.caption)

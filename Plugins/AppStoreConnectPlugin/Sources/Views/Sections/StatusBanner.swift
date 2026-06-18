@@ -68,12 +68,6 @@ struct VersionStatusBanner: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Text(version.platform)
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
         }
         .appStoreConnectAddToChatMenu(
