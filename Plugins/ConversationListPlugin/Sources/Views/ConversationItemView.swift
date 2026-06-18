@@ -8,7 +8,7 @@ import SwiftUI
 /// ## 活跃状态
 ///
 /// 对话项支持两种活跃状态：
-/// - **处理中**：对话正在处理消息，图标会显示脉冲涟漪动画和主题色，标题文字同步脉冲
+/// - **处理中**：对话正在处理消息，图标会显示脉冲涟漪动画和主题色
 /// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
 public struct ConversationItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -27,9 +27,6 @@ public struct ConversationItemView: View {
     /// 是否显示删除确认对话框
     @State private var showDeleteConfirmation = false
 
-    /// 标题脉冲动画状态
-    @State private var titlePulsing = false
-
     /// 计算：对话是否在近期活跃时间窗口内有更新
     private var isRecentlyActive: Bool {
         Date().timeIntervalSince(conversation.updatedAt) < recentActivityWindow
@@ -43,11 +40,13 @@ public struct ConversationItemView: View {
                     .font(.appMicro)
                     .foregroundColor(isProcessing ? theme.primary : theme.textTertiary)
                     .padding(3)
+                    .overlay {
+                        if isProcessing {
+                            PulseRipple(color: theme.primary)
+                        }
+                    }
 
-                if isProcessing {
-                    // 处理中：脉冲动画
-                    ProcessingPulseIndicator(color: theme.primary)
-                } else if isRecentlyActive {
+                if !isProcessing, isRecentlyActive {
                     // 近期活跃：小圆点
                     RecentActivityIndicator(color: theme.primary)
                 }
@@ -55,17 +54,10 @@ public struct ConversationItemView: View {
 
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
-                // 标题（处理中时同步脉冲）
+                // 标题
                 Text(conversation.displayTitle)
                     .font(.appMicroEmphasized)
                     .foregroundColor(isProcessing ? theme.primary : theme.textPrimary)
-                    .opacity(isProcessing && titlePulsing ? 0.4 : 1.0)
-                    .animation(
-                        isProcessing
-                            ? .easeOut(duration: 1.5).repeatForever(autoreverses: false)
-                            : .default,
-                        value: titlePulsing
-                    )
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -74,14 +66,6 @@ public struct ConversationItemView: View {
             }
 
             Spacer()
-        }
-        .onAppear {
-            if isProcessing {
-                titlePulsing = true
-            }
-        }
-        .onChange(of: isProcessing) {
-            titlePulsing = isProcessing
         }
         .contextMenu {
             Button(role: .destructive) {
@@ -103,27 +87,6 @@ public struct ConversationItemView: View {
 }
 
 // MARK: - Activity Indicators
-
-/// 处理中脉冲动画指示器
-private struct ProcessingPulseIndicator: View {
-    public let color: Color
-    @State private var isAnimating = false
-
-    public var body: some View {
-        Circle()
-            .fill(color.opacity(0.3))
-            .frame(width: 12, height: 12)
-            .scaleEffect(isAnimating ? 1.8 : 1.0)
-            .opacity(isAnimating ? 0 : 0.5)
-            .animation(
-                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
-    }
-}
 
 /// 近期活跃小圆点指示器
 private struct RecentActivityIndicator: View {

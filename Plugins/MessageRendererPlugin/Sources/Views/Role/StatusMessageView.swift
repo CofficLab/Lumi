@@ -35,24 +35,3 @@ struct StatusMessageView: View {
         }
     }
 }
-
-/// 脉冲涟漪动画 —— 与对话列表 `ProcessingPulseIndicator` 风格一致。
-struct PulseRipple: View {
-    let color: Color
-    @State private var isAnimating = false
-
-    var body: some View {
-        Circle()
-            .fill(color.opacity(0.3))
-            .scaleEffect(isAnimating ? 1.8 : 1.0)
-            .opacity(isAnimating ? 0 : 0.5)
-            .animation(
-                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
-            .allowsHitTesting(false)
-    }
-}
