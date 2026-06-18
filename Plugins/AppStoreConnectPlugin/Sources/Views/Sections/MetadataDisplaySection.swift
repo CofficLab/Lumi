@@ -6,23 +6,18 @@ struct MetadataDisplaySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(AppStoreConnectLocalization.string("Metadata"))
-                    .font(.title3.weight(.semibold))
-                Text(AppStoreConnectLocalization.string("App Store listing information for this locale"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal)
-            .appStoreConnectAddToChatMenu(
-                entityType: "metadataSection",
-                entityID: localization?.id ?? "none",
-                title: "Metadata",
-                sourceView: "VersionDetail.MetadataDisplaySection",
-                fields: [
-                    "locale": localization?.locale ?? "-"
-                ]
-            )
+            Text(AppStoreConnectLocalization.string("Metadata"))
+                .font(.title3.weight(.semibold))
+                .padding(.horizontal)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "metadataSection",
+                    entityID: localization?.id ?? "none",
+                    title: "Metadata",
+                    sourceView: "VersionDetail.MetadataDisplaySection",
+                    fields: [
+                        "locale": localization?.locale ?? "-",
+                    ]
+                )
 
             if let localization {
                 VStack(alignment: .leading, spacing: 14) {
@@ -40,7 +35,7 @@ struct MetadataDisplaySection: View {
                     title: localization.locale,
                     sourceView: "VersionDetail.MetadataDisplaySection",
                     fields: [
-                        "locale": localization.locale
+                        "locale": localization.locale,
                     ]
                 )
             } else {

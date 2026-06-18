@@ -6,24 +6,19 @@ struct MetadataSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(AppStoreConnectLocalization.string("Metadata"))
-                    .font(.title3.weight(.semibold))
-                Text(AppStoreConnectLocalization.string("Edit App Store version localization fields"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal)
-            .appStoreConnectAddToChatMenu(
-                entityType: "metadataSection",
-                entityID: viewModel.selectedLocalizationID ?? "none",
-                title: "Metadata",
-                sourceView: "VersionDetail.MetadataSection",
-                fields: [
-                    "hasLocalizations": viewModel.localizations.isEmpty ? "false" : "true",
-                    "selectedLocalizationID": viewModel.selectedLocalizationID ?? "-"
-                ]
-            )
+            Text(AppStoreConnectLocalization.string("Metadata"))
+                .font(.title3.weight(.semibold))
+                .padding(.horizontal)
+                .appStoreConnectAddToChatMenu(
+                    entityType: "metadataSection",
+                    entityID: viewModel.selectedLocalizationID ?? "none",
+                    title: "Metadata",
+                    sourceView: "VersionDetail.MetadataSection",
+                    fields: [
+                        "hasLocalizations": viewModel.localizations.isEmpty ? "false" : "true",
+                        "selectedLocalizationID": viewModel.selectedLocalizationID ?? "-",
+                    ]
+                )
 
             if viewModel.localizations.isEmpty {
                 InlineEmptyState(
@@ -39,7 +34,7 @@ struct MetadataSection: View {
                     sourceView: "VersionDetail.MetadataSection",
                     fields: [
                         "selectedVersionID": viewModel.selectedVersion?.id ?? "-",
-                        "selectedVersionString": viewModel.selectedVersion?.versionString ?? "-"
+                        "selectedVersionString": viewModel.selectedVersion?.versionString ?? "-",
                     ]
                 )
             } else {
@@ -69,7 +64,7 @@ struct MetadataEditor: View {
             sourceView: "VersionDetail.MetadataEditor",
             fields: [
                 "isDirty": viewModel.metadataIsDirty ? "true" : "false",
-                "locale": viewModel.editedLocalization?.locale ?? "-"
+                "locale": viewModel.editedLocalization?.locale ?? "-",
             ]
         )
     }
