@@ -79,6 +79,13 @@ final class VM: ObservableObject, SuperLog {
     @Published var ciBuildRuns: [CiBuildRun] = []
     @Published var ciSourceBranchOrTag = ""
     @Published var ciWorkflowExportJSON = ""
+    @Published var coverArtItems: [CoverArtManifest] = []
+    @Published var selectedCoverArtSlug: String?
+    @Published var coverArtHTML = ""
+    @Published var coverArtFileURL: URL?
+    @Published var coverArtReloadToken = UUID()
+
+    let coverArtStore = CoverArtDocumentStore()
 
     static let screenshotDisplayTypesByPlatform: [String: [String]] = [
         "IOS": [

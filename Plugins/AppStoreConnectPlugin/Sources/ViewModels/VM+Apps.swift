@@ -32,6 +32,7 @@ extension VM {
             page = .distribution
         }
         Task { await loadVersions() }
+        reloadCoverArtList()
     }
 
     func applyPersistedOrDefaultSelectedApp() {

@@ -30,8 +30,20 @@ final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
         set(appID, forKey: Self.selectedAppKey(for: credentials))
     }
 
+    func selectedCoverArtSlug(appID: String) -> String? {
+        string(forKey: Self.selectedCoverArtSlugKey(appID: appID))
+    }
+
+    func setSelectedCoverArtSlug(_ slug: String?, appID: String) {
+        set(slug, forKey: Self.selectedCoverArtSlugKey(appID: appID))
+    }
+
     private static func selectedAppKey(for credentials: AppStoreConnectCredentials) -> String {
         "selectedAppID.\(credentials.issuerID).\(credentials.keyID)"
+    }
+
+    private static func selectedCoverArtSlugKey(appID: String) -> String {
+        "selectedCoverArtSlug.\(appID)"
     }
 
     private func set(_ value: Any?, forKey key: String) {

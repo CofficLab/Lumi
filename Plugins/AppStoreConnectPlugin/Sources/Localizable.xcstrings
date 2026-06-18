@@ -32,6 +32,16 @@
     "—" : {
 
     },
+    "%@ · %lld×%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld×%3$lld"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -340,6 +350,34 @@
         }
       }
     },
+    "App Store Connect app identifier." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect app identifier."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 应用标识符。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 應用程式識別碼。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 應用程式識別碼。"
+          }
+        }
+      }
+    },
     "App Store Connect credentials are incomplete." : {
       "localizations" : {
         "en" : {
@@ -452,90 +490,6 @@
         }
       }
     },
-    "Cover Art" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cover Art"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面图"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面圖"
-          }
-        }
-      }
-    },
-    "Cover Art Maker" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cover Art Maker"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面图制作"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面圖製作"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "封面圖製作"
-          }
-        }
-      }
-    },
-    "Design App Store cover images for %@. This workspace is under construction." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design App Store cover images for %@. This workspace is under construction."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "为 %@ 设计 App Store 封面图。此功能正在建设中。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為 %@ 設計 App Store 封面圖。此功能正在建設中。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為 %@ 設計 App Store 封面圖。此功能正在建設中。"
-          }
-        }
-      }
-    },
     "Apps" : {
       "localizations" : {
         "en" : {
@@ -560,6 +514,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App 清單"
+          }
+        }
+      }
+    },
+    "Background Color" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Color"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景颜色"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景顏色"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景顏色"
           }
         }
       }
@@ -784,6 +767,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇一個 App Store Connect App"
+          }
+        }
+      }
+    },
+    "Choose Background" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Background"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择背景"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇背景"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇背景"
+          }
+        }
+      }
+    },
+    "Choose Icon" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Icon"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择图标"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇圖示"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇圖示"
           }
         }
       }
@@ -1068,6 +1109,202 @@
         }
       }
     },
+    "Cover Art" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cover Art"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面图"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖"
+          }
+        }
+      }
+    },
+    "Cover art already exists at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cover art already exists at %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面图已存在于 %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖已存在於 %@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖已存在於 %@"
+          }
+        }
+      }
+    },
+    "Cover Art Maker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cover Art Maker"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面图制作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖製作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面圖製作"
+          }
+        }
+      }
+    },
+    "Cover art not found at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cover art not found at %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 未找到封面图"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 未找到封面圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 未找到封面圖"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
+          }
+        }
+      }
+    },
+    "Create a cover art document, then refine its HTML with the agent." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a cover art document, then refine its HTML with the agent."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建封面图文档，然后通过 Agent 迭代调整 HTML。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立封面圖文件，然後透過 Agent 迭代調整 HTML。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立封面圖文件，然後透過 Agent 迭代調整 HTML。"
+          }
+        }
+      }
+    },
+    "Create a new HTML cover art document from the default template." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new HTML cover art document from the default template."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从默认模板创建新的 HTML 封面图文档。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從預設範本建立新的 HTML 封面圖文件。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從預設範本建立新的 HTML 封面圖文件。"
+          }
+        }
+      }
+    },
     "Create a screenshot set for the selected display type, or switch to another device size." : {
       "localizations" : {
         "en" : {
@@ -1148,6 +1385,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "建立和管理用於提交的應用程式版本"
+          }
+        }
+      }
+    },
+    "Create cover art document" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create cover art document"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建封面图文档"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立封面圖文件"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立封面圖文件"
           }
         }
       }
@@ -1292,6 +1557,64 @@
         }
       }
     },
+    "Design" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设计"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計"
+          }
+        }
+      }
+    },
+    "Design App Store cover images for %@. This workspace is under construction." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design App Store cover images for %@. This workspace is under construction."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 %@ 设计 App Store 封面图。此功能正在建设中。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 %@ 設計 App Store 封面圖。此功能正在建設中。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 %@ 設計 App Store 封面圖。此功能正在建設中。"
+          }
+        }
+      }
+    },
     "Developer Rejected" : {
       "localizations" : {
         "en" : {
@@ -1316,6 +1639,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開發者已拒絕"
+          }
+        }
+      }
+    },
+    "Device Size" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Size"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设备尺寸"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝置尺寸"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝置尺寸"
           }
         }
       }
@@ -1657,6 +2008,118 @@
         }
       }
     },
+    "Export cover art PNG" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export cover art PNG"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出封面图 PNG"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出封面圖 PNG"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出封面圖 PNG"
+          }
+        }
+      }
+    },
+    "Export PNG" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export PNG"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出 PNG"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 PNG"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 PNG"
+          }
+        }
+      }
+    },
+    "Exported image size %dx%d does not match expected %dx%d." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported image size %dx%d does not match expected %dx%d."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出图片尺寸 %dx%d 与预期 %dx%d 不符。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出圖片尺寸 %dx%d 與預期 %dx%d 不符。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出圖片尺寸 %dx%d 與預期 %dx%d 不符。"
+          }
+        }
+      }
+    },
+    "Failed to encode PNG." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to encode PNG."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG 编码失败。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG 編碼失敗。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG 編碼失敗。"
+          }
+        }
+      }
+    },
     "Failed to Load Screenshot Sets" : {
       "localizations" : {
         "en" : {
@@ -1741,6 +2204,35 @@
         }
       }
     },
+    "Generate a cover image for %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate a cover image for %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 %@ 生成封面图"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 %@ 生成封面圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 %@ 生成封面圖"
+          }
+        }
+      }
+    },
     "Global API Key" : {
       "localizations" : {
         "en" : {
@@ -1793,6 +2285,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "前往 Keys 分頁，建立新密鑰，選擇管理 App 中繼資料和截圖所需的最低角色，然後儲存。"
+          }
+        }
+      }
+    },
+    "HTML cover art for %@ in .lumi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTML cover art for %@ in .lumi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 的 HTML 封面图，存储于 .lumi"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 的 HTML 封面圖，儲存於 .lumi"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 的 HTML 封面圖，儲存於 .lumi"
           }
         }
       }
@@ -1905,6 +2425,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "審核中"
+          }
+        }
+      }
+    },
+    "Invalid cover art slug: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid cover art slug: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的封面图 slug：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的封面圖 slug：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的封面圖 slug：%@"
           }
         }
       }
@@ -2157,6 +2705,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用配置的 API 密钥从 App Store Connect 列出应用。"
+          }
+        }
+      }
+    },
+    "List cover art documents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List cover art documents"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出封面图文档"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出封面圖文件"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出封面圖文件"
+          }
+        }
+      }
+    },
+    "List HTML cover art documents stored under .lumi for an App Store Connect app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List HTML cover art documents stored under .lumi for an App Store Connect app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 App Store Connect 应用在 .lumi 下存储的 HTML 封面图文档。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 App Store Connect 應用程式在 .lumi 下儲存的 HTML 封面圖文件。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 App Store Connect 應用程式在 .lumi 下儲存的 HTML 封面圖文件。"
           }
         }
       }
@@ -2610,6 +3214,34 @@
         }
       }
     },
+    "New Cover Art" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Cover Art"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建封面图"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增封面圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增封面圖"
+          }
+        }
+      }
+    },
     "No" : {
       "localizations" : {
         "en" : {
@@ -2722,6 +3354,34 @@
         }
       }
     },
+    "No Cover Art Yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Cover Art Yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无封面图"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚無封面圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚無封面圖"
+          }
+        }
+      }
+    },
     "No Localization Selected" : {
       "localizations" : {
         "en" : {
@@ -2778,6 +3438,35 @@
         }
       }
     },
+    "No Preview" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無預覽"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無預覽"
+          }
+        }
+      }
+    },
     "No Products" : {
       "localizations" : {
         "en" : {
@@ -2802,6 +3491,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无产品"
+          }
+        }
+      }
+    },
+    "No Project Open" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Project Open"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未打开项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未開啟專案"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未開啟專案"
           }
         }
       }
@@ -3114,6 +3831,34 @@
         }
       }
     },
+    "Open a project first so cover art HTML can be stored under .lumi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a project first so cover art HTML can be stored under .lumi."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先打开项目，以便将封面图 HTML 存储在 .lumi 目录下。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先開啟專案，以便將封面圖 HTML 儲存在 .lumi 目錄下。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先開啟專案，以便將封面圖 HTML 儲存在 .lumi 目錄下。"
+          }
+        }
+      }
+    },
     "Open App Store Connect API Keys" : {
       "localizations" : {
         "en" : {
@@ -3226,6 +3971,62 @@
         }
       }
     },
+    "Optional project path. Defaults to the current project." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional project path. Defaults to the current project."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选项目路径，默认为当前项目。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選專案路徑，預設為目前專案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選專案路徑，預設為目前專案。"
+          }
+        }
+      }
+    },
+    "Path is not allowed: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Path is not allowed: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不允许的路径：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不允許的路徑：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不允許的路徑：%@"
+          }
+        }
+      }
+    },
     "Pending Apple Release" : {
       "localizations" : {
         "en" : {
@@ -3278,6 +4079,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "等待開發者發佈"
+          }
+        }
+      }
+    },
+    "Pick a background and icon to generate a preview." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a background and icon to generate a preview."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择背景和图标以生成预览。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇背景和圖示以生成預覽。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇背景和圖示以生成預覽。"
           }
         }
       }
@@ -3450,6 +4280,34 @@
         }
       }
     },
+    "Project path is missing or invalid." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project path is missing or invalid."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目路径缺失或无效。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案路徑缺失或無效。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案路徑缺失或無效。"
+          }
+        }
+      }
+    },
     "Promotional Text" : {
       "localizations" : {
         "en" : {
@@ -3474,6 +4332,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "宣傳文字"
+          }
+        }
+      }
+    },
+    "Read a cover art manifest and full index.html for editing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read a cover art manifest and full index.html for editing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取封面图 manifest 和完整 index.html 以供编辑。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取封面圖 manifest 和完整 index.html 以供編輯。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取封面圖 manifest 和完整 index.html 以供編輯。"
+          }
+        }
+      }
+    },
+    "Read cover art document" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read cover art document"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取封面图文档"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取封面圖文件"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取封面圖文件"
           }
         }
       }
@@ -3810,6 +4724,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已從銷售中移除"
+          }
+        }
+      }
+    },
+    "Render a cover art HTML document to PNG and save it under the project .lumi exports folder." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Render a cover art HTML document to PNG and save it under the project .lumi exports folder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将封面图 HTML 渲染为 PNG，并保存到项目 .lumi/exports 目录。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將封面圖 HTML 渲染為 PNG，並儲存到專案 .lumi/exports 目錄。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將封面圖 HTML 渲染為 PNG，並儲存到專案 .lumi/exports 目錄。"
+          }
+        }
+      }
+    },
+    "Replace the full index.html content for a cover art document." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace the full index.html content for a cover art document."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整文件替换封面图文档的 index.html 内容。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整文件替換封面圖文件的 index.html 內容。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整文件替換封面圖文件的 index.html 內容。"
           }
         }
       }
@@ -4234,6 +5204,34 @@
         }
       }
     },
+    "Slug" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slug"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slug"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slug"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slug"
+          }
+        }
+      }
+    },
     "Start Build" : {
       "localizations" : {
         "en" : {
@@ -4458,6 +5456,62 @@
         }
       }
     },
+    "Timed out while loading cover art HTML." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timed out while loading cover art HTML."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载封面图 HTML 超时。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入封面圖 HTML 逾時。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入封面圖 HTML 逾時。"
+          }
+        }
+      }
+    },
+    "Title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标题"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標題"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標題"
+          }
+        }
+      }
+    },
     "tvOS" : {
       "localizations" : {
         "en" : {
@@ -4542,6 +5596,34 @@
         }
       }
     },
+    "Update cover art HTML" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update cover art HTML"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新封面图 HTML"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新封面圖 HTML"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新封面圖 HTML"
+          }
+        }
+      }
+    },
     "Upload, preview, and organize app screenshots" : {
       "localizations" : {
         "en" : {
@@ -4622,6 +5704,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在上传"
+          }
+        }
+      }
+    },
+    "Use a hex color like #F5F5F7" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a hex color like #F5F5F7"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用类似 #F5F5F7 的十六进制颜色"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用類似 #F5F5F7 的十六進制顏色"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用類似 #F5F5F7 的十六進制顏色"
           }
         }
       }

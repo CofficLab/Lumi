@@ -46,6 +46,7 @@ extension VM {
     }
 
     func openCoverArtMaker() {
+        reloadCoverArtList()
         page = .coverArt
     }
 
