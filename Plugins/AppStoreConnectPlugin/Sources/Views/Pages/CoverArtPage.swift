@@ -86,8 +86,10 @@ struct CoverArtPage: View {
 
     private var content: some View {
         HStack(alignment: .top, spacing: 12) {
-            CoverArtListPanel(viewModel: viewModel)
-                .frame(width: 240)
+            if !viewModel.coverArtItems.isEmpty {
+                CoverArtListPanel(viewModel: viewModel)
+                    .frame(width: 240)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 if viewModel.selectedCoverArtManifest != nil, !viewModel.coverArtPreviewSizes.isEmpty {
