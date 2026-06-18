@@ -154,6 +154,34 @@
         }
       }
     },
+    "A version is already in progress for %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A version is already in progress for %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已有进行中的版本。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已有進行中的版本。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已有進行中的版本。"
+          }
+        }
+      }
+    },
     "Account" : {
       "localizations" : {
         "en" : {
@@ -210,34 +238,6 @@
         }
       }
     },
-    "Allow editing and screenshot upload" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow editing and screenshot upload"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允许编辑和上传截图"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允許編輯和上傳截圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允許編輯和上傳截圖"
-          }
-        }
-      }
-    },
     "After Approval" : {
       "localizations" : {
         "en" : {
@@ -266,30 +266,30 @@
         }
       }
     },
-    "A version is already in progress for %@." : {
+    "Allow editing and screenshot upload" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A version is already in progress for %@."
+            "value" : "Allow editing and screenshot upload"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 已有进行中的版本。"
+            "value" : "允许编辑和上传截图"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 已有進行中的版本。"
+            "value" : "允許編輯和上傳截圖"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 已有進行中的版本。"
+            "value" : "允許編輯和上傳截圖"
           }
         }
       }
@@ -1333,34 +1333,6 @@
         }
       }
     },
-    "Create a new HTML cover art document from the default template." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create a new HTML cover art document from the default template."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从默认模板创建新的 HTML 封面图文档。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從預設範本建立新的 HTML 封面圖文件。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從預設範本建立新的 HTML 封面圖文件。"
-          }
-        }
-      }
-    },
     "Create a new App Store version for the selected app." : {
       "localizations" : {
         "en" : {
@@ -1385,6 +1357,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為所選應用程式建立新的 App Store 版本。"
+          }
+        }
+      }
+    },
+    "Create a new HTML cover art document from the default template." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new HTML cover art document from the default template."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从默认模板创建新的 HTML 封面图文档。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從預設範本建立新的 HTML 封面圖文件。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從預設範本建立新的 HTML 封面圖文件。"
           }
         }
       }
@@ -2374,6 +2374,7 @@
       }
     },
     "HTML cover art for %@ in .lumi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3186,6 +3187,34 @@
         }
       }
     },
+    "Manual Release" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual Release"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动发布"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手動發佈"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手動發佈"
+          }
+        }
+      }
+    },
     "Marketing URL" : {
       "localizations" : {
         "en" : {
@@ -3294,34 +3323,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "中繼資料編輯"
-          }
-        }
-      }
-    },
-    "Manual Release" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manual Release"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "手动发布"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "手動發佈"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "手動發佈"
           }
         }
       }
@@ -5596,6 +5597,34 @@
         }
       }
     },
+    "The new version will start in Prepare for Submission." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The new version will start in Prepare for Submission."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新版本将处于“准备提交”状态。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新版本將處於「準備提交」狀態。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新版本將處於「準備提交」狀態。"
+          }
+        }
+      }
+    },
     "The private key could not be parsed. Use the .p8 key downloaded from App Store Connect." : {
       "localizations" : {
         "en" : {
@@ -5676,34 +5705,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "載入封面圖 HTML 逾時。"
-          }
-        }
-      }
-    },
-    "The new version will start in Prepare for Submission." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The new version will start in Prepare for Submission."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新版本将处于“准备提交”状态。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新版本將處於「準備提交」狀態。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新版本將處於「準備提交」狀態。"
           }
         }
       }
@@ -6073,34 +6074,6 @@
         }
       }
     },
-    "visionOS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "visionOS"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "visionOS"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "visionOS"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "visionOS"
-          }
-        }
-      }
-    },
     "Version Number" : {
       "localizations" : {
         "en" : {
@@ -6153,6 +6126,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請輸入版本號。"
+          }
+        }
+      }
+    },
+    "visionOS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "visionOS"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "visionOS"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "visionOS"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "visionOS"
           }
         }
       }

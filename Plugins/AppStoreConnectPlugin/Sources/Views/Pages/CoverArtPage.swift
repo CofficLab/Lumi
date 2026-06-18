@@ -10,7 +10,7 @@ struct CoverArtPage: View {
     @State private var fileMonitor: DispatchSourceFileSystemObject?
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             header
 
             if viewModel.selectedApp == nil {
@@ -56,16 +56,11 @@ struct CoverArtPage: View {
     }
 
     private var header: some View {
-        HStack {
-            PageHeader(
-                title: AppStoreConnectLocalization.string("Cover Art Maker"),
-                subtitle: viewModel.selectedApp.map {
-                    AppStoreConnectLocalization.string("HTML cover art for %@ in .lumi", $0.name)
-                } ?? AppStoreConnectLocalization.string("Select an app first")
-            )
+        AppToolbarContainer(padding: appStoreToolbarPadding) {
+            HStack(spacing: 16) {
+                Spacer()
 
-            if viewModel.hasOpenProject, viewModel.selectedApp != nil {
-                HStack(spacing: 8) {
+                if viewModel.hasOpenProject, viewModel.selectedApp != nil {
                     AppButton(AppStoreConnectLocalization.string("New Cover Art"), systemImage: "plus", size: .small) {
                         showingCreateSheet = true
                     }
@@ -84,7 +79,6 @@ struct CoverArtPage: View {
                         }
                     }
                 }
-                .padding(.trailing)
             }
         }
     }
@@ -113,10 +107,11 @@ struct CoverArtPage: View {
                         action: { showingCreateSheet = true }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
+                } else if let manifest = viewModel.selectedCoverArtManifest {
                     HTMLPreviewView(
                         htmlText: viewModel.coverArtHTML,
                         fileURL: viewModel.coverArtFileURL,
+                        contentSize: CGSize(width: manifest.width, height: manifest.height),
                         onWebViewResolved: { webView in
                             previewWebView = webView
                         }

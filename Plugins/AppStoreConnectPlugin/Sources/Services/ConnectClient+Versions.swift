@@ -1,9 +1,6 @@
 import Foundation
-import os
 
 extension ConnectClient {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect.client")
-
     func listVersions(appID: String) async throws -> [AppStoreVersion] {
         let query = [
             URLQueryItem(name: "limit", value: "100"),
@@ -13,15 +10,15 @@ extension ConnectClient {
             )
         ]
         let policy = fetchPolicy
-        Self.logger.info("[ConnectClient] listVersions(appID: \(appID)) - fetchPolicy: \(String(describing: policy))")
+        Self.logger.info("\(Self.t)listVersions appID=\(appID) fetchPolicy=\(String(describing: policy))")
         let response: AppStoreConnectListResponse<AppStoreVersion> = try await request(
             path: "/v1/apps/\(appID)/appStoreVersions",
             queryItems: query
         )
-        Self.logger.info("[ConnectClient] listVersions returned \(response.data.count) raw versions")
-        if !response.data.isEmpty, Self.verboseLogging {
+        Self.logger.info("\(Self.t)listVersions returned \(response.data.count) versions")
+        if Self.verbose {
             for v in response.data.prefix(5) {
-                Self.logger.info("[ConnectClient]   - version: \(v.versionString), platform: \(v.platform), state: \(v.appStoreState), created: \(v.createdDate?.description ?? "nil")")
+                Self.logger.info("\(Self.t)  - \(v.versionString) (state: \(v.appStoreState), platform: \(v.platform))")
             }
         }
         return response.data.sorted {
@@ -37,17 +34,14 @@ extension ConnectClient {
                 value: "locale,promotionalText,description,keywords,whatsNew,supportUrl,marketingUrl"
             )
         ]
-        Self.logger.info("[ConnectClient] listLocalizations(versionID: \(versionID))")
+        Self.logger.info("\(Self.t)listLocalizations versionID=\(versionID)")
         let response: AppStoreConnectListResponse<AppStoreVersionLocalization> = try await request(
             path: "/v1/appStoreVersions/\(versionID)/appStoreVersionLocalizations",
             queryItems: query
         )
-        Self.logger.info("[ConnectClient] listLocalizations returned \(response.data.count) localizations")
+        Self.logger.info("\(Self.t)listLocalizations returned \(response.data.count) localizations")
         return response.data
     }
-
-    /// Toggle for verbose logging of API responses.
-    static let verboseLogging = true
 
     func updateLocalization(_ localization: AppStoreVersionLocalization) async throws -> AppStoreVersionLocalization {
         let payload: [String: Any] = [
@@ -66,7 +60,7 @@ extension ConnectClient {
         ]
 
         let body = try JSONSerialization.data(withJSONObject: payload)
-        Self.logger.info("[ConnectClient] updateLocalization(id: \(localization.id))")
+        Self.logger.info("\(Self.t)updateLocalization id=\(localization.id)")
         let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
             path: "/v1/appStoreVersionLocalizations/\(localization.id)",
             method: "PATCH",
@@ -87,7 +81,7 @@ extension ConnectClient {
             platform: platform,
             releaseType: releaseType
         )
-        Self.logger.info("[ConnectClient] createVersion(appID: \(appID), version: \(versionString), platform: \(platform))")
+        Self.logger.info("\(Self.t)createVersion appID=\(appID) version=\(versionString) platform=\(platform)")
         let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
             path: "/v1/appStoreVersions",
             method: "POST",
@@ -106,7 +100,7 @@ extension ConnectClient {
             locale: locale,
             attributes: attributes
         )
-        Self.logger.info("[ConnectClient] createLocalization(versionID: \(versionID), locale: \(locale))")
+        Self.logger.info("\(Self.t)createLocalization versionID=\(versionID) locale=\(locale)")
         let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
             path: "/v1/appStoreVersionLocalizations",
             method: "POST",

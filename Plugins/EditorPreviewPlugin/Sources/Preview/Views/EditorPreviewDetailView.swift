@@ -867,7 +867,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         let hasFrame = viewModel.currentFrame != nil
         GeometryReader { proxy in
             ZStack {
-                EditorPreviewBoardGrid()
+                PreviewBoardGrid()
 
                 if !hasFrame && !isEntryFailed {
                     VStack(spacing: 12) {
@@ -988,7 +988,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func unsupportedPreview(url: URL?) -> some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
             VStack(spacing: 12) {
                 Image(systemName: "doc")
                     .font(.system(size: 36))
@@ -1550,7 +1550,7 @@ private struct EditorPreviewStringCatalogContainer: View {
 
     private func messageView(systemImage: String, text: String) -> some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
             VStack(spacing: 10) {
                 Image(systemName: systemImage)
                     .font(.system(size: 28))
@@ -1840,7 +1840,7 @@ private struct EditorPreviewImageView: View {
 
     public var body: some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
 
             if let image {
                 imageContent(image)

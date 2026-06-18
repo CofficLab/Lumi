@@ -1,4 +1,5 @@
 import Foundation
+import HTMLPreviewKit
 import LumiCoreKit
 import LumiUI
 import os
@@ -25,7 +26,7 @@ public struct EditorPreviewXCAssetsView: View, SuperLog {
 
     public var body: some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
 
             if let content {
                 if content.isEmpty {

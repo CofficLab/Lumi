@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-private let appStoreToolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+let appStoreToolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 
 struct TopBar: View {
     @ObservedObject var viewModel: VM

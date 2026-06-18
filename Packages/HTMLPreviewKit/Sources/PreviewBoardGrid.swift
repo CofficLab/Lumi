@@ -3,10 +3,11 @@ import SwiftUI
 
 /// 预览画布的背景网格。
 ///
-/// 在 `PreviewSurfaceCanvas` 的实时预览区域底层绘制等间距的浅色参考线，
-/// 模拟设计稿画板上的网格背景，便于对齐预览帧。不响应点击（`allowsHitTesting(false)`）。
-public struct EditorPreviewBoardGrid: View {
+/// 在预览区域底层绘制等间距的浅色参考线，便于对齐内容。不响应点击。
+public struct PreviewBoardGrid: View {
     private let spacing: CGFloat = 24
+
+    public init() {}
 
     public var body: some View {
         Canvas { context, size in
@@ -18,7 +19,6 @@ public struct EditorPreviewBoardGrid: View {
                 lineWidth: 1
             )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 0))
         .allowsHitTesting(false)
     }
 
@@ -48,12 +48,4 @@ public struct EditorPreviewBoardGrid: View {
 
         context.stroke(path, with: .color(Color(nsColor: color)), lineWidth: lineWidth)
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    EditorPreviewBoardGrid()
-        .frame(width: 400, height: 300)
-        .background(Color(nsColor: .windowBackgroundColor))
 }
