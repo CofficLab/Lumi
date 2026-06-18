@@ -87,7 +87,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             content: await state.accumulatedContentChunks.joined(),
             providerID: Self.info.id,
             modelName: request.model,
-            metadata: await Self.tokenMetadata(from: state),
+            metadata: await Self.messageMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }
@@ -109,11 +109,21 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
     }
 
-    fileprivate static func tokenMetadata(from state: StreamingState) async -> [String: String] {
-        LumiMessageTokenMetadata.metadata(
+    fileprivate static func messageMetadata(from state: StreamingState) async -> [String: String] {
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let startTime = await state.startTime
+        var metadata = LumiMessageTokenMetadata.metadata(
             inputTokens: await state.inputTokens,
             outputTokens: await state.outputTokens
         )
+        metadata.merge(
+            LumiMessagePerformanceMetadata.metadata(
+                latencyMs: (endTime - startTime) * 1000.0,
+                timeToFirstTokenMs: await state.timeToFirstToken,
+                streamingDurationMs: await state.getStreamingDuration()
+            )
+        ) { _, new in new }
+        return metadata
     }
 
     fileprivate static func processStreamChunk(
@@ -252,7 +262,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
             content: await state.accumulatedContentChunks.joined(),
             providerID: Self.info.id,
             modelName: request.model,
-            metadata: await OpenAICompatibleLumiProvider.tokenMetadata(from: state),
+            metadata: await OpenAICompatibleLumiProvider.messageMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }

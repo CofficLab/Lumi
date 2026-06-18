@@ -12,6 +12,8 @@ struct ModelSelectorView: View {
 
     @State private var selectedTab: ModelSelectorTab = .current
     @State private var searchText = ""
+    @State private var detailedStats: [String: ModelPerformanceStats] = [:]
+    @State private var fastModels: [(provider: LumiLLMProviderInfo, model: String, avgTPS: Double, sampleCount: Int)] = []
 
     init(
         chatService: any LumiChatServicing,
@@ -53,7 +55,21 @@ struct ModelSelectorView: View {
         .appSurface(style: .custom(theme.elevatedSurface), cornerRadius: 12, borderColor: theme.appSubtleBorder)
         .onAppear {
             selectedTab = .current
+            reloadStats()
         }
+        .onChange(of: chatService.revision) { _, _ in
+            reloadStats()
+        }
+    }
+
+    private func reloadStats() {
+        let messages = chatService.conversations.flatMap { chatService.messages(for: $0.id) }
+        let snapshot = ModelSelectorStatsService.buildSnapshot(
+            messages: messages,
+            providers: chatService.providerInfos
+        )
+        detailedStats = snapshot.detailedStats
+        fastModels = snapshot.fastModels
     }
 
     @ViewBuilder
@@ -71,7 +87,7 @@ struct ModelSelectorView: View {
         case .frequent:
             rankedModelList(title: "Frequent Models", ranked: frequentModels)
         case .fast:
-            rankedModelList(title: "Recently Used", ranked: frequentModels)
+            fastModelList
         case .auto:
             autoRoutingView
         case .availability:
@@ -110,6 +126,7 @@ struct ModelSelectorView: View {
                                 isSelected: chatService.providerID(for: conversationID) == provider.id
                                     && chatService.modelName(for: conversationID) == model
                                     && chatService.routingMode == .manual,
+                                stat: detailedStat(providerID: provider.id, modelName: model),
                                 onSelect: {
                                     selectModel(providerID: provider.id, model: model)
                                 }
@@ -194,12 +211,14 @@ struct ModelSelectorView: View {
         } else {
             List {
                 Section(LumiPluginLocalization.string(title, bundle: .module)) {
-                    ForEach(ranked, id: \.model) { entry in
+                    ForEach(ranked.indices, id: \.self) { index in
+                        let entry = ranked[index]
                         ModelSelectorModelRow(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id
                                 && chatService.modelName(for: conversationID) == entry.model,
+                            stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -211,6 +230,45 @@ struct ModelSelectorView: View {
             .scrollContentBackground(.hidden)
             .background(theme.background)
         }
+    }
+
+    @ViewBuilder
+    private var fastModelList: some View {
+        if fastModels.isEmpty {
+            AppEmptyState(
+                icon: "bolt.fill",
+                title: LumiPluginLocalization.string("No Fast Models", bundle: .module),
+                description: LumiPluginLocalization.string(
+                    "Models with higher TPS will appear here",
+                    bundle: .module
+                )
+            )
+        } else {
+            List {
+                Section(LumiPluginLocalization.string("Fast Models", bundle: .module)) {
+                    ForEach(fastModels.indices, id: \.self) { index in
+                        let entry = fastModels[index]
+                        ModelSelectorModelRow(
+                            provider: entry.provider,
+                            model: entry.model,
+                            isSelected: chatService.providerID(for: conversationID) == entry.provider.id
+                                && chatService.modelName(for: conversationID) == entry.model,
+                            stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
+                            onSelect: {
+                                selectModel(providerID: entry.provider.id, model: entry.model)
+                            }
+                        )
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .background(theme.background)
+        }
+    }
+
+    private func detailedStat(providerID: String, modelName: String) -> ModelPerformanceStats? {
+        detailedStats["\(providerID)|\(modelName)"]
     }
 
     private func selectModel(providerID: String, model: String) {
