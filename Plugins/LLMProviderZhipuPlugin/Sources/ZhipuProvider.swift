@@ -30,6 +30,11 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     private let apiService: LLMAPIService
     private let baseURL = "https://open.bigmodel.cn/api/anthropic/v1/messages"
 
+    // Claude Code 模拟常量
+    private static let claudeCodeVersion = "2.0.53-dev.20251124.t173302"
+    private static let claudeCodeUserType = "cli"
+    private static let sessionID = UUID().uuidString
+
     public init(apiService: LLMAPIService = LLMAPIService()) {
         self.apiService = apiService
     }
@@ -51,9 +56,30 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        urlRequest.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+
+        // 设置Claude Code风格的认证头部
+        if apiKey.hasPrefix("Bearer ") || apiKey.contains("Bearer") {
+            // 如果API key包含Bearer标记，使用Authorization头部
+            let cleanToken = apiKey.replacingOccurrences(of: "Bearer ", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            urlRequest.addValue("Bearer \(cleanToken)", forHTTPHeaderField: "Authorization")
+        } else {
+            // 否则使用x-api-key头部
+            urlRequest.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        }
+
+        // Claude Code 兼容的头部
         urlRequest.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Claude Code 特有头部
+        urlRequest.addValue("cli", forHTTPHeaderField: "x-app")
+        urlRequest.addValue(Self.getClaudeCodeUserAgent(), forHTTPHeaderField: "User-Agent")
+        urlRequest.addValue(Self.sessionID, forHTTPHeaderField: "X-Claude-Code-Session-Id")
+
+        // 可选的客户端应用标识
+        if let clientApp = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String {
+            urlRequest.addValue(clientApp, forHTTPHeaderField: "x-client-app")
+        }
 
         let body = Self.requestBody(
             messages: request.messages,
@@ -291,6 +317,44 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
         default:
             ZhipuRenderKind.requestFailed
         }
+    }
+
+    // MARK: - Claude Code 模拟辅助方法
+
+    /// 生成Claude Code风格的User-Agent
+    private static func getClaudeCodeUserAgent() -> String {
+        let version = claudeCodeVersion
+        let userType = claudeCodeUserType
+        let entrypoint = "cli"
+
+        // 模拟Claude Code的User-Agent格式
+        // claude-cli/version (user-type, entrypoint)
+        var userAgent = "claude-cli/\(version) (\(userType), \(entrypoint)"
+
+        // 添加可选的SDK版本信息
+        if let sdkVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+            userAgent += ", sdk/\(sdkVersion)"
+        }
+
+        // 添加可选的客户端应用信息
+        if let clientApp = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String {
+            if let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String {
+                userAgent += ", client-app/\(clientApp)/\(appVersion)"
+            }
+        }
+
+        userAgent += ")"
+
+        return userAgent
+    }
+
+    /// 获取工作负载标识（模拟Claude Code的工作负载上下文）
+    private static func getWorkload() -> String? {
+        // 检查环境变量或配置
+        if let workload = ProcessInfo.processInfo.environment["CLAUDE_CODE_WORKLOAD"] {
+            return workload
+        }
+        return nil
     }
 }
 
