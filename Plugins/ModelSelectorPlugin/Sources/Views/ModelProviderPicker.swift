@@ -20,11 +20,11 @@ struct ModelProviderPicker: View {
         Button {
             isPresented.toggle()
         } label: {
-            HStack(spacing: ToolbarMetrics.chipSpacing) {
+            HStack(spacing: ToolbarMetrics.composerChipSpacing) {
                 Image(systemName: "globe")
-                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
+                    .font(.system(size: ToolbarMetrics.composerChipIconSize, weight: .medium))
                 Text(providerLabel)
-                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: .medium))
+                    .font(.system(size: ToolbarMetrics.composerChipTextSize, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
@@ -32,8 +32,8 @@ struct ModelProviderPicker: View {
                     .foregroundColor(theme.textSecondary)
             }
             .foregroundColor(theme.textSecondary)
-            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
-            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .padding(.horizontal, ToolbarMetrics.composerChipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.composerChipVerticalPadding)
             .contentShape(RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)

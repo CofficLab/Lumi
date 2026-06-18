@@ -29,6 +29,21 @@ public enum ModelSelectorPlugin: LumiPlugin {
     }
 
     @MainActor
+    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+        guard context.showsChatSection,
+              let chatService = context.resolve(LumiChatServicing.self)
+        else {
+            return []
+        }
+
+        return [
+            LumiChatSectionToolbarBarItem(id: "\(info.id).tps", order: info.order + 1) {
+                CurrentModelTPSToolbarView(chatService: chatService)
+            }
+        ]
+    }
+
+    @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         guard let chatService = context.resolve(LumiChatServicing.self) else {
             return []

@@ -48,6 +48,38 @@ import Testing
 }
 
 @MainActor
+@Test func chatSectionToolbarBarItemsRequireVisibleChatSection() {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+
+    let hiddenContext = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .wide,
+        isChatSectionVisible: false,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(LumiChatServicing.self, chatService)
+        }
+    )
+    #expect(ModelSelectorPlugin.chatSectionToolbarBarItems(context: hiddenContext).isEmpty)
+
+    let shownContext = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .wide,
+        isChatSectionVisible: true,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(LumiChatServicing.self, chatService)
+        }
+    )
+    #expect(ModelSelectorPlugin.chatSectionToolbarBarItems(context: shownContext).count == 1)
+    #expect(ModelSelectorPlugin.chatSectionToolbarBarItems(context: shownContext).first?.id == "com.coffic.lumi.plugin.model-selector.tps")
+}
+
+@MainActor
 @Test func switchModelToolUpdatesConversationPreference() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
