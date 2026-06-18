@@ -24,7 +24,21 @@ ChatCoreService
 Sources/
 ├── MessageRendererPlugin.swift   # 注册 8 个核心 renderer
 └── Views/
-    ├── CoreMessageViews.swift    # CoreMessageView、工具调用行、状态消息
+    ├── Role/                     # 按 LumiChatMessageRole 分文件
+    │   ├── UserMessageView.swift
+    │   ├── AssistantMessageView.swift
+    │   ├── ToolMessageView.swift
+    │   ├── SystemMessageView.swift
+    │   ├── ErrorMessageView.swift
+    │   ├── StatusMessageView.swift
+    │   ├── TurnCompletedMessageView.swift
+    │   └── DefaultMessageView.swift
+    ├── Shared/                   # 消息通用 chrome、工具调用行等
+    │   ├── MessageViewChrome.swift
+    │   ├── MessageViewHelpers.swift
+    │   ├── CompactMessageHeaderView.swift
+    │   ├── CollapsiblePlainText.swift
+    │   └── AssistantToolCallViews.swift
     ├── MessageInfoButton.swift   # Header info popover
     └── LumiToolCallAgentBridge.swift
 ```
