@@ -510,7 +510,11 @@ struct PluginAppStoreConnectTests {
             counter.count += 1
             return (200, response)
         }
-        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let cache = ConnectAPICache(
+            rootDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginASCClientTests-\(UUID().uuidString)", isDirectory: true),
+            memoryCache: ConnectCache(ttl: 60, maxEntries: 8)
+        )
         let credentials = AppStoreConnectCredentials(
             issuerID: "issuer-test",
             keyID: "ABC123DEFG",
@@ -553,7 +557,11 @@ struct PluginAppStoreConnectTests {
             counter.count += 1
             return (200, response)
         }
-        let cache = ConnectCache(ttl: 60, maxEntries: 8)
+        let cache = ConnectAPICache(
+            rootDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginASCClientTests-\(UUID().uuidString)", isDirectory: true),
+            memoryCache: ConnectCache(ttl: 60, maxEntries: 8)
+        )
         let credentials = AppStoreConnectCredentials(
             issuerID: "issuer-test",
             keyID: "ABC123DEFG",

@@ -18,15 +18,8 @@ struct ScreenshotsSection: View {
 
     private var sectionHeader: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(AppStoreConnectLocalization.string("App Previews and Screenshots"))
-                    .font(.title3.weight(.semibold))
-                Text(isEditable
-                    ? AppStoreConnectLocalization.string("Manage screenshots for the selected locale and device size")
-                    : AppStoreConnectLocalization.string("Screenshots for the selected locale and device size"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(AppStoreConnectLocalization.string("App Previews and Screenshots"))
+                .font(.title3.weight(.semibold))
 
             Spacer()
 
@@ -42,7 +35,7 @@ struct ScreenshotsSection: View {
                     sourceView: "VersionDetail.ScreenshotsSection",
                     fields: [
                         "actionID": "addScreenshots",
-                        "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false"
+                        "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false",
                     ]
                 )
 
@@ -58,7 +51,7 @@ struct ScreenshotsSection: View {
                     fields: [
                         "actionID": "ensureScreenshotSet",
                         "disabled": viewModel.selectedLocalizationID == nil ? "true" : "false",
-                        "selectedDisplayType": viewModel.selectedScreenshotDisplayType
+                        "selectedDisplayType": viewModel.selectedScreenshotDisplayType,
                     ]
                 )
             }
@@ -88,7 +81,7 @@ struct ScreenshotsSection: View {
                         sourceView: "ScreenshotsSection.devicePicker",
                         fields: [
                             "displayType": type,
-                            "isSelected": isSelected ? "true" : "false"
+                            "isSelected": isSelected ? "true" : "false",
                         ]
                     )
                 }

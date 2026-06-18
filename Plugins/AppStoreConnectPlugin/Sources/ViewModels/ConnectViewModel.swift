@@ -190,7 +190,9 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         screenshots = []
         screenshotsBySetID = [:]
         clearXcodeCloudState()
-        Task { await ScreenshotImageCache.shared.clear() }
+        Task {
+            await ScreenshotImageCache.shared.clear()
+        }
     }
 
     func testConnection() async {
@@ -384,6 +386,7 @@ final class ConnectViewModel: ObservableObject, SuperLog {
             try await client.releaseVersion(versionID: version.id)
             guard let app = selectedApp else { return }
             versions = try await client.listVersions(appID: app.id)
+            client.pruneStaleVersionCache(keepingVersionIDs: Set(versions.map(\.id)))
             if let updated = versions.first(where: { $0.id == version.id }) {
                 selectedVersion = updated
             }
@@ -675,35 +678,45 @@ final class ConnectViewModel: ObservableObject, SuperLog {
         ciWorkflowExportJSON = value
     }
 
+    private static let loadingOverlayDelay: Duration = .milliseconds(500)
+
     private func runBusy(forceRefresh: Bool = false, _ operation: () async throws -> Void) async {
         let startTime = ContinuousClock.now
-        isBusy = true
+        isBusy = false
         errorMessage = nil
         let previousPolicy = client.fetchPolicy
         if forceRefresh {
             client.fetchPolicy = .networkOnly
         }
-        defer {
-            client.fetchPolicy = previousPolicy
+
+        let overlayDelayTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: Self.loadingOverlayDelay)
+                isBusy = true
+            } catch {
+                // Cancelled when the operation finishes before the delay elapses.
+            }
         }
+
+        defer {
+            overlayDelayTask.cancel()
+            client.fetchPolicy = previousPolicy
+            isBusy = false
+        }
+
         do {
             try await operation()
         } catch {
             Self.logger.error("\(self.t)operation failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
-        // Ensure loading state lasts at least 1 second so the UI doesn't flash
-        let remaining: Duration = .seconds(1) - (ContinuousClock.now - startTime)
-        if remaining > .zero {
-            try? await Task.sleep(for: remaining)
-        }
         Self.logger.info("\(self.t)runBusy completed in \((ContinuousClock.now - startTime).formatted())")
-        isBusy = false
     }
 
     private func reloadDistributionFromNetwork() async throws {
         if let app = selectedApp {
             versions = try await client.listVersions(appID: app.id)
+            client.pruneStaleVersionCache(keepingVersionIDs: Set(versions.map(\.id)))
             if let selectedVersion,
                sidebarVersions.contains(where: { $0.id == selectedVersion.id }) {
                 self.selectedVersion = sidebarVersions.first { $0.id == selectedVersion.id }

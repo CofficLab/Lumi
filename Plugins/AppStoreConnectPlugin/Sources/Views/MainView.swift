@@ -36,10 +36,7 @@ struct MainView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     if viewModel.isBusy {
-                        AppCard(style: .subtle, cornerRadius: 8, showShadow: false) {
-                            AppLoadingOverlay(size: .small)
-                                .frame(width: 80, height: 44)
-                        }
+                        ConnectBusyOverlay()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
