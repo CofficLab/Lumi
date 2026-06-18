@@ -30,6 +30,10 @@ import HistoryDBStatusBarPlugin
 import SkillPlugin
 import ConversationListPlugin
 import ConversationTitlePlugin
+import ConversationTimelinePlugin
+import ConversationLanguagePlugin
+import ChatModePlugin
+import VerbosityPlugin
 import AutoTaskPlugin
 import GitHubPlugin
 import IdleTimePlugin
@@ -205,6 +209,10 @@ public enum LumiPluginRegistry {
         HistoryDBStatusBarPlugin.self,
         RAGPlugin.self,
         ConversationTitlePlugin.self,
+        ConversationTimelinePlugin.self,
+        ConversationLanguagePlugin.self,
+        ChatModePlugin.self,
+        VerbosityPlugin.self,
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
         EditorPanelPlugin.self,

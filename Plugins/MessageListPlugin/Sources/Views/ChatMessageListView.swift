@@ -36,6 +36,21 @@ struct ChatMessageListView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(chatListBackground)
+    }
+
+    /// 消息列表的专属背景：纵向微渐变营造深度层次感。
+    private var chatListBackground: some View {
+        LinearGradient(
+            colors: [
+                theme.background.opacity(0.45),
+                theme.surface,
+                theme.elevatedSurface.opacity(0.3),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
     }
 
     private func messageListContent(visibleMessages: [LumiChatMessage]) -> some View {

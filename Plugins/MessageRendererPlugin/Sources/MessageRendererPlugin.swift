@@ -21,7 +21,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 330,
                 canRender: { $0.renderKind == "turn-completed" || $0.content == LumiChatMarkers.turnCompleted },
                 render: { message, _ in
-                    TurnCompletedDividerView(message: message)
+                    TurnCompletedMessageView(message: message)
                 }
             ),
             LumiMessageRendererItem(
@@ -30,7 +30,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 canRender: {
                     $0.role == .status && $0.renderKind != "turn-completed" && $0.content != LumiChatMarkers.turnCompleted
                 },
-                render: { message, showRawMessage in
+                render: { message, _ in
                     StatusMessageView(message: message)
                 }
             ),
@@ -48,7 +48,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                     return true
                 },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    ErrorMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
             LumiMessageRendererItem(
@@ -56,7 +56,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 250,
                 canRender: { $0.role == .tool },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    ToolMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
             LumiMessageRendererItem(
@@ -64,7 +64,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 200,
                 canRender: { $0.role == .user },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    UserMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
             LumiMessageRendererItem(
@@ -72,7 +72,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 190,
                 canRender: { $0.role == .assistant },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    AssistantMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
             LumiMessageRendererItem(
@@ -80,7 +80,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 160,
                 canRender: { $0.role == .system },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    SystemMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
             LumiMessageRendererItem(
@@ -88,7 +88,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                 order: 0,
                 canRender: { !$0.content.isEmpty },
                 render: { message, showRawMessage in
-                    CoreMessageView(message: message, showRawMessage: showRawMessage)
+                    DefaultMessageView(message: message, showRawMessage: showRawMessage)
                 }
             ),
         ]

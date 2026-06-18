@@ -73,6 +73,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         registry.registerProjectContextCapability(projectContextCapability)
         registry.registerSemanticCapability(semanticCapability)
         registry.registerLanguageIntegrationCapability(languageIntegrationCapability)
+        registry.registerCommandContributor(SwiftRunCommandContributor())
 
         if SwiftPluginLog.verbose {
             SwiftPluginLog.logger.info("\(self.t)编辑器扩展注册完成")

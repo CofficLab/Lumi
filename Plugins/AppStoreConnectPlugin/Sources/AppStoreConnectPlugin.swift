@@ -23,6 +23,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
         [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
+            CreateAppStoreConnectVersionTool(),
             ListAppStoreConnectLocalizationsTool(),
             ListAppStoreConnectScreenshotSetsTool(),
             ListAppStoreConnectScreenshotsTool(),
@@ -33,7 +34,12 @@ public enum AppStoreConnectPlugin: LumiPlugin {
             UpdateAppStoreConnectLocalizationTool(),
             CreateAppStoreConnectScreenshotSetTool(),
             StartAppStoreConnectCiBuildRunTool(),
-            SetAppStoreConnectCiWorkflowEnabledTool()
+            SetAppStoreConnectCiWorkflowEnabledTool(),
+            ListAppStoreConnectCoverArtTool(),
+            ReadAppStoreConnectCoverArtTool(),
+            CreateAppStoreConnectCoverArtTool(),
+            UpdateAppStoreConnectCoverArtTool(),
+            ExportAppStoreConnectCoverArtTool()
         ]
     }
 
@@ -55,9 +61,11 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
-        AppStoreConnectAddToChat.currentProjectPathProvider = {
+        let provider: @MainActor @Sendable () -> String = {
             projectPathProvider?.currentProjectPath ?? ""
         }
+        AddToChat.currentProjectPathProvider = provider
+        CoverArtRuntime.currentProjectPathProvider = provider
         return [
             LumiViewContainerItem(
                 id: info.id,
@@ -72,7 +80,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(AppStoreConnectAboutView())
+        AnyView(AboutView())
     }
 }
 

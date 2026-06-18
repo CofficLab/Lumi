@@ -59,6 +59,12 @@ final class ConnectCache: @unchecked Sendable {
         store = store.filter { !predicate($0.key) }
     }
 
+    func remove(_ key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        store.removeValue(forKey: key)
+    }
+
     func clear() {
         lock.lock()
         defer { lock.unlock() }

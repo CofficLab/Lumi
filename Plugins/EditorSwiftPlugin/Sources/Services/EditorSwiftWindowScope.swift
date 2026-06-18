@@ -8,10 +8,12 @@ import XcodeKit
 public final class EditorSwiftWindowScope: ObservableObject {
     public let session: XcodeProjectContextSession
     public let statusBarViewModel: XcodeProjectStatusBarViewModel
+    public let buildRunManager: SwiftBuildRunManager
 
     public init(session: XcodeProjectContextSession = XcodeProjectContextSession()) {
         self.session = session
         self.statusBarViewModel = XcodeProjectStatusBarViewModel(session: session)
+        self.buildRunManager = SwiftBuildRunManager()
     }
 }
 
@@ -22,6 +24,10 @@ public enum EditorSwiftWindowScopeRegistry {
 
     public static var activeStatusBarViewModel: XcodeProjectStatusBarViewModel {
         activeScope()?.statusBarViewModel ?? XcodeProjectStatusBarViewModel.shared
+    }
+
+    public static var activeBuildRunManager: SwiftBuildRunManager {
+        activeScope()?.buildRunManager ?? SwiftBuildRunManager.shared
     }
 
     public static var activeSession: XcodeProjectContextSession {
@@ -41,7 +47,8 @@ public enum EditorSwiftWindowScopeRegistry {
     }
 
     private static func activeScope() -> EditorSwiftWindowScope? {
-        if let keyWindow = NSApp.keyWindow ?? NSApp.mainWindow,
+        if let app = NSApp,
+           let keyWindow = app.keyWindow ?? app.mainWindow,
            let scope = scopesByWindowNumber[keyWindow.windowNumber] {
             return scope
         }

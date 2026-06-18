@@ -14,17 +14,17 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "VerbosityPlugin",
             dependencies: [
+                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [

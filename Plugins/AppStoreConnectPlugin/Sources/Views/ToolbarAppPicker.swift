@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 public struct ToolbarAppPicker: View {
-    @ObservedObject private var viewModel: ConnectViewModel
+    @ObservedObject private var viewModel: VM
     @State private var showingAppPicker = false
 
     public init() {
@@ -44,7 +44,7 @@ public struct ToolbarAppPicker: View {
 }
 
 struct AppPicker: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
     let onSelect: () -> Void
 
     var body: some View {

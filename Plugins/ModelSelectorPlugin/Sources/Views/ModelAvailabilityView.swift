@@ -9,12 +9,17 @@ struct ModelAvailabilityView: View {
 
     var body: some View {
         List {
-            Section("Registered Providers") {
+            Section(LumiPluginLocalization.string("Registered Providers", bundle: .module)) {
                 ForEach(chatService.providerInfos) { provider in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(provider.displayName)
                             .font(.system(size: 15, weight: .semibold))
-                        Text("\(provider.availableModels.count) models")
+                        Text(
+                            String(
+                                format: LumiPluginLocalization.string("%lld models", bundle: .module),
+                                provider.availableModels.count
+                            )
+                        )
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                         Text(provider.description)
@@ -25,7 +30,7 @@ struct ModelAvailabilityView: View {
                 }
             }
 
-            Section("Usage Signals") {
+            Section(LumiPluginLocalization.string("Usage Signals", bundle: .module)) {
                 Text(verbatim: LumiPluginLocalization.string(
                     "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing.",
                     bundle: .module

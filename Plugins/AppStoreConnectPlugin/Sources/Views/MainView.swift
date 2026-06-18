@@ -3,11 +3,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct MainView: View {
-    @StateObject private var viewModel: ConnectViewModel
+    @StateObject private var viewModel: VM
     @State private var importingScreenshots = false
     @State private var showingAccountGuide = false
 
-    init(viewModel: ConnectViewModel = .shared) {
+    init(viewModel: VM = .shared) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
@@ -20,9 +20,8 @@ struct MainView: View {
             Divider()
 
             VStack(spacing: 0) {
-                if viewModel.selectedApp != nil || viewModel.page == .account || viewModel.page == .apps {
-                    AppChrome(viewModel: viewModel)
-                    Divider()
+                if viewModel.page.showsTopBar {
+                    TopBar(viewModel: viewModel)
                 }
 
                 if let error = viewModel.errorMessage, shouldShowGlobalError {
@@ -37,10 +36,7 @@ struct MainView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     if viewModel.isBusy {
-                        AppCard(style: .subtle, cornerRadius: 8, showShadow: false) {
-                            AppLoadingOverlay(size: .small)
-                                .frame(width: 80, height: 44)
-                        }
+                        ConnectBusyOverlay()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -62,7 +58,7 @@ struct MainView: View {
         }
         .task {
             if viewModel.credentials.isComplete && viewModel.apps.isEmpty {
-                await viewModel.loadApps()
+                await viewModel.loadApps(silent: true)
             }
         }
     }
@@ -80,6 +76,8 @@ struct MainView: View {
             AppsPage(viewModel: viewModel)
         case .distribution:
             DistributionPage(viewModel: viewModel, importingScreenshots: $importingScreenshots)
+        case .coverArt:
+            CoverArtPage(viewModel: viewModel)
         case .xcodeCloud:
             XcodeCloudPage(viewModel: viewModel)
         }

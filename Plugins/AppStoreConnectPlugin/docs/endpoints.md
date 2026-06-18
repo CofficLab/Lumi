@@ -43,6 +43,12 @@ https://api.appstoreconnect.apple.com/v2
 | POST | `/v1/appStoreVersionSubmissions` | Submit for review |
 | DELETE | `/v1/appStoreVersionSubmissions/{id}` | Delete a submission |
 
+## App Store Version Release Requests
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/v1/appStoreVersionReleaseRequests` | Manually release an approved version (`PENDING_DEVELOPER_RELEASE`) |
+
 ## App Store Version Phased Releases
 
 | Method | Endpoint | Description |

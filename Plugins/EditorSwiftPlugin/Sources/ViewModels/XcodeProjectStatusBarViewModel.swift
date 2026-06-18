@@ -15,6 +15,9 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     private let session: XcodeProjectContextSession
     @Published var isXcodeProject = false
+    @Published var isSwiftPackageProject = false
+    @Published var spmPackageName: String?
+    @Published var spmExecutableTarget: String?
     @Published var activeScheme: String?
     @Published var schemes: [String] = []
     @Published var activeConfiguration: String?
@@ -81,6 +84,18 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     private var bridge: XcodeProjectContextBridge { session.bridge }
 
+    public var buildContextProvider: XcodeBuildContextProvider? {
+        bridge.buildContextProvider
+    }
+
+    public var activeProjectPath: String? {
+        bridge.activeProjectPath
+    }
+
+    public var showsBuildToolbar: Bool {
+        isXcodeProject || isSwiftPackageProject
+    }
+
     private func syncBuildContextFromBridge() {
         let bridge = bridge
         if SwiftPluginLog.verbose {
@@ -94,8 +109,13 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             isXcodeProject = false
             resetProviderBindings()
             clearDisplayedProjectState()
+            refreshSwiftPackageState()
             return
         }
+
+        isSwiftPackageProject = false
+        spmPackageName = nil
+        spmExecutableTarget = nil
 
         let isCacheForActive = isBridgeCacheForActiveProject(bridge)
         if SwiftPluginLog.verbose {
@@ -223,12 +243,30 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         clearDisplayedProjectState()
     }
 
+    func refreshSwiftPackageStateForTesting(projectPath: String) {
+        isXcodeProject = false
+        let projectURL = URL(fileURLWithPath: projectPath, isDirectory: true)
+        guard let packageRoot = SwiftPackageManifestParser.findPackageDirectory(for: projectURL)
+            ?? (FileManager.default.fileExists(atPath: projectURL.appendingPathComponent("Package.swift").path) ? projectURL : nil)
+        else {
+            isSwiftPackageProject = false
+            return
+        }
+        let executables = SwiftPackageManifestParser.executableTargetNames(packageRoot: packageRoot)
+        isSwiftPackageProject = !executables.isEmpty
+        spmPackageName = packageRoot.lastPathComponent
+        spmExecutableTarget = executables.count == 1 ? executables[0] : nil
+    }
+
     private func clearDisplayedProjectState() {
         schemes = []
         configurations = []
         activeScheme = nil
         activeConfiguration = nil
         activeDestination = nil
+        isSwiftPackageProject = false
+        spmPackageName = nil
+        spmExecutableTarget = nil
         buildContextStatus = .unknown
         buildContextStatusDescription = LumiPluginLocalization.string("Not Initialized", bundle: .module)
         resolutionProgress = nil
@@ -237,6 +275,30 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         semanticReport = XcodeSemanticAvailability.Report(reasons: [])
         semanticIndexLogExcerpt = nil
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+    }
+
+    private func refreshSwiftPackageState() {
+        guard let projectPath = bridge.activeProjectPath, !projectPath.isEmpty else {
+            isSwiftPackageProject = false
+            spmPackageName = nil
+            spmExecutableTarget = nil
+            return
+        }
+
+        let projectURL = URL(fileURLWithPath: projectPath, isDirectory: true)
+        guard let packageRoot = SwiftPackageManifestParser.findPackageDirectory(for: projectURL)
+            ?? (FileManager.default.fileExists(atPath: projectURL.appendingPathComponent("Package.swift").path) ? projectURL : nil)
+        else {
+            isSwiftPackageProject = false
+            spmPackageName = nil
+            spmExecutableTarget = nil
+            return
+        }
+
+        let executables = SwiftPackageManifestParser.executableTargetNames(packageRoot: packageRoot)
+        isSwiftPackageProject = !executables.isEmpty
+        spmPackageName = packageRoot.lastPathComponent
+        spmExecutableTarget = executables.count == 1 ? executables[0] : nil
     }
 
     private func resetProviderBindings() {

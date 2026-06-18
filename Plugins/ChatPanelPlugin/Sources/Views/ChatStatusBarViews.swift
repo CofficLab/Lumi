@@ -13,7 +13,6 @@ struct ChatTimelineStatusBarView: View {
     var body: some View {
         let conversationID = chatService.selectedConversationID
         let count = conversationID.map { chatService.messages(for: $0).count } ?? 0
-        let contextUsage = conversationID.map { chatService.conversationContextUsage(for: $0) }
 
         StatusBarHoverContainer(
             detailView: ChatTimelineDetailView(chatService: chatService),
@@ -25,12 +24,6 @@ struct ChatTimelineStatusBarView: View {
                     .font(.appMicroEmphasized)
                 Text("\(count)")
                     .font(.appMicro)
-
-                if let contextUsage, contextUsage.currentTokens > 0 {
-                    Divider().frame(height: 12)
-                    Text(contextUsage.label)
-                        .font(.appMicro)
-                }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

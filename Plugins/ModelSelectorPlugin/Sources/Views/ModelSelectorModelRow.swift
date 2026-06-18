@@ -8,7 +8,22 @@ struct ModelSelectorModelRow: View {
     let provider: LumiLLMProviderInfo
     let model: String
     let isSelected: Bool
+    let stat: ModelPerformanceStats?
     let onSelect: () -> Void
+
+    init(
+        provider: LumiLLMProviderInfo,
+        model: String,
+        isSelected: Bool,
+        stat: ModelPerformanceStats? = nil,
+        onSelect: @escaping () -> Void
+    ) {
+        self.provider = provider
+        self.model = model
+        self.isSelected = isSelected
+        self.stat = stat
+        self.onSelect = onSelect
+    }
 
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
@@ -26,6 +41,14 @@ struct ModelSelectorModelRow: View {
                     }
 
                     Spacer()
+
+                    if let stat, stat.avgTPS > 0 {
+                        AppTag(ModelSelectorFormatService.tps(stat.avgTPS), systemImage: "speedometer")
+                    }
+
+                    if let stat, stat.sampleCount > 0 {
+                        AppTag("\(stat.sampleCount)", systemImage: "bubble.left.and.bubble.right")
+                    }
                 }
 
                 HStack(spacing: 6) {

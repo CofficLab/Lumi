@@ -302,7 +302,10 @@ HTTP/1.1 204 No Content
 |-------|-------------|
 | `DEVELOPER_REJECTED` | 开发者拒绝 |
 | `DEVELOPER_REMOVED_FROM_SALE` | 开发者从销售中移除 |
+| `IN_REVIEW` | 审核中 |
 | `METADATA_REJECTED` | 元数据被拒绝 |
+| `PENDING_APPLE_RELEASE` | 等待 Apple 按计划发布（`releaseType: SCHEDULED`） |
+| `PENDING_DEVELOPER_RELEASE` | 等待开发者发布（`releaseType: MANUAL`，审核已通过） |
 | `PREPARE_FOR_SUBMISSION` | 准备提交 |
 | `PROCESSING_FOR_DISTRIBUTION` | 处理分发 |
 | `READY_FOR_SALE` | 准备销售 |
@@ -312,6 +315,14 @@ HTTP/1.1 204 No Content
 | `WAITING_FOR_REVIEW` | 等待审核 |
 | `WAITING_FOR_REVIEWER_ACTION` | 等待审核员操作 |
 | `REPLACED_WITH_NEW_VERSION` | 被新版本替换 |
+
+### 手动发布
+
+当 `releaseType` 为 `MANUAL` 且审核通过后，版本进入 `PENDING_DEVELOPER_RELEASE` 状态。此时需调用 [App Store Version Release Requests API](app_store_version_release_requests.md) 完成发布：
+
+```
+POST /v1/appStoreVersionReleaseRequests
+```
 
 ## Release Types
 
@@ -326,6 +337,7 @@ HTTP/1.1 204 No Content
 - [Apps API](apps.md)
 - [Builds API](builds.md)
 - [App Store Version Submissions API](app_store_version_submissions.md)
+- [App Store Version Release Requests API](app_store_version_release_requests.md)
 - [App Store Version Phased Releases API](app_store_version_phased_releases.md)
 - [App Store Connect API Reference](api-reference.md)
 

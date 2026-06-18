@@ -68,24 +68,6 @@ struct ChatComposerSectionView: View {
                 trailingToolbarItems: coordinator.chatSectionToolbarItems.filter {
                     $0.placement == .trailing
                 },
-                languagePicker: {
-                    ChatLanguagePicker(
-                        selectedLanguage: coordinator.chatService.language(for: selectedID),
-                        onSelect: { coordinator.chatService.setLanguage($0, for: selectedID) }
-                    )
-                },
-                automationPicker: {
-                    ChatAutomationLevelPicker(
-                        selectedLevel: coordinator.chatService.automationLevel(for: selectedID),
-                        onSelect: { coordinator.chatService.setAutomationLevel($0, for: selectedID) }
-                    )
-                },
-                verbosityPicker: {
-                    ChatVerbosityPicker(
-                        selectedLevel: coordinator.chatService.verbosity(for: selectedID),
-                        onSelect: { coordinator.chatService.setVerbosity($0, for: selectedID) }
-                    )
-                },
                 onAttachImage: coordinator.selectImageAttachment,
                 onFileDrop: coordinator.handleFileDrop,
                 onSend: coordinator.send,

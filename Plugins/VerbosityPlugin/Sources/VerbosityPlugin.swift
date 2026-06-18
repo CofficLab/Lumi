@@ -1,49 +1,31 @@
 import LumiCoreKit
-import SuperLogKit
 import SwiftUI
-import os
 
-/// 响应详细程度切换插件
-///
-/// 在右侧栏底部工具栏注入简洁/正常/详细切换按钮。
-/// 通过 `VerbosityPreferenceContext` 读写当前详细程度状态。
-public actor VerbosityPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.verbosity")
-
-    public nonisolated static let emoji = "📝"
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public nonisolated static let verbose: Bool = false
-    public static let id = "Verbosity"
-    public static let displayName = LumiPluginLocalization.string("Verbosity", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Switch between Brief, Normal, and Detailed response styles", bundle: .module)
+/// 详细级别切换插件：在 Chat 工具栏提供简洁 / 标准 / 详细回复风格选择。
+public enum VerbosityPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let category: LumiPluginCategory = .agent
     public static let iconName = "text.alignleft"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 84 }
-    public static let shared = VerbosityPlugin()
 
-    // MARK: - Lifecycle
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.verbosity",
+        displayName: LumiPluginLocalization.string("Verbosity", bundle: .module),
+        description: LumiPluginLocalization.string("Switch between Brief, Normal, and Detailed response styles", bundle: .module),
+        order: 85
+    )
 
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
+    @MainActor
+    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+        guard context.showsChatSection,
+              let chatService = context.resolve(LumiChatServicing.self)
+        else {
+            return []
+        }
 
-    // MARK: - Sidebar Toolbar
-
-    @MainActor public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
-        guard context.showChat.isVisible else { return [] }
         return [
-            SidebarToolbarItem(
-                id: "verbosity-toggle",
-                title: LumiPluginLocalization.string("Verbosity", bundle: .module),
-                systemImage: "text.alignleft",
-                priority: 11
-            )
+            LumiChatSectionToolbarBarItem(id: info.id, order: info.order) {
+                VerbosityToolbarView(chatService: chatService)
+            }
         ]
-    }
-
-    @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
-        guard itemId == "verbosity-toggle" else { return nil }
-        guard let verbosityPreferenceContext = context.verbosityPreferenceContext else { return nil }
-        return AnyView(VerbosityToolbarButton(verbosityContext: verbosityPreferenceContext))
     }
 }

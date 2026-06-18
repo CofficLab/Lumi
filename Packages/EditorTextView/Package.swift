@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "EditorTextView",
     defaultLocalization: "en",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         // A Fast, Efficient text view for code.
         .library(
@@ -24,7 +24,8 @@ let package = Package(
         .package(
             url: "https://github.com/apple/swift-collections.git",
             .upToNextMajor(from: "1.0.0")
-        )
+        ),
+        .package(path: "../LumiCoreKit"),
     ],
     targets: [
         // The main text view target.
@@ -33,7 +34,8 @@ let package = Package(
             dependencies: [
                 "TextStory",
                 .product(name: "Collections", package: "swift-collections"),
-                "EditorTextViewObjC"
+                "EditorTextViewObjC",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources",
             exclude: ["EditorTextViewObjC"],
@@ -49,7 +51,10 @@ let package = Package(
         ),
         .testTarget(
             name: "EditorTextViewTests",
-            dependencies: ["EditorTextView"],
+            dependencies: [
+                "EditorTextView",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests"
         ),
     ]

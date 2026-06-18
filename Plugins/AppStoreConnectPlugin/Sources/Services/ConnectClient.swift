@@ -1,5 +1,7 @@
 import CryptoKit
 import Foundation
+import os
+import SuperLogKit
 
 enum AppStoreConnectClientError: LocalizedError {
     case missingCredentials
@@ -24,17 +26,21 @@ enum AppStoreConnectClientError: LocalizedError {
     }
 }
 
-final class ConnectClient: @unchecked Sendable {
+final class ConnectClient: @unchecked Sendable, SuperLog {
+    nonisolated static let emoji = "🔗"
+    nonisolated static let verbose = false
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect.client")
+
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
     private let session: URLSession
-    private let cache: ConnectCache
+    private let cache: ConnectAPICache
     var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
         credentialsProvider: @escaping @Sendable () -> AppStoreConnectCredentials,
         session: URLSession = .shared,
-        cache: ConnectCache = .shared
+        cache: ConnectAPICache = .shared
     ) {
         self.credentialsProvider = credentialsProvider
         self.session = session
@@ -43,6 +49,10 @@ final class ConnectClient: @unchecked Sendable {
 
     func invalidateCache() {
         cache.clear()
+    }
+
+    func pruneStaleVersionCache(keepingVersionIDs: Set<String>) {
+        cache.pruneVersions(keepingVersionIDs: keepingVersionIDs, accountKey: makeAccountKey())
     }
 
     func testConnection() async throws {
@@ -93,7 +103,7 @@ final class ConnectClient: @unchecked Sendable {
         }
 
         let cacheKey = makeCacheKey(method: method, path: path, queryItems: queryItems)
-        if method == "GET", fetchPolicy == .cacheFirst, let cached = cache.get(cacheKey) {
+        if method == "GET", let cached = cache.get(logicalKey: cacheKey, fetchPolicy: fetchPolicy) {
             return try decodeResponse(cached)
         }
 
@@ -116,9 +126,14 @@ final class ConnectClient: @unchecked Sendable {
         }
 
         if method == "GET" {
-            cache.set(cacheKey, data: data)
+            cache.set(logicalKey: cacheKey, method: method, path: path, data: data)
         } else {
-            cache.clear()
+            cache.invalidateAfterMutation(
+                method: method,
+                path: path,
+                body: body,
+                accountKey: makeAccountKey()
+            )
         }
 
         return try decodeResponse(data)
@@ -130,14 +145,20 @@ final class ConnectClient: @unchecked Sendable {
         return try decoder.decode(T.self, from: data)
     }
 
-    private func makeCacheKey(method: String, path: String, queryItems: [URLQueryItem]) -> String {
+    func makeCacheKey(method: String, path: String, queryItems: [URLQueryItem]) -> String {
+        "\(makeAccountKey())|\(method)|\(path)|\(sortedQueryString(queryItems))"
+    }
+
+    func makeAccountKey() -> String {
         let credentials = credentialsProvider()
-        let account = "\(credentials.issuerID)|\(credentials.keyID)"
-        let query = queryItems
+        return "\(credentials.issuerID)|\(credentials.keyID)"
+    }
+
+    private func sortedQueryString(_ queryItems: [URLQueryItem]) -> String {
+        queryItems
             .sorted { $0.name == $1.name ? ($0.value ?? "") < ($1.value ?? "") : $0.name < $1.name }
             .map { "\($0.name)=\($0.value ?? "")" }
             .joined(separator: "&")
-        return "\(account)|\(method)|\(path)|\(query)"
     }
 
     private func apiErrorMessage(from data: Data, statusCode: Int) -> String {

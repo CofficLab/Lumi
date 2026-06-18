@@ -40,6 +40,29 @@ import Testing
 }
 
 @MainActor
+@Test func panelBottomTabItemsRequireEditorPanel() {
+    let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other", showsPanelChrome: true)
+    #expect(EditorSwiftPlugin.panelBottomTabItems(context: hiddenContext).isEmpty)
+
+    let withoutChrome = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
+    #expect(EditorSwiftPlugin.panelBottomTabItems(context: withoutChrome).isEmpty)
+
+    let core = EditorCore()
+    let visibleContext = LumiPluginContext(
+        activeSectionID: "LumiEditor",
+        activeSectionTitle: "Editor",
+        showsPanelChrome: true,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(LumiEditorServicing.self, core)
+        }
+    )
+    let tabs = EditorSwiftPlugin.panelBottomTabItems(context: visibleContext)
+    #expect(tabs.count == 1)
+    #expect(tabs[0].id == SwiftBuildPanelIDs.bottomTab)
+    #expect(tabs[0].systemImage == "play.fill")
+}
+
+@MainActor
 @Test func agentToolsExposeSwiftXcodeTools() {
     let tools = EditorSwiftPlugin.agentTools(context: LumiPluginContext(activeSectionID: "main", activeSectionTitle: "Main"))
     #expect(tools.count == 3)

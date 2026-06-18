@@ -1,0 +1,66 @@
+import Foundation
+
+enum CoverArtTemplateFactory {
+    static func html(title: String, deviceFamily: CoverArtDeviceFamily) -> String {
+        let escapedTitle = escapeHTML(title.isEmpty ? "App Title" : title)
+        return """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>\(escapedTitle)</title>
+          <style>
+            html, body {
+              margin: 0;
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+              font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            }
+            body {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              gap: 4.8vmin;
+              background: linear-gradient(180deg, #f5f5f7 0%, #e8e8ed 100%);
+              color: #1d1d1f;
+            }
+            .icon {
+              width: 28vmin;
+              height: 28vmin;
+              border-radius: 22%;
+              background: #ffffff;
+              box-shadow: 0 2.4vmin 6vmin rgba(0, 0, 0, 0.12);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12vmin;
+            }
+            h1 {
+              margin: 0;
+              padding: 0 6.4vmin;
+              font-size: clamp(28px, 5.5vmin, 96px);
+              font-weight: 700;
+              text-align: center;
+              line-height: 1.15;
+            }
+          </style>
+        </head>
+        <body data-device-family="\(deviceFamily.rawValue)">
+          <div class="icon" aria-hidden="true">★</div>
+          <h1>\(escapedTitle)</h1>
+        </body>
+        </html>
+        """
+    }
+
+    private static func escapeHTML(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+    }
+}

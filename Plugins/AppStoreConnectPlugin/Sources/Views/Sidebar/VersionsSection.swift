@@ -2,7 +2,8 @@ import LumiUI
 import SwiftUI
 
 struct VersionsSection: View {
-    @ObservedObject var viewModel: ConnectViewModel
+    @ObservedObject var viewModel: VM
+    @State private var showingCreateSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -16,6 +17,16 @@ struct VersionsSection: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                Button {
+                    showingCreateSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption2)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .disabled(viewModel.isBusy || !viewModel.canCreateVersion)
+                .help(AppStoreConnectLocalization.string("New Version"))
                 Button {
                     Task { await viewModel.loadVersions() }
                 } label: {
@@ -66,6 +77,9 @@ struct VersionsSection: View {
                 await viewModel.loadVersions()
             }
         }
+        .sheet(isPresented: $showingCreateSheet) {
+            CreateVersionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)
+        }
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
@@ -107,7 +121,8 @@ struct VersionsSection: View {
     }
 
     private func isVersionSelected(_ version: AppStoreVersion) -> Bool {
-        guard let selected = viewModel.selectedVersion else { return false }
+        guard viewModel.page == .distribution,
+              let selected = viewModel.selectedVersion else { return false }
         return version.id == selected.id
     }
 }

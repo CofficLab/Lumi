@@ -119,6 +119,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         case csv(URL)
         case html(URL)
         case pdf(URL)
+        case xcassets(URL)
         case unsupported(URL?)
     }
 
@@ -699,6 +700,8 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         let ext = url.pathExtension.lowercased()
         if ext == "swift" {
             previewMode = .swift
+        } else if ext == "xcassets" {
+            previewMode = .xcassets(url)
         } else if Self.imageExtensions.contains(ext) {
             previewMode = .image(url)
         } else if Self.markdownExtensions.contains(ext) {

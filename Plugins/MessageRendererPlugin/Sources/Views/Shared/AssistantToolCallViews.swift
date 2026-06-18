@@ -1,0 +1,426 @@
+import AgentToolKit
+import LumiCoreKit
+import LumiUI
+import SwiftUI
+
+struct BorderedUtilityContent<Content: View>: View {
+    let tint: Color
+    let role: LumiChatMessageRole
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                tint.opacity(role == .system ? 0.07 : 0.1),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(tint.opacity(0.16), lineWidth: 1)
+            )
+    }
+}
+
+struct ToolCallRowsView: View {
+    let message: LumiChatMessage
+
+    @State private var parameterPopoverToolCallID: String?
+    @State private var resultPopoverToolCallID: String?
+
+    private var toolCalls: [LumiToolCall] {
+        message.toolCalls ?? []
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(toolCalls) { toolCall in
+                ToolCallRowView(
+                    message: message,
+                    toolCall: toolCall,
+                    parameterPopoverToolCallID: $parameterPopoverToolCallID,
+                    resultPopoverToolCallID: $resultPopoverToolCallID
+                )
+            }
+        }
+    }
+}
+
+private struct ToolCallRowView: View {
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
+    let toolCall: LumiToolCall
+    @Binding var parameterPopoverToolCallID: String?
+    @Binding var resultPopoverToolCallID: String?
+
+    @State private var isHovering = false
+
+    private var isParametersPresented: Bool {
+        parameterPopoverToolCallID == toolCall.id
+    }
+
+    private var isResultsPresented: Bool {
+        resultPopoverToolCallID == toolCall.id
+    }
+
+    private var isLoadingResult: Bool {
+        toolCall.result == nil
+    }
+
+    private var visualState: ToolCallResultVisualState {
+        ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
+    }
+
+    var body: some View {
+        Group {
+            if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
+                customRenderer.render(
+                    toolCall: toolCall.agentToolCall,
+                    message: ToolCallRowMessageContext(
+                        conversationId: message.conversationID,
+                        assistantMessageId: message.id
+                    )
+                )
+            } else {
+                defaultToolCallRow
+            }
+        }
+    }
+
+    private var defaultToolCallRow: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "wrench.and.screwdriver")
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(visualState.isFailure ? theme.error : theme.textSecondary)
+
+                Text(toolCall.displayName ?? toolCall.name)
+                    .font(.appCaption)
+                    .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 12)
+
+            if let duration = toolCall.result?.duration {
+                Text(formatDuration(duration))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+            }
+
+            AppIconButton(
+                systemImage: "slider.horizontal.3",
+                tint: isParametersPresented ? theme.textPrimary : theme.textSecondary,
+                size: .regular,
+                isActive: isParametersPresented
+            ) {
+                toggleParameterPopover()
+            }
+            .help(LumiPluginLocalization.string("调用参数", bundle: .module))
+            .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
+                ToolDetailPopoverView(
+                    title: "\(toolCall.name) · 调用参数",
+                    systemImage: "slider.horizontal.3"
+                ) {
+                    ToolCallArgumentsView(toolCall: toolCall)
+                }
+            }
+
+            AppIconButton(
+                systemImage: visualState.systemImage,
+                tint: isResultsPresented
+                    ? theme.textPrimary
+                    : visualState.isFailure ? theme.error : theme.textSecondary,
+                size: .regular,
+                isActive: isResultsPresented
+            ) {
+                toggleResultPopover()
+            }
+            .help(LumiPluginLocalization.string("调用结果", bundle: .module))
+            .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
+                ToolDetailPopoverView(
+                    title: "调用结果",
+                    systemImage: visualState.systemImage,
+                    isError: visualState.isFailure
+                ) {
+                    ToolCallResultView(
+                        result: toolCall.result,
+                        isLoading: isLoadingResult,
+                        visualState: visualState
+                    )
+                }
+            }
+        }
+        .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
+        .background(rowBackground)
+        .overlay(rowBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .scaleEffect(isHovering ? 1.01 : 1)
+        .animation(.easeOut(duration: 0.12), value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    private var rowBackground: some View {
+        Group {
+            if isHovering {
+                visualState.isFailure ? theme.error.opacity(0.12) : Color.white.opacity(0.08)
+            } else {
+                visualState.isFailure ? theme.error.opacity(0.08) : theme.textSecondary.opacity(0.06)
+            }
+        }
+    }
+
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(
+                visualState.isFailure
+                    ? theme.error.opacity(isHovering ? 0.45 : 0.28)
+                    : isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
+                lineWidth: 1
+            )
+    }
+
+    private func toggleParameterPopover() {
+        parameterPopoverToolCallID = isParametersPresented ? nil : toolCall.id
+    }
+
+    private func toggleResultPopover() {
+        resultPopoverToolCallID = isResultsPresented ? nil : toolCall.id
+    }
+
+    private func popoverBinding(selection: Binding<String?>) -> Binding<Bool> {
+        Binding {
+            selection.wrappedValue == toolCall.id
+        } set: { isPresented in
+            if !isPresented, selection.wrappedValue == toolCall.id {
+                selection.wrappedValue = nil
+            }
+        }
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        if duration < 1 {
+            return "\(Int(duration * 1000))ms"
+        }
+
+        if duration < 60 {
+            return String(format: "%.1fs", duration)
+        }
+
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return "\(minutes)m \(seconds)s"
+    }
+}
+
+private struct ToolDetailPopoverView<Content: View>: View {
+    @LumiTheme private var theme
+
+    let title: String
+    let systemImage: String
+    var isError = false
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(isError ? theme.error : theme.textSecondary)
+
+                Text(title)
+                    .font(.appCallout)
+                    .foregroundColor(isError ? theme.error : theme.textPrimary)
+            }
+
+            content
+        }
+        .padding(12)
+        .frame(width: 520)
+        .background(Material.regularMaterial)
+    }
+}
+
+private struct ToolCallArgumentsView: View {
+    let toolCall: LumiToolCall
+
+    var body: some View {
+        if let formattedArguments {
+            ToolTextSectionView(content: formattedArguments)
+        } else {
+            EmptyToolSectionView(systemImage: "info.circle", text: "没有可显示的调用参数")
+        }
+    }
+
+    private var formattedArguments: String? {
+        guard !toolCall.arguments.isEmpty,
+              toolCall.arguments != "{}",
+              let data = toolCall.arguments.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data)
+        else {
+            return nil
+        }
+
+        if let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            return prettyString
+        }
+
+        return toolCall.arguments
+    }
+}
+
+private struct ToolCallResultView: View {
+    let result: LumiToolResult?
+    let isLoading: Bool
+    let visualState: ToolCallResultVisualState
+
+    var body: some View {
+        if isLoading {
+            LoadingToolSectionView()
+        } else if let result {
+            VStack(alignment: .leading, spacing: 8) {
+                if visualState.isFailure {
+                    ToolFailureNoticeView()
+                }
+
+                if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    EmptyToolSectionView(
+                        systemImage: "info.circle",
+                        text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
+                    )
+                } else {
+                    ToolTextSectionView(content: result.content, isError: visualState.isFailure)
+                }
+            }
+        } else {
+            EmptyToolSectionView(systemImage: "info.circle", text: "暂无工具输出")
+        }
+    }
+}
+
+private struct LoadingToolSectionView: View {
+    @LumiTheme private var theme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+
+            Text(verbatim: LumiPluginLocalization.string("查询结果中...", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolSubtleCard()
+    }
+}
+
+private struct ToolFailureNoticeView: View {
+    @LumiTheme private var theme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(theme.error)
+
+            Text(verbatim: LumiPluginLocalization.string("工具执行失败", bundle: .module))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.error)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolSubtleCard()
+    }
+}
+
+private struct ToolTextSectionView: View {
+    @LumiTheme private var theme
+
+    let content: String
+    var isError = false
+
+    var body: some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            ScrollView(.vertical, showsIndicators: true) {
+                Text(content)
+                    .font(.appMonoCaption)
+                    .foregroundColor(isError ? theme.error : theme.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .frame(maxHeight: 360)
+        }
+    }
+}
+
+private struct EmptyToolSectionView: View {
+    @LumiTheme private var theme
+
+    let systemImage: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .foregroundColor(theme.textSecondary)
+
+            Text(text)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolSubtleCard()
+    }
+}
+
+private struct ToolSubtleCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        AppCard(
+            style: .subtle,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ) {
+            content
+        }
+    }
+}
+
+private extension View {
+    func toolSubtleCard() -> some View {
+        modifier(ToolSubtleCardModifier())
+    }
+}
+
+enum ToolCallResultVisualState: Equatable {
+    case loading
+    case failed
+    case completed
+
+    init(result: LumiToolResult?, isLoading: Bool) {
+        if isLoading {
+            self = .loading
+        } else if result?.isError == true {
+            self = .failed
+        } else {
+            self = .completed
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .loading: "hourglass"
+        case .failed: "exclamationmark.triangle.fill"
+        case .completed: "doc.text.magnifyingglass"
+        }
+    }
+
+    var isFailure: Bool {
+        self == .failed
+    }
+}

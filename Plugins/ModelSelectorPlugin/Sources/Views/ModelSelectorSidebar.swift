@@ -51,7 +51,7 @@ struct ModelSelectorSidebar: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 16)
 
-                Text(title)
+                Text(verbatim: LumiPluginLocalization.string(title, bundle: .module))
                     .font(.system(size: 15, weight: .regular))
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)

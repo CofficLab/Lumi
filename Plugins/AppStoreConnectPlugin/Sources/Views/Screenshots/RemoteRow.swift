@@ -42,22 +42,11 @@ struct RemoteScreenshotRow: View {
     @ViewBuilder
     private var screenshotThumbnail: some View {
         if let previewURL = screenshot.previewURL {
-            AsyncImage(url: previewURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty:
-                    ProgressView()
-                        .controlSize(.small)
-                case .failure:
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                @unknown default:
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                }
+            CachedScreenshotThumbnail(url: previewURL, screenshotID: screenshot.id, contentMode: .fill) {
+                ProgressView().controlSize(.small)
+            } failure: {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
             }
             .frame(width: 44, height: 44)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))

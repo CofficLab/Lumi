@@ -10,7 +10,6 @@ struct PanelHeaderView: View {
             ForEach(items) { item in
                 item.makeView()
                     .id(item.id)
-                AppDivider()
             }
         }
     }

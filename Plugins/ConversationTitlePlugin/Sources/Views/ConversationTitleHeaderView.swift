@@ -8,24 +8,20 @@ struct ConversationTitleHeaderView: View {
     let isSending: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .foregroundColor(theme.primary)
+            HStack(spacing: 8) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.appMicro)
+                    .foregroundColor(theme.primary)
 
-            Text(title)
-                .font(.appSectionTitle)
-                .foregroundColor(theme.textPrimary)
-                .lineLimit(1)
+                Text(title)
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
 
             if isSending {
                 BreathingPulseIndicator(color: theme.primary)
             }
-
-            Spacer()
         }
-        .padding(.horizontal, 16)
-        .frame(height: 40)
-        .appSurface(style: .toolbar, cornerRadius: 0)
     }
 }
 

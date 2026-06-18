@@ -24,11 +24,6 @@ struct DeviceInfoMenuBarContentView: View {
                 .interpolation(.none)
                 .help(viewModel.snapshot.memoryHelpText)
 
-            // GPU 柱状图
-            Image(nsImage: viewModel.snapshot.gpuImage)
-                .interpolation(.none)
-                .help(viewModel.snapshot.gpuHelpText)
-
             // Battery indicator (only if device has battery)
             if viewModel.snapshot.showBattery {
                 Image(nsImage: viewModel.snapshot.batteryImage)
@@ -53,7 +48,6 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
         Task { @MainActor in
             CPUService.shared.stopMonitoring()
             MemoryService.shared.stopMonitoring()
-            GPUService.shared.stopMonitoring()
             BatteryService.shared.stopMonitoring()
         }
     }
@@ -61,7 +55,6 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
     private func startMonitoring() {
         CPUService.shared.startMonitoring()
         MemoryService.shared.startMonitoring()
-        GPUService.shared.startMonitoring()
         BatteryService.shared.startMonitoring()
 
         let cpuMetrics = Publishers.CombineLatest3(
@@ -89,14 +82,6 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
             )
         }
 
-        let gpuMetrics = GPUService.shared.$utilization
-            .map { utilization in
-                DeviceInfoMenuBarGPUMetrics(
-                    usagePercent: Int(utilization.rounded()),
-                    modelName: GPUService.shared.modelName
-                )
-            }
-
         let batteryMetrics = Publishers.CombineLatest3(
             BatteryService.shared.$level,
             BatteryService.shared.$isCharging,
@@ -111,9 +96,9 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
         }
 
         cpuMetrics
-            .combineLatest(memoryMetrics, gpuMetrics, batteryMetrics)
+            .combineLatest(memoryMetrics, batteryMetrics)
             .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
-            .map { DeviceInfoMenuBarMetrics(cpu: $0, memory: $1, gpu: $2, battery: $3) }
+            .map { DeviceInfoMenuBarMetrics(cpu: $0, memory: $1, battery: $2) }
             .removeDuplicates()
             .map(DeviceInfoMenuBarSnapshot.init(metrics:))
             .sink { [weak self] snapshot in
@@ -138,11 +123,6 @@ struct DeviceInfoMenuBarMemoryMetrics: Equatable {
     var totalMemory: String
 }
 
-struct DeviceInfoMenuBarGPUMetrics: Equatable {
-    var usagePercent: Int
-    var modelName: String
-}
-
 struct DeviceInfoMenuBarBatteryMetrics: Equatable {
     var levelPercent: Int
     var isCharging: Bool
@@ -153,38 +133,32 @@ struct DeviceInfoMenuBarMetrics: Equatable {
     static let empty = DeviceInfoMenuBarMetrics(
         cpu: DeviceInfoMenuBarCPUMetrics(usagePercent: 0, perCoreUsagePercent: []),
         memory: DeviceInfoMenuBarMemoryMetrics(usagePercent: 0, usedMemory: "0 GB", totalMemory: "0 GB"),
-        gpu: DeviceInfoMenuBarGPUMetrics(usagePercent: 0, modelName: ""),
         battery: DeviceInfoMenuBarBatteryMetrics(levelPercent: 0, isCharging: false, hasBattery: true)
     )
 
     var cpu: DeviceInfoMenuBarCPUMetrics
     var memory: DeviceInfoMenuBarMemoryMetrics
-    var gpu: DeviceInfoMenuBarGPUMetrics
     var battery: DeviceInfoMenuBarBatteryMetrics
 }
 
 struct DeviceInfoMenuBarSnapshot {
     var cpuImage: NSImage
     var memoryImage: NSImage
-    var gpuImage: NSImage
     var batteryImage: NSImage
     var cpuHelpText: String
     var memoryHelpText: String
-    var gpuHelpText: String
     var batteryHelpText: String
     var showBattery: Bool
 
     init(metrics: DeviceInfoMenuBarMetrics) {
         self.cpuImage = CPUMenuBarChartRenderer.makeImage(from: metrics.cpu.normalizedPerCoreUsage)
         self.memoryImage = MemoryMenuBarChartRenderer.makeImage(usage: Double(metrics.memory.usagePercent))
-        self.gpuImage = GPUMenuBarChartRenderer.makeImage(usage: Double(metrics.gpu.usagePercent))
         self.batteryImage = BatteryMenuBarChartRenderer.makeImage(
             level: Double(metrics.battery.levelPercent) / 100.0,
             isCharging: metrics.battery.isCharging
         )
         self.cpuHelpText = Self.cpuHelpText(metrics.cpu)
         self.memoryHelpText = Self.memoryHelpText(metrics.memory)
-        self.gpuHelpText = Self.gpuHelpText(metrics.gpu)
         self.batteryHelpText = Self.batteryHelpText(metrics.battery)
         self.showBattery = metrics.battery.hasBattery
     }
@@ -200,11 +174,6 @@ struct DeviceInfoMenuBarSnapshot {
 
     private static func memoryHelpText(_ memory: DeviceInfoMenuBarMemoryMetrics) -> String {
         String(format: LumiPluginLocalization.string("Memory %lld%% · %@ / %@", bundle: .module), Int64(memory.usagePercent), memory.usedMemory, memory.totalMemory)
-    }
-
-    private static func gpuHelpText(_ gpu: DeviceInfoMenuBarGPUMetrics) -> String {
-        let name = gpu.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpu.modelName
-        return "\(name) \(gpu.usagePercent)%"
     }
 
     private static func batteryHelpText(_ battery: DeviceInfoMenuBarBatteryMetrics) -> String {
