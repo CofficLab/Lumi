@@ -95,11 +95,16 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
                 ))
             }
         }()
-        let targetSourceFiles: [String: Set<String>] = await Task.detached(priority: .userInitiated) { @Sendable in
-            Self.resolveTargetSourceFiles(
+        let resolvedProjectURL = Self.projectURL(for: URL(fileURLWithPath: projectLikePath))
+        let targetSourceFiles: [String: Set<String>]
+        let targetProductTypes: [String: String]
+        (targetSourceFiles, targetProductTypes) = await Task.detached(priority: .userInitiated) { @Sendable in
+            let sourceFiles = Self.resolveTargetSourceFiles(
                 projectLikeURL: URL(fileURLWithPath: projectLikePath),
                 onScanProgress: scanProgressHandler
             )
+            let productTypes = resolvedProjectURL.map { XcodePBXProjParser.parseTargetProductTypes(projectURL: $0) } ?? [:]
+            return (sourceFiles, productTypes)
         }.value
 
         let targetContexts = targetNames.map { targetName in
@@ -109,7 +114,7 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             return XcodeTargetContext(
                 id: targetName,
                 name: targetName,
-                productType: nil,
+                productType: targetProductTypes[targetName],
                 buildConfigurations: targetConfigurations,
                 sourceFiles: targetSourceFiles[targetName] ?? []
             )
@@ -177,11 +182,13 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             XcodeBuildConfigurationContext(id: "Debug", name: "Debug"),
             XcodeBuildConfigurationContext(id: "Release", name: "Release"),
         ]
+        let targetProductTypes = Self.projectURL(for: workspaceURL)
+            .map { XcodePBXProjParser.parseTargetProductTypes(projectURL: $0) } ?? [:]
         let targets = targetNames.map { targetName in
             XcodeTargetContext(
                 id: targetName,
                 name: targetName,
-                productType: nil,
+                productType: targetProductTypes[targetName],
                 buildConfigurations: defaultConfigurations,
                 sourceFiles: targetSourceFiles[targetName] ?? []
             )
@@ -288,21 +295,8 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
         projectLikeURL: URL,
         onScanProgress: (@Sendable (String) -> Void)? = nil
     ) -> [String: Set<String>] {
-        let projectURL: URL
-        if projectLikeURL.pathExtension == "xcodeproj" {
-            projectURL = projectLikeURL
-        } else {
-            let directoryURL = projectLikeURL.deletingLastPathComponent()
-            let preferredCandidate = directoryURL.appendingPathComponent(projectLikeURL.deletingPathExtension().lastPathComponent + ".xcodeproj")
-            if FileManager.default.fileExists(atPath: preferredCandidate.path) {
-                projectURL = preferredCandidate
-            } else if let fallbackCandidate = try? FileManager.default
-                .contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
-                .first(where: { $0.pathExtension == "xcodeproj" }) {
-                projectURL = fallbackCandidate
-            } else {
-                return [:]
-            }
+        guard let projectURL = projectURL(for: projectLikeURL) else {
+            return [:]
         }
 
         let projectRoot = projectURL.deletingLastPathComponent()
@@ -338,6 +332,26 @@ final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
             result[targetName, default: []].formUnion(files)
         }
         return result
+    }
+
+    static func projectURL(for projectLikeURL: URL) -> URL? {
+        if projectLikeURL.pathExtension == "xcodeproj" {
+            return projectLikeURL
+        }
+
+        let directoryURL = projectLikeURL.deletingLastPathComponent()
+        let preferredCandidate = directoryURL.appendingPathComponent(
+            projectLikeURL.deletingPathExtension().lastPathComponent + ".xcodeproj"
+        )
+        if FileManager.default.fileExists(atPath: preferredCandidate.path) {
+            return preferredCandidate
+        }
+        if let fallbackCandidate = try? FileManager.default
+            .contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
+            .first(where: { $0.pathExtension == "xcodeproj" }) {
+            return fallbackCandidate
+        }
+        return nil
     }
 
     public static func uniquePreservingOrder(_ values: [String]) -> [String] {

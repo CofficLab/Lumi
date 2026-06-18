@@ -712,6 +712,15 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         )
     }
 
+    // MARK: - User Build Coordination
+
+    /// Pauses semantic indexing without discarding the active workspace context.
+    public func pauseSemanticIndexingForUserBuild() {
+        semanticIndexTask?.cancel()
+        semanticIndexTask = nil
+        SemanticIndexJobController.shared.cancelCurrentJob()
+    }
+
     // MARK: - Context Invalidation
 
     /// 使所有缓存失效
