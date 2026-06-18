@@ -1,12 +1,23 @@
 import Foundation
 
 extension VM {
-    func loadApps() async {
-        await runBusy {
-            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            apps = try await client.listApps(search: query.isEmpty ? nil : query)
-            connectionStatus = AppStoreConnectLocalization.string("Connected")
-            applyPersistedOrDefaultSelectedApp()
+    func loadApps(silent: Bool = false) async {
+        if silent {
+            do {
+                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                apps = try await client.listApps(search: query.isEmpty ? nil : query)
+                connectionStatus = AppStoreConnectLocalization.string("Connected")
+                applyPersistedOrDefaultSelectedApp()
+            } catch {
+                Self.logger.error("loadApps(silent) failed: \(error.localizedDescription)")
+            }
+        } else {
+            await runBusy {
+                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                apps = try await client.listApps(search: query.isEmpty ? nil : query)
+                connectionStatus = AppStoreConnectLocalization.string("Connected")
+                applyPersistedOrDefaultSelectedApp()
+            }
         }
     }
 

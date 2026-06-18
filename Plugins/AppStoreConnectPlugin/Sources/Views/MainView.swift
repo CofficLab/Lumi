@@ -58,7 +58,7 @@ struct MainView: View {
         }
         .task {
             if viewModel.credentials.isComplete && viewModel.apps.isEmpty {
-                await viewModel.loadApps()
+                await viewModel.loadApps(silent: true)
             }
         }
     }
