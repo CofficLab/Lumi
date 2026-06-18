@@ -10,7 +10,9 @@ struct ScreenshotsSection: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader
 
-            devicePicker
+            if viewModel.availableScreenshotDisplayTypes.count > 1 {
+                devicePicker
+            }
 
             screenshotsContent
         }
