@@ -195,8 +195,10 @@ public struct RAGStatusBarView: View, SuperLog {
         }
 
         do {
+            RAGPluginService.initializeIfNeeded()
             let ragService = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化
+            // 等待服务初始化完成
+            await ragService.initialize()
             let status = try await ragService.getIndexStatus(projectPath: projectPath)
 
             // 只在非索引状态下才更新状态
