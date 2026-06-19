@@ -48,6 +48,10 @@ struct ModelSelectorModelRow: View {
 
                     Spacer()
 
+                    if let contextSize = provider.contextWindowSizes[model] {
+                        AppTag(ModelSelectorFormatService.contextSize(contextSize), systemImage: "text.viewfinder")
+                    }
+
                     if let stat, stat.avgTPS > 0 {
                         AppTag(ModelSelectorFormatService.tps(stat.avgTPS), systemImage: "speedometer")
                     }
