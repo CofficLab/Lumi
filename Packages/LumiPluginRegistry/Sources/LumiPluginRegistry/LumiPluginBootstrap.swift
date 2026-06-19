@@ -16,7 +16,6 @@ public enum LumiPluginBootstrap {
     public static func configurePluginRuntimes(
         currentProjectPath: @escaping @Sendable () -> String,
         currentProjectName: @escaping @Sendable () -> String = { "" },
-        recentProjects: @escaping @Sendable () -> [RAGRuntimeProject] = { [] },
         chatServiceProvider: (@MainActor () -> (any LumiChatServicing)?)? = nil,
         askUserResumer: (any LumiAskUserResuming)? = nil
     ) {
@@ -31,11 +30,7 @@ public enum LumiPluginBootstrap {
             ConversationTitlePlugin.bootstrap(chatServiceProvider: chatServiceProvider)
             GitPlugin.bootstrap(chatServiceProvider: chatServiceProvider)
         }
-        RAGPlugin.bootstrapRuntime(
-            currentProjectPath: currentProjectPath,
-            currentProjectName: currentProjectName,
-            recentProjects: recentProjects
-        )
+        RAGPlugin.bootstrapRuntime()
         AgentRulesRuntime.currentProjectPathProvider = currentProjectPath
         if let askUserResumer {
             AskUserPlugin.configureAskUserResume(askUserResumer)
