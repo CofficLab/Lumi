@@ -35,6 +35,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     let llmRetryCount = 3
     let defaultPageSize = 10
     let modelRouter = ModelRouter()
+    var persistCallCount = 0
 
     // MARK: - Delegates
 
@@ -395,6 +396,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     // MARK: - Persistence
 
     func persist() {
+        persistCallCount += 1
         revision += 1
         store.save(
             ChatStore.Snapshot(
