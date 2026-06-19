@@ -320,6 +320,10 @@ public struct RAGStatusDetailView: View {
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            RAGInfoRow(
+                label: LumiPluginLocalization.string("Project", bundle: .module),
+                value: (status.projectPath as NSString).lastPathComponent
+            )
             RAGInfoRow(label: LumiPluginLocalization.string("File Count", bundle: .module), value: "\(status.fileCount)")
             RAGInfoRow(label: LumiPluginLocalization.string("Chunk Count", bundle: .module), value: "\(status.chunkCount)")
             RAGInfoRow(label: LumiPluginLocalization.string("Last Indexed", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
