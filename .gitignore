@@ -74,4 +74,5 @@ fastlane/test_output
 /Build
 /DerivedData
 /buildServer.json
+.compile_file
 scripts/test-version-bump.sh

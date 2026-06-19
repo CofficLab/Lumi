@@ -19,6 +19,31 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [
+            ListAppStoreConnectAppsTool(),
+            ListAppStoreConnectVersionsTool(),
+            CreateAppStoreConnectVersionTool(),
+            ListAppStoreConnectLocalizationsTool(),
+            ListAppStoreConnectScreenshotSetsTool(),
+            ListAppStoreConnectScreenshotsTool(),
+            ListAppStoreConnectCiProductsTool(),
+            ListAppStoreConnectCiWorkflowsTool(),
+            ReadAppStoreConnectCiWorkflowTool(),
+            ListAppStoreConnectCiBuildRunsTool(),
+            UpdateAppStoreConnectLocalizationTool(),
+            CreateAppStoreConnectScreenshotSetTool(),
+            StartAppStoreConnectCiBuildRunTool(),
+            SetAppStoreConnectCiWorkflowEnabledTool(),
+            ListAppStoreConnectCoverArtTool(),
+            ReadAppStoreConnectCoverArtTool(),
+            CreateAppStoreConnectCoverArtTool(),
+            UpdateAppStoreConnectCoverArtTool(),
+            ExportAppStoreConnectCoverArtTool()
+        ]
+    }
+
+    @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         guard context.activeSectionID == info.id else { return [] }
 
@@ -35,11 +60,18 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
+        let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
+        let provider: @MainActor @Sendable () -> String = {
+            projectPathProvider?.currentProjectPath ?? ""
+        }
+        AddToChat.currentProjectPathProvider = provider
+        CoverArtRuntime.currentProjectPathProvider = provider
+        return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
-                systemImage: iconName
+                systemImage: iconName,
+                chatSection: .narrow
             ) {
                 MainView()
             }
@@ -48,7 +80,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(AppStoreConnectAboutView())
+        AnyView(AboutView())
     }
 }
 

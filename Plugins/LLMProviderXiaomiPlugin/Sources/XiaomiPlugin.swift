@@ -31,6 +31,20 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
             "mimo-v2.5-tts",
             "mimo-v2.5-tts-voiceclone",
             "mimo-v2.5-tts-voicedesign"
+            ],
+            contextWindowSizes: [
+                "mimo-v2.5-pro": 131_072,
+                "mimo-v2.5": 131_072,
+                "mimo-v2.5-tts": 131_072,
+                "mimo-v2.5-tts-voiceclone": 131_072,
+                "mimo-v2.5-tts-voicedesign": 131_072
+            ],
+            modelCapabilities: [
+                "mimo-v2.5-pro": .init(supportsVision: true, supportsTools: true),
+                "mimo-v2.5": .init(supportsVision: false, supportsTools: true),
+                "mimo-v2.5-tts": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
+                "mimo-v2.5-tts-voiceclone": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
+                "mimo-v2.5-tts-voicedesign": .init(supportsVision: false, supportsTools: false, supportsTTS: true)
             ]
         )
     }

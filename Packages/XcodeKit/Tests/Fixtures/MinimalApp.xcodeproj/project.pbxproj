@@ -1,0 +1,143 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXGroup section */
+		FIXTURE001 /* MinimalApp */ = {
+			isa = PBXGroup;
+			children = (
+				FIXTURE002 /* MinimalApp */,
+			);
+			sourceTree = "<group>";
+		};
+		FIXTURE002 /* MinimalApp */ = {
+			isa = PBXGroup;
+			children = (
+				FIXTURE003 /* App.swift */,
+			);
+			path = MinimalApp;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXFileReference section */
+		FIXTURE003 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		FIXTURE004 /* MinimalApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MinimalApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXNativeTarget section */
+		FIXTURE005 /* MinimalApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FIXTURE006 /* Build configuration list for PBXNativeTarget "MinimalApp" */;
+			buildPhases = (
+				FIXTURE007 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MinimalApp;
+			productName = MinimalApp;
+			productReference = FIXTURE004 /* MinimalApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FIXTURE008 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = FIXTURE009 /* Build configuration list for PBXProject "MinimalApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = FIXTURE001 /* MinimalApp */;
+			productRefGroup = FIXTURE010 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FIXTURE005 /* MinimalApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FIXTURE007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FIXTURE011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FIXTURE012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		FIXTURE013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = com.fixture.MinimalApp;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		FIXTURE014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = com.fixture.MinimalApp;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FIXTURE006 /* Build configuration list for PBXNativeTarget "MinimalApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FIXTURE013 /* Debug */,
+				FIXTURE014 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FIXTURE009 /* Build configuration list for PBXProject "MinimalApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FIXTURE011 /* Debug */,
+				FIXTURE012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FIXTURE008 /* Project object */;
+}

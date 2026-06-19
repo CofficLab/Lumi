@@ -9,30 +9,19 @@ public struct XcodeProjectStatusBar: View, SuperLog {
     public nonisolated static let emoji = "🔨"
 
     @LumiTheme private var theme
-    @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
+    @ObservedObject private var viewModel: XcodeProjectStatusBarViewModel
+    @ObservedObject private var buildRunManager: SwiftBuildRunManager
+
+    public init(viewModel: XcodeProjectStatusBarViewModel? = nil) {
+        let resolved = viewModel ?? EditorSwiftWindowScopeRegistry.activeStatusBarViewModel
+        _viewModel = ObservedObject(wrappedValue: resolved)
+        _buildRunManager = ObservedObject(wrappedValue: EditorSwiftWindowScopeRegistry.activeBuildRunManager)
+    }
 
     public var body: some View {
         Group {
-            if viewModel.isXcodeProject {
-                StatusBarHoverContainer(
-                    detailView: XcodeProjectStatusDetailView(viewModel: viewModel),
-                    popoverWidth: 440,
-                    id: "lumi-xcode-project-status",
-                    chrome: .titleToolbar
-                ) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "hammer.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.blue)
-
-                        schemeMenu
-                        configurationMenu
-                        destinationChip
-
-                        buildContextIndicator
-                    }
-                    .padding(.horizontal, 4)
-                }
+            if viewModel.showsBuildToolbar {
+                toolbarContent
             }
         }
         .onAppear {
@@ -48,6 +37,63 @@ public struct XcodeProjectStatusBar: View, SuperLog {
                                     SwiftPluginLog.logger.info("\(self.t)isXcodeProject 变化: \(newValue)")
                 }
             }
+        }
+    }
+
+    private var toolbarContent: some View {
+        HStack(spacing: 8) {
+            if viewModel.isXcodeProject {
+                Image(systemName: "hammer.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.blue)
+                    .help(LumiPluginLocalization.string("Xcode build context", bundle: .module))
+
+                schemeMenu
+                configurationMenu
+                destinationChip
+            } else if viewModel.isSwiftPackageProject {
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.orange)
+
+                if let packageName = viewModel.spmPackageName {
+                    Text(packageName)
+                        .lineLimit(1)
+                }
+                if let target = viewModel.spmExecutableTarget {
+                    Text(target)
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            SwiftBuildRunButton(
+                viewModel: viewModel,
+                buildRunManager: EditorSwiftWindowScopeRegistry.activeBuildRunManager
+            )
+
+            if buildRunManager.isActive {
+                Text(buildPhaseLabel)
+                    .font(.system(size: 11))
+                    .foregroundStyle(theme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            if viewModel.isXcodeProject {
+                statusDetailPopoverTrigger
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private var statusDetailPopoverTrigger: some View {
+        StatusBarHoverContainer(
+            detailView: XcodeProjectStatusDetailView(viewModel: viewModel),
+            popoverWidth: 440,
+            id: "lumi-xcode-project-status",
+            chrome: .titleToolbar
+        ) {
+            buildContextIndicator
         }
     }
 
@@ -162,6 +208,19 @@ public struct XcodeProjectStatusBar: View, SuperLog {
 
     private func statusText(at date: Date) -> String {
         viewModel.semanticStatusText(now: date)
+    }
+
+    private var buildPhaseLabel: String {
+        switch buildRunManager.phase {
+        case .preflighting:
+            return LumiPluginLocalization.string("Preparing…", bundle: .module)
+        case .building:
+            return LumiPluginLocalization.string("Building…", bundle: .module)
+        case .launching:
+            return LumiPluginLocalization.string("Launching…", bundle: .module)
+        default:
+            return LumiPluginLocalization.string("Running…", bundle: .module)
+        }
     }
 }
 #Preview {

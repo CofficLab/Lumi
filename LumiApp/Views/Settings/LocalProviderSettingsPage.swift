@@ -49,7 +49,7 @@ struct LocalProviderSettingsPage: View {
                 spacing: 12
             ) {
                 if localProviders.isEmpty {
-                    Text("当前没有可用的本地供应商")
+                    Text(String(localized: "当前没有可用的本地供应商"))
                         .font(.appCaption)
                         .foregroundColor(.secondary)
                 } else {
@@ -105,7 +105,10 @@ struct LocalProviderSettingsPage: View {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
                         AppSettingsModelRow(
                             model: model,
-                            isDefault: initialModel == model
+                            isDefault: initialModel == model,
+                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
                         ) {
                             settingsStore.saveLocalProviderModel(providerID: provider.id, modelID: model)
                         }
@@ -123,7 +126,7 @@ struct LocalProviderSettingsPage: View {
     private var unsupportedPlatformMessage: some View {
         AppCard {
             AppSettingsSection(title: "MLX", spacing: 8) {
-                Text("MLX 本地模型需要 macOS 14 或更高版本。")
+                Text(String(localized: "MLX 本地模型需要 macOS 14 或更高版本。"))
                     .font(.appCaption)
                     .foregroundColor(.secondary)
             }

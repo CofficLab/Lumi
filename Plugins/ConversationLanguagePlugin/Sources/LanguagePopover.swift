@@ -1,17 +1,16 @@
-import AgentToolKit
-import SwiftUI
 import LumiCoreKit
+import SwiftUI
 
 struct LanguagePopover: View {
-    let selectedLanguage: LanguagePreference
-    let onSelect: (LanguagePreference) -> Void
+    let selectedLanguage: LumiConversationLanguage
+    let onSelect: (LumiConversationLanguage) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LumiPluginLocalization.string("Response Language", bundle: .module))
                 .font(.system(size: 13, weight: .semibold))
 
-            ForEach(LanguagePreference.allCases) { language in
+            ForEach(LumiConversationLanguage.allCases) { language in
                 Button {
                     onSelect(language)
                 } label: {

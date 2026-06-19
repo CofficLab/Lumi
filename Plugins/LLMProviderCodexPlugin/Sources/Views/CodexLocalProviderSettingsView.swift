@@ -62,7 +62,10 @@ public struct CodexLocalProviderSettingsView: View {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
                         AppSettingsModelRow(
                             model: model,
-                            isDefault: selectedModelID == model
+                            isDefault: selectedModelID == model,
+                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
                         ) {
                             selectedModelID = model
                             onDefaultModelChanged(model)

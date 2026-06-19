@@ -12,11 +12,13 @@ public final class WindowProjectVM: ObservableObject {
     public init(store: LumiCurrentProjectPathStore) {
         self.store = store
         self.currentProjectPath = store.currentProjectPath
-        self.cancellable = Timer.publish(every: 0.5, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
+        cancellable = NotificationCenter.default
+            .publisher(for: .lumiCurrentProjectPathDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
                 guard let self else { return }
-                let path = store.currentProjectPath
+                let path = notification.userInfo?[LumiCurrentProjectPathUserInfoKey.path] as? String
+                    ?? store.currentProjectPath
                 if path != currentProjectPath {
                     currentProjectPath = path
                 }

@@ -18,15 +18,6 @@ struct SidebarVersionRow: View {
                     .font(.callout.weight(isSelected ? .semibold : .regular))
                     .lineLimit(1)
 
-                // Platform badge
-                Text(version.platformLabel)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.secondary.opacity(0.12))
-                    .cornerRadius(3)
-
                 Spacer(minLength: 0)
 
                 Text(version.shortStateLabel)
@@ -41,21 +32,35 @@ struct SidebarVersionRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .appStoreConnectAddToChatMenu(
+            entityType: "version",
+            entityID: version.id,
+            title: version.versionString,
+            sourceView: "SidebarVersionRow",
+            fields: [
+                "appStoreState": version.appStoreState,
+                "platform": version.platform
+            ]
+        )
     }
 }
 
 private extension AppStoreVersion {
     var shortStateLabel: String {
         let state = appStoreState.uppercased()
+        if state == "PENDING_DEVELOPER_RELEASE" {
+            return AppStoreConnectLocalization.string("Pending Developer Release")
+        }
         if state.contains("READY") { return AppStoreConnectLocalization.string("Ready") }
         if state.contains("PREPARE") { return AppStoreConnectLocalization.string("Prepare") }
         if state.contains("REJECT") { return AppStoreConnectLocalization.string("Rejected") }
         if state.contains("REVIEW") { return AppStoreConnectLocalization.string("In Review") }
-        return appStoreStateLabel
+        if state.contains("REPLACED") { return AppStoreConnectLocalization.string("Replaced") }
+        return localizedAppStoreStateLabel
     }
 
     var appStoreStateLabel: String {
-        appStoreState.replacingOccurrences(of: "_", with: " ").capitalized
+        localizedAppStoreStateLabel
     }
 
     var stateIcon: String {

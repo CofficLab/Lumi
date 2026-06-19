@@ -29,7 +29,7 @@ public struct AppSearchBar: View {
 
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
-                .font(AppUI.Typography.body)
+                .font(AppUI.Typography.caption1)
                 .foregroundColor(theme.textPrimary)
                 .focused($isFocused)
                 .onSubmit {

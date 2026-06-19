@@ -84,7 +84,7 @@ final class ConversationStatusState {
 
     func setToolCompleted(conversationID: UUID, toolName: String, elapsedSeconds: Int?) {
         let durationSuffix = elapsedSeconds.map { "（\(max(0, $0))s）" } ?? ""
-        setStatus(conversationID: conversationID, content: "✅ \(toolName)\(durationSuffix)")
+        setStatus(conversationID: conversationID, content: "\(toolName)\(durationSuffix)")
     }
 
     private static func normalizedStatusTailBuffer(from raw: String) -> String {

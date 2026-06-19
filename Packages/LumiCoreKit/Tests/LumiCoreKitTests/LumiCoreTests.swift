@@ -36,6 +36,72 @@ import Testing
 }
 
 @MainActor
+@Test func chatSectionToolbarBarItemsSortByOrder() {
+    struct FirstPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+            [LumiChatSectionToolbarBarItem(id: "first", order: 10) { Text("First") }]
+        }
+    }
+
+    struct SecondPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+            [LumiChatSectionToolbarBarItem(id: "second", order: 20) { Text("Second") }]
+        }
+    }
+
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .narrow,
+        isChatSectionVisible: true
+    )
+
+    let plugins: [any LumiPlugin.Type] = [SecondPlugin.self, FirstPlugin.self]
+    let items = plugins
+        .flatMap { $0.chatSectionToolbarBarItems(context: context) }
+        .sorted { $0.order < $1.order }
+
+    #expect(items.map(\.id) == ["first", "second"])
+}
+
+@MainActor
+@Test func chatSectionHeaderItemsSortByOrder() {
+    struct FirstPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
+            [LumiChatSectionHeaderItem(id: "first", order: 10) { Text("First") }]
+        }
+    }
+
+    struct SecondPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20)
+        static let policy = LumiPluginPolicy.alwaysOn
+        static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
+            [LumiChatSectionHeaderItem(id: "second", order: 20) { Text("Second") }]
+        }
+    }
+
+    let context = LumiPluginContext(
+        activeSectionID: "chat",
+        activeSectionTitle: "Chat",
+        chatSection: .narrow,
+        isChatSectionVisible: true
+    )
+
+    let plugins: [any LumiPlugin.Type] = [SecondPlugin.self, FirstPlugin.self]
+    let items = plugins
+        .flatMap { $0.chatSectionHeaderItems(context: context) }
+        .sorted { $0.order < $1.order }
+
+    #expect(items.map(\.id) == ["first", "second"])
+}
+
+@MainActor
 @Test func panelHeaderItemsRespectShowsPanelChromeGuard() {
     struct HeaderPlugin: LumiPlugin {
         static let info = LumiPluginInfo(id: "header", displayName: "Header", description: "", order: 70)
@@ -204,4 +270,39 @@ import Testing
     #expect(hidden.showsChatSection == false)
     #expect(visible.showsChatSection)
     #expect(visible.activeProviderID == "zhipu")
+}
+
+@Test func toolExecutionOnlyMessageDetection() {
+    let conversationID = UUID()
+
+    let substantiveReply = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "Here is the answer.",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(!substantiveReply.isToolExecutionOnly)
+
+    let toolSummary = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "正在执行 read_file",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(toolSummary.isToolExecutionOnly)
+
+    let emptyToolOnly = LumiChatMessage(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "",
+        toolCalls: [LumiToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+    )
+    #expect(emptyToolOnly.isToolExecutionOnly)
+
+    let userMessage = LumiChatMessage(
+        conversationID: conversationID,
+        role: .user,
+        content: "hello"
+    )
+    #expect(!userMessage.isToolExecutionOnly)
 }

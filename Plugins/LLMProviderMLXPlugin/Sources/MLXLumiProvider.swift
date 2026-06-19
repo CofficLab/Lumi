@@ -11,7 +11,10 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Local models via Apple MLX", bundle: .module),
         defaultModel: MLXModels.toolModels.first?.id ?? "mlx-community/Qwen3.5-9B-4bit",
         availableModels: MLXModels.toolModels.map(\.id),
-        isLocal: true
+        isLocal: true,
+        modelCapabilities: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map {
+            ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
+        })
     )
 
     public init() {}

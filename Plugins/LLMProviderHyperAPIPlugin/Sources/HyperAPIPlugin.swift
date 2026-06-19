@@ -37,6 +37,32 @@ public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
             "gpt-5-codex",
             "gpt-5.1",
             "gpt-5.1-codex"
+            ],
+            contextWindowSizes: [
+                "gpt-5": 400_000,
+                "gpt-5-codex": 400_000,
+                "gpt-5.1": 400_000,
+                "gpt-5.1-codex": 400_000,
+                "gpt-5.1-codex-max": 400_000,
+                "gpt-5.1-codex-mini": 400_000,
+                "gpt-5.2": 400_000,
+                "gpt-5.2-codex": 400_000,
+                "gpt-5.3-codex": 400_000,
+                "gpt-5.4": 1_000_000,
+                "gpt-5.4-mini": 400_000
+            ],
+            modelCapabilities: [
+                "gpt-5": .init(supportsVision: true, supportsTools: true),
+                "gpt-5-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex-max": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.1-codex-mini": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.2": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.2-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

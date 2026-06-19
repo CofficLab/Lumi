@@ -27,27 +27,26 @@ struct RemoteScreenshotRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .appStoreConnectAddToChatMenu(
+            entityType: "screenshot",
+            entityID: screenshot.id,
+            title: screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName,
+            sourceView: "RemoteScreenshotRow",
+            fields: [
+                "fileSize": screenshot.fileSize.map(String.init) ?? "-",
+                "previewURL": screenshot.previewURL?.absoluteString ?? "-"
+            ]
+        )
     }
 
     @ViewBuilder
     private var screenshotThumbnail: some View {
         if let previewURL = screenshot.previewURL {
-            AsyncImage(url: previewURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty:
-                    ProgressView()
-                        .controlSize(.small)
-                case .failure:
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                @unknown default:
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                }
+            CachedScreenshotThumbnail(url: previewURL, screenshotID: screenshot.id, contentMode: .fill) {
+                ProgressView().controlSize(.small)
+            } failure: {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
             }
             .frame(width: 44, height: 44)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))

@@ -33,6 +33,24 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
             "claude-3-opus-20240229",
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307"
+            ],
+            contextWindowSizes: [
+                "claude-sonnet-4-20250514": 200_000,
+                "claude-opus-4-20250514": 200_000,
+                "claude-3-5-sonnet-20241022": 200_000,
+                "claude-3-5-sonnet-20240620": 200_000,
+                "claude-3-opus-20240229": 200_000,
+                "claude-3-sonnet-20240229": 200_000,
+                "claude-3-haiku-20240307": 200_000
+            ],
+            modelCapabilities: [
+                "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true),
+                "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true),
+                "claude-3-5-sonnet-20241022": .init(supportsVision: true, supportsTools: true),
+                "claude-3-5-sonnet-20240620": .init(supportsVision: true, supportsTools: true),
+                "claude-3-opus-20240229": .init(supportsVision: true, supportsTools: true),
+                "claude-3-sonnet-20240229": .init(supportsVision: true, supportsTools: true),
+                "claude-3-haiku-20240307": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

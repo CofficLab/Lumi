@@ -166,7 +166,7 @@ public struct AppButton: View {
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
-        .opacity(isDisabled ? 0.5 : 1.0)
+        .opacity(isDisabled && style != .primary ? 0.5 : 1.0)
         .scaleEffect(isEffectivelyHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         .onHover { hovering in
             AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
@@ -210,15 +210,18 @@ public struct AppButton: View {
     private var foregroundColor: Color {
         switch style {
         case .primary:
-            .white
+            if isDisabled {
+                return theme.primary.opacity(0.72)
+            }
+            return .white
         case .secondary:
-            theme.textPrimary
+            return theme.textPrimary
         case .ghost:
-            theme.primary
+            return theme.primary
         case .tonal:
-            theme.textSecondary
+            return theme.textSecondary
         case .destructive:
-            theme.error
+            return theme.error
         }
     }
 
@@ -227,7 +230,11 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isEffectivelyHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
+                    .fill(
+                        isDisabled
+                            ? theme.primary.opacity(0.14)
+                            : (isEffectivelyHovered ? theme.primary.opacity(0.9) : theme.primary)
+                    )
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.appListRowHoverBackground : theme.appStatusMutedFill)

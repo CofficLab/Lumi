@@ -38,8 +38,10 @@ struct ChatMessagesSectionView: View {
                     coordinator.draft = prompt
                     coordinator.send()
                 },
-                automationLevel: coordinator.chatService.automationLevel(for: selectedID)
+                automationLevel: coordinator.chatService.automationLevel(for: selectedID),
+                verbosity: coordinator.chatService.verbosity(for: selectedID)
             )
+            .environment(\.lumiResponseVerbosity, coordinator.chatService.verbosity(for: selectedID))
             .id(selectedID)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

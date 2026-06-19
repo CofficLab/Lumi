@@ -30,6 +30,18 @@ public final class FreeModelProvider: OpenAICompatibleLumiProvider, @unchecked S
             "gpt-5.4",
             "gpt-5.4-mini",
             "gpt-5.3-codex"
+            ],
+            contextWindowSizes: [
+                "gpt-5.5": 1_000_000,
+                "gpt-5.4": 1_000_000,
+                "gpt-5.4-mini": 400_000,
+                "gpt-5.3-codex": 400_000
+            ],
+            modelCapabilities: [
+                "gpt-5.5": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
+                "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true)
             ]
         )
     }

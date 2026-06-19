@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/HTMLPreviewKit"),
     ],
     targets: [
         .target(
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "HTMLPreviewKit", package: "HTMLPreviewKit"),
             ],
             path: "Sources",
             resources: [

@@ -9,6 +9,7 @@ public struct BuildContextResolutionProgress: Equatable, Sendable {
         case runningXcodebuildList
         case selectingScheme
         case generatingBuildServer
+        case indexingCompileDatabase
     }
 
     public struct Update: Sendable, Equatable {
@@ -73,6 +74,8 @@ public struct BuildContextResolutionProgress: Equatable, Sendable {
             return "Selecting scheme..."
         case .generatingBuildServer:
             return "Generating buildServer.json..."
+        case .indexingCompileDatabase:
+            return "Building semantic index..."
         }
     }
 

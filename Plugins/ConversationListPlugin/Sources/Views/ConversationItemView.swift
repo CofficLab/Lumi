@@ -8,7 +8,7 @@ import SwiftUI
 /// ## 活跃状态
 ///
 /// 对话项支持两种活跃状态：
-/// - **处理中**：对话正在处理消息，图标会显示脉冲动画和主题色
+/// - **处理中**：对话正在处理消息，图标会显示脉冲涟漪动画和主题色
 /// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
 public struct ConversationItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -40,11 +40,13 @@ public struct ConversationItemView: View {
                     .font(.appMicro)
                     .foregroundColor(isProcessing ? theme.primary : theme.textTertiary)
                     .padding(3)
+                    .overlay {
+                        if isProcessing {
+                            PulseRipple(color: theme.primary)
+                        }
+                    }
 
-                if isProcessing {
-                    // 处理中：脉冲动画
-                    ProcessingPulseIndicator(color: theme.primary)
-                } else if isRecentlyActive {
+                if !isProcessing, isRecentlyActive {
                     // 近期活跃：小圆点
                     RecentActivityIndicator(color: theme.primary)
                 }
@@ -55,7 +57,7 @@ public struct ConversationItemView: View {
                 // 标题
                 Text(conversation.displayTitle)
                     .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(isProcessing ? theme.primary : theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -86,27 +88,6 @@ public struct ConversationItemView: View {
 
 // MARK: - Activity Indicators
 
-/// 处理中脉冲动画指示器
-private struct ProcessingPulseIndicator: View {
-    public let color: Color
-    @State private var isAnimating = false
-
-    public var body: some View {
-        Circle()
-            .fill(color.opacity(0.3))
-            .frame(width: 12, height: 12)
-            .scaleEffect(isAnimating ? 1.8 : 1.0)
-            .opacity(isAnimating ? 0 : 0.5)
-            .animation(
-                .easeOut(duration: 1.5).repeatForever(autoreverses: false),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
-    }
-}
-
 /// 近期活跃小圆点指示器
 private struct RecentActivityIndicator: View {
     public let color: Color
@@ -122,11 +103,31 @@ private struct RecentActivityIndicator: View {
 // MARK: - View
 
 extension ConversationItemView {
-    /// 元数据区域：显示项目名称和相对时间
-    /// 当会话关联了项目时显示项目名，否则只显示时间
+    /// 元数据区域：显示模型信息、项目名称和相对时间
+    /// 当会话关联了模型时显示供应商/模型，关联了项目时显示项目名
     @ViewBuilder
     private var metadataSection: some View {
         HStack {
+            // 模型信息
+            if let modelName = conversation.modelName, !modelName.isEmpty {
+                if let providerID = conversation.providerID, !providerID.isEmpty {
+                    Text("\(providerID)/\(modelName)")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                } else {
+                    Text(modelName)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
+            }
+
+            // 项目信息
             if let projectPath = conversation.projectPath {
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
                 Text(projectName)
@@ -214,6 +215,15 @@ extension ConversationItemView {
     .padding()
 }
 
+#Preview("会话项 - 无模型信息") {
+    ConversationItemView(
+        conversation: ConversationListItem.example(providerID: nil, modelName: nil),
+        onDelete: {}
+    )
+    .frame(width: 200)
+    .padding()
+}
+
 // MARK: - ConversationListItem+Preview
 
 extension ConversationListItem {
@@ -221,14 +231,18 @@ extension ConversationListItem {
     public static func example(
         title: String = "示例对话",
         projectPath: String? = "/Users/example/project",
-        minutesAgo: Int = 30
+        minutesAgo: Int = 30,
+        providerID: String? = "anthropic",
+        modelName: String? = "claude-sonnet-4-20250514"
     ) -> ConversationListItem {
         ConversationListItem(
             id: UUID(),
             projectPath: projectPath,
             title: title,
             createdAt: Date().addingTimeInterval(-Double(minutesAgo + 30) * 60),
-            updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60)
+            updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60),
+            providerID: providerID,
+            modelName: modelName
         )
     }
 }

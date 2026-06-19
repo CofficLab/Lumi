@@ -1,7 +1,7 @@
 import Foundation
 
 /// 轻量级 `Package.swift` 解析器，用于发现本地包依赖与 target 源码根目录。
-enum SwiftPackageManifestParser {
+public enum SwiftPackageManifestParser {
 
     struct TargetSourceRoot: Equatable, Sendable {
         let relativePath: String
@@ -49,6 +49,55 @@ enum SwiftPackageManifestParser {
         return deduplicate(roots)
     }
 
+    public static func executableTargetNames(packageRoot: URL) -> [String] {
+        if let manifestTargets = executableTargetsFromManifest(packageRoot: packageRoot), !manifestTargets.isEmpty {
+            return manifestTargets
+        }
+        return executableTargetsFromDescribe(packageRoot: packageRoot)
+    }
+
+    public static func targetName(forFile fileURL: URL, packageRoot: URL) -> String? {
+        let filePath = fileURL.standardizedFileURL.path
+        let executableTargets = executableTargetNames(packageRoot: packageRoot)
+        guard !executableTargets.isEmpty else { return nil }
+
+        for target in executableTargets {
+            let defaultPath = packageRoot.appendingPathComponent("Sources/\(target)").path
+            if filePath.hasPrefix(defaultPath + "/") || filePath == defaultPath {
+                return target
+            }
+        }
+
+        for root in regularTargetSourceRoots(packageRoot: packageRoot) {
+            let sourcePath = packageRoot.appendingPathComponent(root.relativePath).path
+            guard filePath.hasPrefix(sourcePath + "/") || filePath == sourcePath else { continue }
+            let folderName = URL(fileURLWithPath: root.relativePath).lastPathComponent
+            if executableTargets.contains(folderName) {
+                return folderName
+            }
+        }
+        return nil
+    }
+
+    public static func findPackageDirectory(for fileOrDirectoryURL: URL) -> URL? {
+        let fileManager = FileManager.default
+        var currentDir = fileOrDirectoryURL
+        if !currentDir.hasDirectoryPath {
+            currentDir = currentDir.deletingLastPathComponent()
+        }
+
+        while currentDir.path != "/" && !currentDir.path.isEmpty {
+            let packageSwiftURL = currentDir.appendingPathComponent("Package.swift")
+            if fileManager.fileExists(atPath: packageSwiftURL.path) {
+                return currentDir
+            }
+            let parentDir = currentDir.deletingLastPathComponent()
+            if parentDir.path == currentDir.path { break }
+            currentDir = parentDir
+        }
+        return nil
+    }
+
     static func localTransitivePackageRoots(from start: URL) -> Set<URL> {
         var visited = Set<String>()
         var queue = [start.standardizedFileURL]
@@ -76,7 +125,8 @@ enum SwiftPackageManifestParser {
     // MARK: - Private
 
     private static let localPackagePathPattern = #"\.package\(\s*path:\s*"([^"]+)""#
-    private static let targetDeclarationPattern = #"\.(target|testTarget)\(\s*name:\s*"([^"]+)""#
+    private static let targetDeclarationPattern = #"\.(target|testTarget|executableTarget)\(\s*name:\s*"([^"]+)""#
+    private static let executableTargetDeclarationPattern = #"\.executableTarget\(\s*name:\s*"([^"]+)""#
     private static let targetPathPattern = #"path:\s*"([^"]+)""#
     private static let targetExcludePattern = #"exclude:\s*\[([^\]]*)\]"#
 
@@ -137,6 +187,47 @@ enum SwiftPackageManifestParser {
         return roots.filter { root in
             let key = "\(root.relativePath)|\(root.excludedRelativePaths.sorted().joined(separator: ","))"
             return seen.insert(key).inserted
+        }
+    }
+
+    private static func executableTargetsFromManifest(packageRoot: URL) -> [String]? {
+        guard let text = readManifest(at: packageRoot) else { return nil }
+        var names: [String] = []
+        for match in regexMatches(pattern: executableTargetDeclarationPattern, in: text) {
+            guard let nameRange = Range(match.range(at: 1), in: text) else { continue }
+            names.append(String(text[nameRange]))
+        }
+        return names.isEmpty ? nil : names
+    }
+
+    private static func executableTargetsFromDescribe(packageRoot: URL) -> [String] {
+        guard let swiftPath = SPMUserBuildRunner.locateSwiftExecutable() else { return [] }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [swiftPath, "package", "describe", "--type", "json", "--package-path", packageRoot.path]
+        process.currentDirectoryURL = packageRoot
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return [] }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let targets = json["targets"] as? [[String: Any]] else {
+                return []
+            }
+            return targets.compactMap { target in
+                guard let type = target["type"] as? String, type == "executable",
+                      let name = target["name"] as? String else {
+                    return nil
+                }
+                return name
+            }
+        } catch {
+            return []
         }
     }
 }

@@ -12,25 +12,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto Conversation Title"
+            "value" : "自动对话标题"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto Conversation Title"
+            "value" : "自動對話標題"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto Conversation Title"
+            "value" : "自動對話標題"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto Conversation Title"
+            "value" : "自動對話標題"
           }
         }
       }
@@ -46,25 +46,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatically generate conversation titles from the first user message"
+            "value" : "根据第一条用户消息自动生成对话标题"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatically generate conversation titles from the first user message"
+            "value" : "根據第一條用戶消息自動生成對話標題"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatically generate conversation titles from the first user message"
+            "value" : "根據第一條用戶消息自動生成對話標題"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatically generate conversation titles from the first user message"
+            "value" : "根據第一條用戶消息自動生成對話標題"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Chat"
+            "value" : "新聊天"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Chat"
+            "value" : "新聊天"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Chat"
+            "value" : "新聊天"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Chat"
+            "value" : "新聊天"
           }
         }
       }
@@ -114,38 +114,69 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Conversation"
+            "value" : "新对话"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Conversation"
+            "value" : "新對話"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Conversation"
+            "value" : "新對話"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Conversation"
+            "value" : "新對話"
           }
         }
       }
     },
     "Update Conversation Title" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Conversation Title"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新对话标题"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新對話標題"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新對話標題"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新對話標題"
+          }
+        }
+      }
     },
     "更新对话标题: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更新对话标题: %@"
+            "value" : "Update conversation title: %@"
           }
         },
         "zh-Hans" : {
@@ -157,19 +188,19 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更新对話标题: %@"
+            "value" : "更新對話標題: %@"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更新对話标题: %@"
+            "value" : "更新對話標題: %@"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更新对話标题: %@"
+            "value" : "更新對話標題: %@"
           }
         }
       }

@@ -1,39 +1,9 @@
+import CSQLite
 import CryptoKit
-import Darwin
 import Foundation
-import SQLite3
 
-/// vec0.dylib 随 ThirdParty/sqlite 3.51.3 构建；更低版本 API 表不完整，加载会在扩展 init 内 SIGSEGV。
+/// vec0.dylib 随 SQLite 3.51.3 构建；CSQLite target 编译的也是 3.51.3，两者同源。
 private let ragVec0MinimumSQLiteVersionNumber = 3_051_003
-
-/// 与 `import SQLite3` 使用同一 libsqlite3；通过 dlsym 解析，避免 RAGKit 测试目标链接未导出的符号。
-private enum SQLiteExtensionAPI: Sendable {
-    typealias EnableLoadExtensionFn = @convention(c) (OpaquePointer?, Int32) -> Int32
-    typealias LoadExtensionFn = @convention(c) (
-        OpaquePointer?,
-        UnsafePointer<CChar>?,
-        UnsafePointer<CChar>?,
-        UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
-    ) -> Int32
-
-    private nonisolated(unsafe) static let handle: UnsafeMutableRawPointer? = {
-        dlopen("/usr/lib/libsqlite3.dylib", RTLD_NOW)
-    }()
-
-    private static func symbol<T>(_ name: String, as type: T.Type) -> T? {
-        guard let handle else { return nil }
-        guard let ptr = dlsym(handle, name) else { return nil }
-        return unsafeBitCast(ptr, to: type)
-    }
-
-    static var enableLoadExtension: EnableLoadExtensionFn? {
-        symbol("sqlite3_enable_load_extension", as: EnableLoadExtensionFn.self)
-    }
-
-    static var loadExtension: LoadExtensionFn? {
-        symbol("sqlite3_load_extension", as: LoadExtensionFn.self)
-    }
-}
 
 final class RAGSQLiteStore: @unchecked Sendable {
     private var db: OpaquePointer?
@@ -597,10 +567,11 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
         let runtimeVersion = sqlite3_libversion_number()
         guard runtimeVersion >= ragVec0MinimumSQLiteVersionNumber else {
+            let versionStr = String(cString: sqlite3_libversion())
             return RAGRuntimeInfo(
                 vectorBackend: .swiftCosine,
                 sqliteVecPath: path,
-                note: "系统 SQLite \(String(cString: sqlite3_libversion())) 低于 vec0 所需 3.51.3，已回退 Swift 余弦"
+                note: "SQLite \(versionStr) 低于 vec0 所需 3.51.3，已回退 Swift 余弦"
             )
         }
 
@@ -626,8 +597,19 @@ final class RAGSQLiteStore: @unchecked Sendable {
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
         let libraryNames = ["vec0.dylib"]
-        let main = Bundle.main
 
+        // 优先：Swift Package 资源 bundle（AgentRAGPlugin 内部打包的 vec0.dylib）
+        let moduleBundle = Bundle.module
+        for name in libraryNames {
+            if let url = moduleBundle.url(forResource: name, withExtension: nil) {
+                candidates.append(url.path)
+            } else if let resourcePath = moduleBundle.resourcePath {
+                candidates.append((resourcePath as NSString).appendingPathComponent(name))
+            }
+        }
+
+        // 兜底：App bundle 内的可能路径
+        let main = Bundle.main
         if let frameworksPath = main.privateFrameworksPath {
             for name in libraryNames {
                 candidates.append((frameworksPath as NSString).appendingPathComponent(name))
@@ -752,21 +734,25 @@ final class RAGSQLiteStore: @unchecked Sendable {
     private func loadSQLiteExtension(at path: String) throws {
         guard let db else { throw RAGError.dbError("数据库未打开") }
 
-        guard let enableFn = SQLiteExtensionAPI.enableLoadExtension,
-              let loadFn = SQLiteExtensionAPI.loadExtension else {
-            throw RAGError.dbError("系统 sqlite3 不支持扩展加载")
-        }
-
-        let enableCode = enableFn(db, 1)
+        let enableCode = sqlite3_enable_load_extension(db, 1)
         guard enableCode == SQLITE_OK else {
             throw dbError("启用 SQLite 扩展加载失败")
         }
 
-        var errorPointer: UnsafeMutablePointer<CChar>?
-        let loadCode = path.withCString { cPath in
-            loadFn(db, cPath, nil, &errorPointer)
+        // SQLite 会自动为扩展路径补全平台后缀（macOS 上追加 .dylib），
+        // 因此传入的路径不应包含 .dylib，否则会变成 vec0.dylib.dylib。
+        let extPath: String
+        if path.hasSuffix(".dylib") {
+            extPath = String(path.dropLast(".dylib".count))
+        } else {
+            extPath = path
         }
-        _ = enableFn(db, 0)
+
+        var errorPointer: UnsafeMutablePointer<CChar>?
+        let loadCode = extPath.withCString { cPath in
+            sqlite3_load_extension(db, cPath, nil, &errorPointer)
+        }
+        sqlite3_enable_load_extension(db, 0)
 
         guard loadCode == SQLITE_OK else {
             let message = errorPointer.map { String(cString: $0) } ?? "未知错误"

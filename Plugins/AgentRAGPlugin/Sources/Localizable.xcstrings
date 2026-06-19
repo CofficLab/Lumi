@@ -2,7 +2,32 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%lld" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
     },
     "%lld days ago" : {
       "localizations" : {
@@ -107,6 +132,7 @@
       }
     },
     "Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -141,6 +167,7 @@
       }
     },
     "All project indexes updated." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -448,6 +475,7 @@
       }
     },
     "Failed to load index status: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -482,6 +510,7 @@
       }
     },
     "Failed to rebuild indexes: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -618,6 +647,7 @@
       }
     },
     "Index update completed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1298,6 +1328,7 @@
       }
     },
     "Rebuild" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1332,6 +1363,7 @@
       }
     },
     "Rebuild All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1366,6 +1398,7 @@
       }
     },
     "Rebuild All Indexes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1400,6 +1433,7 @@
       }
     },
     "Rebuild failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1434,6 +1468,7 @@
       }
     },
     "Rebuilding all indexes..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1468,6 +1503,7 @@
       }
     },
     "Rebuilt: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1502,6 +1538,7 @@
       }
     },
     "Refresh" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1536,6 +1573,7 @@
       }
     },
     "Refresh All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1570,6 +1608,7 @@
       }
     },
     "Refresh All Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1604,6 +1643,7 @@
       }
     },
     "Refresh failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1638,6 +1678,7 @@
       }
     },
     "Refreshed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

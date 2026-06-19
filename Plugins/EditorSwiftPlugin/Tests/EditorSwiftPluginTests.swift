@@ -36,7 +36,30 @@ import Testing
     let items = EditorSwiftPlugin.titleToolbarItems(context: visibleContext)
     #expect(items.count == 1)
     #expect(items[0].id == "EditorSwift.xcode-scheme")
-    #expect(items[0].placement == .center)
+    #expect(items[0].placement == .leading)
+}
+
+@MainActor
+@Test func panelBottomTabItemsRequireEditorPanel() {
+    let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other", showsPanelChrome: true)
+    #expect(EditorSwiftPlugin.panelBottomTabItems(context: hiddenContext).isEmpty)
+
+    let withoutChrome = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
+    #expect(EditorSwiftPlugin.panelBottomTabItems(context: withoutChrome).isEmpty)
+
+    let core = EditorCore()
+    let visibleContext = LumiPluginContext(
+        activeSectionID: "LumiEditor",
+        activeSectionTitle: "Editor",
+        showsPanelChrome: true,
+        dependencies: LumiPluginDependencies { dependencies in
+            dependencies.register(LumiEditorServicing.self, core)
+        }
+    )
+    let tabs = EditorSwiftPlugin.panelBottomTabItems(context: visibleContext)
+    #expect(tabs.count == 1)
+    #expect(tabs[0].id == SwiftBuildPanelIDs.bottomTab)
+    #expect(tabs[0].systemImage == "play.fill")
 }
 
 @MainActor

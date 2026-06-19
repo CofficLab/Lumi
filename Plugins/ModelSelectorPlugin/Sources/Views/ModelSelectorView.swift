@@ -12,6 +12,8 @@ struct ModelSelectorView: View {
 
     @State private var selectedTab: ModelSelectorTab = .current
     @State private var searchText = ""
+    @State private var detailedStats: [String: ModelPerformanceStats] = [:]
+    @State private var fastModels: [(provider: LumiLLMProviderInfo, model: String, avgTPS: Double, sampleCount: Int)] = []
 
     init(
         chatService: any LumiChatServicing,
@@ -53,7 +55,21 @@ struct ModelSelectorView: View {
         .appSurface(style: .custom(theme.elevatedSurface), cornerRadius: 12, borderColor: theme.appSubtleBorder)
         .onAppear {
             selectedTab = .current
+            reloadStats()
         }
+        .onChange(of: chatService.revision) { _, _ in
+            reloadStats()
+        }
+    }
+
+    private func reloadStats() {
+        let messages = chatService.conversations.flatMap { chatService.messages(for: $0.id) }
+        let snapshot = ModelSelectorStatsService.buildSnapshot(
+            messages: messages,
+            providers: chatService.providerInfos
+        )
+        detailedStats = snapshot.detailedStats
+        fastModels = snapshot.fastModels
     }
 
     @ViewBuilder
@@ -63,12 +79,15 @@ struct ModelSelectorView: View {
             if let provider = currentProvider {
                 providerList([provider], emptyTitle: "No Matching Models")
             } else {
-                AppEmptyState(icon: "tray", title: "No Provider Selected")
+                AppEmptyState(
+                    icon: "tray",
+                    title: LumiPluginLocalization.string("No Provider Selected", bundle: .module)
+                )
             }
         case .frequent:
             rankedModelList(title: "Frequent Models", ranked: frequentModels)
         case .fast:
-            rankedModelList(title: "Recently Used", ranked: frequentModels)
+            fastModelList
         case .auto:
             autoRoutingView
         case .availability:
@@ -79,7 +98,10 @@ struct ModelSelectorView: View {
             if let provider = chatService.providerInfos.first(where: { $0.id == providerID }) {
                 providerList([provider], emptyTitle: "No Matching Models")
             } else {
-                AppEmptyState(icon: "tray", title: "No Provider Selected")
+                AppEmptyState(
+                    icon: "tray",
+                    title: LumiPluginLocalization.string("No Provider Selected", bundle: .module)
+                )
             }
         }
     }
@@ -89,7 +111,10 @@ struct ModelSelectorView: View {
         let visibleProviders = providers.filter { hasVisibleModels($0) }
 
         if visibleProviders.isEmpty {
-            AppEmptyState(icon: "magnifyingglass", title: emptyTitle)
+            AppEmptyState(
+                icon: "magnifyingglass",
+                title: LumiPluginLocalization.string(emptyTitle, bundle: .module)
+            )
         } else {
             List {
                 ForEach(visibleProviders) { provider in
@@ -101,6 +126,7 @@ struct ModelSelectorView: View {
                                 isSelected: chatService.providerID(for: conversationID) == provider.id
                                     && chatService.modelName(for: conversationID) == model
                                     && chatService.routingMode == .manual,
+                                stat: detailedStat(providerID: provider.id, modelName: model),
                                 onSelect: {
                                     selectModel(providerID: provider.id, model: model)
                                 }
@@ -124,15 +150,15 @@ struct ModelSelectorView: View {
 
     private var autoRoutingView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Toggle(
-                "Enable automatic routing",
-                isOn: Binding(
+            Toggle(isOn: Binding(
                     get: { chatService.routingMode == .auto },
                     set: { enabled in
                         chatService.setRoutingMode(enabled ? .auto : .manual)
                     }
                 )
-            )
+            ) {
+                Text(verbatim: LumiPluginLocalization.string("Enable automatic routing", bundle: .module))
+            }
             .toggleStyle(.switch)
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -178,16 +204,21 @@ struct ModelSelectorView: View {
         ranked: [(provider: LumiLLMProviderInfo, model: String, count: Int)]
     ) -> some View {
         if ranked.isEmpty {
-            AppEmptyState(icon: "clock.arrow.circlepath", title: "No Usage History")
+            AppEmptyState(
+                icon: "clock.arrow.circlepath",
+                title: LumiPluginLocalization.string("No Usage History", bundle: .module)
+            )
         } else {
             List {
-                Section(title) {
-                    ForEach(ranked, id: \.model) { entry in
+                Section(LumiPluginLocalization.string(title, bundle: .module)) {
+                    ForEach(ranked.indices, id: \.self) { index in
+                        let entry = ranked[index]
                         ModelSelectorModelRow(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id
                                 && chatService.modelName(for: conversationID) == entry.model,
+                            stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -199,6 +230,45 @@ struct ModelSelectorView: View {
             .scrollContentBackground(.hidden)
             .background(theme.background)
         }
+    }
+
+    @ViewBuilder
+    private var fastModelList: some View {
+        if fastModels.isEmpty {
+            AppEmptyState(
+                icon: "bolt.fill",
+                title: LumiPluginLocalization.string("No Fast Models", bundle: .module),
+                description: LumiPluginLocalization.string(
+                    "Models with higher TPS will appear here",
+                    bundle: .module
+                )
+            )
+        } else {
+            List {
+                Section(LumiPluginLocalization.string("Fast Models", bundle: .module)) {
+                    ForEach(fastModels.indices, id: \.self) { index in
+                        let entry = fastModels[index]
+                        ModelSelectorModelRow(
+                            provider: entry.provider,
+                            model: entry.model,
+                            isSelected: chatService.providerID(for: conversationID) == entry.provider.id
+                                && chatService.modelName(for: conversationID) == entry.model,
+                            stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
+                            onSelect: {
+                                selectModel(providerID: entry.provider.id, model: entry.model)
+                            }
+                        )
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .background(theme.background)
+        }
+    }
+
+    private func detailedStat(providerID: String, modelName: String) -> ModelPerformanceStats? {
+        detailedStats["\(providerID)|\(modelName)"]
     }
 
     private func selectModel(providerID: String, model: String) {

@@ -47,6 +47,12 @@ struct AppLayoutView: View {
         let chatSectionToolbarItems = shouldShowChatSection
             ? pluginService.chatSectionToolbarItems(context: pluginContext)
             : []
+        let chatSectionToolbarBarItems = shouldShowChatSection
+            ? pluginService.chatSectionToolbarBarItems(context: pluginContext)
+            : []
+        let chatSectionHeaderItems = shouldShowChatSection
+            ? pluginService.chatSectionHeaderItems(context: pluginContext)
+            : []
         let headerItems = pluginService.panelHeaderItems(context: pluginContext)
         let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
         let railTabs = pluginService.panelRailTabItems(context: pluginContext)
@@ -91,6 +97,8 @@ struct AppLayoutView: View {
                         if shouldShowChatSection {
                             ChatSectionView(
                                 layout: chatSection,
+                                toolbarBarItems: chatSectionToolbarBarItems,
+                                headerItems: chatSectionHeaderItems,
                                 stackItems: chatSectionItems.filter { $0.placement == .stack },
                                 bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
                                 rootContent: pluginService.chatSectionRootWrapper(
@@ -320,13 +328,14 @@ private struct ChatSectionToolbarSync: View {
     let items: [LumiChatSectionToolbarItem]
     @ObservedObject var coordinator: ChatSectionCoordinator
 
+    private var syncKey: String {
+        items.map(\.id).joined(separator: "|")
+    }
+
     var body: some View {
         Color.clear
             .frame(width: 0, height: 0)
-            .onAppear {
-                coordinator.setChatSectionToolbarItems(items)
-            }
-            .onChange(of: items.map(\.id)) { _, _ in
+            .onChange(of: syncKey, initial: true) { _, _ in
                 coordinator.setChatSectionToolbarItems(items)
             }
     }

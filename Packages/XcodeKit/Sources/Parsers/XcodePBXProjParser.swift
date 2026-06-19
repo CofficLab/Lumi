@@ -28,6 +28,35 @@ public enum XcodePBXProjParser {
         return try parseMembershipGraph(xcodeProj: xcodeProj, projectURL: projectURL)
     }
 
+    public static func parseTargetProductTypes(projectURL: URL) -> [String: String] {
+        guard let xcodeProj = try? XcodeProj(pathString: projectURL.path) else { return [:] }
+        return Dictionary(
+            uniqueKeysWithValues: xcodeProj.pbxproj.nativeTargets.compactMap { target in
+                guard let productType = target.productType?.rawValue else { return nil }
+                return (target.name, productType)
+            }
+        )
+    }
+
+    public static func parseTargetProductTypes(contents: String) -> [String: String] {
+        guard !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [:] }
+
+        let fileManager = FileManager.default
+        let temporaryRoot = fileManager.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let projectURL = temporaryRoot.appendingPathComponent("Fixture.xcodeproj", isDirectory: true)
+        let pbxprojURL = projectURL.appendingPathComponent("project.pbxproj")
+
+        do {
+            try fileManager.createDirectory(at: projectURL, withIntermediateDirectories: true)
+            defer { try? fileManager.removeItem(at: temporaryRoot) }
+            try contents.write(to: pbxprojURL, atomically: true, encoding: .utf8)
+            return parseTargetProductTypes(projectURL: projectURL)
+        } catch {
+            return [:]
+        }
+    }
+
     public static func parseMembershipGraph(contents: String) throws -> MembershipGraph {
         guard !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return MembershipGraph(targetRoots: [:])

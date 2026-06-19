@@ -1,5 +1,25 @@
 import Foundation
 
+/// 模型能力声明
+public struct LumiModelCapabilities: Sendable, Equatable {
+    /// 是否支持视觉输入（图片）
+    public let supportsVision: Bool
+    /// 是否支持工具调用
+    public let supportsTools: Bool
+    /// 是否支持文本转语音（TTS）
+    public let supportsTTS: Bool
+
+    public init(
+        supportsVision: Bool,
+        supportsTools: Bool,
+        supportsTTS: Bool = false
+    ) {
+        self.supportsVision = supportsVision
+        self.supportsTools = supportsTools
+        self.supportsTTS = supportsTTS
+    }
+}
+
 public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let id: String
     public let displayName: String
@@ -8,6 +28,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let availableModels: [String]
     public let isLocal: Bool
     public let contextWindowSizes: [String: Int]
+    /// 各模型的能力声明（key 为模型 ID）
+    public let modelCapabilities: [String: LumiModelCapabilities]
 
     public init(
         id: String,
@@ -16,7 +38,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         defaultModel: String,
         availableModels: [String],
         isLocal: Bool = false,
-        contextWindowSizes: [String: Int] = [:]
+        contextWindowSizes: [String: Int] = [:],
+        modelCapabilities: [String: LumiModelCapabilities] = [:]
     ) {
         self.id = id
         self.displayName = displayName
@@ -25,6 +48,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.availableModels = availableModels
         self.isLocal = isLocal
         self.contextWindowSizes = contextWindowSizes
+        self.modelCapabilities = modelCapabilities
     }
 }
 

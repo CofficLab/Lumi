@@ -1789,10 +1789,19 @@ public final class EditorState: ObservableObject, SuperLog {
             fileLoadRequestGeneration.invalidate()
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
-            if Self.verbose {
-                logger.info("\(self.t)loadFile: url 是目录 → resetState, url=\(url.path)")
+            // xcassets 等目录类型文件：设置 currentFileURL 让预览系统处理
+            let ext = url.pathExtension.lowercased()
+            if ext == "xcassets" {
+                if Self.verbose {
+                    logger.info("\(self.t)loadFile: url 是 xcassets 目录 → 设置 currentFileURL, url=\(url.path)")
+                }
+                currentFileURL = url
+            } else {
+                if Self.verbose {
+                    logger.info("\(self.t)loadFile: url 是目录 → resetState, url=\(url.path)")
+                }
+                resetState()
             }
-            resetState()
             return
         }
         

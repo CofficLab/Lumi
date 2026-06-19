@@ -46,5 +46,5 @@ import Testing
         elapsedSeconds: 8
     )
 
-    #expect(state.statusMessage(for: conversationID)?.content == "✅ run_command（8s）")
+    #expect(state.statusMessage(for: conversationID)?.content == "run_command（8s）")
 }

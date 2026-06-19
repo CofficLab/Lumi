@@ -70,7 +70,7 @@ public final class BatteryService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(Self.emoji) 开始电池增强监控")
+            Self.logger.info("\(self.t)开始电池增强监控")
             sampleBattery()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
@@ -84,7 +84,7 @@ public final class BatteryService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(Self.emoji) 停止电池增强监控")
+            Self.logger.info("\(self.t)停止电池增强监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             samplingTask?.cancel()

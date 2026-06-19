@@ -115,7 +115,8 @@ HTTP/1.1 204 No Content
    - 然后变为 `IN_REVIEW`
 
 6. **审核结果**
-   - `READY_FOR_SALE` - 审核通过
+   - `releaseType: AFTER_APPROVAL` → 自动进入分发，最终 `READY_FOR_SALE`
+   - `releaseType: MANUAL` → `PENDING_DEVELOPER_RELEASE`，需调用 [Release Requests API](app_store_version_release_requests.md) 手动发布
    - `REJECTED` - 审核被拒绝
 
 ### Cancel a Submission
@@ -210,14 +211,20 @@ PREPARE_FOR_SUBMISSION
 WAITING_FOR_REVIEW
     ↓ (Apple picks up)
 IN_REVIEW
-    ↓ (review complete)
-READY_FOR_SALE (approved)
-REJECTED (rejected)
+    ↓ (review complete, releaseType = AFTER_APPROVAL)
+PROCESSING_FOR_DISTRIBUTION → READY_FOR_SALE
+    ↓ (review complete, releaseType = MANUAL)
+PENDING_DEVELOPER_RELEASE
+    ↓ (POST appStoreVersionReleaseRequests)
+PROCESSING_FOR_DISTRIBUTION → READY_FOR_SALE
+    ↓ (rejected)
+REJECTED
 ```
 
 ## Related Documentation
 
 - [App Store Versions API](app_store_versions.md)
+- [App Store Version Release Requests API](app_store_version_release_requests.md)
 - [Builds API](builds.md)
 - [App Store Version Localizations API](app_store_version_localizations.md)
 - [App Store Connect API Reference](api-reference.md)

@@ -175,6 +175,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
             Label(LumiPluginLocalization.string("PDF Preview", bundle: .module), systemImage: "doc.richtext")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        case .xcassets:
+            Label(LumiPluginLocalization.string("Asset Catalog Preview", bundle: .module), systemImage: "folder.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         case let .unsupported(url):
             Label(url?.pathExtension.isEmpty == false ? url!.pathExtension.uppercased() : "File", systemImage: "doc")
                 .font(.caption)
@@ -466,7 +470,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         switch viewModel.previewMode {
         case .swift:
             return viewModel.status == .running && viewModel.currentFrame != nil
-        case .stringCatalog, .unsupported:
+        case .stringCatalog, .unsupported, .xcassets:
             return false
         default:
             return true
@@ -843,6 +847,9 @@ public struct EditorPreviewDetailView: View, SuperLog {
             case let .pdf(url):
                 EditorPreviewPDFView(fileURL: url)
                     .environmentObject(themeVM)
+            case let .xcassets(url):
+                EditorPreviewXCAssetsView(xcassetsURL: url)
+                    .environmentObject(themeVM)
             case let .unsupported(url):
                 unsupportedPreview(url: url)
             }
@@ -860,7 +867,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         let hasFrame = viewModel.currentFrame != nil
         GeometryReader { proxy in
             ZStack {
-                EditorPreviewBoardGrid()
+                PreviewBoardGrid()
 
                 if !hasFrame && !isEntryFailed {
                     VStack(spacing: 12) {
@@ -981,7 +988,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func unsupportedPreview(url: URL?) -> some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
             VStack(spacing: 12) {
                 Image(systemName: "doc")
                     .font(.system(size: 36))
@@ -1543,7 +1550,7 @@ private struct EditorPreviewStringCatalogContainer: View {
 
     private func messageView(systemImage: String, text: String) -> some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
             VStack(spacing: 10) {
                 Image(systemName: systemImage)
                     .font(.system(size: 28))
@@ -1833,7 +1840,7 @@ private struct EditorPreviewImageView: View {
 
     public var body: some View {
         ZStack {
-            EditorPreviewBoardGrid()
+            PreviewBoardGrid()
 
             if let image {
                 imageContent(image)

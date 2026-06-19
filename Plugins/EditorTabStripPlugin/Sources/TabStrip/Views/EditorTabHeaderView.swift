@@ -31,9 +31,16 @@ public struct EditorTabHeaderView: View {
     // MARK: - Body
 
     public var body: some View {
-        ZStack {
+        AppToolbarContainer(
+            height: AppPanelChromeMetrics.tabBarHeight,
+            backgroundStyle: .custom(theme.workspaceBackgroundColor()),
+            padding: AppPanelChromeMetrics.tabBarPadding
+        ) {
             if !visibleTabs.isEmpty {
-                tabList
+                tabListContent
+            } else {
+                Color.clear
+                    .frame(maxWidth: .infinity)
             }
         }
         .onAppear {
@@ -90,12 +97,22 @@ public struct EditorTabHeaderView: View {
     }
 
     private var visibleTabs: [EditorTab] {
-        service.sessions.tabs
+        guard let projectRoot = normalizedProjectRoot else { return [] }
+        return service.sessions.tabs.filter { tab in
+            guard let fileURL = tab.fileURL else { return false }
+            return isFile(fileURL, inside: projectRoot)
+        }
+    }
+
+    private var normalizedProjectRoot: String? {
+        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path).standardizedFileURL.path
     }
 
     // MARK: - 子视图
 
-    private var tabList: some View {
+    private var tabListContent: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
                 ForEach(visibleTabs) { tab in
@@ -116,12 +133,8 @@ public struct EditorTabHeaderView: View {
                         return true
                     }
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+            // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
         }
-        // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
-        .frame(height: 40)
-        .background(theme.workspaceBackgroundColor())
     }
 
     // MARK: - 操作方法
@@ -146,6 +159,9 @@ public struct EditorTabHeaderView: View {
 
     /// 处理 SetCurrentFileTool 发出的通知，同步到编辑器
     private func handleCurrentFileDidChange(path: String) {
+        guard let projectRoot = normalizedProjectRoot else { return }
+        let targetPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        guard targetPath == projectRoot || targetPath.hasPrefix(projectRoot + "/") else { return }
         // 如果路径与当前文件相同，无需切换
         guard service.files.currentFileURL?.path != path else { return }
 
@@ -159,5 +175,10 @@ public struct EditorTabHeaderView: View {
             await service.refreshProjectContext(for: projectVM.currentProjectPath)
             service.sessions.open(at: url)
         }
+    }
+
+    private func isFile(_ fileURL: URL, inside projectRoot: String) -> Bool {
+        let normalized = fileURL.standardizedFileURL.path
+        return normalized == projectRoot || normalized.hasPrefix(projectRoot + "/")
     }
 }

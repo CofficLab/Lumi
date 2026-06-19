@@ -135,6 +135,11 @@ public enum LumiPluginLocalization {
 
         return id
     }
+
+    /// Locale aligned with plugin string resolution (`Locale.preferredLanguages` first).
+    public static func preferredLocale(_ locale: Locale = .current) -> Locale {
+        Locale(identifier: languageCandidates(for: locale).first ?? locale.identifier)
+    }
 }
 
 private struct CatalogCacheKey: Hashable {

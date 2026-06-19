@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import WebKit
 
@@ -10,15 +11,19 @@ public struct HTMLPreviewView: View {
 
     let htmlText: String
     let fileURL: URL?
+    /// When set, the WebView renders at this logical size and scales down to fit the container.
+    let contentSize: CGSize?
     var onWebViewResolved: ((WKWebView) -> Void)?
 
     public init(
         htmlText: String,
         fileURL: URL? = nil,
+        contentSize: CGSize? = nil,
         onWebViewResolved: ((WKWebView) -> Void)? = nil
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
+        self.contentSize = contentSize
         self.onWebViewResolved = onWebViewResolved
     }
 
@@ -26,18 +31,45 @@ public struct HTMLPreviewView: View {
         Group {
             if htmlText.isEmpty {
                 emptyView
-            } else {
-                GeometryReader { geometry in
-                    _WKWebViewWrapper(
-                        html: htmlText,
-                        fileURL: fileURL,
-                        containerSize: geometry.size,
-                        onWebViewResolved: onWebViewResolved
-                    )
+            } else if contentSize != nil {
+                ZStack {
+                    Color(nsColor: .windowBackgroundColor)
+                    PreviewBoardGrid()
+                    previewContent
                 }
+            } else {
+                previewContent
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var previewContent: some View {
+        GeometryReader { geometry in
+            let webViewSize = contentSize ?? geometry.size
+            let fitScale = Self.fitScale(contentSize: contentSize, in: geometry.size)
+
+            _WKWebViewWrapper(
+                html: htmlText,
+                fileURL: fileURL,
+                containerSize: webViewSize,
+                onWebViewResolved: onWebViewResolved
+            )
+            .frame(width: webViewSize.width, height: webViewSize.height)
+            .scaleEffect(fitScale)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+    }
+
+    private static func fitScale(contentSize: CGSize?, in containerSize: CGSize) -> CGFloat {
+        guard let contentSize,
+              contentSize.width > 0,
+              contentSize.height > 0,
+              containerSize.width > 0,
+              containerSize.height > 0 else {
+            return 1
+        }
+        return min(containerSize.width / contentSize.width, containerSize.height / contentSize.height)
     }
 
     private var emptyView: some View {

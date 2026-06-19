@@ -38,6 +38,26 @@ enum XcodeSemanticIndexRunner {
         return compileModified >= buildServerModified
     }
 
+    static func isCompileDatabaseValid(
+        manifest: IndexManifest?,
+        compileDatabaseURL: URL,
+        scheme: String,
+        configuration: String,
+        destination: String,
+        inputs: IndexManifest.InputFingerprints,
+        toolchain: IndexManifest.ToolchainInfo
+    ) -> Bool {
+        IndexManifestValidation.isCompileDatabaseValid(
+            manifest: manifest,
+            compileDatabaseURL: compileDatabaseURL,
+            scheme: scheme,
+            configuration: configuration,
+            destination: destination,
+            inputs: inputs,
+            toolchain: toolchain
+        )
+    }
+
     static func syncCompileDatabaseFromDerivedData(_ request: Request) async -> Bool {
         guard isBuildRootUnderDerivedData(request) else {
             return false
@@ -54,7 +74,8 @@ enum XcodeSemanticIndexRunner {
             arguments: ["parse", "-s", buildRoot, "-o", compileURL.path],
             workingDirectory: request.storeDirectory
         )
-        return synced && validateCompileDatabase(at: compileURL, scheme: request.scheme) == nil
+        guard synced else { return false }
+        return await CompileDatabaseValidator.validateForPromotion(at: compileURL, scheme: request.scheme) == nil
     }
 
     static func buildAndParseCompileDatabase(_ request: Request) async -> String? {
@@ -80,7 +101,7 @@ enum XcodeSemanticIndexRunner {
                 arguments: ["parse", "-s", buildRoot, "-o", stagingURL.path],
                 workingDirectory: request.storeDirectory
             )
-            if derivedParse, validateCompileDatabase(at: stagingURL, scheme: request.scheme) == nil {
+            if derivedParse, await CompileDatabaseValidator.validateForPromotion(at: stagingURL, scheme: request.scheme) == nil {
                 try? FileManager.default.removeItem(at: compileURL)
                 if (try? FileManager.default.moveItem(at: stagingURL, to: compileURL)) != nil {
                     return nil
@@ -96,7 +117,7 @@ enum XcodeSemanticIndexRunner {
             arguments: ["parse", "-o", compileURL.path, logURL.path],
             workingDirectory: request.storeDirectory
         )
-        if parseResult.succeeded, let issue = validateCompileDatabase(at: compileURL, scheme: request.scheme) {
+        if parseResult.succeeded, let issue = await CompileDatabaseValidator.validateForPromotion(at: compileURL, scheme: request.scheme) {
             return issue
         }
 
@@ -213,6 +234,14 @@ enum XcodeSemanticIndexRunner {
                 process.executableURL = URL(filePath: executablePath)
                 process.arguments = arguments
                 process.currentDirectoryURL = workingDirectory
+                if #available(macOS 13.0, *) {
+                    process.qualityOfService = .utility
+                }
+                if executablePath.hasSuffix("xcodebuild") {
+                    var environment = ProcessInfo.processInfo.environment
+                    environment["IDEBuildOperationMaxNumberOfConcurrentCompileTasks"] = "4"
+                    process.environment = environment
+                }
 
                 var outputHandle: FileHandle?
                 var errorHandle: FileHandle?
@@ -248,7 +277,14 @@ enum XcodeSemanticIndexRunner {
                     return
                 }
 
+                Task { @MainActor in
+                    SemanticIndexJobController.shared.registerProcess(process)
+                }
+
                 process.waitUntilExit()
+                Task { @MainActor in
+                    SemanticIndexJobController.shared.clearProcessRegistration()
+                }
                 continuation.resume(returning: process.terminationStatus == 0)
             }
         }

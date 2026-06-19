@@ -254,6 +254,20 @@ public struct RAGStatusDetailView: View {
     public let errorMessage: String?
     public let isNotInitialized: Bool
 
+    public init(
+        indexStatus: RAGIndexStatus?,
+        isIndexing: Bool,
+        progressEvent: RAGIndexProgressEvent?,
+        errorMessage: String?,
+        isNotInitialized: Bool
+    ) {
+        self.indexStatus = indexStatus
+        self.isIndexing = isIndexing
+        self.progressEvent = progressEvent
+        self.errorMessage = errorMessage
+        self.isNotInitialized = isNotInitialized
+    }
+
     public var body: some View {
         StatusBarPopoverScaffold(
             title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),

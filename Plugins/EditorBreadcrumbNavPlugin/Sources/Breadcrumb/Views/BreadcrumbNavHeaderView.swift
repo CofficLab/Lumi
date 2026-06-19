@@ -16,10 +16,33 @@ public struct BreadcrumbNavHeaderView: View {
     }
 
     public var body: some View {
-        // 仅在有文件打开时显示
-        if let fileURL = service.files.currentFileURL, projectVM.isProjectSelected {
-            BreadcrumbNavPathView(fileURL: fileURL, service: service)
+        AppBreadcrumbBarContainer {
+            if let fileURL = service.files.currentFileURL,
+               projectVM.isProjectSelected,
+               isFileInCurrentProject(fileURL) {
+                breadcrumbPath(fileURL: fileURL)
+            } else {
+                Color.clear
+            }
         }
+    }
+
+    @ViewBuilder
+    private func breadcrumbPath(fileURL: URL) -> some View {
+        BreadcrumbNavPathView(fileURL: fileURL, service: service)
+    }
+
+    private func isFileInCurrentProject(_ fileURL: URL) -> Bool {
+        let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Self.isFile(fileURL, inProjectPath: projectPath)
+    }
+
+    static func isFile(_ fileURL: URL, inProjectPath rawProjectPath: String) -> Bool {
+        let projectPath = rawProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !projectPath.isEmpty else { return false }
+        let projectRoot = URL(fileURLWithPath: projectPath).standardizedFileURL.path
+        let filePath = fileURL.standardizedFileURL.path
+        return filePath == projectRoot || filePath.hasPrefix(projectRoot + "/")
     }
 }
 
@@ -111,6 +134,11 @@ public struct BreadcrumbNavPathView: View {
                                 truncatedCrumbWidth: item.index == 0
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
+                                    let rawProjectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    guard !rawProjectPath.isEmpty else { return }
+                                    guard BreadcrumbNavHeaderView.isFile(url, inProjectPath: rawProjectPath) else {
+                                        return
+                                    }
                                     Task { @MainActor in
                                         await service.refreshProjectContext(for: projectVM.currentProjectPath)
                                         service.sessions.open(at: url)
@@ -159,17 +187,6 @@ public struct BreadcrumbNavPathView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
-            .frame(height: 20)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(
-            theme.textTertiary.opacity(0.035)
-        )
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(theme.textTertiary.opacity(0.08))
-                .frame(height: 1)
         }
     }
 

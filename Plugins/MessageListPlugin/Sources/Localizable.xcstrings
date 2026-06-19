@@ -106,7 +106,34 @@
         }
       }
     },
-    "Agent chat messages timeline in the right ChatSection.": {},
+    "Agent chat messages timeline in the right ChatSection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent chat messages timeline in the right ChatSection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右侧 ChatSection 中的 Agent 聊天消息时间线。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右側 ChatSection 中的 Agent 聊天消息時間線。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右側 ChatSection 中的 Agent 聊天消息時間線。"
+          }
+        }
+      }
+    },
     "All": {
       "extractionState": "stale",
       "localizations": {
@@ -421,7 +448,34 @@
         }
       }
     },
-    "Chat Messages": {},
+    "Chat Messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Messages"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天消息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天消息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天消息"
+          }
+        }
+      }
+    },
     "Chat Messages Area": {
       "extractionState": "stale",
       "localizations": {
@@ -1295,7 +1349,34 @@
         }
       }
     },
-    "Hide Raw Message": {},
+    "Hide Raw Message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Raw Message"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏原始消息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏原始消息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏原始消息"
+          }
+        }
+      }
+    },
     "Image": {
       "extractionState": "stale",
       "localizations": {
@@ -3499,7 +3580,34 @@
         }
       }
     },
-    "Show Raw Message": {},
+    "Show Raw Message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Raw Message"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Raw Message"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Raw Message"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Raw Message"
+          }
+        }
+      }
+    },
     "Show Rendered": {
       "comment": "Toggle to show rendered markdown",
       "extractionState": "stale",

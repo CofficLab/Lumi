@@ -1,3 +1,4 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -9,9 +10,16 @@ struct ModelSelectorSearchBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AppSearchBar(text: $searchText, placeholder: "Search models or providers...")
+            AppSearchBar(
+                text: $searchText,
+                placeholder: LocalizedStringKey(
+                    LumiPluginLocalization.string("Search models or providers...", bundle: .module)
+                )
+            )
 
-            Button("Cancel", action: onCancel)
+            Button(action: onCancel) {
+                Text(verbatim: LumiPluginLocalization.string("Cancel", bundle: .module))
+            }
                 .buttonStyle(.plain)
                 .font(.appCallout)
                 .foregroundColor(theme.primary)

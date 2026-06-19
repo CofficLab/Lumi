@@ -19,6 +19,13 @@ public struct XcodeProjectStatusDetailView: View {
 
             detailRow(LumiPluginLocalization.string("Build Context", bundle: .module), viewModel.buildContextStatusDescription)
             detailRow(LumiPluginLocalization.string("Semantic Index", bundle: .module), viewModel.semanticStatusDescription)
+            detailRow(LumiPluginLocalization.string("Capability Level", bundle: .module), viewModel.capabilityLevelDescription)
+            if !viewModel.preflightIssues.isEmpty {
+                detailRow(
+                    LumiPluginLocalization.string("Preflight", bundle: .module),
+                    viewModel.preflightIssues.joined(separator: "; ")
+                )
+            }
             toolsToolbar
             if let failureReason = viewModel.semanticIndexFailureReason {
                 semanticIndexErrorSection(failureReason)
@@ -102,6 +109,8 @@ public struct XcodeProjectStatusDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .onAppear { viewModel.detailPanelDidAppear() }
+        .onDisappear { viewModel.detailPanelDidDisappear() }
     }
 
     private var buildStatusBadge: some View {
@@ -119,6 +128,15 @@ public struct XcodeProjectStatusDetailView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
             Spacer()
+            Button {
+                viewModel.exportDiagnostics()
+            } label: {
+                Text(LumiPluginLocalization.string("Export Diagnostics", bundle: .module))
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.blue)
+
             Button {
                 viewModel.openCacheDirectory()
             } label: {

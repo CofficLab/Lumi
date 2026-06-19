@@ -17,7 +17,9 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: nil,
-                requestedBuildServerPath: "/tmp/buildServer.json"
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: nil,
+                requestedBuildServerKind: nil
             ),
             "SourceKit must restart once buildServerPath becomes available"
         )
@@ -43,7 +45,33 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: nil,
-                requestedBuildServerPath: "/tmp/buildServer.json"
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: nil,
+                requestedBuildServerKind: nil
+            )
+        )
+    }
+
+    func testBuildServerKindExtractsInitializationOption() {
+        XCTAssertEqual(
+            LSPServerLifecyclePolicy.buildServerKind(from: ["buildServerKind": "manual"]),
+            "manual"
+        )
+        XCTAssertNil(LSPServerLifecyclePolicy.buildServerKind(from: [:]))
+    }
+
+    func testBuildServerKindChangeRequiresServerRestart() {
+        XCTAssertFalse(
+            LSPServerLifecyclePolicy.canReuseExistingServer(
+                hasServer: true,
+                activeLanguageId: languageId,
+                requestedLanguageId: languageId,
+                activeProjectPath: projectPath,
+                requestedProjectPath: projectPath,
+                activeBuildServerPath: "/tmp/buildServer.json",
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: "xcode",
+                requestedBuildServerKind: "manual"
             )
         )
     }
@@ -66,7 +94,9 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: "/tmp/buildServer.json",
-                requestedBuildServerPath: "/tmp/buildServer.json"
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: "manual",
+                requestedBuildServerKind: "manual"
             )
         )
     }
@@ -80,7 +110,9 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: "/tmp/old.json",
-                requestedBuildServerPath: "/tmp/new.json"
+                requestedBuildServerPath: "/tmp/new.json",
+                activeBuildServerKind: "manual",
+                requestedBuildServerKind: "manual"
             )
         )
     }
@@ -90,12 +122,14 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
             LSPServerLifecyclePolicy.startTaskSignature(
                 languageId: languageId,
                 projectPath: projectPath,
-                buildServerPath: nil
+                buildServerPath: nil,
+                buildServerKind: nil
             ),
             LSPServerLifecyclePolicy.startTaskSignature(
                 languageId: languageId,
                 projectPath: projectPath,
-                buildServerPath: "/tmp/buildServer.json"
+                buildServerPath: "/tmp/buildServer.json",
+                buildServerKind: nil
             ),
             "In-flight server start tasks must not be reused after buildServerPath becomes available"
         )
@@ -119,7 +153,9 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: nil,
-                requestedBuildServerPath: "/tmp/buildServer.json"
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: nil,
+                requestedBuildServerKind: nil
             ),
             "openDocument must re-run ensureServer so buildServerPath changes restart SourceKit"
         )
@@ -134,7 +170,9 @@ final class LSPServerLifecyclePolicyTests: XCTestCase {
                 activeProjectPath: projectPath,
                 requestedProjectPath: projectPath,
                 activeBuildServerPath: "/tmp/buildServer.json",
-                requestedBuildServerPath: "/tmp/buildServer.json"
+                requestedBuildServerPath: "/tmp/buildServer.json",
+                activeBuildServerKind: "manual",
+                requestedBuildServerKind: "manual"
             )
         )
     }

@@ -27,6 +27,12 @@
             "state" : "translated",
             "value" : "剪下"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪下"
+          }
         }
       }
     },
@@ -56,6 +62,12 @@
             "state" : "translated",
             "value" : "拷貝"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝"
+          }
         }
       }
     },
@@ -81,6 +93,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "貼上"
