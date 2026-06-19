@@ -29,6 +29,10 @@ public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Senda
             "gpt-5.5",
             "gpt-5.4"
             ],
+            contextWindowSizes: [
+                "gpt-5.5": 400_000,
+                "gpt-5.4": 400_000
+            ],
             modelCapabilities: [
                 "gpt-5.5": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.4": .init(supportsVision: true, supportsTools: true)

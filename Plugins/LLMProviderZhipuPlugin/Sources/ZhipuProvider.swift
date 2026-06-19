@@ -23,6 +23,16 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
                 "glm-4.5",
                 "glm-4.5-air",
             ],
+            contextWindowSizes: [
+                "glm-5.2": 128_000,
+                "glm-5.1": 128_000,
+                "glm-5-turbo": 128_000,
+                "glm-5": 128_000,
+                "glm-4.7": 128_000,
+                "glm-4.6": 128_000,
+                "glm-4.5": 128_000,
+                "glm-4.5-air": 128_000
+            ],
             modelCapabilities: [
                 "glm-5.2": .init(supportsVision: true, supportsTools: true),
                 "glm-5.1": .init(supportsVision: true, supportsTools: true),

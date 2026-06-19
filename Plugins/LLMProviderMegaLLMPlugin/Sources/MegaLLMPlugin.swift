@@ -40,6 +40,21 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
             "minimaxai/minimax-m2.1",
             "newclaude-opus-4-6"
             ],
+            contextWindowSizes: [
+                "alibaba-qwen3.5-397b": 131_072,
+                "claude-haiku-4-5-20251001": 200_000,
+                "claude-opus-4-5-20251101": 200_000,
+                "claude-opus-4-6": 200_000,
+                "claude-sonnet-4-5-20250929": 200_000,
+                "claude-sonnet-4-6": 200_000,
+                "deepseek-ai/deepseek-v3.1": 64_000,
+                "grok-4.1-fast-reasoning": 1_000_000,
+                "gpt-5-mini": 400_000,
+                "gpt-5.3-codex": 400_000,
+                "llama3.3-70b-instruct": 131_072,
+                "minimaxai/minimax-m2.1": 1_000_000,
+                "newclaude-opus-4-6": 200_000
+            ],
             modelCapabilities: [
                 "alibaba-qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
                 "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),

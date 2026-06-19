@@ -29,6 +29,10 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
             "deepseek-chat",
             "deepseek-coder"
             ],
+            contextWindowSizes: [
+                "deepseek-chat": 64_000,
+                "deepseek-coder": 128_000
+            ],
             modelCapabilities: [
                 "deepseek-chat": .init(supportsVision: false, supportsTools: true),
                 "deepseek-coder": .init(supportsVision: false, supportsTools: true)
