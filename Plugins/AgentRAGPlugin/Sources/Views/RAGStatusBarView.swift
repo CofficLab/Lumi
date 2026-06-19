@@ -31,13 +31,7 @@ public struct RAGStatusBarView: View, SuperLog {
 
     public var body: some View {
         StatusBarHoverContainer(
-            detailView: RAGStatusDetailView(
-                indexStatus: indexStatus,
-                isIndexing: isIndexing,
-                progressEvent: progressEvent,
-                errorMessage: errorMessage,
-                isNotInitialized: isNotInitialized
-            ),
+            detailView: RAGSettingsPopoverView(),
             popoverWidth: 420,
             id: "rag-status"
         ) {
@@ -198,7 +192,7 @@ public struct RAGStatusBarView: View, SuperLog {
             RAGPluginService.initializeIfNeeded()
             let ragService = RAGPlugin.getService()
             // 等待服务初始化完成
-            await ragService.initialize()
+            try await ragService.initialize()
             let status = try await ragService.getIndexStatus(projectPath: projectPath)
 
             // 只在非索引状态下才更新状态

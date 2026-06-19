@@ -2,6 +2,7 @@ import LumiUI
 import SuperLogKit
 import SwiftUI
 import LumiCoreKit
+import ProjectsPlugin
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
@@ -148,7 +149,8 @@ extension RAGSettingsView {
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let recent = RAGPluginRuntime.recentProjectsProvider().map { RAGTrackedProject(name: $0.name, path: $0.path) }
+        let store = ProjectsPlugin.sharedStore
+        let projects = store.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) }
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]
         if currentPath.isEmpty {
@@ -157,7 +159,7 @@ extension RAGSettingsView {
             let name = RAGPluginRuntime.currentProjectName.isEmpty ? URL(fileURLWithPath: currentPath).lastPathComponent : RAGPluginRuntime.currentProjectName
             current = [RAGTrackedProject(name: name, path: currentPath)]
         }
-        return dedupProjects(current + recent)
+        return dedupProjects(current + projects)
     }
 
     private func dedupProjects(_ projects: [RAGTrackedProject]) -> [RAGTrackedProject] {
