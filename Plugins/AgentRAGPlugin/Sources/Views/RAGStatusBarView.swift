@@ -325,17 +325,6 @@ public struct RAGStatusDetailView: View {
             RAGInfoRow(label: LumiPluginLocalization.string("Last Indexed", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
             RAGInfoRow(label: LumiPluginLocalization.string("Embedding Model", bundle: .module), value: status.embeddingModel)
             RAGInfoRow(label: LumiPluginLocalization.string("Vector Dimensions", bundle: .module), value: "\(status.embeddingDimension)")
-
-            if status.isStale {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(theme.warning)
-
-                    Text(LumiPluginLocalization.string("Index is outdated, recommend re-indexing", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.warning)
-                }
-            }
         }
     }
 

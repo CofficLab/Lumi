@@ -59,5 +59,5 @@ struct RAGIndexMaintenanceView: View {
         }
     }
 
-    private static let maintenanceInterval: TimeInterval = 5 * 60 // 5 分钟
+    private static let maintenanceInterval: TimeInterval = 60 // 每 60 秒检查一次
 }
