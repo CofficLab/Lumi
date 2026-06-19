@@ -9,6 +9,24 @@ public enum ProjectsPlugin: LumiPlugin {
         description: LumiPluginLocalization.string("Adds a project manager control to the title toolbar.", bundle: .module)
     )
 
+    /// 插件持有的项目 Store 实例，供其他组件通过依赖注入访问
+    @MainActor
+    public static var sharedStore: ProjectsStore {
+        guard let store = _sharedStore else {
+            fatalError("ProjectsPlugin.setupStore must be called before accessing sharedStore")
+        }
+        return store
+    }
+    
+    @MainActor
+    private static var _sharedStore: ProjectsStore?
+    
+    /// 初始化插件的 Store 实例，应在应用启动时调用
+    @MainActor
+    public static func setupStore(projectPathStore: LumiCurrentProjectPathStore) {
+        _sharedStore = ProjectsStore(projectPathStore: projectPathStore)
+    }
+
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)

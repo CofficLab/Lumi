@@ -2,6 +2,7 @@ import LumiChatKit
 import Foundation
 import LumiCoreKit
 import LumiPluginRegistry
+import ProjectsPlugin
 
 @MainActor
 final class ChatCoreService {
@@ -44,6 +45,7 @@ final class ChatCoreService {
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiToolServicing.self, toolService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+                dependencies.register(LumiProjectStoring.self, ProjectsPlugin.sharedStore)
             }
         )
         toolService.registerTools(pluginService.agentTools(context: context))
