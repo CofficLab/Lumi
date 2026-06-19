@@ -32,7 +32,8 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Localizable.xcstrings"),
+                .copy("Resources/vec0.dylib")
             ]
         ),
         .testTarget(

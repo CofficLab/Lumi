@@ -626,8 +626,19 @@ final class RAGSQLiteStore: @unchecked Sendable {
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
         let libraryNames = ["vec0.dylib"]
-        let main = Bundle.main
 
+        // 优先：Swift Package 资源 bundle（AgentRAGPlugin 内部打包的 vec0.dylib）
+        let moduleBundle = Bundle.module
+        for name in libraryNames {
+            if let url = moduleBundle.url(forResource: name, withExtension: nil) {
+                candidates.append(url.path)
+            } else if let resourcePath = moduleBundle.resourcePath {
+                candidates.append((resourcePath as NSString).appendingPathComponent(name))
+            }
+        }
+
+        // 兜底：App bundle 内的可能路径
+        let main = Bundle.main
         if let frameworksPath = main.privateFrameworksPath {
             for name in libraryNames {
                 candidates.append((frameworksPath as NSString).appendingPathComponent(name))
