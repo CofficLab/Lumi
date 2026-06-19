@@ -10,9 +10,6 @@ public struct RAGSettingsPopoverView: View, SuperLog {
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
-    @State private var isLoading = false
-    @State private var activeProjectActionPath: String?
-    @State private var message: String?
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -20,18 +17,6 @@ public struct RAGSettingsPopoverView: View, SuperLog {
                 Label(LumiPluginLocalization.string("RAG Index Status", bundle: .module), systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
-                Button(LumiPluginLocalization.string("Refresh All", bundle: .module)) {
-                    Task { await loadStatus() }
-                }
-                .disabled(isLoading)
-                .controlSize(.small)
-
-                Button(LumiPluginLocalization.string("Rebuild All", bundle: .module)) {
-                    Task { await rebuildAll() }
-                }
-                .disabled(isLoading)
-                .controlSize(.small)
-
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
@@ -54,12 +39,6 @@ public struct RAGSettingsPopoverView: View, SuperLog {
                             projectRow(project)
                         }
                     }
-
-                    if let message {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding(16)
             }
@@ -75,6 +54,8 @@ public struct RAGSettingsPopoverView: View, SuperLog {
         }
     }
 }
+
+// MARK: - Project Row
 
 extension RAGSettingsPopoverView {
     @ViewBuilder
@@ -107,23 +88,6 @@ extension RAGSettingsPopoverView {
             if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                 ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
             }
-
-            HStack(spacing: 8) {
-                Button(LumiPluginLocalization.string("Refresh", bundle: .module)) {
-                    Task { await refreshProjectStatus(projectPath: project.path) }
-                }
-                .disabled(isLoading)
-
-                Button(LumiPluginLocalization.string("Rebuild", bundle: .module)) {
-                    Task { await rebuildProject(projectPath: project.path) }
-                }
-                .disabled(isLoading)
-
-                if activeProjectActionPath == project.path {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -131,6 +95,8 @@ extension RAGSettingsPopoverView {
         .cornerRadius(8)
     }
 }
+
+// MARK: - Private
 
 extension RAGSettingsPopoverView {
     private var trackedProjects: [RAGTrackedProjectPopover] {
@@ -166,9 +132,6 @@ extension RAGSettingsPopoverView {
             return
         }
 
-        isLoading = true
-        defer { isLoading = false }
-
         do {
             let service = RAGPlugin.getService()
             try await service.initialize()
@@ -179,63 +142,7 @@ extension RAGSettingsPopoverView {
                 }
             }
             statusesByPath = next
-            message = nil
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Failed to load index status: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func rebuildAll() async {
-        let projects = trackedProjects
-        guard !projects.isEmpty else { return }
-
-        isLoading = true
-        message = LumiPluginLocalization.string("Rebuilding all indexes...", bundle: .module)
-        defer { isLoading = false }
-
-        do {
-            let service = RAGPlugin.getService()
-            try await service.initialize()
-            for project in projects {
-                try await service.ensureIndexed(projectPath: project.path, force: true)
-            }
-            await loadStatus()
-            message = LumiPluginLocalization.string("All project indexes updated.", bundle: .module)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func refreshProjectStatus(projectPath: String) async {
-        activeProjectActionPath = projectPath
-        defer { activeProjectActionPath = nil }
-        do {
-            let service = RAGPlugin.getService()
-            try await service.initialize()
-            let status = try await service.getIndexStatus(projectPath: projectPath)
-            statusesByPath[projectPath] = status
-            if status == nil {
-                statusesByPath.removeValue(forKey: projectPath)
-            }
-            message = String(format: LumiPluginLocalization.string("Refreshed: %@", bundle: .module), projectPath)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Refresh failed: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func rebuildProject(projectPath: String) async {
-        activeProjectActionPath = projectPath
-        defer { activeProjectActionPath = nil }
-        do {
-            let service = RAGPlugin.getService()
-            try await service.initialize()
-            try await service.ensureIndexed(projectPath: projectPath, force: true)
-            let status = try await service.getIndexStatus(projectPath: projectPath)
-            statusesByPath[projectPath] = status
-            message = String(format: LumiPluginLocalization.string("Rebuilt: %@", bundle: .module), projectPath)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Rebuild failed: %@", bundle: .module), error.localizedDescription)
-        }
+        } catch {}
     }
 }
 

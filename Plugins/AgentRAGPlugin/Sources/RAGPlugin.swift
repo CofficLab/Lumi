@@ -1,4 +1,5 @@
 import AgentToolKit
+import SwiftUI
 import LumiChatKit
 import LumiCoreKit
 
@@ -19,6 +20,18 @@ public enum RAGPlugin: LumiPlugin {
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         RAGPluginService.initializeIfNeeded()
         return [RAGChatMiddleware()]
+    }
+
+    @MainActor
+    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: "\(info.id).index-maintenance") { content in
+                ZStack {
+                    content
+                    RAGIndexMaintenanceView()
+                }
+            }
+        ]
     }
 
     @MainActor

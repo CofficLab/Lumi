@@ -36,10 +36,7 @@ public struct RAGStatusBarView: View, SuperLog {
                 isIndexing: isIndexing,
                 progressEvent: progressEvent,
                 errorMessage: errorMessage,
-                isNotInitialized: isNotInitialized,
-                onRefresh: {
-                    Task { await rebuildIndex() }
-                }
+                isNotInitialized: isNotInitialized
             ),
             popoverWidth: 420,
             id: "rag-status"
@@ -151,27 +148,6 @@ public struct RAGStatusBarView: View, SuperLog {
         }
     }
 
-    private func rebuildIndex() async {
-        let projectPath = RAGPluginRuntime.currentProjectPath
-        guard !projectPath.isEmpty else { return }
-        guard !isIndexing else { return }
-
-        do {
-            let ragService = RAGPlugin.getService()
-            try await ragService.initialize()
-            isIndexing = true
-            isNotInitialized = false
-            errorMessage = nil
-            try await ragService.ensureIndexed(projectPath: projectPath, force: true)
-        } catch {
-            if Self.verbose {
-                RAGPlugin.logger.error("\(Self.t)Failed to rebuild RAG index: \(error.localizedDescription)")
-            }
-            isIndexing = false
-            errorMessage = LumiPluginLocalization.string("Failed to rebuild index", bundle: .module)
-        }
-    }
-
     private func resetAndReload() async {
         // 重置所有状态
         indexStatus = nil
@@ -277,22 +253,19 @@ public struct RAGStatusDetailView: View {
     public let progressEvent: RAGIndexProgressEvent?
     public let errorMessage: String?
     public let isNotInitialized: Bool
-    public let onRefresh: (() -> Void)?
 
     public init(
         indexStatus: RAGIndexStatus?,
         isIndexing: Bool,
         progressEvent: RAGIndexProgressEvent?,
         errorMessage: String?,
-        isNotInitialized: Bool,
-        onRefresh: (() -> Void)? = nil
+        isNotInitialized: Bool
     ) {
         self.indexStatus = indexStatus
         self.isIndexing = isIndexing
         self.progressEvent = progressEvent
         self.errorMessage = errorMessage
         self.isNotInitialized = isNotInitialized
-        self.onRefresh = onRefresh
     }
 
     public var body: some View {
@@ -300,17 +273,6 @@ public struct RAGStatusDetailView: View {
             title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
             systemImage: "doc.text.magnifyingglass"
         ) {
-            if let onRefresh {
-                Button(action: onRefresh) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Rebuild Index", bundle: .module))
-                .disabled(isIndexing)
-            }
-        } content: {
             if isIndexing {
                 indexingView()
             } else if let status = indexStatus {

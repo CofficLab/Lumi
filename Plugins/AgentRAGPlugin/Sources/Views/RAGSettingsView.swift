@@ -14,8 +14,6 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
-    @State private var activeProjectActionPath: String?
-    @State private var message: String?
 
     public init() {}
 
@@ -25,8 +23,6 @@ public struct RAGSettingsView: View, SuperLog {
             subtitle: LumiPluginLocalization.string("Manage semantic indexes for tracked projects.", bundle: .module),
             showHeader: false
         ) {
-            actionsCard
-
             if trackedProjects.isEmpty {
                 AppCard {
                     AppEmptyState(
@@ -44,10 +40,6 @@ public struct RAGSettingsView: View, SuperLog {
                     projectCard(project)
                 }
             }
-
-            if let message {
-                AppErrorBanner(message: LocalizedStringKey(message))
-            }
         }
         .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
             await loadStatus()
@@ -55,37 +47,12 @@ public struct RAGSettingsView: View, SuperLog {
         .onRAGIndexProgressDidChange { event in
             progressByPath[event.projectPath] = event
             if event.isFinished {
-                message = String(format: LumiPluginLocalization.string("Index update completed: %@", bundle: .module), event.projectPath)
                 Task { await loadStatus() }
             }
         }
     }
 
-    private var actionsCard: some View {
-        AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Actions", bundle: .module), spacing: 12) {
-                HStack(spacing: 8) {
-                    AppButton(
-                        LumiPluginLocalization.string("Refresh All Status", bundle: .module),
-                        style: .secondary,
-                        fillsWidth: true
-                    ) {
-                        Task { await loadStatus() }
-                    }
-                    .disabled(isLoading)
-
-                    AppButton(
-                        LumiPluginLocalization.string("Rebuild All Indexes", bundle: .module),
-                        style: .primary,
-                        fillsWidth: true
-                    ) {
-                        Task { await rebuildIndex() }
-                    }
-                    .disabled(isLoading)
-                }
-            }
-        }
-    }
+    // MARK: - Cards
 
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
@@ -148,29 +115,12 @@ public struct RAGSettingsView: View, SuperLog {
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
-
-                HStack(spacing: 8) {
-                    AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), style: .secondary, fillsWidth: true) {
-                        Task { await refreshProjectStatus(projectPath: project.path) }
-                    }
-                    .disabled(isLoading)
-
-                    AppButton(LumiPluginLocalization.string("Rebuild", bundle: .module), style: .primary, fillsWidth: true) {
-                        Task { await rebuildProjectIndex(projectPath: project.path) }
-                    }
-                    .disabled(isLoading)
-
-                    if activeProjectActionPath == project.path {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                }
             }
         }
     }
 }
 
-// MARK: - Action
+// MARK: - Load Status
 
 extension RAGSettingsView {
     private func loadStatus() async {
@@ -190,60 +140,7 @@ extension RAGSettingsView {
                 }
             }
             statusesByPath = next
-            message = nil
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Failed to load index status: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func rebuildIndex() async {
-        let projects = trackedProjects
-        guard !projects.isEmpty else { return }
-
-        isLoading = true
-        message = LumiPluginLocalization.string("Rebuilding all indexes...", bundle: .module)
-        defer { isLoading = false }
-
-        do {
-            let service = RAGPlugin.getService()
-            for project in projects {
-                try await service.ensureIndexed(projectPath: project.path, force: true)
-            }
-            await loadStatus()
-            message = LumiPluginLocalization.string("All project indexes updated.", bundle: .module)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Failed to rebuild indexes: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func refreshProjectStatus(projectPath: String) async {
-        activeProjectActionPath = projectPath
-        defer { activeProjectActionPath = nil }
-        do {
-            let service = RAGPlugin.getService()
-            let status = try await service.getIndexStatus(projectPath: projectPath)
-            statusesByPath[projectPath] = status
-            if status == nil {
-                statusesByPath.removeValue(forKey: projectPath)
-            }
-            message = String(format: LumiPluginLocalization.string("Refreshed: %@", bundle: .module), projectPath)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Refresh failed: %@", bundle: .module), error.localizedDescription)
-        }
-    }
-
-    private func rebuildProjectIndex(projectPath: String) async {
-        activeProjectActionPath = projectPath
-        defer { activeProjectActionPath = nil }
-        do {
-            let service = RAGPlugin.getService()
-            try await service.ensureIndexed(projectPath: projectPath, force: true)
-            let status = try await service.getIndexStatus(projectPath: projectPath)
-            statusesByPath[projectPath] = status
-            message = String(format: LumiPluginLocalization.string("Rebuilt: %@", bundle: .module), projectPath)
-        } catch {
-            message = String(format: LumiPluginLocalization.string("Rebuild failed: %@", bundle: .module), error.localizedDescription)
-        }
+        } catch {}
     }
 }
 
