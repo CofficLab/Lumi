@@ -33,8 +33,8 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
             "gpt-5.2"
             ],
             contextWindowSizes: [
-                "gpt-5.5": 400_000,
-                "gpt-5.4": 400_000,
+                "gpt-5.5": 1_000_000,
+                "gpt-5.4": 1_000_000,
                 "gpt-5.4-mini": 400_000,
                 "gpt-5.3": 400_000,
                 "gpt-5.2": 400_000

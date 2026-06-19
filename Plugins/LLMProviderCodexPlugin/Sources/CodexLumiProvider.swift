@@ -10,7 +10,7 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         availableModels: ["gpt-5.5", "gpt-5.4-mini"],
         isLocal: true,
         contextWindowSizes: [
-            "gpt-5.5": 400_000,
+            "gpt-5.5": 1_000_000,
             "gpt-5.4-mini": 400_000
         ],
         modelCapabilities: [

@@ -52,7 +52,7 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "anthropic/claude-opus-4-5-20251101": 200_000,
                 "anthropic/claude-sonnet-4-5-20250929": 200_000,
                 "bytedance-seed/seedream-4.5": 32_000,
-                "deepseek/deepseek-v3.1": 64_000,
+                "deepseek/deepseek-v3.1": 128_000,
                 "google/gemma-3-27b-it:free": 131_072,
                 "google/gemini-pro-2.5": 1_000_000,
                 "meta-llama/llama-3.3-70b-instruct": 131_072,

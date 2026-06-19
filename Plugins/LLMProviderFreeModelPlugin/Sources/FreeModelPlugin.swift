@@ -32,8 +32,8 @@ public final class FreeModelProvider: OpenAICompatibleLumiProvider, @unchecked S
             "gpt-5.3-codex"
             ],
             contextWindowSizes: [
-                "gpt-5.5": 400_000,
-                "gpt-5.4": 400_000,
+                "gpt-5.5": 1_000_000,
+                "gpt-5.4": 1_000_000,
                 "gpt-5.4-mini": 400_000,
                 "gpt-5.3-codex": 400_000
             ],

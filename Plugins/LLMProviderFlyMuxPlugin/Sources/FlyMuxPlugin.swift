@@ -39,7 +39,7 @@ public final class FlyMuxProvider: OpenAICompatibleLumiProvider, @unchecked Send
             "gpt-5.1-codex-mini"
             ],
             contextWindowSizes: [
-                "gpt-5.4": 400_000,
+                "gpt-5.4": 1_000_000,
                 "gpt-5.4-mini": 400_000,
                 "gpt-5.4-openai-compact": 400_000,
                 "gpt-5.3": 400_000,
