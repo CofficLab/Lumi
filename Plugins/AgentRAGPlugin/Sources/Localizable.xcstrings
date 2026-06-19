@@ -613,6 +613,7 @@
       }
     },
     "Index is outdated, recommend re-indexing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
