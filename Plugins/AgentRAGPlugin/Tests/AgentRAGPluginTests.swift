@@ -3,6 +3,29 @@ import Foundation
 import Testing
 @testable import AgentRAGPlugin
 
+// MARK: - vec0.dylib 加载测试
+
+@Test func vec0DylibBundledInPackageResources() {
+    let url = Bundle.module.url(forResource: "vec0", withExtension: "dylib")
+    #expect(url != nil, "vec0.dylib 应存在于 AgentRAGPlugin 的资源 bundle 中")
+}
+
+@Test func sqliteVecBackendLoadsSuccessfully() throws {
+    let dbURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRAGPluginTests")
+        .appendingPathComponent("\(UUID().uuidString).sqlite")
+    defer { try? FileManager.default.removeItem(at: dbURL) }
+
+    let store = try RAGSQLiteStore(dbURL: dbURL)
+    try store.migrate()
+    try store.configureVectorBackend(embeddingDimension: 256)
+
+    #expect(store.runtimeInfo.vectorBackend == .sqliteVec,
+           "vec0.dylib 加载应成功，实际: \(store.runtimeInfo.note ?? "")")
+}
+
+// MARK: - 原有测试
+
 @Test func packageLoads() async throws {
     #expect(true)
 }

@@ -22,8 +22,17 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "CSQLite",
+            path: "Sources/CSQLite",
+            publicHeadersPath: "include",
+            cSettings: [
+                .define("SQLITE_ENABLE_LOAD_EXTENSION")
+            ]
+        ),
+        .target(
             name: "AgentRAGPlugin",
             dependencies: [
+                "CSQLite",
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
@@ -31,6 +40,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
+            exclude: ["CSQLite"],
             resources: [
                 .process("Localizable.xcstrings"),
                 .copy("Resources/vec0.dylib")
