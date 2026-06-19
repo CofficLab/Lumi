@@ -46,14 +46,14 @@ public struct RAGStatusBarView: View, SuperLog {
         .task {
             await updateStatus()
         }
+        .task(id: RAGPluginRuntime.currentProjectPath) {
+            // 项目切换时重新加载（.onChange 无法观察计算属性）
+            let path = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !path.isEmpty else { return }
+            await resetAndReload()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .ragIndexProgressDidChange)) { notification in
             handleProgressNotification(notification)
-        }
-        .onChange(of: RAGPluginRuntime.currentProjectPath) { _, _ in
-            // 项目切换时重新加载
-            Task {
-                await resetAndReload()
-            }
         }
     }
 
