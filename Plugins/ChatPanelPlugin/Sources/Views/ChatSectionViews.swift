@@ -43,6 +43,10 @@ struct ChatComposerSectionView: View {
         let isSending = coordinator.chatService.isSending(for: selectedID)
 
         VStack(spacing: 0) {
+            ChatPendingSectionView(coordinator: coordinator)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 4)
+
             ChatCommandSuggestionsView(
                 suggestions: ChatSlashCommand.suggestions(for: coordinator.draft),
                 isVisible: coordinator.showCommandSuggestions,
