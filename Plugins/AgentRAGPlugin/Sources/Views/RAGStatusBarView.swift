@@ -307,16 +307,10 @@ public struct RAGStatusDetailView: View {
                     RAGProgressRow(label: LumiPluginLocalization.string("Document Chunks", bundle: .module), value: "\(event.chunkCount)")
 
                     if !event.currentFilePath.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(LumiPluginLocalization.string("Current File", bundle: .module))
-                                .font(.appMicro)
-                                .foregroundColor(theme.textSecondary)
-
-                            Text((event.currentFilePath as NSString).lastPathComponent)
-                                .font(.appMicro)
-                                .foregroundColor(theme.textTertiary)
-                                .lineLimit(2)
-                        }
+                        RAGProgressRow(
+                            label: LumiPluginLocalization.string("Current File", bundle: .module),
+                            value: (event.currentFilePath as NSString).lastPathComponent
+                        )
                     }
                 }
             }
