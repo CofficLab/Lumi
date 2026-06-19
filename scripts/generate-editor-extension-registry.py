@@ -31,6 +31,7 @@ INFRA_PLUGINS = [
     "LSPSelectionRangeEditorPlugin",
     "EditorLSPContextCommandsPlugin",
     "EditorChatIntegrationPlugin",
+    "EditorMinimapContextMenuPlugin",
     "EditorMultiCursorCommandsPlugin",
 ]
 
