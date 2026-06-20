@@ -9,6 +9,7 @@ import SwiftUI
 /// 实际网页抓取能力由 `WebFetchKit` 承载。
 public enum WebFetchPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "globe"
 

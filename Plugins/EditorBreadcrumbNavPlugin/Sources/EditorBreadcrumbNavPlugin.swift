@@ -5,6 +5,7 @@ import SwiftUI
 
 public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "point.topleft.down.curvedto.point.bottomright.up"
 

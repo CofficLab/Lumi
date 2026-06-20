@@ -21,6 +21,7 @@ private let gitOKPluginLogger = Logger(subsystem: "com.coffic.lumi", category: "
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
 public enum AgentOpenInGitOKPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "point.topleft.down.curvedto.point.filled.bottomright.up"
 

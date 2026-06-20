@@ -7,6 +7,7 @@ import ProjectsPlugin
 /// RAG 插件：检索增强生成。
 public enum RAGPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "doc.text.magnifyingglass"
 

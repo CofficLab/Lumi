@@ -6,6 +6,7 @@ import SwiftUI
 /// Provides a view container for video format conversion using FFmpeg.
 public enum VideoConverterPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "video"
 

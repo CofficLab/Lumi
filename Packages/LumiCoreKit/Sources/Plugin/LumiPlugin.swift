@@ -4,6 +4,7 @@ public protocol LumiPlugin {
     static var info: LumiPluginInfo { get }
     static var policy: LumiPluginPolicy { get }
     static var category: LumiPluginCategory { get }
+    static var stage: LumiPluginStage { get }
     static var iconName: String { get }
 
     @MainActor
@@ -70,6 +71,10 @@ public protocol LumiPlugin {
 public extension LumiPlugin {
     static var category: LumiPluginCategory {
         .general
+    }
+
+    static var stage: LumiPluginStage {
+        .beta
     }
 
     static var iconName: String {

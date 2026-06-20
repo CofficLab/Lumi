@@ -9,6 +9,7 @@ import SwiftUI
 /// 支持本地文件路径和远程 URL 两种图片源。
 public enum ShowImagePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "photo.on.rectangle"
 

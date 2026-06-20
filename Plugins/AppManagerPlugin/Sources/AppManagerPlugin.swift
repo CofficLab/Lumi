@@ -8,6 +8,7 @@ public enum AppManagerPlugin: LumiPlugin {
     nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = { AppConfig.getDBFolderURL() }
 
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "apps.ipad"
 

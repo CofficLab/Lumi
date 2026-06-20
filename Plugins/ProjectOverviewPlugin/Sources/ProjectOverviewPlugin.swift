@@ -9,6 +9,7 @@ import os
 /// 提供 Agent 工具，返回项目类型、顶层结构、Git 信息、清单文件、README 预览和关键文件。
 public enum ProjectOverviewPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "doc.text.magnifyingglass"
     public static var verbose: Bool { false }

@@ -6,6 +6,7 @@ import SwiftUI
 /// Conversation List Plugin: rail conversation list, project switch guidance, and agent tools.
 public enum ConversationListPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "message.fill"
     public static let verbose = false

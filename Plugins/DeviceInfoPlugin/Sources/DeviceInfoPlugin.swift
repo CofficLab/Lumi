@@ -10,6 +10,7 @@ public enum DeviceInfoPlugin: LumiPlugin {
     )
     public static let category: LumiPluginCategory = .system
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
 
     public static let iconName = "macbook.and.iphone"
 

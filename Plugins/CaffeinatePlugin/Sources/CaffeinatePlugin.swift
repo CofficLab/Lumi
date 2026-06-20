@@ -10,6 +10,7 @@ import os
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
 public enum CaffeinatePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "bolt"
     public static var verbose: Bool { false }

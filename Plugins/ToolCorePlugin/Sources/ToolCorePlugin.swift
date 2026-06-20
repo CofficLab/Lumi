@@ -15,6 +15,7 @@ public enum ToolCorePlugin: LumiPlugin {
     )
 
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "wrench.and.screwdriver"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")

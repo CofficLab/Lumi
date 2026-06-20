@@ -4,6 +4,7 @@ import SwiftUI
 
 public enum AppIconDesignerPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "app.dashed"
 

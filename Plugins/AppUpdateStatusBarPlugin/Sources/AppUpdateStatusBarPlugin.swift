@@ -3,6 +3,7 @@ import SwiftUI
 
 public enum AppUpdateStatusBarPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "arrow.down.circle"
 

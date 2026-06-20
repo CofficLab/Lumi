@@ -4,6 +4,7 @@ import SwiftUI
 /// 详细级别切换插件：在 Chat 工具栏提供简洁 / 标准 / 详细回复风格选择。
 public enum VerbosityPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "text.alignleft"
 

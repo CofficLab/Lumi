@@ -10,6 +10,7 @@ import SwiftUI
 /// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
 public enum WebSearchPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "magnifyingglass"
 

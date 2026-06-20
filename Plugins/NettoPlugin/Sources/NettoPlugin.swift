@@ -3,6 +3,7 @@ import SwiftUI
 
 public enum NettoPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "shield.lefthalf.filled"
 

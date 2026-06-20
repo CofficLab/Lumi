@@ -178,6 +178,8 @@ struct PluginSettingsPage: View {
                             .foregroundStyle(theme.textPrimary)
                             .lineLimit(1)
 
+                        AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
+
                         Circle()
                             .fill(isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
                             .frame(width: 6, height: 6)
@@ -257,9 +259,13 @@ private struct PluginSettingsDetailView: View {
                 )
 
             VStack(alignment: .leading, spacing: 7) {
-                Text(row.displayName)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(theme.textPrimary)
+                HStack(spacing: 8) {
+                    Text(row.displayName)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(theme.textPrimary)
+
+                    AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
+                }
 
                 Text(row.description.isEmpty ? row.id : row.description)
                     .font(.appCaption)
@@ -299,6 +305,7 @@ private struct PluginSettingsRowModel: Identifiable {
     var iconName: String { plugin.iconName }
     var category: LumiPluginCategory { plugin.category }
     var policy: LumiPluginPolicy { plugin.policy }
+    var stage: LumiPluginStage { plugin.stage }
 }
 
 private struct DefaultPluginAboutView: View {

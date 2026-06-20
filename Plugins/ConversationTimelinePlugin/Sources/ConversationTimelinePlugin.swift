@@ -4,6 +4,7 @@ import SwiftUI
 /// 在 Chat 工具栏显示当前对话的 LLM 上下文用量。
 public enum ConversationTimelinePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "chart.bar.xaxis"
 

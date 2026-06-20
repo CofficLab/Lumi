@@ -5,6 +5,7 @@ import SwiftUI
 
 public enum ChatPanelPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "bubble.left.and.bubble.right.fill"
     public static let info = LumiPluginInfo(

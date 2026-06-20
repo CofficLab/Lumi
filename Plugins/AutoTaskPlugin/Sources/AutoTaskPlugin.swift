@@ -8,6 +8,7 @@ import SwiftUI
 /// AutoTask 插件：任务拆解、进度跟踪与 Agent 自动推进。
 public enum AutoTaskPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "checklist"
 

@@ -17,6 +17,7 @@ public struct LoadedPluginInfo: Identifiable, Sendable {
 
 public enum AppLoadedPluginsPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "puzzlepiece.extension"
 

@@ -5,6 +5,7 @@ import AgentToolKit
 /// Memory Plugin：持久化记忆系统。
 public enum MemoryPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "brain.head.profile"
     public static var verbose: Bool { false }

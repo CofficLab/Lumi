@@ -5,6 +5,7 @@ import os
 /// LLM 可用性检测插件：维护实际可用的供应商+模型列表。
 public enum LLMAvailabilityPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "network"
     public static let verbose: Bool = false

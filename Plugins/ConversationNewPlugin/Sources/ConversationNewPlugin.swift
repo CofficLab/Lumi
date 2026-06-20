@@ -6,6 +6,7 @@ import SwiftUI
 /// 在标题栏右侧提供新建对话按钮（NewChatButton）。
 public enum ConversationNewPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "bubble.left.and.bubble.right"
 

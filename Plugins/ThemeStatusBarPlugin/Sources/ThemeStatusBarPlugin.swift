@@ -4,6 +4,7 @@ import LumiUI
 public enum ThemeStatusBarPlugin: LumiPlugin {
     public static let category: LumiPluginCategory = .theme
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme-status-bar",
         displayName: LumiPluginLocalization.string("Theme Status Bar", bundle: .module),

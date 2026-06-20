@@ -6,6 +6,7 @@ public enum DockerManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
     public static let verbose = false
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "shippingbox"
 

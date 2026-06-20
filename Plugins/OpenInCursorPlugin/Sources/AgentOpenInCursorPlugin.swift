@@ -6,6 +6,7 @@ import SwiftUI
 /// 在 Cursor 中打开项目插件
 public enum AgentOpenInCursorPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "chevron.left.forwardslash.chevron.right"
 

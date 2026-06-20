@@ -3,6 +3,7 @@ import LumiCoreKit
 /// Collects OSLog entries to rotating on-disk log files.
 public enum FileLogPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "doc.text.below.ecg"
 

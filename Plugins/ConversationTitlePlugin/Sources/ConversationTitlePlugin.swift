@@ -5,6 +5,7 @@ import SwiftUI
 /// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.
 public enum ConversationTitlePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "character.cursor.ibeam"
 

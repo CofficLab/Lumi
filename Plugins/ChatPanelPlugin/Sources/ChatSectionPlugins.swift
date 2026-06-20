@@ -5,6 +5,7 @@ import SwiftUI
 
 public enum ChatPendingSectionPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "clock"
 
@@ -24,6 +25,7 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
 
 public enum ChatAttachmentSectionPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "paperclip"
 
@@ -65,6 +67,7 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
 
 public enum ChatComposerSectionPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "keyboard"
 
