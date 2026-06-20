@@ -1,6 +1,7 @@
 import LayoutPlugin
 import LumiChatKit
 import LumiCoreKit
+import ProjectsPlugin
 import SwiftUI
 
 @MainActor
@@ -22,6 +23,8 @@ final class RootContainer: ObservableObject {
         self.pluginService = PluginService()
         self.toolService = ToolService()
         self.projectPathStore = LumiCurrentProjectPathStore()
+        // ProjectsPlugin 负责项目数据的存储，在 ChatCoreService 之前初始化
+        ProjectsPlugin.setupStore(projectPathStore: projectPathStore)
         self.editorCoreService = EditorCoreService(
             pluginService: pluginService,
             persistenceRootURL: { AppConfig.getDBFolderURL() },

@@ -1123,6 +1123,12 @@ public final class EditorState: ObservableObject, SuperLog {
     
     /// 是否显示 Minimap
     @Published public var showMinimap: Bool = true
+
+    /// 切换 Minimap 显示偏好并写入磁盘。
+    public func toggleShowMinimapPersisted() {
+        showMinimap.toggle()
+        persistConfig()
+    }
     
     /// 是否显示行号
     @Published public var showGutter: Bool = true
@@ -1406,9 +1412,11 @@ public final class EditorState: ObservableObject, SuperLog {
             state: self,
             textView: invocationContext.textView
         ).map(\.asCommandSuggestion)
+        // 右键菜单不拆分 recent/frequent，所有命令统一放入 sections，
+        // 避免执行过的命令被移出 sections 后在 injectCustomItems 中丢失。
         return commandController.presentationModel(
             from: suggestions,
-            recentCommandIDs: recentCommandIDs,
+            recentCommandIDs: [],
             query: query,
             categories: categories
         )

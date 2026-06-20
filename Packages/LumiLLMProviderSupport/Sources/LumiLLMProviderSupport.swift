@@ -285,11 +285,21 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     }
 }
 
-public enum LumiLLMProviderSupportError: LocalizedError {
+public enum LumiLLMProviderSupportError: LocalizedError, NonRetryableErrorProviding {
     case emptyConversation
     case invalidBaseURL(String)
     case missingAPIKey(String)
     case streamingFailed(String)
+
+    /// 配置类错误（API Key 未配置、Base URL 无效等）属于确定性失败，不应重试。
+    public var isNonRetryable: Bool {
+        switch self {
+        case .emptyConversation, .invalidBaseURL, .missingAPIKey:
+            return true
+        case .streamingFailed:
+            return false
+        }
+    }
 
     public var errorDescription: String? {
         switch self {

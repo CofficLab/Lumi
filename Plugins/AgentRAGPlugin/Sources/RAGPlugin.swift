@@ -2,6 +2,7 @@ import AgentToolKit
 import SwiftUI
 import LumiChatKit
 import LumiCoreKit
+import ProjectsPlugin
 
 /// RAG 插件：检索增强生成。
 public enum RAGPlugin: LumiPlugin {

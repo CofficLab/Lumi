@@ -94,6 +94,7 @@ public enum EditorCommandCategoryScope {
         .multiCursor,
         .format,
         .lsp,
-        .chat
+        .chat,
+        .workbench
     ]
 }

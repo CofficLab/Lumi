@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 struct SettingsSceneContent: View {
@@ -13,9 +14,9 @@ struct SettingsSceneContent: View {
         }
         .background {
             WindowAccessor { window in
-                window.titleVisibility = .hidden
-                window.titlebarAppearsTransparent = true
+                window.configureForLumiMainChrome()
             }
+            ThemeWindowAppearanceBridge()
         }
     }
 }

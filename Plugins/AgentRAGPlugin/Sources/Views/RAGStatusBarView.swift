@@ -31,13 +31,7 @@ public struct RAGStatusBarView: View, SuperLog {
 
     public var body: some View {
         StatusBarHoverContainer(
-            detailView: RAGStatusDetailView(
-                indexStatus: indexStatus,
-                isIndexing: isIndexing,
-                progressEvent: progressEvent,
-                errorMessage: errorMessage,
-                isNotInitialized: isNotInitialized
-            ),
+            detailView: RAGSettingsPopoverView(),
             popoverWidth: 420,
             id: "rag-status"
         ) {
@@ -46,14 +40,14 @@ public struct RAGStatusBarView: View, SuperLog {
         .task {
             await updateStatus()
         }
+        .task(id: RAGPluginRuntime.currentProjectPath) {
+            // 项目切换时重新加载（.onChange 无法观察计算属性）
+            let path = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !path.isEmpty else { return }
+            await resetAndReload()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .ragIndexProgressDidChange)) { notification in
             handleProgressNotification(notification)
-        }
-        .onChange(of: RAGPluginRuntime.currentProjectPath) { _, _ in
-            // 项目切换时重新加载
-            Task {
-                await resetAndReload()
-            }
         }
     }
 
@@ -195,8 +189,10 @@ public struct RAGStatusBarView: View, SuperLog {
         }
 
         do {
+            RAGPluginService.initializeIfNeeded()
             let ragService = RAGPlugin.getService()
-            // 服务已在 onEnable 时初始化
+            // 等待服务初始化完成
+            try await ragService.initialize()
             let status = try await ragService.getIndexStatus(projectPath: projectPath)
 
             // 只在非索引状态下才更新状态
@@ -307,16 +303,10 @@ public struct RAGStatusDetailView: View {
                     RAGProgressRow(label: LumiPluginLocalization.string("Document Chunks", bundle: .module), value: "\(event.chunkCount)")
 
                     if !event.currentFilePath.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(LumiPluginLocalization.string("Current File", bundle: .module))
-                                .font(.appMicro)
-                                .foregroundColor(theme.textSecondary)
-
-                            Text((event.currentFilePath as NSString).lastPathComponent)
-                                .font(.appMicro)
-                                .foregroundColor(theme.textTertiary)
-                                .lineLimit(2)
-                        }
+                        RAGProgressRow(
+                            label: LumiPluginLocalization.string("Current File", bundle: .module),
+                            value: (event.currentFilePath as NSString).lastPathComponent
+                        )
                     }
                 }
             }
@@ -326,22 +316,15 @@ public struct RAGStatusDetailView: View {
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            RAGInfoRow(
+                label: LumiPluginLocalization.string("Project", bundle: .module),
+                value: (status.projectPath as NSString).lastPathComponent
+            )
             RAGInfoRow(label: LumiPluginLocalization.string("File Count", bundle: .module), value: "\(status.fileCount)")
             RAGInfoRow(label: LumiPluginLocalization.string("Chunk Count", bundle: .module), value: "\(status.chunkCount)")
             RAGInfoRow(label: LumiPluginLocalization.string("Last Indexed", bundle: .module), value: formatIndexTime(status.lastIndexedAt))
             RAGInfoRow(label: LumiPluginLocalization.string("Embedding Model", bundle: .module), value: status.embeddingModel)
             RAGInfoRow(label: LumiPluginLocalization.string("Vector Dimensions", bundle: .module), value: "\(status.embeddingDimension)")
-
-            if status.isStale {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(theme.warning)
-
-                    Text(LumiPluginLocalization.string("Index is outdated, recommend re-indexing", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.warning)
-                }
-            }
         }
     }
 

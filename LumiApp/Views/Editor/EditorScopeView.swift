@@ -51,7 +51,7 @@ struct EditorScopeView<Content: View>: View {
     }
 
     private func syncEditorTheme() {
-        let scheme = SystemAppearanceResolver.effectiveColorScheme
+        let scheme = AppThemeAppearanceResolver.effectiveColorScheme
         let resolved = EditorSyntaxThemeResolver.resolve(
             registry: LumiUIThemeRegistry.shared,
             extensions: editor.extensionRegistry,

@@ -75,6 +75,75 @@ struct ColorHexTests {
         let isBlack = (resolved?.redComponent ?? 1) < 0.05 && (resolved?.alphaComponent ?? 0) > 0.95
         #expect(isWhite || isBlack)
     }
+
+    @Test
+    @MainActor
+    func adaptiveColorFollowsFixedDarkThemeRegardlessOfSystemAppearance() {
+        struct DarkChrome: LumiAppChromeTheme {
+            let identifier = "test-dark"
+            let displayName = "Dark"
+            let compactName = "Dark"
+            let description = "Test"
+            let iconName = "moon"
+            let iconColor = Color.purple
+            let appearanceKind: ThemeAppearanceKind = .dark
+
+            func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
+                (.red, .green, .blue)
+            }
+
+            func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+                (.black, .gray, .white)
+            }
+
+            func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+                (.red, .green, .blue)
+            }
+        }
+
+        let previous = ActiveChromeTheme.current
+        ActiveChromeTheme.current = DarkChrome()
+        defer { ActiveChromeTheme.current = previous }
+
+        let adaptive = Color.adaptive(light: "FFFFFF", dark: "050510")
+        let resolved = NSColor(adaptive).usingColorSpace(.sRGB)
+
+        #expect(resolved != nil)
+        #expect((resolved?.redComponent ?? 1) < 0.05)
+        #expect(AppThemeAppearanceResolver.effectiveColorScheme == .dark)
+    }
+
+    @Test
+    @MainActor
+    func appThemeAppearanceResolverIgnoresSystemForFixedLightTheme() {
+        struct LightChrome: LumiAppChromeTheme {
+            let identifier = "test-light"
+            let displayName = "Light"
+            let compactName = "Light"
+            let description = "Test"
+            let iconName = "sun"
+            let iconColor = Color.yellow
+            let appearanceKind: ThemeAppearanceKind = .light
+
+            func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
+                (.red, .green, .blue)
+            }
+
+            func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+                (.white, .gray, .black)
+            }
+
+            func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+                (.red, .green, .blue)
+            }
+        }
+
+        let previous = ActiveChromeTheme.current
+        ActiveChromeTheme.current = LightChrome()
+        defer { ActiveChromeTheme.current = previous }
+
+        #expect(AppThemeAppearanceResolver.effectiveColorScheme == .light)
+    }
 }
 
 private extension RGBA {

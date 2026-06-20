@@ -4,8 +4,13 @@ import SwiftUI
 
 struct ProjectControlView: View {
     let projectPathStore: LumiCurrentProjectPathStoring?
-    @StateObject private var store = ProjectsStore()
+    @ObservedObject private var store: ProjectsStore
     @State private var isPopoverPresented = false
+
+    init(projectPathStore: LumiCurrentProjectPathStoring? = nil) {
+        self.projectPathStore = projectPathStore
+        self.store = ProjectsPlugin.sharedStore
+    }
 
     var body: some View {
         Button {

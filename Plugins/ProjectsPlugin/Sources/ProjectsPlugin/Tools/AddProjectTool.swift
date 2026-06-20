@@ -40,8 +40,8 @@ struct AddProjectTool: LumiAgentTool {
 
         return await MainActor.run {
             do {
-                let store = ProjectsStore()
-                let project = try store.addProject(path: path, select: false)
+                let store = ProjectsPlugin.sharedStore
+                let project = try store.add(path: path, select: false)
                 return Self.successMessage(project: project, projects: store.projects)
             } catch {
                 return "Error: \(error.localizedDescription)"

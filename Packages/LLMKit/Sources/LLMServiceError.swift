@@ -2,6 +2,20 @@ import Foundation
 
 /// `LLMService` 及其配置校验可能产生的唯一错误类型。
 public enum LLMServiceError: Error, LocalizedError, Equatable {
+    // MARK: - 不可重试判断
+
+    /// 配置类错误（API Key 未配置、供应商未找到等）属于确定性失败，不应重试。
+    public var isNonRetryable: Bool {
+        switch self {
+        case .apiKeyEmpty, .modelEmpty, .providerIdEmpty,
+             .temperatureOutOfRange, .maxTokensInvalid,
+             .providerNotFound, .invalidBaseURL, .cancelled:
+            return true
+        case .requestFailed:
+            return false
+        }
+    }
+
     // MARK: - 配置校验（`LLMConfig.validate()`）
 
     case apiKeyEmpty

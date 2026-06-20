@@ -1,27 +1,20 @@
 import Foundation
-
-public struct RAGRuntimeProject: Sendable, Equatable {
-    public let name: String
-    public let path: String
-
-    public init(name: String, path: String) {
-        self.name = name
-        self.path = path
-    }
-}
+import LumiCoreKit
 
 public enum RAGPluginRuntime {
     nonisolated(unsafe) public static var databaseDirectoryProvider: @Sendable () -> URL = {
         FileManager.default.temporaryDirectory.appendingPathComponent("Lumi-RAGPlugin", isDirectory: true)
     }
-    nonisolated(unsafe) public static var currentProjectProvider: @Sendable () -> RAGRuntimeProject? = { nil }
-    nonisolated(unsafe) public static var recentProjectsProvider: @Sendable () -> [RAGRuntimeProject] = { [] }
 
+    /// 当前项目路径，从内核 `LumiCurrentProjectPathStore` 获取。
     public static var currentProjectPath: String {
-        currentProjectProvider()?.path ?? ""
+        LumiCurrentProjectPathStore().currentProjectPath
     }
 
+    /// 当前项目名称，从路径推导。
     public static var currentProjectName: String {
-        currentProjectProvider()?.name ?? ""
+        let path = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.isEmpty else { return "" }
+        return URL(fileURLWithPath: path).lastPathComponent
     }
 }

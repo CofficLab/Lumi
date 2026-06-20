@@ -69,4 +69,46 @@ struct EditorSyntaxPaletteTests {
         #expect(resolved?.palette.backgroundHex == "282A36")
         #expect(resolved?.isDark == true)
     }
+
+    @Test
+    @MainActor
+    func derivedFromAdaptiveChromeUsesDarkBranchWhenThemeIsFixedDark() {
+        struct AdaptiveDarkChrome: LumiAppChromeTheme {
+            let identifier = "adaptive-dark"
+            let displayName = "Adaptive Dark"
+            let compactName = "Dark"
+            let description = "Test"
+            let iconName = "moon"
+            let iconColor = Color.purple
+            let appearanceKind: ThemeAppearanceKind = .dark
+
+            func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
+                (
+                    primary: Color.adaptive(light: "5B4FCF", dark: "5B4FCF"),
+                    secondary: Color.adaptive(light: "7C6FFF", dark: "7C6FFF"),
+                    tertiary: Color.adaptive(light: "00B4D8", dark: "00D4FF")
+                )
+            }
+
+            func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+                (
+                    deep: Color.adaptive(light: "F5F5FA", dark: "050510"),
+                    medium: Color.adaptive(light: "FFFFFF", dark: "0A0A1F"),
+                    light: Color.adaptive(light: "E8E8F2", dark: "151530")
+                )
+            }
+
+            func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+                (.purple, .pink, .cyan)
+            }
+        }
+
+        let previous = ActiveChromeTheme.current
+        ActiveChromeTheme.current = AdaptiveDarkChrome()
+        defer { ActiveChromeTheme.current = previous }
+
+        let palette = EditorSyntaxPalette.derived(from: AdaptiveDarkChrome(), colorScheme: .light)
+        #expect(palette.backgroundHex == "0A0A1F")
+        #expect(palette.text.colorHex == "FFFFFF")
+    }
 }

@@ -25,7 +25,7 @@ final class ProviderManager {
             .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
 
         reconcileSelectedProvider()
-        service.persist()
+        service.persistStateOnly()
     }
 
     func provider(byID id: String) -> (any LumiLLMProvider)? {
@@ -51,14 +51,14 @@ final class ProviderManager {
 
         if let conversationID,
            let index = service.conversations.firstIndex(where: { $0.id == conversationID }) {
-            var conversations = service.conversations
-            conversations[index].providerID = info.id
-            conversations[index].modelName = normalized
-            conversations[index].updatedAt = Date()
-            service.conversations = conversations
+            service.conversations[index].providerID = info.id
+            service.conversations[index].modelName = normalized
+            service.conversations[index].updatedAt = Date()
+            // 增量持久化：对话属性 + 状态
+            service.persistConversationAndState(service.conversations[index])
+        } else {
+            service.persistStateOnly()
         }
-
-        service.persist()
     }
 
     // MARK: - Model Resolution
@@ -89,7 +89,7 @@ final class ProviderManager {
 
     func setRoutingMode(_ mode: LumiModelRoutingMode) {
         service?.routingMode = mode
-        service?.persist()
+        service?.persistStateOnly()
     }
 
     // MARK: - Resolved Provider & Model (internal)

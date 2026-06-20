@@ -8,7 +8,7 @@ struct ProjectsPopoverView: View {
     @State private var isImporterPresented = false
     @State private var searchText = ""
 
-    private var filteredProjects: [LumiProject] {
+    private var filteredProjects: [LumiProjectEntry] {
         if searchText.isEmpty {
             return store.projects
         }

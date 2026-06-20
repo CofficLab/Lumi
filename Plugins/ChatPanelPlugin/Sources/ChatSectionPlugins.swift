@@ -17,17 +17,8 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
 
     @MainActor
     public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
-        else {
-            return []
-        }
-
-        return [
-            LumiChatSectionItem(id: info.id, order: info.order) {
-                ChatPendingSectionView(coordinator: coordinator)
-            }
-        ]
+        // Pending messages are now rendered inline inside ChatComposerSectionView
+        return []
     }
 }
 

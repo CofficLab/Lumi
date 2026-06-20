@@ -15,6 +15,7 @@ import LSPDocumentLinkEditorPlugin
 import LSPSelectionRangeEditorPlugin
 import EditorLSPContextCommandsPlugin
 import EditorChatIntegrationPlugin
+import EditorMinimapContextMenuPlugin
 import EditorMultiCursorCommandsPlugin
 import EditorVuePlugin
 import EditorJSPlugin
@@ -69,6 +70,7 @@ public enum EditorExtensionPluginRegistry {
         LSPSelectionRangeEditorPlugin.self,
         EditorLSPContextCommandsPlugin.self,
         EditorChatIntegrationPlugin.self,
+        EditorMinimapContextMenuPlugin.self,
         EditorMultiCursorCommandsPlugin.self,
         EditorVuePlugin.self,
         EditorJSPlugin.self,

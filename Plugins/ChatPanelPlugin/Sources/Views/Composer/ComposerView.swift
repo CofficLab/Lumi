@@ -42,8 +42,6 @@ struct ComposerView: View {
             .frame(height: inputHeight)
             .padding(.horizontal, 10)
             .padding(.top, 8)
-            .disabled(isSending && !canSend)
-            .opacity(isSending && !canSend ? 0.7 : 1)
 
             Rectangle()
                 .fill(theme.appSubtleBorder)
@@ -70,10 +68,9 @@ struct ComposerView: View {
                 if isSending {
                     StopButton(action: onStop)
                         .help(LumiPluginLocalization.string("Stop", bundle: .module))
-                } else {
-                    SendButton(isSending: false, canSend: canSend, action: sendIfPossible)
-                        .help(LumiPluginLocalization.string("Send", bundle: .module))
                 }
+                SendButton(isSending: isSending, canSend: canSend, action: sendIfPossible)
+                    .help(LumiPluginLocalization.string("Send", bundle: .module))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -88,9 +85,7 @@ struct ComposerView: View {
     }
 
     private func sendIfPossible() {
-        guard canSend, !isSending else {
-            return
-        }
+        guard canSend else { return }
         onSend()
     }
 }

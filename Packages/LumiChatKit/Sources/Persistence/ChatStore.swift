@@ -109,23 +109,127 @@ struct ChatStore {
         }
     }
 
+    // MARK: - Full Save (fallback, only for bulk sync)
+
     func save(_ snapshot: Snapshot) {
         do {
             try upsertConversations(snapshot.conversations)
             try upsertMessages(snapshot.messagesByConversationID)
+            try saveState(snapshot)
+        } catch {
+            assertionFailure("LumiChatKit failed to save SwiftData store: \(error)")
+        }
+    }
+
+    // MARK: - Incremental Saves
+
+    /// 增量保存单个对话（新建或更新）。
+    /// 只按 ID fetch 该条记录，不做全量扫描。
+    func upsertConversation(_ conversation: LumiConversationSummary) {
+        do {
+            let entity = try fetchConversation(id: conversation.id) ?? Conversation(
+                id: conversation.id,
+                title: conversation.title
+            )
+            if entity.modelContext == nil {
+                context.insert(entity)
+            }
+            applyConversation(conversation, to: entity)
+            try context.save()
+        } catch {
+            assertionFailure("LumiChatKit failed to upsert conversation: \(error)")
+        }
+    }
+
+    /// 增量保存单条消息。只按 ID fetch 该条记录。
+    func upsertMessage(_ message: LumiChatMessage) {
+        do {
+            let entity = try fetchMessage(id: message.id) ?? ChatMessageEntity(
+                id: message.id,
+                conversationId: message.conversationID,
+                role: message.role.rawValue,
+                content: message.content
+            )
+            if entity.modelContext == nil {
+                context.insert(entity)
+            }
+            applyMessage(message, to: entity)
+            try context.save()
+        } catch {
+            assertionFailure("LumiChatKit failed to upsert message: \(error)")
+        }
+    }
+
+    /// 增量更新状态（selectedConversationID、provider、model、routingMode）。
+    func saveState(_ snapshot: Snapshot) throws {
+        let state = try currentState(createIfNeeded: true) ?? ChatStateEntity()
+        state.selectedConversationID = snapshot.selectedConversationID
+        state.selectedProviderID = snapshot.selectedProviderID
+        state.selectedModel = snapshot.selectedModel
+        state.routingMode = snapshot.routingMode.rawValue
+        if state.modelContext == nil {
+            context.insert(state)
+        }
+        try context.save()
+    }
+
+    /// 只保存状态部分（不含对话和消息），用于 selectConversation 等轻量操作。
+    func saveStateOnly(
+        selectedConversationID: UUID?,
+        selectedProviderID: String?,
+        selectedModel: String?,
+        routingMode: LumiModelRoutingMode
+    ) {
+        do {
             let state = try currentState(createIfNeeded: true) ?? ChatStateEntity()
-            state.selectedConversationID = snapshot.selectedConversationID
-            state.selectedProviderID = snapshot.selectedProviderID
-            state.selectedModel = snapshot.selectedModel
-            state.routingMode = snapshot.routingMode.rawValue
+            state.selectedConversationID = selectedConversationID
+            state.selectedProviderID = selectedProviderID
+            state.selectedModel = selectedModel
+            state.routingMode = routingMode.rawValue
             if state.modelContext == nil {
                 context.insert(state)
             }
             try context.save()
         } catch {
-            assertionFailure("LumiChatKit failed to save SwiftData store: \(error)")
+            assertionFailure("LumiChatKit failed to save state: \(error)")
         }
     }
+
+    /// 删除单个对话及其所有消息。
+    func deleteConversationAndMessages(conversationID: UUID) {
+        do {
+            // 删除该对话的所有消息
+            let messageDescriptor = FetchDescriptor<ChatMessageEntity>(
+                predicate: #Predicate { $0.conversationId == conversationID }
+            )
+            for entity in try context.fetch(messageDescriptor) {
+                context.delete(entity)
+            }
+
+            // 删除对话本身
+            if let conversation = try fetchConversation(id: conversationID) {
+                context.delete(conversation)
+            }
+
+            try context.save()
+        } catch {
+            assertionFailure("LumiChatKit failed to delete conversation: \(error)")
+        }
+    }
+
+    /// 删除单条消息。
+    func deleteMessage(id: UUID) {
+        do {
+            if let entity = try fetchMessage(id: id) {
+                context.delete(entity)
+                try context.save()
+            }
+        } catch {
+            assertionFailure("LumiChatKit failed to delete message: \(error)")
+        }
+    }
+
+    // MARK: - Full Upsert (internal, used by save() fallback)
 
     private func upsertConversations(_ conversations: [LumiConversationSummary]) throws {
         let existingEntities = try context.fetch(FetchDescriptor<Conversation>())
@@ -144,16 +248,7 @@ struct ChatStore {
             if entity.modelContext == nil {
                 context.insert(entity)
             }
-            entity.title = conversation.title
-            entity.preview = conversation.preview
-            entity.createdAt = conversation.createdAt
-            entity.updatedAt = conversation.updatedAt
-            entity.chatMode = conversation.automationLevel?.rawValue
-            entity.verbosity = conversation.verbosity?.rawValue
-            entity.languagePreference = conversation.language?.rawValue
-            entity.providerId = conversation.providerID
-            entity.model = conversation.modelName
-            entity.projectId = conversation.projectPath
+            applyConversation(conversation, to: entity)
         }
     }
 
@@ -177,19 +272,56 @@ struct ChatStore {
             if entity.modelContext == nil {
                 context.insert(entity)
             }
-            entity.conversationId = message.conversationID
-            entity.role = message.role.rawValue
-            entity.content = message.content
-            entity.timestamp = message.createdAt
-            entity.providerId = message.providerID
-            entity.modelName = message.modelName
-            entity.isError = message.isError
-            entity.rawErrorDetail = message.rawErrorDetail
-            entity.renderKind = message.renderKind
-            entity.metadataJSON = encode(message.metadata)
-            entity.toolCallsJSON = encode(message.toolCalls)
-            entity.toolCallID = message.toolCallID
+            applyMessage(message, to: entity)
         }
+    }
+
+    // MARK: - Single-Record Fetches
+
+    private func fetchConversation(id: UUID) throws -> Conversation? {
+        var descriptor = FetchDescriptor<Conversation>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    private func fetchMessage(id: UUID) throws -> ChatMessageEntity? {
+        var descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    // MARK: - Field Application
+
+    private func applyConversation(_ conversation: LumiConversationSummary, to entity: Conversation) {
+        entity.title = conversation.title
+        entity.preview = conversation.preview
+        entity.createdAt = conversation.createdAt
+        entity.updatedAt = conversation.updatedAt
+        entity.chatMode = conversation.automationLevel?.rawValue
+        entity.verbosity = conversation.verbosity?.rawValue
+        entity.languagePreference = conversation.language?.rawValue
+        entity.providerId = conversation.providerID
+        entity.model = conversation.modelName
+        entity.projectId = conversation.projectPath
+    }
+
+    private func applyMessage(_ message: LumiChatMessage, to entity: ChatMessageEntity) {
+        entity.conversationId = message.conversationID
+        entity.role = message.role.rawValue
+        entity.content = message.content
+        entity.timestamp = message.createdAt
+        entity.providerId = message.providerID
+        entity.modelName = message.modelName
+        entity.isError = message.isError
+        entity.rawErrorDetail = message.rawErrorDetail
+        entity.renderKind = message.renderKind
+        entity.metadataJSON = encode(message.metadata)
+        entity.toolCallsJSON = encode(message.toolCalls)
+        entity.toolCallID = message.toolCallID
     }
 
     private func currentState(createIfNeeded: Bool) throws -> ChatStateEntity? {

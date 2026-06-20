@@ -30,6 +30,7 @@ private struct ChromeFixture: LumiAppChromeTheme {
 
 struct ChromeToUIThemeAdapterTests {
     @Test
+    @MainActor
     func mapsIdentityAndAccentToUITheme() {
         let chrome = ChromeFixture()
         let ui = ChromeToUIThemeAdapter(chrome: chrome)

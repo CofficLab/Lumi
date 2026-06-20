@@ -64,7 +64,11 @@ final class MessageManager {
         }
         service.messagesByConversationID[message.conversationID, default: []].append(message)
         updateConversationSummary(for: message)
-        service.persist()
+        // 增量持久化：只保存这条消息 + 对话预览更新
+        service.persistMessage(message)
+        if let updatedConversation = service.conversations.first(where: { $0.id == message.conversationID }) {
+            service.store.upsertConversation(updatedConversation)
+        }
         postMessageSavedNotification(for: message)
     }
 
@@ -76,7 +80,8 @@ final class MessageManager {
         }
         messages.removeAll { $0.id == id }
         service.messagesByConversationID[conversationID] = messages
-        service.persist()
+        // 增量删除：只删除这一条消息
+        service.persistDeleteMessage(id: id)
     }
 
     func updateToolCallResult(
@@ -97,7 +102,8 @@ final class MessageManager {
         toolCalls[toolCallIndex].result = result
         messages[messageIndex].toolCalls = toolCalls
         service.messagesByConversationID[conversationID] = messages
-        service.persist()
+        // 增量持久化：只更新这条消息
+        service.persistMessage(messages[messageIndex])
     }
 
     // MARK: - Notifications

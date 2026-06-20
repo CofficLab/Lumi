@@ -9,6 +9,33 @@ public enum SystemAppearanceResolver {
     }
 }
 
+/// 解析当前 Lumi 应用主题的有效明暗，固定明暗主题不受系统外观影响。
+@MainActor
+public enum AppThemeAppearanceResolver {
+    public static var effectiveColorScheme: ColorScheme {
+        switch ActiveChromeTheme.current.appearanceKind {
+        case .dark:
+            return .dark
+        case .light:
+            return .light
+        case .system:
+            return SystemAppearanceResolver.effectiveColorScheme
+        }
+    }
+
+    /// `Color.adaptive(light:dark:)` 应使用的分支；固定主题忽略 `NSAppearance`。
+    nonisolated static func adaptiveUsesDarkBranch(for appearance: NSAppearance) -> Bool {
+        switch ActiveChromeTheme.current.appearanceKind {
+        case .dark:
+            return true
+        case .light:
+            return false
+        case .system:
+            return appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        }
+    }
+}
+
 extension Color {
     public init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -42,7 +69,7 @@ extension Color {
 
     public init(light: String, dark: String) {
         self.init(nsColor: NSColor(name: nil) { appearance in
-            if appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
+            if AppThemeAppearanceResolver.adaptiveUsesDarkBranch(for: appearance) {
                 return NSColor(Color(hex: dark))
             } else {
                 return NSColor(Color(hex: light))

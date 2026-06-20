@@ -1,49 +1,35 @@
+import LumiUI
 import SwiftUI
-import SuperLogKit
 import LumiCoreKit
+import ProjectsPlugin
 
 @MainActor
-public struct RAGSettingsPopoverView: View, SuperLog {
-    public nonisolated static var emoji: String { "🦞" }
-    public nonisolated static var verbose: Bool { false }
-    @Environment(\.dismiss) private var dismiss
-
+struct RAGSettingsPopoverView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
+    
+    private var projectStore: ProjectsStore {
+        ProjectsPlugin.sharedStore
+    }
 
-    public var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Label(LumiPluginLocalization.string("RAG Index Status", bundle: .module), systemImage: "doc.text.magnifyingglass")
-                    .font(.headline)
-                Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
-
-            Divider()
-
-            ScrollView {
+    var body: some View {
+        StatusBarPopoverScaffold(
+            title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
+            systemImage: "doc.text.magnifyingglass"
+        ) {
+            if trackedProjects.isEmpty {
+                Text(LumiPluginLocalization.string("No Projects", bundle: .module))
+                    .foregroundColor(theme.textSecondary)
+            } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    if trackedProjects.isEmpty {
-                        Text(LumiPluginLocalization.string("No Projects", bundle: .module))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(trackedProjects) { project in
-                            projectRow(project)
-                        }
+                    ForEach(trackedProjects) { project in
+                        projectRow(project)
                     }
                 }
-                .padding(16)
             }
         }
-        .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
+        .task(id: trackedProjectsKey) {
             await loadStatus()
         }
         .onRAGIndexProgressDidChange { event in
@@ -53,36 +39,43 @@ public struct RAGSettingsPopoverView: View, SuperLog {
             }
         }
     }
-}
 
-// MARK: - Project Row
+    private var trackedProjectsKey: String {
+        trackedProjects.map(\.path).joined(separator: "|")
+    }
 
-extension RAGSettingsPopoverView {
+    // MARK: - Project Row
+
     @ViewBuilder
     private func projectRow(_ project: RAGTrackedProjectPopover) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(project.name)
-                .font(.subheadline)
-                .fontWeight(.medium)
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
             Text(project.path)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
             if let status = statusesByPath[project.path] {
                 HStack(spacing: 10) {
                     Label("\(status.fileCount)", systemImage: "doc")
-                    Label("\(status.chunkCount)", systemImage: "square.stack.3d.up")
-                    Label(status.isStale ? LumiPluginLocalization.string("Outdated", bundle: .module) : LumiPluginLocalization.string("Up to Date", bundle: .module), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(status.isStale ? .orange : .green)
+                    Label("\(status.chunkCount)", systemImage: "square.stack.3d.up.fill")
+                    Label(
+                        status.isStale
+                            ? LumiPluginLocalization.string("Outdated", bundle: .module)
+                            : LumiPluginLocalization.string("Up to Date", bundle: .module),
+                        systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+                    )
+                    .foregroundColor(status.isStale ? theme.warning : theme.success)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
             } else {
                 Text(LumiPluginLocalization.string("Not indexed yet", bundle: .module))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
@@ -91,22 +84,22 @@ extension RAGSettingsPopoverView {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(theme.elevatedSurface)
         .cornerRadius(8)
     }
-}
 
-// MARK: - Private
+    // MARK: - Private
 
-extension RAGSettingsPopoverView {
     private var trackedProjects: [RAGTrackedProjectPopover] {
-        let recent = RAGPluginRuntime.recentProjectsProvider().map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) }
+        let recent = projectStore.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) }
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProjectPopover]
         if currentPath.isEmpty {
             current = []
         } else {
-            let name = RAGPluginRuntime.currentProjectName.isEmpty ? URL(fileURLWithPath: currentPath).lastPathComponent : RAGPluginRuntime.currentProjectName
+            let name = RAGPluginRuntime.currentProjectName.isEmpty
+                ? URL(fileURLWithPath: currentPath).lastPathComponent
+                : RAGPluginRuntime.currentProjectName
             current = [RAGTrackedProjectPopover(name: name, path: currentPath)]
         }
         return dedupProjects(current + recent)
@@ -147,7 +140,7 @@ extension RAGSettingsPopoverView {
 }
 
 private struct RAGTrackedProjectPopover: Identifiable, Equatable {
-    public var id: String { path }
-    public let name: String
-    public let path: String
+    var id: String { path }
+    let name: String
+    let path: String
 }

@@ -35,10 +35,15 @@ final class ConversationManager {
             modelName: service.selectedModel,
             projectPath: resolvedProjectPath
         )
+
+        // 合并 @Published 通知：在修改前手动发一次通知，
+        // 让 SwiftUI 只在这批变更完成后重绘一次。
+        service.objectWillChange.send()
         service.conversations.insert(conversation, at: 0)
         service.messagesByConversationID[conversation.id] = []
         service.selectedConversationID = conversation.id
-        service.persist()
+        // 增量持久化：只插入新对话 + 保存状态 + 合并 revision
+        service.persistConversationAndStateMerged(conversation)
         return conversation.id
     }
 
@@ -50,7 +55,8 @@ final class ConversationManager {
         }
 
         service.selectedConversationID = id
-        service.persist()
+        // 只保存状态（selectedConversationID），不扫描对话和消息
+        service.persistStateOnly()
     }
 
     func conversationSummary(for id: UUID) -> LumiConversationSummary? {
@@ -70,7 +76,8 @@ final class ConversationManager {
             service.selectedConversationID = service.conversations.first?.id
         }
 
-        service.persist()
+        // 增量删除：只删除该对话及其消息，不全量扫描
+        service.persistDeleteConversation(id: id)
     }
 
     @discardableResult
@@ -84,7 +91,7 @@ final class ConversationManager {
 
         service.conversations[index].title = trimmed
         service.conversations[index].updatedAt = Date()
-        service.persist()
+        service.persistConversationAndState(service.conversations[index])
         return true
     }
 
@@ -98,7 +105,7 @@ final class ConversationManager {
 
         service.conversations[index].projectPath = Self.normalizedOptionalPath(projectPath)
         service.conversations[index].updatedAt = Date()
-        service.persist()
+        service.persistConversationAndState(service.conversations[index])
         return true
     }
 
@@ -122,7 +129,7 @@ final class ConversationManager {
 
         service.conversations[index].language = language
         service.conversations[index].updatedAt = Date()
-        service.persist()
+        service.persistConversationAndState(service.conversations[index])
     }
 
     // MARK: - Automation Level
@@ -145,7 +152,7 @@ final class ConversationManager {
 
         service.conversations[index].automationLevel = automationLevel
         service.conversations[index].updatedAt = Date()
-        service.persist()
+        service.persistConversationAndState(service.conversations[index])
     }
 
     // MARK: - Verbosity
@@ -168,7 +175,7 @@ final class ConversationManager {
 
         service.conversations[index].verbosity = verbosity
         service.conversations[index].updatedAt = Date()
-        service.persist()
+        service.persistConversationAndState(service.conversations[index])
     }
 
     // MARK: - Title helper
