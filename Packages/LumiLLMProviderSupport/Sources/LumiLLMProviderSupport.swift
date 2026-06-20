@@ -67,18 +67,28 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
         let chunkHandler = onChunk
-        try await apiService.sendStreamingRequest(request: httpRequest, body: body) { [self] chunkData in
-            await Self.processStreamChunk(
-                chunkData: chunkData,
-                parse: { try self.adapter.parseStreamChunk(data: $0) },
-                state: state,
-                onChunk: chunkHandler
-            )
-        }
+        try await apiService.sendStreamingRequest(
+            request: httpRequest,
+            body: body,
+            onResponseReceived: { response in
+                await state.recordHttpResponse(statusCode: response.statusCode)
+            },
+            onChunk: { [self] chunkData in
+                await Self.processStreamChunk(
+                    chunkData: chunkData,
+                    parse: { try self.adapter.parseStreamChunk(data: $0) },
+                    state: state,
+                    onChunk: chunkHandler
+                )
+            }
+        )
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
-            throw LumiLLMProviderSupportError.streamingFailed(error)
+            let enrichedError = await state.httpStatusCode.map { code in
+                "HTTP \(code) \(error)"
+            } ?? error
+            throw LumiLLMProviderSupportError.streamingFailed(enrichedError)
         }
 
         return LumiChatMessage(
@@ -242,18 +252,41 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
         let chunkHandler = onChunk
-        try await apiService.sendStreamingRequest(request: httpRequest, body: body) { [self] chunkData in
-            await OpenAICompatibleLumiProvider.processStreamChunk(
-                chunkData: chunkData,
-                parse: { try self.adapter.parseStreamChunk(data: $0) },
-                state: state,
-                onChunk: chunkHandler
-            )
-        }
+        try await apiService.sendStreamingRequest(
+            request: httpRequest,
+            body: body,
+            onResponseReceived: { response in
+                await state.recordHttpResponse(statusCode: response.statusCode)
+            },
+            onChunk: { [self] chunkData in
+                let shouldContinue = await OpenAICompatibleLumiProvider.processStreamChunk(
+                    chunkData: chunkData,
+                    parse: { try self.adapter.parseStreamChunk(data: $0) },
+                    state: state,
+                    onChunk: chunkHandler
+                )
+                if !shouldContinue {
+                    return false
+                }
+                // Capture raw response body on streaming errors
+                if let error = await state.streamError,
+                   await state.httpResponseBody == nil {
+                    await state.recordHttpResponse(
+                        statusCode: await state.httpStatusCode,
+                        headers: nil,
+                        body: String(data: chunkData, encoding: .utf8)
+                    )
+                }
+                return true
+            }
+        )
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
-            throw LumiLLMProviderSupportError.streamingFailed(error)
+            let enrichedError = await state.httpStatusCode.map { code in
+                "HTTP \(code) \(error)"
+            } ?? error
+            throw LumiLLMProviderSupportError.streamingFailed(enrichedError)
         }
 
         return LumiChatMessage(
