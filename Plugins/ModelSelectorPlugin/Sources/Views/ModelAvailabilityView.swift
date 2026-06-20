@@ -1,3 +1,4 @@
+import LLMAvailabilityPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -7,40 +8,147 @@ struct ModelAvailabilityView: View {
 
     let chatService: any LumiChatServicing
 
+    @ObservedObject private var store = LLMAvailabilityStore.shared
+
     var body: some View {
         List {
-            Section(LumiPluginLocalization.string("Registered Providers", bundle: .module)) {
-                ForEach(chatService.providerInfos) { provider in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(provider.displayName)
-                            .font(.system(size: 15, weight: .semibold))
-                        Text(
-                            String(
-                                format: LumiPluginLocalization.string("%lld models", bundle: .module),
-                                provider.availableModels.count
-                            )
-                        )
-                            .font(.appCaption)
-                            .foregroundColor(theme.textSecondary)
-                        Text(provider.description)
+            // MARK: - 检测状态
+
+            if store.isCheckingAll {
+                Section {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text(LumiPluginLocalization.string("Checking availability...", bundle: .module))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                     }
-                    .padding(.vertical, 4)
                 }
             }
 
-            Section(LumiPluginLocalization.string("Usage Signals", bundle: .module)) {
-                Text(verbatim: LumiPluginLocalization.string(
-                    "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing.",
-                    bundle: .module
-                ))
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
+            // MARK: - 可用的供应商+模型
+
+            let availableProviders = store.providers.filter { $0.hasAvailableModels }
+            if !availableProviders.isEmpty {
+                Section(LumiPluginLocalization.string("Available", bundle: .module)) {
+                    ForEach(availableProviders) { provider in
+                        providerRow(provider)
+                    }
+                }
+            }
+
+            // MARK: - 不可用的供应商
+
+            let unavailableProviders = store.providers.filter { !$0.hasAvailableModels }
+            if !unavailableProviders.isEmpty {
+                Section(LumiPluginLocalization.string("Unavailable", bundle: .module)) {
+                    ForEach(unavailableProviders) { provider in
+                        providerRow(provider)
+                    }
+                }
+            }
+
+            // MARK: - 空状态
+
+            if store.providers.isEmpty {
+                Section {
+                    AppEmptyState(
+                        icon: "network.slash",
+                        title: LumiPluginLocalization.string("No Providers Registered", bundle: .module)
+                    )
+                }
             }
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .background(theme.background)
+    }
+
+    // MARK: - Provider Row
+
+    @ViewBuilder
+    private func providerRow(_ provider: LLMProviderAvailability) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(provider.displayName)
+                    .font(.system(size: 15, weight: .semibold))
+
+                if provider.hasAvailableModels {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 12))
+                }
+            }
+
+            ForEach(provider.models) { model in
+                modelRow(model)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Model Row
+
+    @ViewBuilder
+    private func modelRow(_ model: LLMModelAvailability) -> some View {
+        HStack(spacing: 6) {
+            statusIcon(model.status)
+
+            Text(model.modelId)
+                .font(.system(size: 13))
+                .foregroundColor(theme.textPrimary)
+
+            Spacer()
+
+            statusText(model.status)
+        }
+        .padding(.leading, 8)
+    }
+
+    // MARK: - Status Components
+
+    @ViewBuilder
+    private func statusIcon(_ status: LLMAvailabilityStatus) -> some View {
+        switch status {
+        case .available:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+                .font(.system(size: 11))
+        case .checking:
+            ProgressView()
+                .scaleEffect(0.5)
+                .frame(width: 12, height: 12)
+        case .unavailable:
+            Image(systemName: "xmark.circle.fill")
+                .foregroundColor(.red)
+                .font(.system(size: 11))
+        case .unknown:
+            Image(systemName: "questionmark.circle.fill")
+                .foregroundColor(.secondary)
+                .font(.system(size: 11))
+        }
+    }
+
+    @ViewBuilder
+    private func statusText(_ status: LLMAvailabilityStatus) -> some View {
+        switch status {
+        case .available:
+            Text(LumiPluginLocalization.string("Available", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(.green)
+        case .checking:
+            Text(LumiPluginLocalization.string("Checking...", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+        case .unavailable(let reason):
+            Text(reason)
+                .font(.appCaption)
+                .foregroundColor(.red)
+                .lineLimit(1)
+        case .unknown:
+            Text(LumiPluginLocalization.string("Unknown", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+        }
     }
 }

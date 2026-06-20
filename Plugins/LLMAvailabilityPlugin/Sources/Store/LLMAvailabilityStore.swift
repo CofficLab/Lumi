@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import LLMKit
+import LumiCoreKit
 import SuperLogKit
 
 public enum LLMAvailabilityStatus: Equatable, Sendable {
@@ -72,6 +73,22 @@ public final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
     }
 
     public func initialize(providers providersInfo: [LLMProviderInfo]) {
+        let providers = providersInfo.map { info in
+            LLMProviderAvailability(
+                providerId: info.id,
+                displayName: info.displayName,
+                models: info.availableModels.map { LLMModelAvailability(modelId: $0) }
+            )
+        }
+
+        lock.lock()
+        _providers = providers
+        lock.unlock()
+        publishChange()
+    }
+
+    /// 使用 `LumiCoreKit.LumiLLMProviderInfo` 初始化（新架构入口）。
+    public func initializeFromLumiProviders(_ providersInfo: [LumiLLMProviderInfo]) {
         let providers = providersInfo.map { info in
             LLMProviderAvailability(
                 providerId: info.id,

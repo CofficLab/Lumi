@@ -18,12 +18,14 @@ let package = Package(
         .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Plugins/LLMAvailabilityPlugin"),
     ],
     targets: [
         .target(
             name: "ModelSelectorPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "LLMAvailabilityPlugin", package: "LLMAvailabilityPlugin"),
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

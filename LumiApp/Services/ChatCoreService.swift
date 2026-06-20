@@ -49,9 +49,13 @@ final class ChatCoreService {
             }
         )
         toolService.registerTools(pluginService.agentTools(context: context))
-        chatService.registerProviders(pluginService.llmProviders(context: context))
+        let providers = pluginService.llmProviders(context: context)
+        chatService.registerProviders(providers)
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
         chatService.registerToolService(toolService)
+
+        // 初始化 LLM 可用性检测
+        LumiPluginBootstrap.configureAvailabilityChecker(providers: providers)
     }
 }
