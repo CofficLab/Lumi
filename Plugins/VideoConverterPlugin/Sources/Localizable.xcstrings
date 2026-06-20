@@ -1,0 +1,77 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld%%" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Convert" : {
+
+    },
+    "Convert video formats using FFmpeg" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert video formats using FFmpeg"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 FFmpeg 转换视频格式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 FFmpeg 轉換影片格式"
+          }
+        }
+      }
+    },
+    "Drag & drop a video file here" : {
+
+    },
+    "Format" : {
+
+    },
+    "Log" : {
+
+    },
+    "or click to browse" : {
+
+    },
+    "Output Format" : {
+
+    },
+    "Video Converter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video Converter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "视频转换器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "影片轉換器"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
