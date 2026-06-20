@@ -3,8 +3,10 @@ import SwiftUI
 
 public extension LumiUITheme {
     /// AppKit 窗口/控件应使用的外观，与 ``preferredColorScheme`` 保持一致。
+    /// `nil` 表示清除强制外观，跟随系统。
     var preferredAppKitAppearance: NSAppearance? {
-        switch preferredColorScheme {
+        guard let scheme = preferredColorScheme else { return nil }
+        switch scheme {
         case .dark:
             return NSAppearance(named: .darkAqua)
         case .light:
