@@ -3,35 +3,29 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.5.2</title>
-            <pubDate>Sat, 20 Jun 2026 05:13:54 +0000</pubDate>
-            <sparkle:version>231</sparkle:version>
-            <sparkle:shortVersionString>4.5.2</sparkle:shortVersionString>
+            <title>4.6.0</title>
+            <pubDate>Sat, 20 Jun 2026 14:31:20 +0000</pubDate>
+            <sparkle:version>232</sparkle:version>
+            <sparkle:shortVersionString>4.6.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.5.2</h2>
-<h3>Changes since v4.5.1</h3>
+            <description><![CDATA[<h2>Release v4.6.0</h2>
+<h3>Changes since v4.5.2</h3>
 <ul>
-<li>feat(editor): add EditorMinimapContextMenuPlugin for toggle minimap via context menu</li>
-<li>feat(rag): show project name in status bar popover</li>
-<li>fix(chat): allow typing while LLM is streaming to restore send queue behavior</li>
-<li>fix(chat): input field no longer loses cursor when empty</li>
-<li>fix(chat): skip retry for non-retryable errors like missing API key</li>
-<li>fix(editor): context menu commands disappear after first use due to recent/frequent split</li>
-<li>fix(rag): ensure service is initialized before checking index status</li>
-<li>fix(rag): hide stale warning from UI, reduce maintenance interval to 60s</li>
-<li>fix(rag): show current file on same line in indexing progress popover</li>
-<li>fix(rag): update popover when project switches via ProjectsPlugin</li>
-<li>fix(theme): fixed-appearance themes no longer follow system light/dark</li>
-<li>fix(ui): system appearance theme should query effective color scheme directly</li>
-<li>perf(chat): switch to incremental persistence to eliminate new-conversation lag</li>
-<li>refactor(chat): inline pending messages in composer and fix send button state</li>
-<li>refactor(core): extract LumiProjectEntry model and update plugin bootstrap</li>
-<li>refactor(core): migrate project storage from kernel to ProjectsPlugin</li>
-<li>refactor(plugins): adapt AgentRAGPlugin to new project storage architecture</li>
+<li>feat: add plugin stage declaration and display in settings</li>
+<li>feat(availability): restore LLM provider availability checking</li>
+<li>feat(llm): enrich streaming errors with HTTP status code and response details</li>
+<li>feat(menubar): restore inactive icon by default, activate on caffeinate/update events</li>
+<li>feat(plugin): add VideoConverterPlugin for video format conversion</li>
+<li>feat(video-plugin): add i18n support and localization tests</li>
+<li>fix(llm): include raw response preview in parse error messages</li>
+<li>fix(theme): resolve system appearance via UserDefaults to avoid window appearance pollution</li>
+<li>fix(theme): system theme retains previous fixed appearance after switch</li>
+<li>refactor(conversation-list): replace List with ScrollView+LazyVStack</li>
+<li>refactor(theme): merge VS Code dark/light plugins into single ThemeVscodePlugin with auto theme</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.2</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.6.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.2/Lumi_4.5.2_arm64.dmg" length="47428828" type="application/octet-stream" sparkle:edSignature="rZjvOUAqjx8itS4o8yQ4mU9yXUuUmsKytWDPBqx6+mo7J7GgSvglyjTTDFBGhDNf/qE5ybmumUXaK/UagJOQDg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.6.0/Lumi_4.6.0_arm64.dmg" length="49391703" type="application/octet-stream" sparkle:edSignature="mFgiQ76HB/S46TXwPA5rGHpIHfO2awYUaJgrV4ZBeItnpRkbuHs/KsSysVmM6aeBEEXLo4ouR/JpPhLyfZ0wBg=="/>
         </item>
     </channel>
 </rss>
