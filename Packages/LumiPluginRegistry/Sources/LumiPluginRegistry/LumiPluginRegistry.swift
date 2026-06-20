@@ -122,6 +122,7 @@ import ConversationNewPlugin
 import DisplayControlPlugin
 import LogoSmartLightPlugin
 import LogoCofficPlugin
+import VideoConverterPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -251,6 +252,7 @@ public enum LumiPluginRegistry {
         AppIconDesignerPlugin.self,
         DisplayControlPlugin.self,
         LogoSmartLightPlugin.self,
-        LogoCofficPlugin.self
+        LogoCofficPlugin.self,
+        VideoConverterPlugin.self
     ]
 }

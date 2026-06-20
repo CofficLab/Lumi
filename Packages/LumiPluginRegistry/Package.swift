@@ -187,7 +187,8 @@ let package = Package(
         .package(path: "../../Plugins/AppIconDesignerPlugin"),
         .package(path: "../../Plugins/DisplayControlPlugin"),
         .package(path: "../../Plugins/LogoSmartLightPlugin"),
-        .package(path: "../../Plugins/LogoCofficPlugin")
+        .package(path: "../../Plugins/LogoCofficPlugin"),
+        .package(path: "../../Plugins/VideoConverterPlugin")
     ],
     targets: [
         .target(
@@ -366,7 +367,8 @@ let package = Package(
                 .product(name: "AppIconDesignerPlugin", package: "AppIconDesignerPlugin"),
                 .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
                 .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin"),
-                .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin")
+                .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
+                .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin")
             ]
         )
     ]
