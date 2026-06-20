@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.5.0</title>
-            <pubDate>Thu, 18 Jun 2026 11:36:22 +0000</pubDate>
-            <sparkle:version>229</sparkle:version>
-            <sparkle:shortVersionString>4.5.0</sparkle:shortVersionString>
+            <title>4.5.1</title>
+            <pubDate>Fri, 19 Jun 2026 04:58:23 +0000</pubDate>
+            <sparkle:version>230</sparkle:version>
+            <sparkle:shortVersionString>4.5.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.5.0</h2>
-<h3>Changes since v4.4.0</h3>
+            <description><![CDATA[<h2>Release v4.5.1</h2>
+<h3>Changes since v4.5.0</h3>
 <ul>
-<li>document:  update documentation</li>
-<li>feat: add xcassets asset catalog preview support</li>
-<li>feat(app-store-connect): add API disk cache and improve loading UX</li>
-<li>feat(app-store-connect): add create version flow with smart defaults</li>
-<li>feat(app-store-connect): add HTML cover art docs and agent tools</li>
-<li>feat(app-store-connect): add production screenshot preview cache</li>
-<li>feat(app-store-connect): improve cover art preview and toolbar styling</li>
-<li>feat(app-store-connect): persist selected app and add cover art scaffold</li>
-<li>feat(app-store-connect): refactor cover art around device families</li>
-<li>feat(app-store-connect): reorganize views and polish distribution workflow</li>
-<li>feat(chat-section): add header and toolbar chrome with plugin injection</li>
-<li>feat(editor-swift): add build and run for Xcode and SPM projects</li>
-<li>feat(editor-swift): show build logs in bottom panel instead of sheet</li>
-<li>feat(llm-provider-zhipu): enhance API request to mimic Claude Code behavior</li>
-<li>feat(message-list): add subtle gradient background to chat message area</li>
-<li>feat(model-selector): restore per-model TPS display from chat history</li>
-<li>feat(model-selector): show current model TPS in chat toolbar</li>
-<li>fix: normalize log messages to follow SuperLog convention</li>
-<li>fix(app-store-connect): adjust cover art page spacing and localization catalog</li>
-<li>fix(app-store-connect): hide screenshot device picker when only one size</li>
+<li>feat(chat): hide tool execution messages in brief verbosity mode</li>
+<li>feat(conversation-list): show provider and model info in conversation list</li>
+<li>feat(i18n): update conversation list plugin localization strings</li>
+<li>feat(model-selector): restore context window size badge display</li>
+<li>feat(model): restore model capabilities declaration and badge display</li>
+<li>feat(providers): add contextWindowSizes for all LLM provider models</li>
+<li>feat(rag): add rebuild index button to status bar popover</li>
+<li>feat(status-message): replace loading spinner with breathing avatar animation</li>
+<li>feat(ui): unify pulse ripple animation across status messages and conversation list</li>
+<li>fix(appstore): hide cover art sidebar when list is empty</li>
+<li>fix(i18n): Fix missing localization issues</li>
+<li>fix(providers): correct context window sizes per official docs</li>
+<li>fix(status): remove checkmark emoji from tool completed status message</li>
+<li>fix(zhipu): inherit AnthropicCompatibleLumiProvider for TPS display</li>
+<li>refactor(rag): add background index maintenance via rootOverlay</li>
+<li>refactor(rag): bundle vec0.dylib inside AgentRAGPlugin package</li>
+<li>refactor(rag): replace system SQLite with CSQLite target for vec0 support</li>
+<li>refactor(ui): unify app picker toolbar style with project picker and add loading overlay</li>
+<li>refactor(ui): unify project popover style with app picker, add search and move add button to header</li>
+<li>refactor(ui): unify pulse ripple to shared LumiUI component across conversation title, list, and status messages</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.0/Lumi_4.5.0_x86_64.dmg" length="51187962" type="application/octet-stream" sparkle:edSignature="g9GROPPHXWBD1EjXLHOrQwLP9KL3Nh2umkDDzdFCrUpLpK/MWlprmkI7jHOaavZGdgpII9sH/mDKWRnhkak0Cg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.1/Lumi_4.5.1_x86_64.dmg" length="51834337" type="application/octet-stream" sparkle:edSignature="I/V9IzJEbHSPPjWKC+hvMcoUNyzOvrxa5Q8CQ4mTCT80J5P2Ld6qX9EBRzq50gFb0cP4LzUQ46PRLp9pwBB7Cw=="/>
         </item>
     </channel>
 </rss>
