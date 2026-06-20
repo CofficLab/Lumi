@@ -92,9 +92,8 @@ import ThemeWinterPlugin
 import ThemeGithubPlugin
 import ThemeOrchardPlugin
 import ThemeMountainPlugin
-import ThemeVscodeDarkPlugin
+import ThemeVscodePlugin
 import ThemeRiverPlugin
-import ThemeVscodeLightPlugin
 import ThemeOneDarkPlugin
 import ThemeDraculaPlugin
 import ThemeStatusBarPlugin
@@ -142,9 +141,8 @@ public enum LumiPluginRegistry {
         ThemeGithubPlugin.self,
         ThemeOrchardPlugin.self,
         ThemeMountainPlugin.self,
-        ThemeVscodeDarkPlugin.self,
+        ThemeVscodePlugin.self,
         ThemeRiverPlugin.self,
-        ThemeVscodeLightPlugin.self,
         ThemeOneDarkPlugin.self,
         ThemeDraculaPlugin.self,
         ThemeStatusBarPlugin.self,
