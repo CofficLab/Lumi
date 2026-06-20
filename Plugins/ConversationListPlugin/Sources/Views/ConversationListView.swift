@@ -25,7 +25,6 @@ public struct ConversationListView: View, SuperLog {
     @State private var lastReloadSelectionId: UUID?
 
     private let pageSize: Int = 40
-    private let listTopAnchorId = "conversation_list_top_anchor"
 
     public init(context: ConversationListContext) {
         self.context = context
@@ -33,33 +32,31 @@ public struct ConversationListView: View, SuperLog {
     }
 
     public var body: some View {
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                if conversations.isEmpty {
-                    if isLoadingPage {
-                        loadingView
-                    } else {
-                        ConversationListEmptyView()
-                    }
+        VStack(spacing: 0) {
+            if conversations.isEmpty {
+                if isLoadingPage {
+                    loadingView
                 } else {
-                    conversationListContent(proxy: proxy)
+                    ConversationListEmptyView()
                 }
+            } else {
+                conversationListContent
             }
-            .onAppear(perform: performInitialLoadIfNeeded)
-            .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-            .onChange(of: context.selectedConversationId, handleConversationSelected)
-            .onChange(of: context.selectedConversationId) { _, newValue in
-                selectionStore.saveSelectedConversationId(newValue)
-            }
-            .onChange(of: conversations) { _, newConversations in
-                handleConversationsChanged(newConversations)
-            }
-            .onChange(of: context.lastChange) { _, change in
-                guard let change else { return }
-                handleConversationChange(change)
-            }
-            .onChange(of: context.statusVersion) { _, _ in }
         }
+        .onAppear(perform: performInitialLoadIfNeeded)
+        .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
+        .onChange(of: context.selectedConversationId, handleConversationSelected)
+        .onChange(of: context.selectedConversationId) { _, newValue in
+            selectionStore.saveSelectedConversationId(newValue)
+        }
+        .onChange(of: conversations) { _, newConversations in
+            handleConversationsChanged(newConversations)
+        }
+        .onChange(of: context.lastChange) { _, change in
+            guard let change else { return }
+            handleConversationChange(change)
+        }
+        .onChange(of: context.statusVersion) { _, _ in }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
@@ -75,30 +72,32 @@ extension ConversationListView {
             .padding(.vertical, 12)
     }
 
-    private func conversationListContent(proxy: ScrollViewProxy) -> some View {
+    private var conversationListContent: some View {
         VStack(spacing: 0) {
-            List(selection: $localSelectedConversationId) {
-                Color.clear
-                    .frame(height: 0)
-                    .id(listTopAnchorId)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowSeparator(.hidden)
-
-                ForEach(conversations, id: \.id) { conversation in
-                    ConversationItemView(
-                        conversation: conversation,
-                        onDelete: { handleDelete(conversation) },
-                        isProcessing: context.isConversationProcessing(conversation.id)
-                    )
-                    .id(conversation.id)
-                    .tag(conversation.id)
-                    .onAppear {
-                        handleRowAppear(conversation)
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(conversations, id: \.id) { conversation in
+                        AppListRow(
+                            isSelected: localSelectedConversationId == conversation.id,
+                            action: {
+                                localSelectedConversationId = conversation.id
+                            }
+                        ) {
+                            ConversationItemView(
+                                conversation: conversation,
+                                onDelete: { handleDelete(conversation) },
+                                isProcessing: context.isConversationProcessing(conversation.id)
+                            )
+                        }
+                        .onAppear {
+                            handleRowAppear(conversation)
+                        }
                     }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
-            .listStyle(.plain)
-            .environment(\.defaultMinListRowHeight, 0)
+            .scrollContentBackground(.hidden)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if isLoadingPage {
