@@ -3,38 +3,35 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.5.1</title>
-            <pubDate>Fri, 19 Jun 2026 04:58:20 +0000</pubDate>
-            <sparkle:version>230</sparkle:version>
-            <sparkle:shortVersionString>4.5.1</sparkle:shortVersionString>
+            <title>4.5.2</title>
+            <pubDate>Sat, 20 Jun 2026 05:13:54 +0000</pubDate>
+            <sparkle:version>231</sparkle:version>
+            <sparkle:shortVersionString>4.5.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.5.1</h2>
-<h3>Changes since v4.5.0</h3>
+            <description><![CDATA[<h2>Release v4.5.2</h2>
+<h3>Changes since v4.5.1</h3>
 <ul>
-<li>feat(chat): hide tool execution messages in brief verbosity mode</li>
-<li>feat(conversation-list): show provider and model info in conversation list</li>
-<li>feat(i18n): update conversation list plugin localization strings</li>
-<li>feat(model-selector): restore context window size badge display</li>
-<li>feat(model): restore model capabilities declaration and badge display</li>
-<li>feat(providers): add contextWindowSizes for all LLM provider models</li>
-<li>feat(rag): add rebuild index button to status bar popover</li>
-<li>feat(status-message): replace loading spinner with breathing avatar animation</li>
-<li>feat(ui): unify pulse ripple animation across status messages and conversation list</li>
-<li>fix(appstore): hide cover art sidebar when list is empty</li>
-<li>fix(i18n): Fix missing localization issues</li>
-<li>fix(providers): correct context window sizes per official docs</li>
-<li>fix(status): remove checkmark emoji from tool completed status message</li>
-<li>fix(zhipu): inherit AnthropicCompatibleLumiProvider for TPS display</li>
-<li>refactor(rag): add background index maintenance via rootOverlay</li>
-<li>refactor(rag): bundle vec0.dylib inside AgentRAGPlugin package</li>
-<li>refactor(rag): replace system SQLite with CSQLite target for vec0 support</li>
-<li>refactor(ui): unify app picker toolbar style with project picker and add loading overlay</li>
-<li>refactor(ui): unify project popover style with app picker, add search and move add button to header</li>
-<li>refactor(ui): unify pulse ripple to shared LumiUI component across conversation title, list, and status messages</li>
+<li>feat(editor): add EditorMinimapContextMenuPlugin for toggle minimap via context menu</li>
+<li>feat(rag): show project name in status bar popover</li>
+<li>fix(chat): allow typing while LLM is streaming to restore send queue behavior</li>
+<li>fix(chat): input field no longer loses cursor when empty</li>
+<li>fix(chat): skip retry for non-retryable errors like missing API key</li>
+<li>fix(editor): context menu commands disappear after first use due to recent/frequent split</li>
+<li>fix(rag): ensure service is initialized before checking index status</li>
+<li>fix(rag): hide stale warning from UI, reduce maintenance interval to 60s</li>
+<li>fix(rag): show current file on same line in indexing progress popover</li>
+<li>fix(rag): update popover when project switches via ProjectsPlugin</li>
+<li>fix(theme): fixed-appearance themes no longer follow system light/dark</li>
+<li>fix(ui): system appearance theme should query effective color scheme directly</li>
+<li>perf(chat): switch to incremental persistence to eliminate new-conversation lag</li>
+<li>refactor(chat): inline pending messages in composer and fix send button state</li>
+<li>refactor(core): extract LumiProjectEntry model and update plugin bootstrap</li>
+<li>refactor(core): migrate project storage from kernel to ProjectsPlugin</li>
+<li>refactor(plugins): adapt AgentRAGPlugin to new project storage architecture</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.5.2</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.1/Lumi_4.5.1_arm64.dmg" length="47172826" type="application/octet-stream" sparkle:edSignature="v7KZ9h7jw/qUwgQmVWebRGgft2ububZlzfkH7AJ8YY4SIrMRbeOI608nR069KFSjqFD+yao9qJh22zihy2xeCw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.5.2/Lumi_4.5.2_arm64.dmg" length="47428828" type="application/octet-stream" sparkle:edSignature="rZjvOUAqjx8itS4o8yQ4mU9yXUuUmsKytWDPBqx6+mo7J7GgSvglyjTTDFBGhDNf/qE5ybmumUXaK/UagJOQDg=="/>
         </item>
     </channel>
 </rss>
