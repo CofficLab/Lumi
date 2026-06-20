@@ -410,6 +410,74 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         )
     }
 
+    /// 增量持久化单个对话（新建或更新）。不扫描历史消息。
+    func persistConversation(_ conversation: LumiConversationSummary) {
+        persistCallCount += 1
+        revision += 1
+        store.upsertConversation(conversation)
+    }
+
+    /// 增量持久化单条消息。不扫描历史消息。
+    func persistMessage(_ message: LumiChatMessage) {
+        persistCallCount += 1
+        revision += 1
+        store.upsertMessage(message)
+    }
+
+    /// 增量持久化对话更新 + 状态。
+    /// 用于 updateConversationTitle、setLanguage 等只改一个对话属性的场景。
+    func persistConversationAndState(_ conversation: LumiConversationSummary) {
+        persistCallCount += 1
+        revision += 1
+        store.upsertConversation(conversation)
+        store.saveStateOnly(
+            selectedConversationID: selectedConversationID,
+            selectedProviderID: selectedProviderID,
+            selectedModel: selectedModel,
+            routingMode: routingMode
+        )
+    }
+
+    /// 增量持久化对话 + 状态，不递增 revision。
+    /// 用于调用方已经手动发送 objectWillChange.send() 的场景（如 createConversation），
+    /// 避免额外的 revision 触发多一次 UI 重绘。
+    func persistConversationAndStateMerged(_ conversation: LumiConversationSummary) {
+        persistCallCount += 1
+        store.upsertConversation(conversation)
+        store.saveStateOnly(
+            selectedConversationID: selectedConversationID,
+            selectedProviderID: selectedProviderID,
+            selectedModel: selectedModel,
+            routingMode: routingMode
+        )
+    }
+
+    /// 只持久化状态（selectedConversationID 等），不扫描对话和消息。
+    func persistStateOnly() {
+        persistCallCount += 1
+        revision += 1
+        store.saveStateOnly(
+            selectedConversationID: selectedConversationID,
+            selectedProviderID: selectedProviderID,
+            selectedModel: selectedModel,
+            routingMode: routingMode
+        )
+    }
+
+    /// 增量删除对话及其消息。
+    func persistDeleteConversation(id: UUID) {
+        persistCallCount += 1
+        revision += 1
+        store.deleteConversationAndMessages(conversationID: id)
+    }
+
+    /// 增量删除单条消息。
+    func persistDeleteMessage(id: UUID) {
+        persistCallCount += 1
+        revision += 1
+        store.deleteMessage(id: id)
+    }
+
     // MARK: - String Helpers
 
     func normalizedTitle(_ title: String?) -> String? {
