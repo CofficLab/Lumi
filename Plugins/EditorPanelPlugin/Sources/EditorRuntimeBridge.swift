@@ -29,7 +29,7 @@ public enum EditorRuntimeBridge {
             editor.currentProjectPathProvider?() ?? ""
         }
         EditorBottomTerminalBridge.editorThemeIdProvider = {
-            let scheme = SystemAppearanceResolver.effectiveColorScheme
+            let scheme = AppThemeAppearanceResolver.effectiveColorScheme
             return LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
         }
 

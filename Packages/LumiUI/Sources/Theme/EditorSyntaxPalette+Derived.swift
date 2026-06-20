@@ -45,12 +45,12 @@ extension EditorSyntaxPalette {
         let isDark = resolvedIsDark(chrome: chrome, colorScheme: colorScheme)
 
         return derived(
-            backgroundHex: hexString(from: isDark ? atmosphere.medium : atmosphere.medium, fallback: isDark ? "1C1C1E" : "FFFFFF"),
-            surfaceHex: hexString(from: isDark ? atmosphere.light : atmosphere.deep, fallback: isDark ? "2C2C2E" : "F2F2F7"),
-            textHex: hexString(from: chrome.workspaceTextColor(), fallback: isDark ? "FFFFFF" : "1C1C1E"),
-            accentPrimaryHex: hexString(from: accent.primary, fallback: "0A84FF"),
-            accentSecondaryHex: hexString(from: accent.secondary, fallback: "5E5CE6"),
-            accentTertiaryHex: hexString(from: accent.tertiary, fallback: "30D158"),
+            backgroundHex: hexString(from: atmosphere.medium, isDark: isDark, fallback: isDark ? "1C1C1E" : "FFFFFF"),
+            surfaceHex: hexString(from: isDark ? atmosphere.light : atmosphere.deep, isDark: isDark, fallback: isDark ? "2C2C2E" : "F2F2F7"),
+            textHex: hexString(from: chrome.workspaceTextColor(), isDark: isDark, fallback: isDark ? "FFFFFF" : "1C1C1E"),
+            accentPrimaryHex: hexString(from: accent.primary, isDark: isDark, fallback: "0A84FF"),
+            accentSecondaryHex: hexString(from: accent.secondary, isDark: isDark, fallback: "5E5CE6"),
+            accentTertiaryHex: hexString(from: accent.tertiary, isDark: isDark, fallback: "30D158"),
             isDark: isDark
         )
     }
@@ -66,9 +66,13 @@ extension EditorSyntaxPalette {
         }
     }
 
-    private static func hexString(from color: Color, fallback: String) -> String {
-        let nsColor = NSColor(color)
-        guard let rgb = nsColor.usingColorSpace(.sRGB) else { return fallback }
+    private static func hexString(from color: Color, isDark: Bool, fallback: String) -> String {
+        let appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)!
+        var rgb: NSColor?
+        appearance.performAsCurrentDrawingAppearance {
+            rgb = NSColor(color).usingColorSpace(.sRGB)
+        }
+        guard let rgb else { return fallback }
         let r = Int(round(rgb.redComponent * 255))
         let g = Int(round(rgb.greenComponent * 255))
         let b = Int(round(rgb.blueComponent * 255))

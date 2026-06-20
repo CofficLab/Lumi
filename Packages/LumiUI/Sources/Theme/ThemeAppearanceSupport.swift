@@ -38,20 +38,23 @@ public struct ThemeWindowAppearanceBridge: NSViewRepresentable {
     public init() {}
 
     public func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        DispatchQueue.main.async {
-            Self.applyAppearance(from: themeStore.theme, to: view.window)
-        }
+        let view = ThemeWindowAppearanceHostView()
+        view.applyAppearance(from: themeStore.theme)
         return view
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            Self.applyAppearance(from: themeStore.theme, to: nsView.window)
-        }
+        (nsView as? ThemeWindowAppearanceHostView)?.applyAppearance(from: themeStore.theme)
+    }
+}
+
+private final class ThemeWindowAppearanceHostView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        applyAppearance(from: LumiUIThemeStore.shared.theme)
     }
 
-    private static func applyAppearance(from theme: any LumiUITheme, to window: NSWindow?) {
+    func applyAppearance(from theme: any LumiUITheme) {
         guard let window else { return }
         window.appearance = theme.preferredAppKitAppearance
     }
