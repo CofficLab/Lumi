@@ -6,6 +6,7 @@ public enum MenuBarManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
     public static let verbose = false
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "menubar.rectangle"
 

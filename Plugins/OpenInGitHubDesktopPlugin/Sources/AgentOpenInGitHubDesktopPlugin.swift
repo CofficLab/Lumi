@@ -18,6 +18,7 @@ import SwiftUI
 /// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
 public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "desktopcomputer"
 

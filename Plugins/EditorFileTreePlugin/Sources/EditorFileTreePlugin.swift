@@ -4,6 +4,7 @@ import SwiftUI
 
 public enum EditorFileTreePanelPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "folder"
 

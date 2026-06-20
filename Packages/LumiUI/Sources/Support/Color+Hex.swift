@@ -1,11 +1,31 @@
 import AppKit
 import SwiftUI
 
-/// 解析 macOS 当前有效外观（不受 SwiftUI `preferredColorScheme` 残留影响）。
+/// 解析 macOS 当前有效外观（不受 SwiftUI `preferredColorScheme` / `NSWindow.appearance` 残留影响）。
 @MainActor
 public enum SystemAppearanceResolver {
+    /// 通过 `UserDefaults` 读取系统级外观偏好，
+    /// 不受 `NSWindow.appearance` / `preferredColorScheme` 污染。
+    /// `UserDefaults.standard` 是线程安全的，故标记 `nonisolated`。
+    nonisolated static var systemIsDarkByPreference: Bool {
+        let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") ?? ""
+        return style.lowercased().contains("dark")
+    }
+
+    /// 缓存的系统真实外观。
+    /// 在固定外观主题激活时快照，确保 `.system` 主题切换回来时颜色解析不受窗口外观异步清除影响。
+    nonisolated(unsafe) static var cachedSystemIsDark: Bool?
+
+    /// 强制刷新系统外观快照。
+    static func cache() {
+        cachedSystemIsDark = systemIsDarkByPreference
+    }
+
     public static var effectiveColorScheme: ColorScheme {
-        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+        if let cached = cachedSystemIsDark {
+            return cached ? .dark : .light
+        }
+        return systemIsDarkByPreference ? .dark : .light
     }
 }
 
@@ -31,7 +51,12 @@ public enum AppThemeAppearanceResolver {
         case .light:
             return false
         case .system:
-            return appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            // 使用 UserDefaults 读取系统级外观偏好，
+            // 避免窗口外观异步清除期间传入被污染的 appearance 参数
+            if let cached = SystemAppearanceResolver.cachedSystemIsDark {
+                return cached
+            }
+            return SystemAppearanceResolver.systemIsDarkByPreference
         }
     }
 }

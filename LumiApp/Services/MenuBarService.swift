@@ -2,6 +2,15 @@ import AppKit
 import LumiCoreKit
 import SwiftUI
 
+// MARK: - Notification Names
+
+private extension Notification.Name {
+    /// 由 CaffeinatePlugin / AppUpdateStatusBarPlugin 发出，
+    /// 用于通知菜单栏图标切换 active/inactive 外观
+    static let requestMenuBarAppearanceUpdate =
+        Notification.Name("requestMenuBarAppearanceUpdate")
+}
+
 @MainActor
 final class MenuBarService: NSObject, NSPopoverDelegate {
     private let pluginService: PluginService
@@ -9,11 +18,37 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     private var hostingView: NSHostingView<MenuBarIconView>?
     private var popover: NSPopover?
     private var eventMonitor: Any?
+    nonisolated(unsafe) private var appearanceObserver: NSObjectProtocol?
+
+    /// 是否有需要用户注意的事件（caffeinate 激活、有更新等）
+    private var isAppearanceActive: Bool = false
 
     init(pluginService: PluginService) {
         self.pluginService = pluginService
         super.init()
+        observeAppearanceUpdates()
         scheduleMenuBarSetup()
+    }
+
+    deinit {
+        if let appearanceObserver {
+            NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+    }
+
+    // MARK: - Appearance
+
+    private func observeAppearanceUpdates() {
+        appearanceObserver = NotificationCenter.default.addObserver(
+            forName: .requestMenuBarAppearanceUpdate,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            let isActive = notification.userInfo?["isActive"] as? Bool ?? false
+            self.isAppearanceActive = isActive
+            self.refresh()
+        }
     }
 
     func refresh() {
@@ -28,7 +63,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             }
 
             let items = self.pluginService.menuBarContentItems(context: self.menuBarContext)
-            self.hostingView?.rootView = MenuBarIconView(contentItems: items)
+            self.hostingView?.rootView = MenuBarIconView(contentItems: items, isActive: self.isAppearanceActive)
             self.statusItem?.length = self.menuBarWidth(for: items)
 
             if self.popover?.isShown == true {
@@ -63,7 +98,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             return
         }
 
-        let rootView = MenuBarIconView(contentItems: items)
+        let rootView = MenuBarIconView(contentItems: items, isActive: isAppearanceActive)
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         self.hostingView = hostingView

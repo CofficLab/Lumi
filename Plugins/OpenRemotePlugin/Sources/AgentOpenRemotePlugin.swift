@@ -12,6 +12,7 @@ import ShellKit
 /// 在 Agent 模式的状态栏添加一个图标，点击后在浏览器中打开当前项目的远程仓库地址。
 public enum AgentOpenRemotePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "safari"
 

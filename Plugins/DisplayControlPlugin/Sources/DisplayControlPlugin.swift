@@ -13,6 +13,7 @@ public enum DisplayControlPlugin: LumiPlugin {
     )
     public static let category: LumiPluginCategory = .system
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
 
     public static let iconName = "display"
 

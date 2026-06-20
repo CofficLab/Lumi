@@ -7,6 +7,7 @@ import SwiftUI
 /// Swift / Xcode 集成插件：scheme 工具栏与 Agent 工具。
 public enum EditorSwiftPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "swift"
 

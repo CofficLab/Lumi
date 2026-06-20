@@ -4,6 +4,7 @@ import LumiUI
 public enum ThemeOneDarkPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let category: LumiPluginCategory = .theme
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.one-dark",
         displayName: LumiPluginLocalization.string("One Dark Theme", bundle: .module),

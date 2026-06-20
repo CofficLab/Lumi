@@ -56,6 +56,7 @@ public final class HTTPClient: @unchecked Sendable {
         body: [String: Any],
         timeoutInterval: TimeInterval = 300,
         onRequestStart: @Sendable @escaping (HTTPRequestMetadata) async -> Void = { _ in },
+        onResponseReceived: @Sendable @escaping (HTTPURLResponse) async -> Void = { _ in },
         onEvent: @Sendable @escaping (Data) async -> Bool
     ) async throws {
         var mutableRequest = request
@@ -82,6 +83,9 @@ public final class HTTPClient: @unchecked Sendable {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw HTTPClientError.invalidResponse
             }
+
+            // Notify caller of response metadata (always, not just errors)
+            await onResponseReceived(httpResponse)
 
             guard (200 ... 299).contains(httpResponse.statusCode) else {
                 var errorData = Data()

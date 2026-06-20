@@ -103,9 +103,16 @@ public final class LumiUIThemeRegistry: ObservableObject {
         guard let contribution = catalog?.selected else {
             throw ThemeError.noThemesRegistered
         }
-        chromeTheme = contribution.chromeTheme
-        ActiveChromeTheme.current = contribution.chromeTheme
-        let resolvedUI = contribution.uiTheme ?? ChromeToUIThemeAdapter(chrome: contribution.chromeTheme)
+        let chrome = contribution.chromeTheme
+        // 在固定外观主题下，窗口 appearance 会覆盖系统外观，导致
+        // NSApp.effectiveAppearance 不可靠。此时快照系统真实外观，
+        // 以便切回 `.system` 主题时 adaptive 颜色能正确解析。
+        if chrome.appearanceKind != .system {
+            SystemAppearanceResolver.cache()
+        }
+        chromeTheme = chrome
+        ActiveChromeTheme.current = chrome
+        let resolvedUI = contribution.uiTheme ?? ChromeToUIThemeAdapter(chrome: chrome)
         uiTheme = resolvedUI
         LumiUIThemeStore.shared.setTheme(resolvedUI)
     }

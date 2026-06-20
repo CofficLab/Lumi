@@ -8,6 +8,7 @@ import os
 /// Git plugin: panel, commit history, status bar, and agent tools.
 public enum GitPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "arrow.triangle.branch"
     public static var verbose: Bool { false }

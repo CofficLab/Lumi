@@ -9,6 +9,7 @@ import LumiCoreKit
 /// - `browser_agent`：基于 agent-browser CLI 的浏览器自动化
 public enum BrowserPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "safari"
 

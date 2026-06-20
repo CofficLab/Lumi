@@ -97,7 +97,8 @@ public extension LumiUITheme {
     var statusBarItemPresentedBackground: Color { primary.opacity(0.14) }
 
     /// SwiftUI 控件（如 segmented picker）应使用的外观，避免 popover 与主题背景不一致。
-    var preferredColorScheme: ColorScheme {
+    /// 返回 `nil` 表示不强制，跟随系统外观（适用于 `.system` 主题）。
+    var preferredColorScheme: ColorScheme? {
         textPrimary.isLightColor ? .dark : .light
     }
 }

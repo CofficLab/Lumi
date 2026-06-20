@@ -4,6 +4,7 @@ import SwiftUI
 /// 语言切换插件：在 Chat 工具栏提供语言选择，并通过中间件注入 LLM 系统提示。
 public enum ConversationLanguagePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "globe"
 

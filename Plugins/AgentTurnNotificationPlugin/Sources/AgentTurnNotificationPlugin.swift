@@ -5,6 +5,7 @@ import SwiftUI
 /// Sends a system notification when an agent turn completes.
 public enum AgentTurnNotificationPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "bell.badge"
 

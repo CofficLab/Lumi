@@ -7,6 +7,7 @@ import FileLogPlugin
 import GitPlugin
 import GitHubPlugin
 import IdleTimePlugin
+import LLMAvailabilityPlugin
 import LumiCoreKit
 import MemoryPlugin
 import ProjectIssueScannerPlugin
@@ -35,5 +36,12 @@ public enum LumiPluginBootstrap {
         if let askUserResumer {
             AskUserPlugin.configureAskUserResume(askUserResumer)
         }
+    }
+
+    /// 初始化 LLM 可用性检测：注入适配器并触发全量检测。
+    ///
+    /// 应在供应商注册完成后调用。
+    public static func configureAvailabilityChecker(providers: [any LumiLLMProvider]) {
+        LLMAvailabilityPlugin.bootstrap(providers: providers)
     }
 }

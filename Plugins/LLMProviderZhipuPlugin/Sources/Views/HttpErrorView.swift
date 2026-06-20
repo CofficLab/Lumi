@@ -17,10 +17,18 @@ struct HttpErrorView: View {
     }
 
     private var displayText: String {
-        if let raw = message.rawErrorDetail, !raw.isEmpty {
-            return raw
+        guard let raw = message.rawErrorDetail, !raw.isEmpty else {
+            return message.content
         }
-        return message.content
+        // Strip "HTTP <code> " prefix since it's shown in the title
+        var text = raw
+        if let code = statusCode {
+            let prefix = "HTTP \(code) "
+            if text.hasPrefix(prefix) {
+                text = String(text.dropFirst(prefix.count))
+            }
+        }
+        return text
     }
 
     var body: some View {

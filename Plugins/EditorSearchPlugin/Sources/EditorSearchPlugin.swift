@@ -4,6 +4,7 @@ import SwiftUI
 
 public enum EditorSearchPanelPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "magnifyingglass"
     private static let railTabOrder = 12

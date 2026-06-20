@@ -44,14 +44,14 @@ public struct ChromeToUIThemeAdapter: LumiUITheme {
         chrome.statusBarItemBackgroundColor(isPresented: true)
     }
 
-    /// 跟随系统外观的主题应直接查询系统有效外观，避免在主题切换期间因
-    /// AppKit appearance 异步更新导致 `isLightColor` 返回错误值，
-    /// 从而引发界面亮暗混合的问题。
+    /// 跟随系统外观的主题不应强制 `preferredColorScheme`，
+    /// 否则从固定亮/暗切回 `.system` 时，之前强制的 appearance 残留会导致
+    /// 系统无法正确接管外观。
     @MainActor
-    public var preferredColorScheme: ColorScheme {
+    public var preferredColorScheme: ColorScheme? {
         switch chrome.appearanceKind {
         case .system:
-            return SystemAppearanceResolver.effectiveColorScheme
+            return nil
         case .dark:
             return .dark
         case .light:

@@ -305,8 +305,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
             return StreamChunk(eventType: .unknown, rawEvent: text)
         } catch {
+            let preview = text.count > 500 ? String(text.prefix(500)) + "..." : text
             return StreamChunk(
-                error: "解析失败: \(error.localizedDescription)",
+                error: "解析失败: \(error.localizedDescription)\n原始响应: \(preview)",
                 eventType: .unknown,
                 rawEvent: text
             )

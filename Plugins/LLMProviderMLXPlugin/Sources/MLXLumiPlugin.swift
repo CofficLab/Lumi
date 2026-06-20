@@ -3,6 +3,7 @@ import LumiCoreKit
 @available(macOS 14.0, *)
 public enum MLXLumiPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .llmProvider
     public static let iconName = "desktopcomputer"
     public static let info = LumiPluginInfo(

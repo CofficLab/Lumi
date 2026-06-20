@@ -21,6 +21,9 @@ public actor StreamingState {
     public var accumulatedThinkingLength: Int = 0
     public var accumulatedToolCalls: [KitToolCall] = []
     public var streamError: String?
+    public var httpStatusCode: Int?
+    public var httpResponseHeaders: [String: String]?
+    public var httpResponseBody: String?
     public var currentToolCallId: String?
     public var currentToolCallName: String?
     public var currentToolCallArgumentChunks: [String] = []
@@ -105,6 +108,12 @@ public actor StreamingState {
 
     public func appendToolCallArguments(_ partialJson: String) {
         currentToolCallArgumentChunks.append(partialJson)
+    }
+
+    public func recordHttpResponse(statusCode: Int?, headers: [String: String]? = nil, body: String? = nil) {
+        httpStatusCode = statusCode
+        if let headers { httpResponseHeaders = headers }
+        if let body { httpResponseBody = body }
     }
 
     public func setError(_ error: String) {

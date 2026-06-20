@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ThemeVscodeLightPlugin",
+    name: "ThemeVscodePlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ThemeVscodeLightPlugin",
-            targets: ["ThemeVscodeLightPlugin"]
+            name: "ThemeVscodePlugin",
+            targets: ["ThemeVscodePlugin"]
         )
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ThemeVscodeLightPlugin",
+            name: "ThemeVscodePlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI")
@@ -30,8 +30,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ThemeVscodeLightPluginTests",
-            dependencies: ["ThemeVscodeLightPlugin"],
+            name: "ThemeVscodePluginTests",
+            dependencies: ["ThemeVscodePlugin"],
             path: "Tests"
         )
     ]

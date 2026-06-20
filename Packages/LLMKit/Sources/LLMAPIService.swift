@@ -25,12 +25,14 @@ public class LLMAPIService: @unchecked Sendable {
         request: URLRequest,
         body: [String: Any],
         onRequestStart: @Sendable @escaping (HTTPRequestMetadata) async -> Void = { _ in },
+        onResponseReceived: @Sendable @escaping (HTTPURLResponse) async -> Void = { _ in },
         onChunk: @Sendable @escaping (Data) async -> Bool
     ) async throws {
         try await client.sendStreamingJSONRequest(
             request: request,
             body: body,
             onRequestStart: onRequestStart,
+            onResponseReceived: onResponseReceived,
             onEvent: onChunk
         )
     }

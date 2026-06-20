@@ -27,9 +27,8 @@ let package = Package(
         .package(path: "../../Plugins/ThemeGithubPlugin"),
         .package(path: "../../Plugins/ThemeOrchardPlugin"),
         .package(path: "../../Plugins/ThemeMountainPlugin"),
-        .package(path: "../../Plugins/ThemeVscodeDarkPlugin"),
+        .package(path: "../../Plugins/ThemeVscodePlugin"),
         .package(path: "../../Plugins/ThemeRiverPlugin"),
-        .package(path: "../../Plugins/ThemeVscodeLightPlugin"),
         .package(path: "../../Plugins/ThemeOneDarkPlugin"),
         .package(path: "../../Plugins/ThemeDraculaPlugin"),
         .package(path: "../../Plugins/ThemeStatusBarPlugin"),
@@ -187,7 +186,8 @@ let package = Package(
         .package(path: "../../Plugins/AppIconDesignerPlugin"),
         .package(path: "../../Plugins/DisplayControlPlugin"),
         .package(path: "../../Plugins/LogoSmartLightPlugin"),
-        .package(path: "../../Plugins/LogoCofficPlugin")
+        .package(path: "../../Plugins/LogoCofficPlugin"),
+        .package(path: "../../Plugins/VideoConverterPlugin")
     ],
     targets: [
         .target(
@@ -207,9 +207,8 @@ let package = Package(
                 .product(name: "ThemeGithubPlugin", package: "ThemeGithubPlugin"),
                 .product(name: "ThemeOrchardPlugin", package: "ThemeOrchardPlugin"),
                 .product(name: "ThemeMountainPlugin", package: "ThemeMountainPlugin"),
-                .product(name: "ThemeVscodeDarkPlugin", package: "ThemeVscodeDarkPlugin"),
+                .product(name: "ThemeVscodePlugin", package: "ThemeVscodePlugin"),
                 .product(name: "ThemeRiverPlugin", package: "ThemeRiverPlugin"),
-                .product(name: "ThemeVscodeLightPlugin", package: "ThemeVscodeLightPlugin"),
                 .product(name: "ThemeOneDarkPlugin", package: "ThemeOneDarkPlugin"),
                 .product(name: "ThemeDraculaPlugin", package: "ThemeDraculaPlugin"),
                 .product(name: "ThemeStatusBarPlugin", package: "ThemeStatusBarPlugin"),
@@ -366,7 +365,8 @@ let package = Package(
                 .product(name: "AppIconDesignerPlugin", package: "AppIconDesignerPlugin"),
                 .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
                 .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin"),
-                .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin")
+                .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
+                .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin")
             ]
         )
     ]

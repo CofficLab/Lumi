@@ -21,6 +21,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     )
     public static let category: LumiPluginCategory = .system
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {

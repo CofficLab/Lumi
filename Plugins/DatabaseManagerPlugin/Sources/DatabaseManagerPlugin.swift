@@ -5,6 +5,7 @@ import SwiftUI
 
 public enum DatabaseManagerPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "server.rack"
     public static let verbose: Bool = false

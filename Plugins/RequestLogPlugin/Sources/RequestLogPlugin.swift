@@ -10,6 +10,7 @@ public enum RequestLogPlugin: LumiPlugin {
         order: 100
     )
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "list.clipboard.fill"
 

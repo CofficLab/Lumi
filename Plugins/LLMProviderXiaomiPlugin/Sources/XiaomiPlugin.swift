@@ -3,6 +3,7 @@ import LumiLLMProviderSupport
 
 public enum XiaomiPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .llmProvider
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(

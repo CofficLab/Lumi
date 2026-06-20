@@ -6,6 +6,7 @@ import os
 /// 延时消息插件：在未来某个时刻自动恢复对话。
 public enum DelayMessagePlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "clock.badge"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.delay-message")

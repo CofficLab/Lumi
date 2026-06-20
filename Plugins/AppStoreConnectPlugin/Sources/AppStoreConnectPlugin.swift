@@ -3,6 +3,7 @@ import SwiftUI
 
 public enum AppStoreConnectPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "bag"
 

@@ -3,6 +3,7 @@ import SwiftUI
 
 public enum FontConfigPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .theme
     public static let iconName = "textformat"
 

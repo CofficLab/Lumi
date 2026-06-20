@@ -10,6 +10,7 @@ public enum EditorPanelPlugin: LumiPlugin {
     public static var verbose: Bool { false }
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
     public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
 

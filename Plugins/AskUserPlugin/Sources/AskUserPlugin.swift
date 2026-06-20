@@ -8,6 +8,7 @@ import LumiCoreKit
 /// 支持是/否选择、多选项选择和自由文本输入。
 public enum AskUserPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "questionmark.circle.fill"
 

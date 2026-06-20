@@ -6,6 +6,7 @@ import os
 /// 多智能体插件：创建和收集子智能体工具。
 public enum MultiAgentPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "person.3.fill"
     public static let verbose: Bool = false

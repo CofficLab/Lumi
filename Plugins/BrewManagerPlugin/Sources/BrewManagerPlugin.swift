@@ -6,6 +6,7 @@ public enum BrewManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
     public static let verbose = false
     public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "mug.fill"
 

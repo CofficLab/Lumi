@@ -4,6 +4,7 @@ import LumiUI
 public enum ThemeMidnightPlugin: LumiPlugin, LumiUIThemeProviding {
     public static let category: LumiPluginCategory = .theme
     public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.midnight",
         displayName: LumiPluginLocalization.string("Midnight Theme", bundle: .module),
