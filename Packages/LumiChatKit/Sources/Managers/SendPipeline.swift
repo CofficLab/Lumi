@@ -262,6 +262,10 @@ final class SendPipeline {
                 throw CancellationError()
             } catch {
                 lastError = error
+                // 确定性失败（如 API Key 未配置、供应商未找到）不应重试
+                if NonRetryableErrorChecker.isNonRetryable(error) {
+                    break
+                }
             }
         }
 
