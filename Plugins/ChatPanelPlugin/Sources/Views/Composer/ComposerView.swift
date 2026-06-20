@@ -42,8 +42,7 @@ struct ComposerView: View {
             .frame(height: inputHeight)
             .padding(.horizontal, 10)
             .padding(.top, 8)
-            .disabled(!canSend)
-            .opacity(canSend ? 1 : 0.7)
+            .disabled(isSending)
 
             Rectangle()
                 .fill(theme.appSubtleBorder)
