@@ -33,7 +33,10 @@ let package = Package(
         ),
         .testTarget(
             name: "VideoConverterPluginTests",
-            dependencies: ["VideoConverterPlugin"],
+            dependencies: [
+                "VideoConverterPlugin",
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+            ],
             path: "Tests"
         )
     ]

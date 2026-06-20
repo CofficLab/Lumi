@@ -7,7 +7,7 @@ struct ConversionLogView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Log")
+                Text(VideoConverterLocalization.string("Log"))
                     .font(.subheadline.bold())
                 Spacer()
             }

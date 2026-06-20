@@ -29,7 +29,7 @@ struct DropZoneView: View {
                     Text(ByteCountFormatter.string(fromByteCount: Int64(file.fileSize), countStyle: .file))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("Clear") {
+                    Button(VideoConverterLocalization.string("Clear")) {
                         viewModel.clearSelection()
                     }
                     .buttonStyle(.bordered)
@@ -38,9 +38,9 @@ struct DropZoneView: View {
                     Image(systemName: "arrow.down.doc")
                         .font(.system(size: 36))
                         .foregroundStyle(.secondary)
-                    Text("Drag & drop a video file here")
+                    Text(VideoConverterLocalization.string("Drag & drop a video file here"))
                         .font(.headline)
-                    Text("or click to browse")
+                    Text(VideoConverterLocalization.string("or click to browse"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

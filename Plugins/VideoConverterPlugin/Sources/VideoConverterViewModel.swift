@@ -63,7 +63,11 @@ final class VideoConverterViewModel: ObservableObject {
 
         isConverting = true
         progress = 0
-        conversionLog = "Converting \(file.lastPathComponent) → \(outputFormat.displayName)...\n"
+        conversionLog = VideoConverterLocalization.string(
+            "Converting %@ → %@...",
+            file.lastPathComponent,
+            outputFormat.displayName
+        ) + "\n"
 
         Task {
             do {
@@ -87,10 +91,10 @@ final class VideoConverterViewModel: ObservableObject {
                     }
                 )
 
-                conversionLog += "✅ Conversion completed!\n"
+                conversionLog += "✅ \(VideoConverterLocalization.string("Conversion completed!"))\n"
                 progress = 1.0
             } catch {
-                conversionLog += "❌ Error: \(error.localizedDescription)\n"
+                conversionLog += "❌ \(VideoConverterLocalization.string("Error: %@", error.localizedDescription))\n"
             }
 
             isConverting = false
@@ -101,7 +105,7 @@ final class VideoConverterViewModel: ObservableObject {
         Task {
             await converter.cancel()
             isConverting = false
-            conversionLog += "⚠️ Conversion cancelled.\n"
+            conversionLog += "⚠️ \(VideoConverterLocalization.string("Conversion cancelled."))\n"
         }
     }
 }

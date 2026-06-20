@@ -11,10 +11,10 @@ struct ConversionSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Output Format")
+            Text(VideoConverterLocalization.string("Output Format"))
                 .font(.subheadline.bold())
 
-            Picker("Format", selection: $outputFormat) {
+            Picker(VideoConverterLocalization.string("Format"), selection: $outputFormat) {
                 ForEach(VideoFormat.allCases) { format in
                     Text(format.displayName).tag(format)
                 }
@@ -27,11 +27,11 @@ struct ConversionSettingsView: View {
                         .progressViewStyle(.linear)
 
                     HStack {
-                        Text("\(Int(progress * 100))%")
+                        Text(VideoConverterLocalization.string("%lld%%", Int(progress * 100)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Button("Cancel", role: .destructive) {
+                        Button(VideoConverterLocalization.string("Cancel"), role: .destructive) {
                             onCancel()
                         }
                         .buttonStyle(.bordered)
@@ -40,7 +40,7 @@ struct ConversionSettingsView: View {
                 }
             } else {
                 Button(action: onConvert) {
-                    Label("Convert", systemImage: "arrow.right.circle.fill")
+                    Label(VideoConverterLocalization.string("Convert"), systemImage: "arrow.right.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

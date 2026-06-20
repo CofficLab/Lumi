@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 /// Service that wraps FFmpeg CLI for video conversion.
 actor VideoConverterService {
@@ -181,9 +182,9 @@ enum VideoConverterError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .ffmpegNotFound:
-            return "FFmpeg not found. Please install it via `brew install ffmpeg`."
+            return VideoConverterLocalization.string("FFmpeg not found. Please install it via `brew install ffmpeg`.")
         case .conversionFailed(let code):
-            return "FFmpeg exited with error code \(code)."
+            return VideoConverterLocalization.string("FFmpeg exited with error code %lld.", code)
         }
     }
 }

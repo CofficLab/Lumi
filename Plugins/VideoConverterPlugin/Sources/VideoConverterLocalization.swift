@@ -7,10 +7,10 @@ enum VideoConverterLocalization {
     static let bundle = Bundle.module
 
     static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
+        LumiPluginLocalization.string(key, bundle: bundle, table: table)
     }
 
     static func string(_ key: String, _ args: CVarArg...) -> String {
-        String(format: string(key), locale: Locale.current, arguments: args)
+        String(format: string(key), locale: LumiPluginLocalization.preferredLocale(), arguments: args)
     }
 }
