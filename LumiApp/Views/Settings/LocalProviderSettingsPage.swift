@@ -49,7 +49,7 @@ struct LocalProviderSettingsPage: View {
                 spacing: 12
             ) {
                 if localProviders.isEmpty {
-                    Text(String(localized: "当前没有可用的本地供应商"))
+                    Text(String(localized: "No local providers available"))
                         .font(.appCaption)
                         .foregroundColor(.secondary)
                 } else {
@@ -126,7 +126,7 @@ struct LocalProviderSettingsPage: View {
     private var unsupportedPlatformMessage: some View {
         AppCard {
             AppSettingsSection(title: "MLX", spacing: 8) {
-                Text(String(localized: "MLX 本地模型需要 macOS 14 或更高版本。"))
+                Text(String(localized: "MLX local models require macOS 14 or later."))
                     .font(.appCaption)
                     .foregroundColor(.secondary)
             }

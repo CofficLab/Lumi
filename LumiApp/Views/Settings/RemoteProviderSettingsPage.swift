@@ -99,7 +99,7 @@ struct RemoteProviderSettingsPage: View {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(theme.success)
-                    Text(String(localized: "已保存"))
+                    Text(String(localized: "Saved"))
                         .font(.appCaption)
                         .foregroundColor(theme.success)
                 }

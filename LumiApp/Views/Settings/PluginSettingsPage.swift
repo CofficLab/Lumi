@@ -96,7 +96,7 @@ struct PluginSettingsPage: View {
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label("\(pluginRows.count) 个插件", systemImage: "puzzlepiece.extension")
-            Text(String(format: String(localized: "%lld 个已启用"), enabledCount))
+            Text(String(format: String(localized: "%lld enabled"), enabledCount))
             Spacer()
         }
         .font(.appCaption)
@@ -316,7 +316,7 @@ private struct DefaultPluginAboutView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "插件说明"))
+            Text(String(localized: "Plugin Description"))
                 .font(.appBodyEmphasized)
                 .foregroundStyle(theme.textPrimary)
 
