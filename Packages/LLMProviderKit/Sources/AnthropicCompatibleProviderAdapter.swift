@@ -188,6 +188,11 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             return nil
         }
 
+        // 处理 SSE [DONE] 结束标记（ZhiPu 等供应商在流末尾发送 data: [DONE]）
+        if dataStr == "[DONE]" {
+            return StreamChunk(isDone: true, eventType: .messageStop, rawEvent: text)
+        }
+
         guard let jsonData = dataStr.data(using: .utf8) else {
             return nil
         }

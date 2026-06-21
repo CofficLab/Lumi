@@ -303,6 +303,26 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(chunk?.content, "Let me think...")
     }
 
+    func testParseStreamChunkWithDoneMarker() throws {
+        // ZhiPu 发送 data: [DONE] 作为流结束标志，不应崩溃
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data("data: [DONE]\n\n".utf8)
+        )
+        XCTAssertNotNil(chunk, "data: [DONE] should return a valid chunk, not throw")
+        XCTAssertEqual(chunk?.isDone, true)
+        XCTAssertEqual(chunk?.eventType, .messageStop)
+    }
+
+    func testParseStreamChunkWithDoneMarkerAndEvent() throws {
+        // 带 event: prefix 的 [DONE] 也不应崩溃
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data("event: done\ndata: [DONE]\n\n".utf8)
+        )
+        XCTAssertNotNil(chunk, "event: done + data: [DONE] should not throw")
+        XCTAssertEqual(chunk?.isDone, true)
+        XCTAssertEqual(chunk?.eventType, .messageStop)
+    }
+
     func testParseStreamReturnsNilForNonDataEvent() throws {
         let chunk = try makeAdapter().parseStreamChunk(
             data: Data("event: ping\n\n".utf8)
