@@ -5,20 +5,45 @@ struct AboutSettingsPage: View {
     private let bundleInfo = AppBundleInfo()
 
     var body: some View {
-        AppSettingsContentScaffold {
-            VStack(alignment: .leading, spacing: 18) {
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
                 LogoView(scene: .about)
                     .frame(width: 72, height: 72)
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 8)
 
-                AppSettingsSection(title: "Lumi") {
-                    AppSettingsReadOnlyRow("名称", badge: bundleInfo.name)
-                    AppSettingsReadOnlyRow("Bundle ID", badge: bundleInfo.bundleIdentifier)
-                    AppSettingsReadOnlyRow("版本", badge: bundleInfo.version ?? "未设置")
-                    AppSettingsReadOnlyRow("构建", badge: bundleInfo.build ?? "未设置")
+                AppSettingSection(title: "Lumi", titleAlignment: .leading) {
+                    VStack(spacing: 0) {
+                        AppSettingRow(title: "名称", description: bundleInfo.name, icon: "app") {
+                            EmptyView()
+                        }
+                        Divider()
+                            .padding(.vertical, 8)
+                        AppSettingRow(title: "Bundle ID", description: bundleInfo.bundleIdentifier, icon: "number") {
+                            EmptyView()
+                        }
+                        Divider()
+                            .padding(.vertical, 8)
+                        AppSettingRow(
+                            title: "版本",
+                            description: bundleInfo.version ?? "未设置",
+                            icon: "info.circle"
+                        ) {
+                            EmptyView()
+                        }
+                        Divider()
+                            .padding(.vertical, 8)
+                        AppSettingRow(
+                            title: "构建",
+                            description: bundleInfo.build ?? "未设置",
+                            icon: "hammer"
+                        ) {
+                            EmptyView()
+                        }
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
