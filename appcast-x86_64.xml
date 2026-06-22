@@ -3,28 +3,32 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.6.0</title>
-            <pubDate>Sat, 20 Jun 2026 14:31:24 +0000</pubDate>
-            <sparkle:version>232</sparkle:version>
-            <sparkle:shortVersionString>4.6.0</sparkle:shortVersionString>
+            <title>4.7.0</title>
+            <pubDate>Mon, 22 Jun 2026 11:20:21 +0000</pubDate>
+            <sparkle:version>233</sparkle:version>
+            <sparkle:shortVersionString>4.7.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.6.0</h2>
-<h3>Changes since v4.5.2</h3>
+            <description><![CDATA[<h2>Release v4.7.0</h2>
+<h3>Changes since v4.6.0</h3>
 <ul>
-<li>feat: add plugin stage declaration and display in settings</li>
-<li>feat(availability): restore LLM provider availability checking</li>
-<li>feat(llm): enrich streaming errors with HTTP status code and response details</li>
-<li>feat(menubar): restore inactive icon by default, activate on caffeinate/update events</li>
-<li>feat(plugin): add VideoConverterPlugin for video format conversion</li>
-<li>feat(video-plugin): add i18n support and localization tests</li>
-<li>fix(llm): include raw response preview in parse error messages</li>
-<li>fix(theme): resolve system appearance via UserDefaults to avoid window appearance pollution</li>
-<li>fix(theme): system theme retains previous fixed appearance after switch</li>
-<li>refactor(conversation-list): replace List with ScrollView+LazyVStack</li>
-<li>refactor(theme): merge VS Code dark/light plugins into single ThemeVscodePlugin with auto theme</li>
+<li>feat: add availability indicators to model selector</li>
+<li>feat: add DownloadKit package for robust file downloading</li>
+<li>feat(freemodel): route Claude via native API with Claude Code emulation</li>
+<li>feat(mlx): add button to reveal cache directory in Finder</li>
+<li>feat(mlx): refactor MLXDownloadManager to use DownloadKit</li>
+<li>fix(agent-turn): stop AutoTask retry loop on LLM failures</li>
+<li>fix(i18n): move Localizable.xcstrings into LumiApp and switch to English source language</li>
+<li>fix(LLMProviderKit): handle SSE [DONE] marker from ZhiPu provider</li>
+<li>fix(theme): actively sync Lumi system theme when macOS appearance changes</li>
+<li>i18n:  translate or localize content</li>
+<li>refactor(editor-tab-strip): flatten Sources directory structure</li>
+<li>refactor(editor-tab-strip): simplify names and group agent tools</li>
+<li>refactor(settings): adopt GitOK grouped cards and refresh settings pages</li>
+<li>refactor(settings): align local provider detail layout with remote</li>
+<li>refactor(settings): unify provider pages and simplify model display</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.6.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.6.0/Lumi_4.6.0_x86_64.dmg" length="51322306" type="application/octet-stream" sparkle:edSignature="LynvwFEsCsErLF447VWOT86o/W2/a2dqa71NTzsk7AQzRfpN/+PdTJgkiTYJlsrZvFhecB5JyFbsyE42lFr3DA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.7.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.7.0/Lumi_4.7.0_x86_64.dmg" length="52398474" type="application/octet-stream" sparkle:edSignature="eM60ebxfFcKETy519kEGQDU1ofTSxmSuGJ2ArPOFZZqrkVFRJYWM5AwZsc4FmWlDRvFGo4E/yTsp4InZ3MIRCQ=="/>
         </item>
     </channel>
 </rss>
