@@ -28,37 +28,35 @@ public struct MLXLocalProviderSettingsView: View {
     }
 
     private var machineInfoCard: some View {
-        AppCard {
-            AppSettingsSection(title: "设备信息", spacing: 8) {
-                HStack {
-                    Text("系统内存")
-                        .font(.appBody)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    Text("\(modelManager.systemRAM) GB")
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
-                HStack {
-                    Text("缓存占用")
-                        .font(.appBody)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    Text(modelManager.formattedCacheSize)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
+        AppSettingsSection(title: "设备信息", spacing: 8) {
+            HStack {
+                Text("系统内存")
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
+                Spacer()
+                Text("\(modelManager.systemRAM) GB")
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
+            }
+            HStack {
+                Text("缓存占用")
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
+                Spacer()
+                Text(modelManager.formattedCacheSize)
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
             }
         }
     }
 
     private var modelListCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: "本地模型",
-                subtitle: "下载后在本地运行，无需 API Key",
-                spacing: 12
-            ) {
+        AppSettingsSection(
+            title: "本地模型",
+            subtitle: "下载后在本地运行，无需 API Key",
+            spacing: 12
+        ) {
+            VStack(spacing: 0) {
                 ForEach(modelManager.availableModels()) { model in
                     modelRow(model)
                 }

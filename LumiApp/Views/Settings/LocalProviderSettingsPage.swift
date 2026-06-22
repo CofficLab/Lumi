@@ -197,21 +197,19 @@ struct LocalProviderSettingsPage: View {
     }
 
     private func defaultLocalProviderDetail(for provider: LumiLLMProviderInfo) -> some View {
-        AppCard {
-            AppSettingsSection(title: "可用模型", spacing: 12) {
-                VStack(spacing: 0) {
-                    ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                        AppSettingsModelRow(
-                            model: model,
-                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
-                        )
+        AppSettingsSection(title: "可用模型", spacing: 12) {
+            VStack(spacing: 0) {
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
+                    AppSettingsModelRow(
+                        model: model,
+                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS
+                    )
 
-                        if index < provider.availableModels.count - 1 {
-                            AppSettingsDivider()
-                                .padding(.horizontal, 8)
-                        }
+                    if index < provider.availableModels.count - 1 {
+                        AppSettingsDivider()
+                            .padding(.horizontal, 8)
                     }
                 }
             }

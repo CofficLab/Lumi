@@ -21,47 +21,43 @@ public struct CodexLocalProviderSettingsView: View {
     }
 
     private var cliStatusCard: some View {
-        AppCard {
-            AppSettingsSection(title: "Codex CLI", subtitle: "通过本地 Codex 命令行调用 OpenAI 模型", spacing: 12) {
-                HStack {
-                    Text("可执行文件")
-                        .font(.appBody)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    Text(cli.executablePath)
-                        .font(.appMonoCaption)
-                        .foregroundColor(theme.textPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
+        AppSettingsSection(title: "Codex CLI", subtitle: "通过本地 Codex 命令行调用 OpenAI 模型", spacing: 12) {
+            HStack {
+                Text("可执行文件")
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
+                Spacer()
+                Text(cli.executablePath)
+                    .font(.appMonoCaption)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
 
-                HStack(spacing: 8) {
-                    Image(systemName: cli.isAvailable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .foregroundColor(cli.isAvailable ? theme.success : theme.warning)
-                    Text(cli.isAvailable ? "CLI 已就绪" : "未找到 Codex CLI，请先安装并加入 PATH")
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
+            HStack(spacing: 8) {
+                Image(systemName: cli.isAvailable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundColor(cli.isAvailable ? theme.success : theme.warning)
+                Text(cli.isAvailable ? "CLI 已就绪" : "未找到 Codex CLI，请先安装并加入 PATH")
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
             }
         }
     }
 
     private var modelListCard: some View {
-        AppCard {
-            AppSettingsSection(title: "可用模型", spacing: 12) {
-                VStack(spacing: 0) {
-                    ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                        AppSettingsModelRow(
-                            model: model,
-                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
-                        )
+        AppSettingsSection(title: "可用模型", spacing: 12) {
+            VStack(spacing: 0) {
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
+                    AppSettingsModelRow(
+                        model: model,
+                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS
+                    )
 
-                        if index < provider.availableModels.count - 1 {
-                            AppSettingsDivider()
-                                .padding(.horizontal, 8)
-                        }
+                    if index < provider.availableModels.count - 1 {
+                        AppSettingsDivider()
+                            .padding(.horizontal, 8)
                     }
                 }
             }
