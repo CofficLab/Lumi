@@ -6,9 +6,11 @@ import LumiUI
 import SwiftUI
 
 struct LocalProviderSettingsPage: View {
+    @LumiTheme private var theme
     @ObservedObject var chatService: ChatService
 
     @State private var selectedProviderID = ""
+    @State private var searchText = ""
 
     private let settingsStore = ProviderSettingsStore.shared
 
@@ -20,98 +22,191 @@ struct LocalProviderSettingsPage: View {
         localProviders.first { $0.id == selectedProviderID }
     }
 
+    private var filteredProviders: [LumiLLMProviderInfo] {
+        let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return localProviders }
+        return localProviders.filter { provider in
+            provider.displayName.localizedCaseInsensitiveContains(keyword)
+                || provider.description.localizedCaseInsensitiveContains(keyword)
+                || provider.id.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(spacing: 0) {
-                providerSelectorCard
+            VStack(alignment: .leading, spacing: 14) {
+                headerStats
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        if let selectedProvider {
-                            providerDetail(for: selectedProvider)
-                        }
-                        Spacer(minLength: 0)
-                    }
+                HStack(spacing: 0) {
+                    providerListPane
+                        .frame(width: 300)
+                        .frame(maxHeight: .infinity)
+
+                    AppDivider(.vertical)
+
+                    providerDetailPane
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(minHeight: 520, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(theme.divider, lineWidth: 1)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onAppear(perform: loadSelectedProviderID)
+        .onChange(of: filteredProviders.map(\.id)) { _, ids in
+            guard ids.contains(selectedProviderID) else {
+                selectedProviderID = ids.first ?? ""
+                return
+            }
+        }
         .onChange(of: selectedProviderID) { _, newValue in
             settingsStore.saveSelectedLocalProviderID(newValue)
         }
     }
 
-    private var providerSelectorCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: "本地 LLM 供应商",
-                subtitle: "在本地设备上运行 AI 模型",
-                spacing: 12
-            ) {
-                if localProviders.isEmpty {
-                    Text(String(localized: "No local providers available"))
-                        .font(.appCaption)
-                        .foregroundColor(.secondary)
-                } else {
-                    LazyVStack(spacing: 4) {
-                        ForEach(localProviders) { provider in
-                            AppSettingsProviderRow(
-                                title: provider.displayName,
-                                subtitle: provider.description,
-                                isSelected: selectedProviderID == provider.id
-                            ) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedProviderID = provider.id
-                                }
-                            }
-                        }
+    private var headerStats: some View {
+        HStack(spacing: 10) {
+            Label("\(localProviders.count) 个本地供应商", systemImage: "desktopcomputer")
+            Text("\(selectedProvider?.availableModels.count ?? 0) 个模型")
+            Spacer()
+        }
+        .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
+    }
+
+    private var providerListPane: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 10) {
+                AppSearchBar(text: $searchText, placeholder: "搜索供应商")
+            }
+            .padding(12)
+
+            AppDivider()
+
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(filteredProviders) { provider in
+                        providerListRow(provider)
+                    }
+
+                    if filteredProviders.isEmpty {
+                        AppEmptyState(icon: "magnifyingglass", title: "未找到供应商")
+                            .padding(.vertical, 32)
                     }
                 }
+                .padding(8)
+            }
+            .frame(maxHeight: .infinity)
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private func providerListRow(_ provider: LumiLLMProviderInfo) -> some View {
+        let isSelected = selectedProviderID == provider.id
+        return AppListRow(isSelected: isSelected, action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedProviderID = provider.id
+            }
+        }) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "desktopcomputer")
+                    .font(.appBody)
+                    .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(provider.displayName)
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+
+                    Text(provider.description.isEmpty ? provider.id : provider.description)
+                        .font(.appMicro)
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 
     @ViewBuilder
-    private func providerDetail(for provider: LumiLLMProviderInfo) -> some View {
-        let initialModel = resolvedDefaultModel(for: provider)
+    private var providerDetailPane: some View {
+        if let selectedProvider {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    providerHeader(for: selectedProvider)
+                    providerDetail(for: selectedProvider)
+                    Spacer(minLength: 0)
+                }
+                .padding(22)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .appSurface(style: .panel, cornerRadius: 0)
+        } else {
+            AppEmptyState(icon: "desktopcomputer", title: "选择一个供应商")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .appSurface(style: .panel, cornerRadius: 0)
+        }
+    }
 
+    private func providerHeader(for provider: LumiLLMProviderInfo) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "desktopcomputer")
+                .font(.system(size: 38, weight: .semibold))
+                .foregroundStyle(theme.primary)
+                .frame(width: 64, height: 64)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(theme.appAccentSoftFill)
+                )
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(provider.displayName)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(theme.textPrimary)
+
+                Text(provider.description.isEmpty ? provider.id : provider.description)
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func providerDetail(for provider: LumiLLMProviderInfo) -> some View {
         switch provider.id {
         case "mlx":
             if #available(macOS 14.0, *) {
-                MLXLocalProviderSettingsView(
-                    initialDefaultModelID: initialModel
-                ) { modelID in
-                    settingsStore.saveLocalProviderModel(providerID: provider.id, modelID: modelID)
-                }
+                MLXLocalProviderSettingsView()
             } else {
                 unsupportedPlatformMessage
             }
         case "codex":
-            CodexLocalProviderSettingsView(
-                provider: provider,
-                initialDefaultModelID: initialModel
-            ) { modelID in
-                settingsStore.saveLocalProviderModel(providerID: provider.id, modelID: modelID)
-            }
+            CodexLocalProviderSettingsView(provider: provider)
         default:
-            defaultLocalProviderDetail(for: provider, initialModel: initialModel)
+            defaultLocalProviderDetail(for: provider)
         }
     }
 
-    private func defaultLocalProviderDetail(for provider: LumiLLMProviderInfo, initialModel: String) -> some View {
+    private func defaultLocalProviderDetail(for provider: LumiLLMProviderInfo) -> some View {
         AppCard {
-            AppSettingsSection(title: "可用模型", subtitle: "点击某个模型可设为默认", spacing: 12) {
+            AppSettingsSection(title: "可用模型", spacing: 12) {
                 VStack(spacing: 0) {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
                         AppSettingsModelRow(
                             model: model,
-                            isDefault: initialModel == model,
                             supportsVision: provider.modelCapabilities[model]?.supportsVision,
                             supportsTools: provider.modelCapabilities[model]?.supportsTools,
                             supportsTTS: provider.modelCapabilities[model]?.supportsTTS
-                        ) {
-                            settingsStore.saveLocalProviderModel(providerID: provider.id, modelID: model)
-                        }
+                        )
 
                         if index < provider.availableModels.count - 1 {
                             AppSettingsDivider()
@@ -140,13 +235,5 @@ struct LocalProviderSettingsPage: View {
         } else if let first = localProviders.first {
             selectedProviderID = first.id
         }
-    }
-
-    private func resolvedDefaultModel(for provider: LumiLLMProviderInfo) -> String {
-        if let savedModel = settingsStore.loadLocalProviderModel(providerID: provider.id),
-           provider.availableModels.contains(savedModel) {
-            return savedModel
-        }
-        return provider.defaultModel
     }
 }

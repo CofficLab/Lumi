@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -52,7 +53,8 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
                 "claude-3-opus-20240229": .init(supportsVision: true, supportsTools: true),
                 "claude-3-sonnet-20240229": .init(supportsVision: true, supportsTools: true),
                 "claude-3-haiku-20240307": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://console.anthropic.com/")
         )
     }
 

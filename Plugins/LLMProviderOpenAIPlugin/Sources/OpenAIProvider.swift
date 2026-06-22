@@ -31,7 +31,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-4-turbo": .init(supportsVision: true, supportsTools: true),
             "gpt-4": .init(supportsVision: false, supportsTools: true),
             "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
-        ]
+        ],
+        websiteURL: URL(string: "https://platform.openai.com/")
     )
 
     private static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"

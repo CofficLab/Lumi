@@ -6,20 +6,11 @@ public struct CodexLocalProviderSettingsView: View {
     @LumiTheme private var theme
 
     let provider: LumiLLMProviderInfo
-    @State private var selectedModelID: String
     @State private var cli: CodexCLI
 
-    private let onDefaultModelChanged: (String) -> Void
-
-    public init(
-        provider: LumiLLMProviderInfo,
-        initialDefaultModelID: String,
-        onDefaultModelChanged: @escaping (String) -> Void
-    ) {
+    public init(provider: LumiLLMProviderInfo) {
         self.provider = provider
-        self._selectedModelID = State(initialValue: initialDefaultModelID)
         self._cli = State(initialValue: CodexCLI())
-        self.onDefaultModelChanged = onDefaultModelChanged
     }
 
     public var body: some View {
@@ -57,19 +48,15 @@ public struct CodexLocalProviderSettingsView: View {
 
     private var modelListCard: some View {
         AppCard {
-            AppSettingsSection(title: "可用模型", subtitle: "点击某个模型可设为默认", spacing: 12) {
+            AppSettingsSection(title: "可用模型", spacing: 12) {
                 VStack(spacing: 0) {
                     ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
                         AppSettingsModelRow(
                             model: model,
-                            isDefault: selectedModelID == model,
                             supportsVision: provider.modelCapabilities[model]?.supportsVision,
                             supportsTools: provider.modelCapabilities[model]?.supportsTools,
                             supportsTTS: provider.modelCapabilities[model]?.supportsTTS
-                        ) {
-                            selectedModelID = model
-                            onDefaultModelChanged(model)
-                        }
+                        )
 
                         if index < provider.availableModels.count - 1 {
                             AppSettingsDivider()
@@ -81,4 +68,3 @@ public struct CodexLocalProviderSettingsView: View {
         }
     }
 }
-

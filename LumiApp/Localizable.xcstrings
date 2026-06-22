@@ -29,7 +29,16 @@
         }
       }
     },
+    "%lld 个云端供应商" : {
+
+    },
     "%lld 个插件" : {
+
+    },
+    "%lld 个本地供应商" : {
+
+    },
+    "%lld 个模型" : {
 
     },
     "Check for Updates..." : {
@@ -92,6 +101,7 @@
       }
     },
     "No local providers available" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -190,6 +200,9 @@
     "打开 Lumi" : {
 
     },
+    "打开供应商页面" : {
+
+    },
     "打开容器目录" : {
 
     },
@@ -197,6 +210,9 @@
 
     },
     "打开文档目录" : {
+
+    },
+    "搜索供应商" : {
 
     },
     "搜索插件" : {

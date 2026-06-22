@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -88,7 +89,8 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "qwen/qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
                 "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
                 "z-ai/glm-4.5-air:free": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://openrouter.ai/")
         )
     }
 

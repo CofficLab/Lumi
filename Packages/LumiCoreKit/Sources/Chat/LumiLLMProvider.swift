@@ -30,6 +30,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let contextWindowSizes: [String: Int]
     /// 各模型的能力声明（key 为模型 ID）
     public let modelCapabilities: [String: LumiModelCapabilities]
+    /// 供应商官网/控制台页面（用于设置页跳转；若无则不展示入口）
+    public let websiteURL: URL?
 
     public init(
         id: String,
@@ -39,7 +41,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         availableModels: [String],
         isLocal: Bool = false,
         contextWindowSizes: [String: Int] = [:],
-        modelCapabilities: [String: LumiModelCapabilities] = [:]
+        modelCapabilities: [String: LumiModelCapabilities] = [:],
+        websiteURL: URL? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -49,6 +52,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.isLocal = isLocal
         self.contextWindowSizes = contextWindowSizes
         self.modelCapabilities = modelCapabilities
+        self.websiteURL = websiteURL
     }
 }
 

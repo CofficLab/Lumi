@@ -166,10 +166,17 @@ struct PluginSettingsPage: View {
 
         return AppListRow(isSelected: isSelected, action: { selectedPluginID = row.id }) {
             HStack(alignment: .top, spacing: 10) {
-                Image(systemName: row.iconName)
-                    .font(.appBody)
-                    .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
-                    .frame(width: 22, height: 22)
+                VStack(spacing: 6) {
+                    Image(systemName: row.iconName)
+                        .font(.appBody)
+                        .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
+                        .frame(width: 22, height: 22)
+
+                    Circle()
+                        .fill(isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
+                        .frame(width: 6, height: 6)
+                }
+                .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -177,12 +184,6 @@ struct PluginSettingsPage: View {
                             .font(.appCaptionEmphasized)
                             .foregroundStyle(theme.textPrimary)
                             .lineLimit(1)
-
-                        AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
-
-                        Circle()
-                            .fill(isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
-                            .frame(width: 6, height: 6)
                     }
 
                     Text(row.description.isEmpty ? row.id : row.description)
@@ -190,8 +191,11 @@ struct PluginSettingsPage: View {
                         .foregroundStyle(theme.textSecondary)
                         .lineLimit(2)
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.trailing, 44)
+            }
+            .overlay(alignment: .topTrailing) {
+                AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
             }
         }
     }
@@ -259,19 +263,20 @@ private struct PluginSettingsDetailView: View {
                 )
 
             VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 8) {
-                    Text(row.displayName)
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(theme.textPrimary)
-
-                    AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
-                }
+                Text(row.displayName)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(theme.textPrimary)
 
                 Text(row.description.isEmpty ? row.id : row.description)
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 56)
+        }
+        .overlay(alignment: .topTrailing) {
+            AppTag(row.stage.displayName, style: row.stage == .stable ? .accent : .subtle)
         }
     }
 

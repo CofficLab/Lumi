@@ -8,7 +8,7 @@ import SwiftUI
 /// 作为 package 化试点，插件适配层只负责把 `WebFetchTool` 注册到 Lumi 插件系统；
 /// 实际网页抓取能力由 `WebFetchKit` 承载。
 public enum WebFetchPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optIn
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "globe"
