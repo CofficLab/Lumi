@@ -49,7 +49,7 @@ enum ToolExecutorOrchestrator: SuperLog {
     }
 
     @MainActor
-    private static func performExecution(conversationId: UUID, assistantMessage: ChatMessage) async {
+    private static func performExecution(conversationId: UUID, assistantMessage: AgentChatMessage) async {
         defer { ToolExecutorRuntimeBridge.releaseConversationLock(conversationId) }
 
         if await ToolExecutorRuntimeBridge.presentToolPermissionIfNeeded(assistantMessage, conversationId) {

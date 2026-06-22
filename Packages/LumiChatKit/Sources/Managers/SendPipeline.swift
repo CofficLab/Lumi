@@ -161,10 +161,9 @@ final class SendPipeline {
                 conversationID: conversationID,
                 imageAttachments: pending.imageAttachments
             )
-            if outcome == .completed {
-                service.appendTurnCompletedMarker(conversationID: conversationID)
-            }
+            finishTurn(conversationID: conversationID, reason: outcome.turnEndReason)
         } catch is CancellationError {
+            finishTurn(conversationID: conversationID, reason: .cancelled)
             return
         } catch {
             service.append(
@@ -175,6 +174,7 @@ final class SendPipeline {
                     isError: true
                 )
             )
+            finishTurn(conversationID: conversationID, reason: .failed)
         }
     }
 
@@ -296,10 +296,9 @@ final class SendPipeline {
 
         do {
             let outcome = try await service.runAgentTurn(conversationID: conversationID)
-            if outcome == .completed {
-                appendTurnCompletedMarker(conversationID: conversationID)
-            }
+            finishTurn(conversationID: conversationID, reason: outcome.turnEndReason)
         } catch is CancellationError {
+            finishTurn(conversationID: conversationID, reason: .cancelled)
             return
         } catch {
             service.append(
@@ -310,7 +309,25 @@ final class SendPipeline {
                     isError: true
                 )
             )
+            finishTurn(conversationID: conversationID, reason: .failed)
         }
+    }
+
+    func finishTurn(conversationID: UUID, reason: LumiTurnEndReason) {
+        if reason == .completed {
+            appendTurnCompletedMarker(conversationID: conversationID)
+            return
+        }
+
+        let userInfo: [AnyHashable: Any] = [
+            LumiMessageSavedNotification.conversationIDKey: conversationID,
+            LumiTurnFinishedNotification.reasonKey: reason.rawValue,
+        ]
+        NotificationCenter.default.post(
+            name: .lumiTurnFinished,
+            object: nil,
+            userInfo: userInfo
+        )
     }
 
     func appendTurnCompletedMarker(conversationID: UUID) {
@@ -322,10 +339,19 @@ final class SendPipeline {
                 renderKind: "turn-completed"
             )
         )
+        let userInfo: [AnyHashable: Any] = [
+            LumiMessageSavedNotification.conversationIDKey: conversationID,
+            LumiTurnFinishedNotification.reasonKey: LumiTurnEndReason.completed.rawValue,
+        ]
         NotificationCenter.default.post(
             name: .lumiTurnCompleted,
             object: nil,
-            userInfo: [LumiMessageSavedNotification.conversationIDKey: conversationID]
+            userInfo: userInfo
+        )
+        NotificationCenter.default.post(
+            name: .lumiTurnFinished,
+            object: nil,
+            userInfo: userInfo
         )
     }
 }

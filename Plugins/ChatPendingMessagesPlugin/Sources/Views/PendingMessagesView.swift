@@ -40,7 +40,7 @@ public struct PendingMessagesView: View {
 }
 
 public struct PendingMessageRow: View {
-    public let message: ChatMessage
+    public let message: AgentChatMessage
     public let onRemove: (() -> Void)?
 
     public var body: some View {

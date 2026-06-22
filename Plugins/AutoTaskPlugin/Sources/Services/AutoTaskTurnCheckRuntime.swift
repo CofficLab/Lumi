@@ -3,7 +3,8 @@ import LumiCoreKit
 
 /// Turn 结束后检查未完成任务，并在需要时入队跟进提示。
 ///
-/// `LumiSendMiddleware` 仅覆盖发送前阶段；turn 完成逻辑通过 `lumiTurnCompleted` 通知触发。
+/// 仅响应 `lumiTurnFinished` 且 `reason == .completed` 的事件；
+/// 供应商故障等失败 Turn 由 `LumiChatKit` 标记为 `.failed`，不会触发自动续聊。
 @MainActor
 enum AutoTaskTurnCheckRuntime {
     private static var observer: NSObjectProtocol?
@@ -12,15 +13,20 @@ enum AutoTaskTurnCheckRuntime {
         guard observer == nil else { return }
 
         observer = NotificationCenter.default.addObserver(
-            forName: .lumiTurnCompleted,
+            forName: .lumiTurnFinished,
             object: nil,
             queue: .main
         ) { notification in
             guard let conversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID else {
                 return
             }
+            guard let reason = LumiTurnEndReason(notificationUserInfo: notification.userInfo),
+                  reason.allowsAutomaticContinuation
+            else {
+                return
+            }
             Task { @MainActor in
-                await handleTurnCompleted(
+                await handleSuccessfulTurnCompleted(
                     conversationID: conversationID,
                     chatServiceProvider: chatServiceProvider
                 )
@@ -28,7 +34,7 @@ enum AutoTaskTurnCheckRuntime {
         }
     }
 
-    private static func handleTurnCompleted(
+    private static func handleSuccessfulTurnCompleted(
         conversationID: UUID,
         chatServiceProvider: @MainActor () -> (any LumiChatServicing)?
     ) async {
@@ -43,27 +49,14 @@ enum AutoTaskTurnCheckRuntime {
 
         guard !activeTasks.isEmpty else { return }
 
-        let turnMessages = turnMessages(for: conversationID, chatService: chatService)
-        let hasUpdateCall = turnMessages.contains { message in
-            guard message.role == .assistant, let toolCalls = message.toolCalls else { return false }
-            return toolCalls.contains { $0.name == "update_task" }
+        let messages = chatService.messages(for: conversationID)
+        let turnMessages = LumiAgentTurnDerivation.turnMessagesSinceLastUser(in: messages)
+        guard !LumiAgentTurnDerivation.assistantCalledTool(named: "update_task", in: turnMessages) else {
+            return
         }
-
-        guard !hasUpdateCall else { return }
 
         let prompt = buildTaskCheckPrompt(tasks: activeTasks)
         chatService.enqueueText(prompt, in: conversationID)
-    }
-
-    private static func turnMessages(
-        for conversationID: UUID,
-        chatService: any LumiChatServicing
-    ) -> [LumiChatMessage] {
-        let messages = chatService.messages(for: conversationID)
-        guard let lastUserIndex = messages.lastIndex(where: { $0.role == .user }) else {
-            return []
-        }
-        return Array(messages[(lastUserIndex + 1)...]).filter { $0.role != .status }
     }
 
     private static func buildTaskCheckPrompt(tasks: [TaskItem]) -> String {

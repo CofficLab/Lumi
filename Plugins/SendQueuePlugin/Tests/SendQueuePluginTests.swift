@@ -9,7 +9,7 @@ struct SendQueuePluginTests {
     @Test("should dequeue when idle and pending exists")
     func dequeueGate() {
         let messages = [
-            ChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending)
+            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending)
         ]
         #expect(AgentTurnDerivation.shouldDequeueNextTurn(messages: messages, phase: .idle))
     }
@@ -17,7 +17,7 @@ struct SendQueuePluginTests {
     @Test("should not dequeue when already processing")
     func noDequeueWhenBusy() {
         let messages = [
-            ChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending)
+            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending)
         ]
         #expect(!AgentTurnDerivation.shouldDequeueNextTurn(messages: messages, phase: .processing))
     }

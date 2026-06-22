@@ -25,7 +25,7 @@ struct ToolCallLoopDetectorTests {
 
     @Test("does not count different arguments as the same loop")
     func differentArgumentsAreDistinct() {
-        var messages: [ChatMessage] = []
+        var messages: [AgentChatMessage] = []
         for index in 0 ..< 3 {
             messages.append(
                 assistantToolMessage(
@@ -41,16 +41,16 @@ struct ToolCallLoopDetectorTests {
         count: Int,
         name: String,
         arguments: String
-    ) -> [ChatMessage] {
+    ) -> [AgentChatMessage] {
         (0 ..< count).map { _ in
             assistantToolMessage(name: name, arguments: arguments)
         }
     }
 
-    private func assistantToolMessage(name: String, arguments: String) -> ChatMessage {
+    private func assistantToolMessage(name: String, arguments: String) -> AgentChatMessage {
         var toolCall = ToolCall(id: UUID().uuidString, name: name, arguments: arguments)
         toolCall.result = ToolCallResult(content: "ok")
-        return ChatMessage(
+        return AgentChatMessage(
             role: .assistant,
             conversationId: conversationId,
             content: "",
