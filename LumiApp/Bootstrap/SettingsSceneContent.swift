@@ -11,6 +11,7 @@ struct SettingsSceneContent: View {
                 lumiUIService: container.lumiUIService,
                 chatService: container.chatCoreService.chatService
             )
+            .ignoresSafeArea()
         }
         .background {
             WindowAccessor { window in
@@ -18,5 +19,6 @@ struct SettingsSceneContent: View {
             }
             ThemeWindowAppearanceBridge()
         }
+        .ignoresSafeArea()
     }
 }

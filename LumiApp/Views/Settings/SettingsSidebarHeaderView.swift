@@ -12,8 +12,12 @@ struct SettingsSidebarHeaderView: View {
             topSpacing: 22,
             bottomSpacing: 8
         ) {
-            LogoView(scene: .about)
-                .frame(width: 64, height: 64)
+            HStack {
+                Spacer()
+                LogoView(scene: .about)
+                    .frame(width: 64, height: 64)
+                Spacer()
+            }
         }
     }
 }

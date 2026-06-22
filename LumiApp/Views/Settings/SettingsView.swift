@@ -20,6 +20,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 720, minHeight: 520)
         .background(theme.background)
+        .ignoresSafeArea()
     }
 
     private var sidebar: some View {
