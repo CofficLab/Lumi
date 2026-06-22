@@ -54,8 +54,15 @@ EditorTabStripPlugin/
 ├── README.md
 ├── .gitignore
 ├── Sources/
-│   └── EditorTabStripPlugin.swift
-├── Resources/
+│   ├── EditorTabStripPlugin.swift      # 插件入口
+│   ├── EditorTabStripCoordinator.swift
+│   ├── EditorTabStripStore.swift
+│   ├── EditorTabStripEvents.swift
+│   ├── EditorTabHeaderView.swift
+│   ├── EditorTabItemView.swift
+│   ├── EditorTabDragPreview.swift
+│   ├── GetCurrentFileTool.swift
+│   ├── SetCurrentFileTool.swift
 │   └── Localizable.xcstrings
 └── Tests/
 ```
