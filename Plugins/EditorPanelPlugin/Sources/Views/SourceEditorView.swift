@@ -18,6 +18,7 @@ public struct SourceEditorView: View, SuperLog {
     
     @ObservedObject var state: EditorState
     @EnvironmentObject private var themeVM: AppThemeVM
+    @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @Environment(\.colorScheme) private var colorScheme
     private let adapter = SourceEditorAdapter()
     private let bridge = SourceEditorViewBridge()
@@ -80,6 +81,7 @@ public struct SourceEditorView: View, SuperLog {
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
             .onChange(of: themeVM.activeChromeTheme.identifier) { _, _ in updateConfigCache() }
+            .onChange(of: themeRegistry.systemColorScheme) { _, _ in updateConfigCache() }
             .onChange(of: colorScheme) { _, _ in updateConfigCache() }
             .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() })
 

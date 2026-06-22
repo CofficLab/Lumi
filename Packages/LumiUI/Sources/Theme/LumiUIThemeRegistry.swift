@@ -11,7 +11,15 @@ public final class LumiUIThemeRegistry: ObservableObject {
 
     @Published public private(set) var uiTheme: any LumiUITheme = LumiDefaultTheme()
 
-    public init() {}
+    /// 当前系统有效明暗；`.system` 主题下随 macOS 外观变化更新，供 SwiftUI 触发重绘。
+    @Published public private(set) var systemColorScheme: ColorScheme = SystemAppearanceResolver.effectiveColorScheme
+
+    /// 系统外观变化且当前主题为 `.system` 时调用（例如同步编辑器语法主题）。
+    public var onSystemAppearanceDidChange: (() -> Void)?
+
+    public init() {
+        _ = SystemAppearanceObserver.shared
+    }
 
     public var themes: [LumiUIThemeContribution] {
         catalog?.themes ?? []
@@ -65,6 +73,17 @@ public final class LumiUIThemeRegistry: ObservableObject {
         resolvedEditorSyntax(colorScheme: colorScheme)?.themeId
     }
 
+    /// 由系统外观观察者或 ``ThemeWindowAppearanceBridge`` 调用。
+    public func handleSystemAppearanceDidChange() {
+        guard chromeTheme.followsSystemAppearance else { return }
+        let scheme = SystemAppearanceResolver.effectiveColorScheme
+        ResolvedSystemColorScheme.current = scheme
+        systemColorScheme = scheme
+        republishCurrentUITheme()
+        onSystemAppearanceDidChange?()
+        ThemeWindowAppearanceSync.syncAllWindows()
+    }
+
     public func resolvedEditorSyntax(colorScheme: ColorScheme) -> ResolvedEditorSyntax? {
         guard let contribution = selectedContribution else { return nil }
         let chrome = contribution.chromeTheme
@@ -104,16 +123,31 @@ public final class LumiUIThemeRegistry: ObservableObject {
             throw ThemeError.noThemesRegistered
         }
         let chrome = contribution.chromeTheme
-        // 在固定外观主题下，窗口 appearance 会覆盖系统外观，导致
-        // NSApp.effectiveAppearance 不可靠。此时快照系统真实外观，
-        // 以便切回 `.system` 主题时 adaptive 颜色能正确解析。
-        if chrome.appearanceKind != .system {
-            SystemAppearanceResolver.cache()
-        }
         chromeTheme = chrome
+        syncResolvedColorScheme(for: chrome)
         ActiveChromeTheme.current = chrome
-        let resolvedUI = contribution.uiTheme ?? ChromeToUIThemeAdapter(chrome: chrome)
+        republishCurrentUITheme(from: contribution)
+    }
+
+    private func syncResolvedColorScheme(for chrome: any LumiAppChromeTheme) {
+        switch chrome.appearanceKind {
+        case .system:
+            let scheme = SystemAppearanceResolver.effectiveColorScheme
+            ResolvedSystemColorScheme.current = scheme
+            systemColorScheme = scheme
+        case .dark:
+            ResolvedSystemColorScheme.current = .dark
+        case .light:
+            ResolvedSystemColorScheme.current = .light
+        }
+    }
+
+    private func republishCurrentUITheme(from contribution: LumiUIThemeContribution? = nil) {
+        let source = contribution ?? selectedContribution
+        guard let source else { return }
+        let resolvedUI = source.uiTheme ?? ChromeToUIThemeAdapter(chrome: source.chromeTheme)
         uiTheme = resolvedUI
         LumiUIThemeStore.shared.setTheme(resolvedUI)
+        ThemeWindowAppearanceSync.syncAllWindows()
     }
 }

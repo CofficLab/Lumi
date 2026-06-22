@@ -46,6 +46,6 @@ extension NSWindow {
         titlebarAppearsTransparent = true
         toolbar = nil
         styleMask.insert(.fullSizeContentView)
-        appearance = LumiUIThemeStore.shared.theme.preferredAppKitAppearance
+        ThemeWindowAppearanceSync.syncAllWindows()
     }
 }

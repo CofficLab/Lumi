@@ -19,9 +19,10 @@ public extension LumiUITheme {
 
 private struct AppThemedAppearanceModifier: ViewModifier {
     @LumiTheme private var theme
+    @ObservedObject private var registry = LumiUIThemeRegistry.shared
 
     func body(content: Content) -> some View {
-        content.preferredColorScheme(theme.preferredColorScheme)
+        content.preferredColorScheme(theme.preferredColorScheme ?? registry.systemColorScheme)
     }
 }
 
@@ -53,7 +54,13 @@ public struct ThemeWindowAppearanceBridge: NSViewRepresentable {
 private final class ThemeWindowAppearanceHostView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        SystemAppearanceObserver.shared.startObservingApplicationAppearanceIfNeeded()
         applyAppearance(from: LumiUIThemeStore.shared.theme)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        LumiUIThemeRegistry.shared.handleSystemAppearanceDidChange()
     }
 
     func applyAppearance(from theme: any LumiUITheme) {

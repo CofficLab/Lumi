@@ -7,6 +7,7 @@ import SwiftUI
 struct EditorScopeView<Content: View>: View {
     @StateObject private var projectVM: WindowProjectVM
     @StateObject private var themeVM = AppThemeVM.shared
+    @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @StateObject private var recentProjectsVM = AppProjectsVM.shared
     @StateObject private var conversationVM = WindowConversationVM()
     @StateObject private var editorContext: EditorContext
@@ -45,7 +46,10 @@ struct EditorScopeView<Content: View>: View {
                 EditorRuntimeBridge.configure(editor: editor)
                 syncEditorTheme()
             }
-            .onChange(of: LumiUIThemeRegistry.shared.selectedThemeId) { _, _ in
+            .onChange(of: themeRegistry.selectedThemeId) { _, _ in
+                syncEditorTheme()
+            }
+            .onChange(of: themeRegistry.systemColorScheme) { _, _ in
                 syncEditorTheme()
             }
     }

@@ -148,6 +148,11 @@ public final class LumiUIThemeStore: ObservableObject {
     public func setTheme(_ theme: any LumiUITheme) {
         self.theme = theme
     }
+
+    /// 系统外观变化时触发依赖 `@LumiTheme` 的视图重绘。
+    public func notifyAppearanceRefresh() {
+        objectWillChange.send()
+    }
 }
 
 @MainActor
@@ -164,6 +169,7 @@ public var currentTheme: any LumiUITheme {
 @MainActor
 public struct LumiTheme: DynamicProperty {
     @ObservedObject private var store = LumiUIThemeStore.shared
+    @ObservedObject private var registry = LumiUIThemeRegistry.shared
 
     public init() {}
 
