@@ -60,7 +60,7 @@ struct SettingsView: View {
         case .plugins:
             PluginSettingsPage(pluginService: pluginService)
         case .about:
-            AboutSettingsPage()
+            AboutPage()
         }
     }
 }
