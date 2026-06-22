@@ -1,3 +1,4 @@
+import AppKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -10,19 +11,9 @@ public struct MLXLocalProviderSettingsView: View {
     @StateObject private var downloadManager = MLXDownloadManager()
     @StateObject private var inferenceService = MLXInferenceService()
 
-    @State private var selectedModelID = ""
     @State private var actionError: String?
 
-    private let onDefaultModelChanged: (String) -> Void
-    private let initialDefaultModelID: String
-
-    public init(
-        initialDefaultModelID: String,
-        onDefaultModelChanged: @escaping (String) -> Void
-    ) {
-        self.initialDefaultModelID = initialDefaultModelID
-        self.onDefaultModelChanged = onDefaultModelChanged
-    }
+    public init() {}
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -35,45 +26,48 @@ public struct MLXLocalProviderSettingsView: View {
                     .foregroundColor(theme.error)
             }
         }
-        .onAppear {
-            if selectedModelID.isEmpty {
-                selectedModelID = initialDefaultModelID
-            }
-        }
     }
 
     private var machineInfoCard: some View {
-        AppCard {
-            AppSettingsSection(title: "设备信息", spacing: 8) {
-                HStack {
-                    Text("系统内存")
-                        .font(.appBody)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    Text("\(modelManager.systemRAM) GB")
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
+        AppSettingsSection(title: "设备信息", spacing: 8) {
+            HStack {
+                Text("系统内存")
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
+                Spacer()
+                Text("\(modelManager.systemRAM) GB")
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
+            }
+            HStack {
+                Text("缓存占用")
+                    .font(.appBody)
+                    .foregroundColor(theme.textSecondary)
+                Spacer()
+                Text(modelManager.formattedCacheSize)
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
+                AppButton(systemImage: "folder", style: .ghost, size: .small) {
+                    openCacheDirectory()
                 }
-                HStack {
-                    Text("缓存占用")
-                        .font(.appBody)
-                        .foregroundColor(theme.textSecondary)
-                    Spacer()
-                    Text(modelManager.formattedCacheSize)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
+                .help("在访达中打开缓存目录")
             }
         }
     }
 
+    private func openCacheDirectory() {
+        let url = MLXModels.modelsCacheBaseDirectory
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
+    }
+
     private var modelListCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: "本地模型",
-                subtitle: "下载后在本地运行，无需 API Key",
-                spacing: 12
-            ) {
+        AppSettingsSection(
+            title: "本地模型",
+            subtitle: "下载后在本地运行，无需 API Key",
+            spacing: 12
+        ) {
+            VStack(spacing: 0) {
                 ForEach(modelManager.availableModels()) { model in
                     modelRow(model)
                 }
@@ -87,7 +81,6 @@ public struct MLXLocalProviderSettingsView: View {
         let isDownloading = downloadManager.downloadingModelId == model.id
         let isLoaded = inferenceService.currentModelId == model.id
         let isLoading = inferenceService.state == .loading && inferenceService.currentModelId == model.id
-        let isDefault = selectedModelID == model.id
 
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 10) {
@@ -100,11 +93,6 @@ public struct MLXLocalProviderSettingsView: View {
                         .foregroundColor(theme.textSecondary)
                 }
                 Spacer(minLength: 0)
-                if isDefault {
-                    Text("默认")
-                        .font(.appCaption)
-                        .foregroundColor(theme.primary)
-                }
             }
 
             HStack(spacing: 8) {
@@ -124,13 +112,6 @@ public struct MLXLocalProviderSettingsView: View {
                         Task { await downloadModel(model.id) }
                     }
                     .disabled(isDownloading)
-                }
-
-                if isCached {
-                    AppButton("设为默认", style: .ghost, size: .small) {
-                        selectedModelID = model.id
-                        onDefaultModelChanged(model.id)
-                    }
                 }
             }
 
@@ -162,8 +143,6 @@ public struct MLXLocalProviderSettingsView: View {
         actionError = nil
         do {
             try await inferenceService.loadModel(id: modelID)
-            selectedModelID = modelID
-            onDefaultModelChanged(modelID)
         } catch {
             actionError = error.localizedDescription
         }

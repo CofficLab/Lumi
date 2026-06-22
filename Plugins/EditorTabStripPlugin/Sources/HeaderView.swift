@@ -5,9 +5,9 @@ import SwiftUI
 
 /// 编辑器 Tab Header 视图
 ///
-/// 渲染 Tab 栏 UI，并嵌入 `EditorTabStripCoordinator` 实现
+/// 渲染 Tab 栏 UI，并嵌入 `StripCoordinator` 实现
 /// 标签页的自动保存和项目切换时的恢复。
-public struct EditorTabHeaderView: View {
+public struct HeaderView: View {
 
     // MARK: - 属性
 
@@ -18,13 +18,13 @@ public struct EditorTabHeaderView: View {
     @ObservedObject private var service: EditorService
 
     /// 标签页持久化协调器
-    @StateObject private var coordinator = EditorTabStripCoordinator()
+    @StateObject private var coordinator = StripCoordinator()
 
     public init(service: EditorService) {
         self._service = ObservedObject(wrappedValue: service)
     }
 
-    // ⚠️ sessionStore 用于 EditorTabStripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
+    // ⚠️ sessionStore 用于 StripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
     // 这些 Publisher 无法通过门面方法转发。
     public var sessionStore: EditorSessionStore { service.sessionStore }
 
@@ -116,7 +116,7 @@ public struct EditorTabHeaderView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
                 ForEach(visibleTabs) { tab in
-                    EditorTabItemView(
+                    ItemView(
                         service: service,
                         tab: tab,
                         theme: theme,

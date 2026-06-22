@@ -9,17 +9,17 @@ import os
 ///
 /// 按项目维度保存/恢复打开的标签页列表和活跃标签。
 /// 存储位置：<dbRoot>/EditorTabStrip/projects/<projectHash>/tabs.json
-public final class EditorTabStripStore: @unchecked Sendable, SuperLog {
+public final class StripStore: @unchecked Sendable, SuperLog {
     public nonisolated static var emoji: String { "📑" }
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip-store")
 
     private let fileManager = FileManager.default
-    private let queue = DispatchQueue(label: "EditorTabStripStore.queue", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "StripStore.queue", qos: .userInitiated)
     private let baseDirectory: URL
 
-    public static let shared = EditorTabStripStore()
+    public static let shared = StripStore()
 
     // MARK: - Persistence Models
 
@@ -234,7 +234,7 @@ public final class EditorTabStripStore: @unchecked Sendable, SuperLog {
 
 // MARK: - PersistedTab Public Extension
 
-extension EditorTabStripStore.PersistedTab {
+extension StripStore.PersistedTab {
     /// 转换为文件 URL
     public var fileURL: URL? {
         URL(fileURLWithPath: path)

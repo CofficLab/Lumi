@@ -20,6 +20,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 720, minHeight: 520)
         .background(theme.background)
+        .ignoresSafeArea()
     }
 
     private var sidebar: some View {
@@ -60,7 +61,7 @@ struct SettingsView: View {
         case .plugins:
             PluginSettingsPage(pluginService: pluginService)
         case .about:
-            AboutSettingsPage()
+            AboutPage()
         }
     }
 }

@@ -44,14 +44,12 @@ public struct ChromeToUIThemeAdapter: LumiUITheme {
         chrome.statusBarItemBackgroundColor(isPresented: true)
     }
 
-    /// 跟随系统外观的主题不应强制 `preferredColorScheme`，
-    /// 否则从固定亮/暗切回 `.system` 时，之前强制的 appearance 残留会导致
-    /// 系统无法正确接管外观。
+    /// 跟随系统时返回当前解析到的明暗，驱动 SwiftUI / AppKit 主动同步。
     @MainActor
     public var preferredColorScheme: ColorScheme? {
         switch chrome.appearanceKind {
         case .system:
-            return nil
+            return ResolvedSystemColorScheme.current
         case .dark:
             return .dark
         case .light:

@@ -53,45 +53,103 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             throw LumiLLMProviderSupportError.emptyConversation
         }
 
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            throw LumiLLMProviderSupportError.invalidBaseURL(adapter.configuration.baseURL)
-        }
-
-        let httpRequest = buildRequest(url: url, apiKey: try apiKey())
         let body = try adapter.buildStreamingRequestBody(
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
         )
+        let apiKeyValue = try apiKey()
 
+        var lastError: Error?
+        for baseURLString in resolvedBaseURLs() {
+            guard let url = URL(string: baseURLString) else {
+                if baseURLString == adapter.configuration.baseURL {
+                    throw LumiLLMProviderSupportError.invalidBaseURL(baseURLString)
+                }
+                continue
+            }
+
+            switch await attemptStreamingRequest(
+                url: url,
+                apiKey: apiKeyValue,
+                body: body,
+                conversationID: conversationID,
+                request: request,
+                onChunk: onChunk
+            ) {
+            case .success(let message):
+                return message
+            case .retry:
+                lastError = LumiLLMProviderSupportError.streamingFailed("Endpoint unavailable: \(baseURLString)")
+            case .failure(let error):
+                throw error
+            }
+        }
+
+        if let lastError {
+            throw lastError
+        }
+        throw LumiLLMProviderSupportError.streamingFailed("All provider endpoints failed.")
+    }
+
+    private func resolvedBaseURLs() -> [String] {
+        [adapter.configuration.baseURL] + adapter.configuration.fallbackBaseURLs
+    }
+
+    private enum StreamingAttemptResult {
+        case success(LumiChatMessage)
+        case retry
+        case failure(Error)
+    }
+
+    private func attemptStreamingRequest(
+        url: URL,
+        apiKey: String,
+        body: [String: Any],
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async -> StreamingAttemptResult {
+        let httpRequest = buildRequest(url: url, apiKey: apiKey)
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
         let chunkHandler = onChunk
-        try await apiService.sendStreamingRequest(
-            request: httpRequest,
-            body: body,
-            onResponseReceived: { response in
-                await state.recordHttpResponse(statusCode: response.statusCode)
-            },
-            onChunk: { [self] chunkData in
-                await Self.processStreamChunk(
-                    chunkData: chunkData,
-                    parse: { try self.adapter.parseStreamChunk(data: $0) },
-                    state: state,
-                    onChunk: chunkHandler
-                )
-            }
-        )
+
+        do {
+            try await apiService.sendStreamingRequest(
+                request: httpRequest,
+                body: body,
+                onResponseReceived: { response in
+                    await state.recordHttpResponse(statusCode: response.statusCode)
+                },
+                onChunk: { [self] chunkData in
+                    await Self.processStreamChunk(
+                        chunkData: chunkData,
+                        parse: { try self.adapter.parseStreamChunk(data: $0) },
+                        state: state,
+                        onChunk: chunkHandler
+                    )
+                }
+            )
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            return .retry
+        }
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
             let enrichedError = await state.httpStatusCode.map { code in
                 "HTTP \(code) \(error)"
             } ?? error
-            throw LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            let streamError = LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            if await hasNoDeliveredOutput(state) {
+                return .retry
+            }
+            return .failure(streamError)
         }
 
-        return LumiChatMessage(
+        let message = LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: await state.accumulatedContentChunks.joined(),
@@ -102,6 +160,15 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }
         )
+        return .success(message)
+    }
+
+    private func hasNoDeliveredOutput(_ state: StreamingState) async -> Bool {
+        let hasContent = await !state.accumulatedContentChunks.isEmpty
+        let hasThinking = await !state.accumulatedThinkingChunks.isEmpty
+        let hasToolCalls = await !state.accumulatedToolCalls.isEmpty
+        let hasActiveToolCall = await state.currentToolCallId != nil
+        return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
     }
 
     private func apiKey() throws -> String {
@@ -238,58 +305,131 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
             throw LumiLLMProviderSupportError.emptyConversation
         }
 
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            throw LumiLLMProviderSupportError.invalidBaseURL(adapter.configuration.baseURL)
+        let body = try buildAnthropicStreamingRequestBody(for: request)
+        let apiKeyValue = try apiKey()
+
+        var lastError: Error?
+        for baseURLString in resolvedBaseURLs() {
+            guard let url = URL(string: baseURLString) else {
+                if baseURLString == adapter.configuration.baseURL {
+                    throw LumiLLMProviderSupportError.invalidBaseURL(baseURLString)
+                }
+                continue
+            }
+
+            switch await attemptStreamingRequest(
+                url: url,
+                apiKey: apiKeyValue,
+                body: body,
+                conversationID: conversationID,
+                request: request,
+                onChunk: onChunk
+            ) {
+            case .success(let message):
+                return message
+            case .retry:
+                lastError = LumiLLMProviderSupportError.streamingFailed("Endpoint unavailable: \(baseURLString)")
+            case .failure(let error):
+                throw error
+            }
         }
 
-        let httpRequest = buildRequest(url: url, apiKey: try apiKey())
-        let body = try adapter.buildStreamingRequestBody(
+        if let lastError {
+            throw lastError
+        }
+        throw LumiLLMProviderSupportError.streamingFailed("All provider endpoints failed.")
+    }
+
+    /// 子类可覆盖以注入 Claude Code 等网关所需的 system / metadata / betas。
+    open func anthropicStreamingSystemPrompt(for request: LumiLLMRequest) -> String {
+        ""
+    }
+
+    open func customizeAnthropicStreamingBody(
+        _ body: inout [String: Any],
+        request: LumiLLMRequest
+    ) {}
+
+    private func buildAnthropicStreamingRequestBody(for request: LumiLLMRequest) throws -> [String: Any] {
+        var body = try adapter.buildStreamingRequestBody(
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
-            systemPrompt: ""
+            systemPrompt: anthropicStreamingSystemPrompt(for: request)
         )
+        customizeAnthropicStreamingBody(&body, request: request)
+        return body
+    }
 
+    private func resolvedBaseURLs() -> [String] {
+        [adapter.configuration.baseURL] + adapter.configuration.fallbackBaseURLs
+    }
+
+    private enum StreamingAttemptResult {
+        case success(LumiChatMessage)
+        case retry
+        case failure(Error)
+    }
+
+    private func attemptStreamingRequest(
+        url: URL,
+        apiKey: String,
+        body: [String: Any],
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async -> StreamingAttemptResult {
+        let httpRequest = buildRequest(url: url, apiKey: apiKey)
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
         let chunkHandler = onChunk
-        try await apiService.sendStreamingRequest(
-            request: httpRequest,
-            body: body,
-            onResponseReceived: { response in
-                await state.recordHttpResponse(statusCode: response.statusCode)
-            },
-            onChunk: { [self] chunkData in
-                let shouldContinue = await OpenAICompatibleLumiProvider.processStreamChunk(
-                    chunkData: chunkData,
-                    parse: { try self.adapter.parseStreamChunk(data: $0) },
-                    state: state,
-                    onChunk: chunkHandler
-                )
-                if !shouldContinue {
-                    return false
-                }
-                // Capture raw response body on streaming errors
-                if let error = await state.streamError,
-                   await state.httpResponseBody == nil {
-                    await state.recordHttpResponse(
-                        statusCode: await state.httpStatusCode,
-                        headers: nil,
-                        body: String(data: chunkData, encoding: .utf8)
+
+        do {
+            try await apiService.sendStreamingRequest(
+                request: httpRequest,
+                body: body,
+                onResponseReceived: { response in
+                    await state.recordHttpResponse(statusCode: response.statusCode)
+                },
+                onChunk: { [self] chunkData in
+                    let shouldContinue = await OpenAICompatibleLumiProvider.processStreamChunk(
+                        chunkData: chunkData,
+                        parse: { try self.adapter.parseStreamChunk(data: $0) },
+                        state: state,
+                        onChunk: chunkHandler
                     )
+                    if !shouldContinue {
+                        return false
+                    }
+                    if await state.streamError != nil,
+                       await state.httpResponseBody == nil {
+                        await state.recordHttpResponse(
+                            statusCode: await state.httpStatusCode,
+                            headers: nil,
+                            body: String(data: chunkData, encoding: .utf8)
+                        )
+                    }
+                    return true
                 }
-                return true
-            }
-        )
+            )
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            return .retry
+        }
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
             let enrichedError = await state.httpStatusCode.map { code in
                 "HTTP \(code) \(error)"
             } ?? error
-            throw LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            let streamError = LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            if await hasNoDeliveredOutput(state) {
+                return .retry
+            }
+            return .failure(streamError)
         }
 
-        return LumiChatMessage(
+        let message = LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: await state.accumulatedContentChunks.joined(),
@@ -300,6 +440,15 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }
         )
+        return .success(message)
+    }
+
+    private func hasNoDeliveredOutput(_ state: StreamingState) async -> Bool {
+        let hasContent = await !state.accumulatedContentChunks.isEmpty
+        let hasThinking = await !state.accumulatedThinkingChunks.isEmpty
+        let hasToolCalls = await !state.accumulatedToolCalls.isEmpty
+        let hasActiveToolCall = await state.currentToolCallId != nil
+        return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
     }
 
     private func apiKey() throws -> String {

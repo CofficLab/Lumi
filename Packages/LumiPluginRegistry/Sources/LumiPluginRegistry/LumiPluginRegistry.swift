@@ -217,7 +217,7 @@ public enum LumiPluginRegistry {
         EditorPanelPlugin.self,
         EditorSwiftPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
-        EditorTabStripHeaderPlugin.self,
+        StripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,
         EditorProblemsPanelPlugin.self,
         EditorReferencesPanelPlugin.self,

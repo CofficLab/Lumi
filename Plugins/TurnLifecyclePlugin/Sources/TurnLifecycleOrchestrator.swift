@@ -22,10 +22,14 @@ enum TurnLifecycleOrchestrator {
             return
         }
 
+        guard let endReason = AgentTurnDerivation.turnEndReason(messages: messages) else {
+            return
+        }
+
         if AgentSendPipelineLog.enabled {
             AgentSendPipelineLog.logger.info("\(AgentSendPipelineLog.t)[\(AgentSendPipelineLog.conv(conversationId))] ⑥ [TurnLifecycle] Turn 完成 → finishTurn + idle")
         }
-        TurnLifecycleRuntimeBridge.finishAgentTurn(conversationId, .completed)
+        TurnLifecycleRuntimeBridge.finishAgentTurn(conversationId, endReason)
         TurnLifecycleRuntimeBridge.setTurnPhase(.idle, conversationId)
         TurnLifecycleRuntimeBridge.releaseConversationLock(conversationId)
     }

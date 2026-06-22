@@ -3,7 +3,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-public enum EditorTabStripHeaderPlugin: LumiPlugin {
+public enum StripHeaderPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
@@ -26,7 +26,7 @@ public enum EditorTabStripHeaderPlugin: LumiPlugin {
 
         return [
             LumiPanelHeaderItem(id: info.id, order: info.order) {
-                EditorTabHeaderView(service: service)
+                HeaderView(service: service)
             }
         ]
     }

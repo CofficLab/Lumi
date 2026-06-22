@@ -42,7 +42,8 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
                 "glm-4.6": .init(supportsVision: true, supportsTools: true),
                 "glm-4.5": .init(supportsVision: true, supportsTools: true),
                 "glm-4.5-air": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://open.bigmodel.cn/")
         )
     }
 

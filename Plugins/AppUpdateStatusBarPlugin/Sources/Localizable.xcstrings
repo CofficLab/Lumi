@@ -15,22 +15,16 @@
             "value": "应用更新状态"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用更新状态"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "应用更新状态"
+            "value": "應用更新狀態"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "应用更新状态"
+            "value": "應用更新狀態"
           }
         }
       }
@@ -49,22 +43,16 @@
             "value": "Lumi %@ 已下载完成"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lumi %@ 已下载完成"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi %@ 已下载完成"
+            "value": "Lumi %@ 已下載完成"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi %@ 已下载完成"
+            "value": "Lumi %@ 已下載完成"
           }
         }
       }
@@ -83,22 +71,16 @@
             "value": "新版本已准备好"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新版本已准备好"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "新版本已准备好"
+            "value": "新版本已準備好"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "新版本已准备好"
+            "value": "新版本已準備好"
           }
         }
       }
@@ -117,22 +99,16 @@
             "value": "重启更新"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重启更新"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "重启更新"
+            "value": "重啟更新"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "重启更新"
+            "value": "重啟更新"
           }
         }
       }
@@ -151,22 +127,16 @@
             "value": "当应用更新准备安装时显示菜单栏提醒。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当应用更新准备安装时显示菜单栏提醒。"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "当应用更新准备安装时显示菜单栏提醒。"
+            "value": "當應用更新準備安裝時顯示選單列提醒。"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "当应用更新准备安装时显示菜单栏提醒。"
+            "value": "當應用更新準備安裝時顯示選單列提醒。"
           }
         }
       }
@@ -185,19 +155,13 @@
             "value": "更新"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更新"
-          }
-        },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "更新"
           }
         },
-        "zh-TW": {
+        "zh-HK": {
           "stringUnit": {
             "state": "translated",
             "value": "更新"

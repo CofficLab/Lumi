@@ -13,7 +13,7 @@ import LumiCoreKit
     let selectedConversationId = UUID()
     let selectedMessageId = UUID()
     let otherConversationId = UUID()
-    let selectedMessage = ChatMessage(
+    let selectedMessage = AgentChatMessage(
         id: selectedMessageId,
         role: .user,
         conversationId: selectedConversationId,
@@ -21,7 +21,7 @@ import LumiCoreKit
         timestamp: Date(timeIntervalSince1970: 1),
         queueStatus: .pending
     )
-    let otherMessage = ChatMessage(
+    let otherMessage = AgentChatMessage(
         id: UUID(),
         role: .user,
         conversationId: otherConversationId,

@@ -1,9 +1,11 @@
+import LLMAvailabilityPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ModelSelectorSidebar: View {
     @LumiTheme private var theme
+    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     let providers: [LumiLLMProviderInfo]
     let selectedProviderID: String?
@@ -63,12 +65,13 @@ struct ModelSelectorSidebar: View {
 
     private func providerTabButton(_ provider: LumiLLMProviderInfo) -> some View {
         let tab = ModelSelectorTab.provider(provider.id)
+        let isAvailable = isProviderAvailable(provider)
 
         return AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
             HStack(spacing: 4) {
                 Image(systemName: "cloud")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(isAvailable ? .green : .red)
                     .frame(width: 16)
 
                 Text(provider.displayName)
@@ -97,5 +100,13 @@ struct ModelSelectorSidebar: View {
                     .lineLimit(1)
             }
         }
+    }
+
+    /// 判断服务商是否有可用的模型
+    private func isProviderAvailable(_ provider: LumiLLMProviderInfo) -> Bool {
+        guard let providerAvailability = availabilityStore.providers.first(where: { $0.providerId == provider.id }) else {
+            return false
+        }
+        return providerAvailability.hasAvailableModels
     }
 }

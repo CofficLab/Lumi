@@ -47,7 +47,7 @@ enum ToolCallLoopDetectionOrchestrator: SuperLog {
         - 参数：\(truncated(pattern.toolArguments, limit: 100))
         """)
 
-        let loopMessage = ChatMessage(
+        let loopMessage = AgentChatMessage(
             role: .assistant,
             conversationId: conversationId,
             content: repeatedToolLoopMessage(

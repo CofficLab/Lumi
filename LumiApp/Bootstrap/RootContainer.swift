@@ -1,6 +1,7 @@
 import LayoutPlugin
 import LumiChatKit
 import LumiCoreKit
+import LumiUI
 import ProjectsPlugin
 import SwiftUI
 
@@ -43,6 +44,9 @@ final class RootContainer: ObservableObject {
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)
         self.lumiUIService.onThemesDidChange = { [weak self] in
+            self?.editorCoreService.syncAppSyntaxThemes()
+        }
+        LumiUIThemeRegistry.shared.onSystemAppearanceDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()
         }
         _ = UpdateController.shared

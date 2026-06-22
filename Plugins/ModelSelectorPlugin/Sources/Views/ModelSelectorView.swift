@@ -1,3 +1,4 @@
+import LLMAvailabilityPlugin
 import LumiChatKit
 import LumiCoreKit
 import LumiUI
@@ -7,6 +8,7 @@ struct ModelSelectorView: View {
     @LumiTheme private var theme
 
     @ObservedObject private var chatService: ChatService
+    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
     let conversationID: UUID?
     let onClose: () -> Void
 
@@ -14,6 +16,7 @@ struct ModelSelectorView: View {
     @State private var searchText = ""
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
     @State private var fastModels: [(provider: LumiLLMProviderInfo, model: String, avgTPS: Double, sampleCount: Int)] = []
+    @State private var checkingProviderID: String? = nil
 
     init(
         chatService: any LumiChatServicing,
@@ -315,8 +318,39 @@ struct ModelSelectorView: View {
             Text(provider.displayName)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(theme.textPrimary)
+
+            if checkingProviderID == provider.id {
+                ProgressView()
+                    .scaleEffect(0.6)
+                    .frame(width: 16, height: 16)
+            } else {
+                Button {
+                    checkProviderAvailability(provider)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(theme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("Re-check availability")
+            }
+
             Spacer()
         }
         .padding(.vertical, 4)
+    }
+
+    private func checkProviderAvailability(_ provider: LumiLLMProviderInfo) {
+        guard let llmService = LLMAvailabilityRuntime.llmService else { return }
+
+        checkingProviderID = provider.id
+        let checker = LLMAvailabilityChecker(llmService: llmService)
+
+        Task {
+            for model in provider.availableModels {
+                await checker.checkModel(providerId: provider.id, modelId: model)
+            }
+            checkingProviderID = nil
+        }
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 /// 统一的工具栏容器组件
 ///
 /// 提供标准化的水平工具栏样式，包含统一的高度、背景、底部 border。
-/// 用于 AppTitleToolbar、EditorTabHeaderView、RailView 等场景。
+/// 用于 AppTitleToolbar、HeaderView、RailView 等场景。
 ///
 /// ## 示例
 /// ```swift

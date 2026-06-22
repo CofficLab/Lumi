@@ -128,6 +128,7 @@
 				en,
 				Base,
 				"zh-Hans",
+				"zh-Hant",
 				"zh-HK",
 			);
 			mainGroup = F54F8C752F1A3B6500AABB2A;

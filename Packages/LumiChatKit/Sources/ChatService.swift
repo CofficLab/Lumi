@@ -533,8 +533,12 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                             isError: true
                         )
                     )
-                    return .completed
+                    return .failed
                 }
+            }
+
+            if assistantMessage.role == .error || assistantMessage.isError {
+                return .failed
             }
 
             // ── Phase 3: Execute tool calls (if any) ───────────────

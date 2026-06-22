@@ -11,8 +11,8 @@ final class SenderService: SuperLog {
     nonisolated static let emoji = "📬"
     private weak var plugin: MessageSenderPlugin?
     private var conversationStore: any AgentConversationStore = UnavailableAgentConversationStore()
-    private var llmSendService: any LLMSendService = UnavailableLLMSendService()
-    private var prepareMessagesForLLM: (UUID, [ChatMessage]) -> [ChatMessage] = { _, messages in messages }
+    private var llmSendService: any AgentLLMSendService = UnavailableLLMSendService()
+    private var prepareMessagesForLLM: (UUID, [AgentChatMessage]) -> [AgentChatMessage] = { _, messages in messages }
     private var consumeTransientSystemPrompts: (UUID) -> [String] = { _ in [] }
     private var isConversationCancelled: (UUID) -> Bool = { _ in false }
     private var inFlightConversationIds = Set<UUID>()
@@ -70,7 +70,7 @@ final class SenderService: SuperLog {
         }
     }
 
-    private func performSend(conversationId: UUID, storageMessages: [ChatMessage]) async {
+    private func performSend(conversationId: UUID, storageMessages: [AgentChatMessage]) async {
         inFlightConversationIds.insert(conversationId)
         defer { inFlightConversationIds.remove(conversationId) }
 
@@ -120,7 +120,7 @@ final class SenderService: SuperLog {
             allowsTools: toolsArg != nil
         )
 
-        let onStreamChunk: @Sendable (StreamChunk) async -> Void = { [llmSendService, conversationId = request.conversationId] chunk in
+        let onStreamChunk: @Sendable (AgentStreamChunk) async -> Void = { [llmSendService, conversationId = request.conversationId] chunk in
             await MainActor.run {
                 llmSendService.applyStreamChunk(conversationId: conversationId, chunk: chunk)
             }
@@ -132,7 +132,7 @@ final class SenderService: SuperLog {
 
         let startTime = CFAbsoluteTimeGetCurrent()
         let metadataHolder = MetadataHolder()
-        let onRequestStart: @Sendable (HTTPRequestMetadata) async -> Void = { [llmSendService, conversationId = request.conversationId] metadata in
+        let onRequestStart: @Sendable (AgentRequestMetadata) async -> Void = { [llmSendService, conversationId = request.conversationId] metadata in
             await metadataHolder.set(metadata)
             await MainActor.run {
                 llmSendService.setStatus(
@@ -241,7 +241,7 @@ final class SenderService: SuperLog {
         }
 
         return .failed(
-            llmSendService.buildErrorChatMessage(
+            llmSendService.buildErrorAgentChatMessage(
                 error: error,
                 conversationId: request.conversationId,
                 providerId: config.providerId,
@@ -254,16 +254,16 @@ final class SenderService: SuperLog {
 
     private func composeMessagesForLLM(
         conversationId: UUID,
-        baseMessages: [ChatMessage],
+        baseMessages: [AgentChatMessage],
         additionalSystemPrompts: [String]
-    ) -> [ChatMessage] {
+    ) -> [AgentChatMessage] {
         guard !additionalSystemPrompts.isEmpty else { return baseMessages }
         guard !baseMessages.isEmpty else { return baseMessages }
 
         var merged = baseMessages
         let insertionIndex = max(merged.count - 1, 0)
         let transientMessages = additionalSystemPrompts.map {
-            ChatMessage(role: .system, conversationId: conversationId, content: $0)
+            AgentChatMessage(role: .system, conversationId: conversationId, content: $0)
         }
         merged.insert(contentsOf: transientMessages, at: insertionIndex)
         return merged
@@ -318,13 +318,13 @@ final class SenderService: SuperLog {
 }
 
 private actor MetadataHolder {
-    private var metadata: HTTPRequestMetadata?
+    private var metadata: AgentRequestMetadata?
 
-    func set(_ metadata: HTTPRequestMetadata) {
+    func set(_ metadata: AgentRequestMetadata) {
         self.metadata = metadata
     }
 
-    func get() -> HTTPRequestMetadata? {
+    func get() -> AgentRequestMetadata? {
         metadata
     }
 }

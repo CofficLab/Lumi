@@ -11,15 +11,15 @@ import Foundation
 /// 通过 `@EnvironmentObject` 获取 `WindowEditorVM` 和 `WindowProjectVM`，
 /// 不依赖任何其他插件。
 @MainActor
-public final class EditorTabStripCoordinator: ObservableObject, SuperLog {
+public final class StripCoordinator: ObservableObject, SuperLog {
     public nonisolated static var emoji: String { "📑" }
 
     // MARK: - 属性
 
-    private let store: EditorTabStripStore
+    private let store: StripStore
     private var cancellables = Set<AnyCancellable>()
 
-    init(store: EditorTabStripStore = .shared) {
+    init(store: StripStore = .shared) {
         self.store = store
     }
 

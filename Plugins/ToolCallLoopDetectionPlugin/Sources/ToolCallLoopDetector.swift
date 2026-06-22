@@ -18,7 +18,7 @@ enum ToolCallLoopDetector {
     static let repeatedToolWindowThreshold = 3
     static let recentMessageLimit = 100
 
-    static func detect(in messages: [ChatMessage]) -> ToolLoopPattern? {
+    static func detect(in messages: [AgentChatMessage]) -> ToolLoopPattern? {
         let recentMessages = Array(messages.suffix(recentMessageLimit))
 
         var signatureCounts: [String: Int] = [:]
@@ -83,8 +83,8 @@ enum ToolCallLoopDetector {
 
     private static func findAssistantMessage(
         for toolCallID: String,
-        in messages: [ChatMessage]
-    ) -> ChatMessage? {
+        in messages: [AgentChatMessage]
+    ) -> AgentChatMessage? {
         for message in messages.reversed() {
             if message.role == .assistant,
                let toolCalls = message.toolCalls,

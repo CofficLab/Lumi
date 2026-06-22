@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import Combine
+import DownloadKit
 import os
 
 // Forward reference to MLXModels
@@ -13,8 +14,10 @@ private typealias _MLXModels = MLXModels
 /// - 断点续传支持
 /// - 下载进度实时回调
 /// - 文件验证（safetensors 非空检查）
+/// - 使用 DownloadKit 提供的健壮下载基础设施
 ///
 /// 使用 Combine 发布事件，UI 可以订阅变化。
+@MainActor
 public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
     nonisolated public static let verbose: Bool = false
@@ -24,10 +27,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Published Properties
 
     /// 下载状态
-    @Published public private(set) var status: DownloadStatus = .idle
+    @Published public private(set) var status: MLXDownloadStatus = .idle
 
     /// 下载进度
-    @Published public private(set) var progress: DownloadProgress = .init()
+    @Published public private(set) var progress: MLXDownloadProgress = .init()
 
     /// 正在下载的模型 ID
     @Published public private(set) var downloadingModelId: String?
@@ -35,27 +38,25 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Private Properties
 
     private var downloadTask: Task<Void, Never>?
-    private var activeDownloadTask: URLSessionDownloadTask?
-    private var downloadSession: URLSession!
-    private var currentFileProgress: Int64 = 0
-    private var currentFileTotal: Int64 = 0
     private var isShutdown = false
 
     private let fileManager = FileManager.default
-    private var tempDirectory: URL
-    private var resumeOffset: Int64 = 0
+    private let downloadManager: DownloadManager
 
     // MARK: - Initialization
 
     public override init() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForResource = 3600
-        self.tempDirectory = fileManager.temporaryDirectory.appendingPathComponent("lumi-mlx-download")
+        let config = DownloadManager.Configuration(
+            downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
+            maxConcurrentDownloads: 3,
+            timeoutInterval: 3600,
+            enableResume: true
+        )
+        self.downloadManager = DownloadManager(configuration: config)
 
         super.init()
 
-        self.downloadSession = URLSession(configuration: config, delegate: self, delegateQueue: nil)
-        try? fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: config.downloadDirectory, withIntermediateDirectories: true)
 
         if Self.verbose {
             Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
@@ -63,7 +64,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     }
 
     deinit {
-        shutdown()
+        downloadTask?.cancel()
     }
 
     // MARK: - Public Methods
@@ -72,20 +73,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     public func download(modelId: String) async {
         guard !isShutdown else { return }
 
-        let isAlreadyDownloading = await MainActor.run {
-            self.downloadingModelId == modelId && self.status == .downloading
-        }
+        let isAlreadyDownloading = downloadingModelId == modelId && status == .downloading
         if isAlreadyDownloading {
             return
         }
 
         cancel(resetPublishedState: false)
 
-        await MainActor.run {
-            self.downloadingModelId = modelId
-            self.status = .downloading
-            self.progress = DownloadProgress()
-        }
+        downloadingModelId = modelId
+        status = .downloading
+        progress = MLXDownloadProgress()
 
         let task = Task { [weak self] in
             guard let self else { return }
@@ -95,23 +92,27 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 try await self.downloadAllFiles(modelId: modelId, to: localDir)
 
                 if Task.isCancelled {
-                    await self.updateStatus(.idle)
+                    self.status = .idle
+                    self.downloadingModelId = nil
                     return
                 }
 
-                await self.updateStatus(.completed)
+                self.status = .completed
+                self.downloadingModelId = nil
                 if Self.verbose {
                     Self.logger.info("\(self.t)模型下载完成：\(modelId)")
                 }
 
             } catch {
                 if !Task.isCancelled {
-                    await self.updateStatus(.failed(error.localizedDescription))
+                    self.status = .failed(error.localizedDescription)
+                    self.downloadingModelId = nil
                 } else {
-                    await self.updateStatus(.idle)
+                    self.status = .idle
+                    self.downloadingModelId = nil
                 }
                 if Self.verbose {
-                                    Self.logger.error("\(self.t)模型下载失败：\(modelId), 错误：\(error.localizedDescription)")
+                    Self.logger.error("\(self.t)模型下载失败：\(modelId), 错误：\(error.localizedDescription)")
                 }
             }
         }
@@ -126,15 +127,17 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     }
 
     private func cancel(resetPublishedState shouldResetPublishedState: Bool) {
-        activeDownloadTask?.cancel()
-        activeDownloadTask = nil
         downloadTask?.cancel()
         downloadTask = nil
 
+        // 取消 DownloadKit 中的所有任务
+        let dm = downloadManager
+        Task {
+            await dm.cancelAll()
+        }
+
         if shouldResetPublishedState {
-            Task { @MainActor [weak self] in
-                self?.resetPublishedState()
-            }
+            resetPublishedState()
         }
 
         if Self.verbose {
@@ -146,15 +149,15 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         guard !isShutdown else { return }
         isShutdown = true
 
-        activeDownloadTask?.cancel()
-        activeDownloadTask = nil
         downloadTask?.cancel()
         downloadTask = nil
-        downloadSession.invalidateAndCancel()
 
-        Task { @MainActor [weak self] in
-            self?.resetPublishedState()
+        let dm = downloadManager
+        Task {
+            await dm.cancelAll()
         }
+
+        resetPublishedState()
     }
 
     /// 重置状态
@@ -169,16 +172,17 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         let filteredFiles = filterFiles(files)
 
         guard !filteredFiles.isEmpty else {
-            throw DownloadError.noFilesAvailable
+            throw MLXDownloadError.noFilesAvailable
         }
 
         let totalBytes = filteredFiles.reduce(Int64(0)) { $0 + ($1.size ?? 0) }
 
-        await updateProgress(totalFiles: Int64(filteredFiles.count), totalBytes: totalBytes)
+        updateProgress(totalFiles: Int64(filteredFiles.count), totalBytes: totalBytes)
 
         try fileManager.createDirectory(at: localDir, withIntermediateDirectories: true)
 
         var downloadedBytes: Int64 = 0
+        let dm = downloadManager
 
         for (index, file) in filteredFiles.enumerated() {
             try Task.checkCancellation()
@@ -196,32 +200,55 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                let existingSize = attrs[.size] as? Int64,
                existingSize == expectedSize, expectedSize > 0 {
                 downloadedBytes += expectedSize
-                await updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
                 continue
             }
 
-            // 下载文件
-            let bytesWritten = try await downloadSingleFile(
-                modelId: modelId,
-                remotePath: file.path,
-                to: fileURL,
+            // 使用 DownloadKit 下载文件
+            let encodedPath = file.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? file.path
+            let urlString = "https://huggingface.co/\(modelId)/resolve/main/\(encodedPath)"
+            guard let url = URL(string: urlString) else {
+                throw MLXDownloadError.invalidURL
+            }
+
+            let task = DownloadTask(
+                id: file.path,
+                url: url,
+                destination: fileURL,
                 expectedSize: expectedSize
             )
 
-            downloadedBytes += bytesWritten
-            await updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+            do {
+                _ = try await dm.download(task)
+                downloadedBytes += expectedSize
+                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+            } catch {
+                // 转换 DownloadKit 错误为 MLX 错误
+                if let downloadError = error as? DownloadKit.DownloadError {
+                    switch downloadError {
+                    case .sizeMismatch(let expected, let actual):
+                        throw MLXDownloadError.sizeMismatch(expected, actual)
+                    case .emptyFile:
+                        throw MLXDownloadError.emptySafetensorsFile(file.path)
+                    default:
+                        throw MLXDownloadError.downloadFailed(error.localizedDescription)
+                    }
+                } else {
+                    throw MLXDownloadError.downloadFailed(error.localizedDescription)
+                }
+            }
         }
 
         // 验证 safetensors
         for file in filteredFiles where file.path.hasSuffix(".safetensors") {
             let fileURL = localDir.appendingPathComponent(file.path)
             guard fileManager.fileExists(atPath: fileURL.path) else {
-                throw DownloadError.missingFile(file.path)
+                throw MLXDownloadError.missingFile(file.path)
             }
             let attrs = try fileManager.attributesOfItem(atPath: fileURL.path)
             let size = attrs[.size] as? Int64 ?? 0
             if size == 0 {
-                throw DownloadError.emptySafetensorsFile(file.path)
+                throw MLXDownloadError.emptySafetensorsFile(file.path)
             }
         }
     }
@@ -229,7 +256,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private func fetchFileList(modelId: String) async throws -> [HFFileEntry] {
         let urlString = "https://huggingface.co/api/models/\(modelId)/tree/main"
         guard let url = URL(string: urlString) else {
-            throw DownloadError.invalidURL
+            throw MLXDownloadError.invalidURL
         }
 
         var request = URLRequest(url: url)
@@ -287,65 +314,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
     }
 
-    private func downloadSingleFile(
-        modelId: String,
-        remotePath: String,
-        to localURL: URL,
-        expectedSize: Int64
-    ) async throws -> Int64 {
-        let encodedPath = remotePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? remotePath
-        let urlString = "https://huggingface.co/\(modelId)/resolve/main/\(encodedPath)"
-        guard let url = URL(string: urlString) else {
-            throw DownloadError.invalidURL
-        }
-
-        let incompleteURL = localURL.appendingPathExtension("incomplete")
-        self.resumeOffset = 0
-
-        // 检查断点
-        if fileManager.fileExists(atPath: incompleteURL.path) {
-            let attrs = try fileManager.attributesOfItem(atPath: incompleteURL.path)
-            self.resumeOffset = attrs[.size] as? Int64 ?? 0
-        }
-
-        // 已存在完整文件
-        if fileManager.fileExists(atPath: localURL.path) {
-            if let attrs = try? fileManager.attributesOfItem(atPath: localURL.path),
-               let size = attrs[.size] as? Int64, size == expectedSize {
-                return size
-            }
-            try fileManager.removeItem(at: localURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 600
-        if resumeOffset > 0 {
-            request.setValue("bytes=\(resumeOffset)-", forHTTPHeaderField: "Range")
-        }
-
-        // 使用 async/await 下载
-        return try await withCheckedThrowingContinuation { continuation in
-            let task = downloadSession.downloadTask(with: request)
-            task.taskDescription = "\(localURL.path)|\(expectedSize)"
-            self.activeDownloadTask = task
-
-            // 存储 continuation 用于回调
-            DownloadContext.store(id: task.taskDescription ?? "", continuation: continuation)
-            task.resume()
-        }
-    }
-
     // MARK: - Status Updates
 
-    @MainActor
-    private func updateStatus(_ status: DownloadStatus) {
-        self.status = status
-        if status == .completed || status == .idle || status == .failed("") {
-            self.downloadingModelId = nil
-        }
-    }
-
-    @MainActor
     private func updateProgress(completedFiles: Int64? = nil, downloadedBytes: Int64? = nil,
                                 totalFiles: Int64? = nil, totalBytes: Int64? = nil) {
         if let cf = completedFiles { progress.completedFiles = cf }
@@ -368,156 +338,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         return min(max(fraction, 0), maxFraction)
     }
 
-    @MainActor
     private func resetPublishedState() {
         status = .idle
         downloadingModelId = nil
-        progress = DownloadProgress()
-    }
-}
-
-// MARK: - URLSessionDownloadDelegate
-
-extension MLXDownloadManager: URLSessionDownloadDelegate {
-
-    public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                          didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
-                          totalBytesExpectedToWrite: Int64) {
-        let currentWritten = resumeOffset + totalBytesWritten
-        let currentTotal = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : resumeOffset + totalBytesWritten
-
-        Task { @MainActor [weak self] in
-            guard let self, self.status == .downloading else { return }
-            self.progress.fractionCompleted = Self.downloadProgressFraction(
-                writtenBytes: currentWritten,
-                totalBytes: currentTotal
-            )
-        }
-    }
-
-    public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                          didFinishDownloadingTo location: URL) {
-        guard let taskInfo = downloadTask.taskDescription else { return }
-        let parts = taskInfo.split(separator: "|", maxSplits: 1)
-        guard parts.count == 2 else { return }
-
-        let destPath = String(parts[0])
-        let expectedSize = Int64(parts[1]) ?? 0
-
-        let destURL = URL(fileURLWithPath: destPath)
-        let incompleteURL = destURL.appendingPathExtension("incomplete")
-
-        // 处理不同的 HTTP 状态码
-        if let response = downloadTask.response as? HTTPURLResponse {
-            switch response.statusCode {
-            case 200, 206:
-                break
-            case 416:
-                try? fileManager.removeItem(at: incompleteURL)
-                try? fileManager.removeItem(at: location)
-                // 重试下载
-                if let context = DownloadContext.remove(id: taskInfo) {
-                    context.resume(returning: 0)  // 返回 0 表示需要重试
-                }
-                return
-            default:
-                try? fileManager.removeItem(at: location)
-                if let context = DownloadContext.remove(id: taskInfo) {
-                    context.resume(throwing: DownloadError.httpError(response.statusCode))
-                }
-                return
-            }
-        }
-
-        do {
-            let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode
-            let actualSize = try Self.finalizeDownloadedFile(
-                from: location,
-                to: destURL,
-                expectedSize: expectedSize,
-                statusCode: statusCode,
-                fileManager: fileManager
-            )
-
-            if let context = DownloadContext.remove(id: taskInfo) {
-                context.resume(returning: actualSize)
-            }
-        } catch {
-            try? fileManager.removeItem(at: location)
-            if let context = DownloadContext.remove(id: taskInfo) {
-                context.resume(throwing: error)
-            }
-        }
-    }
-
-    public func urlSession(_ session: URLSession, task: URLSessionTask,
-                          didCompleteWithError error: Error?) {
-        guard let taskInfo = task.taskDescription else { return }
-
-        if let error = error {
-            if Self.verbose {
-                            Self.logger.error("\(self.t)下载失败：\(error.localizedDescription)")
-            }
-            if let context = DownloadContext.remove(id: taskInfo) {
-                context.resume(throwing: error)
-            }
-        }
-        // 成功情况在 didFinishDownloadingTo 中处理，这里不重复调用 continuation
-    }
-
-    static func finalizeDownloadedFile(
-        from location: URL,
-        to destURL: URL,
-        expectedSize: Int64,
-        statusCode: Int?,
-        fileManager: FileManager = .default
-    ) throws -> Int64 {
-        let incompleteURL = destURL.appendingPathExtension("incomplete")
-
-        if statusCode == 206, fileManager.fileExists(atPath: incompleteURL.path) {
-            try appendFile(at: location, to: incompleteURL, fileManager: fileManager)
-            try fileManager.removeItem(at: location)
-        } else {
-            if fileManager.fileExists(atPath: incompleteURL.path) {
-                try fileManager.removeItem(at: incompleteURL)
-            }
-            try fileManager.moveItem(at: location, to: incompleteURL)
-        }
-
-        let attrs = try fileManager.attributesOfItem(atPath: incompleteURL.path)
-        let actualSize = attrs[.size] as? Int64 ?? 0
-        if expectedSize > 0 && actualSize != expectedSize {
-            try? fileManager.removeItem(at: incompleteURL)
-            throw DownloadError.sizeMismatch(expectedSize, actualSize)
-        }
-
-        if fileManager.fileExists(atPath: destURL.path) {
-            try fileManager.removeItem(at: destURL)
-        }
-        try fileManager.moveItem(at: incompleteURL, to: destURL)
-
-        return actualSize
-    }
-
-    private static func appendFile(at sourceURL: URL, to destinationURL: URL, fileManager: FileManager) throws {
-        let source = try FileHandle(forReadingFrom: sourceURL)
-        defer { try? source.close() }
-
-        let destination = try FileHandle(forWritingTo: destinationURL)
-        defer { try? destination.close() }
-        try destination.seekToEnd()
-
-        while true {
-            let chunk = try source.read(upToCount: 1024 * 1024) ?? Data()
-            if chunk.isEmpty { break }
-            try destination.write(contentsOf: chunk)
-        }
+        progress = MLXDownloadProgress()
     }
 }
 
 // MARK: - Supporting Types
 
-public enum DownloadStatus: Equatable, Sendable {
+public enum MLXDownloadStatus: Equatable, Sendable {
     case idle, downloading, paused, completed, failed(String), cancelling
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
@@ -530,7 +360,7 @@ public enum DownloadStatus: Equatable, Sendable {
     }
 }
 
-public struct DownloadProgress: Sendable {
+public struct MLXDownloadProgress: Sendable {
     public var fractionCompleted: Double = 0
     public var completedFiles: Int64 = 0
     public var totalFiles: Int64 = 0
@@ -553,7 +383,7 @@ private struct HFFileEntry: Decodable {
     public let size: Int64?
 }
 
-public enum DownloadError: LocalizedError {
+public enum MLXDownloadError: LocalizedError {
     case invalidURL, invalidResponse, httpError(Int), noFilesAvailable
     case missingFile(String), emptySafetensorsFile(String), sizeMismatch(Int64, Int64)
     case downloadFailed(String)
@@ -569,49 +399,5 @@ public enum DownloadError: LocalizedError {
         case .sizeMismatch(let exp, let act): return "大小不匹配：期望 \(exp), 实际 \(act)"
         case .downloadFailed(let msg): return "下载失败：\(msg)"
         }
-    }
-}
-
-// MARK: - DownloadContext (Continuation Storage)
-
-private final class DownloadContext: @unchecked Sendable {
-    private static let _continuations = LockedDictionary<String, DownloadContext>()
-
-    public let continuation: CheckedContinuation<Int64, Error>
-    public let id: String
-
-    private init(id: String, continuation: CheckedContinuation<Int64, Error>) {
-        self.id = id
-        self.continuation = continuation
-    }
-
-    public static func store(id: String, continuation: CheckedContinuation<Int64, Error>) {
-        _continuations.setValue(DownloadContext(id: id, continuation: continuation), forKey: id)
-    }
-
-    public static func remove(id: String) -> DownloadContext? {
-        _continuations.removeValue(forKey: id)
-    }
-
-    public func resume(returning value: Int64) {
-        continuation.resume(returning: value)
-    }
-
-    public func resume(throwing error: Error) {
-        continuation.resume(throwing: error)
-    }
-}
-
-// Thread-safe dictionary wrapper
-private final class LockedDictionary<Key: Hashable & Sendable, Value: Sendable>: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "com.lumi.downloadcontext.lock")
-    private var _storage: [Key: Value] = [:]
-
-    public func setValue(_ value: Value, forKey key: Key) {
-        queue.sync { self._storage[key] = value }
-    }
-
-    public func removeValue(forKey key: Key) -> Value? {
-        queue.sync { _storage.removeValue(forKey: key) }
     }
 }

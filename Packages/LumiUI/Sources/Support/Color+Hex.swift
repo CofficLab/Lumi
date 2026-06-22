@@ -8,24 +8,41 @@ public enum SystemAppearanceResolver {
     /// 不受 `NSWindow.appearance` / `preferredColorScheme` 污染。
     /// `UserDefaults.standard` 是线程安全的，故标记 `nonisolated`。
     nonisolated static var systemIsDarkByPreference: Bool {
-        let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") ?? ""
-        return style.lowercased().contains("dark")
-    }
-
-    /// 缓存的系统真实外观。
-    /// 在固定外观主题激活时快照，确保 `.system` 主题切换回来时颜色解析不受窗口外观异步清除影响。
-    nonisolated(unsafe) static var cachedSystemIsDark: Bool?
-
-    /// 强制刷新系统外观快照。
-    static func cache() {
-        cachedSystemIsDark = systemIsDarkByPreference
-    }
-
-    public static var effectiveColorScheme: ColorScheme {
-        if let cached = cachedSystemIsDark {
-            return cached ? .dark : .light
+        if let style = globalInterfaceStyle {
+            return style.lowercased().contains("dark")
         }
-        return systemIsDarkByPreference ? .dark : .light
+        return false
+    }
+
+    /// `AppleInterfaceStyle` 存在全局域；`UserDefaults.standard` 在运行时切换时不一定同步。
+    nonisolated private static var globalInterfaceStyle: String? {
+        UserDefaults.standard.synchronize()
+        if let style = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleInterfaceStyle"] as? String,
+           !style.isEmpty {
+            return style
+        }
+        if let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle"), !style.isEmpty {
+            return style
+        }
+        return nil
+    }
+
+    /// 读取当前系统明暗；优先 UserDefaults，自动模式下回退到 NSApp 有效外观。
+    @MainActor
+    public static func currentSystemColorScheme() -> ColorScheme {
+        if let style = globalInterfaceStyle {
+            return style.lowercased().contains("dark") ? .dark : .light
+        }
+        guard NSApp != nil else {
+            return systemIsDarkByPreference ? .dark : .light
+        }
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return isDark ? .dark : .light
+    }
+
+    @MainActor
+    public static var effectiveColorScheme: ColorScheme {
+        currentSystemColorScheme()
     }
 }
 
@@ -43,7 +60,7 @@ public enum AppThemeAppearanceResolver {
         }
     }
 
-    /// `Color.adaptive(light:dark:)` 应使用的分支；固定主题忽略 `NSAppearance`。
+    /// `Color.adaptive(light:dark:)` 在固定主题下使用的分支。
     nonisolated static func adaptiveUsesDarkBranch(for appearance: NSAppearance) -> Bool {
         switch ActiveChromeTheme.current.appearanceKind {
         case .dark:
@@ -51,12 +68,7 @@ public enum AppThemeAppearanceResolver {
         case .light:
             return false
         case .system:
-            // 使用 UserDefaults 读取系统级外观偏好，
-            // 避免窗口外观异步清除期间传入被污染的 appearance 参数
-            if let cached = SystemAppearanceResolver.cachedSystemIsDark {
-                return cached
-            }
-            return SystemAppearanceResolver.systemIsDarkByPreference
+            return ResolvedSystemColorScheme.current == .dark
         }
     }
 }
@@ -93,13 +105,14 @@ extension Color {
     }
 
     public init(light: String, dark: String) {
-        self.init(nsColor: NSColor(name: nil) { appearance in
-            if AppThemeAppearanceResolver.adaptiveUsesDarkBranch(for: appearance) {
-                return NSColor(Color(hex: dark))
-            } else {
-                return NSColor(Color(hex: light))
-            }
-        })
+        switch ActiveChromeTheme.current.appearanceKind {
+        case .system:
+            self.init(hex: ResolvedSystemColorScheme.current == .dark ? dark : light)
+        case .dark:
+            self.init(hex: dark)
+        case .light:
+            self.init(hex: light)
+        }
     }
 
     /// 基于字符串（如人名）生成固定的自适应颜色，同一输入始终映射到同一色板项。

@@ -3,47 +3,26 @@ import LumiUI
 import SwiftUI
 
 struct GeneralSettingsPage: View {
-    @State private var reopenLastWindow = true
-    @State private var enableStatusBar = true
-    @State private var showDeveloperCommands = true
-
     var body: some View {
-        AppSettingsContentScaffold {
-            VStack(alignment: .leading, spacing: 18) {
-                AppSettingsSection(title: "启动") {
-                    AppSettingsToggleRow(
-                        "恢复上次窗口",
-                        description: "保留入口，后续接入窗口持久化服务。",
-                        systemImage: "macwindow",
-                        isOn: $reopenLastWindow
-                    )
-                }
-
-                AppSettingsSection(title: "界面") {
-                    AppSettingsToggleRow(
-                        "显示状态栏",
-                        description: "当前为只读布局开关占位。",
-                        systemImage: "rectangle.bottomthird.inset.filled",
-                        isOn: $enableStatusBar
-                    )
-                    AppSettingsToggleRow(
-                        "显示调试命令",
-                        description: "调试菜单已经恢复，这里先保留设置项。",
-                        systemImage: "ladybug",
-                        isOn: $showDeveloperCommands
-                    )
-                }
-
-                AppSettingsSection(title: "新手引导") {
-                    AppButton("重新查看新手引导", systemImage: "graduationcap", style: .secondary) {
-                        NotificationCenter.default.post(
-                            name: .lumiShowOnboarding,
-                            object: nil,
-                            userInfo: [LumiOnboardingNotification.resetKey: true]
-                        )
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
+                AppSettingSection(title: "新手引导", titleAlignment: .leading) {
+                    AppSettingRow(
+                        title: "重新查看新手引导",
+                        description: "再次打开首次使用引导流程",
+                        icon: "graduationcap"
+                    ) {
+                        AppButton("开始", systemImage: "arrow.right", style: .secondary, size: .small) {
+                            NotificationCenter.default.post(
+                                name: .lumiShowOnboarding,
+                                object: nil,
+                                userInfo: [LumiOnboardingNotification.resetKey: true]
+                            )
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

@@ -23,6 +23,7 @@ let package = Package(
             revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
         ),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/DownloadKit"),
     ],
     targets: [
         .target(
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "DownloadKit", package: "DownloadKit"),
             ],
             path: "Sources",
             exclude: [

@@ -8,6 +8,9 @@ public struct AnthropicCompatibleProviderConfiguration: Sendable, Equatable {
     /// API 基础 URL
     public let baseURL: String
 
+    /// 主入口不可用时的备用 URL 列表
+    public let fallbackBaseURLs: [String]
+
     /// 额外的 HTTP 请求头
     public let additionalHeaders: [String: String]
 
@@ -19,11 +22,13 @@ public struct AnthropicCompatibleProviderConfiguration: Sendable, Equatable {
 
     public init(
         baseURL: String,
+        fallbackBaseURLs: [String] = [],
         additionalHeaders: [String: String] = [:],
         apiVersion: String = "2023-06-01",
         defaultMaxTokens: Int = 8192
     ) {
         self.baseURL = baseURL
+        self.fallbackBaseURLs = fallbackBaseURLs
         self.additionalHeaders = additionalHeaders
         self.apiVersion = apiVersion
         self.defaultMaxTokens = defaultMaxTokens
