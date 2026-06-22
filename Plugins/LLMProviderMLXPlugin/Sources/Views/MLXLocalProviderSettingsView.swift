@@ -1,3 +1,4 @@
+import AppKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -46,8 +47,18 @@ public struct MLXLocalProviderSettingsView: View {
                 Text(modelManager.formattedCacheSize)
                     .font(.appBody)
                     .foregroundColor(theme.textPrimary)
+                AppButton(systemImage: "folder", style: .ghost, size: .small) {
+                    openCacheDirectory()
+                }
+                .help("在访达中打开缓存目录")
             }
         }
+    }
+
+    private func openCacheDirectory() {
+        let url = MLXModels.modelsCacheBaseDirectory
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
     }
 
     private var modelListCard: some View {
