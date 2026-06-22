@@ -171,6 +171,23 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             return nil
         }
 
+        // 部分网关（如 FreeModel）在 stream=true 时仍返回整段 JSON 而非 SSE
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("{"),
+           !trimmed.contains("event:"),
+           !trimmed.contains("data:") {
+            let parsed = try parseResponse(data: data)
+            if !parsed.content.isEmpty || parsed.toolCalls != nil {
+                return StreamChunk(
+                    content: parsed.content.isEmpty ? nil : parsed.content,
+                    isDone: true,
+                    toolCalls: parsed.toolCalls,
+                    eventType: .textDelta,
+                    rawEvent: text
+                )
+            }
+        }
+
         var eventType: String?
         var eventDataLines: [String] = []
 

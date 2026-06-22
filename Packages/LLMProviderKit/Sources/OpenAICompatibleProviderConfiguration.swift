@@ -2,6 +2,7 @@ import Foundation
 
 public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
     public let baseURL: String
+    public let fallbackBaseURLs: [String]
     public let additionalHeaders: [String: String]
     public let includeUsageInStreamOptions: Bool
     public let returnsEmptyChunkWhenNoDelta: Bool
@@ -10,6 +11,7 @@ public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
 
     public init(
         baseURL: String,
+        fallbackBaseURLs: [String] = [],
         additionalHeaders: [String: String] = [:],
         includeUsageInStreamOptions: Bool = false,
         returnsEmptyChunkWhenNoDelta: Bool = false,
@@ -17,6 +19,7 @@ public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
         includesReasoningContentInMessages: Bool = false
     ) {
         self.baseURL = baseURL
+        self.fallbackBaseURLs = fallbackBaseURLs
         self.additionalHeaders = additionalHeaders
         self.includeUsageInStreamOptions = includeUsageInStreamOptions
         self.returnsEmptyChunkWhenNoDelta = returnsEmptyChunkWhenNoDelta
