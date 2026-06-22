@@ -54,22 +54,23 @@ EditorTabStripPlugin/
 ├── README.md
 ├── .gitignore
 ├── Sources/
-│   ├── EditorTabStripPlugin.swift      # 插件入口
-│   ├── EditorTabStripCoordinator.swift
-│   ├── EditorTabStripStore.swift
-│   ├── EditorTabStripEvents.swift
-│   ├── EditorTabHeaderView.swift
-│   ├── EditorTabItemView.swift
-│   ├── EditorTabDragPreview.swift
-│   ├── GetCurrentFileTool.swift
-│   ├── SetCurrentFileTool.swift
+│   ├── StripPlugin.swift               # 插件入口
+│   ├── StripCoordinator.swift
+│   ├── StripStore.swift
+│   ├── StripEvents.swift
+│   ├── HeaderView.swift
+│   ├── ItemView.swift
+│   ├── DragPreview.swift
+│   ├── Tools/
+│   │   ├── GetCurrentFileTool.swift
+│   │   └── SetCurrentFileTool.swift
 │   └── Localizable.xcstrings
 └── Tests/
 ```
 
 ## 注册
 
-在 `Packages/LumiPluginRegistry/Sources/LumiPluginRegistry/LumiPluginRegistry.swift` 的 `allPlugins` 数组中注册 `EditorTabStripHeaderPlugin.self`。
+在 `Packages/LumiPluginRegistry/Sources/LumiPluginRegistry/LumiPluginRegistry.swift` 的 `allPlugins` 数组中注册 `StripHeaderPlugin.self`。
 
 ## 相关插件
 

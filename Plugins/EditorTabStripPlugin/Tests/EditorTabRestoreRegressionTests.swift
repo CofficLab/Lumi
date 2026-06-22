@@ -8,7 +8,7 @@ import Testing
 struct EditorTabRestoreRegressionTests {
     @Test func startObservingRestoresImmediatelyWhenProjectPathIsReady() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         await fixture.persistTabs(
             paths: [fixture.primaryFile.path, fixture.secondaryFile.path],
             activePath: fixture.primaryFile.path
@@ -30,7 +30,7 @@ struct EditorTabRestoreRegressionTests {
 
     @Test func startObservingWithEmptyPathEventuallyRestoresWhenPathBecomesAvailable() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         await fixture.persistTabs(
             paths: [fixture.primaryFile.path],
             activePath: fixture.primaryFile.path
@@ -59,7 +59,7 @@ struct EditorTabRestoreRegressionTests {
 
     @Test func restoreWithEmptyProjectPathDoesNotCreateSessions() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         await fixture.persistTabs(
             paths: [fixture.primaryFile.path],
             activePath: fixture.primaryFile.path
@@ -81,7 +81,7 @@ struct EditorTabRestoreRegressionTests {
 
     @Test func restoreTabsDoesNotExposeSessionOnlyGapBeforeOpenFile() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         await fixture.persistTabs(
             paths: [fixture.primaryFile.path],
             activePath: fixture.primaryFile.path
@@ -112,7 +112,7 @@ struct EditorTabRestoreRegressionTests {
 
     @Test func slowOpenFileDefersContentUntilCompletion() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         await fixture.persistTabs(
             paths: [fixture.primaryFile.path],
             activePath: fixture.primaryFile.path
@@ -137,7 +137,7 @@ struct EditorTabRestoreRegressionTests {
 
     @Test func handleProjectPathChangeIgnoresLateRestoreFromPreviousProject() async {
         let fixture = TabRestoreFixture()
-        let coordinator = EditorTabStripCoordinator(store: fixture.store)
+        let coordinator = StripCoordinator(store: fixture.store)
         let oldProject = fixture.projectPath
         let newProject = fixture.rootDirectory.appendingPathComponent("GitOK", isDirectory: true).path
         try? FileManager.default.createDirectory(atPath: newProject, withIntermediateDirectories: true)
@@ -169,7 +169,7 @@ private final class TabRestoreFixture {
     let projectPath: String
     let primaryFile: URL
     let secondaryFile: URL
-    let store: EditorTabStripStore
+    let store: StripStore
     let service = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
 
     var sessionStore: EditorSessionStore { service.sessionStore }
@@ -191,7 +191,7 @@ private final class TabRestoreFixture {
         projectPath = root.path
         primaryFile = primary
         secondaryFile = secondary
-        store = EditorTabStripStore(
+        store = StripStore(
             baseDirectory: root.appendingPathComponent("EditorTabStrip/projects", isDirectory: true)
         )
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 import LumiUI
 
-struct EditorTabDragPreview: View {
+struct DragPreview: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     let fileURL: URL

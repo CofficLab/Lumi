@@ -4,7 +4,7 @@ import AgentToolKit
 
 /// 设置当前文件工具
 ///
-/// 基于 EditorTabStripStore 的 activeTabPath 设置当前活跃文件。
+/// 基于 StripStore 的 activeTabPath 设置当前活跃文件。
 public struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = false
@@ -64,8 +64,8 @@ public struct SetCurrentFileTool: SuperAgentTool, SuperLog {
 
         let fileName = URL(fileURLWithPath: path).lastPathComponent
 
-        // 通过 EditorTabStripStore 设置当前活跃文件
-        let store = EditorTabStripStore.shared
+        // 通过 StripStore 设置当前活跃文件
+        let store = StripStore.shared
         store.setCurrentFilePath(path: path, forProject: projectPath)
 
         // 发送通知，告知 UI 同步

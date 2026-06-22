@@ -7,7 +7,7 @@ import LumiCoreKit
 /// 单个标签页的完整交互项
 ///
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
-public struct EditorTabItemView: View {
+public struct ItemView: View {
     @LumiUI.LumiTheme private var uiTheme: any LumiUITheme
 
     @LumiMotionPreferenceReader private var motionPreference
@@ -181,7 +181,7 @@ public struct EditorTabItemView: View {
     private var tabDragPreview: some View {
         Group {
             if let fileURL = tab.fileURL {
-                EditorTabDragPreview(fileURL: fileURL)
+                DragPreview(fileURL: fileURL)
             } else {
                 Text(tab.title)
                     .font(.appMicroEmphasized)

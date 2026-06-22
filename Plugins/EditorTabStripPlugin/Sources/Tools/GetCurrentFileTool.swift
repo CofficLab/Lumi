@@ -5,7 +5,7 @@ import os
 
 /// 获取当前文件工具
 ///
-/// 基于 EditorTabStripStore 的 activeTabPath 获取当前活跃文件。
+/// 基于 StripStore 的 activeTabPath 获取当前活跃文件。
 public struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = false
@@ -46,7 +46,7 @@ public struct GetCurrentFileTool: SuperAgentTool, SuperLog {
             """
         }
 
-        let store = EditorTabStripStore.shared
+        let store = StripStore.shared
         guard let fileInfo = store.getCurrentFilePath(forProject: projectPath) else {
             return """
             ## Current File Status
