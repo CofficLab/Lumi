@@ -122,6 +122,7 @@ import DisplayControlPlugin
 import LogoSmartLightPlugin
 import LogoCofficPlugin
 import VideoConverterPlugin
+import DownloadPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -251,6 +252,7 @@ public enum LumiPluginRegistry {
         DisplayControlPlugin.self,
         LogoSmartLightPlugin.self,
         LogoCofficPlugin.self,
-        VideoConverterPlugin.self
+        VideoConverterPlugin.self,
+        DownloadPlugin.self,
     ]
 }

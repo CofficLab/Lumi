@@ -152,6 +152,12 @@ public actor DownloadManager {
         return taskStates[taskId]
     }
 
+    /// 获取所有任务状态
+    /// - Returns: 所有任务 ID 到状态的映射
+    public func allTaskStates() -> [String: DownloadTaskState] {
+        return taskStates
+    }
+
     // MARK: - Private Methods
 
     private func performDownload(_ task: DownloadTask) async {

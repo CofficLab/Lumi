@@ -1,0 +1,73 @@
+import AgentToolKit
+import DownloadKit
+import Foundation
+import LumiCoreKit
+import os
+import SuperLogKit
+
+/// Download Agent 插件
+///
+/// 提供一组下载相关的 Agent 工具，支持 HTTP/HTTPS 文件下载、
+/// 批量下载、断点续传、进度追踪和任务管理。
+public enum DownloadPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .agent
+    public static let iconName = "arrow.down.circle"
+
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.download-agent",
+        displayName: "Download Agent",
+        description: "文件下载 Agent 工具集：支持 HTTP/HTTPS 下载、断点续传、批量下载、进度查询与任务管理",
+        order: 92
+    )
+
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.download-agent")
+
+    /// 全局下载管理器，懒加载
+    @MainActor public static var sharedManager: DownloadManager = {
+        let dir = defaultDownloadDirectory()
+        let config = DownloadManager.Configuration(
+            downloadDirectory: dir,
+            maxConcurrentDownloads: 3,
+            timeoutInterval: 3600,
+            enableResume: true
+        )
+        return DownloadManager(configuration: config)
+    }()
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        let manager = sharedManager
+        return [
+            DownloadFileTool(manager: manager).asLumiAgentTool(),
+            DownloadBatchTool(manager: manager).asLumiAgentTool(),
+            ListDownloadsTool(manager: manager).asLumiAgentTool(),
+            DownloadProgressTool(manager: manager).asLumiAgentTool(),
+            CancelDownloadTool(manager: manager).asLumiAgentTool(),
+            RetryDownloadTool(manager: manager).asLumiAgentTool(),
+        ]
+    }
+}
+
+// MARK: - Helpers
+
+extension DownloadPlugin {
+    /// 默认下载目录：~/Downloads/LumiDownloads
+    static func defaultDownloadDirectory() -> URL {
+        let fileManager = FileManager.default
+        let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        let dir = downloads.appendingPathComponent("LumiDownloads", isDirectory: true)
+        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    /// 从 URL 字符串提取文件名
+    static func extractFilename(from url: URL) -> String {
+        let name = url.lastPathComponent
+        // lastPathComponent 对 "/" 路径返回 "/"，对无路径的 URL 可能返回空
+        if name.isEmpty || name == "/" { return "download_\(UUID().uuidString.prefix(8))" }
+        return name
+    }
+}
