@@ -1,9 +1,11 @@
+import LLMAvailabilityPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ModelSelectorModelRow: View {
     @LumiTheme private var theme
+    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     let provider: LumiLLMProviderInfo
     let model: String
@@ -31,10 +33,16 @@ struct ModelSelectorModelRow: View {
         provider.modelCapabilities[model]
     }
 
+    private var availabilityStatus: LLMAvailabilityStatus {
+        availabilityStore.status(providerId: provider.id, modelId: model) ?? .unknown
+    }
+
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
+                    availabilityStatusIcon(availabilityStatus)
+
                     Text(model)
                         .font(.system(size: 15, weight: .regular))
                         .foregroundColor(theme.textPrimary)
@@ -98,5 +106,27 @@ struct ModelSelectorModelRow: View {
     private func capabilityBadge(title: String, systemImage: String) -> some View {
         AppTag(title, systemImage: systemImage, style: .subtle)
             .help(title)
+    }
+
+    @ViewBuilder
+    private func availabilityStatusIcon(_ status: LLMAvailabilityStatus) -> some View {
+        switch status {
+        case .available:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(.green)
+        case .checking:
+            ProgressView()
+                .scaleEffect(0.5)
+                .frame(width: 12, height: 12)
+        case .unavailable:
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(.red)
+        case .unknown:
+            Image(systemName: "questionmark.circle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
     }
 }
