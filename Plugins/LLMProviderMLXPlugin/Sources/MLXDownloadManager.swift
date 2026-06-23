@@ -22,6 +22,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
     nonisolated public static let verbose: Bool = false
 
+    /// 全局共享的下载管理器单例
+    ///
+    /// 使用单例确保下载任务独立于视图生命周期，
+    /// 即使视图关闭也能在后台继续下载，重新打开时恢复进度。
+    public static let shared = MLXDownloadManager()
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mlx")
 
     // MARK: - Published Properties
@@ -35,6 +41,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     /// 正在下载的模型 ID
     @Published public private(set) var downloadingModelId: String?
 
+    /// 当前正在下载的文件名
+    @Published public private(set) var currentFileName: String?
+
+    /// 当前正在下载的文件大小（字节）
+    @Published public private(set) var currentFileSize: Int64 = 0
+
     // MARK: - Private Properties
 
     private var downloadTask: Task<Void, Never>?
@@ -45,7 +57,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Initialization
 
-    public override init() {
+    private override init() {
         let config = DownloadManager.Configuration(
             downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
             maxConcurrentDownloads: 3,
@@ -236,6 +248,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             Self.logger.info("\(self.t)📥 下载文件 [\(index + 1)/\(filteredFiles.count)]：\(file.path) (\(expectedSize) 字节)")
 
+            // 更新当前下载的文件名和大小
+            currentFileName = file.path
+            currentFileSize = expectedSize
+
             let task = DownloadTask(
                 id: file.path,
                 url: url,
@@ -410,6 +426,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private func resetPublishedState() {
         status = .idle
         downloadingModelId = nil
+        currentFileName = nil
+        currentFileSize = 0
         progress = MLXDownloadProgress()
     }
 }

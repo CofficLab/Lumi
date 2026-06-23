@@ -11,7 +11,7 @@ public struct MLXLocalProviderSettingsView: View {
     @LumiTheme private var theme
 
     @StateObject private var modelManager = MLXModelManager()
-    @StateObject private var downloadManager = MLXDownloadManager()
+    @ObservedObject private var downloadManager = MLXDownloadManager.shared
     @StateObject private var inferenceService = MLXInferenceService()
 
     @State private var actionError: String?
@@ -201,8 +201,40 @@ public struct MLXLocalProviderSettingsView: View {
             }
 
             if isDownloading {
-                ProgressView(value: downloadManager.progress.fractionCompleted)
-                    .controlSize(.small)
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: downloadManager.progress.fractionCompleted)
+                        .controlSize(.small)
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.caption2)
+                            .foregroundColor(theme.textSecondary)
+
+                        if let fileName = downloadManager.currentFileName {
+                            Text(LumiPluginLocalization.string("正在下载", bundle: .module) + " " + fileName)
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        } else {
+                            Text(LumiPluginLocalization.string("准备下载...", bundle: .module))
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if downloadManager.currentFileSize > 0 {
+                            Text(formattedFileSize(downloadManager.currentFileSize))
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Text("\(downloadManager.progress.completedFiles)/\(downloadManager.progress.totalFiles)")
+                            .font(.caption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
             }
 
             if hasError, let errorMsg = actionError {
@@ -266,5 +298,11 @@ public struct MLXLocalProviderSettingsView: View {
         actionError = nil
         errorModelId = nil
         await inferenceService.unloadModel()
+    }
+
+    private func formattedFileSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
     }
 }
