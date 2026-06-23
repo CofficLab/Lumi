@@ -1,0 +1,48 @@
+import Foundation
+import LumiCoreKit
+import SwiftUI
+
+/// Agent 临时文件存储插件。
+///
+/// 为 Agent 提供隔离的临时文件目录，支持写入、读取与列举；
+/// 超过保留期限（默认 7 天）的文件会自动清理。
+public enum AgentTempStoragePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .agent
+    public static let iconName = "doc.badge.clock"
+
+    public static let info = LumiPluginInfo(
+        id: "AgentTempStorage",
+        displayName: PluginAgentTempStorageLocalization.string("Agent Temp Storage"),
+        description: PluginAgentTempStorageLocalization.string(
+            "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
+        ),
+        order: 18
+    )
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [
+            WriteTempFileTool(),
+            ReadTempFileTool(),
+            ListTempFilesTool()
+        ]
+    }
+
+    @MainActor
+    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+        pluginAboutView(
+            icon: iconName,
+            displayName: info.displayName,
+            description: info.description,
+            kind: .general
+        )
+    }
+}
+
+enum PluginAgentTempStorageLocalization {
+    static func string(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, table: "Localizable")
+    }
+}
