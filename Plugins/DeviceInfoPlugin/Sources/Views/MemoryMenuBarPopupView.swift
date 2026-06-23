@@ -3,15 +3,13 @@ import SwiftUI
 import LumiCoreKit
 
 struct MemoryMenuBarPopupView: View {
+    @LumiTheme private var theme
+
     @StateObject private var viewModel = MemoryManagerViewModel()
-    @ObservedObject private var historyService = MemoryHistoryService.shared
 
     var body: some View {
         HoverableContainerView(detailView: MemoryHistoryDetailView()) {
-            VStack(spacing: 0) {
-                liveStatsView
-                miniTrendView
-            }
+            liveStatsView
         }
     }
 
@@ -20,7 +18,7 @@ struct MemoryMenuBarPopupView: View {
             HStack {
                 Text(LumiPluginLocalization.string("Memory", bundle: .module))
                     .font(.system(size: 11))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Spacer()
 
@@ -31,12 +29,12 @@ struct MemoryMenuBarPopupView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "98989E").opacity(0.2))
+                        .fill(theme.textTertiary.opacity(0.2))
 
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "7C6FFF"), Color(hex: "0A84FF")]),
+                                gradient: Gradient(colors: [theme.primary, theme.info]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -48,81 +46,4 @@ struct MemoryMenuBarPopupView: View {
         }
         .padding()
     }
-
-    private var miniTrendView: some View {
-        let recentData = Array(historyService.recentHistory.suffix(60))
-        let maxValue = 100.0
-
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
-
-                Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
-                    .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
-
-                Spacer()
-
-                HStack(spacing: 6) {
-                    HStack(spacing: 3) {
-                        Circle()
-                            .fill(Color(hex: "7C6FFF").opacity(0.8))
-                            .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Usage", bundle: .module))
-                            .font(.system(size: 9))
-                            .foregroundColor(Color(hex: "98989E"))
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-
-            GeometryReader { geometry in
-                ZStack {
-                    ForEach(0 ..< 3) { i in
-                        let y = CGFloat(i) * geometry.size.height / 2
-                        Path { path in
-                            path.move(to: CGPoint(x: 0, y: y))
-                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
-                        }
-                        .stroke(Color(hex: "98989E").opacity(0.1), lineWidth: 1)
-                    }
-
-                    if !recentData.isEmpty {
-                        MiniGraphArea(
-                            data: recentData.map { $0.usagePercentage },
-                            maxValue: maxValue
-                        )
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(hex: "7C6FFF").opacity(0.4),
-                                    Color(hex: "0A84FF").opacity(0.05),
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-
-                        MiniGraphLine(
-                            data: recentData.map { $0.usagePercentage },
-                            maxValue: maxValue
-                        )
-                        .stroke(Color(hex: "7C6FFF").opacity(0.8), lineWidth: 1.2)
-                    } else {
-                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(hex: "98989E"))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-            }
-            .frame(height: 40)
-            .padding(.horizontal, 12)
-        }
-        .padding(.vertical, 8)
-        .background(Color.white.opacity(0.06))
-    }
 }
-

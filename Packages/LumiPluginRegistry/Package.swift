@@ -65,6 +65,7 @@ let package = Package(
         .package(path: "../../Plugins/SkillPlugin"),
         .package(path: "../../Plugins/MemoryPlugin"),
         .package(path: "../../Plugins/AgentRAGPlugin"),
+        .package(path: "../../Plugins/AgentTempStoragePlugin"),
         .package(path: "../../Plugins/RequestLogPlugin"),
         .package(path: "../../Plugins/HistoryDBStatusBarPlugin"),
         .package(path: "../../Plugins/ConversationTitlePlugin"),
@@ -187,7 +188,8 @@ let package = Package(
         .package(path: "../../Plugins/DisplayControlPlugin"),
         .package(path: "../../Plugins/LogoSmartLightPlugin"),
         .package(path: "../../Plugins/LogoCofficPlugin"),
-        .package(path: "../../Plugins/VideoConverterPlugin")
+        .package(path: "../../Plugins/VideoConverterPlugin"),
+        .package(path: "../../Plugins/DownloadPlugin")
     ],
     targets: [
         .target(
@@ -245,6 +247,7 @@ let package = Package(
                 .product(name: "SkillPlugin", package: "SkillPlugin"),
                 .product(name: "MemoryPlugin", package: "MemoryPlugin"),
                 .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
+                .product(name: "AgentTempStoragePlugin", package: "AgentTempStoragePlugin"),
                 .product(name: "RequestLogPlugin", package: "RequestLogPlugin"),
                 .product(name: "HistoryDBStatusBarPlugin", package: "HistoryDBStatusBarPlugin"),
                 .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin"),
@@ -366,7 +369,8 @@ let package = Package(
                 .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
                 .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin"),
                 .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
-                .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin")
+                .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
+                .product(name: "DownloadPlugin", package: "DownloadPlugin")
             ]
         )
     ]

@@ -79,14 +79,18 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
-    // MARK: - Private Properties
+    /// 获取下载管理器实例
+    ///
+    /// 使用单例确保下载任务独立于视图生命周期，
+    /// 即使视图关闭也能在后台继续下载，重新打开时恢复进度。
+    public static var downloadManager: MLXDownloadManager {
+        .shared
+    }
 
     /// 仅在 MainActor 上访问，用于满足 MLXInferenceService 的 @MainActor 隔离。
     private nonisolated(unsafe) var inferenceService: MLXInferenceService?
     private var modelManager: MLXModelManager?
-    private var downloadManager: MLXDownloadManager?
-    private var currentModelId: String?
-    private var downloadCancellables: Set<AnyCancellable> = []
+    private nonisolated(unsafe) var currentModelId: String?
 
     // MARK: - Initialization
 
@@ -107,7 +111,6 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
             if self.inferenceService == nil {
                 self.inferenceService = MLXInferenceService()
                 self.modelManager = self.modelManager ?? MLXModelManager()
-                self.downloadManager = self.downloadManager ?? MLXDownloadManager()
             }
         }
     }
@@ -129,9 +132,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public func downloadModel(id: String) async throws {
         await ensureServices()
 
-        guard let downloadManager = downloadManager else {
-            throw MLXError.downloadFailed("下载管理器未初始化")
-        }
+        let manager = Self.downloadManager
 
         if isModelDownloaded(id: id) {
             if Self.verbose {
@@ -142,27 +143,33 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
             return
         }
 
-        await downloadManager.download(modelId: id)
+        await manager.download(modelId: id)
 
-        if downloadManager.status == .completed {
+        if manager.status == .completed {
             if Self.verbose {
                 if Self.verbose {
                                     Self.logger.info("\(self.t) 模型下载完成：\(id)")
                 }
             }
-        } else if case .failed(let error) = downloadManager.status {
+        } else if case .failed(let error) = manager.status {
             throw MLXError.downloadFailed(error)
         }
     }
 
     /// 取消下载
     public func cancelDownload() {
-        downloadManager?.cancel()
+        Task { @MainActor in
+            Self.downloadManager.cancel()
+        }
     }
 
     /// 获取下载进度
     public func getDownloadProgress() -> DownloadProgress {
-        downloadManager?.progress ?? DownloadProgress()
+        Task { @MainActor in
+            Self.downloadManager.progress
+        }
+        // 同步返回最后一次快照值（避免阻塞）
+        return DownloadProgress()
     }
 
     /// 加载模型
@@ -268,8 +275,8 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     }
 
     public func getDownloadStatus() -> LocalDownloadStatus {
-        let status = downloadManager?.status ?? .idle
-        let progress = downloadManager?.progress ?? DownloadProgress()
+        let status = Self.downloadManager.status
+        let progress = Self.downloadManager.progress
         switch status {
         case .idle: return .idle
         case .downloading: return .downloading(fractionCompleted: progress.fractionCompleted)
@@ -349,8 +356,6 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     }
 
     public func shutdown() {
-        downloadCancellables.removeAll()
-        downloadManager?.shutdown()
         modelManager?.stopMonitoring()
 
         let inferenceService = inferenceService
@@ -360,7 +365,6 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
 
         self.inferenceService = nil
         self.modelManager = nil
-        self.downloadManager = nil
         self.currentModelId = nil
     }
 

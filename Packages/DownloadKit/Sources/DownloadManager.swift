@@ -152,6 +152,12 @@ public actor DownloadManager {
         return taskStates[taskId]
     }
 
+    /// 获取所有任务状态
+    /// - Returns: 所有任务 ID 到状态的映射
+    public func allTaskStates() -> [String: DownloadTaskState] {
+        return taskStates
+    }
+
     // MARK: - Private Methods
 
     private func performDownload(_ task: DownloadTask) async {
@@ -183,7 +189,7 @@ public actor DownloadManager {
             let progressStartTime = Date()
             let taskId = task.id
 
-            _ = try await httpClient.download(
+            let downloadedData = try await httpClient.download(
                 from: task.url,
                 to: task.destination,
                 resumeData: resumeData,
@@ -206,6 +212,11 @@ public actor DownloadManager {
                     }
                 }
             )
+
+            // 将下载的数据写入目标文件
+            if let data = downloadedData {
+                try data.write(to: task.destination, options: .atomic)
+            }
 
             // 验证文件
             _ = try fileValidator.validate(fileAt: task.destination, expectedSize: task.expectedSize)

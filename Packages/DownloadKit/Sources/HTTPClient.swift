@@ -104,6 +104,7 @@ private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unc
         progressHandlers.removeValue(forKey: taskId)
         lock.unlock()
         
+        // 获取目标路径（从 downloadTask 的原始请求 URL 推断或使用临时文件数据）
         do {
             let data = try Data(contentsOf: location)
             continuation?.resume(returning: data)

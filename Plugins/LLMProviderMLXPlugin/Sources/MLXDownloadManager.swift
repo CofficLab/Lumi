@@ -22,6 +22,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
     nonisolated public static let verbose: Bool = false
 
+    /// 全局共享的下载管理器单例
+    ///
+    /// 使用单例确保下载任务独立于视图生命周期，
+    /// 即使视图关闭也能在后台继续下载，重新打开时恢复进度。
+    public static let shared = MLXDownloadManager()
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mlx")
 
     // MARK: - Published Properties
@@ -35,6 +41,15 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     /// 正在下载的模型 ID
     @Published public private(set) var downloadingModelId: String?
 
+    /// 当前正在下载的文件名
+    @Published public private(set) var currentFileName: String?
+
+    /// 当前正在下载的文件大小（字节）
+    @Published public private(set) var currentFileSize: Int64 = 0
+
+    /// 当前文件已下载的字节数
+    @Published public private(set) var currentFileDownloadedBytes: Int64 = 0
+
     // MARK: - Private Properties
 
     private var downloadTask: Task<Void, Never>?
@@ -43,9 +58,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
 
+    // MARK: - Pause/Resume State
+
+    private var pausedModelId: String?
+    private var pausedProgress: MLXDownloadProgress?
+    private var pausedFileIndex: Int?
+    private var pausedDownloadedBytes: Int64?
+
     // MARK: - Initialization
 
-    public override init() {
+    private override init() {
         let config = DownloadManager.Configuration(
             downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
             maxConcurrentDownloads: 3,
@@ -71,10 +93,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     /// 下载模型
     public func download(modelId: String) async {
-        guard !isShutdown else { return }
+        guard !isShutdown else {
+            Self.logger.warning("\(self.t)下载被拒绝：管理器已关闭")
+            return
+        }
 
         let isAlreadyDownloading = downloadingModelId == modelId && status == .downloading
         if isAlreadyDownloading {
+            Self.logger.info("\(self.t)跳过重复下载：\(modelId)")
             return
         }
 
@@ -84,14 +110,22 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         status = .downloading
         progress = MLXDownloadProgress()
 
+        Self.logger.info("\(self.t)🟢 开始下载模型：\(modelId)")
+
         let task = Task { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                Self.logger.warning("\(Self.t)下载任务中 self 已释放")
+                return
+            }
 
             do {
                 let localDir = _MLXModels.cacheDirectory(for: modelId)
+                Self.logger.info("\(self.t)下载目标目录：\(localDir.path)")
+
                 try await self.downloadAllFiles(modelId: modelId, to: localDir)
 
                 if Task.isCancelled {
+                    Self.logger.info("\(self.t)下载任务被取消：\(modelId)")
                     self.status = .idle
                     self.downloadingModelId = nil
                     return
@@ -99,20 +133,17 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 self.status = .completed
                 self.downloadingModelId = nil
-                if Self.verbose {
-                    Self.logger.info("\(self.t)模型下载完成：\(modelId)")
-                }
+                Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
 
             } catch {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId)\n错误类型：\(type(of: error))\n错误详情：\(error.localizedDescription)")
                 } else {
+                    Self.logger.info("\(self.t)下载任务被取消（异常路径）：\(modelId)")
                     self.status = .idle
                     self.downloadingModelId = nil
-                }
-                if Self.verbose {
-                    Self.logger.error("\(self.t)模型下载失败：\(modelId), 错误：\(error.localizedDescription)")
                 }
             }
         }
@@ -124,6 +155,100 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     /// 取消下载
     public func cancel() {
         cancel(resetPublishedState: true)
+    }
+
+    /// 暂停下载
+    public func pause() {
+        guard status == .downloading, let modelId = downloadingModelId else {
+            Self.logger.warning("\(self.t)无法暂停：当前未在下载")
+            return
+        }
+
+        Self.logger.info("\(self.t)⏸️ 暂停下载：\(modelId)")
+
+        // 保存当前状态
+        pausedModelId = modelId
+        pausedProgress = progress
+        pausedDownloadedBytes = calculateTotalDownloadedBytes()
+
+        // 设置状态为暂停
+        status = .paused
+
+        // 取消当前下载任务（但不重置状态）
+        downloadTask?.cancel()
+        downloadTask = nil
+
+        // 取消 DownloadKit 中的任务
+        let dm = downloadManager
+        Task {
+            await dm.cancelAll()
+        }
+    }
+
+    /// 恢复下载
+    public func resume() async {
+        guard status == .paused, let modelId = pausedModelId else {
+            Self.logger.warning("\(self.t)无法恢复：当前未暂停")
+            return
+        }
+
+        Self.logger.info("\(self.t)▶️ 恢复下载：\(modelId)")
+
+        // 恢复状态
+        downloadingModelId = modelId
+        status = .downloading
+
+        if let savedProgress = pausedProgress {
+            progress = savedProgress
+        }
+
+        // 清除暂停状态
+        pausedModelId = nil
+        pausedProgress = nil
+
+        // 重新启动下载
+        let task = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let localDir = _MLXModels.cacheDirectory(for: modelId)
+                let startIndex = Int(self.progress.completedFiles)
+
+                try await self.downloadAllFiles(modelId: modelId, to: localDir, startIndex: startIndex)
+
+                if Task.isCancelled {
+                    self.status = .idle
+                    self.downloadingModelId = nil
+                    return
+                }
+
+                self.status = .completed
+                self.downloadingModelId = nil
+                Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
+
+            } catch {
+                if !Task.isCancelled {
+                    self.status = .failed(error.localizedDescription)
+                    self.downloadingModelId = nil
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
+                } else {
+                    self.status = .idle
+                    self.downloadingModelId = nil
+                }
+            }
+        }
+
+        downloadTask = task
+        await task.value
+    }
+
+    private func calculateTotalDownloadedBytes() -> Int64 {
+        // 简化实现：根据已完成文件数估算
+        guard let modelId = downloadingModelId else { return 0 }
+
+        // 这里需要根据实际下载的文件大小计算，暂时返回 0
+        // 后续可以从 DownloadKit 获取更精确的值
+        return 0
     }
 
     private func cancel(resetPublishedState shouldResetPublishedState: Bool) {
@@ -167,25 +292,47 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Download Pipeline
 
-    private func downloadAllFiles(modelId: String, to localDir: URL) async throws {
+    private func downloadAllFiles(modelId: String, to localDir: URL, startIndex: Int = 0) async throws {
+        Self.logger.info("\(self.t)获取文件列表：\(modelId)")
         let files = try await fetchFileList(modelId: modelId)
+        Self.logger.info("\(self.t)原始文件数量：\(files.count)")
+
         let filteredFiles = filterFiles(files)
+        Self.logger.info("\(self.t)过滤后文件数量：\(filteredFiles.count)")
 
         guard !filteredFiles.isEmpty else {
+            Self.logger.error("\(self.t)❌ 没有可下载的文件")
             throw MLXDownloadError.noFilesAvailable
         }
 
         let totalBytes = filteredFiles.reduce(Int64(0)) { $0 + ($1.size ?? 0) }
+        Self.logger.info("\(self.t)总下载大小：\(totalBytes) 字节")
 
         updateProgress(totalFiles: Int64(filteredFiles.count), totalBytes: totalBytes)
 
         try fileManager.createDirectory(at: localDir, withIntermediateDirectories: true)
+        Self.logger.info("\(self.t)下载目录已创建：\(localDir.path)")
 
         var downloadedBytes: Int64 = 0
         let dm = downloadManager
 
+        // 如果从中间开始，先计算已下载文件的总大小
+        if startIndex > 0 {
+            for index in 0..<startIndex {
+                let file = filteredFiles[index]
+                downloadedBytes += file.size ?? 0
+            }
+            updateProgress(completedFiles: Int64(startIndex), downloadedBytes: downloadedBytes)
+            Self.logger.info("\(self.t)▶️ 从第 \(startIndex) 个文件继续下载")
+        }
+
         for (index, file) in filteredFiles.enumerated() {
             try Task.checkCancellation()
+
+            // 跳过已完成的文件
+            if index < startIndex {
+                continue
+            }
 
             let fileURL = localDir.appendingPathComponent(file.path)
             let parentDir = fileURL.deletingLastPathComponent()
@@ -197,19 +344,33 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             // 检查是否已下载
             if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
-               let existingSize = attrs[.size] as? Int64,
-               existingSize == expectedSize, expectedSize > 0 {
-                downloadedBytes += expectedSize
-                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
-                continue
+               let existingSize = attrs[.size] as? Int64 {
+                if existingSize == expectedSize, expectedSize > 0 {
+                    Self.logger.info("\(self.t)⏭️ 文件已存在，跳过：\(file.path)")
+                    downloadedBytes += expectedSize
+                    updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                    continue
+                } else if expectedSize > 0 {
+                    // 文件存在但大小不匹配，删除旧文件重新下载
+                    Self.logger.warning("\(self.t)⚠️ 文件大小不匹配，删除旧文件：\(file.path) (期望 \(expectedSize), 实际 \(existingSize))")
+                    try? fileManager.removeItem(at: fileURL)
+                }
             }
 
             // 使用 DownloadKit 下载文件
             let encodedPath = file.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? file.path
             let urlString = "https://huggingface.co/\(modelId)/resolve/main/\(encodedPath)"
             guard let url = URL(string: urlString) else {
+                Self.logger.error("\(self.t)❌ 无效的 URL：\(urlString)")
                 throw MLXDownloadError.invalidURL
             }
+
+            Self.logger.info("\(self.t)📥 下载文件 [\(index + 1)/\(filteredFiles.count)]：\(file.path) (\(expectedSize) 字节)")
+
+            // 更新当前下载的文件名和大小
+            currentFileName = file.path
+            currentFileSize = expectedSize
+            currentFileDownloadedBytes = 0
 
             let task = DownloadTask(
                 id: file.path,
@@ -219,10 +380,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             )
 
             do {
-                _ = try await dm.download(task)
+                _ = try await dm.download(task) { [weak self] progress in
+                    Task { @MainActor in
+                        self?.currentFileDownloadedBytes = progress.downloadedBytes
+                    }
+                }
                 downloadedBytes += expectedSize
                 updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                Self.logger.info("\(self.t)✅ 文件下载完成：\(file.path)")
             } catch {
+                Self.logger.error("\(self.t)❌ 文件下载失败：\(file.path)\n错误：\(error.localizedDescription)")
                 // 转换 DownloadKit 错误为 MLX 错误
                 if let downloadError = error as? DownloadKit.DownloadError {
                     switch downloadError {
@@ -240,38 +407,80 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
 
         // 验证 safetensors
+        Self.logger.info("\(self.t)开始验证 safetensors 文件")
         for file in filteredFiles where file.path.hasSuffix(".safetensors") {
             let fileURL = localDir.appendingPathComponent(file.path)
             guard fileManager.fileExists(atPath: fileURL.path) else {
+                Self.logger.error("\(self.t)❌ 缺失 safetensors 文件：\(file.path)")
                 throw MLXDownloadError.missingFile(file.path)
             }
             let attrs = try fileManager.attributesOfItem(atPath: fileURL.path)
             let size = attrs[.size] as? Int64 ?? 0
             if size == 0 {
+                Self.logger.error("\(self.t)❌ safetensors 文件为空：\(file.path)")
                 throw MLXDownloadError.emptySafetensorsFile(file.path)
             }
+            Self.logger.info("\(self.t)✅ safetensors 验证通过：\(file.path) (\(size) 字节)")
         }
+        Self.logger.info("\(self.t)所有文件下载和验证完成")
     }
 
     private func fetchFileList(modelId: String) async throws -> [HFFileEntry] {
         let urlString = "https://huggingface.co/api/models/\(modelId)/tree/main"
+        Self.logger.info("\(self.t)获取文件列表 URL：\(urlString)")
+
         guard let url = URL(string: urlString) else {
+            Self.logger.error("\(self.t)❌ 无效的文件列表 URL")
             throw MLXDownloadError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 30
 
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let entries = try JSONDecoder().decode([HFFileEntry].self, from: data)
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
 
-        var allFiles = entries.filter { $0.type == "file" }
-        for dir in entries.filter({ $0.type == "directory" }) {
-            let subFiles = try await fetchSubdirectory(modelId: modelId, path: dir.path)
-            allFiles.append(contentsOf: subFiles)
+            if let httpResponse = response as? HTTPURLResponse {
+                Self.logger.info("\(self.t)文件列表 HTTP 状态码：\(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    throw MLXDownloadError.httpError(httpResponse.statusCode)
+                }
+            }
+
+            Self.logger.info("\(self.t)文件列表响应大小：\(data.count) 字节")
+
+            do {
+                let entries = try JSONDecoder().decode([HFFileEntry].self, from: data)
+                Self.logger.info("\(self.t)解析到 \(entries.count) 个条目")
+
+                var allFiles = entries.filter { $0.type == "file" }
+                Self.logger.info("\(self.t)根目录文件数：\(allFiles.count)")
+
+                let directories = entries.filter({ $0.type == "directory" })
+                Self.logger.info("\(self.t)子目录数：\(directories.count)")
+
+                for dir in directories {
+                    Self.logger.info("\(self.t)扫描子目录：\(dir.path)")
+                    let subFiles = try await fetchSubdirectory(modelId: modelId, path: dir.path)
+                    Self.logger.info("\(self.t)子目录 \(dir.path) 文件数：\(subFiles.count)")
+                    allFiles.append(contentsOf: subFiles)
+                }
+
+                Self.logger.info("\(self.t)总计文件数：\(allFiles.count)")
+                return allFiles
+
+            } catch let decodingError {
+                Self.logger.error("\(self.t)❌ JSON 解析失败：\(decodingError.localizedDescription)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    Self.logger.error("\(self.t)响应内容前 500 字符：\(String(jsonString.prefix(500)))")
+                }
+                throw MLXDownloadError.invalidResponse
+            }
+
+        } catch let urlError as URLError {
+            Self.logger.error("\(self.t)❌ 网络错误：\(urlError.localizedDescription)\n错误码：\(urlError.code.rawValue)")
+            throw MLXDownloadError.downloadFailed("网络错误：\(urlError.localizedDescription)")
         }
-
-        return allFiles
     }
 
     private func fetchSubdirectory(modelId: String, path: String) async throws -> [HFFileEntry] {
@@ -341,6 +550,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private func resetPublishedState() {
         status = .idle
         downloadingModelId = nil
+        currentFileName = nil
+        currentFileSize = 0
         progress = MLXDownloadProgress()
     }
 }

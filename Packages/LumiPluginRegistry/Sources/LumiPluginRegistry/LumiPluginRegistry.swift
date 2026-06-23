@@ -23,6 +23,7 @@ import LLMProviderXybbzPlugin
 import LLMProviderCodexPlugin
 import LLMProviderMLXPlugin
 import AgentRAGPlugin
+import AgentTempStoragePlugin
 import AgentRulesPlugin
 import MemoryPlugin
 import RequestLogPlugin
@@ -122,6 +123,7 @@ import DisplayControlPlugin
 import LogoSmartLightPlugin
 import LogoCofficPlugin
 import VideoConverterPlugin
+import DownloadPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -207,6 +209,7 @@ public enum LumiPluginRegistry {
         RequestLogPlugin.self,
         HistoryDBStatusBarPlugin.self,
         RAGPlugin.self,
+        AgentTempStoragePlugin.self,
         ConversationTitlePlugin.self,
         ConversationTimelinePlugin.self,
         ConversationLanguagePlugin.self,
@@ -251,6 +254,7 @@ public enum LumiPluginRegistry {
         DisplayControlPlugin.self,
         LogoSmartLightPlugin.self,
         LogoCofficPlugin.self,
-        VideoConverterPlugin.self
+        VideoConverterPlugin.self,
+        DownloadPlugin.self,
     ]
 }

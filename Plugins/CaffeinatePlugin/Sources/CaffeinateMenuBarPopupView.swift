@@ -69,7 +69,7 @@ struct CaffeinateMenuBarPopupView: View {
 
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
-            QuickActionMenuItem(
+            MenuBarActionRow(
                 title: PluginCaffeinateLocalization.string("Prevent sleep & Keep screen on"),
                 icon: "sun.max.fill",
                 color: Color(hex: "FF9F0A"),
@@ -82,7 +82,7 @@ struct CaffeinateMenuBarPopupView: View {
             GlassDivider()
                 .padding(.leading, 36)
 
-            QuickActionMenuItem(
+            MenuBarActionRow(
                 title: PluginCaffeinateLocalization.string("Prevent sleep & Allow screen off"),
                 icon: "moon.fill",
                 color: Color(hex: "0A84FF"),
@@ -95,7 +95,7 @@ struct CaffeinateMenuBarPopupView: View {
             GlassDivider()
                 .padding(.leading, 36)
 
-            QuickActionMenuItem(
+            MenuBarActionRow(
                 title: PluginCaffeinateLocalization.string("Prevent sleep & Turn off screen"),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
@@ -154,60 +154,5 @@ private struct DurationButton: View {
                 .cornerRadius(3)
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - 快捷菜单项
-
-private struct QuickActionMenuItem: View {
-    let title: String
-    let icon: String
-    let color: Color
-    var isSelected: Bool = false
-    var showCheckmark: Bool? = nil // nil 表示根据 isSelected 自动决定
-    let action: () -> Void
-
-    @State private var isHovering = false
-
-    private var shouldShowCheckmark: Bool {
-        if let showCheckmark = showCheckmark {
-            return showCheckmark
-        }
-        return isSelected
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                    .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : color)
-                    .frame(width: 18)
-
-                Text(title)
-                    .font(.system(size: 11))
-                    .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-
-                Spacer()
-
-                // 显示对号
-                if shouldShowCheckmark {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : color)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(
-            Rectangle()
-                .fill(isHovering ? Color(hex: "7C6FFF").opacity(0.2) : Color.clear)
-        )
-        .onHover { hovering in
-            isHovering = hovering
-        }
     }
 }
