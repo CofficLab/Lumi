@@ -3,33 +3,27 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.7.0</title>
-            <pubDate>Mon, 22 Jun 2026 11:20:16 +0000</pubDate>
-            <sparkle:version>233</sparkle:version>
-            <sparkle:shortVersionString>4.7.0</sparkle:shortVersionString>
+            <title>4.8.0</title>
+            <pubDate>Tue, 23 Jun 2026 14:08:55 +0000</pubDate>
+            <sparkle:version>234</sparkle:version>
+            <sparkle:shortVersionString>4.8.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.7.0</h2>
-<h3>Changes since v4.6.0</h3>
+            <description><![CDATA[<h2>Release v4.8.0</h2>
+<h3>Changes since v4.7.0</h3>
 <ul>
-<li>feat: add availability indicators to model selector</li>
-<li>feat: add DownloadKit package for robust file downloading</li>
-<li>feat(freemodel): route Claude via native API with Claude Code emulation</li>
-<li>feat(mlx): add button to reveal cache directory in Finder</li>
-<li>feat(mlx): refactor MLXDownloadManager to use DownloadKit</li>
-<li>fix(agent-turn): stop AutoTask retry loop on LLM failures</li>
-<li>fix(i18n): move Localizable.xcstrings into LumiApp and switch to English source language</li>
-<li>fix(LLMProviderKit): handle SSE [DONE] marker from ZhiPu provider</li>
-<li>fix(theme): actively sync Lumi system theme when macOS appearance changes</li>
-<li>i18n:  translate or localize content</li>
-<li>refactor(editor-tab-strip): flatten Sources directory structure</li>
-<li>refactor(editor-tab-strip): simplify names and group agent tools</li>
-<li>refactor(settings): adopt GitOK grouped cards and refresh settings pages</li>
-<li>refactor(settings): align local provider detail layout with remote</li>
-<li>refactor(settings): unify provider pages and simplify model display</li>
+<li>feat: add DownloadPlugin with agent download tools</li>
+<li>feat(agent): add temp file storage plugin for agent tools</li>
+<li>feat(mlx): add download pause/resume functionality</li>
+<li>feat(mlx): add horizontal series tabs for local model settings</li>
+<li>feat(mlx): enhance download manager with detailed logging and error handling</li>
+<li>feat(mlx): show download progress in background and restore when view reopens</li>
+<li>fix: resolve intermittent API Key loss after sleep/lock</li>
+<li>fix(downloadkit): write downloaded data to destination file</li>
+<li>refactor(menubar): fix theme adaptation and cleanup menu bar items</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.7.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.8.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.7.0/Lumi_4.7.0_arm64.dmg" length="48834893" type="application/octet-stream" sparkle:edSignature="Nw3VaNpQBTWGYOvIfELOPo7RbiPpzh18iAPAf7Opu3TULhYAwqlVnHEkdXjb/fLuPqGrIkP3TrYzMDWDEPwMCA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.8.0/Lumi_4.8.0_arm64.dmg" length="48371774" type="application/octet-stream" sparkle:edSignature="OcdXVMEXMkzA0lLH0UrMFiZ4j0saP1UWEz90JXSAFp4gDK6aIq6YjJxfIPs9LFRpreKiiscSRbKujN7QuzIXBg=="/>
         </item>
     </channel>
 </rss>
