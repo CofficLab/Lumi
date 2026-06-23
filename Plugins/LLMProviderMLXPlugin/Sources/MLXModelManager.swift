@@ -75,6 +75,33 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
         _MLXModels.availableModels(for: self.systemRAM)
     }
 
+    /// 按系列分组的模型数据
+    public struct ModelSeries: Identifiable, Equatable {
+        public let id: String
+        public let name: String
+        public let models: [LocalModelInfo]
+
+        public init(name: String, models: [LocalModelInfo]) {
+            self.id = name
+            self.name = name
+            self.models = models
+        }
+        
+        public static func == (lhs: ModelSeries, rhs: ModelSeries) -> Bool {
+            lhs.id == rhs.id && lhs.models == rhs.models
+        }
+    }
+
+    /// 获取按系列分组的模型列表（根据 RAM 过滤）
+    public func modelsBySeries() -> [ModelSeries] {
+        let models = _MLXModels.availableModels(for: self.systemRAM)
+        let grouped = Dictionary(grouping: models, by: { $0.series })
+
+        // 按照系列中优先级最高的模型排序
+        return grouped.map { ModelSeries(name: $0.key, models: $0.value.sorted { $0.priority < $1.priority }) }
+            .sorted { ($0.models.first?.priority ?? Int.max) < ($1.models.first?.priority ?? Int.max) }
+    }
+
     /// 刷新已缓存的模型列表（定时器每 5 秒调用，用于发现外部下载/删除的模型）
     public func refreshCachedModels() {
         var newIds: Set<String> = []

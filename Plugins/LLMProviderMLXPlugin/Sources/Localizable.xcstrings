@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld" : {
+
+    },
     "%lld GB" : {
       "localizations" : {
         "en" : {
@@ -798,16 +801,6 @@
         }
       }
     },
-    "体积 %@ · 内存 ≥ %lld GB" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "体积 %1$@ · 内存 ≥ %2$lld GB"
-          }
-        }
-      }
-    },
     "最强开源模型，需要高配置" : {
       "localizations" : {
         "en" : {
@@ -837,6 +830,9 @@
       }
     },
     "在访达中打开缓存目录" : {
+
+    },
+    "复制错误信息" : {
 
     },
     "支持图片理解的视觉语言模型" : {
