@@ -3,8 +3,6 @@ import LumiUI
 import SwiftUI
 
 struct MenuBarPopupView: View {
-    @LumiTheme private var theme
-
     let popupItems: [LumiMenuBarPopupItem]
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
@@ -28,38 +26,41 @@ struct MenuBarPopupView: View {
                 GlassDivider()
             }
 
-            menuRow("打开 Lumi", systemImage: "macwindow", action: onShowMainWindow)
-
-            GlassDivider()
-
-            menuRow("检查更新", systemImage: "arrow.down.circle", action: onCheckForUpdates)
-
-            GlassDivider()
-
-            menuRow("退出 Lumi", systemImage: "power", role: .destructive, action: onQuit)
+            appActionsSection
         }
         .frame(width: 300)
         .appSurface(style: .popover, cornerRadius: 0)
     }
 
-    private func menuRow(
-        _ titleKey: LocalizedStringKey,
-        systemImage: String,
-        role: ButtonRole? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Group {
-            if let role {
-                AppContextMenuRow(titleKey, systemImage: systemImage, role: role, action: action)
-            } else {
-                AppContextMenuRow(titleKey, systemImage: systemImage, action: action)
-            }
+    private var appActionsSection: some View {
+        VStack(spacing: 0) {
+            MenuBarActionRow(
+                "打开 Lumi",
+                icon: "macwindow",
+                color: Color(hex: "7C6FFF"),
+                action: onShowMainWindow
+            )
+
+            GlassDivider()
+                .padding(.leading, 36)
+
+            MenuBarActionRow(
+                "检查更新",
+                icon: "arrow.down.circle",
+                color: Color(hex: "0A84FF"),
+                action: onCheckForUpdates
+            )
+
+            GlassDivider()
+                .padding(.leading, 36)
+
+            MenuBarActionRow(
+                "退出 Lumi",
+                icon: "power",
+                color: Color(hex: "FF453A"),
+                action: onQuit
+            )
         }
-        .font(.appCaption)
-        .foregroundStyle(role == .destructive ? theme.error : theme.textPrimary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
+        .padding(.vertical, 4)
     }
 }

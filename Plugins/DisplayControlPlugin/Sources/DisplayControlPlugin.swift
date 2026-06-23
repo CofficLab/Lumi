@@ -37,10 +37,6 @@ public enum DisplayControlPlugin: LumiPlugin {
 
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        [
-            LumiMenuBarPopupItem(id: "\(info.id).controls", order: info.order) {
-                DisplayMenuBarPopupView()
-            }
-        ]
+        []
     }
 }
