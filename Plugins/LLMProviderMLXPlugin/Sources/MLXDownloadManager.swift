@@ -47,6 +47,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     /// 当前正在下载的文件大小（字节）
     @Published public private(set) var currentFileSize: Int64 = 0
 
+    /// 当前文件已下载的字节数
+    @Published public private(set) var currentFileDownloadedBytes: Int64 = 0
+
     // MARK: - Private Properties
 
     private var downloadTask: Task<Void, Never>?
@@ -54,6 +57,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
+
+    // MARK: - Pause/Resume State
+
+    private var pausedModelId: String?
+    private var pausedProgress: MLXDownloadProgress?
+    private var pausedFileIndex: Int?
+    private var pausedDownloadedBytes: Int64?
 
     // MARK: - Initialization
 
@@ -147,6 +157,100 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         cancel(resetPublishedState: true)
     }
 
+    /// 暂停下载
+    public func pause() {
+        guard status == .downloading, let modelId = downloadingModelId else {
+            Self.logger.warning("\(self.t)无法暂停：当前未在下载")
+            return
+        }
+
+        Self.logger.info("\(self.t)⏸️ 暂停下载：\(modelId)")
+
+        // 保存当前状态
+        pausedModelId = modelId
+        pausedProgress = progress
+        pausedDownloadedBytes = calculateTotalDownloadedBytes()
+
+        // 设置状态为暂停
+        status = .paused
+
+        // 取消当前下载任务（但不重置状态）
+        downloadTask?.cancel()
+        downloadTask = nil
+
+        // 取消 DownloadKit 中的任务
+        let dm = downloadManager
+        Task {
+            await dm.cancelAll()
+        }
+    }
+
+    /// 恢复下载
+    public func resume() async {
+        guard status == .paused, let modelId = pausedModelId else {
+            Self.logger.warning("\(self.t)无法恢复：当前未暂停")
+            return
+        }
+
+        Self.logger.info("\(self.t)▶️ 恢复下载：\(modelId)")
+
+        // 恢复状态
+        downloadingModelId = modelId
+        status = .downloading
+
+        if let savedProgress = pausedProgress {
+            progress = savedProgress
+        }
+
+        // 清除暂停状态
+        pausedModelId = nil
+        pausedProgress = nil
+
+        // 重新启动下载
+        let task = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let localDir = _MLXModels.cacheDirectory(for: modelId)
+                let startIndex = Int(self.progress.completedFiles)
+
+                try await self.downloadAllFiles(modelId: modelId, to: localDir, startIndex: startIndex)
+
+                if Task.isCancelled {
+                    self.status = .idle
+                    self.downloadingModelId = nil
+                    return
+                }
+
+                self.status = .completed
+                self.downloadingModelId = nil
+                Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
+
+            } catch {
+                if !Task.isCancelled {
+                    self.status = .failed(error.localizedDescription)
+                    self.downloadingModelId = nil
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
+                } else {
+                    self.status = .idle
+                    self.downloadingModelId = nil
+                }
+            }
+        }
+
+        downloadTask = task
+        await task.value
+    }
+
+    private func calculateTotalDownloadedBytes() -> Int64 {
+        // 简化实现：根据已完成文件数估算
+        guard let modelId = downloadingModelId else { return 0 }
+
+        // 这里需要根据实际下载的文件大小计算，暂时返回 0
+        // 后续可以从 DownloadKit 获取更精确的值
+        return 0
+    }
+
     private func cancel(resetPublishedState shouldResetPublishedState: Bool) {
         downloadTask?.cancel()
         downloadTask = nil
@@ -188,7 +292,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Download Pipeline
 
-    private func downloadAllFiles(modelId: String, to localDir: URL) async throws {
+    private func downloadAllFiles(modelId: String, to localDir: URL, startIndex: Int = 0) async throws {
         Self.logger.info("\(self.t)获取文件列表：\(modelId)")
         let files = try await fetchFileList(modelId: modelId)
         Self.logger.info("\(self.t)原始文件数量：\(files.count)")
@@ -212,8 +316,23 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         var downloadedBytes: Int64 = 0
         let dm = downloadManager
 
+        // 如果从中间开始，先计算已下载文件的总大小
+        if startIndex > 0 {
+            for index in 0..<startIndex {
+                let file = filteredFiles[index]
+                downloadedBytes += file.size ?? 0
+            }
+            updateProgress(completedFiles: Int64(startIndex), downloadedBytes: downloadedBytes)
+            Self.logger.info("\(self.t)▶️ 从第 \(startIndex) 个文件继续下载")
+        }
+
         for (index, file) in filteredFiles.enumerated() {
             try Task.checkCancellation()
+
+            // 跳过已完成的文件
+            if index < startIndex {
+                continue
+            }
 
             let fileURL = localDir.appendingPathComponent(file.path)
             let parentDir = fileURL.deletingLastPathComponent()
@@ -251,6 +370,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             // 更新当前下载的文件名和大小
             currentFileName = file.path
             currentFileSize = expectedSize
+            currentFileDownloadedBytes = 0
 
             let task = DownloadTask(
                 id: file.path,
@@ -260,7 +380,11 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             )
 
             do {
-                _ = try await dm.download(task)
+                _ = try await dm.download(task) { [weak self] progress in
+                    Task { @MainActor in
+                        self?.currentFileDownloadedBytes = progress.downloadedBytes
+                    }
+                }
                 downloadedBytes += expectedSize
                 updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
                 Self.logger.info("\(self.t)✅ 文件下载完成：\(file.path)")

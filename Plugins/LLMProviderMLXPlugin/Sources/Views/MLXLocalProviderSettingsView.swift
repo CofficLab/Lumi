@@ -145,7 +145,8 @@ public struct MLXLocalProviderSettingsView: View {
     @ViewBuilder
     private func modelRow(_ model: LocalModelInfo) -> some View {
         let isCached = modelManager.isModelCached(id: model.id)
-        let isDownloading = downloadManager.downloadingModelId == model.id
+        let isDownloading = downloadManager.downloadingModelId == model.id && downloadManager.status == .downloading
+        let isPaused = downloadManager.downloadingModelId == model.id && downloadManager.status == .paused
         let isLoaded = inferenceService.currentModelId == model.id
         let isLoading = inferenceService.state == .loading && inferenceService.currentModelId == model.id
         let hasError = errorModelId == model.id && actionError != nil
@@ -187,31 +188,60 @@ public struct MLXLocalProviderSettingsView: View {
                         }
                     }
                 } else {
-                    AppButton(
-                        isDownloading
-                            ? LumiPluginLocalization.string("下载中", bundle: .module)
-                            : LumiPluginLocalization.string("下载", bundle: .module),
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        Task { await downloadModel(model.id) }
+                    if isDownloading {
+                        AppButton(
+                            systemImage: "pause.fill",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            downloadManager.pause()
+                        }
+                        .help(LumiPluginLocalization.string("暂停下载", bundle: .module))
+                    } else if isPaused {
+                        AppButton(
+                            systemImage: "play.fill",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            Task { await downloadManager.resume() }
+                        }
+                        .help(LumiPluginLocalization.string("继续下载", bundle: .module))
+
+                        AppButton(
+                            systemImage: "xmark",
+                            style: .ghost,
+                            size: .small
+                        ) {
+                            downloadManager.cancel()
+                        }
+                        .help(LumiPluginLocalization.string("取消下载", bundle: .module))
+                    } else {
+                        AppButton(
+                            LumiPluginLocalization.string("下载", bundle: .module),
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            Task { await downloadModel(model.id) }
+                        }
                     }
-                    .disabled(isDownloading)
                 }
             }
 
-            if isDownloading {
+            if isDownloading || isPaused {
                 VStack(alignment: .leading, spacing: 4) {
                     ProgressView(value: downloadManager.progress.fractionCompleted)
                         .controlSize(.small)
 
                     HStack(spacing: 6) {
-                        Image(systemName: "arrow.down.circle.fill")
+                        Image(systemName: isPaused ? "pause.circle.fill" : "arrow.down.circle.fill")
                             .font(.caption2)
-                            .foregroundColor(theme.textSecondary)
+                            .foregroundColor(isPaused ? theme.warning : theme.textSecondary)
 
                         if let fileName = downloadManager.currentFileName {
-                            Text(LumiPluginLocalization.string("正在下载", bundle: .module) + " " + fileName)
+                            Text((isPaused
+                                  ? LumiPluginLocalization.string("已暂停", bundle: .module)
+                                  : LumiPluginLocalization.string("正在下载", bundle: .module))
+                                 + " " + fileName)
                                 .font(.caption)
                                 .foregroundColor(theme.textSecondary)
                                 .lineLimit(1)
@@ -225,9 +255,17 @@ public struct MLXLocalProviderSettingsView: View {
                         Spacer(minLength: 0)
 
                         if downloadManager.currentFileSize > 0 {
-                            Text(formattedFileSize(downloadManager.currentFileSize))
-                                .font(.caption)
-                                .foregroundColor(theme.textSecondary)
+                            let downloaded = downloadManager.currentFileDownloadedBytes
+                            let total = downloadManager.currentFileSize
+                            if downloaded > 0 {
+                                Text("\(formattedFileSize(downloaded)) / \(formattedFileSize(total))")
+                                    .font(.caption)
+                                    .foregroundColor(theme.textSecondary)
+                            } else {
+                                Text(formattedFileSize(total))
+                                    .font(.caption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
                         }
 
                         Text("\(downloadManager.progress.completedFiles)/\(downloadManager.progress.totalFiles)")
