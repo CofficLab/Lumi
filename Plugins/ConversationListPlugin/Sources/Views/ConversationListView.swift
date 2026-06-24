@@ -255,9 +255,16 @@ extension ConversationListView {
 
     private func handleConversationUpdated(_ conversationId: UUID) {
         guard let updatedConversation = context.fetchConversation(id: conversationId) else { return }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
 
-        conversations[index] = updatedConversation
+        if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
+            conversations[index] = updatedConversation
+        } else {
+            // 本地数组中还没有这个对话（可能错过了 .created 事件）
+            // 这种情况会在创建对话后标题立即更新时发生
+            conversations.insert(updatedConversation, at: 0)
+            nextOffset += 1
+            syncSelectionFromContext()
+        }
     }
 
     private func handleConversationDeleted(_ conversationId: UUID) {
