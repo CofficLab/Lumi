@@ -146,7 +146,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
             content: "",
             providerID: info.id,
             isError: true,
-            rawErrorDetail: error.localizedDescription,
+            rawErrorDetail: LumiLLMProviderSupportLocalization.userFacingDescription(for: error),
             renderKind: renderKind(for: error)
         )
     }
@@ -171,6 +171,8 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     private static func parseHTTPStatusCode(from text: String) -> Int? {
         let patterns = [
             #"HTTP 错误 \((\d+)\)"#,
+            #"HTTP 错误（(\d+)）"#,
+            #"HTTP error \((\d+)\)"#,
             #"HTTP (\d+)"#,
             #"\b(\d{3})\b"#,
         ]

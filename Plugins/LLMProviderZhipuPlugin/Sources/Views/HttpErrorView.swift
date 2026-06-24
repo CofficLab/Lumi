@@ -4,6 +4,7 @@ import SwiftUI
 
 struct HttpErrorView: View {
     @LumiTheme private var theme
+    private static let transportDetailsSeparator = "\n\n--- Request / Response Details ---\n"
 
     let message: LumiChatMessage
     let statusCode: Int?
@@ -17,11 +18,10 @@ struct HttpErrorView: View {
     }
 
     private var displayText: String {
-        guard let raw = message.rawErrorDetail, !raw.isEmpty else {
-            return message.content
-        }
+        let raw = ((message.rawErrorDetail?.isEmpty == false) ? message.rawErrorDetail : message.content) ?? ""
+        var text = raw.components(separatedBy: Self.transportDetailsSeparator).first ?? raw
+
         // Strip "HTTP <code> " prefix since it's shown in the title
-        var text = raw
         if let code = statusCode {
             let prefix = "HTTP \(code) "
             if text.hasPrefix(prefix) {

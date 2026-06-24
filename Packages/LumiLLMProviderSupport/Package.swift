@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LumiLLMProviderSupport",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -27,7 +28,10 @@ let package = Package(
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "LumiLLMProviderSupportTests",
