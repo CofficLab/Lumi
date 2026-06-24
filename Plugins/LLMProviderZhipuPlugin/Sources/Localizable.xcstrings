@@ -510,6 +510,7 @@
       }
     },
     "Parsing details..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
