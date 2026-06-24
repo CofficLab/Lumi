@@ -16,7 +16,7 @@ public struct BreadcrumbNavHeaderView: View {
     }
 
     public var body: some View {
-        AppBreadcrumbBarContainer {
+        AppBreadcrumbBarContainer(showsBottomShadow: true) {
             if let fileURL = service.files.currentFileURL,
                projectVM.isProjectSelected,
                isFileInCurrentProject(fileURL) {
@@ -25,7 +25,6 @@ public struct BreadcrumbNavHeaderView: View {
                 Color.clear
             }
         }
-        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }
 
     @ViewBuilder

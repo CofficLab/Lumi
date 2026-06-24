@@ -27,7 +27,6 @@ struct RailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
-        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
         .overlay(alignment: .trailing) {
             if Self.showsBorder {
                 AppDivider(.vertical)
@@ -44,6 +43,7 @@ struct RailView: View {
     private var railTabBar: some View {
         AppToolbarContainer(
             height: 40,
+            showsBottomShadow: true,
             backgroundStyle: .panel,
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
