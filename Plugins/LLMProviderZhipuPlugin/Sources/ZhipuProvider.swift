@@ -140,14 +140,50 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     // MARK: - Error Handling
 
     static func errorMessage(conversationID: UUID, error: Error) -> LumiChatMessage {
-        LumiChatMessage(
+        let fullDetail = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+        let split = splitTransportDetails(fullDetail)
+        var metadata: [String: String] = [:]
+        if let request = split.requestDetails, !request.isEmpty {
+            metadata["llm.transport.request"] = request
+        }
+        if let response = split.responseDetails, !response.isEmpty {
+            metadata["llm.transport.response"] = response
+        }
+        return LumiChatMessage(
             conversationID: conversationID,
             role: .error,
             content: "",
             providerID: info.id,
             isError: true,
-            rawErrorDetail: LumiLLMProviderSupportLocalization.userFacingDescription(for: error),
-            renderKind: renderKind(for: error)
+            rawErrorDetail: split.summary,
+            renderKind: renderKind(for: error),
+            metadata: metadata
+        )
+    }
+
+    private static func splitTransportDetails(_ fullDetail: String) -> (summary: String, requestDetails: String?, responseDetails: String?) {
+        let separator = "\n\n--- Request / Response Details ---\n"
+        guard let separatorRange = fullDetail.range(of: separator) else {
+            return (summary: fullDetail, requestDetails: nil, responseDetails: nil)
+        }
+
+        let summary = String(fullDetail[..<separatorRange.lowerBound])
+        let detailsBlock = String(fullDetail[separatorRange.upperBound...])
+        guard let responseRange = detailsBlock.range(of: "Response Status:") else {
+            let request = detailsBlock.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (
+                summary: summary,
+                requestDetails: request.isEmpty ? nil : request,
+                responseDetails: nil
+            )
+        }
+
+        let request = String(detailsBlock[..<responseRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let response = String(detailsBlock[responseRange.lowerBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return (
+            summary: summary,
+            requestDetails: request.isEmpty ? nil : request,
+            responseDetails: response.isEmpty ? nil : response
         )
     }
 

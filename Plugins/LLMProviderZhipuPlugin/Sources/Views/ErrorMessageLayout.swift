@@ -2,8 +2,9 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-private enum ErrorMessageLayoutConstants {
-    static let transportDetailsSeparator = "\n\n--- Request / Response Details ---\n"
+private enum TransportDetailsKeys {
+    static let request = "llm.transport.request"
+    static let response = "llm.transport.response"
 }
 
 struct ErrorMessageLayout<Content: View>: View {
@@ -13,26 +14,37 @@ struct ErrorMessageLayout<Content: View>: View {
     @Binding var showRawMessage: Bool
     @ViewBuilder let content: () -> Content
 
-    private var copyContent: String {
+    private var summary: String {
         if !message.content.isEmpty {
             return message.content
         }
         return message.rawErrorDetail ?? ""
     }
 
-    private var hasTransportDetails: Bool {
-        copyContent.contains(ErrorMessageLayoutConstants.transportDetailsSeparator)
+    private var requestDetails: String? {
+        message.metadata[TransportDetailsKeys.request]
     }
 
-    private var popoverContent: String {
-        if hasTransportDetails {
-            let parts = copyContent.components(separatedBy: ErrorMessageLayoutConstants.transportDetailsSeparator)
-            return parts.count > 1 ? parts[1] : copyContent
+    private var responseDetails: String? {
+        message.metadata[TransportDetailsKeys.response]
+    }
+
+    private var hasTransportDetails: Bool {
+        requestDetails != nil || responseDetails != nil
+    }
+
+    private var copyContent: String {
+        var sections: [String] = []
+        if !summary.isEmpty {
+            sections.append(summary)
         }
-        if !copyContent.isEmpty {
-            return copyContent
+        if let requestDetails, !requestDetails.isEmpty {
+            sections.append("--- Request ---\n\(requestDetails)")
         }
-        return message.renderKind ?? ""
+        if let responseDetails, !responseDetails.isEmpty {
+            sections.append("--- Response ---\n\(responseDetails)")
+        }
+        return sections.joined(separator: "\n\n")
     }
 
     private var popoverTitle: String {
@@ -82,8 +94,9 @@ struct ErrorMessageLayout<Content: View>: View {
                 .popover(isPresented: $showRawMessage, arrowEdge: .bottom) {
                     ErrorDetailsPopoverContent(
                         title: popoverTitle,
-                        content: popoverContent,
-                        hasTransportDetails: hasTransportDetails
+                        summary: summary,
+                        requestDetails: requestDetails,
+                        responseDetails: responseDetails
                     )
                 }
             }
@@ -104,17 +117,23 @@ private struct ErrorDetailsPopoverContent: View {
         case response
     }
 
-    private struct ParsedDetails {
-        let request: String
-        let response: String
-    }
-
     let title: String
-    let content: String
-    let hasTransportDetails: Bool
+    let summary: String
+    let requestDetails: String?
+    let responseDetails: String?
 
     @State private var selectedTab: DetailsTab = .request
-    @State private var parsed: ParsedDetails?
+
+    private var hasTransportDetails: Bool {
+        requestDetails != nil || responseDetails != nil
+    }
+
+    private var currentTabContent: String {
+        if hasTransportDetails {
+            return selectedTab == .request ? (requestDetails ?? "-") : (responseDetails ?? "-")
+        }
+        return summary.isEmpty ? "-" : summary
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -147,70 +166,17 @@ private struct ErrorDetailsPopoverContent: View {
                 .pickerStyle(.segmented)
             }
 
-            if let parsed {
-                ScrollView {
-                    Text(selectedTab == .request ? parsed.request : parsed.response)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(theme.textPrimary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text(LumiPluginLocalization.string("Parsing details...", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            ScrollView {
+                Text(currentTabContent)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(theme.textPrimary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(12)
         .frame(width: 680)
         .frame(minHeight: 520)
         .frame(maxHeight: 760)
-        .task(id: content) {
-            guard parsed == nil else { return }
-            let payload = content
-            let includeTabs = hasTransportDetails
-            let parsedDetails = await Task.detached(priority: .userInitiated) {
-                Self.parseDetails(content: payload, hasTransportDetails: includeTabs)
-            }.value
-            parsed = parsedDetails
-        }
-    }
-
-    private var currentTabContent: String {
-        guard let parsed else { return content }
-        return selectedTab == .request ? parsed.request : parsed.response
-    }
-
-    nonisolated private static func parseDetails(content: String, hasTransportDetails: Bool) -> ParsedDetails {
-        guard hasTransportDetails else {
-            return ParsedDetails(request: content, response: "-")
-        }
-
-        let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        var request: [String] = []
-        var response: [String] = []
-        var isResponseSection = false
-
-        for line in lines {
-            if line.hasPrefix("Response Status:") || line.hasPrefix("Response Headers:") || line.hasPrefix("Response Body:") {
-                isResponseSection = true
-            }
-            if isResponseSection {
-                response.append(line)
-            } else {
-                request.append(line)
-            }
-        }
-
-        let requestText = request.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        let responseText = response.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        return ParsedDetails(
-            request: requestText.isEmpty ? "-" : requestText,
-            response: responseText.isEmpty ? "-" : responseText
-        )
     }
 }
