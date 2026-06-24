@@ -7,29 +7,28 @@ import LumiCoreKit
 struct PluginDiskManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(DiskManagerPlugin.id == "DiskManager")
-        #expect(DiskManagerPlugin.navigationId == "disk_manager")
-        #expect(DiskManagerPlugin.displayName.isEmpty == false)
-        #expect(DiskManagerPlugin.description.isEmpty == false)
+        #expect(DiskManagerPlugin.info.id == "com.coffic.lumi.plugin.disk-manager")
+        #expect(DiskManagerPlugin.info.displayName.isEmpty == false)
+        #expect(DiskManagerPlugin.info.description.isEmpty == false)
         #expect(DiskManagerPlugin.iconName == "internaldrive")
         #expect(DiskManagerPlugin.category == .system)
-        #expect(DiskManagerPlugin.order == 22)
-        #expect(DiskManagerPlugin.isConfigurable == true)
-        #expect(DiskManagerPlugin.policy == .optOut)
-        #expect(DiskManagerPlugin.shared.instanceLabel == DiskManagerPlugin.id)
+        #expect(DiskManagerPlugin.info.order == 44)
+        #expect(DiskManagerPlugin.policy == .optIn)
     }
 
     @Test
-    func viewContainerContributionIsAvailable() {
-        let item = DiskManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == DiskManagerPlugin.id)
-        #expect(item?.title == DiskManagerPlugin.displayName)
-        #expect(item?.icon == DiskManagerPlugin.iconName)
+    func viewContainerContributionIsAvailable() throws {
+        let items = DiskManagerPlugin.viewContainers(
+            context: LumiPluginContext(activeSectionID: "workspace", activeSectionTitle: "Workspace")
+        )
+        let item = try #require(items.first)
+        #expect(item.id == DiskManagerPlugin.info.id)
+        #expect(item.title == DiskManagerPlugin.info.displayName)
     }
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginDiskManagerLocalization.bundle.url(forResource: "DiskManager", withExtension: "xcstrings") != nil)
+        #expect(PluginDiskManagerLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(PluginDiskManagerLocalization.string("Disk Manager").isEmpty == false)
     }
 
