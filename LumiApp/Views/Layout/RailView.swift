@@ -27,6 +27,7 @@ struct RailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
         .overlay(alignment: .trailing) {
             if Self.showsBorder {
                 AppDivider(.vertical)

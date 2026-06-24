@@ -25,6 +25,7 @@ public struct BreadcrumbNavHeaderView: View {
                 Color.clear
             }
         }
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }
 
     @ViewBuilder

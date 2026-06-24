@@ -19,5 +19,6 @@ struct ChatHeaderView: View {
             }
         }
         .frame(height: AppPanelChromeMetrics.tabBarHeight)
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }
 }
