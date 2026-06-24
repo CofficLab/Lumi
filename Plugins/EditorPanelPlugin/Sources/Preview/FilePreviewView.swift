@@ -4,6 +4,7 @@ import PDFKit
 import QuickLookUI
 import SwiftUI
 import UniformTypeIdentifiers
+import WebKit
 
 // MARK: - Preview Kind
 
@@ -56,19 +57,114 @@ private struct _QuickLookFilePreview: NSViewRepresentable {
 
     let fileURL: URL
 
-    func makeNSView(context: Context) -> QLPreviewView {
+    func makeNSView(context: Context) -> _QuickLookPreviewHostView {
+        let host = _QuickLookPreviewHostView()
+        host.previewView.previewItem = fileURL as NSURL
+        host.scheduleLayoutPasses()
+        return host
+    }
+
+    func updateNSView(_ hostView: _QuickLookPreviewHostView, context: Context) {
+        let currentURL = hostView.previewView.previewItem as? URL
+        guard currentURL != fileURL else { return }
+        hostView.previewView.previewItem = fileURL as NSURL
+        hostView.scheduleLayoutPasses()
+    }
+
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        nsView: _QuickLookPreviewHostView,
+        context: Context
+    ) -> CGSize? {
+        guard let width = proposal.width, let height = proposal.height else { return nil }
+        return CGSize(width: width, height: height)
+    }
+
+    static func dismantleNSView(_ hostView: _QuickLookPreviewHostView, coordinator: ()) {
+        hostView.previewView.close()
+    }
+}
+
+/// 让 QLPreviewView 始终铺满 SwiftUI 分配区域，避免滚动条停在内容宽度处。
+@MainActor
+private final class _QuickLookPreviewHostView: NSView {
+    let previewView: QLPreviewView = {
         let view = QLPreviewView()
-        view.previewItem = fileURL as NSURL
         view.shouldCloseWithWindow = false
+        view.autoresizingMask = [.width, .height]
         return view
+    }()
+
+    private var layoutPassToken = UUID()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        addSubview(previewView)
     }
 
-    func updateNSView(_ qlPreviewView: QLPreviewView, context: Context) {
-        qlPreviewView.previewItem = fileURL as NSURL
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
-    static func dismantleNSView(_ qlPreviewView: QLPreviewView, coordinator: ()) {
-        qlPreviewView.close()
+    override func layout() {
+        super.layout()
+        previewView.frame = bounds
+        _QuickLookPreviewLayoutExpander.expand(in: previewView)
+    }
+
+    /// QuickLook 异步生成预览后会重新居中内容，补几次 layout 覆盖初始加载阶段。
+    func scheduleLayoutPasses() {
+        layoutPassToken = UUID()
+        let token = layoutPassToken
+        let delays: [TimeInterval] = [0, 0.15, 0.5, 1.5]
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.layoutPassToken == token else { return }
+                self.needsLayout = true
+                self.layoutSubtreeIfNeeded()
+            }
+        }
+    }
+}
+
+/// QuickLook 的 Office 预览会把 `QLWeb2View` 居中并限制宽度，导致滚动条不在面板最右侧。
+@MainActor
+private enum _QuickLookPreviewLayoutExpander {
+    private static let officeCenteringStyleID = "lumi-quicklook-office-center"
+    private static let officeCenteringCSS = """
+    body { margin: 0 !important; }
+    body > div { margin-left: auto !important; margin-right: auto !important; }
+    """
+
+    static func expand(in view: NSView) {
+        for subview in view.subviews {
+            if String(describing: type(of: subview)).contains("CenteringView") {
+                for child in subview.subviews {
+                    child.frame = subview.bounds
+                    child.autoresizingMask = [.width, .height]
+                }
+            }
+            if let webView = subview as? WKWebView {
+                centerOfficePreviewContent(in: webView)
+            }
+            expand(in: subview)
+        }
+    }
+
+    private static func centerOfficePreviewContent(in webView: WKWebView) {
+        let script = """
+        (function() {
+            var style = document.getElementById('\(officeCenteringStyleID)');
+            if (!style) {
+                style = document.createElement('style');
+                style.id = '\(officeCenteringStyleID)';
+                document.head.appendChild(style);
+            }
+            style.textContent = `\(officeCenteringCSS.replacingOccurrences(of: "`", with: "\\`"))`;
+        })();
+        """
+        webView.evaluateJavaScript(script, completionHandler: nil)
     }
 }
 
