@@ -137,9 +137,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let targetPosition = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
         let needsSelectionUpdate = textView.selectedRange().location != targetPosition || textChanged
-        let needsFocus = isFocused && nsView.window.map { $0.firstResponder != textView } ?? false
 
-        if textChanged || needsSelectionUpdate || needsFocus {
+        if textChanged || needsSelectionUpdate {
             let position = targetPosition
             DispatchQueue.main.async {
                 if textChanged, let tv = nsView.documentView as? EditorTextView {
@@ -147,9 +146,6 @@ public struct ChatInputEditorView: NSViewRepresentable {
                 }
                 if needsSelectionUpdate, let tv = nsView.documentView as? EditorTextView {
                     tv.setSelectedRange(NSRange(location: position, length: 0))
-                }
-                if needsFocus, let window = nsView.window, window.firstResponder != textView {
-                    window.makeFirstResponder(textView)
                 }
             }
         }
