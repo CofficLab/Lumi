@@ -29,6 +29,7 @@ struct RootView<Content: View>: View {
             }
         )
         let _ = container.pluginService.registerPluginContributions(context: context)
+        let onboardingPages = container.pluginService.onboardingPages(context: context)
         let baseView = AnyView(content)
         let overlayView = appliesRootOverlays
             ? container.pluginService.rootOverlays(context: context).reduce(baseView) { wrapped, overlay in
@@ -36,6 +37,7 @@ struct RootView<Content: View>: View {
             }
             : baseView
         overlayView
+            .environment(\.onboardingPages, onboardingPages)
             .appThemedAppearance()
             .background {
                 ThemeWindowAppearanceBridge()

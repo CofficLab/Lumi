@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import Testing
 @testable import OnboardingPlugin
 
@@ -6,6 +7,57 @@ import Testing
     #expect(OnboardingPlugin.info.id == "com.coffic.lumi.plugin.onboarding")
     #expect(OnboardingPlugin.policy == .alwaysOn)
     #expect(OnboardingPlugin.policy.shouldRegister)
+}
+
+@MainActor
+@Test func onboardingPluginProvidesPages() throws {
+    let context = LumiPluginContext(
+        activeSectionID: "test",
+        activeSectionTitle: "Test"
+    )
+    let pages = OnboardingPlugin.onboardingPages(context: context)
+
+    #expect(pages.count == 2)
+    #expect(pages[0].id.hasSuffix(".welcome"))
+    #expect(pages[0].order == 10)
+    #expect(pages[1].id.hasSuffix(".plugins"))
+    #expect(pages[1].order == 20)
+}
+
+@MainActor
+@Test func onboardingPageMakesContent() throws {
+    let context = LumiPluginContext(
+        activeSectionID: "test",
+        activeSectionTitle: "Test"
+    )
+    let pages = OnboardingPlugin.onboardingPages(context: context)
+
+    for page in pages {
+        let content = page.makeContent()
+        #expect("\(content)" != "")
+    }
+}
+
+@MainActor
+@Test func defaultOnboardingPagesReturnsEmpty() throws {
+    struct DummyPlugin: LumiPlugin {
+        static let info = LumiPluginInfo(
+            id: "test.dummy",
+            displayName: "Dummy",
+            description: "A test plugin",
+            order: 0
+        )
+        static let policy: LumiPluginPolicy = .alwaysOn
+        static let category: LumiPluginCategory = .general
+        static let iconName = "star"
+    }
+
+    let context = LumiPluginContext(
+        activeSectionID: "test",
+        activeSectionTitle: "Test"
+    )
+    let pages = DummyPlugin.onboardingPages(context: context)
+    #expect(pages.isEmpty)
 }
 
 @Test func onboardingStoreReportsSaveResultAndReloadsCompletion() {

@@ -107,6 +107,14 @@ final class PluginService: ObservableObject {
             .sorted { $0.order < $1.order }
     }
 
+    func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        enabledPlugins
+            .flatMap { plugin in
+                plugin.onboardingPages(context: context)
+            }
+            .sorted { $0.order < $1.order }
+    }
+
     func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
         guard context.supportsChatSection else { return [] }
         return enabledPlugins
