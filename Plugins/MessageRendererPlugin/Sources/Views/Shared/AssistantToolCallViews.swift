@@ -105,7 +105,7 @@ private struct ToolCallRowView: View {
             Spacer(minLength: 12)
 
             if let duration = toolCall.result?.duration {
-                Text(formatDuration(duration))
+                Text(MessageViewHelpers.formatDuration(duration))
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
             }
@@ -201,20 +201,6 @@ private struct ToolCallRowView: View {
             }
         }
     }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        if duration < 1 {
-            return "\(Int(duration * 1000))ms"
-        }
-
-        if duration < 60 {
-            return String(format: "%.1fs", duration)
-        }
-
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        return "\(minutes)m \(seconds)s"
-    }
 }
 
 private struct ToolDetailPopoverView<Content: View>: View {
@@ -257,20 +243,7 @@ private struct ToolCallArgumentsView: View {
     }
 
     private var formattedArguments: String? {
-        guard !toolCall.arguments.isEmpty,
-              toolCall.arguments != "{}",
-              let data = toolCall.arguments.data(using: .utf8),
-              let jsonObject = try? JSONSerialization.jsonObject(with: data)
-        else {
-            return nil
-        }
-
-        if let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
-           let prettyString = String(data: prettyData, encoding: .utf8) {
-            return prettyString
-        }
-
-        return toolCall.arguments
+        MessageViewHelpers.formatToolCallArguments(toolCall.arguments)
     }
 }
 
