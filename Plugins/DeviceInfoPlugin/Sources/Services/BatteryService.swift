@@ -294,11 +294,30 @@ public final class BatteryService: ObservableObject, SuperLog {
         var isCharging = false
         var isCharged = false
         var isACConnected = false
-        var source: BatteryPowerSource = .acPower
+        var source: BatteryPowerSource = .battery
 
-        if let ps = sources.first {
-            let desc = IOPSGetPowerSourceDescription(snapshot, ps)?.takeUnretainedValue() as? [String: Any] ?? [:]
+        // Find the internal battery power source first
+        var batterySource: [String: Any]?
+        var upsSource: [String: Any]?
 
+        for ps in sources {
+            guard let desc = IOPSGetPowerSourceDescription(snapshot, ps)?.takeUnretainedValue() as? [String: Any] else {
+                continue
+            }
+
+            let type = desc[kIOPSTypeKey] as? String ?? ""
+            if type == kIOPSInternalBatteryType {
+                batterySource = desc
+                break  // Found the battery, stop searching
+            } else if type == "UPS" {
+                upsSource = desc
+            }
+        }
+
+        // Use battery source if found, otherwise try UPS
+        let desc = batterySource ?? upsSource ?? [:]
+
+        if !desc.isEmpty {
             if let current = desc[kIOPSCurrentCapacityKey] as? Int,
                let max = desc[kIOPSMaxCapacityKey] as? Int, max > 0 {
                 level = Double(current) / Double(max)
@@ -314,7 +333,7 @@ public final class BatteryService: ObservableObject, SuperLog {
             case "UPS":
                 source = .ups
             default:
-                source = .acPower
+                source = .battery
             }
         }
 
