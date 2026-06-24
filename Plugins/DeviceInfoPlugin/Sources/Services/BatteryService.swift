@@ -243,15 +243,22 @@ public final class BatteryService: ObservableObject, SuperLog {
         }
         defer { IOObjectRelease(service) }
 
-        // Check if battery is present
-        let externalConnected = intFromRegistry(service, "ExternalConnected")
-        let builtIn = intFromRegistry(service, "BuiltIn")
-
-        // If there is no battery properties at all, this is a desktop Mac
+        // Determine whether this Mac has an internal battery.
+        //
+        // The registry keys are inconsistent across models:
+        // - `BatteryPresent` / `BuiltIn` exist on many Intel Macs but are ABSENT
+        //   on recent Apple Silicon Macs (returning -1 below), which previously
+        //   caused laptops to be misdetected as battery-less desktops and always
+        //   rendered as "AC Power".
+        // - `BatteryInstalled` (1 = battery fitted) is the reliable cross-model key.
+        //
+        // A real desktop without an internal battery has none of these keys, so we
+        // treat "no battery keys at all" (all three absent) as the desktop case.
         let batteryPresent = intFromRegistry(service, "BatteryPresent")
-        // Some Macs don't have BatteryPresent key, use heuristics
-        if batteryPresent < 0 && builtIn < 0 {
-            // No battery keys at all — likely a desktop without internal battery
+        let builtIn = intFromRegistry(service, "BuiltIn")
+        let batteryInstalled = intFromRegistry(service, "BatteryInstalled")
+
+        if !Self.hasInternalBattery(batteryPresent: batteryPresent, builtIn: builtIn, batteryInstalled: batteryInstalled) {
             data.hasBattery = false
             return data
         }
@@ -380,6 +387,26 @@ public final class BatteryService: ObservableObject, SuperLog {
     }
 
     // MARK: - IOKit Helpers
+
+    /// Decide whether an internal battery is fitted from IOKit registry values.
+    ///
+    /// Each argument is the value of the corresponding `AppleSmartBattery` registry
+    /// key, or `-1` when the key is absent (see `intFromRegistry`). `BatteryInstalled`
+    /// is the most reliable signal across Mac models; the legacy `BatteryPresent` /
+    /// `BuiltIn` keys are absent on recent Apple Silicon Macs.
+    ///
+    /// - Returns: `false` when the keys are altogether absent (a battery-less
+    ///   desktop) or `BatteryInstalled` is explicitly `0`; otherwise `true`.
+    package nonisolated static func hasInternalBattery(
+        batteryPresent: Int,
+        builtIn: Int,
+        batteryInstalled: Int
+    ) -> Bool {
+        let anyKeyPresent = batteryPresent >= 0 || builtIn >= 0 || batteryInstalled >= 0
+        guard anyKeyPresent else { return false }   // desktop without internal battery
+        if batteryInstalled == 0 { return false }    // explicitly no battery installed
+        return true
+    }
 
     private nonisolated static func intFromRegistry(_ service: io_service_t, _ key: String) -> Int {
         guard let value = IORegistryEntryCreateCFProperty(
