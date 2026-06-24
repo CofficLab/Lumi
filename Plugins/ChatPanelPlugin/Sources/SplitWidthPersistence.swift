@@ -6,10 +6,18 @@ enum SplitWidth {
     static let defaultMinimumWidth: CGFloat = 220
     static let defaultMaximumWidth: CGFloat = 960
 
+    /// Clamp a requested width into `[minimum, maximum]`.
+    ///
+    /// Extracted from `preferredWidth` (and duplicated inline in the NSView body)
+    /// so the layout bounds are testable and single-sourced.
+    static func clamp(_ requested: CGFloat, minimum: CGFloat = defaultMinimumWidth, maximum: CGFloat = defaultMaximumWidth) -> CGFloat {
+        min(max(requested, minimum), maximum)
+    }
+
     static func preferredWidth(databaseDirectory: URL) -> CGFloat {
         let savedWidth = LocalStore(databaseDirectory: databaseDirectory).loadConversationListWidth()
         let requestedWidth = savedWidth > 0 ? CGFloat(savedWidth) : defaultWidth
-        return min(max(requestedWidth, defaultMinimumWidth), defaultMaximumWidth)
+        return clamp(requestedWidth)
     }
 }
 

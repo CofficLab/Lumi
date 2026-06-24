@@ -14,7 +14,8 @@ struct ChatSlashCommand: Identifiable, Equatable {
         return all.filter { $0.command.lowercased().hasPrefix(normalized) }
     }
 
-    private static let all: [ChatSlashCommand] = [
+    /// Catalog of supported slash commands. `internal` so tests can assert it.
+    static let all: [ChatSlashCommand] = [
         .init(command: "/clear", description: LumiPluginLocalization.string("Clear chat history", bundle: .module)),
         .init(command: "/help", description: LumiPluginLocalization.string("Show available commands", bundle: .module)),
         .init(command: "/model", description: LumiPluginLocalization.string("Open model selector", bundle: .module)),
