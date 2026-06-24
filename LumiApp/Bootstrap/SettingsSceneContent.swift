@@ -5,7 +5,7 @@ struct SettingsSceneContent: View {
     @StateObject private var container = RootContainer.shared
 
     var body: some View {
-        RootView(container: container) {
+        RootView(container: container, appliesRootOverlays: false) {
             SettingsView(
                 pluginService: container.pluginService,
                 lumiUIService: container.lumiUIService,
