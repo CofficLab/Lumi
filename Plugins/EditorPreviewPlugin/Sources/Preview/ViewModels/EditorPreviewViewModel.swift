@@ -120,6 +120,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         case html(URL)
         case pdf(URL)
         case xcassets(URL)
+        case doc(URL)
         case unsupported(URL?)
     }
 
@@ -718,6 +719,8 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             previewMode = .html(url)
         } else if Self.pdfExtensions.contains(ext) {
             previewMode = .pdf(url)
+        } else if Self.docExtensions.contains(ext) {
+            previewMode = .doc(url)
         } else {
             previewMode = .unsupported(url)
         }
@@ -1307,4 +1310,5 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     private static let csvExtensions: Set<String> = ["csv", "tsv"]
     private static let htmlExtensions: Set<String> = ["html", "htm"]
     private static let pdfExtensions: Set<String> = ["pdf"]
+    private static let docExtensions: Set<String> = ["doc", "docx"]
 }
