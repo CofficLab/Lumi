@@ -13,8 +13,8 @@ enum ConnectCacheInvalidator {
             if let localizationID = extractTrailingID(from: patchPath) {
                 cache.invalidate(tags: [.localization(localizationID)])
                 cache.invalidate(accountKey: accountKey) { entry in
-                    entry.path.contains("/appStoreVersionLocalizations/\(localizationID)")
-                        || entry.path.contains("/appScreenshotSets")
+                    (entry.path.contains("/appStoreVersionLocalizations/\(localizationID)")
+                        || entry.path.contains("/appScreenshotSets"))
                         && entry.path.contains(localizationID)
                 }
             }

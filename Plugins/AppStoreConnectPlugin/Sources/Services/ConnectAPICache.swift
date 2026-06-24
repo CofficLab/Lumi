@@ -14,7 +14,9 @@ final class ConnectAPICache: @unchecked Sendable {
     }()
 
     private let memoryCache: ConnectCache
-    private let diskStore: ConnectAPICacheDiskStore
+    /// Backing disk store. `package` so tests can seed/inspect entries directly
+    /// when exercising `ConnectCacheInvalidator` without the policy resolver.
+    package let diskStore: ConnectAPICacheDiskStore
     private let versionStateIndex: VersionStateIndex
 
     init(
