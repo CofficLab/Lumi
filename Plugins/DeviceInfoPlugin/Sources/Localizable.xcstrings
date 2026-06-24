@@ -818,6 +818,7 @@
       }
     },
     "Battery %lld%%" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
