@@ -272,6 +272,13 @@ public struct MLXLocalProviderSettingsView: View {
                         Text("\(downloadManager.progress.completedFiles)/\(downloadManager.progress.totalFiles)")
                             .font(.caption)
                             .foregroundColor(theme.textSecondary)
+
+                        // 实时下载速度（暂停时 speed 被清空，仅下载中显示）
+                        if isDownloading, !downloadManager.progress.speedLabel.isEmpty {
+                            Text(downloadManager.progress.speedLabel)
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                        }
                     }
                 }
             }

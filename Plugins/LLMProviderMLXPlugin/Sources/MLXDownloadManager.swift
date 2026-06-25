@@ -207,6 +207,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         // 保存当前状态，供 resume() 续传
         pausedModelId = modelId
+        // 清除实时速率后快照：暂停后不再有新字节流入，保留 speed 会让 UI 显示陈旧值
+        progress.speed = nil
         pausedProgress = progress
 
         // 设置状态为暂停
@@ -466,6 +468,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 let baseDownloadedBytes = downloadedBytes
                 _ = try await dm.download(task) { [weak self] progress in
                     let newBytes = progress.downloadedBytes
+                    let speed = progress.bytesPerSecond
                     Task { @MainActor in
                         guard let self else { return }
                         // 只在新值大于当前值时更新，避免并发 Task 调度乱序导致进度回退显示
@@ -474,7 +477,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                             // 将当前文件的实时字节数纳入整体进度，避免进度条在大文件下载期间冻结
                             self.updateProgress(
                                 downloadedBytes: baseDownloadedBytes + newBytes,
-                                totalBytes: totalBytes
+                                totalBytes: totalBytes,
+                                speed: speed
                             )
                         }
                     }
@@ -650,9 +654,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Status Updates
 
     private func updateProgress(completedFiles: Int64? = nil, downloadedBytes: Int64? = nil,
-                                totalFiles: Int64? = nil, totalBytes: Int64? = nil) {
+                                totalFiles: Int64? = nil, totalBytes: Int64? = nil,
+                                speed: Double? = nil) {
         if let cf = completedFiles { progress.completedFiles = cf }
         if let tf = totalFiles { progress.totalFiles = tf }
+        // 速度即时刷新：DownloadKit 回调给出的 bytesPerSecond 直接反映当前文件实时速率，
+        // 每次回调都覆盖，避免停留陈旧值（回调频率高，无需额外平滑）。
+        if let speed { progress.speed = speed }
         if let db = downloadedBytes, let tb = totalBytes {
             var fraction = Self.downloadProgressFraction(
                 writtenBytes: db,
