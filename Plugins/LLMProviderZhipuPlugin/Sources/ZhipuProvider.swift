@@ -24,12 +24,12 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
                 "glm-4.5-air",
             ],
             contextWindowSizes: [
-                "glm-5.2": 128_000,
-                "glm-5.1": 128_000,
-                "glm-5-turbo": 128_000,
-                "glm-5": 128_000,
+                "glm-5.2": 1_000_000,
+                "glm-5.1": 1_000_000,
+                "glm-5-turbo": 1_000_000,
+                "glm-5": 1_000_000,
                 "glm-4.7": 128_000,
-                "glm-4.6": 128_000,
+                "glm-4.6": 200_000,
                 "glm-4.5": 128_000,
                 "glm-4.5-air": 128_000
             ],

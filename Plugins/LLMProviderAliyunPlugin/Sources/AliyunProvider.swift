@@ -27,13 +27,13 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
             contextWindowSizes: [
                 "qwen3.5-plus": 131_072,
                 "qwen3.6-flash": 1_000_000,
-                "qwen3.6-plus": 131_072,
-                "qwen3.7-plus": 131_072,
-                "qwen3.7-max": 131_072,
+                "qwen3.6-plus": 1_000_000,
+                "qwen3.7-plus": 1_000_000,
+                "qwen3.7-max": 1_000_000,
                 "glm-4.7": 128_000,
-                "glm-5": 128_000,
-                "MiniMax-M2.5": 1_000_000,
-                "kimi-k2.5": 256_000
+                "glm-5": 1_000_000,
+                "MiniMax-M2.5": 204_800,
+                "kimi-k2.5": 262_144
             ],
             modelCapabilities: [
                 "qwen3.5-plus": .init(supportsVision: true, supportsTools: true),

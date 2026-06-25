@@ -48,7 +48,7 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "claude-opus-4-6": 200_000,
                 "claude-sonnet-4-5-20250929": 200_000,
                 "claude-sonnet-4-6": 200_000,
-                "deepseek-ai/deepseek-v3.1": 128_000,
+                "deepseek-ai/deepseek-v3.1": 1_000_000,
                 "grok-4.1-fast-reasoning": 1_000_000,
                 "gpt-5-mini": 400_000,
                 "gpt-5.3-codex": 400_000,

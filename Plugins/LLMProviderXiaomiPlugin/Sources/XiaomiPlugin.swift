@@ -34,8 +34,8 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
             "mimo-v2.5-tts-voicedesign"
             ],
             contextWindowSizes: [
-                "mimo-v2.5-pro": 131_072,
-                "mimo-v2.5": 131_072,
+                "mimo-v2.5-pro": 1_000_000,
+                "mimo-v2.5": 1_000_000,
                 "mimo-v2.5-tts": 131_072,
                 "mimo-v2.5-tts-voiceclone": 131_072,
                 "mimo-v2.5-tts-voicedesign": 131_072
