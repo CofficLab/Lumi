@@ -63,7 +63,8 @@ struct ModelProviderPicker: View {
         }
 
         if let model = chatService.modelName(for: conversationID) {
-            return "\(provider.displayName) · \(model)"
+            let displayModel = provider.modelDisplayNames[model] ?? model
+            return "\(provider.displayName) · \(displayModel)"
         }
         return provider.displayName
     }

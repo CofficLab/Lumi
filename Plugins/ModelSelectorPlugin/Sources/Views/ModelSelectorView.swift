@@ -288,7 +288,10 @@ struct ModelSelectorView: View {
         return providers.filter { provider in
             provider.displayName.localizedCaseInsensitiveContains(searchText)
                 || provider.id.localizedCaseInsensitiveContains(searchText)
-                || provider.availableModels.contains { $0.localizedCaseInsensitiveContains(searchText) }
+                || provider.availableModels.contains {
+                    $0.localizedCaseInsensitiveContains(searchText)
+                        || (provider.modelDisplayNames[$0] ?? "").localizedCaseInsensitiveContains(searchText)
+                }
         }
     }
 
@@ -306,7 +309,10 @@ struct ModelSelectorView: View {
             return provider.availableModels
         }
 
-        return provider.availableModels.filter { $0.localizedCaseInsensitiveContains(searchText) }
+        return provider.availableModels.filter {
+            $0.localizedCaseInsensitiveContains(searchText)
+                || (provider.modelDisplayNames[$0] ?? "").localizedCaseInsensitiveContains(searchText)
+        }
     }
 
     private var normalizedSearch: String {

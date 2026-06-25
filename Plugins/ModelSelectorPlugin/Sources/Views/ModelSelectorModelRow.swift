@@ -29,6 +29,10 @@ struct ModelSelectorModelRow: View {
 
     // MARK: - Derived
 
+    private var modelDisplayName: String {
+        provider.modelDisplayNames[model] ?? model
+    }
+
     private var capabilities: LumiModelCapabilities? {
         provider.modelCapabilities[model]
     }
@@ -43,7 +47,7 @@ struct ModelSelectorModelRow: View {
                 HStack {
                     availabilityStatusIcon(availabilityStatus)
 
-                    Text(model)
+                    Text(modelDisplayName)
                         .font(.system(size: 15, weight: .regular))
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)

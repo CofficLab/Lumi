@@ -15,6 +15,7 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         modelCapabilities: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map {
             ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
         }),
+        modelDisplayNames: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map { ($0.id, $0.displayName) }),
         websiteURL: URL(string: "https://github.com/ml-explore/mlx")!
     )
 
