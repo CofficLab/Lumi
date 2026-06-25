@@ -40,23 +40,44 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             throw MLXLumiError.missingConversation
         }
 
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let stats = StreamingTokenStats()
+
         let result = try await Self.generate(
             request: request,
+            stats: stats,
             onChunk: onChunk
         )
+
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let streamingDurationMs = (endTime - startTime) * 1000.0
+
+        var metadata = LumiMessageTokenMetadata.metadata(
+            inputTokens: nil,
+            outputTokens: stats.outputTokenCount > 0 ? stats.outputTokenCount : nil
+        )
+        metadata.merge(
+            LumiMessagePerformanceMetadata.metadata(
+                latencyMs: streamingDurationMs,
+                timeToFirstTokenMs: stats.timeToFirstTokenMs,
+                streamingDurationMs: streamingDurationMs
+            )
+        ) { _, new in new }
 
         return LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: result,
             providerID: Self.info.id,
-            modelName: request.model
+            modelName: request.model,
+            metadata: metadata
         )
     }
 
     @MainActor
     private static func generate(
         request: LumiLLMRequest,
+        stats: StreamingTokenStats,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> String {
         let service = MLXInferenceService()
@@ -93,6 +114,7 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             switch chunk {
             case .text(let text):
                 content += text
+                stats.recordToken()
                 await onChunk(LumiStreamChunk(content: text, eventTitle: "生成中"))
             case .error(let message):
                 throw MLXLumiError.generationFailed(message)
@@ -103,6 +125,35 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
         return content
+    }
+}
+
+/// 流式生成期间的 token 统计（线程安全，供 @MainActor 闭包外读取）
+private final class StreamingTokenStats: @unchecked Sendable {
+    private let startTime = CFAbsoluteTimeGetCurrent()
+    private var lock = os_unfair_lock_s()
+    private var _outputTokenCount = 0
+    private var _timeToFirstTokenMs: Double?
+
+    func recordToken() {
+        os_unfair_lock_lock(&lock)
+        _outputTokenCount += 1
+        if _timeToFirstTokenMs == nil {
+            _timeToFirstTokenMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+        }
+        os_unfair_lock_unlock(&lock)
+    }
+
+    var outputTokenCount: Int {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        return _outputTokenCount
+    }
+
+    var timeToFirstTokenMs: Double? {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        return _timeToFirstTokenMs
     }
 }
 
