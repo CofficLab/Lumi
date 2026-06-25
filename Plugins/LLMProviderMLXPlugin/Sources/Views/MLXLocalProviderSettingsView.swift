@@ -151,7 +151,6 @@ public struct MLXLocalProviderSettingsView: View {
         let isActiveDownload = isDownloading || isPaused
         let isCached = !isActiveDownload && modelManager.isModelCached(id: model.id)
         let isLoaded = inferenceService.currentModelId == model.id
-        let isLoading = inferenceService.state == .loading && inferenceService.currentModelId == model.id
         let hasError = errorModelId == model.id && actionError != nil
 
         VStack(alignment: .leading, spacing: 8) {
@@ -172,15 +171,6 @@ public struct MLXLocalProviderSettingsView: View {
 
             HStack(spacing: 8) {
                 if isCached {
-                    AppButton(
-                        LumiPluginLocalization.string("加载", bundle: .module),
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        Task { await loadModel(model.id) }
-                    }
-                    .disabled(isLoading || isLoaded)
-
                     if isLoaded {
                         AppButton(
                             LumiPluginLocalization.string("卸载", bundle: .module),
@@ -319,18 +309,6 @@ public struct MLXLocalProviderSettingsView: View {
             Self.logger.info("✅ UI: 下载成功完成")
             actionError = nil
             errorModelId = nil
-        }
-    }
-
-    @MainActor
-    private func loadModel(_ modelID: String) async {
-        actionError = nil
-        errorModelId = nil
-        do {
-            try await inferenceService.loadModel(id: modelID)
-        } catch {
-            actionError = error.localizedDescription
-            errorModelId = modelID
         }
     }
 
