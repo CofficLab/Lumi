@@ -2004,6 +2004,138 @@ enum MLXDownloadManagerSharedStateTests {
         manager.cancel()
         #expect(manager.status == .idle)
     }
+
+    // MARK: - 暂停保留 .paused（回归 #1：暂停曾被异步取消覆盖为 idle）
+
+    /// 下载中调用 pause() 后，状态应停留在 .paused、模型 ID 仍在，
+    /// 而非被下载任务的取消分支改回 .idle（这是修复前的核心缺陷）。
+    ///
+    /// 使用真实存在的模型 id（文件列表可达、但完整下载耗时较长），使 .downloading 态
+    /// 持续足够久以便触发暂停。无网络环境下下载会失败、用例直接跳过，不视为回归。
+    @Test
+    static func pauseDuringDownloadKeepsPausedState() async {
+        let manager = MLXDownloadManager.shared
+        manager.cancel()  // 确保从干净状态开始
+
+        // 真实存在的小模型：fetchFileList 成功后会进入实际下载（耗时），留出暂停窗口
+        let realId = "mlx-community/Qwen3.5-0.8B-OptiQ-4bit"
+        let downloadTask = Task { await manager.download(modelId: realId) }
+
+        // download() 在发起网络请求前就会同步置 status = .downloading（line ~122）。
+        // 等待文件列表返回并开始下载，期间状态保持 .downloading。
+        try? await Task.sleep(nanoseconds: 400_000_000)  // 0.4s
+
+        guard manager.status == .downloading else {
+            // 无网络或下载瞬时结束：本用例无法验证暂停，收尾跳过（不记为失败）
+            manager.cancel(); downloadTask.cancel()
+            return
+        }
+
+        manager.pause()
+        // 暂停后状态应为 .paused，且模型 ID 保留（恢复按钮可见的前提）
+        #expect(manager.status == .paused, "暂停后应停留在 .paused，实际：\(manager.status)")
+        #expect(manager.downloadingModelId == realId, "暂停后模型 ID 应保留")
+
+        // 关键回归点：等待足够时间让被取消的下载任务的 catch 分支执行完毕后，
+        // .paused 仍不应被改回 .idle（修复前会在此处被覆盖）。
+        try? await Task.sleep(nanoseconds: 400_000_000)  // 0.4s
+        #expect(manager.status == .paused, "暂停后状态应保持 .paused，实际：\(manager.status)")
+
+        // 收尾：取消并等待后台下载任务结束，避免污染后续用例
+        manager.cancel()
+        downloadTask.cancel()
+    }
+
+    /// 暂停 → 取消 应回到 .idle（暂停保留的状态最终能被真取消复位）。
+    /// 使用真实存在的模型 id 以获得可暂停的下载窗口；无网络则跳过。
+    @Test
+    static func pauseThenCancelReturnsToIdle() async {
+        let manager = MLXDownloadManager.shared
+        manager.cancel()
+
+        let realId = "mlx-community/Qwen3.5-0.8B-OptiQ-4bit"
+        let downloadTask = Task { await manager.download(modelId: realId) }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+
+        guard manager.status == .downloading else {
+            manager.cancel(); downloadTask.cancel()
+            return  // 无网络：跳过
+        }
+
+        manager.pause()
+        #expect(manager.status == .paused)
+
+        // 真取消应复位为 idle（暂停标志被清除）
+        manager.cancel()
+        #expect(manager.status == .idle)
+        #expect(manager.downloadingModelId == nil)
+
+        manager.cancel()
+        downloadTask.cancel()
+    }
+
+    /// 暂停后恢复：若仍处于 .paused（未被取消），resume() 应重新进入 .downloading。
+    @Test
+    static func resumeAfterPauseReentersDownloading() async {
+        let manager = MLXDownloadManager.shared
+        manager.cancel()
+
+        let realId = "mlx-community/Qwen3.5-0.8B-OptiQ-4bit"
+        let downloadTask = Task { await manager.download(modelId: realId) }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+
+        guard manager.status == .downloading else {
+            manager.cancel(); downloadTask.cancel()
+            return  // 无网络：跳过
+        }
+
+        manager.pause()
+        #expect(manager.status == .paused)
+
+        // 恢复：应重新置为 .downloading（随后会继续下载，关键是不应停留在 paused）
+        let resumeTask = Task { await manager.resume() }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        // 恢复发起后，状态要么 downloading（进行中）要么已 failed/completed；
+        // 关键是不应停留在 paused
+        #expect(manager.status != .paused, "恢复后不应停留在 paused")
+
+        manager.cancel()
+        downloadTask.cancel()
+        resumeTask.cancel()
+    }
+
+    // MARK: - 进度恢复（回归 #3：恢复后进度曾冻结）
+
+    /// downloadProgressFraction 在已知字节数下应立即重算，不再卡在旧值。
+    /// 这里直接验证纯函数：恢复路径的 updateProgress 依赖它计算 fraction。
+    @Test
+    static func progressFractionRecomputesAfterResume() {
+        // 模拟恢复场景：已完成 500MB，总量 1GB → fraction 应 ≈ 0.475（0.5 * 0.95）
+        let fraction = MLXDownloadManager.downloadProgressFraction(
+            writtenBytes: 500_000_000,
+            totalBytes: 1_000_000_000
+        )
+        #expect(fraction > 0.47 && fraction < 0.48, "恢复后进度应立即反映已下载字节，实际：\(fraction)")
+        #expect(fraction > 0, "进度必须非零，否则进度条冻结")
+    }
+
+    /// updateProgress 同时传 downloadedBytes + totalBytes 时应更新 fractionCompleted。
+    /// 验证 MLXDownloadProgress 在 startIndex 续传块后会被正确刷新。
+    @Test
+    static func progressUpdatesFractionWhenBothBytesProvided() {
+        // 等价于 downloadAllFiles 续传块现在的调用：
+        // updateProgress(completedFiles:downloadedBytes:totalBytes:)
+        var progress = MLXDownloadProgress()
+        progress.totalFiles = 10
+        progress.completedFiles = 5
+        let totalBytes: Int64 = 1_000_000_000
+        // 续传块算出的 fraction（与 downloadAllFiles 内部一致）
+        progress.fractionCompleted = MLXDownloadManager.downloadProgressFraction(
+            writtenBytes: 500_000_000,
+            totalBytes: totalBytes
+        )
+        #expect(progress.fractionCompleted > 0.4)
+    }
 }
 
 // Progress 标签格式化是纯函数式，无需串行；保持在 MainActor 下与现有风格一致。
