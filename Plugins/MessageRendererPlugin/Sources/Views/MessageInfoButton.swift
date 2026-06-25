@@ -187,7 +187,7 @@ struct MessageInfoPopoverContent: View {
         var parts = [result.isError ? "失败" : "成功"]
         parts.append("\(result.content.count) 字符")
         if let duration = result.duration {
-            parts.append(formatDuration(duration))
+            parts.append(MessageViewHelpers.formatDuration(duration))
         }
         return parts.joined(separator: " · ")
     }
@@ -234,17 +234,5 @@ struct MessageInfoPopoverContent: View {
 
     private func isMonoMetadata(_ key: String) -> Bool {
         key == "imageAttachments" || key.hasSuffix("ID") || key.hasSuffix("Id")
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        if duration < 1 {
-            return "\(Int(duration * 1000))ms"
-        }
-        if duration < 60 {
-            return String(format: "%.1fs", duration)
-        }
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        return "\(minutes)m \(seconds)s"
     }
 }

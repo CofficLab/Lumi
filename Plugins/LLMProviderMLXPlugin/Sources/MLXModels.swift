@@ -62,8 +62,7 @@ public enum MLXModels {
     }
 
     private static var cacheRootDirectory: URL {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
+        AppConfig.getPluginDBFolderURL(pluginName: "LLMProviderMLX")
     }
 
     private static func cachePathComponents(for modelId: String) -> [String] {

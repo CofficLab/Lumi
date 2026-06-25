@@ -32,7 +32,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-4": .init(supportsVision: false, supportsTools: true),
             "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
         ],
-        websiteURL: URL(string: "https://platform.openai.com/")
+        websiteURL: URL(string: "https://openai.com/")!
     )
 
     private static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
@@ -86,6 +86,43 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             }
         )
+    }
+
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        let apiKeyValue: String
+        do {
+            apiKeyValue = try apiKey()
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            return .unavailable(reason: "无效的 Base URL")
+        }
+
+        let body: [String: Any]
+        do {
+            body = try adapter.buildRequestBody(
+                messages: [LLMProviderKit.ChatMessage(role: .user, content: "ping")],
+                model: model,
+                tools: nil,
+                systemPrompt: ""
+            )
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            return .unavailable(reason: LumiLLMProviderSupportLocalization.userFacingDescription(for: error))
+        }
     }
 
     private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {

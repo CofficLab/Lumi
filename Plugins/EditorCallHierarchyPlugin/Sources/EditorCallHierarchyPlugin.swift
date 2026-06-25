@@ -3,7 +3,7 @@ import LumiCoreKit
 import SwiftUI
 
 public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "point.3.connected.trianglepath.dotted"

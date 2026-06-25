@@ -4,6 +4,7 @@ import SwiftUI
 
 struct HttpErrorView: View {
     @LumiTheme private var theme
+    private static let transportDetailsSeparator = "\n\n--- Request / Response Details ---\n"
 
     let message: LumiChatMessage
     let statusCode: Int?
@@ -17,10 +18,8 @@ struct HttpErrorView: View {
     }
 
     private var displayText: String {
-        if let raw = message.rawErrorDetail, !raw.isEmpty {
-            return raw
-        }
-        return message.content
+        let raw = ((message.rawErrorDetail?.isEmpty == false) ? message.rawErrorDetail : message.content) ?? ""
+        return raw.components(separatedBy: Self.transportDetailsSeparator).first ?? raw
     }
 
     var body: some View {

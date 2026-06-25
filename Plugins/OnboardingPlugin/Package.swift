@@ -29,7 +29,7 @@ let package = Package(
         ),
         .testTarget(
             name: "OnboardingPluginTests",
-            dependencies: ["OnboardingPlugin"],
+            dependencies: ["OnboardingPlugin", .product(name: "LumiCoreKit", package: "LumiCoreKit")],
             path: "Tests"
         )
     ]

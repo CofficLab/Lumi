@@ -54,7 +54,7 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "anthropic/claude-opus-4-5-20251101": 200_000,
                 "anthropic/claude-sonnet-4-5-20250929": 200_000,
                 "bytedance-seed/seedream-4.5": 32_000,
-                "deepseek/deepseek-v3.1": 128_000,
+                "deepseek/deepseek-v3.1": 1_000_000,
                 "google/gemma-3-27b-it:free": 131_072,
                 "google/gemini-pro-2.5": 1_000_000,
                 "meta-llama/llama-3.3-70b-instruct": 131_072,
@@ -65,9 +65,9 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "openai/gpt-5": 400_000,
                 "openai/gpt-5-mini": 400_000,
                 "openai/gpt-oss-20b:free": 131_072,
-                "qwen/qwen3.6-plus": 131_072,
+                "qwen/qwen3.6-plus": 1_000_000,
                 "stepfun/step-3.5-flash:free": 256_000,
-                "z-ai/glm-4.5-air:free": 128_000
+                "z-ai/glm-4.5-air:free": 131_000
             ],
             modelCapabilities: [
                 "alibaba/qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
@@ -90,7 +90,7 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
                 "z-ai/glm-4.5-air:free": .init(supportsVision: true, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://openrouter.ai/")
+            websiteURL: URL(string: "https://openrouter.ai/")!
         )
     }
 

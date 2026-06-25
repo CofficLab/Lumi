@@ -5,6 +5,7 @@ import LumiLLMProviderSupport
 import Testing
 @testable import LLMProviderAliyunPlugin
 
+@Suite(.serialized)
 struct PluginLLMProviderAliyunTests {
     @Test func pluginMetadata() {
         #expect(AliyunPlugin.info.id.isEmpty == false)
@@ -114,5 +115,30 @@ struct PluginLLMProviderAliyunTests {
         #expect(message.renderKind == AliyunRenderKind.apiKeyMissing)
         #expect(message.providerID == AliyunProvider.info.id)
         #expect(message.isError)
+    }
+
+    @Test func errorMessageMapsHTTP401FromHTTPClientError() {
+        let message = AliyunProvider.errorMessage(
+            conversationID: UUID(),
+            error: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
+        )
+
+        #expect(message.renderKind == AliyunRenderKind.http(401))
+        #expect(message.rawErrorDetail?.contains("401") == true)
+        #expect(message.rawErrorDetail?.contains("invalid_api_key") == true)
+    }
+
+    @Test func errorMessageMapsHTTP401FromLocalizedStreamingFailed() {
+        let detail = LumiLLMProviderSupportLocalization.userFacingDescription(
+            for: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key"),
+            locale: Locale(identifier: "zh-Hans")
+        )
+        let message = AliyunProvider.errorMessage(
+            conversationID: UUID(),
+            error: LumiLLMProviderSupportError.streamingFailed(detail)
+        )
+
+        #expect(message.renderKind == AliyunRenderKind.http(401))
+        #expect(message.rawErrorDetail == detail)
     }
 }

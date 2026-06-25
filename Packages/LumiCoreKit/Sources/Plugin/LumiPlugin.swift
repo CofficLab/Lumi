@@ -41,6 +41,9 @@ public protocol LumiPlugin {
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
 
     @MainActor
+    static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage]
+
+    @MainActor
     static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem]
 
     @MainActor
@@ -133,6 +136,11 @@ public extension LumiPlugin {
 
     @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        []
+    }
+
+    @MainActor
+    static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
         []
     }
 

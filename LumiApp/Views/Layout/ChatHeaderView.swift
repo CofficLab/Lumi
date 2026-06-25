@@ -8,6 +8,7 @@ struct ChatHeaderView: View {
     var body: some View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.tabBarHeight,
+            showsBottomShadow: true,
             padding: AppPanelChromeMetrics.tabBarPadding
         ) {
             HStack(spacing: 8) {

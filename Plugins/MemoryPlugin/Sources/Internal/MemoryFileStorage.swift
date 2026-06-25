@@ -68,15 +68,28 @@ public actor MemoryFileStorage {
 
     /// 将项目路径转换为安全的目录名
     private func sanitizeProjectPath(_ path: String) -> String {
-        // 使用路径的 lastPathComponent 作为人类可读标识，加上路径的哈希片段
+        Self.sanitizeProjectPath(path)
+    }
+
+    /// 将项目路径转换为安全的、唯一的目录名。
+    ///
+    /// 取路径末段作为人类可读标识，再追加一段基于完整路径的稳定哈希作为"指纹"，
+    /// 避免不同项目仅因末段同名而写入同一目录。
+    ///
+    /// - Note: 历史实现将哈希折叠进 `UInt8`（仅 256 种取值），不同路径极易碰撞，
+    ///   导致跨项目记忆串扰；现已改用 FNV-1a 64 位哈希。
+    package static func sanitizeProjectPath(_ path: String) -> String {
+        // 使用路径的 lastPathComponent 作为人类可读标识
         let lastComponent = URL(fileURLWithPath: path).lastPathComponent
         let safeName = lastComponent.replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: ".", with: "_")
             .prefix(32)
-        // 用简单的字符编码和作为轻量"指纹"
-        let hashValue = path.utf8.reduce(UInt8(0)) { ($0 &* 31 &+ $1) }
-        return "\(safeName)_\(String(format: "%04x", hashValue))"
+        // FNV-1a 64 位哈希，比旧版 UInt8 求和碰撞率低得多
+        let hashValue = path.utf8.reduce(UInt64(0xcbf29ce484222325)) { hash, byte in
+            (hash ^ UInt64(byte)) &* 0x100000001b3
+        }
+        return "\(safeName)_\(String(format: "%016llx", hashValue))"
     }
 
     /// 记忆文件路径

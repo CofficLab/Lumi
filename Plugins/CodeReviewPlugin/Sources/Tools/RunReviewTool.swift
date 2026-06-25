@@ -67,7 +67,9 @@ public struct RunReviewTool: SuperAgentTool, SuperLog {
         }
     }
 
-    private func format(report: ReviewReport) -> String {
+    /// Format a review report into a human-readable summary string (pure).
+    /// Internal so it can be unit-tested directly.
+    func format(report: ReviewReport) -> String {
         let critical = report.issues.filter { $0.severity == .critical }
         let warnings = report.issues.filter { $0.severity == .warning }
         let infos = report.issues.filter { $0.severity == .info }

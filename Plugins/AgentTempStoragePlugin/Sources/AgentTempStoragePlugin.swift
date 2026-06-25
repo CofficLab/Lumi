@@ -7,7 +7,7 @@ import SwiftUI
 /// 为 Agent 提供隔离的临时文件目录，支持写入、读取与列举；
 /// 超过保留期限（默认 7 天）的文件会自动清理。
 public enum AgentTempStoragePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "doc.badge.clock"

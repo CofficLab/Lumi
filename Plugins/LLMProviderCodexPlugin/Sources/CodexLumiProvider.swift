@@ -16,7 +16,8 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         modelCapabilities: [
             "gpt-5.5": .init(supportsVision: true, supportsTools: true),
             "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
-        ]
+        ],
+        websiteURL: URL(string: "https://github.com/openai/codex")!
     )
 
     private let cli: CodexCLI
@@ -27,6 +28,13 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
+    }
+
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        guard cli.isAvailable else {
+            return .unavailable(reason: "Codex CLI not found at \(cli.executablePath)")
+        }
+        return .available
     }
 
     public func sendStreaming(

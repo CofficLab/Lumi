@@ -95,7 +95,16 @@ final class ReviewGitService: @unchecked Sendable {
         )
     }
 
-    private func parseNumstat(_ output: String?) -> ReviewGitDiffStats? {
+    func parseNumstat(_ output: String?) -> ReviewGitDiffStats? {
+        Self.parseNumstat(output)
+    }
+
+    /// Parse `git numstat` output into aggregate diff stats.
+    ///
+    /// Each line is `<insertions>\t<deletions>\t<filepath>`. Binary files
+    /// report `-` for the counts (coerced to 0). Promoted to a static,
+    /// testable helper.
+    static func parseNumstat(_ output: String?) -> ReviewGitDiffStats? {
         guard let output, !output.isEmpty else { return nil }
         var files = 0
         var insertions = 0

@@ -1,5 +1,13 @@
 import Foundation
 
+/// LLM 模型可用性检测结果
+public enum LumiModelAvailabilityResult: Sendable, Equatable {
+    /// 模型可用
+    case available
+    /// 模型不可用，附带不可用原因
+    case unavailable(reason: String)
+}
+
 /// 模型能力声明
 public struct LumiModelCapabilities: Sendable, Equatable {
     /// 是否支持视觉输入（图片）
@@ -30,8 +38,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let contextWindowSizes: [String: Int]
     /// 各模型的能力声明（key 为模型 ID）
     public let modelCapabilities: [String: LumiModelCapabilities]
-    /// 供应商官网/控制台页面（用于设置页跳转；若无则不展示入口）
-    public let websiteURL: URL?
+    /// 供应商官网/控制台页面（用于设置页跳转）
+    public let websiteURL: URL
 
     public init(
         id: String,
@@ -42,7 +50,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         isLocal: Bool = false,
         contextWindowSizes: [String: Int] = [:],
         modelCapabilities: [String: LumiModelCapabilities] = [:],
-        websiteURL: URL? = nil
+        websiteURL: URL
     ) {
         self.id = id
         self.displayName = displayName
@@ -84,6 +92,11 @@ public protocol LumiLLMProvider: Sendable {
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage
+
+    /// 检查指定模型是否可用。
+    /// - Parameter model: 模型名称
+    /// - Returns: 模型可用性检测结果
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult
 }
 
 public extension LumiLLMProvider {
@@ -97,5 +110,9 @@ public extension LumiLLMProvider {
         }
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
         return message
+    }
+
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        .unavailable(reason: "Provider does not implement availability checks.")
     }
 }

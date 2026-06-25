@@ -55,6 +55,20 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private var downloadTask: Task<Void, Never>?
     private var isShutdown = false
 
+    /// 标记当前取消是「暂停」意图还是「真取消」。
+    ///
+    /// `downloadTask` 被取消后，其 `catch` 分支会在 MainActor 上异步执行；若不区分意图，
+    /// 暂停（`status = .paused`）会被取消分支无脑改回 `.idle`，导致暂停实际等于取消、
+    /// 恢复按钮永不出现。置 true 时，取消分支须保留 `.paused` 状态。
+    private var isPauseRequested = false
+
+    /// 追踪 `cancelAll()` 的执行，避免与新下载产生竞态。
+    ///
+    /// `pause()`/`cancel()` 是同步方法（UI 直接调用），无法 `await` `cancelAll()`；
+    /// 若用 fire-and-forget `Task`，紧随其后的 `download()`/`resume()` 发起的新下载可能被
+    /// 尚未跑完的 `cancelAll()` 误杀。这里把取消任务保存下来，在发起新下载前先 await 它。
+    private var downloadKitCancellation: Task<Void, Never>?
+
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
 
@@ -62,8 +76,6 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     private var pausedModelId: String?
     private var pausedProgress: MLXDownloadProgress?
-    private var pausedFileIndex: Int?
-    private var pausedDownloadedBytes: Int64?
 
     // MARK: - Initialization
 
@@ -87,6 +99,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     deinit {
         downloadTask?.cancel()
+        // 释放未等待的 DownloadKit 取消任务，避免悬挂
+        downloadKitCancellation?.cancel()
     }
 
     // MARK: - Public Methods
@@ -105,6 +119,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
 
         cancel(resetPublishedState: false)
+
+        // 发起新下载前，先确保上一次 pause/cancel 触发的 cancelAll() 已落地，
+        // 否则新下载可能被尚未跑完的取消任务误杀。
+        await awaitDownloadKitCancellation()
 
         downloadingModelId = modelId
         status = .downloading
@@ -125,9 +143,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 try await self.downloadAllFiles(modelId: modelId, to: localDir)
 
                 if Task.isCancelled {
-                    Self.logger.info("\(self.t)下载任务被取消：\(modelId)")
-                    self.status = .idle
-                    self.downloadingModelId = nil
+                    // 暂停意图：保留 .paused，由 pause() 维护的状态接管；否则复位为 idle。
+                    if self.isPauseRequested {
+                        Self.logger.info("\(self.t)下载已暂停：\(modelId)")
+                    } else {
+                        Self.logger.info("\(self.t)下载任务被取消：\(modelId)")
+                        self.status = .idle
+                        self.downloadingModelId = nil
+                    }
                     return
                 }
 
@@ -139,7 +162,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
-                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId)\n错误类型：\(type(of: error))\n错误详情：\(error.localizedDescription)")
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId)\n错误详情：\(error.localizedDescription)")
+                } else if self.isPauseRequested {
+                    // 暂停：下载在文件传输中途被取消并抛错，保留 .paused 等待恢复。
+                    Self.logger.info("\(self.t)下载已暂停（异常路径）：\(modelId)")
                 } else {
                     Self.logger.info("\(self.t)下载任务被取消（异常路径）：\(modelId)")
                     self.status = .idle
@@ -166,10 +192,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         Self.logger.info("\(self.t)⏸️ 暂停下载：\(modelId)")
 
-        // 保存当前状态
+        // 标记为暂停意图：取消分支据此保留 .paused，避免被改回 .idle（暂停≠取消）
+        isPauseRequested = true
+
+        // 保存当前状态，供 resume() 续传
         pausedModelId = modelId
         pausedProgress = progress
-        pausedDownloadedBytes = calculateTotalDownloadedBytes()
 
         // 设置状态为暂停
         status = .paused
@@ -178,11 +206,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadTask?.cancel()
         downloadTask = nil
 
-        // 取消 DownloadKit 中的任务
-        let dm = downloadManager
-        Task {
-            await dm.cancelAll()
-        }
+        // 取消 DownloadKit 中的任务（被追踪，发起新下载前会 await）
+        cancelDownloadKit()
     }
 
     /// 恢复下载
@@ -193,6 +218,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
 
         Self.logger.info("\(self.t)▶️ 恢复下载：\(modelId)")
+
+        // 已不再是暂停意图
+        isPauseRequested = false
 
         // 恢复状态
         downloadingModelId = modelId
@@ -206,6 +234,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         pausedModelId = nil
         pausedProgress = nil
 
+        // 发起新下载前，先确保暂停时触发的 cancelAll() 已落地，避免误杀恢复任务
+        await awaitDownloadKitCancellation()
+
         // 重新启动下载
         let task = Task { [weak self] in
             guard let self else { return }
@@ -217,8 +248,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 try await self.downloadAllFiles(modelId: modelId, to: localDir, startIndex: startIndex)
 
                 if Task.isCancelled {
-                    self.status = .idle
-                    self.downloadingModelId = nil
+                    // 恢复期间再次暂停：保留 .paused；真取消则复位
+                    if self.isPauseRequested {
+                        Self.logger.info("\(self.t)恢复后再次暂停：\(modelId)")
+                    } else {
+                        self.status = .idle
+                        self.downloadingModelId = nil
+                    }
                     return
                 }
 
@@ -231,6 +267,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
                     Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
+                } else if self.isPauseRequested {
+                    // 恢复期间被暂停（异常路径）：保留 .paused 等待再次恢复
+                    Self.logger.info("\(self.t)恢复后再次暂停（异常路径）：\(modelId)")
                 } else {
                     self.status = .idle
                     self.downloadingModelId = nil
@@ -242,24 +281,15 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         await task.value
     }
 
-    private func calculateTotalDownloadedBytes() -> Int64 {
-        // 简化实现：根据已完成文件数估算
-        guard let modelId = downloadingModelId else { return 0 }
-
-        // 这里需要根据实际下载的文件大小计算，暂时返回 0
-        // 后续可以从 DownloadKit 获取更精确的值
-        return 0
-    }
-
     private func cancel(resetPublishedState shouldResetPublishedState: Bool) {
+        // 真取消：清除暂停意图
+        isPauseRequested = false
+
         downloadTask?.cancel()
         downloadTask = nil
 
-        // 取消 DownloadKit 中的所有任务
-        let dm = downloadManager
-        Task {
-            await dm.cancelAll()
-        }
+        // 取消 DownloadKit 中的所有任务（被追踪，发起新下载前会 await）
+        cancelDownloadKit()
 
         if shouldResetPublishedState {
             resetPublishedState()
@@ -274,13 +304,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         guard !isShutdown else { return }
         isShutdown = true
 
+        // 真取消：清除暂停意图
+        isPauseRequested = false
+
         downloadTask?.cancel()
         downloadTask = nil
 
-        let dm = downloadManager
-        Task {
-            await dm.cancelAll()
-        }
+        cancelDownloadKit()
 
         resetPublishedState()
     }
@@ -290,6 +320,26 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         cancel()
     }
 
+    // MARK: - DownloadKit Cancellation Helpers
+
+    /// 异步取消 DownloadKit 中所有任务，并追踪该任务以便后续 await。
+    ///
+    /// `pause()`/`cancel()` 是同步方法，无法 `await` `cancelAll()`，但若不等待，
+    /// 紧随其后的 `download()`/`resume()` 发起新下载会被误杀。这里把取消任务保存下来，
+    /// 供 `awaitDownloadKitCancellation()` 在发起新下载前等待。
+    private func cancelDownloadKit() {
+        let dm = downloadManager
+        downloadKitCancellation = Task { await dm.cancelAll() }
+    }
+
+    /// 等待上一次 `cancelDownloadKit()` 完成，确保新下载不会被陈旧的取消误杀。
+    private func awaitDownloadKitCancellation() async {
+        if let task = downloadKitCancellation {
+            await task.value
+            downloadKitCancellation = nil
+        }
+    }
+
     // MARK: - Download Pipeline
 
     private func downloadAllFiles(modelId: String, to localDir: URL, startIndex: Int = 0) async throws {
@@ -297,7 +347,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         let files = try await fetchFileList(modelId: modelId)
         Self.logger.info("\(self.t)原始文件数量：\(files.count)")
 
-        let filteredFiles = filterFiles(files)
+        let filteredFiles = Self.filterFiles(files)
         Self.logger.info("\(self.t)过滤后文件数量：\(filteredFiles.count)")
 
         guard !filteredFiles.isEmpty else {
@@ -322,7 +372,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 let file = filteredFiles[index]
                 downloadedBytes += file.size ?? 0
             }
-            updateProgress(completedFiles: Int64(startIndex), downloadedBytes: downloadedBytes)
+            // 必须同时传 totalBytes，否则 updateProgress 不会重算 fractionCompleted，
+            // 恢复后进度条会冻结在暂停时的旧值，直到下一个完整文件下载完才跳动。
+            updateProgress(
+                completedFiles: Int64(startIndex),
+                downloadedBytes: downloadedBytes,
+                totalBytes: totalBytes
+            )
             Self.logger.info("\(self.t)▶️ 从第 \(startIndex) 个文件继续下载")
         }
 
@@ -346,12 +402,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
                let existingSize = attrs[.size] as? Int64 {
                 if existingSize == expectedSize, expectedSize > 0 {
-                    Self.logger.info("\(self.t)⏭️ 文件已存在，跳过：\(file.path)")
+                    Self.logger.info("\(self.t)⏭️ 文件已存在，跳过：\(file.path) (size=\(existingSize))")
                     downloadedBytes += expectedSize
-                    updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                    updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                     continue
                 } else if expectedSize > 0 {
-                    // 文件存在但大小不匹配，删除旧文件重新下载
+                    // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除）
                     Self.logger.warning("\(self.t)⚠️ 文件大小不匹配，删除旧文件：\(file.path) (期望 \(expectedSize), 实际 \(existingSize))")
                     try? fileManager.removeItem(at: fileURL)
                 }
@@ -381,12 +437,22 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             do {
                 _ = try await dm.download(task) { [weak self] progress in
+                    let newBytes = progress.downloadedBytes
                     Task { @MainActor in
-                        self?.currentFileDownloadedBytes = progress.downloadedBytes
+                        guard let self else { return }
+                        // 只在新值大于当前值时更新，避免并发 Task 调度乱序导致进度回退显示
+                        if newBytes > self.currentFileDownloadedBytes {
+                            self.currentFileDownloadedBytes = newBytes
+                            // 将当前文件的实时字节数纳入整体进度，避免进度条在大文件下载期间冻结
+                            self.updateProgress(
+                                downloadedBytes: downloadedBytes + newBytes,
+                                totalBytes: totalBytes
+                            )
+                        }
                     }
                 }
                 downloadedBytes += expectedSize
-                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                 Self.logger.info("\(self.t)✅ 文件下载完成：\(file.path)")
             } catch {
                 Self.logger.error("\(self.t)❌ 文件下载失败：\(file.path)\n错误：\(error.localizedDescription)")
@@ -506,7 +572,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         return files
     }
 
-    private func filterFiles(_ files: [HFFileEntry]) -> [HFFileEntry] {
+    /// 过滤 HuggingFace 文件列表，保留模型所需的文件
+    ///
+    /// 规则：
+    /// - 排除 README/LICENSE/.git/onnx/flax/tf/pytorch 等无关文件
+    /// - 保留 safetensors/json/txt/py/tiktoken 等模型必需文件
+    /// - 保留按文件名匹配的必需配置文件
+    ///
+    /// 设为 `nonisolated` 以便在任意上下文（含单元测试）中直接调用，
+    /// 因为过滤逻辑是纯函数，不依赖任何 MainActor 实例状态。
+    nonisolated static func filterFiles(_ files: [HFFileEntry]) -> [HFFileEntry] {
         let requiredExts: Set<String> = [".safetensors", ".json", ".txt", ".py", ".tiktoken"]
         let requiredNames: Set<String> = ["config.json", "tokenizer.json", "tokenizer_config.json",
                                           "generation_config.json", "special_tokens_map.json", "chat_template.jinja"]
@@ -588,10 +663,19 @@ public struct MLXDownloadProgress: Sendable {
     public init() {}
 }
 
-private struct HFFileEntry: Decodable {
-    public let type: String
-    public let path: String
-    public let size: Int64?
+/// HuggingFace 文件树条目（对应 HF API 返回的文件信息）
+///
+/// 设为 `internal` 以便单元测试构造 `filterFiles` 的输入数据。
+struct HFFileEntry: Decodable {
+    let type: String
+    let path: String
+    let size: Int64?
+
+    init(type: String, path: String, size: Int64? = nil) {
+        self.type = type
+        self.path = path
+        self.size = size
+    }
 }
 
 public enum MLXDownloadError: LocalizedError {

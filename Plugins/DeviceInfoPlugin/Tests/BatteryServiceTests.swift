@@ -137,4 +137,30 @@ struct BatteryServiceTests {
         svc.temperature = 0
         #expect(svc.temperatureString == "—")
     }
+
+    // MARK: - hasInternalBattery
+
+    @Test
+    func hasInternalBatteryAppleSiliconLaptop() {
+        // Recent Apple Silicon Macs lack BatteryPresent/BuiltIn but expose
+        // BatteryInstalled=1. Previously misdetected as a battery-less desktop.
+        #expect(BatteryService.hasInternalBattery(batteryPresent: -1, builtIn: -1, batteryInstalled: 1) == true)
+    }
+
+    @Test
+    func hasInternalBatteryIntelLaptop() {
+        #expect(BatteryService.hasInternalBattery(batteryPresent: 1, builtIn: 1, batteryInstalled: 1) == true)
+    }
+
+    @Test
+    func hasInternalBatteryDesktop() {
+        // A desktop without an internal battery exposes none of the keys.
+        #expect(BatteryService.hasInternalBattery(batteryPresent: -1, builtIn: -1, batteryInstalled: -1) == false)
+    }
+
+    @Test
+    func hasInternalBatteryExplicitlyAbsent() {
+        // BatteryInstalled=0 means no battery installed even if legacy keys exist.
+        #expect(BatteryService.hasInternalBattery(batteryPresent: -1, builtIn: -1, batteryInstalled: 0) == false)
+    }
 }

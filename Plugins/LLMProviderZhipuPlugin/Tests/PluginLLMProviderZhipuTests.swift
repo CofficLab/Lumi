@@ -3,6 +3,7 @@ import LumiCoreKit
 import Testing
 @testable import LLMProviderZhipuPlugin
 
+@Suite(.serialized)
 struct PluginLLMProviderZhipuTests {
     @Test func pluginMetadata() {
         #expect(ZhipuPlugin.info.id.isEmpty == false)

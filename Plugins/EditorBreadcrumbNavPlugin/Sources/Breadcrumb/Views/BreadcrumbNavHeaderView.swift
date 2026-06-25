@@ -16,7 +16,7 @@ public struct BreadcrumbNavHeaderView: View {
     }
 
     public var body: some View {
-        AppBreadcrumbBarContainer {
+        AppBreadcrumbBarContainer(showsBottomShadow: true) {
             if let fileURL = service.files.currentFileURL,
                projectVM.isProjectSelected,
                isFileInCurrentProject(fileURL) {

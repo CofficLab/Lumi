@@ -23,4 +23,16 @@ public enum OnboardingPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).welcome", order: 10) {
+                OnboardingWelcomePage()
+            },
+            LumiPluginOnboardingPage(id: "\(info.id).plugins", order: 20) {
+                OnboardingPluginsPage()
+            },
+        ]
+    }
 }

@@ -28,7 +28,8 @@ final class ChunkedStreamingMockProvider: LumiLLMProvider, @unchecked Sendable {
         id: "chunked-streaming-mock",
         displayName: "Chunked Streaming Mock",
         defaultModel: "mock",
-        availableModels: ["mock"]
+        availableModels: ["mock"],
+        websiteURL: URL(string: "https://example.com")!
     )
 
     let chunks: [String]
@@ -64,5 +65,9 @@ final class ChunkedStreamingMockProvider: LumiLLMProvider, @unchecked Sendable {
             role: .assistant,
             content: chunks.joined()
         )
+    }
+
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        .available
     }
 }

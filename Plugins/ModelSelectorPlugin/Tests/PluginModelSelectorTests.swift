@@ -117,7 +117,8 @@ private struct MockLLMProvider: LumiLLMProvider {
         displayName: "Mock",
         description: "Mock provider",
         defaultModel: "mock-model-a",
-        availableModels: ["mock-model-a", "mock-model-b"]
+        availableModels: ["mock-model-a", "mock-model-b"],
+        websiteURL: URL(string: "https://example.com")!
     )
 
     func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {

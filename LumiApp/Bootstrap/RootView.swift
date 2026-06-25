@@ -6,9 +6,15 @@ import SwiftUI
 struct RootView<Content: View>: View {
     @ObservedObject private var container: RootContainer
     private let content: Content
+    private let appliesRootOverlays: Bool
 
-    init(container: RootContainer, @ViewBuilder content: () -> Content) {
+    /// - Parameters:
+    ///   - container: 全局容器。
+    ///   - appliesRootOverlays: 是否应用插件 root overlays（如 Onboarding）。
+    ///     主窗口传 `true`，设置等辅助窗口传 `false` 以避免重复弹出。
+    init(container: RootContainer, appliesRootOverlays: Bool = true, @ViewBuilder content: () -> Content) {
         self.container = container
+        self.appliesRootOverlays = appliesRootOverlays
         self.content = content()
     }
 
@@ -23,13 +29,18 @@ struct RootView<Content: View>: View {
             }
         )
         let _ = container.pluginService.registerPluginContributions(context: context)
-        let overlays = container.pluginService.rootOverlays(context: context)
-        overlays.reduce(AnyView(content)) { wrapped, overlay in
-            overlay.apply(to: wrapped)
-        }
-        .appThemedAppearance()
-        .background {
-            ThemeWindowAppearanceBridge()
-        }
+        let onboardingPages = container.pluginService.onboardingPages(context: context)
+        let baseView = AnyView(content)
+        let overlayView = appliesRootOverlays
+            ? container.pluginService.rootOverlays(context: context).reduce(baseView) { wrapped, overlay in
+                overlay.apply(to: wrapped)
+            }
+            : baseView
+        overlayView
+            .environment(\.onboardingPages, onboardingPages)
+            .appThemedAppearance()
+            .background {
+                ThemeWindowAppearanceBridge()
+            }
     }
 }

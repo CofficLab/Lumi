@@ -1,38 +1,39 @@
 import SwiftUI
 
-/// 与编辑器面包屑导航栏一致的次级工具栏容器。
+/// 面包屑导航栏容器。
+///
+/// 底层复用 `AppToolbarContainer`，提供与编辑器面包屑一致的淡灰背景和底部 border。
+/// 支持可选的底部 shadow。
 public struct AppBreadcrumbBarContainer<Content: View>: View {
     @LumiTheme private var theme
 
-    let contentHeight: CGFloat
-    let horizontalPadding: CGFloat
-    let verticalPadding: CGFloat
+    let showsBottomShadow: Bool
     let content: () -> Content
 
     public init(
-        contentHeight: CGFloat = AppPanelChromeMetrics.breadcrumbContentHeight,
-        horizontalPadding: CGFloat = AppPanelChromeMetrics.breadcrumbHorizontalPadding,
-        verticalPadding: CGFloat = AppPanelChromeMetrics.breadcrumbVerticalPadding,
+        showsBottomShadow: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
-        self.contentHeight = contentHeight
-        self.horizontalPadding = horizontalPadding
-        self.verticalPadding = verticalPadding
+        self.showsBottomShadow = showsBottomShadow
         self.content = content
     }
 
     public var body: some View {
-        content()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: contentHeight, alignment: .center)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .frame(height: AppPanelChromeMetrics.breadcrumbBarHeight, alignment: .center)
-            .background(theme.textTertiary.opacity(0.035))
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(theme.textTertiary.opacity(0.08))
-                    .frame(height: 1)
-            }
+        AppToolbarContainer(
+            height: AppPanelChromeMetrics.breadcrumbBarHeight,
+            showsBottomBorder: true,
+            showsBottomShadow: showsBottomShadow,
+            backgroundStyle: .custom(theme.textTertiary.opacity(0.035)),
+            padding: EdgeInsets(
+                top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
+                bottom: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
+            )
+        ) {
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
+        }
     }
 }

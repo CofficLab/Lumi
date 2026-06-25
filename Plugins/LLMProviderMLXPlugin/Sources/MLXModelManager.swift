@@ -42,9 +42,9 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
 
     // MARK: - Initialization
 
-    public init() {
-        self.fileManager = FileManager.default
-        self.cacheDirectory = _MLXModels.modelsCacheBaseDirectory
+    public init(fileManager: FileManager = .default, cacheDirectory: URL? = nil) {
+        self.fileManager = fileManager
+        self.cacheDirectory = cacheDirectory ?? _MLXModels.modelsCacheBaseDirectory
         self.systemRAM = _MLXModels.detectSystemRAM()
 
         if Self.verbose {
@@ -54,7 +54,7 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
         }
 
         // 确保缓存目录存在
-        try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        try? self.fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
 
         // 刷新缓存状态
         self.refreshCachedModels()
@@ -158,9 +158,9 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
         var totalSize: Int64 = 0
         for case let fileURL as URL in enumerator {
             do {
-                let values = try fileURL.resourceValues(forKeys: [.fileSizeKey])
-                if let size = values.fileSize {
-                    totalSize += Int64(size)
+                let values = try fileManager.attributesOfItem(atPath: fileURL.path)
+                if let size = values[.size] as? Int64 {
+                    totalSize += size
                 }
             } catch {
                 continue
@@ -266,9 +266,9 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
         var totalSize: Int64 = 0
         for case let fileURL as URL in enumerator {
             do {
-                let values = try fileURL.resourceValues(forKeys: [.fileSizeKey])
-                if let size = values.fileSize {
-                    totalSize += Int64(size)
+                let values = try fileManager.attributesOfItem(atPath: fileURL.path)
+                if let size = values[.size] as? Int64 {
+                    totalSize += size
                 }
             } catch {
                 continue

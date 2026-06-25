@@ -103,11 +103,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
             // 统计
             let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
-            var insertions = 0, deletions = 0
-            for line in content.components(separatedBy: "\n") {
-                if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
-                else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
-            }
+            let (insertions, deletions) = GitDiffStats.countInsertionsDeletions(in: content)
 
             let stats = !files.isEmpty ? GitDiffStats(filesChanged: files.count, insertions: insertions, deletions: deletions) : nil
             return GitDiff(content: content, stats: stats)
@@ -178,10 +174,9 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
             var insertions = 0, deletions = 0
             for file in diffFiles {
-                for line in file.diff.components(separatedBy: "\n") {
-                    if line.hasPrefix("+") && !line.hasPrefix("++") { insertions += 1 }
-                    else if line.hasPrefix("-") && !line.hasPrefix("--") { deletions += 1 }
-                }
+                let (ins, dels) = GitDiffStats.countInsertionsDeletions(in: file.diff)
+                insertions += ins
+                deletions += dels
             }
 
             let stats = !diffFiles.isEmpty ? GitDiffStats(

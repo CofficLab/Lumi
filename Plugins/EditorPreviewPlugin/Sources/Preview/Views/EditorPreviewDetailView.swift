@@ -36,6 +36,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var isTakingScreenshot = false
     @State private var previewCanvasView: NSView?
     @State private var htmlPreviewWebView: WKWebView?
+    @State private var docPreviewWebView: WKWebView?
 
     @MainActor
     public init(context: PluginContext, viewModel: EditorPreviewViewModel? = nil) {
@@ -173,6 +174,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 .foregroundStyle(.secondary)
         case .pdf:
             Label(LumiPluginLocalization.string("PDF Preview", bundle: .module), systemImage: "doc.richtext")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .doc:
+            Label(LumiPluginLocalization.string("DOC Preview", bundle: .module), systemImage: "doc.text")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .xcassets:
@@ -558,6 +563,14 @@ public struct EditorPreviewDetailView: View, SuperLog {
             return
         }
 
+        // DOC 预览需要特殊处理：使用 WKWebView 渲染，
+        // cacheDisplay 无法捕获 WKWebView 内容，需要用 HTMLScreenshotter
+        if case .doc = viewModel.previewMode,
+           let webView = docPreviewWebView {
+            takeHTMLScreenshot(webView)
+            return
+        }
+
         guard let canvasView = previewCanvasView else {
             isTakingScreenshot = false
             alert_warning(LumiPluginLocalization.string("Failed to capture preview screenshot.", bundle: .module))
@@ -846,6 +859,14 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 )
             case let .pdf(url):
                 EditorPreviewPDFView(fileURL: url)
+                    .environmentObject(themeVM)
+            case let .doc(url):
+                EditorPreviewDOCView(
+                    fileURL: url,
+                    onWebViewResolved: { webView in
+                        docPreviewWebView = webView
+                    }
+                )
                     .environmentObject(themeVM)
             case let .xcassets(url):
                 EditorPreviewXCAssetsView(xcassetsURL: url)

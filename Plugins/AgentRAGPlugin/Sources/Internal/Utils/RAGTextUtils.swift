@@ -7,6 +7,18 @@ public enum RAGTextUtils {
         var buffer = ""
 
         for scalar in text.unicodeScalars {
+            // CJK ideographs are members of `alphanumerics` but must still be
+            // tokenized per-character; otherwise a run like "swift代码" collapses
+            // into a single token and defeats keyword retrieval for Chinese.
+            if scalar.isCJK {
+                if !buffer.isEmpty {
+                    tokens.append(buffer)
+                    buffer.removeAll(keepingCapacity: true)
+                }
+                tokens.append(String(scalar))
+                continue
+            }
+
             if CharacterSet.alphanumerics.contains(scalar) {
                 buffer.unicodeScalars.append(scalar)
                 continue
@@ -15,10 +27,6 @@ public enum RAGTextUtils {
             if !buffer.isEmpty {
                 tokens.append(buffer)
                 buffer.removeAll(keepingCapacity: true)
-            }
-
-            if scalar.isCJK {
-                tokens.append(String(scalar))
             }
         }
 

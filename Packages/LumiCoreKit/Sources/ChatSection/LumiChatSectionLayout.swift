@@ -6,7 +6,7 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
     case wide
 
     private static let resizableMinWidth: CGFloat = 280
-    private static let resizableMaxWidth: CGFloat = 960
+    private static let resizableMaxWidth: CGFloat = .infinity
     private static let minimumMainContentWidth: CGFloat = 360
 
     public var isVisible: Bool {

@@ -13,6 +13,40 @@ enum MessageViewHelpers {
         timestampFormatter.string(from: date)
     }
 
+    /// Human-readable tool-call duration.
+    ///
+    /// Three tiers: <1s → milliseconds, <60s → one-decimal seconds, else "Xm Ys".
+    /// Centralized here (was duplicated privately in two views).
+    static func formatDuration(_ duration: TimeInterval) -> String {
+        if duration < 1 {
+            return "\(Int(duration * 1000))ms"
+        }
+        if duration < 60 {
+            return String(format: "%.1fs", duration)
+        }
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return "\(minutes)m \(seconds)s"
+    }
+
+    /// Pretty-print a tool-call's JSON argument string.
+    ///
+    /// Returns `nil` for empty / `"{}" / invalid JSON; otherwise a sorted,
+    /// pretty-printed representation. Centralized here (was private in a view).
+    static func formatToolCallArguments(_ arguments: String) -> String? {
+        guard !arguments.isEmpty, arguments != "{}",
+              let data = arguments.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data)
+        else {
+            return nil
+        }
+        if let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            return prettyString
+        }
+        return arguments
+    }
+
     static func formatModelName(_ name: String) -> String {
         let parts = name.split(separator: "-")
         if parts.count > 2, let lastPart = parts.last, lastPart.allSatisfy({ $0.isNumber }) {

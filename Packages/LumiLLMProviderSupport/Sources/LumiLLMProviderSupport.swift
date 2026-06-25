@@ -45,6 +45,41 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         try await sendStreaming(request) { _ in }
     }
 
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        guard let apiKeyValue = try? apiKey() else {
+            return .unavailable(reason: "Missing API key")
+        }
+
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            return .unavailable(reason: "无效的 Base URL")
+        }
+
+        let body: [String: Any]
+        do {
+            body = try adapter.buildRequestBody(
+                messages: [ChatMessage(role: .user, content: "ping")],
+                model: model,
+                tools: nil,
+                systemPrompt: ""
+            )
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            return .unavailable(reason: errorDesc)
+        }
+    }
+
     public func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -80,8 +115,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             ) {
             case .success(let message):
                 return message
-            case .retry:
-                lastError = LumiLLMProviderSupportError.streamingFailed("Endpoint unavailable: \(baseURLString)")
+            case .retry(let error):
+                lastError = error
             case .failure(let error):
                 throw error
             }
@@ -90,7 +125,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         if let lastError {
             throw lastError
         }
-        throw LumiLLMProviderSupportError.streamingFailed("All provider endpoints failed.")
+        throw LumiLLMProviderSupportError.allEndpointsFailed
     }
 
     private func resolvedBaseURLs() -> [String] {
@@ -99,7 +134,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     private enum StreamingAttemptResult {
         case success(LumiChatMessage)
-        case retry
+        case retry(Error)
         case failure(Error)
     }
 
@@ -120,7 +155,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 request: httpRequest,
                 body: body,
                 onResponseReceived: { response in
-                    await state.recordHttpResponse(statusCode: response.statusCode)
+                    await state.recordHttpResponse(
+                        statusCode: response.statusCode,
+                        headers: Self.normalizedHeaders(from: response)
+                    )
                 },
                 onChunk: { [self] chunkData in
                     await Self.processStreamChunk(
@@ -134,17 +172,30 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            return .retry
+            let summary = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            let detailed = await Self.attachTransportDetails(
+                summary: summary,
+                request: httpRequest,
+                requestBody: body,
+                state: nil
+            )
+            return .retry(LumiLLMProviderSupportError.streamingFailed(detailed))
         }
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
             let enrichedError = await state.httpStatusCode.map { code in
-                "HTTP \(code) \(error)"
+                LumiLLMProviderSupportLocalization.httpError(statusCode: code, message: error)
             } ?? error
-            let streamError = LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            let detailed = await Self.attachTransportDetails(
+                summary: enrichedError,
+                request: httpRequest,
+                requestBody: body,
+                state: state
+            )
+            let streamError = LumiLLMProviderSupportError.streamingFailed(detailed)
             if await hasNoDeliveredOutput(state) {
-                return .retry
+                return .retry(streamError)
             }
             return .failure(streamError)
         }
@@ -201,6 +252,85 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             )
         ) { _, new in new }
         return metadata
+    }
+
+    fileprivate static func attachTransportDetails(
+        summary: String,
+        request: URLRequest,
+        requestBody: [String: Any],
+        state: StreamingState?
+    ) async -> String {
+        let details = await transportDetails(request: request, requestBody: requestBody, state: state)
+        guard !details.isEmpty else { return summary }
+        return summary + "\n\n--- Request / Response Details ---\n" + details
+    }
+
+    fileprivate static func transportDetails(
+        request: URLRequest,
+        requestBody: [String: Any],
+        state: StreamingState?
+    ) async -> String {
+        var lines: [String] = []
+        lines.append("Request URL: \(request.url?.absoluteString ?? "-")")
+        lines.append("Request Method: \(request.httpMethod ?? "POST")")
+        lines.append("Request Headers:")
+        lines.append(prettyHeaders(maskedHeaders(request.allHTTPHeaderFields ?? [:])))
+        lines.append("Request Body:")
+        lines.append(prettyJSON(requestBody))
+
+        if let state {
+            let status = await state.httpStatusCode
+            let responseHeaders = await state.httpResponseHeaders ?? [:]
+            let responseBody = await state.httpResponseBody ?? "-"
+            lines.append("Response Status: \(status.map(String.init) ?? "-")")
+            lines.append("Response Headers:")
+            lines.append(prettyHeaders(maskedHeaders(responseHeaders)))
+            lines.append("Response Body:")
+            lines.append(responseBody)
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    fileprivate static func normalizedHeaders(from response: HTTPURLResponse) -> [String: String] {
+        var headers: [String: String] = [:]
+        for (key, value) in response.allHeaderFields {
+            guard let key = key as? String else { continue }
+            headers[key] = String(describing: value)
+        }
+        return headers
+    }
+
+    fileprivate static func maskedHeaders(_ headers: [String: String]) -> [String: String] {
+        var masked = headers
+        for (key, value) in headers {
+            let lower = key.lowercased()
+            if lower == "authorization" || lower == "x-api-key" || lower.contains("token") || lower.contains("api-key") {
+                masked[key] = maskSecret(value)
+            }
+        }
+        return masked
+    }
+
+    fileprivate static func maskSecret(_ value: String) -> String {
+        guard value.count > 8 else { return "***" }
+        let prefix = value.prefix(4)
+        let suffix = value.suffix(4)
+        return "\(prefix)***\(suffix)"
+    }
+
+    fileprivate static func prettyHeaders(_ headers: [String: String]) -> String {
+        guard !headers.isEmpty else { return "-" }
+        return headers.keys.sorted().map { "\($0): \(headers[$0] ?? "")" }.joined(separator: "\n")
+    }
+
+    fileprivate static func prettyJSON(_ body: [String: Any]) -> String {
+        guard JSONSerialization.isValidJSONObject(body),
+              let data = try? JSONSerialization.data(withJSONObject: body, options: [.prettyPrinted, .sortedKeys]),
+              let text = String(data: data, encoding: .utf8) else {
+            return "-"
+        }
+        return text
     }
 
     fileprivate static func processStreamChunk(
@@ -297,6 +427,41 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         try await sendStreaming(request) { _ in }
     }
 
+    open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        guard let apiKeyValue = try? apiKey() else {
+            return .unavailable(reason: "Missing API key")
+        }
+
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            return .unavailable(reason: "无效的 Base URL")
+        }
+
+        let body: [String: Any]
+        do {
+            body = try adapter.buildRequestBody(
+                messages: [ChatMessage(role: .user, content: "ping")],
+                model: model,
+                tools: nil,
+                systemPrompt: ""
+            )
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            return .unavailable(reason: errorDesc)
+        }
+    }
+
     open func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -327,8 +492,8 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
             ) {
             case .success(let message):
                 return message
-            case .retry:
-                lastError = LumiLLMProviderSupportError.streamingFailed("Endpoint unavailable: \(baseURLString)")
+            case .retry(let error):
+                lastError = error
             case .failure(let error):
                 throw error
             }
@@ -337,7 +502,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         if let lastError {
             throw lastError
         }
-        throw LumiLLMProviderSupportError.streamingFailed("All provider endpoints failed.")
+        throw LumiLLMProviderSupportError.allEndpointsFailed
     }
 
     /// 子类可覆盖以注入 Claude Code 等网关所需的 system / metadata / betas。
@@ -367,7 +532,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
     private enum StreamingAttemptResult {
         case success(LumiChatMessage)
-        case retry
+        case retry(Error)
         case failure(Error)
     }
 
@@ -388,7 +553,10 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
                 request: httpRequest,
                 body: body,
                 onResponseReceived: { response in
-                    await state.recordHttpResponse(statusCode: response.statusCode)
+                    await state.recordHttpResponse(
+                        statusCode: response.statusCode,
+                        headers: OpenAICompatibleLumiProvider.normalizedHeaders(from: response)
+                    )
                 },
                 onChunk: { [self] chunkData in
                     let shouldContinue = await OpenAICompatibleLumiProvider.processStreamChunk(
@@ -414,17 +582,30 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            return .retry
+            let summary = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
+                summary: summary,
+                request: httpRequest,
+                requestBody: body,
+                state: nil
+            )
+            return .retry(LumiLLMProviderSupportError.streamingFailed(detailed))
         }
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
             let enrichedError = await state.httpStatusCode.map { code in
-                "HTTP \(code) \(error)"
+                LumiLLMProviderSupportLocalization.httpError(statusCode: code, message: error)
             } ?? error
-            let streamError = LumiLLMProviderSupportError.streamingFailed(enrichedError)
+            let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
+                summary: enrichedError,
+                request: httpRequest,
+                requestBody: body,
+                state: state
+            )
+            let streamError = LumiLLMProviderSupportError.streamingFailed(detailed)
             if await hasNoDeliveredOutput(state) {
-                return .retry
+                return .retry(streamError)
             }
             return .failure(streamError)
         }
@@ -471,6 +652,7 @@ public enum LumiLLMProviderSupportError: LocalizedError, NonRetryableErrorProvid
     case emptyConversation
     case invalidBaseURL(String)
     case missingAPIKey(String)
+    case allEndpointsFailed
     case streamingFailed(String)
 
     /// 配置类错误（API Key 未配置、Base URL 无效等）属于确定性失败，不应重试。
@@ -478,22 +660,13 @@ public enum LumiLLMProviderSupportError: LocalizedError, NonRetryableErrorProvid
         switch self {
         case .emptyConversation, .invalidBaseURL, .missingAPIKey:
             return true
-        case .streamingFailed:
+        case .allEndpointsFailed, .streamingFailed:
             return false
         }
     }
 
     public var errorDescription: String? {
-        switch self {
-        case .emptyConversation:
-            "LLM request has no conversation."
-        case .invalidBaseURL(let url):
-            "Invalid provider base URL: \(url)"
-        case .missingAPIKey(let providerName):
-            "\(providerName) API Key is not configured."
-        case .streamingFailed(let message):
-            message
-        }
+        localizedDescription(locale: .current)
     }
 }
 

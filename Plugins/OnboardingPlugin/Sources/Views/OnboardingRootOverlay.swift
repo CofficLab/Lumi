@@ -234,6 +234,23 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
     @StateObject private var viewModel = OnboardingPluginViewModel()
 
+    /// Aggregated onboarding pages from all enabled plugins, injected via
+    /// `RootView`'s environment. Falls back to OnboardingPlugin's own pages
+    /// when the environment value is empty (e.g., in previews).
+    @Environment(\.onboardingPages) private var environmentPages
+
+    // MARK: - 页面聚合
+
+    private var pages: [LumiPluginOnboardingPage] {
+        guard !environmentPages.isEmpty else {
+            return OnboardingPlugin.onboardingPages(context: LumiPluginContext(
+                activeSectionID: "preview",
+                activeSectionTitle: "Preview"
+            ))
+        }
+        return environmentPages
+    }
+
     public var body: some View {
         content
             .onAppear {
@@ -244,7 +261,7 @@ public struct OnboardingRootOverlay<Content: View>: View {
                 viewModel.show(forceReset: forceReset)
             }
             .sheet(isPresented: $viewModel.isPresentingOnboarding) {
-                OnboardingSheetView(viewModel: viewModel)
+                OnboardingSheetView(viewModel: viewModel, pages: pages)
             }
     }
 }
@@ -253,75 +270,28 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
+    let pages: [LumiPluginOnboardingPage]
     @Environment(\.colorScheme) private var colorScheme
-
-    // MARK: - 页面数据
-
-    private struct OnboardingPage: Identifiable {
-        let id: String
-        let icon: String
-        let iconGradient: [Color]
-        let title: String
-        let subtitle: String
-        let features: [Feature]
-        let tip: String?
-    }
-
-    private struct Feature {
-        let icon: String
-        let title: String
-        let description: String
-    }
-
-    private var pages: [OnboardingPage] {
-        [
-            OnboardingPage(
-                id: "welcome",
-                icon: "sparkles",
-                iconGradient: [Color.blue, Color.purple],
-                title: LumiPluginLocalization.string("欢迎使用 Lumi", bundle: .module),
-                subtitle: LumiPluginLocalization.string("你的 AI 驱动个人桌面助手", bundle: .module),
-                features: [
-                    Feature(
-                        icon: "brain",
-                        title: LumiPluginLocalization.string("智能对话", bundle: .module),
-                        description: LumiPluginLocalization.string("支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "hammer.circle",
-                        title: LumiPluginLocalization.string("Agent 能力", bundle: .module),
-                        description: LumiPluginLocalization.string("自动执行文件操作、命令行、Git 等任务", bundle: .module)
-                    ),
-                    Feature(
-                        icon: "rectangle.3.group",
-                        title: LumiPluginLocalization.string("多会话并行", bundle: .module),
-                        description: LumiPluginLocalization.string("同时处理多个独立任务，互不干扰", bundle: .module)
-                    )
-                ],
-                tip: nil
-            ),
-            OnboardingPage(
-                id: "plugins",
-                icon: "puzzlepiece.extension",
-                iconGradient: [Color.cyan, Color.blue],
-                title: LumiPluginLocalization.string("插件可自由开关", bundle: .module),
-                subtitle: LumiPluginLocalization.string("在设置中随时开启或关闭插件，按需定制你的工作台", bundle: .module),
-                features: [],
-                tip: LumiPluginLocalization.string("设置 → 插件，或按 ⌘, 打开设置", bundle: .module)
-            )
-        ]
-    }
 
     // MARK: - Body
 
     public var body: some View {
+        if pages.isEmpty {
+            AnyView(EmptyView())
+        } else {
+            AnyView(buildSheet())
+        }
+    }
+
+    @ViewBuilder
+    private func buildSheet() -> some View {
         let pageIndex = safePageIndex
         let page = pages[pageIndex]
         let isLastPage = pageIndex == pages.count - 1
 
         ZStack {
             // 背景渐变
-            backgroundGradient
+            backgroundGradient(page: page)
 
             // 主内容
             VStack(spacing: 0) {
@@ -332,9 +302,9 @@ private struct OnboardingSheetView: View {
                 Divider()
                     .opacity(0.5)
 
-                // 内容区域
+                // 内容区域 - 动态渲染插件提供的页面
                 ScrollView(.vertical, showsIndicators: false) {
-                    pageContent(page)
+                    page.makeContent()
                         .padding(.horizontal, 32)
                         .padding(.top, 24)
                         .padding(.bottom, 16)
@@ -372,32 +342,32 @@ private struct OnboardingSheetView: View {
             y: 20
         )
         .interactiveDismissDisabled()
-            .alert(
-                LumiPluginLocalization.string("无法保存新手引导状态", bundle: .module),
-                isPresented: Binding(
-                    get: { viewModel.persistenceErrorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewModel.persistenceErrorMessage = nil
-                        }
+        .alert(
+            LumiPluginLocalization.string("无法保存新手引导状态", bundle: .module),
+            isPresented: Binding(
+                get: { viewModel.persistenceErrorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.persistenceErrorMessage = nil
                     }
-                )
-            ) {
-                Button(LumiPluginLocalization.string("好", bundle: .module), role: .cancel) {}
-            } message: {
-                Text(viewModel.persistenceErrorMessage ?? "")
-            }
+                }
+            )
+        ) {
+            Button(LumiPluginLocalization.string("好", bundle: .module), role: .cancel) {}
+        } message: {
+            Text(viewModel.persistenceErrorMessage ?? "")
+        }
     }
 
     // MARK: - 子视图
 
     /// 背景渐变
-    private var backgroundGradient: some View {
-        let page = pages[safePageIndex]
-        return LinearGradient(
+    private func backgroundGradient(page: LumiPluginOnboardingPage) -> some View {
+        // Use a generic gradient for contributed pages (they don't expose gradient colors).
+        LinearGradient(
             colors: [
-                page.iconGradient[0].opacity(colorScheme == .dark ? 0.08 : 0.04),
-                page.iconGradient[1].opacity(colorScheme == .dark ? 0.05 : 0.02),
+                .accentColor.opacity(colorScheme == .dark ? 0.08 : 0.04),
+                .accentColor.opacity(colorScheme == .dark ? 0.05 : 0.02),
                 .clear
             ],
             startPoint: .topLeading,
@@ -439,16 +409,15 @@ private struct OnboardingSheetView: View {
     /// 步骤指示器
     private var stepIndicator: some View {
         let pageIndex = safePageIndex
+        let activeColor = Color.accentColor
 
         return HStack(spacing: 6) {
             ForEach(0..<pages.count, id: \.self) { index in
                 Capsule()
                     .fill(
                         index == pageIndex
-                            ? pages[pageIndex].iconGradient[0]
-                            : index < pageIndex
-                                ? .secondary.opacity(0.4)
-                                : .secondary.opacity(0.15)
+                            ? activeColor
+                            : Color.secondary.opacity(index < pageIndex ? 0.4 : 0.15)
                     )
                     .frame(
                         width: index == pageIndex ? 24 : 8,
@@ -460,143 +429,6 @@ private struct OnboardingSheetView: View {
                     )
             }
         }
-    }
-
-    /// 页面内容
-    private func pageContent(_ page: OnboardingPage) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerSection(page)
-
-            if !page.features.isEmpty {
-                featuresSection(page)
-                    .padding(.top, 28)
-            }
-
-            if let tip = page.tip {
-                tipCard(tip)
-                    .padding(.top, page.features.isEmpty ? 32 : 24)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .opacity(viewModel.isTransitioning ? 0 : 1)
-        .offset(x: viewModel.isTransitioning ? -20 : 0)
-    }
-
-    /// 头部区域
-    private func headerSection(_ page: OnboardingPage) -> some View {
-        HStack(spacing: 20) {
-            // 图标容器
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: page.iconGradient.map { $0.opacity(0.15) },
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 64, height: 64)
-
-                Image(systemName: page.icon)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: page.iconGradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(page.title)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-
-                Text(page.subtitle)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-    }
-
-    /// 功能特性区域
-    private func featuresSection(_ page: OnboardingPage) -> some View {
-        VStack(spacing: 12) {
-            ForEach(page.features.indices, id: \.self) { index in
-                let feature = page.features[index]
-                featureRow(feature, isLast: index == page.features.count - 1)
-            }
-        }
-    }
-
-    /// 单个功能行
-    private func featureRow(_ feature: Feature, isLast: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 14) {
-                    // 特性图标
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(.quinary.opacity(0.5))
-                            .frame(width: 36, height: 36)
-
-                        Image(systemName: feature.icon)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.primary)
-                    }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(feature.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.primary)
-
-                        Text(feature.description)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer()
-                }
-            }
-            .padding(14)
-            .background(.quinary.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-            if !isLast {
-                Divider()
-                    .opacity(0.3)
-            }
-        }
-    }
-
-    /// 提示卡片
-    private func tipCard(_ tip: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 14))
-                .foregroundStyle(.yellow)
-
-            Text(tip)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer()
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.yellow.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(.yellow.opacity(0.2), lineWidth: 1)
-                )
-        )
     }
 
     /// 底部操作栏
@@ -644,7 +476,7 @@ private struct OnboardingSheetView: View {
                 .padding(.vertical, 10)
                 .background(
                     LinearGradient(
-                        colors: pages[safePageIndex].iconGradient,
+                        colors: [.accentColor, .accentColor.opacity(0.8)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

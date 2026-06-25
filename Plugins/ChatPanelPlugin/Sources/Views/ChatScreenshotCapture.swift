@@ -119,7 +119,12 @@ final class ChatScreenshotState: ObservableObject {
         return (image, frame)
     }
 
-    private nonisolated static func crop(image: CGImage, captureFrame: CGRect, selection: CGRect) -> CGImage? {
+    /// Crop a captured image to a selection rect in screen space.
+    ///
+    /// Pure geometry: maps the screen-space `selection` into image space via the
+    /// capture's scale factors, applies a Y-axis flip, integral+intersection
+    /// clamping, and a 1px minimum guard. Promoted to `internal` for unit testing.
+    nonisolated static func crop(image: CGImage, captureFrame: CGRect, selection: CGRect) -> CGImage? {
         let scaleX = CGFloat(image.width) / captureFrame.width
         let scaleY = CGFloat(image.height) / captureFrame.height
         let relativeX = selection.minX - captureFrame.minX

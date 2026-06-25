@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -64,7 +65,8 @@ public final class AiRouterProvider: OpenAICompatibleLumiProvider, @unchecked Se
                 "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.4": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://airouter.org")!
         )
     }
 

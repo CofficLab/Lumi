@@ -17,7 +17,8 @@ private final class AgentTurnMockProvider: LumiLLMProvider, @unchecked Sendable 
         id: "agent-turn-mock",
         displayName: "Agent Turn Mock",
         defaultModel: "mock",
-        availableModels: ["mock"]
+        availableModels: ["mock"],
+        websiteURL: URL(string: "https://example.com")!
     )
 
     private let state = AgentTurnMockProviderState()
@@ -52,6 +53,10 @@ private final class AgentTurnMockProvider: LumiLLMProvider, @unchecked Sendable 
             role: .assistant,
             content: "done"
         )
+    }
+
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        .available
     }
 }
 
