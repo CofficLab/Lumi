@@ -404,7 +404,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 if existingSize == expectedSize, expectedSize > 0 {
                     Self.logger.info("\(self.t)⏭️ 文件已存在，跳过：\(file.path) (size=\(existingSize))")
                     downloadedBytes += expectedSize
-                    updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                    updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                     continue
                 } else if expectedSize > 0 {
                     // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除）
@@ -443,11 +443,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                         // 只在新值大于当前值时更新，避免并发 Task 调度乱序导致进度回退显示
                         if newBytes > self.currentFileDownloadedBytes {
                             self.currentFileDownloadedBytes = newBytes
+                            // 将当前文件的实时字节数纳入整体进度，避免进度条在大文件下载期间冻结
+                            self.updateProgress(
+                                downloadedBytes: downloadedBytes + newBytes,
+                                totalBytes: totalBytes
+                            )
                         }
                     }
                 }
                 downloadedBytes += expectedSize
-                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
+                updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                 Self.logger.info("\(self.t)✅ 文件下载完成：\(file.path)")
             } catch {
                 Self.logger.error("\(self.t)❌ 文件下载失败：\(file.path)\n错误：\(error.localizedDescription)")
