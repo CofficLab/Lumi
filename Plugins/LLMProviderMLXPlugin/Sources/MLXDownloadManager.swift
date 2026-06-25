@@ -112,11 +112,6 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             return
         }
 
-        let statusSnap = String(describing: self.status)
-        let dlIdSnap = self.downloadingModelId
-        let pauseSnap = self.isPauseRequested
-        Self.logger.info("\(self.t)🔵 [download 入口] modelId=\(modelId) 入口状态 status=\(statusSnap) downloadingModelId=\(String(describing: dlIdSnap)) isPauseRequested=\(pauseSnap)")
-
         let isAlreadyDownloading = downloadingModelId == modelId && status == .downloading
         if isAlreadyDownloading {
             Self.logger.info("\(self.t)跳过重复下载：\(modelId)")
@@ -132,8 +127,6 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadingModelId = modelId
         status = .downloading
         progress = MLXDownloadProgress()
-
-        Self.logger.info("\(self.t)🔵 [download 已置 .downloading] modelId=\(modelId)")
 
         Self.logger.info("\(self.t)🟢 开始下载模型：\(modelId)")
 
@@ -152,9 +145,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 if Task.isCancelled {
                     // 暂停意图：保留 .paused，由 pause() 维护的状态接管；否则复位为 idle。
                     if self.isPauseRequested {
-                        Self.logger.info("\(self.t)🔵 [download 正常取消=暂停] 保留 .paused modelId=\(modelId)")
+                        Self.logger.info("\(self.t)下载已暂停：\(modelId)")
                     } else {
-                        Self.logger.info("\(self.t)🔵 [download 正常取消=真取消] → .idle modelId=\(modelId)")
+                        Self.logger.info("\(self.t)下载任务被取消：\(modelId)")
                         self.status = .idle
                         self.downloadingModelId = nil
                     }
@@ -163,18 +156,18 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 self.status = .completed
                 self.downloadingModelId = nil
-                Self.logger.info("\(self.t)🔵 [download 完成] → .completed modelId=\(modelId)")
+                Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
 
             } catch {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
-                    Self.logger.error("\(self.t)🔵 [download 失败] → .failed modelId=\(modelId) err=\(error.localizedDescription)")
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId)\n错误详情：\(error.localizedDescription)")
                 } else if self.isPauseRequested {
                     // 暂停：下载在文件传输中途被取消并抛错，保留 .paused 等待恢复。
-                    Self.logger.info("\(self.t)🔵 [download 异常取消=暂停] 保留 .paused modelId=\(modelId) err=\(error.localizedDescription)")
+                    Self.logger.info("\(self.t)下载已暂停（异常路径）：\(modelId)")
                 } else {
-                    Self.logger.info("\(self.t)🔵 [download 异常取消=真取消] → .idle modelId=\(modelId) err=\(error.localizedDescription)")
+                    Self.logger.info("\(self.t)下载任务被取消（异常路径）：\(modelId)")
                     self.status = .idle
                     self.downloadingModelId = nil
                 }
@@ -192,12 +185,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     /// 暂停下载
     public func pause() {
-        let statusSnap = String(describing: self.status)
-        let dlIdSnap = self.downloadingModelId
-        let pauseSnap = self.isPauseRequested
-        Self.logger.info("\(self.t)🔵 [pause 入口] status=\(statusSnap) downloadingModelId=\(String(describing: dlIdSnap))")
         guard status == .downloading, let modelId = downloadingModelId else {
-            Self.logger.warning("\(self.t)🔵 [pause 被拒] 当前未在下载 status=\(statusSnap)")
+            Self.logger.warning("\(self.t)无法暂停：当前未在下载")
             return
         }
 
@@ -219,19 +208,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         // 取消 DownloadKit 中的任务（被追踪，发起新下载前会 await）
         cancelDownloadKit()
-
-        let pSnap1 = self.progress
-        Self.logger.info("\(self.t)🔵 [pause 已置 .paused] modelId=\(modelId) savedProgress.completedFiles=\(pSnap1.completedFiles)/\(pSnap1.totalFiles) fraction=\(pSnap1.fractionCompleted)")
     }
 
     /// 恢复下载
     public func resume() async {
-        let statusSnap = String(describing: self.status)
-        let pausedIdSnap = self.pausedModelId
-        let pauseSnap = self.isPauseRequested
-        Self.logger.info("\(self.t)🔵 [resume 入口] status=\(statusSnap) pausedModelId=\(String(describing: pausedIdSnap)) isPauseRequested=\(pauseSnap)")
         guard status == .paused, let modelId = pausedModelId else {
-            Self.logger.warning("\(self.t)🔵 [resume 被拒] 当前未暂停 status=\(statusSnap)")
+            Self.logger.warning("\(self.t)无法恢复：当前未暂停")
             return
         }
 
@@ -252,12 +234,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         pausedModelId = nil
         pausedProgress = nil
 
-        let pSnap2 = self.progress
-        Self.logger.info("\(self.t)🔵 [resume 已置 .downloading] modelId=\(modelId) progress.completedFiles=\(pSnap2.completedFiles)/\(pSnap2.totalFiles) fraction=\(pSnap2.fractionCompleted)")
-
         // 发起新下载前，先确保暂停时触发的 cancelAll() 已落地，避免误杀恢复任务
         await awaitDownloadKitCancellation()
-        Self.logger.info("\(self.t)🔵 [resume] cancelAll 已落地，准备重新下载 modelId=\(modelId)")
 
         // 重新启动下载
         let task = Task { [weak self] in
@@ -266,16 +244,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             do {
                 let localDir = _MLXModels.cacheDirectory(for: modelId)
                 let startIndex = Int(self.progress.completedFiles)
-                Self.logger.info("\(self.t)🔵 [resume task] modelId=\(modelId) startIndex=\(startIndex)")
 
                 try await self.downloadAllFiles(modelId: modelId, to: localDir, startIndex: startIndex)
 
                 if Task.isCancelled {
                     // 恢复期间再次暂停：保留 .paused；真取消则复位
                     if self.isPauseRequested {
-                        Self.logger.info("\(self.t)🔵 [resume 正常取消=再次暂停] 保留 .paused modelId=\(modelId)")
+                        Self.logger.info("\(self.t)恢复后再次暂停：\(modelId)")
                     } else {
-                        Self.logger.info("\(self.t)🔵 [resume 正常取消=真取消] → .idle modelId=\(modelId)")
                         self.status = .idle
                         self.downloadingModelId = nil
                     }
@@ -284,18 +260,17 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 self.status = .completed
                 self.downloadingModelId = nil
-                Self.logger.info("\(self.t)🔵 [resume 完成] → .completed modelId=\(modelId)")
+                Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
 
             } catch {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
-                    Self.logger.error("\(self.t)🔵 [resume 失败] → .failed modelId=\(modelId) err=\(error.localizedDescription)")
+                    Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
                 } else if self.isPauseRequested {
                     // 恢复期间被暂停（异常路径）：保留 .paused 等待再次恢复
-                    Self.logger.info("\(self.t)🔵 [resume 异常取消=再次暂停] 保留 .paused modelId=\(modelId) err=\(error.localizedDescription)")
+                    Self.logger.info("\(self.t)恢复后再次暂停（异常路径）：\(modelId)")
                 } else {
-                    Self.logger.info("\(self.t)🔵 [resume 异常取消=真取消] → .idle modelId=\(modelId) err=\(error.localizedDescription)")
                     self.status = .idle
                     self.downloadingModelId = nil
                 }
@@ -368,7 +343,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Download Pipeline
 
     private func downloadAllFiles(modelId: String, to localDir: URL, startIndex: Int = 0) async throws {
-        Self.logger.info("\(self.t)🔵 [downloadAllFiles 入口] modelId=\(modelId) startIndex=\(startIndex)")
+        Self.logger.info("\(self.t)获取文件列表：\(modelId)")
         let files = try await fetchFileList(modelId: modelId)
         Self.logger.info("\(self.t)原始文件数量：\(files.count)")
 
@@ -376,12 +351,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         Self.logger.info("\(self.t)过滤后文件数量：\(filteredFiles.count)")
 
         guard !filteredFiles.isEmpty else {
-            Self.logger.error("\(self.t)🔵 [downloadAllFiles] 无可下载文件 → noFilesAvailable")
+            Self.logger.error("\(self.t)❌ 没有可下载的文件")
             throw MLXDownloadError.noFilesAvailable
         }
 
         let totalBytes = filteredFiles.reduce(Int64(0)) { $0 + ($1.size ?? 0) }
-        Self.logger.info("\(self.t)🔵 [downloadAllFiles] 总大小 totalBytes=\(totalBytes) startIndex=\(startIndex)")
+        Self.logger.info("\(self.t)总下载大小：\(totalBytes) 字节")
 
         updateProgress(totalFiles: Int64(filteredFiles.count), totalBytes: totalBytes)
 
@@ -432,8 +407,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                     updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes)
                     continue
                 } else if expectedSize > 0 {
-                    // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除！）
-                    Self.logger.warning("\(self.t)🔵 [文件大小不匹配→删除重下] file=\(file.path) index=\(index) 期望=\(expectedSize) 实际=\(existingSize) startIndex=\(startIndex)")
+                    // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除）
+                    Self.logger.warning("\(self.t)⚠️ 文件大小不匹配，删除旧文件：\(file.path) (期望 \(expectedSize), 实际 \(existingSize))")
                     try? fileManager.removeItem(at: fileURL)
                 }
             }
