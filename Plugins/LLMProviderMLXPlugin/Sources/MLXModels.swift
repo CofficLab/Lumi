@@ -41,10 +41,25 @@ public enum MLXModels {
         recommended.first { $0.id == id }
     }
 
-    /// 检查模型是否已缓存
+    /// 检查模型是否已缓存（完整下载完成）
+    ///
+    /// 校验目录存在且实际占用大小达到模型期望大小（`expectedBytes`）。
+    /// 不再用「safetensors ≥1MB」作为判据——下载中途的部分文件轻松超过该阈值，
+    /// 会导致下载中被误判为已缓存，UI 按钮错乱（暂停按钮变加载按钮）。
     public static func isModelCached(id: String) -> Bool {
         let cacheDir = cacheDirectory(for: id)
-        return FileManager.default.fileExists(atPath: cacheDir.path) && containsValidSafetensorsFiles(cacheDir)
+        guard FileManager.default.fileExists(atPath: cacheDir.path) else { return false }
+
+        // 取模型期望大小；若清单缺失该模型或无 expectedBytes，退回到 safetensors 有效性检查
+        guard let model = model(id: id), model.expectedBytes > 0 else {
+            return containsValidSafetensorsFiles(cacheDir)
+        }
+
+        let expectedBytes = Int64(model.expectedBytes)
+        let actualSize = directorySize(at: cacheDir)
+        // 实际大小达到期望大小（允许略小以容忍文件系统开销误差）才算完整缓存。
+        // 下载中途的目录大小远小于 expectedBytes，因此不会误判为已缓存。
+        return actualSize >= Int64(Double(expectedBytes) * 0.99)
     }
 
     // MARK: - 缓存管理
@@ -79,6 +94,31 @@ public enum MLXModels {
         return trimmed
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "\\", with: "_")
+    }
+
+    /// 计算目录下所有文件的总大小（字节），用于缓存完整性校验。
+    private static func directorySize(at directory: URL) -> Int64 {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return 0
+        }
+
+        var totalSize: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            do {
+                let values = try fileURL.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
+                guard values.isDirectory != true else { continue }
+                if let size = values.fileSize {
+                    totalSize += Int64(size)
+                }
+            } catch {
+                continue
+            }
+        }
+        return totalSize
     }
 
     /// 检查目录是否包含有效的 safetensors 文件

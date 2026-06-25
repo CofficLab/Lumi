@@ -144,9 +144,12 @@ public struct MLXLocalProviderSettingsView: View {
 
     @ViewBuilder
     private func modelRow(_ model: LocalModelInfo) -> some View {
-        let isCached = modelManager.isModelCached(id: model.id)
         let isDownloading = downloadManager.downloadingModelId == model.id && downloadManager.status == .downloading
         let isPaused = downloadManager.downloadingModelId == model.id && downloadManager.status == .paused
+        // 正在下载/暂停的模型不算已缓存：下载中途的部分文件可能被 isModelCached 误判为已缓存
+        // （它只检查 safetensors 是否 ≥1MB，不校验完整性），导致按钮在下载中途错乱地变成「加载」。
+        let isActiveDownload = isDownloading || isPaused
+        let isCached = !isActiveDownload && modelManager.isModelCached(id: model.id)
         let isLoaded = inferenceService.currentModelId == model.id
         let isLoading = inferenceService.state == .loading && inferenceService.currentModelId == model.id
         let hasError = errorModelId == model.id && actionError != nil
