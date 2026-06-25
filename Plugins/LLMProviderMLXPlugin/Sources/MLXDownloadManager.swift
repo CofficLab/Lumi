@@ -297,7 +297,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         let files = try await fetchFileList(modelId: modelId)
         Self.logger.info("\(self.t)原始文件数量：\(files.count)")
 
-        let filteredFiles = filterFiles(files)
+        let filteredFiles = Self.filterFiles(files)
         Self.logger.info("\(self.t)过滤后文件数量：\(filteredFiles.count)")
 
         guard !filteredFiles.isEmpty else {
@@ -506,7 +506,16 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         return files
     }
 
-    private func filterFiles(_ files: [HFFileEntry]) -> [HFFileEntry] {
+    /// 过滤 HuggingFace 文件列表，保留模型所需的文件
+    ///
+    /// 规则：
+    /// - 排除 README/LICENSE/.git/onnx/flax/tf/pytorch 等无关文件
+    /// - 保留 safetensors/json/txt/py/tiktoken 等模型必需文件
+    /// - 保留按文件名匹配的必需配置文件
+    ///
+    /// 设为 `nonisolated` 以便在任意上下文（含单元测试）中直接调用，
+    /// 因为过滤逻辑是纯函数，不依赖任何 MainActor 实例状态。
+    nonisolated static func filterFiles(_ files: [HFFileEntry]) -> [HFFileEntry] {
         let requiredExts: Set<String> = [".safetensors", ".json", ".txt", ".py", ".tiktoken"]
         let requiredNames: Set<String> = ["config.json", "tokenizer.json", "tokenizer_config.json",
                                           "generation_config.json", "special_tokens_map.json", "chat_template.jinja"]
@@ -588,10 +597,19 @@ public struct MLXDownloadProgress: Sendable {
     public init() {}
 }
 
-private struct HFFileEntry: Decodable {
-    public let type: String
-    public let path: String
-    public let size: Int64?
+/// HuggingFace 文件树条目（对应 HF API 返回的文件信息）
+///
+/// 设为 `internal` 以便单元测试构造 `filterFiles` 的输入数据。
+struct HFFileEntry: Decodable {
+    let type: String
+    let path: String
+    let size: Int64?
+
+    init(type: String, path: String, size: Int64? = nil) {
+        self.type = type
+        self.path = path
+        self.size = size
+    }
 }
 
 public enum MLXDownloadError: LocalizedError {
