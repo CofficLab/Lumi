@@ -63,6 +63,14 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         // 200 表示服务器忽略了 Range（或全新请求），必须从 0 重写，否则拼接错乱。
         let httpResp = response as? HTTPURLResponse
         let statusCode = httpResp?.statusCode ?? 0
+
+        // 检查 HTTP 状态码：非 200/206 表示服务器错误（如 403 Forbidden、404 Not Found）。
+        // LFS 文件重定向失败时，HuggingFace 可能返回 HTML 错误页面而非文件内容，
+        // 若不检查状态码，错误页面会被写入磁盘伪装成模型文件。
+        guard statusCode == 200 || statusCode == 206 else {
+            throw DownloadError.httpError(statusCode)
+        }
+
         let supportsResume = statusCode == 206
 
         // Content-Range: bytes <start>-<end>/<total> 或 Content-Length 给出本次剩余大小。

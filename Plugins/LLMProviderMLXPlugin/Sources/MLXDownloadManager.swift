@@ -511,6 +511,27 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             }
             Self.logger.info("\(self.t)✅ safetensors 验证通过：\(file.path) (\(size) 字节)")
         }
+
+        // 验证加载模型必需的配置文件（swift-transformers 硬性要求 tokenizer.json 存在）
+        let requiredConfigFiles = ["tokenizer.json", "config.json"]
+        for fileName in requiredConfigFiles {
+            // 仅验证 filterFiles 已包含的文件：如果原始文件列表中没有该文件则跳过
+            guard filteredFiles.contains(where: { $0.path.components(separatedBy: "/").last == fileName }) else {
+                continue
+            }
+            let fileURL = localDir.appendingPathComponent(fileName)
+            guard fileManager.fileExists(atPath: fileURL.path) else {
+                Self.logger.error("\(self.t)❌ 缺失必需配置文件：\(fileName)")
+                throw MLXDownloadError.missingFile(fileName)
+            }
+            let attrs = try fileManager.attributesOfItem(atPath: fileURL.path)
+            let size = attrs[.size] as? Int64 ?? 0
+            if size == 0 {
+                Self.logger.error("\(self.t)❌ 必需配置文件为空：\(fileName)")
+                throw MLXDownloadError.emptySafetensorsFile(fileName)
+            }
+            Self.logger.info("\(self.t)✅ 配置文件验证通过：\(fileName) (\(size) 字节)")
+        }
         Self.logger.info("\(self.t)所有文件下载和验证完成")
     }
 
