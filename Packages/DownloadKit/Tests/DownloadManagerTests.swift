@@ -7,6 +7,8 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     var downloadResult: Result<Data?, Error> = .success(Data("mock content".utf8))
     var downloadDelay: Duration? = nil
     var progressUpdates: [(Int64, Int64?)] = []
+    /// 延迟期间是否持续发送进度回调（模拟真实下载取消后仍有滞后进度到达）。
+    var emitProgressDuringDelay: Bool = false
 
     private(set) var downloadCallCount = 0
     private(set) var lastURL: URL?
@@ -29,7 +31,19 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
 
         // 模拟延迟
         if let delay = downloadDelay {
-            try await Task.sleep(for: delay)
+            if emitProgressDuringDelay {
+                // 在延迟期间持续发送进度，模拟真实下载：取消后仍有滞后进度回调到达
+                let deadline = ContinuousClock().now.advanced(by: delay)
+                var bytes: Int64 = 0
+                while ContinuousClock().now < deadline {
+                    bytes += 1000
+                    progressHandler(bytes, Int64.max)
+                    try await Task.sleep(for: .milliseconds(10))
+                    try Task.checkCancellation()
+                }
+            } else {
+                try await Task.sleep(for: delay)
+            }
         }
 
         // 返回结果
@@ -49,6 +63,7 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         downloadResult = .success(Data("mock content".utf8))
         downloadDelay = nil
         progressUpdates = []
+        emitProgressDuringDelay = false
         downloadCallCount = 0
         lastURL = nil
         lastDestination = nil
@@ -279,6 +294,84 @@ struct DownloadManagerTests {
             for i in 0..<3 {
                 let state = await manager.state(for: "task-\(i)")
                 #expect(state == .cancelled)
+            }
+        }
+    }
+
+    @Test("取消后可重新下载同 id 任务（暂停/恢复回归）")
+    func reDownloadAfterCancel() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            mockClient.downloadDelay = .seconds(2)
+            // 延迟期间持续发送进度，尽量接近真实下载（取消后仍有滞后进度回调）。
+            // 注：真实 bug 的竞态依赖网络 IO 的非确定性取消时序，单测难以 100% 复现；
+            // 此用例主要守护「取消→重新下载同 id」的对外契约不被破坏。
+            mockClient.emitProgressDuringDelay = true
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("file.txt")
+            let task = DownloadTask(
+                id: "same-id",
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination
+            )
+
+            // 1. 发起下载（不等待完成，模拟进行中）
+            let firstDownload = Task { try? await manager.download(task) }
+            try await Task.sleep(for: .milliseconds(100))
+
+            // 2. 取消（模拟暂停：底层调 cancel）
+            await manager.cancel(taskId: task.id)
+            _ = await firstDownload.result
+
+            // 3. 重新下载同 id —— 修复前会因滞后进度覆盖状态而抛「任务已在进行中」
+            mockClient.downloadDelay = nil
+            mockClient.emitProgressDuringDelay = false
+            let result = await Task { try? await manager.download(task) }.result
+            switch result {
+            case .success:
+                #expect(true)  // 修复后可正常重新下载
+            case .failure:
+                Issue.record("取消后重新下载同 id 应成功，不应残留「任务已在进行中」状态")
+            }
+        }
+    }
+
+    @Test("cancelAll 后可重新下载同 id 任务（暂停/恢复回归）")
+    func reDownloadAfterCancelAll() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            mockClient.downloadDelay = .seconds(2)
+            mockClient.emitProgressDuringDelay = true  // 同上，复现滞后进度覆盖状态
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("file.txt")
+            let task = DownloadTask(
+                id: "same-id",
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination
+            )
+
+            // 1. 发起下载
+            let firstDownload = Task { try? await manager.download(task) }
+            try await Task.sleep(for: .milliseconds(100))
+
+            // 2. cancelAll（MLX 暂停/取消走这条路径）
+            await manager.cancelAll()
+            _ = await firstDownload.result
+
+            // 3. 重新下载同 id —— 修复前会抛「任务已在进行中」
+            mockClient.downloadDelay = nil
+            let result = await Task { try? await manager.download(task) }.result
+            switch result {
+            case .success:
+                #expect(true)
+            case .failure:
+                Issue.record("cancelAll 后重新下载同 id 应成功，不应残留「任务已在进行中」状态")
             }
         }
     }

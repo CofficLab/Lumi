@@ -40,7 +40,20 @@ public enum DownloadTaskState: Sendable, Equatable {
     case completed
     case failed(DownloadError)
     case cancelled
-    
+
+    /// 是否处于终态（不会再变化）。
+    ///
+    /// 用于阻止滞后的进度回调把已取消/失败/完成的状态覆盖回 `.downloading`，
+    /// 从而让取消后能重新下载同一 id 的任务（暂停→恢复场景）。
+    public var isFinal: Bool {
+        switch self {
+        case .completed, .failed, .cancelled:
+            return true
+        case .pending, .downloading:
+            return false
+        }
+    }
+
     public static func == (lhs: DownloadTaskState, rhs: DownloadTaskState) -> Bool {
         switch (lhs, rhs) {
         case (.pending, .pending): return true

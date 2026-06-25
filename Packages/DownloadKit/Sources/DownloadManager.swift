@@ -206,7 +206,9 @@ public actor DownloadManager {
                         totalFiles: 1,
                         bytesPerSecond: speed
                     )
-
+                    // 异步更新状态。若任务已被取消/完成，updateStateAndNotify 内部会
+                    // 跳过覆盖（见下方实现），避免滞后的进度回调把 .cancelled 改回
+                    // .downloading，从而让取消后重新下载同 id 被误判为「已在进行中」。
                     Task { [weak self] in
                         await self?.updateStateAndNotify(taskId, progress)
                     }
@@ -243,6 +245,12 @@ public actor DownloadManager {
     }
 
     private func updateStateAndNotify(_ taskId: String, _ progress: DownloadProgress) {
+        // 若任务已被取消/失败/完成（终态），不再被滞后的进度回调覆盖回 .downloading。
+        // 这是取消（暂停）后能重新下载同一文件的关键：否则残留的 .downloading 状态会让
+        // 下一次 download() 的前置检查误抛「任务已在进行中」。
+        if let existing = taskStates[taskId], existing.isFinal {
+            return
+        }
         taskStates[taskId] = .downloading(progress: progress)
         progressHandlers[taskId]?(progress)
     }
