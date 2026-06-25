@@ -437,8 +437,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             do {
                 _ = try await dm.download(task) { [weak self] progress in
+                    let newBytes = progress.downloadedBytes
                     Task { @MainActor in
-                        self?.currentFileDownloadedBytes = progress.downloadedBytes
+                        guard let self else { return }
+                        // 只在新值大于当前值时更新，避免并发 Task 调度乱序导致进度回退显示
+                        if newBytes > self.currentFileDownloadedBytes {
+                            self.currentFileDownloadedBytes = newBytes
+                        }
                     }
                 }
                 downloadedBytes += expectedSize
