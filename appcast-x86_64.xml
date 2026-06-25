@@ -3,26 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.8.0</title>
-            <pubDate>Tue, 23 Jun 2026 14:08:58 +0000</pubDate>
-            <sparkle:version>234</sparkle:version>
-            <sparkle:shortVersionString>4.8.0</sparkle:shortVersionString>
+            <title>4.9.0</title>
+            <pubDate>Thu, 25 Jun 2026 04:45:59 +0000</pubDate>
+            <sparkle:version>235</sparkle:version>
+            <sparkle:shortVersionString>4.9.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.8.0</h2>
-<h3>Changes since v4.7.0</h3>
+            <description><![CDATA[<h2>Release v4.9.0</h2>
+<h3>Changes since v4.8.0</h3>
 <ul>
-<li>feat: add DownloadPlugin with agent download tools</li>
-<li>feat(agent): add temp file storage plugin for agent tools</li>
-<li>feat(mlx): add download pause/resume functionality</li>
-<li>feat(mlx): add horizontal series tabs for local model settings</li>
-<li>feat(mlx): enhance download manager with detailed logging and error handling</li>
-<li>feat(mlx): show download progress in background and restore when view reopens</li>
-<li>fix: resolve intermittent API Key loss after sleep/lock</li>
-<li>fix(downloadkit): write downloaded data to destination file</li>
-<li>refactor(menubar): fix theme adaptation and cleanup menu bar items</li>
+<li>docs: add quantified pure-logic coverage report</li>
+<li>feat: add model availability check to LumiLLMProvider protocol</li>
+<li>feat(editor-preview): add DOC/DOCX file preview and screenshot support</li>
+<li>feat(plugin): support plugin-contributed onboarding pages via protocol hook</li>
+<li>feat(ui): add bottom shadow to rail, breadcrumb, and chat header views</li>
+<li>fix: prevent onboarding from appearing in settings window</li>
+<li>fix: remove chat section maximum width limit to allow free resizing</li>
+<li>fix(agent-temp-storage): set plugin policy to alwaysOn</li>
+<li>fix(chat): insert conversations missed by create event on update</li>
+<li>fix(chat): stop chat input from reclaiming first responder on update</li>
+<li>fix(device-info): correctly detect battery power source</li>
+<li>fix(device-info): detect internal battery on Apple Silicon Macs</li>
+<li>fix(device-info): remove battery indicator from menu bar</li>
+<li>fix(download-kit): guard against lagged progress overwriting cancelled state</li>
+<li>fix(editor-call-hierarchy): set plugin policy to alwaysOn</li>
+<li>fix(editor-problems): set plugin policy to alwaysOn</li>
+<li>fix(editor-references): set plugin policy to alwaysOn</li>
+<li>fix(editor-search): set plugin policy to alwaysOn</li>
+<li>fix(editor-symbols): set plugin policy to alwaysOn</li>
+<li>fix(editor): align QuickLook Office preview scrollbar and content layout</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.8.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.8.0/Lumi_4.8.0_x86_64.dmg" length="52489567" type="application/octet-stream" sparkle:edSignature="cgqRpDTpJJUJSDvLSkknyoAIbc4hIXRUqULTp5II3qrXRMR+P7dxN1Rh37mm9HBUkZvPzvUlBzfHim4+Hl8VAA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.9.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.9.0/Lumi_4.9.0_x86_64.dmg" length="52916705" type="application/octet-stream" sparkle:edSignature="ThLvzMk0KXee3UE+LikDuhmdSCe7Sbrsm/KBxdoashUNckaOyXFDnhhLdl9iI0cBuMiD4/Z5atkmzA9XLge8Dw=="/>
         </item>
     </channel>
 </rss>
