@@ -93,13 +93,24 @@ public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Senda
     }
 
     /// 获取按系列分组的模型列表（根据 RAM 过滤）
+    ///
+    /// 返回顺序必须是确定性的：每次调用得到完全相同的顺序，
+    /// 否则 UI 的系列 tab 会反复乱序，且 onChange(allSeries) 会误判变化、
+    /// 把用户选中的 tab 重置回第一个。这里以系列名为稳定主排序键。
     public func modelsBySeries() -> [ModelSeries] {
         let models = _MLXModels.availableModels(for: self.systemRAM)
         let grouped = Dictionary(grouping: models, by: { $0.series })
 
-        // 按照系列中优先级最高的模型排序
-        return grouped.map { ModelSeries(name: $0.key, models: $0.value.sorted { $0.priority < $1.priority }) }
-            .sorted { ($0.models.first?.priority ?? Int.max) < ($1.models.first?.priority ?? Int.max) }
+        return grouped
+            .map { ModelSeries(name: $0.key, models: $0.value.sorted { $0.priority < $1.priority }) }
+            // 先按系列内最高优先级排（保持业务上的展示优先级），
+            // 再用系列名兜底：当两个系列最高优先级相同时，按名称字典序，
+            // 确保顺序完全确定、不依赖 Dictionary 迭代顺序或排序稳定性。
+            .sorted {
+                let lhsPri = $0.models.first?.priority ?? Int.max
+                let rhsPri = $1.models.first?.priority ?? Int.max
+                return lhsPri != rhsPri ? lhsPri < rhsPri : $0.name < $1.name
+            }
     }
 
     /// 刷新已缓存的模型列表（定时器每 5 秒调用，用于发现外部下载/删除的模型）

@@ -73,13 +73,11 @@ public struct MLXLocalProviderSettingsView: View {
             spacing: 12
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 8) {
-                        ForEach(allSeries) { series in
-                            seriesTab(series, isSelected: series.id == selectedSeries?.id)
-                        }
+                // 系列选择器用流式布局：全部平铺、一行放不下自动换行，避免横向滚动条。
+                FlowLayout(spacing: 8) {
+                    ForEach(allSeries) { series in
+                        seriesTab(series, isSelected: series.id == selectedSeries?.id)
                     }
-                    .padding(.horizontal, 2)
                 }
 
                 if let series = selectedSeries {
@@ -105,9 +103,12 @@ public struct MLXLocalProviderSettingsView: View {
                     selectedSeriesId = firstSeries.id
                 }
             }
-            .onChange(of: allSeries) { _, newSeries in
-                if let firstSeries = newSeries.first {
-                    selectedSeriesId = firstSeries.id
+            .onChange(of: allSeries) { oldSeries, newSeries in
+                // 列表变化时（如 RAM 改变导致可用模型增减），仅当用户当前选中的系列
+                // 已不存在才回退到第一个；否则保留用户选择，避免每次刷新都重置 tab。
+                // 旧逻辑无脑取 newSeries.first，会反复把选中重置回第一个系列。
+                if selectedSeriesId.map({ id in newSeries.contains { $0.id == id } }) == false {
+                    selectedSeriesId = newSeries.first?.id ?? oldSeries.first?.id
                 }
             }
         }
@@ -348,5 +349,50 @@ public struct MLXLocalProviderSettingsView: View {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         return formatter.string(fromByteCount: bytes)
+    }
+}
+
+// MARK: - Flow Layout
+
+/// 简单的流式布局：子视图横向依次排列，一行放不下时自动换到下一行。
+///
+/// 用于模型系列选择器，避免横向滚动条，让所有系列标签全部铺开展示。
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(proposal: proposal, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
+                proposal: .unspecified
+            )
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
     }
 }

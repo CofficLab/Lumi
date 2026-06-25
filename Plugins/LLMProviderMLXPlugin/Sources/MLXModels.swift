@@ -10,11 +10,14 @@ public enum MLXModels {
     // MARK: - 推荐模型（按优先级排序）
 
     /// 所有推荐模型（按 priority 排序）
-    public static let recommended: [LocalModelInfo] = 
-        QwenModels.all + 
-        MistralModels.all + 
-        LlamaModels.all + 
-        Gemma4Models.all
+    public static let recommended: [LocalModelInfo] =
+        QwenModels.all +
+        MistralModels.all +
+        LlamaModels.all +
+        Gemma4Models.all +
+        CoderModels.all +
+        DeepSeekModels.all +
+        MicrosoftModels.all
 
     // MARK: - 按内存要求过滤
 

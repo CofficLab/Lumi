@@ -459,6 +459,11 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             )
 
             do {
+                // 下载进度回调是 @Sendable，会在非 MainActor 的并发上下文执行；
+                // 若直接捕获外层 var downloadedBytes 再传给内部 @MainActor Task，
+                // Swift 6 会判定该变量跨越 actor 边界存在数据竞争。
+                // 这里先取不可变快照，闭包只捕获 Sendable 的 let，规避竞争。
+                let baseDownloadedBytes = downloadedBytes
                 _ = try await dm.download(task) { [weak self] progress in
                     let newBytes = progress.downloadedBytes
                     Task { @MainActor in
@@ -468,7 +473,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                             self.currentFileDownloadedBytes = newBytes
                             // 将当前文件的实时字节数纳入整体进度，避免进度条在大文件下载期间冻结
                             self.updateProgress(
-                                downloadedBytes: downloadedBytes + newBytes,
+                                downloadedBytes: baseDownloadedBytes + newBytes,
                                 totalBytes: totalBytes
                             )
                         }
