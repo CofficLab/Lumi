@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -64,7 +65,8 @@ public final class FlyMuxProvider: OpenAICompatibleLumiProvider, @unchecked Send
                 "gpt-5.1-codex": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.1-codex-max": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.1-codex-mini": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://flymux.com")!
         )
     }
 

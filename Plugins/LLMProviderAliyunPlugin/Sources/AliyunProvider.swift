@@ -46,7 +46,7 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
                 "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true),
                 "kimi-k2.5": .init(supportsVision: false, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://dashscope.console.aliyun.com/")
+            websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!
         )
     }
 

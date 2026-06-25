@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -46,7 +47,8 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
                 "mimo-v2.5-tts": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
                 "mimo-v2.5-tts-voiceclone": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
                 "mimo-v2.5-tts-voicedesign": .init(supportsVision: false, supportsTools: false, supportsTTS: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://www.mi.com")!
         )
     }
 

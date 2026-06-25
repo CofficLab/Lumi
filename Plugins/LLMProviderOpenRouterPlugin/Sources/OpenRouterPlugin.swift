@@ -90,7 +90,7 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
                 "z-ai/glm-4.5-air:free": .init(supportsVision: true, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://openrouter.ai/")
+            websiteURL: URL(string: "https://openrouter.ai/")!
         )
     }
 

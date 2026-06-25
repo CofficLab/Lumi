@@ -14,13 +14,21 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         isLocal: true,
         modelCapabilities: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map {
             ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
-        })
+        }),
+        websiteURL: URL(string: "https://github.com/ml-explore/mlx")!
     )
 
     public init() {}
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
+    }
+
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        if Self.info.availableModels.contains(model) {
+            return .available
+        }
+        return .unavailable(reason: "模型 \(model) 未注册或不可用")
     }
 
     public func sendStreaming(

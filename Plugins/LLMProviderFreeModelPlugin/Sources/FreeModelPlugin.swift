@@ -81,7 +81,7 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
             "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true),
             "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
         ],
-        websiteURL: URL(string: "https://freemodel.dev/")
+        websiteURL: URL(string: "https://freemodel.dev/")!
     )
 
     public static var info: LumiLLMProviderInfo { providerInfo }

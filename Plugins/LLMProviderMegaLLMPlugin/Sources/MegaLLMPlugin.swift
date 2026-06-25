@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -70,7 +71,8 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "llama3.3-70b-instruct": .init(supportsVision: false, supportsTools: true),
                 "minimaxai/minimax-m2.1": .init(supportsVision: false, supportsTools: true),
                 "newclaude-opus-4-6": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://megallm.io")!
         )
     }
 

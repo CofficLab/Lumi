@@ -26,7 +26,7 @@ public struct LumiProviderAvailabilityAdapter: LLMAvailabilityLLMServicing {
                 displayName: info.displayName,
                 shortName: info.displayName,
                 description: info.description,
-                websiteURL: nil,
+                websiteURL: info.websiteURL.absoluteString,
                 availableModels: info.availableModels,
                 defaultModel: info.defaultModel,
                 isLocal: info.isLocal,

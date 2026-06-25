@@ -39,7 +39,7 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
                 "deepseek-chat": .init(supportsVision: false, supportsTools: true),
                 "deepseek-coder": .init(supportsVision: false, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://platform.deepseek.com/")
+            websiteURL: URL(string: "https://www.deepseek.com/")!
         )
     }
 

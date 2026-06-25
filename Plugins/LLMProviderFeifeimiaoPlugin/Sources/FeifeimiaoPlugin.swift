@@ -1,3 +1,4 @@
+import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -46,7 +47,8 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.3": .init(supportsVision: true, supportsTools: true),
                 "gpt-5.2": .init(supportsVision: true, supportsTools: true)
-            ]
+            ],
+            websiteURL: URL(string: "https://feifeimiao.top")!
         )
     }
 

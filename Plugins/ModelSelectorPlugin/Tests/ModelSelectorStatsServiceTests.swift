@@ -29,7 +29,8 @@ import Testing
         displayName: "OpenAI",
         description: "Test",
         defaultModel: "gpt-fast",
-        availableModels: ["gpt-fast", "gpt-slow"]
+        availableModels: ["gpt-fast", "gpt-slow"],
+        websiteURL: URL(string: "https://example.com")!
     )
 
     let messages = [

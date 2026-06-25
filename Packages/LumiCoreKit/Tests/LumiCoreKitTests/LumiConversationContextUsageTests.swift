@@ -41,7 +41,8 @@ import LumiCoreKit
         displayName: "OpenAI",
         defaultModel: "gpt-4o",
         availableModels: ["gpt-4o"],
-        contextWindowSizes: ["gpt-4o": 128_000]
+        contextWindowSizes: ["gpt-4o": 128_000],
+        websiteURL: URL(string: "https://example.com")!
     )
 
     let usage = LumiConversationContextCalculator.usage(

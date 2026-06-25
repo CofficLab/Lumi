@@ -45,6 +45,41 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         try await sendStreaming(request) { _ in }
     }
 
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        guard let apiKeyValue = try? apiKey() else {
+            return .unavailable(reason: "Missing API key")
+        }
+
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            return .unavailable(reason: "无效的 Base URL")
+        }
+
+        let body: [String: Any]
+        do {
+            body = try adapter.buildRequestBody(
+                messages: [ChatMessage(role: .user, content: "ping")],
+                model: model,
+                tools: nil,
+                systemPrompt: ""
+            )
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            return .unavailable(reason: errorDesc)
+        }
+    }
+
     public func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -390,6 +425,41 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
     open func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
+    }
+
+    open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        guard let apiKeyValue = try? apiKey() else {
+            return .unavailable(reason: "Missing API key")
+        }
+
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            return .unavailable(reason: "无效的 Base URL")
+        }
+
+        let body: [String: Any]
+        do {
+            body = try adapter.buildRequestBody(
+                messages: [ChatMessage(role: .user, content: "ping")],
+                model: model,
+                tools: nil,
+                systemPrompt: ""
+            )
+        } catch {
+            return .unavailable(reason: error.localizedDescription)
+        }
+
+        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            return .unavailable(reason: errorDesc)
+        }
     }
 
     open func sendStreaming(
