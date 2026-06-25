@@ -50,6 +50,9 @@ public enum MLXModels {
         let cacheDir = cacheDirectory(for: id)
         guard FileManager.default.fileExists(atPath: cacheDir.path) else { return false }
 
+        // tokenizer.json 是 swift-transformers 的硬性要求，缺失即说明下载未完成或损坏
+        guard fileExistsNonEmpty(cacheDir.appendingPathComponent("tokenizer.json")) else { return false }
+
         // 取模型期望大小；若清单缺失该模型或无 expectedBytes，退回到 safetensors 有效性检查
         guard let model = model(id: id), model.expectedBytes > 0 else {
             return containsValidSafetensorsFiles(cacheDir)
@@ -119,6 +122,13 @@ public enum MLXModels {
             }
         }
         return totalSize
+    }
+
+    /// 检查文件是否存在且非空
+    private static func fileExistsNonEmpty(_ url: URL) -> Bool {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attrs[.size] as? Int64 else { return false }
+        return size > 0
     }
 
     /// 检查目录是否包含有效的 safetensors 文件
