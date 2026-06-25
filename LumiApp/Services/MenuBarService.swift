@@ -19,6 +19,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     private var popover: NSPopover?
     private var eventMonitor: Any?
     nonisolated(unsafe) private var appearanceObserver: NSObjectProtocol?
+    private var effectiveAppearanceObservation: NSKeyValueObservation?
 
     /// 是否有需要用户注意的事件（caffeinate 激活、有更新等）
     private var isAppearanceActive: Bool = false
@@ -115,6 +116,31 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
             hostingView.heightAnchor.constraint(equalToConstant: 22)
         ])
+
+        // 按钮位于系统托管的菜单栏中，其 effectiveAppearance 反映菜单栏真实外观
+        // （受系统明暗 + 壁纸亮度共同决定），不受 Lumi 主题窗口外观污染。
+        // 把 hosting view 钉到按钮的有效外观上，让 CPU 柱状图、网速、Logo 颜色与菜单栏一致。
+        syncHostingAppearance()
+
+        observeEffectiveAppearance()
+    }
+
+    /// 把 hosting view 的外观同步为菜单栏按钮当前的有效外观。
+    private func syncHostingAppearance() {
+        guard let button = statusItem?.button else { return }
+        hostingView?.appearance = button.effectiveAppearance
+    }
+
+    /// 观察菜单栏按钮的有效外观变化（系统明暗切换、壁纸亮度自适应都会触发），
+    /// 让 CPU 柱状图、网速文字、Logo 等动态色跟随**菜单栏本身**的外观，而非 App/主题外观。
+    private func observeEffectiveAppearance() {
+        guard let button = statusItem?.button, effectiveAppearanceObservation == nil else { return }
+        effectiveAppearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.syncHostingAppearance()
+                self?.hostingView?.needsDisplay = true
+            }
+        }
     }
 
     private func menuBarWidth(for items: [LumiMenuBarContentItem]) -> CGFloat {
