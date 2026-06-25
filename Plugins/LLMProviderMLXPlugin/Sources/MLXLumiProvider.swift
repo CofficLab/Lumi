@@ -19,6 +19,13 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         websiteURL: URL(string: "https://github.com/ml-explore/mlx")!
     )
 
+    /// 持久化的推理服务（跨对话复用模型，避免每次重新加载）
+    private nonisolated(unsafe) static var _inferenceService: MLXInferenceService?
+    /// 空闲卸载计时器：生成完成后 10 分钟无新请求则释放模型内存
+    private nonisolated(unsafe) static var idleTimer: Task<Void, Never>?
+    /// 空闲超时时间（纳秒）：10 分钟
+    private static let idleTimeoutNanos: UInt64 = 600_000_000_000
+
     public init() {}
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
@@ -80,8 +87,22 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         stats: StreamingTokenStats,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> String {
-        let service = MLXInferenceService()
-        try await service.loadModel(id: request.model)
+        let service = Self._inferenceService ?? {
+            let s = MLXInferenceService()
+            Self._inferenceService = s
+            return s
+        }()
+
+        // 有新请求，取消空闲卸载计时器
+        cancelIdleTimer()
+
+        // 如果目标模型未加载，先卸载旧模型再加载新模型
+        if service.currentModelId != request.model {
+            if service.currentModelId != nil {
+                service.unloadModel()
+            }
+            try await service.loadModel(id: request.model)
+        }
 
         let preparedMessages = LumiVisionMessageSupport.preparedMessages(for: request)
         let mlxMessages = preparedMessages.compactMap { message -> MLXChatMessage? in
@@ -124,7 +145,32 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
+
+        // 生成完成，启动空闲卸载计时器
+        startIdleTimer()
+
         return content
+    }
+
+    // MARK: - Idle Timer
+
+    private static func cancelIdleTimer() {
+        idleTimer?.cancel()
+        idleTimer = nil
+    }
+
+    private static func startIdleTimer() {
+        cancelIdleTimer()
+        guard let service = _inferenceService else { return }
+        idleTimer = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: idleTimeoutNanos)
+                // 计时器未被取消，说明确实空闲，释放模型内存
+                service.unloadModel()
+            } catch {
+                // Task.sleep 被取消（有新请求），正常退出
+            }
+        }
     }
 }
 

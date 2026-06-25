@@ -180,6 +180,13 @@ public struct MLXLocalProviderSettingsView: View {
                             Task { await unloadModel() }
                         }
                     }
+                    AppButton(
+                        LumiPluginLocalization.string("删除", bundle: .module),
+                        style: .ghost,
+                        size: .small
+                    ) {
+                        Task { await deleteModel(model.id) }
+                    }
                 } else {
                     if isDownloading {
                         AppButton(
@@ -317,6 +324,24 @@ public struct MLXLocalProviderSettingsView: View {
         actionError = nil
         errorModelId = nil
         await inferenceService.unloadModel()
+    }
+
+    @MainActor
+    private func deleteModel(_ modelID: String) async {
+        actionError = nil
+        errorModelId = nil
+
+        // 如果模型正在使用，先卸载
+        if inferenceService.currentModelId == modelID {
+            await inferenceService.unloadModel()
+        }
+
+        do {
+            try modelManager.deleteModel(id: modelID)
+        } catch {
+            actionError = error.localizedDescription
+            errorModelId = modelID
+        }
     }
 
     private func formattedFileSize(_ bytes: Int64) -> String {
