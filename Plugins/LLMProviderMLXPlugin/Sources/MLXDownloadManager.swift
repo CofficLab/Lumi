@@ -77,6 +77,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private var pausedModelId: String?
     private var pausedProgress: MLXDownloadProgress?
 
+    /// 恢复下载时的进度地板（fraction 下限）。
+    ///
+    /// 暂停时正在下载的文件会被重新下载，其已下载部分字节不再计入新的 `downloadedBytes`，
+    /// 导致恢复瞬间 fraction 从「含部分字节」跌到「仅完整文件」，进度条先跌后涨。
+    /// 记录暂停时刻的 fraction 作为地板：恢复后任何重算的 fraction 不低于它，
+    /// 进度条保持暂停值，直到真实下载进度自然超过它。设为 nil 表示无地板（首次下载）。
+    private var resumeFloorFraction: Double?
+
     // MARK: - Initialization
 
     private override init() {
@@ -127,6 +135,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadingModelId = modelId
         status = .downloading
         progress = MLXDownloadProgress()
+        // 全新下载无暂停历史，清除可能残留的恢复地板
+        resumeFloorFraction = nil
 
         Self.logger.info("\(self.t)🟢 开始下载模型：\(modelId)")
 
@@ -228,6 +238,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         if let savedProgress = pausedProgress {
             progress = savedProgress
+            // 记录暂停时刻的 fraction 作为恢复地板：暂停时正在下载文件的部分字节
+            // 会在恢复后重下时丢失，重算 fraction 会因此下跌。地板保证恢复后进度条
+            // 不回退，停留在暂停值直到真实进度超过它。
+            resumeFloorFraction = savedProgress.fractionCompleted
         }
 
         // 清除暂停状态
@@ -260,12 +274,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 self.status = .completed
                 self.downloadingModelId = nil
+                self.resumeFloorFraction = nil
                 Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
 
             } catch {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
+                    self.resumeFloorFraction = nil
                     Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
                 } else if self.isPauseRequested {
                     // 恢复期间被暂停（异常路径）：保留 .paused 等待再次恢复
@@ -366,17 +382,21 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         var downloadedBytes: Int64 = 0
         let dm = downloadManager
 
-        // 如果从中间开始，先计算已下载文件的总大小
+        // 如果从中间开始（恢复场景）：只更新 completedFiles/totalFiles，
+        // fractionCompleted 保留 resume() 里恢复的暂停值（savedProgress.fractionCompleted）。
+        // 绝不能用「仅完整文件字节」去重算 fraction——暂停时正在下载文件的部分字节
+        // 已计入暂停值，但这里只累加完整文件，重算会让 fraction 跌到（只含完整文件的比例），
+        // 进度条先跌到接近 0、再随该文件重下爬回，视觉上像「变成 0」。
+        // downloadedBytes 局部变量仍正确累加完整文件字节，供后续进度回调
+        // `downloadedBytes + newBytes`（与正常下载一致的推进方式）。
         if startIndex > 0 {
             for index in 0..<startIndex {
                 let file = filteredFiles[index]
                 downloadedBytes += file.size ?? 0
             }
-            // 必须同时传 totalBytes，否则 updateProgress 不会重算 fractionCompleted，
-            // 恢复后进度条会冻结在暂停时的旧值，直到下一个完整文件下载完才跳动。
             updateProgress(
                 completedFiles: Int64(startIndex),
-                downloadedBytes: downloadedBytes,
+                totalFiles: Int64(filteredFiles.count),
                 totalBytes: totalBytes
             )
             Self.logger.info("\(self.t)▶️ 从第 \(startIndex) 个文件继续下载")
@@ -398,7 +418,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             let expectedSize = file.size ?? 0
 
-            // 检查是否已下载
+            // 检查已存在的本地文件，决定是跳过、续传还是全新下载。
+            // existingSize 用于续传起点：部分文件（暂停时下载了一部分）保留不删，
+            // 交给 DownloadKit 用 HTTP Range 从断点继续——这正是「不重头下载、不浪费」的关键。
+            var fileResumeBytes: Int64 = 0
             if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
                let existingSize = attrs[.size] as? Int64 {
                 if existingSize == expectedSize, expectedSize > 0 {
@@ -406,10 +429,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                     downloadedBytes += expectedSize
                     updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                     continue
-                } else if expectedSize > 0 {
-                    // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除）
-                    Self.logger.warning("\(self.t)⚠️ 文件大小不匹配，删除旧文件：\(file.path) (期望 \(expectedSize), 实际 \(existingSize))")
-                    try? fileManager.removeItem(at: fileURL)
+                } else if expectedSize > 0, existingSize > 0, existingSize < expectedSize {
+                    // 部分文件：保留，作为字节级续传起点（DownloadKit 会发 Range 请求继续）
+                    fileResumeBytes = existingSize
+                    Self.logger.info("\(self.t)⏏️ 续传文件：\(file.path) (已下载 \(existingSize)/\(expectedSize) 字节)")
                 }
             }
 
@@ -423,10 +446,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             Self.logger.info("\(self.t)📥 下载文件 [\(index + 1)/\(filteredFiles.count)]：\(file.path) (\(expectedSize) 字节)")
 
-            // 更新当前下载的文件名和大小
+            // 更新当前下载的文件名和大小；已下载字节从续传起点初始化，进度条不回退到 0
             currentFileName = file.path
             currentFileSize = expectedSize
-            currentFileDownloadedBytes = 0
+            currentFileDownloadedBytes = fileResumeBytes
 
             let task = DownloadTask(
                 id: file.path,
@@ -605,10 +628,17 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         if let cf = completedFiles { progress.completedFiles = cf }
         if let tf = totalFiles { progress.totalFiles = tf }
         if let db = downloadedBytes, let tb = totalBytes {
-            progress.fractionCompleted = Self.downloadProgressFraction(
+            var fraction = Self.downloadProgressFraction(
                 writtenBytes: db,
                 totalBytes: tb
             )
+            // 恢复场景的地板：重算的 fraction 不应低于暂停时刻的值。
+            // 暂停时正在下载文件的部分字节在恢复后会因重下而短暂缺失，
+            // 没有地板的话进度条会先跌到「仅完整文件」比例，视觉上像变成 0。
+            if let floor = resumeFloorFraction, fraction < floor {
+                fraction = floor
+            }
+            progress.fractionCompleted = fraction
         }
     }
 
@@ -628,6 +658,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         currentFileName = nil
         currentFileSize = 0
         progress = MLXDownloadProgress()
+        // 复位时一并清除恢复地板，避免残留到下次下载
+        resumeFloorFraction = nil
     }
 }
 
