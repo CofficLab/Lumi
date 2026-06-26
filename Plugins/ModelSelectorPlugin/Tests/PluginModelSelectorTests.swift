@@ -128,4 +128,8 @@ private struct MockLLMProvider: LumiLLMProvider {
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         .available
     }
+
+    func providerStatus() -> LumiLLMProviderStatus? {
+        nil
+    }
 }
