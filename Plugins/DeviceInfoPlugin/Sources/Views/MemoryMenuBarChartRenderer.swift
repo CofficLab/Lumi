@@ -13,10 +13,14 @@ struct MemoryMenuBarChartRenderer {
     private static let imageHeight: CGFloat = 14
 
     // MARK: - Colors
+    //
+    // 内存柱渲染为单色模板图（`isTemplate = true`），由菜单栏统一着色，
+    // 因此这里只用 `labelColor` 的不同透明度表达「填充柱」与「背景槽」，
+    // 不再使用品牌紫色 / 警告红色（模板着色会覆盖任意颜色）。
+    // 警告态（≥80%）用全不透明填充，与正常态的低透明槽 + 实心柱做视觉区分。
 
-    private static let normalColor = NSColor(hex: "7C6FFF")
-    private static let warningColor = NSColor(hex: "FF6B6B")
-    private static let trackColor = NSColor.labelColor.withAlphaComponent(0.12)
+    private static let trackColor = NSColor.labelColor.withAlphaComponent(0.18)
+    private static let barColor = NSColor.labelColor
 
     // MARK: - Public Methods
 
@@ -51,22 +55,14 @@ struct MemoryMenuBarChartRenderer {
         )
 
         let barPath = NSBezierPath(roundedRect: barRect, xRadius: barCornerRadius, yRadius: barCornerRadius)
-        barColor(for: usage).setFill()
+        barColor.setFill()
         barPath.fill()
 
         image.unlockFocus()
-        image.isTemplate = false
+        image.isTemplate = true
         return image
     }
 
-    // MARK: - Private Methods
-
-    private static func barColor(for usage: Double) -> NSColor {
-        if usage >= 80 {
-            return warningColor
-        }
-        return normalColor
-    }
 }
 
 // MARK: - NSColor Extension

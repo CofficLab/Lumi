@@ -16,9 +16,12 @@ struct CofficLogoView: View {
                 case .general, .appIcon, .about, .custom:
                     animatedLogo(size: size)
                 case .statusBarInactive:
+                    // 菜单栏图标渲染为单色模板图（由系统统一着色），
+                    // 非激活态降低不透明度，与激活态做视觉区分。
                     monochromeLogo(size: size)
+                        .opacity(0.55)
                 case .statusBarActive:
-                    staticLogo(size: size)
+                    monochromeLogo(size: size)
                 }
             }
             .frame(width: size, height: size)
@@ -127,25 +130,6 @@ struct CofficLogoView: View {
                     .opacity(isAnimating ? 0.3 : 0.7)
             }
         }
-    }
-
-    @ViewBuilder
-    private func staticLogo(size: CGFloat) -> some View {
-        let mainSize = size * 0.75
-
-        RoundedRectangle(cornerRadius: size * 0.08)
-            .fill(Color.brown)
-            .frame(width: mainSize * 0.7, height: mainSize * 0.6)
-
-        RoundedRectangle(cornerRadius: size * 0.04)
-            .fill(Color.brown.opacity(0.8))
-            .frame(width: mainSize * 0.75, height: mainSize * 0.12)
-            .offset(y: -mainSize * 0.28)
-
-        Circle()
-            .stroke(Color.brown, lineWidth: size * 0.04)
-            .frame(width: mainSize * 0.25, height: mainSize * 0.25)
-            .offset(x: mainSize * 0.38, y: -mainSize * 0.05)
     }
 
     @ViewBuilder

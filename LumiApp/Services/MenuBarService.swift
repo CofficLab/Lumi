@@ -15,11 +15,9 @@ private extension Notification.Name {
 final class MenuBarService: NSObject, NSPopoverDelegate {
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?
-    private var hostingView: NSHostingView<MenuBarIconView>?
     private var popover: NSPopover?
     private var eventMonitor: Any?
     nonisolated(unsafe) private var appearanceObserver: NSObjectProtocol?
-    private var effectiveAppearanceObservation: NSKeyValueObservation?
 
     /// 是否有需要用户注意的事件（caffeinate 激活、有更新等）
     private var isAppearanceActive: Bool = false
@@ -63,9 +61,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
                 return
             }
 
-            let items = self.pluginService.menuBarContentItems(context: self.menuBarContext)
-            self.hostingView?.rootView = MenuBarIconView(contentItems: items, isActive: self.isAppearanceActive)
-            self.statusItem?.length = self.menuBarWidth(for: items)
+            self.updateStatusItemImage()
 
             if self.popover?.isShown == true {
                 self.popover?.contentViewController = NSHostingController(rootView: self.makePopupView())
@@ -92,59 +88,38 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             return
         }
 
-        let items = pluginService.menuBarContentItems(context: menuBarContext)
-        statusItem = NSStatusBar.system.statusItem(withLength: menuBarWidth(for: items))
+        // 先用一个占位长度创建 status item，待图片渲染后按真实宽度校正。
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         guard let button = statusItem?.button else {
             return
         }
 
-        let rootView = MenuBarIconView(contentItems: items, isActive: isAppearanceActive)
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        self.hostingView = hostingView
-
-        button.image = nil
-        button.subviews.forEach { $0.removeFromSuperview() }
-        button.addSubview(hostingView)
         button.target = self
         button.action = #selector(togglePopover)
 
-        NSLayoutConstraint.activate([
-            hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
-            hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            hostingView.heightAnchor.constraint(equalToConstant: 22)
-        ])
-
-        // 按钮位于系统托管的菜单栏中，其 effectiveAppearance 反映菜单栏真实外观
-        // （受系统明暗 + 壁纸亮度共同决定），不受 Lumi 主题窗口外观污染。
-        // 把 hosting view 钉到按钮的有效外观上，让 CPU 柱状图、网速、Logo 颜色与菜单栏一致。
-        syncHostingAppearance()
-
-        observeEffectiveAppearance()
+        updateStatusItemImage()
     }
 
-    /// 把 hosting view 的外观同步为菜单栏按钮当前的有效外观。
-    private func syncHostingAppearance() {
+    /// 把菜单栏内容（Logo + CPU/内存/网速）渲染成单色模板图交给系统着色。
+    ///
+    /// 模板图（`isTemplate = true`）不依赖任何 `NSAppearance` 求值，系统会按菜单栏
+    /// 真实外观（系统明暗 + 壁纸亮度自适应）自动涂黑或涂白，永远与其它系统图标一致，
+    /// 不受 Lumi 主题窗口外观污染。
+    private func updateStatusItemImage() {
         guard let button = statusItem?.button else { return }
-        hostingView?.appearance = button.effectiveAppearance
-    }
 
-    /// 观察菜单栏按钮的有效外观变化（系统明暗切换、壁纸亮度自适应都会触发），
-    /// 让 CPU 柱状图、网速文字、Logo 等动态色跟随**菜单栏本身**的外观，而非 App/主题外观。
-    private func observeEffectiveAppearance() {
-        guard let button = statusItem?.button, effectiveAppearanceObservation == nil else { return }
-        effectiveAppearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in
-                self?.syncHostingAppearance()
-                self?.hostingView?.needsDisplay = true
-            }
-        }
-    }
+        let items = pluginService.menuBarContentItems(context: menuBarContext)
+        let iconView = MenuBarIconView(contentItems: items, isActive: isAppearanceActive)
 
-    private func menuBarWidth(for items: [LumiMenuBarContentItem]) -> CGFloat {
-        max(24, 24 + CGFloat(items.count * 44))
+        let renderer = ImageRenderer(content: iconView)
+        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        guard let image = renderer.nsImage else { return }
+
+        image.isTemplate = true
+        button.image = image
+        button.imagePosition = .imageOnly
+        statusItem?.length = image.size.width
     }
 
     @objc private func togglePopover() {
