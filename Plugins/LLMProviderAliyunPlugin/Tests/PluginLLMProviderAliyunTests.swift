@@ -172,4 +172,24 @@ struct PluginLLMProviderAliyunTests {
         #expect(message.rawErrorDetail == "invalid_api_key")
         #expect(message.metadata[LumiLLMTransportMetadata.requestDetails]?.contains("Request URL") == true)
     }
+
+    @Test func unsupportedModelAvailabilityMapsToStructuredFailure() {
+        let body = #"{"error":{"code":"invalid_parameter_error","message":"model not supported"}}"#
+        let error = HTTPClientError.httpError(statusCode: 400, message: body)
+
+        #expect(AvailabilityService.isUnsupportedModelError(error))
+
+        let mapped = AvailabilityService.mapUnsupportedModelResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(failure.reason == .unsupportedModel)
+        #expect(!failure.availabilityDisplayText.contains("invalid_parameter"))
+        #expect(!failure.availabilityDisplayText.contains("URL:"))
+    }
 }
