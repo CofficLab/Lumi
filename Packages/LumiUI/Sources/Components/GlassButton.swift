@@ -32,10 +32,9 @@ public struct GlassButton: View {
         action: @escaping () -> Void
     ) {
         if let tableName {
+            let localizedTitle = Bundle.module.localizedString(forKey: title, value: nil, table: tableName)
             appButton = AppButton(
-                localized: title,
-                table: tableName,
-                bundle: .module,
+                localizedTitle,
                 style: Self.mapStyle(style),
                 fillsWidth: true,
                 action: action
