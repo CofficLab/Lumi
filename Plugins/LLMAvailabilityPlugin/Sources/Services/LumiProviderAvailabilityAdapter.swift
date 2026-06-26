@@ -42,8 +42,8 @@ public struct LumiProviderAvailabilityAdapter: LLMAvailabilityLLMServicing {
     }
 
     public func createProvider(id providerId: String) -> (any LLMAvailabilityCheckingProvider)? {
-        guard provider(forId: providerId) != nil else { return nil }
-        return LumiCheckingProviderAdapter()
+        guard let provider = provider(forId: providerId) else { return nil }
+        return LumiCheckingProviderAdapter(provider: provider)
     }
 
     public func sendMessage(
@@ -111,13 +111,18 @@ private struct LumiProviderTypeAdapter: LLMAvailabilityProviderType {
 
 // MARK: - Checking Provider Adapter
 
-/// 默认的可用性检测策略适配器。
-/// 如果供应商自身实现了 `availabilityCheckStrategy`，则委托给它；
-/// 否则使用 `apiKeyOnly` 策略（仅检查 API Key 是否配置）。
+/// 将 `LumiLLMProvider.checkAvailability` 桥接到可用性检测策略。
 private struct LumiCheckingProviderAdapter: LLMAvailabilityCheckingProvider {
+    let provider: any LumiLLMProvider
+
     func availabilityCheckStrategy(forModel modelId: String) -> AvailabilityCheckStrategy {
-        // 默认策略：仅检查 API Key 是否已配置，不发网络请求
-        // 供应商可通过实现 availabilityCheckStrategy 来自定义（如 Codex/MLX）
-        .apiKeyOnly
+        .custom { _, model in
+            switch await provider.checkAvailability(model: model) {
+            case .available:
+                return (true, nil)
+            case .unavailable(let reason):
+                return (false, reason)
+            }
+        }
     }
 }

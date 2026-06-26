@@ -140,7 +140,7 @@ public final class LLMAvailabilityChecker {
 
     /// 检测单个模型的可用性（内部实现）
     ///
-    /// 通过供应商提供的 `availabilityCheckStrategy(forModel:)` 策略决定检测方式。
+    /// 通过供应商提供的检测策略决定检测方式（新架构供应商委托 `checkAvailability`）。
     private func performCheck(providerId: String, modelId: String) async -> ModelCheckResult {
         store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
 
