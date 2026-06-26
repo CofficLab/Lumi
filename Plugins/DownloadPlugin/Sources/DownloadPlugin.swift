@@ -56,8 +56,12 @@ extension DownloadPlugin {
     /// 默认下载目录：~/Downloads/LumiDownloads
     static func defaultDownloadDirectory() -> URL {
         let fileManager = FileManager.default
-        let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
-            ?? fileManager.temporaryDirectory
+        guard let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
+            // 降级到临时目录
+            let fallback = fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads")
+            try? fileManager.createDirectory(at: fallback, withIntermediateDirectories: true)
+            return fallback
+        }
         let dir = downloads.appendingPathComponent("LumiDownloads", isDirectory: true)
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir

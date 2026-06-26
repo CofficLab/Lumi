@@ -22,17 +22,21 @@ public actor DownloadManager {
         public var timeoutInterval: TimeInterval
         /// 是否启用断点续传
         public var enableResume: Bool
+        /// 下载速率限制（字节/秒）。`nil` 表示不限速
+        public var maxBytesPerSecond: Int?
 
         public init(
             downloadDirectory: URL? = nil,
             maxConcurrentDownloads: Int = 3,
             timeoutInterval: TimeInterval = 3600,
-            enableResume: Bool = true
+            enableResume: Bool = true,
+            maxBytesPerSecond: Int? = nil
         ) {
             self.downloadDirectory = downloadDirectory ?? URL.temporaryDirectory.appendingPathComponent("DownloadKit")
             self.maxConcurrentDownloads = maxConcurrentDownloads
             self.timeoutInterval = timeoutInterval
             self.enableResume = enableResume
+            self.maxBytesPerSecond = maxBytesPerSecond
         }
     }
 
@@ -202,6 +206,7 @@ public actor DownloadManager {
                 from: task.url,
                 to: task.destination,
                 existingBytes: existingBytes,
+                maxBytesPerSecond: configuration.maxBytesPerSecond,
                 progressHandler: { [weak self] downloadedBytes, totalBytes in
                     let elapsed = Date().timeIntervalSince(progressStartTime)
                     // speed 以「本次新下载字节」计，避免续传时把 existingBytes 计入速率导致偏低

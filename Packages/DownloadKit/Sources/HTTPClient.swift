@@ -12,6 +12,7 @@ public protocol HTTPClient: Sendable {
     ///   - url: 远程 URL
     ///   - destination: 本地目标路径（已存在的部分文件将被续传追加）
     ///   - existingBytes: 目标文件已下载的字节数（续传起点）；0 表示全新下载
+    ///   - maxBytesPerSecond: 下载速率限制（字节/秒）。`nil` 表示不限速
     ///   - progressHandler: 进度回调。`downloadedBytes` 为累计值（含续传部分），即
     ///     `existingBytes + 本次已写字节`，便于上层直接计算整体进度
     ///   - onCancelled: 取消回调（流式写入已即时落盘，无需 resume data，参数固定为 nil）
@@ -20,9 +21,32 @@ public protocol HTTPClient: Sendable {
         from url: URL,
         to destination: URL,
         existingBytes: Int64,
+        maxBytesPerSecond: Int?,
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64?
+}
+
+// MARK: - Backward-Compatible Default
+
+public extension HTTPClient {
+    /// 向后兼容的便捷方法，不限速
+    func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
+        try await download(
+            from: url,
+            to: destination,
+            existingBytes: existingBytes,
+            maxBytesPerSecond: nil,
+            progressHandler: progressHandler,
+            onCancelled: onCancelled
+        )
+    }
 }
 
 /// 默认 HTTP 客户端实现，基于 URLSession 流式下载 + Range 续传
@@ -41,9 +65,13 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         from url: URL,
         to destination: URL,
         existingBytes: Int64,
+        maxBytesPerSecond: Int?,
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64? {
+        // 创建速率限制器（nil 表示不限速，acquire 立即返回）
+        let rateLimiter = RateLimiter(bytesPerSecond: maxBytesPerSecond)
+
         var request = URLRequest(url: url)
         // 断点续传：已有字节时用 Range 请求剩余部分。
         if existingBytes > 0 {
@@ -114,17 +142,20 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         buffer.reserveCapacity(bufferSize)
 
         do {
+            // 按缓冲区批次限速：每填满一次 buffer 统一申请一次令牌，避免逐字节锁竞争
             for try await byte in bytes {
                 buffer.append(byte)
                 if buffer.count >= bufferSize {
+                    try await rateLimiter.acquire(bytes: buffer.count)
                     try handle.write(contentsOf: buffer)
                     writtenThisSession += Int64(buffer.count)
                     buffer.removeAll(keepingCapacity: true)
                     progressHandler(resumeBaseBytes + writtenThisSession, remainingTotal.map { resumeBaseBytes + $0 })
                 }
             }
-            // flush 残余
+            // flush 残余：写入前申请剩余字节令牌
             if !buffer.isEmpty {
+                try await rateLimiter.acquire(bytes: buffer.count)
                 try handle.write(contentsOf: buffer)
                 writtenThisSession += Int64(buffer.count)
                 progressHandler(resumeBaseBytes + writtenThisSession, remainingTotal.map { resumeBaseBytes + $0 })

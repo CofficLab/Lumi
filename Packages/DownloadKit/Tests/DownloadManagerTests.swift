@@ -20,6 +20,7 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         from url: URL,
         to destination: URL,
         existingBytes: Int64,
+        maxBytesPerSecond: Int?,
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64? {
