@@ -12,23 +12,18 @@
 
 ### Phase 1: 审计和边界定义
 
-- [x] 增加可重复运行的 UI 样式审计脚本，统计 `Color.adaptive`、`Color(hex:)`、`.font(.system...)`、`RoundedRectangle`、`.cornerRadius(...)`、`activeChromeTheme.*Color()` 等逃逸点。
-- [x] 生成首轮审计文档，按 Core Settings、Chat、Status/Menu Bar、Editor Plugins、Other Plugins 汇总迁移热点。
 - [ ] 标记可直接替换为现有 LumiUI 组件的调用点，例如 `Button` -> `AppButton/AppIconButton`、自定义 row -> `AppListRow/GlassRow`、空态 -> `AppEmptyState`、错误态 -> `AppErrorBanner`、搜索框 -> `AppSearchBar`。
 - [ ] 标记不能直接替换的重复模式，沉淀为 LumiUI 新组件或组件参数，而不是在 app 层复制 modifier。
 - [ ] 明确例外清单：编辑器语法高亮、terminal、QuickLook/PDF/image preview、营销截图、第三方嵌入控件。
 
 ### Phase 2: 补齐 LumiUI 缺口
 
-- [x] 增加公开 typography API：title、section、body、caption、mono caption、status text。
-- [x] 增加公开 semantic surface API：panel、popover、toolbar strip、list row hover/selected、divider、focus ring。
 - [ ] 完善 settings/form/list scaffold：settings section、row、picker row、text field row、toggle row、footer actions。
 - [ ] 完善状态组件：metric card、status pill、inline progress、inline loading、empty/loading/error state。
 
 ### Phase 3: 第一批迁移
 
 - [ ] 迁移 Core Settings 中重复 row/page：`PluginSettingsView`、`LocalModelRow`、provider/model row 系列。
-- [x] 用 `PluginSettingsView` 做小范围试迁移，验证 app 侧可以直接使用 `Font.app*` 和 `LumiUITheme` 语义色。
 - [ ] 迁移状态栏和菜单栏详情：DeviceInfo、NetworkManager、HistoryDB、AgentRequestLog、RAG status detail。
 - [ ] 迁移管理类插件详情页：Git commit detail、Docker images、Model availability、GitHub plugin settings。
 - [ ] 每批迁移后重新运行审计脚本，记录数量下降和剩余例外。
@@ -49,42 +44,29 @@
 ### 动效体验规划
 
 - [ ] 梳理全 App 动效入口，按“导航/面板切换、列表增删、弹层、按钮反馈、状态变化、流式内容、编辑器 overlay”建立动效清单。
-- [x] 在 `LumiUI` 增加统一 motion tokens（duration、curve、spring、delay、stagger），避免各处散落 `0.12`、`0.15`、`0.2`、`.spring`。
-- [x] 增加 `MotionPreference` 或等价环境配置，统一处理 `Reduce Motion`、低性能模式和高频更新场景。
 - [ ] 建立动效验收标准：不影响快速输入、不打断滚动、不改变焦点、不制造布局跳动、不对流式 token 更新逐帧重排。
 - [ ] 👤 需要用户参与：用真实使用路径录屏评审动效节奏，确认“顺滑但不花哨”。
 
 ### Priority 0: 全局动效基建
 
-- [x] 检查 `Packages/LumiUI/Sources/LumiUI/Components` 中已有 hover/press 动画，提取统一按钮、卡片、列表行反馈。
-- [x] 为 `AppButton`、`AppIconButton`、`GlassButton`、`AppListRow`、`AppTabBar` 统一 hover、press、selection 动效。（已接入 `GlassSelectionCard`、`GlassRow`）
-- [x] 为状态变化定义通用 transition：`.opacity`、轻微 `.scale`、`.move(edge:)` 的使用边界和默认参数。（已增加消息插入、disclosure 内容、status presentation 过渡）
 - [ ] 为所有无限循环动画添加可见性和 reduce-motion gating，避免后台或不可见面板持续动画。（LumiUI 组件硬编码 hover/status 动画已收敛，循环动画待单独扫描）
 - [ ] 增加一个轻量 `MotionDebugOverlay` 或日志开关，定位过度动画、重复动画和高频状态抖动。
 
 ### Priority 1: 主框架导航和面板切换
 
-- [x] 检查 `ContentView.swift`、`LeftBar.swift`、`RailView.swift`、`PanelContentView.swift`、`BottomPanelBarView.swift`。
-- [x] 为左侧栏选中态、Rail tab 选中态、底部面板出现/隐藏统一 spring/opacity 过渡。
 - [ ] 面板内容切换使用稳定身份和 `contentTransition`/opacity，避免整个树突兀重建。（已统一 Rail、主面板、底部面板 opacity transition）
 - [ ] 底部面板高度变化使用受控动画；拖动/连续 resize 时禁用动画，结束后再恢复。
-- [x] 主题切换背景动画限制在低频路径，避免 `themeVM.currentThemeId` 触发大面积重绘时掉帧。
 
 ### Priority 2: 聊天体验动效
 
 - [ ] 检查 `MessageListView.swift`、`StreamingAssistantRowView.swift`、`AssistantMessage.swift`、`UserMessage.swift`、`MessageWithToolCallsView.swift`。（已完成 `MessageListView`、`MessageWithToolCallsView`、`SpecialErrorView`、`ToolExecutionStatusCardView`、`ThinkingProcessView`、`MessageHeaderView`）
-- [x] 新消息插入使用轻量 fade+offset；历史消息恢复和首屏加载不播放逐条动画。
 - [ ] 流式消息正文更新不对每个 token 做布局动画，只对“开始回答、完成回答、工具状态变化”做状态动效。
-- [x] 工具调用卡片展开/折叠使用统一 disclosure 动效，保持内容高度变化可预测。
-- [x] 自动滚动区分用户主动滚动和模型流式更新；流式期间禁用不必要的 scroll animation。
-- [x] 权限请求、错误消息、完成分隔线使用一致的出现/消失 transition。
 
 ### Priority 3: 编辑器和开发者工作流动效
 
 - [ ] 检查 `SourceEditorView.swift`、`EditorCommandPaletteView.swift`、`EditorTabHeaderView.swift`、`EditorTabItemView.swift`、`BreadcrumbNavHeaderView.swift`。（已完成 `EditorTabItemView`、`BreadcrumbNavHeaderView`、`EditorCommandPaletteView` 滚动路径）
 - [ ] 编辑器 tab 新增、关闭、选中态增加稳定且不改变宽度的过渡。（已统一 hover/selection/close affordance 动效）
 - [ ] Command Palette 打开/关闭、搜索结果更新使用轻量 transition；快速输入搜索时禁用列表重排动画。（已接入 selection scroll motion preference）
-- [x] Breadcrumb hover、菜单、路径切换统一微交互反馈。
 - [ ] 编辑器 overlay（peek、inline rename、signature help、code action）恢复后统一进入/退出动画，并确保不遮挡光标和当前行。
 - [ ] 文件树/搜索结果/引用结果列表增加插入、删除、选中动效，但大结果集和批量刷新时禁用逐项动画。
 
@@ -106,8 +88,6 @@
 
 ### Priority 6: 可访问性和性能约束
 
-- [x] 接入 macOS Reduce Motion；开启后保留 opacity，禁用 scale、move、spring 和循环动画。
-- [x] 为低性能模式或大文件/大列表场景提供 `animation(nil)` 路径。
 - [ ] 对输入、流式聊天、编辑器滚动、窗口 resize 等高频路径设置“默认不动画，只在状态边界动画”的规则。
 - [ ] 👤 需要用户参与：在低端 Mac 或电池模式验证动效不会造成明显掉帧。
 - [ ] 👤 需要用户参与：验证 VoiceOver/键盘导航下焦点不因动画丢失。
@@ -195,32 +175,22 @@
 
 ### Phase 1: TreeSitter 解析优化 (高优先级)
 
-- [x] 调整 `TreeSitterClient.Constants.parserTimeout` 从 50ms 到 100ms，减少超时导致的重新解析
-- [x] 降低 `maxSyncContentLength` 从 1MB 到 500KB，避免大文件阻塞主线程
-- [x] 降低 `maxSyncEditLength` 从 1024 到 512，减少编辑操作的同步处理阈值
 - [ ] 优化异步任务调度：使用 `Task(priority: .utility)` 替代 `.userInitiated`，降低主线程争用
 - [ ] 实现增量语法树更新：只更新受影响的语法范围，避免全量重新解析
 - [ ] 添加 TreeSitter 解析性能监控：记录解析时间、取消次数、异步切换次数
 
 ### Phase 2: Highlighting 延迟更新 (高优先级)
 
-- [x] 为 `Highlighter.textStorage(_:didProcessEditing:)` 添加防抖机制（16ms 延迟，60fps）
-- [x] 优化 `visibleRangeProvider.visibleTextChanged()`：只在可见区域真正变化时触发
-- [x] 添加 `currentVisibleRange` 属性用于防抖比较
 - [ ] 实现 HighlightProvider 并行处理：使用 `TaskGroup` 并行执行多个 provider 的高亮查询
 - [ ] 添加高亮更新性能监控：记录更新频率、单次更新耗时、可见区域变化次数
 - [ ] 优化 `StyledRangeContainer.runsIn(range:)`：缓存最近查询结果，避免重复计算
 
 ### Phase 3: LineOffsetTable 增量更新 (中优先级)
 
-- [x] 实现 `LineOffsetTable.update(editRange:changeInLength:)` 增量更新方法
-- [x] 避免每次编辑都重建行偏移表，只更新受影响的行
-- [x] 优化行计数初始化：使用更高效的方法替代 `content.filter { $0 == "\n" }`
 - [ ] 添加行偏移表性能监控：记录重建次数、增量更新次数、查询命中率
 
 ### Phase 4: TextLayoutManager 布局优化 (中优先级)
 
-- [x] 调整 `verticalLayoutPadding` 从 350 到 200，减少不必要的预布局行数
 - [ ] 增加 View 复用池大小：从默认值增加到 200，减少视图创建开销
 - [ ] 优化 `layoutLines` 循环：跳过不需要重新布局的行，减少循环迭代次数
 - [ ] 实现布局结果缓存：缓存最近的布局结果，避免相同可见区域重复布局
@@ -300,102 +270,41 @@ case undoManagerSize = "undoManager.size"
 
 #### 1.1 EditorService Proto 层增加类型桥接
 
-- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorTypeBridge.swift`，重导出插件高频使用的模型类型（`MultiCursorState`、`EditorFindMatch`、`EditorRange`、`EditorSelection` 等）
-- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorTextViewBridge.swift`，封装插件需要的 `TextView` 操作为协议抽象（通过 `SuperEditorRuntimeContext` 等已有协议扩展）
-- [x] 在 `EditorService/Sources/Proto/` 中新增 `EditorLanguageBridge.swift`，重导出 `CodeLanguage` 等语言检测类型
 
 #### 1.2 逐批迁移 LSP 插件（纯模型依赖，风险最低）
 
-- [x] 迁移 `LSPFoldingRangeEditorPlugin`：移除 `EditorKernel` 直接依赖，改用 EditorService 桥接类型
-- [x] 迁移 `LSPSelectionRangeEditorPlugin`
-- [x] 迁移 `LSPDocumentColorEditorPlugin`
-- [x] 迁移 `LSPDocumentLinkEditorPlugin`
-- [x] 迁移 `LSPWorkspaceSymbolEditorPlugin`
-- [x] 迁移 `LSPCallHierarchyEditorPlugin`
 
 #### 1.3 迁移需要 TextView 的 LSP 插件（中风险）
 
-- [x] 迁移 `LSPCodeActionEditorPlugin`：同时依赖 `EditorKernel` + `EditorSource` + `EditorTextView`，通过 EditorService 协议抽象解耦
-- [x] 迁移 `LSPSignatureHelpEditorPlugin`
-- [x] 迁移 `LSPInlayHintEditorPlugin`
-- [x] 迁移 `LSPRealtimeSignalsPlugin`
-- [x] 迁移 `LSPDocumentHighlightEditorPlugin`
 
 #### 1.4 迁移语言/功能插件
 
-- [x] 迁移 `EditorMarkdownPlugin`：移除 `EditorLanguages` + `EditorTextView` 直接依赖
-- [x] 迁移 `EditorBreadcrumbNavPlugin`：移除 `EditorLanguages` 直接依赖
-- [x] 迁移 `EditorChatIntegrationPlugin`：移除 `EditorTextView` 直接依赖
-- [x] 迁移 `EditorGoPlugin` / `EditorJSPlugin` / `EditorVuePlugin` / `EditorHTMLPlugin`：移除 `EditorTextView` 直接依赖
-- [x] 迁移 `EditorMultiCursorCommandsPlugin`：移除 `EditorTextView` 直接依赖
-- [x] 迁移 `EditorLSPContextCommandsPlugin`：移除 `EditorTextView` 直接依赖
 
 #### 1.5 迁移核心 UI 插件
 
-- [x] 迁移 `EditorPanelPlugin`：当前同时依赖 `EditorKernel` + `EditorSource` + `EditorTextView` + `EditorLanguages`，是最重的消费者，需最后处理
 
 ### Phase 2: 拆分 EditorService 门面（高优先级）
 
 > 目标：将 874 行的 God Object 拆分为职责清晰的子门面。
 
-- [x] 抽取 `EditorFileService`（文件操作、加载、保存、大文件模式）约 15 个 API
-- [x] 抽取 `EditorSessionService`（会话、标签页管理、导航历史）约 15 个 API
-- [x] 抽取 `EditorEditingService`（光标、编辑、多光标、查找替换）约 10 个 API
-- [x] 抽取 `EditorNavigationService`（跳转定义/引用/符号、Peek）约 5 个 API
-- [x] 抽取 `EditorCommandService`（命令系统、命令面板、右键菜单）约 10 个 API
-- [x] 抽取 `EditorPanelService`（面板操作、底部面板）约 5 个 API
-- [x] 抽取 `EditorThemeService`（主题与外观配置）约 8 个 API
-- [x] 抽取 `EditorLSPService`（LSP 能力、诊断、格式化、语义）约 8 个 API
-- [x] `EditorService` 保留初始化、子门面组装和 `ObservableObject` 转发
-- [x] 在 `EditorService` 上保留便捷属性（向后兼容），逐版标记 deprecated
-- [x] 批量迁移插件/App 调用点至子门面（`editor.files.*` / `editor.sessions.*` 等）
-- [x] 移除 deprecated 平铺 API 及已无引用的 `EditorService+Forwarding.swift`
 
 ### Phase 3: 清理 EditorService/Kernel 桥接层（中优先级）
 
 > 目标：消除 5 个同名文件的冗余间接层。
 
-- [x] 合并 `EditorService/Sources/Kernel/LSPRequestPipeline.swift`（5 行 typealias）到消费方文件，直接 `import EditorKernel`
-- [x] 合并 `EditorService/Sources/Kernel/LSPViewportScheduler.swift`（3 行）同理
-- [x] 合并 `EditorService/Sources/Kernel/EditorLanguageActionFacade.swift`（6 行 extension）到对应的 Controller
-- [x] 合并 `EditorService/Sources/Kernel/EditorMultiCursorController.swift`（51 行 extension）到对应的 Controller
-- [x] 合并 `EditorService/Sources/Kernel/WorkspaceEditFileOperations.swift`（4 行 extension）同理
-- [x] 确认 `EditorService/Sources/Kernel/` 目录清理后无同名文件残留
 
 ### Phase 4: EditorKernel 内部目录分组（中优先级）
 
 > 目标：将 106 个扁平文件按领域分组到子目录，提升可读性和导航效率。
 
-- [x] 创建 `EditorKernel/Sources/Selection/`：选择集、多光标相关（~12 文件）
-- [x] 创建 `EditorKernel/Sources/FindReplace/`：查找替换相关（~8 文件）
-- [x] 创建 `EditorKernel/Sources/Save/`：保存工作流相关（~8 文件）
-- [x] 创建 `EditorKernel/Sources/Command/`：命令系统相关（~10 文件）
-- [x] 创建 `EditorKernel/Sources/Navigation/`：导航、Peek、折叠相关（~10 文件）
-- [x] 创建 `EditorKernel/Sources/LSP/`：LSP 请求模型与管线（~8 文件）
-- [x] 创建 `EditorKernel/Sources/Panel/`：面板模型（~5 文件）
-- [x] 创建 `EditorKernel/Sources/Foundation/`：基础类型（EditorRange、EditorTransaction、EditorBuffer 等 ~15 文件）
-- [x] 其余文件保留在 `EditorKernel/Sources/` 根目录或按需继续分组
-- [x] 更新 `Package.swift` 中的 `exclude` 和 `sources` 配置（如有必要）
 
 ### Phase 5: EditorSymbols 合并到 EditorSource（低优先级）
 
 > 目标：减少一个独立 Package，简化依赖树。
 
-- [x] 将 `EditorSymbols/Sources/EditorSymbols/Symbols.xcassets` 移入 `EditorSource/Sources/EditorSource/Symbols.xcassets`
-- [x] 将 `EditorSymbols/Sources/EditorSymbols/EditorSymbols.swift` 移入 `EditorSource/Sources/EditorSource/EditorSymbols.swift`
-- [x] 更新 `EditorSource/Package.swift`：移除对 `EditorSymbols` 的依赖，将资源声明改为 `Sources/EditorSource/Symbols.xcassets`
-- [x] 更新所有 `import EditorSymbols` 为 `import EditorSource`（仅 `EditorSource` 内部使用）
-- [x] 删除 `Packages/EditorSymbols` 目录
-- [x] 更新 `docs/editor-architecture.md` 的分层图和 Package 索引表
 
 ### 成功标准
 
-- [x] 所有 Editor/LSP 插件的 `Package.swift` 不再直接引用 `EditorKernel` / `EditorSource` / `EditorTextView` / `EditorLanguages`（`EditorPanelPlugin` 可作为最后里程碑特例处理）
-- [x] `EditorService.swift` 核心门面 < 200 行，每个子门面 100-200 行
-- [x] `EditorService/Sources/Kernel/` 无同名桥接文件
-- [x] `EditorKernel/Sources/` 按领域子目录组织，不再有 100+ 文件扁平排列
-- [x] Editor 相关 Package 数量从 6 个减少到 5 个（EditorSymbols 合并后）
-- [x] 底层包（EditorKernel / EditorTextView / EditorLanguages）的 API 变动只影响 EditorService，不波及任何插件
 
 ---
 
@@ -456,7 +365,6 @@ case undoManagerSize = "undoManager.size"
 
 - [ ] 编写单元测试：可用性 Store 并发写入安全性、状态查询准确性
 - [ ] 编写单元测试：路由过滤逻辑、评分排序、边界场景（无可用模型、所有模型不支持工具等）
-- [x] 验证：Auto 模式发消息，实际请求使用了路由选择的模型；手动模式行为不变
 - [ ] 验证：插件禁用后内核 Store 为空，App 正常运行（Auto 路由退化为默认行为）
 
 ### UI 完善
@@ -473,9 +381,7 @@ case undoManagerSize = "undoManager.size"
 
 ### Phase 7: 复杂度感知
 
-- [x] 消息长度分析（短消息偏向轻量模型）
 - [ ] 对话轮数感知（多轮复杂对话偏向强模型）
-- [x] 代码检测（消息包含代码块时偏向编程能力强的模型）
 
 ### Phase 8: 学习型路由
 
@@ -703,30 +609,18 @@ case undoManagerSize = "undoManager.size"
 
 ### Phase 1: LSP 基础
 
-- [x] GoLSPConfig: gopls 配置管理
-- [x] GoProjectDetector: go.mod 定位
-- [x] GoEnvResolver: GOPATH/GOROOT 解析
-- [x] GoCompletionPipeline: 补全策略定制
 
 ### Phase 2: 工程命令
 
-- [x] GoBuildCommand + GoBuildManager: go build 封装
-- [x] GoBuildOutputParser + GoBuildOutputView: 构建输出解析与面板
-- [x] GoFmtCommand、GoModCommand
 
 ### Phase 3: 测试系统
 
-- [x] GoTestCommand + GoTestManager、GoTestOutputParser
-- [x] GoTestResultView、Gutter 测试图标集成
 
 ### Phase 4: 体验打磨
 
-- [x] GoInlayHintPipeline、保存时自动格式化
-- [x] GoStatusBarIndicator、代码透镜
 
 ### Phase 5: 调试系统
 
-- [x] DelveAdapter: Delve DAP 适配
 
 ---
 
@@ -818,8 +712,6 @@ FileEditTool/
 
 ### 任务 1: 合并 API
 
-- [x] 将 `SuperPlugin` 协议中的 `addPanelIcon()` 和 `addPanelView(activeIcon:)` 合并成一个 `addViewContainer()` 方法
-- [x] 定义 `ViewContainerItem` 结构体：
   ```swift
   struct ViewContainerItem: Identifiable {
       let id: String
@@ -828,17 +720,11 @@ FileEditTool/
       let makeView: @MainActor () -> AnyView  // 闭包，延迟创建视图
   }
   ```
-- [x] 消除手动匹配 `activeIcon` 的样板代码
-- [x] 更新 `AppPluginVM` 中的聚合逻辑：
   - `getPanelIconItems()` → `getViewContainerItems()`
   - `getActivePanelItem()` → `getActiveViewContainer()`
 
 ### 任务 2: 统一 VS Code 风格命名
 
-- [x] 将 `PanelIconItem` 重命名为 `ViewContainerItem`
-- [x] 将 `PanelItem` 重命名为 `ViewContainerItem`（合并后只有一个类型）
-- [x] 更新所有相关变量名和方法名
-- [x] 保持与 VS Code 扩展 API 术语一致：
   | VS Code | Lumi |
   |---------|------|
   | Activity Bar | ActivityBar |
