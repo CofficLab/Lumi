@@ -120,8 +120,8 @@ private struct LumiCheckingProviderAdapter: LLMAvailabilityCheckingProvider {
             switch await provider.checkAvailability(model: model) {
             case .available:
                 return (true, nil)
-            case .unavailable(let reason):
-                return (false, reason)
+            case .unavailable(let failure):
+                return (false, failure)
             }
         }
     }

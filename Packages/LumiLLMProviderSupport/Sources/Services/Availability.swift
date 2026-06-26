@@ -69,18 +69,18 @@ enum LumiLLMProviderAvailabilitySupport {
         do {
             apiKeyValue = try resolveAPIKey()
         } catch {
-            return .unavailable(reason: LumiLLMProviderSupportLocalization.userFacingDescription(for: error))
+            return .unavailable( LumiLLMFailureDetailResolver.resolve(from: error))
         }
 
         guard let url = URL(string: baseURL) else {
-            return .unavailable(reason: "无效的 Base URL")
+            return .unavailable( .message("无效的 Base URL"))
         }
 
         let body: [String: Any]
         do {
             body = try buildRequestBody(model)
         } catch {
-            return .unavailable(reason: error.localizedDescription)
+            return .unavailable(.message(error.localizedDescription))
         }
 
         let httpRequest = buildRequest(url, apiKeyValue)
@@ -92,9 +92,8 @@ enum LumiLLMProviderAvailabilitySupport {
             )
             return .available
         } catch {
-            return .unavailable(
-                reason: LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-            )
+            let detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            return .unavailable( detail)
         }
     }
 }

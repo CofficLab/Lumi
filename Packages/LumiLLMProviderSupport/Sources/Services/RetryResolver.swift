@@ -4,7 +4,7 @@ import LLMKit
 import LLMProviderKit
 import LumiCoreKit
 
-public enum LumiLLMErrorDispositionResolver {
+public enum ErrorDispositionResolver {
     public static func disposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         if error is CancellationError {
             return .nonRetryable
@@ -91,9 +91,25 @@ public enum LumiLLMProviderErrorSupport {
         disposition: LumiLLMErrorDisposition,
         renderKind: String?
     ) -> LumiChatMessage {
-        let fullDetail = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-        let split = LumiLLMTransportDetails.split(fullDetail)
-        var metadata = LumiLLMTransportDetails.metadata(from: split)
+        let detail: LumiLLMFailureDetail
+        var metadata: [String: String] = [:]
+
+        if case let LumiLLMProviderSupportError.streamingFailed(message) = error {
+            let split = LumiLLMTransportDetails.split(message)
+            detail = LumiLLMFailureDetail(
+                summary: split.summary,
+                httpStatusCode: LumiLLMHTTPErrorParsing.statusCode(from: split.summary)
+                    ?? LumiLLMHTTPErrorParsing.statusCode(from: message),
+                transportDetails: nil
+            )
+            metadata = LumiLLMTransportDetails.metadata(from: split)
+        } else {
+            detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            if let transportDetails = detail.transportDetails {
+                metadata[LumiLLMTransportMetadata.responseDetails] = transportDetails
+            }
+        }
+
         metadata.merge(disposition.metadataEntries) { _, new in new }
         return LumiChatMessage(
             conversationID: conversationID,
@@ -102,7 +118,7 @@ public enum LumiLLMProviderErrorSupport {
             providerID: providerID,
             modelName: request.model,
             isError: true,
-            rawErrorDetail: split.summary,
+            rawErrorDetail: detail.summary.isEmpty ? detail.availabilityDisplayText : detail.summary,
             renderKind: renderKind,
             metadata: metadata
         )

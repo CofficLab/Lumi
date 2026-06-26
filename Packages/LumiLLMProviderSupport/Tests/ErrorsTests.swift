@@ -14,23 +14,12 @@ struct LumiLLMProviderSupportErrorTests {
         #expect(description.contains("API Key"))
     }
 
-    @Test func userFacingDescriptionIncludesHTTPStatusAndMessage() {
-        let error = HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
+    @Test func userFacingDescriptionIncludesResponseExcerpt() {
+        let error = HTTPClientError.httpError(statusCode: 401, message: "URL: https://example.com\nResponse: invalid_api_key")
         let description = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
 
-        #expect(description.contains("401"))
         #expect(description.contains("invalid_api_key"))
-    }
-
-    @Test func userFacingDescriptionUsesChineseHTTPPrefixForZhHansLocale() {
-        let error = HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
-        let description = LumiLLMProviderSupportLocalization.userFacingDescription(
-            for: error,
-            locale: Locale(identifier: "zh-Hans")
-        )
-
-        #expect(description.contains("HTTP 错误（401）"))
-        #expect(description.contains("invalid_api_key"))
+        #expect(!description.contains("HTTP 错误"))
     }
 
     @Test func userFacingDescriptionPassesThroughStreamingFailedMessage() {

@@ -4,8 +4,8 @@ import Foundation
 public enum LumiModelAvailabilityResult: Sendable, Equatable {
     /// 模型可用
     case available
-    /// 模型不可用，附带不可用原因
-    case unavailable(reason: String)
+    /// 模型不可用，附带结构化失败信息
+    case unavailable(LumiLLMFailureDetail)
 }
 
 /// 模型能力声明
@@ -101,6 +101,10 @@ public protocol LumiLLMProvider: Sendable {
     /// - Parameter model: 模型名称
     /// - Returns: 模型可用性检测结果
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult
+
+    /// 供应商为模型选择器等 UI 提供的当前状态说明（如缺少 API Key、套餐过期）。
+    /// 每个供应商都必须实现；无问题时返回 `nil`。
+    func providerStatus() -> LumiLLMProviderStatus?
 
     /// 供应商对单次失败的重试决策；子类可 override。
     func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition

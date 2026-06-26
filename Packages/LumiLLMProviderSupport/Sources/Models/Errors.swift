@@ -42,7 +42,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     open func lumiResolveAPIKey() throws -> String { try apiKey() }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        LumiLLMErrorDispositionResolver.disposition(for: error, context: context)
+        ErrorDispositionResolver.disposition(for: error, context: context)
     }
 
     open func errorRenderKind(for error: Error) -> String? {
@@ -75,6 +75,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         fatalError("\(Self.self) must override checkAvailability(model:)")
+    }
+
+    open func providerStatus() -> LumiLLMProviderStatus? {
+        fatalError("\(Self.self) must override providerStatus()")
     }
 
     open func sendStreaming(
@@ -169,7 +173,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            let summary = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            let detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            let summary = detail.summary.isEmpty ? (detail.transportDetails ?? error.localizedDescription) : detail.summary
             let detailed = await Self.attachTransportDetails(
                 summary: summary,
                 request: httpRequest,
@@ -181,11 +186,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
-            let enrichedError = await state.httpStatusCode.map { code in
-                LumiLLMProviderSupportLocalization.httpError(statusCode: code, message: error)
-            } ?? error
             let detailed = await Self.attachTransportDetails(
-                summary: enrichedError,
+                summary: error,
                 request: httpRequest,
                 requestBody: body,
                 state: state
@@ -421,7 +423,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     open func lumiResolveAPIKey() throws -> String { try apiKey() }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        LumiLLMErrorDispositionResolver.disposition(for: error, context: context)
+        ErrorDispositionResolver.disposition(for: error, context: context)
     }
 
     open func errorRenderKind(for error: Error) -> String? {
@@ -454,6 +456,10 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
     open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         fatalError("\(Self.self) must override checkAvailability(model:)")
+    }
+
+    open func providerStatus() -> LumiLLMProviderStatus? {
+        fatalError("\(Self.self) must override providerStatus()")
     }
 
     open func sendStreaming(
@@ -576,7 +582,8 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            let summary = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
+            let detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            let summary = detail.summary.isEmpty ? (detail.transportDetails ?? error.localizedDescription) : detail.summary
             let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
                 summary: summary,
                 request: httpRequest,
@@ -588,11 +595,8 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
         await state.saveCurrentToolCall()
         if let error = await state.streamError {
-            let enrichedError = await state.httpStatusCode.map { code in
-                LumiLLMProviderSupportLocalization.httpError(statusCode: code, message: error)
-            } ?? error
             let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
-                summary: enrichedError,
+                summary: error,
                 request: httpRequest,
                 requestBody: body,
                 state: state

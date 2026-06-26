@@ -438,7 +438,6 @@ public final class HTTPClient: @unchecked Sendable {
         guard (200 ... 299).contains(httpResponse.statusCode) else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
             let errorMessage = """
-            HTTP Error (\(httpResponse.statusCode))
             URL: \(response.url?.absoluteString ?? "Unknown")
             Response: \(errorString)
             """

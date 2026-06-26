@@ -191,6 +191,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         providerManager.modelName(for: conversationID)
     }
 
+    public func provider(forID id: String) -> (any LumiLLMProvider)? {
+        providerManager.provider(byID: id)
+    }
+
     public func setRoutingMode(_ mode: LumiModelRoutingMode) {
         providerManager.setRoutingMode(mode)
     }

@@ -8,7 +8,7 @@ public enum LLMAvailabilityStatus: Equatable, Sendable {
     case unknown
     case checking
     case available
-    case unavailable(String)
+    case unavailable(LumiLLMFailureDetail)
 }
 
 public struct LLMModelAvailability: Identifiable, Equatable, Sendable {

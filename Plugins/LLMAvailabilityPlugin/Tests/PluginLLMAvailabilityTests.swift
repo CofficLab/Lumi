@@ -44,7 +44,7 @@ struct LLMAvailabilityCheckerTests {
 
     @Test func lumiAdapterDelegatesToProviderCheckAvailability() async throws {
         let provider = AvailabilityMockLumiProvider(
-            checkResult: .unavailable(reason: "endpoint unreachable")
+            checkResult: .unavailable(.message("endpoint unreachable"))
         )
         let adapter = LumiProviderAvailabilityAdapter(providers: [provider])
         let providerInfo = adapter.allProviders()[0]
@@ -59,7 +59,7 @@ struct LLMAvailabilityCheckerTests {
             LLMAvailabilityStore.shared.status(
                 providerId: providerInfo.id,
                 modelId: providerInfo.defaultModel
-            ) == .unavailable("endpoint unreachable")
+            ) == .unavailable(.message("endpoint unreachable"))
         )
     }
 }
@@ -124,5 +124,9 @@ private struct AvailabilityMockLumiProvider: LumiLLMProvider {
 
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         checkResult
+    }
+
+    func providerStatus() -> LumiLLMProviderStatus? {
+        nil
     }
 }

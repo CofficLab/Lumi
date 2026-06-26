@@ -2,6 +2,7 @@ import AgentToolKit
 import Foundation
 import LLMKit
 import LLMProviderKit
+import LumiCoreKit
 import os
 
 /// LLM 可用性检测服务
@@ -24,7 +25,9 @@ public final class LLMAvailabilityChecker {
         public let providerId: String
         public let modelId: String
         public let isAvailable: Bool
-        public let reason: String?
+        public let failure: LumiLLMFailureDetail?
+
+        public var reason: String? { failure?.logSummary }
     }
 
     // MARK: - 全量检测
@@ -71,18 +74,18 @@ public final class LLMAvailabilityChecker {
     @discardableResult
     public func checkModel(providerId: String, modelId: String) async -> ModelCheckResult {
         guard let providerType = llmService.providerType(forId: providerId) else {
-            let msg = "供应商 `\(providerId)` 未注册"
-            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+            let failure = Self.messageFailure("供应商 `\(providerId)` 未注册")
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
         }
 
         let providerInfo = llmService.allProviders().first { $0.id == providerId }
         let isLocal = providerInfo?.isLocal ?? false
 
         if !providerType.hasApiKey && !isLocal {
-            let msg = "未配置凭证"
-            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+            let failure = Self.messageFailure("未配置凭证")
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
         }
 
         // 委托给内部实现
@@ -108,7 +111,11 @@ public final class LLMAvailabilityChecker {
                 }
             }
             for modelId in info.availableModels {
-                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("供应商类型未找到"))
+                store.updateStatus(
+                    providerId: providerId,
+                    modelId: modelId,
+                    status: .unavailable(Self.messageFailure("供应商类型未找到"))
+                )
             }
             return
         }
@@ -120,7 +127,11 @@ public final class LLMAvailabilityChecker {
                 }
             }
             for modelId in info.availableModels {
-                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置凭证"))
+                store.updateStatus(
+                    providerId: providerId,
+                    modelId: modelId,
+                    status: .unavailable(Self.messageFailure("未配置凭证"))
+                )
             }
             return
         }
@@ -146,9 +157,9 @@ public final class LLMAvailabilityChecker {
 
         // 从供应商获取检测策略
         guard let provider = llmService.createProvider(id: providerId) else {
-            let msg = "供应商 `\(providerId)` 未注册"
-            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(msg))
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: msg)
+            let failure = Self.messageFailure("供应商 `\(providerId)` 未注册")
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
         }
 
         let strategy = provider.availabilityCheckStrategy(forModel: modelId)
@@ -162,7 +173,7 @@ public final class LLMAvailabilityChecker {
                     LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（apiKeyOnly 策略）: \(providerId) / \(modelId)")
                 }
             }
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
 
         case .chatPing(let maxTokens):
             return await performChatPing(
@@ -174,18 +185,24 @@ public final class LLMAvailabilityChecker {
         case .custom(let check):
             let credential = llmService.providerType(forId: providerId)?.getApiKey() ?? ""
             let result = await check(credential, modelId)
-            let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(result.reason ?? "检测失败")
+            let failure = result.failure ?? Self.messageFailure("检测失败")
+            let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(failure)
             store.updateStatus(providerId: providerId, modelId: modelId, status: status)
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
                     if result.isAvailable {
                         LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（custom 策略）: \(providerId) / \(modelId)")
                     } else {
-                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用（custom 策略）: \(providerId) / \(modelId) - \(result.reason ?? "")")
+                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用（custom 策略）: \(providerId) / \(modelId) - \(failure.logSummary)")
                     }
                 }
             }
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: result.isAvailable, reason: result.reason)
+            return ModelCheckResult(
+                providerId: providerId,
+                modelId: modelId,
+                isAvailable: result.isAvailable,
+                failure: result.isAvailable ? nil : failure
+            )
         }
     }
 
@@ -218,7 +235,7 @@ public final class LLMAvailabilityChecker {
                 }
             }
 
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
         } catch let error as LLMServiceError {
             switch error {
             case .cancelled:
@@ -229,26 +246,30 @@ public final class LLMAvailabilityChecker {
                     }
                 }
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
-                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, reason: nil)
+                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
             default:
-                let reason = error.errorDescription ?? error.localizedDescription
+                let failure = Self.messageFailure(error.errorDescription ?? error.localizedDescription)
                 if Self.verbose {
                     if LLMAvailabilityPlugin.verbose {
-                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(reason)")
+                        LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(failure.logSummary)")
                     }
                 }
-                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
-                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
+                return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
             }
         } catch {
-            let reason = error.localizedDescription
+            let failure = Self.messageFailure(error.localizedDescription)
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
-                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(reason)")
+                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(failure.logSummary)")
                 }
             }
-            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(reason))
-            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, reason: reason)
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
         }
+    }
+
+    private static func messageFailure(_ message: String) -> LumiLLMFailureDetail {
+        .message(message)
     }
 }
