@@ -1,7 +1,6 @@
 import LumiCoreKit
 
 enum ZhipuRenderKind {
-    static let prefix = "zhipu-"
     static let apiKeyMissing = "zhipu-api-key-missing"
     static let requestFailed = "zhipu-request-failed"
 

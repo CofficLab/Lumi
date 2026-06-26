@@ -1,7 +1,6 @@
 import LumiUI
 import SwiftUI
 
-/// 智谱供应商标记（显示在自定义消息界面右上角）
 struct ProviderBadge: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 

@@ -7,18 +7,17 @@ enum QuotaService {
     private static let timeout: TimeInterval = 5.0
 
     /// 获取配额信息
-    /// - Returns: 配额结果
-    static func fetchQuota() async -> (status: QuotaStatus, data: QuotaData?) {
+    static func fetchQuota() async -> QuotaStatus {
         // 获取 API Key
         let apiKey = ZhipuProvider.getApiKey()
         guard !apiKey.isEmpty else {
-            return (.authError, nil)
+            return .authError
         }
 
         let quotaURL = "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
 
         guard let url = URL(string: quotaURL) else {
-            return (.unavailable, nil)
+            return .unavailable
         }
 
         var request = URLRequest(url: url)
@@ -35,22 +34,22 @@ enum QuotaService {
             // 解析 JSON
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             guard let payload = json else {
-                return (.unavailable, nil)
+                return .unavailable
             }
 
             // 检查 success 字段
             if payload["success"] as? Bool != true {
                 let code = payload["code"] as? Int
                 if code == 1001 || code == 401 {
-                    return (.authError, nil)
+                    return .authError
                 }
-                return (.unavailable, nil)
+                return .unavailable
             }
 
             // 提取配额数据
             guard let dataDict = payload["data"] as? [String: Any],
                   let limits = dataDict["limits"] as? [[String: Any]] else {
-                return (.unavailable, nil)
+                return .unavailable
             }
 
             // 查找 5 小时滚动窗口限制（TOKENS_LIMIT, number=5）
@@ -81,7 +80,7 @@ enum QuotaService {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                return (.success(quotaData), nil)
+                return .success(quotaData)
             }
 
             // 备用方案：如果 TOKENS_LIMIT 不存在，使用 TIME_LIMIT 计算
@@ -109,20 +108,20 @@ enum QuotaService {
                     mcpLeftPercent: mcpLeftPercent,
                     mcpNextResetTime: mcpNextResetTime
                 )
-                return (.success(quotaData), nil)
+                return .success(quotaData)
             }
 
-            return (.unavailable, nil)
+            return .unavailable
 
         } catch let error as HTTPClientError {
             if case let .httpError(statusCode, _) = error {
                 if statusCode == 401 || statusCode == 1001 {
-                    return (.authError, nil)
+                    return .authError
                 }
             }
-            return (.unavailable, nil)
+            return .unavailable
         } catch {
-            return (.unavailable, nil)
+            return .unavailable
         }
     }
 }

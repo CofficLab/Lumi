@@ -21,7 +21,6 @@ struct HttpErrorView: View {
         let raw = ((message.rawErrorDetail?.isEmpty == false) ? message.rawErrorDetail : message.content) ?? ""
         var text = raw.components(separatedBy: Self.transportDetailsSeparator).first ?? raw
 
-        // Strip "HTTP <code> " prefix since it's shown in the title
         if let code = statusCode {
             let prefix = "HTTP \(code) "
             if text.hasPrefix(prefix) {

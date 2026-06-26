@@ -141,14 +141,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
 
     static func errorMessage(conversationID: UUID, error: Error) -> LumiChatMessage {
         let fullDetail = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-        let split = splitTransportDetails(fullDetail)
-        var metadata: [String: String] = [:]
-        if let request = split.requestDetails, !request.isEmpty {
-            metadata["llm.transport.request"] = request
-        }
-        if let response = split.responseDetails, !response.isEmpty {
-            metadata["llm.transport.response"] = response
-        }
+        let split = LumiLLMTransportDetails.split(fullDetail)
         return LumiChatMessage(
             conversationID: conversationID,
             role: .error,
@@ -157,33 +150,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
             isError: true,
             rawErrorDetail: split.summary,
             renderKind: renderKind(for: error),
-            metadata: metadata
-        )
-    }
-
-    private static func splitTransportDetails(_ fullDetail: String) -> (summary: String, requestDetails: String?, responseDetails: String?) {
-        let separator = "\n\n--- Request / Response Details ---\n"
-        guard let separatorRange = fullDetail.range(of: separator) else {
-            return (summary: fullDetail, requestDetails: nil, responseDetails: nil)
-        }
-
-        let summary = String(fullDetail[..<separatorRange.lowerBound])
-        let detailsBlock = String(fullDetail[separatorRange.upperBound...])
-        guard let responseRange = detailsBlock.range(of: "Response Status:") else {
-            let request = detailsBlock.trimmingCharacters(in: .whitespacesAndNewlines)
-            return (
-                summary: summary,
-                requestDetails: request.isEmpty ? nil : request,
-                responseDetails: nil
-            )
-        }
-
-        let request = String(detailsBlock[..<responseRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let response = String(detailsBlock[responseRange.lowerBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-        return (
-            summary: summary,
-            requestDetails: request.isEmpty ? nil : request,
-            responseDetails: response.isEmpty ? nil : response
+            metadata: LumiLLMTransportDetails.metadata(from: split)
         )
     }
 
