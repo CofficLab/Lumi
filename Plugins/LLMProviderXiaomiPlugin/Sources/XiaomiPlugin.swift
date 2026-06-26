@@ -8,12 +8,23 @@ public enum XiaomiPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.xiaomi",
         displayName: LumiPluginLocalization.string("Xiaomi", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes Xiaomi models to Lumi Chat.", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Xiaomi TokenPlan and Xiaomi API (OpenAI-compatible) models to Lumi Chat.", bundle: .module),
         order: 102
     )
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [XiaomiProvider()]
+        [XiaomiProvider(), XiaomiAPIProvider()]
+    }
+
+    @MainActor
+    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+        [
+            ApiKeyMissingRenderer.item,
+            Http401Renderer.item,
+            Http403Renderer.item,
+            HttpErrorRenderer.item,
+            RequestFailedRenderer.item,
+        ]
     }
 }

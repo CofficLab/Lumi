@@ -3,17 +3,27 @@ import Testing
 
 struct PluginLLMProviderXiaomiTests {
     @Test func pluginMetadata() {
-        #expect(XiaomiPlugin.id.isEmpty == false)
-        #expect(XiaomiPlugin.displayName.isEmpty == false)
-        #expect(XiaomiPlugin.description.isEmpty == false)
+        #expect(XiaomiPlugin.info.id.isEmpty == false)
+        #expect(XiaomiPlugin.info.displayName.isEmpty == false)
+        #expect(XiaomiPlugin.info.description.isEmpty == false)
         #expect(XiaomiPlugin.iconName.isEmpty == false)
         #expect(XiaomiPlugin.category == .llmProvider)
-        #expect(XiaomiPlugin.shared.llmProviderType() == XiaomiProvider.self)
     }
 
     @Test func providerMetadata() {
-        #expect(XiaomiProvider.id.isEmpty == false)
-        #expect(XiaomiProvider.displayName.isEmpty == false)
-        #expect(XiaomiProvider.defaultModel.isEmpty == false)
+        #expect(XiaomiProvider.info.id == "xiaomi")
+        #expect(XiaomiProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiProvider.info.defaultModel.isEmpty == false)
+    }
+
+    @Test func apiProviderMetadata() {
+        #expect(XiaomiAPIProvider.info.id == "xiaomi-api")
+        #expect(XiaomiAPIProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiAPIProvider.info.defaultModel.isEmpty == false)
+    }
+
+    @Test func providersUseDistinctAPIKeyStorage() {
+        // TokenPlan 与小米 API 是独立服务，API Key 必须分开存储
+        #expect(XiaomiProvider.apiKeyStorageKey != XiaomiAPIProvider.apiKeyStorageKey)
     }
 }

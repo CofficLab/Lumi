@@ -41,7 +41,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         adapter.buildRequest(url: url, apiKey: apiKey)
     }
 
-    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+    open func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }
 
@@ -80,7 +80,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
     }
 
-    public func sendStreaming(
+    open func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {

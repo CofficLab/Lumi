@@ -1,30 +1,30 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Contributes Xiaomi models to Lumi Chat.": {
+    "Contributes Xiaomi TokenPlan and Xiaomi API (OpenAI-compatible) models to Lumi Chat.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes Xiaomi models to Lumi Chat."
+            "value": "Contributes Xiaomi TokenPlan and Xiaomi API (OpenAI-compatible) models to Lumi Chat."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为 Lumi Chat 贡献 Xiaomi 模型。"
+            "value": "为 Lumi Chat 贡献小米 TokenPlan 与小米 API（OpenAI 兼容）模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "為 Lumi Chat 貢獻 Xiaomi 模型。"
+            "value": "為 Lumi Chat 貢獻小米 TokenPlan 與小米 API（OpenAI 相容）模型。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "為 Lumi Chat 貢獻 Xiaomi 模型。"
+            "value": "為 Lumi Chat 貢獻小米 TokenPlan 與小米 API（OpenAI 相容）模型。"
           }
         }
       }
@@ -63,36 +63,630 @@
         }
       }
     },
-    "Xiaomi AI Models": {
+    "Xiaomi API": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Xiaomi AI Models"
+            "value": "Xiaomi API"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "小米 AI 模型"
+            "value": "小米API"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "小米 AI 模型"
+            "value": "小米API"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "小米 AI 模型"
+            "value": "小米API"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "小米 AI 模型"
+            "value": "小米API"
+          }
+        }
+      }
+    },
+    "Xiaomi API (OpenAI-compatible)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xiaomi API (OpenAI-compatible)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米API（OpenAI 兼容）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米API（OpenAI 相容）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米API（OpenAI 相容）"
+          }
+        }
+      }
+    },
+    "Xiaomi TokenPlan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xiaomi TokenPlan"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米TokenPlan"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米TokenPlan"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米TokenPlan"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米TokenPlan"
+          }
+        }
+      }
+    },
+    "Xiaomi TokenPlan AI Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xiaomi TokenPlan AI Models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 TokenPlan AI 模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 TokenPlan AI 模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 TokenPlan AI 模型"
+          }
+        }
+      }
+    },
+    "%@ API Key required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ API Key required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要配置 %@ 的 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要設定 %@ 的 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要設定 %@ 的 API Key"
+          }
+        }
+      }
+    },
+    "Configure your Xiaomi API Key below, then resend your message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure your Xiaomi API Key below, then resend your message."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在下方配置小米 API Key，然后重新发送消息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在下方設定小米 API Key，然後重新發送訊息。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在下方設定小米 API Key，然後重新發送訊息。"
+          }
+        }
+      }
+    },
+    "Get API Key on Xiaomi MIMO Platform": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get API Key on Xiaomi MIMO Platform"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在小米 MIMO 平台获取 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在小米 MIMO 平台取得 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在小米 MIMO 平台取得 API Key"
+          }
+        }
+      }
+    },
+    "Enter API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 API Key"
+          }
+        }
+      }
+    },
+    "Show API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API Key"
+          }
+        }
+      }
+    },
+    "Hide API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API Key"
+          }
+        }
+      }
+    },
+    "Error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
+          }
+        }
+      }
+    },
+    "Request / Response Details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request / Response Details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求 / 响应详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求 / 回應詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求 / 回應詳情"
+          }
+        }
+      }
+    },
+    "Raw error details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raw error details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始错误详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始錯誤詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始錯誤詳情"
+          }
+        }
+      }
+    },
+    "Show request and response details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show request and response details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示请求和响应详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示請求和回應詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示請求和回應詳情"
+          }
+        }
+      }
+    },
+    "Show raw error details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show raw error details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示原始错误详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示原始錯誤詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示原始錯誤詳情"
+          }
+        }
+      }
+    },
+    "Sending Data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending Data"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送資料"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送資料"
+          }
+        }
+      }
+    },
+    "Received Data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received Data"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收資料"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收資料"
+          }
+        }
+      }
+    },
+    "API": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API"
+          }
+        }
+      }
+    },
+    "TokenPlan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TokenPlan"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TokenPlan"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TokenPlan"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TokenPlan"
+          }
+        }
+      }
+    },
+    "Xiaomi HTTP %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xiaomi HTTP %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 HTTP %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 HTTP %lld"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米 HTTP %lld"
+          }
+        }
+      }
+    },
+    "Xiaomi request failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xiaomi request failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米请求失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米請求失敗"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小米請求失敗"
           }
         }
       }

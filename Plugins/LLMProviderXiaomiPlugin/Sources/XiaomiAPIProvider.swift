@@ -2,22 +2,27 @@ import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+/// 小米 API（OpenAI 兼容协议）
+///
+/// 与 `XiaomiProvider`（TokenPlan 计费入口）同属小米 mimo 系列，但走标准的
+/// OpenAI 兼容接口（`https://api.xiaomimimo.com/v1`），使用独立的 API Key 与计费。
+/// 两者模型清单一致，方便用户在「按 Token 计费」与「标准 API」间切换。
+public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
     /// 获取 API Key 的帮助页面（小米 MIMO 开放平台）。
     public static let apiKeyHelpURL: String? = "https://platform.xiaomimimo.com/"
 
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
-            id: "xiaomi",
-            displayName: LumiPluginLocalization.string("Xiaomi TokenPlan", bundle: .module),
-            description: LumiPluginLocalization.string("Xiaomi TokenPlan AI Models", bundle: .module),
+            id: "xiaomi-api",
+            displayName: LumiPluginLocalization.string("Xiaomi API", bundle: .module),
+            description: LumiPluginLocalization.string("Xiaomi API (OpenAI-compatible)", bundle: .module),
             defaultModel: "mimo-v2.5-pro",
             availableModels: [
-            "mimo-v2.5-pro",
-            "mimo-v2.5",
-            "mimo-v2.5-tts",
-            "mimo-v2.5-tts-voiceclone",
-            "mimo-v2.5-tts-voicedesign"
+                "mimo-v2.5-pro",
+                "mimo-v2.5",
+                "mimo-v2.5-tts",
+                "mimo-v2.5-tts-voiceclone",
+                "mimo-v2.5-tts-voicedesign"
             ],
             contextWindowSizes: [
                 "mimo-v2.5-pro": 1_000_000,
@@ -38,18 +43,18 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
     }
 
     public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_Xiaomi"
+        "DevAssistant_ApiKey_XiaomiAPI"
     }
 
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(
-            baseURL: "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
-            additionalHeaders: [:],
-            includeUsageInStreamOptions: false,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false
-        )
+                baseURL: "https://api.xiaomimimo.com/v1/chat/completions",
+                additionalHeaders: [:],
+                includeUsageInStreamOptions: false,
+                returnsEmptyChunkWhenNoDelta: false,
+                acceptsFunctionScopedToolCallID: false
+            )
         )
     }
 
