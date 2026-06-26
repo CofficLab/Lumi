@@ -60,7 +60,7 @@ public struct AppBarChart: View {
                     let ratio = CGFloat(bar.value) / CGFloat(peak)
                     let height = max(Self.barMinHeight, ratio * proxy.size.height)
 
-                    Capsule()
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(barColor(for: bar))
                         .frame(width: barWidth, height: height)
                         .help(bar.tooltip)
