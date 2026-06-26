@@ -4,7 +4,10 @@ import LumiUI
 import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
-public struct NodeView: View {
+public struct NodeView: View, Equatable {
+    /// 默认图标主题贡献器（无状态，可复用）
+    private static let defaultIconContributor = LumiDefaultFileIconThemeContributor()
+    
     @EnvironmentObject private var editorContext: EditorContext
     @EnvironmentObject private var selectionState: SelectionState
     @LumiTheme private var uiTheme
@@ -31,6 +34,14 @@ public struct NodeView: View {
 
     /// Git 状态快照（由协调器提供，节点视图只读查询）
     public let gitStatusSnapshot: GitStatusSnapshot
+
+    /// 精准刷新令牌：协调器检测到具体目录变化时递增。
+    /// 节点结合 `changedDirectoryPaths` 判断自身是否需要 reload，避免全树重载。
+    public let targetedRefreshToken: Int
+
+    /// 最近一次精准刷新命中的目录绝对路径集合（标准化后）。
+    /// 节点仅当自身 url 命中此集合时才 reloadChildren。
+    public let changedDirectoryPaths: Set<String>
 
     /// 本地展开状态
     @State private var isExpanded: Bool = false
@@ -74,9 +85,26 @@ public struct NodeView: View {
     /// 文件图标解析元数据（启动时缓存，避免 body 求值时反复调 FileManager）
     private let iconMetadata: FileTreeIconMetadata
 
+    /// Git 相对路径（启动时缓存，避免 body 求值时反复调 PathFormatter）
+    private let gitRelativePath: String
+
     /// 文件名（不含路径）
     private var fileName: String {
         url.lastPathComponent
+    }
+
+    // MARK: - Equatable
+
+    public nonisolated static func == (lhs: NodeView, rhs: NodeView) -> Bool {
+        // 只比较影响视图渲染的外部属性，闭包属性不参与比较
+        return lhs.url == rhs.url
+            && lhs.depth == rhs.depth
+            && lhs.refreshToken == rhs.refreshToken
+            && lhs.targetedRefreshToken == rhs.targetedRefreshToken
+            && lhs.changedDirectoryPaths == rhs.changedDirectoryPaths
+            && lhs.gitStatusSnapshot == rhs.gitStatusSnapshot
+            && lhs.windowId == rhs.windowId
+            && lhs.projectRootPath == rhs.projectRootPath
     }
 
     // MARK: - Init
@@ -90,7 +118,9 @@ public struct NodeView: View {
         projectRootPath: String = "",
         onExpansionChange: ((String, Bool) -> Void)? = nil,
         onTreeMutation: (() -> Void)? = nil,
-        gitStatusSnapshot: GitStatusSnapshot = .empty
+        gitStatusSnapshot: GitStatusSnapshot = .empty,
+        targetedRefreshToken: Int = 0,
+        changedDirectoryPaths: Set<String> = []
     ) {
         self.url = url
         self.depth = depth
@@ -101,6 +131,8 @@ public struct NodeView: View {
         self.onExpansionChange = onExpansionChange
         self.onTreeMutation = onTreeMutation
         self.gitStatusSnapshot = gitStatusSnapshot
+        self.targetedRefreshToken = targetedRefreshToken
+        self.changedDirectoryPaths = changedDirectoryPaths
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = FileTreeFacade.isDirectory(url)
@@ -112,6 +144,9 @@ public struct NodeView: View {
                 atPath: url.appendingPathComponent("Package.swift", isDirectory: false).path
             )
         )
+
+        // 在 init 时一次性缓存 Git 相对路径，避免 body 求值时反复调 PathFormatter
+        self.gitRelativePath = PathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
@@ -125,126 +160,139 @@ public struct NodeView: View {
 
     public var body: some View {
         let isSelected = selectionState.isSelected(url)
-        guard let chrome = editorContext.activeChromeTheme else {
-            return AnyView(Color.clear)
-        }
+        let icon = resolvedIcon
+        let gitStatus = currentGitStatus
+        Group {
+            if let chrome = editorContext.activeChromeTheme {
+                VStack(alignment: .leading, spacing: 0) {
+                    rowContent(isSelected: isSelected, icon: icon, gitStatus: gitStatus, chrome: chrome)
 
-        return AnyView(
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
-                    if isDirectory {
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(uiTheme.textTertiary)
-                            .frame(width: 12)
-                    } else {
-                        Color.clear.frame(width: 12)
-                    }
-
-                    fileIconView(resolvedIcon)
-                        .font(.system(size: 12))
-                        .foregroundColor(isDirectory ? uiTheme.primary : uiTheme.textSecondary)
-                        .frame(width: 16)
-
-                    Text(fileName)
-                        .font(.appCaption)
-                        .foregroundColor(uiTheme.textPrimary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if let gitStatus = currentGitStatus {
-                        Text(gitStatus.displayLetter)
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected))
-                            .frame(width: 16, alignment: .trailing)
-                            .help(gitStatus.tooltip)
-                    }
-                }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 6)
-                .padding(.leading, CGFloat(depth) * 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(rowBackground(isSelected: isSelected, chrome: chrome))
-                .contentShape(Rectangle())
-                .onDrag {
-                    NSItemProvider(object: url.path as NSString)
-                } preview: {
-                    FileTreeDragPreview(fileURL: url)
-                }
-                .contextMenu { contextMenuContent }
-                .onTapGesture { handleTap() }
-                .onHover { hovering in isHovering = hovering }
-                .confirmationDialog(
-                    deleteConfirmationTitle,
-                    isPresented: $showDeleteConfirmation,
-                    titleVisibility: .visible
-                ) {
-                    Button(deleteConfirmationActionLabel, role: .destructive) { deleteItems() }
-                    Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
-                } message: {
-                    Text(deleteConfirmationMessage)
-                }
-                .alert(LumiPluginLocalization.string("New File", bundle: .module), isPresented: $showNewFileSheet) {
-                    TextField(LumiPluginLocalization.string("File name", bundle: .module), text: $newItemName)
-                    Button(LumiPluginLocalization.string("Create", bundle: .module)) { createNewFile() }
-                    Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
-                } message: { Text(LumiPluginLocalization.string("Enter the name for the new file.", bundle: .module)) }
-                .alert(LumiPluginLocalization.string("New Folder", bundle: .module), isPresented: $showNewFolderSheet) {
-                    TextField(LumiPluginLocalization.string("Folder name", bundle: .module), text: $newItemName)
-                    Button(LumiPluginLocalization.string("Create", bundle: .module)) { createNewFolder() }
-                    Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
-                } message: { Text(LumiPluginLocalization.string("Enter the name for the new folder.", bundle: .module)) }
-                .alert(LumiPluginLocalization.string("Rename", bundle: .module), isPresented: $showRenameSheet) {
-                    TextField(LumiPluginLocalization.string("New name", bundle: .module), text: $newItemName)
-                    Button(LumiPluginLocalization.string("Rename", bundle: .module)) { renameItem() }
-                    Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
-                } message: { Text(LumiPluginLocalization.string("Enter the new name for this item.", bundle: .module)) }
-
-                if isDirectory && isExpanded {
-                    if children.isEmpty {
-                        if isLoadingChildren {
-                            EditorFileTreeLoadingView(depth: depth + 1)
-                        } else if hasLoadedChildren {
-                            EditorFileTreeEmptyView(depth: depth + 1)
-                        }
-                    } else {
-                        VStack(spacing: 2) {
-                            ForEach(children, id: \.self) { childURL in
-                                NodeView(
-                                    url: childURL,
-                                    depth: depth + 1,
-                                    onSelect: onSelect,
-                                    windowId: windowId,
-                                    refreshToken: refreshToken,
-                                    projectRootPath: projectRootPath,
-                                    onExpansionChange: onExpansionChange,
-                                    onTreeMutation: onTreeMutation,
-                                    gitStatusSnapshot: gitStatusSnapshot
-                                )
+                    if isDirectory && isExpanded {
+                        if children.isEmpty {
+                            if isLoadingChildren {
+                                EditorFileTreeLoadingView(depth: depth + 1)
+                            } else if hasLoadedChildren {
+                                EditorFileTreeEmptyView(depth: depth + 1)
+                            }
+                        } else {
+                            VStack(spacing: 2) {
+                                ForEach(children, id: \.self) { childURL in
+                                    NodeView(
+                                        url: childURL,
+                                        depth: depth + 1,
+                                        onSelect: onSelect,
+                                        windowId: windowId,
+                                        refreshToken: refreshToken,
+                                        projectRootPath: projectRootPath,
+                                        onExpansionChange: onExpansionChange,
+                                        onTreeMutation: onTreeMutation,
+                                        gitStatusSnapshot: gitStatusSnapshot,
+                                        targetedRefreshToken: targetedRefreshToken,
+                                        changedDirectoryPaths: changedDirectoryPaths
+                                    )
+                                    .equatable()
+                                }
                             }
                         }
                     }
                 }
-            }
-            .onAppear {
-                selectionState.trackVisible(url)
-                if isDirectory && isExpanded && children.isEmpty {
-                    loadChildren()
+                .onAppear {
+                    selectionState.trackVisible(url)
+                    if isDirectory && isExpanded && children.isEmpty {
+                        loadChildren()
+                    }
+                    if isDirectory && isExpanded {
+                        notifyExpansionChanged(isExpanded: true)
+                    }
                 }
-                if isDirectory && isExpanded {
-                    notifyExpansionChanged(isExpanded: true)
+                .onChange(of: refreshToken) { _, newValue in
+                    handleRefreshTokenChange(newValue)
                 }
+                .onChange(of: targetedRefreshToken) { _, _ in
+                    handleTargetedRefresh()
+                }
+                .onDisappear {
+                    selectionState.untrackVisible(url)
+                    loadChildrenTask?.cancel()
+                    loadChildrenTask = nil
+                }
+            } else {
+                Color.clear
             }
-            .onChange(of: refreshToken) { _, newValue in
-                handleRefreshTokenChange(newValue)
+        }
+    }
+
+    @ViewBuilder
+    private func rowContent(isSelected: Bool, icon: LumiFileIcon, gitStatus: GitStatus?, chrome: any LumiAppChromeTheme) -> some View {
+        HStack(spacing: 4) {
+            if isDirectory {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(uiTheme.textTertiary)
+                    .frame(width: 12)
+            } else {
+                Color.clear.frame(width: 12)
             }
-            .onDisappear {
-                selectionState.untrackVisible(url)
-                loadChildrenTask?.cancel()
-                loadChildrenTask = nil
+
+            fileIconView(icon)
+                .font(.system(size: 12))
+                .foregroundColor(isDirectory ? uiTheme.primary : uiTheme.textSecondary)
+                .frame(width: 16)
+
+            Text(fileName)
+                .font(.appCaption)
+                .foregroundColor(uiTheme.textPrimary)
+                .lineLimit(1)
+
+            Spacer()
+
+            if let gitStatus = gitStatus {
+                Text(gitStatus.displayLetter)
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundColor(gitStatusColor(gitStatus, isSelected: isSelected))
+                    .frame(width: 16, alignment: .trailing)
+                    .help(gitStatus.tooltip)
             }
-        )
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.leading, CGFloat(depth) * 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(rowBackground(isSelected: isSelected, chrome: chrome))
+        .contentShape(Rectangle())
+        .onDrag {
+            NSItemProvider(object: url.path as NSString)
+        } preview: {
+            FileTreeDragPreview(fileURL: url, isDirectory: isDirectory)
+        }
+        .contextMenu { contextMenuContent }
+        .onTapGesture { handleTap() }
+        .onHover { hovering in isHovering = hovering }
+        .confirmationDialog(
+            deleteConfirmationTitle,
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(deleteConfirmationActionLabel, role: .destructive) { deleteItems() }
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
+        } message: {
+            Text(deleteConfirmationMessage)
+        }
+        .alert(LumiPluginLocalization.string("New File", bundle: .module), isPresented: $showNewFileSheet) {
+            TextField(LumiPluginLocalization.string("File name", bundle: .module), text: $newItemName)
+            Button(LumiPluginLocalization.string("Create", bundle: .module)) { createNewFile() }
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
+        } message: { Text(LumiPluginLocalization.string("Enter the name for the new file.", bundle: .module)) }
+        .alert(LumiPluginLocalization.string("New Folder", bundle: .module), isPresented: $showNewFolderSheet) {
+            TextField(LumiPluginLocalization.string("Folder name", bundle: .module), text: $newItemName)
+            Button(LumiPluginLocalization.string("Create", bundle: .module)) { createNewFolder() }
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
+        } message: { Text(LumiPluginLocalization.string("Enter the name for the new folder.", bundle: .module)) }
+        .alert(LumiPluginLocalization.string("Rename", bundle: .module), isPresented: $showRenameSheet) {
+            TextField(LumiPluginLocalization.string("New name", bundle: .module), text: $newItemName)
+            Button(LumiPluginLocalization.string("Rename", bundle: .module)) { renameItem() }
+            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
+        } message: { Text(LumiPluginLocalization.string("Enter the new name for this item.", bundle: .module)) }
     }
 
     // MARK: - Context Menu
@@ -317,9 +365,26 @@ public struct NodeView: View {
     private func handleRefreshTokenChange(_ newValue: Int) {
         guard newValue != lastRefreshToken else { return }
         lastRefreshToken = newValue
-        if isDirectory && isExpanded {
-            reloadChildren()
+        
+        // 全局刷新令牌变化时，检查自身是否在精准刷新范围内
+        // 如果 changedDirectoryPaths 非空且命中，则 reload；否则跳过，让 Equatable 优化跳过未变化节点
+        guard isDirectory, isExpanded else { return }
+        
+        if !changedDirectoryPaths.isEmpty {
+            let ownPath = PathFormatter.normalizedFilePath(url)
+            guard changedDirectoryPaths.contains(ownPath) else { return }
         }
+        
+        reloadChildren()
+    }
+
+    /// 精准刷新：仅当本节点目录命中协调器下发的变化集合时才重载子项，
+    /// 避免文件系统事件触发整棵树无差别磁盘 I/O。
+    private func handleTargetedRefresh() {
+        guard isDirectory, isExpanded, !changedDirectoryPaths.isEmpty else { return }
+        let ownPath = PathFormatter.normalizedFilePath(url)
+        guard changedDirectoryPaths.contains(ownPath) else { return }
+        reloadChildren()
     }
 
     // MARK: - View Helpers
@@ -333,11 +398,6 @@ public struct NodeView: View {
         } else {
             return gitStatusSnapshot.statusForPath(path)
         }
-    }
-
-    /// 用于 Git 状态查询的相对路径（与 snapshot 中 key 的格式匹配）
-    private var gitRelativePath: String {
-        PathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
     }
 
     /// Git 状态标记颜色
@@ -374,12 +434,11 @@ public struct NodeView: View {
             isSwiftPackageDirectory: iconMetadata.isSwiftPackageDirectory,
             projectRootPath: projectRootPath
         )
-        let defaultContributor = LumiDefaultFileIconThemeContributor()
         let activeContributor = editorContext.activeFileIconTheme
         if let icon = activeContributor?.icon(for: context) {
             return icon
         }
-        if let icon = defaultContributor.icon(for: context) {
+        if let icon = Self.defaultIconContributor.icon(for: context) {
             return icon
         }
         if iconMetadata.isDirectory, let icon = activeContributor?.defaultFolderIcon(isExpanded: isExpanded) {
@@ -389,8 +448,8 @@ public struct NodeView: View {
             return icon
         }
         return iconMetadata.isDirectory
-            ? defaultContributor.defaultFolderIcon(isExpanded: isExpanded)
-            : defaultContributor.defaultFileIcon()
+            ? Self.defaultIconContributor.defaultFolderIcon(isExpanded: isExpanded)
+            : Self.defaultIconContributor.defaultFileIcon()
     }
 
     @ViewBuilder

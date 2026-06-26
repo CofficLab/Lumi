@@ -6,6 +6,10 @@ import os
 /// 负责持久化文件树的展开状态和最近项目路径。
 /// 通过 Property List 文件进行读写，使用串行队列保证线程安全。
 ///
+/// 性能优化：
+/// - 展开状态变更采用内存缓存 + 防抖落盘策略
+/// - 频繁的 add/remove 操作只更新内存，通过 debounce 批量写入磁盘
+///
 /// 使用方式：
 /// ```swift
 /// let store = FileTreeStore(directory: storeDirectory)
@@ -22,6 +26,20 @@ public final class FileTreeStore: @unchecked Sendable {
     private let pluginDirectory: URL
     private let settingsFileURL: URL
     private let corruptSettingsFileURL: URL
+
+    // MARK: - Debounce Properties
+
+    /// 内存缓存：按项目路径存储展开状态
+    private var expandedPathsCache: [String: Set<String>] = [:]
+    
+    /// 待落盘的脏数据标记
+    private var hasDirtyCache = false
+    
+    /// 防抖任务
+    private var persistTask: DispatchWorkItem?
+    
+    /// 防抖间隔（秒）
+    private let persistDebounceInterval: TimeInterval = 1.0
 
     // MARK: - Keys
 
@@ -43,6 +61,10 @@ public final class FileTreeStore: @unchecked Sendable {
         } catch {
             Self.logger.error("Create file tree settings directory failed: \(error.localizedDescription)")
         }
+    }
+
+    deinit {
+        persistTask?.cancel()
     }
 
     // MARK: - Public API
@@ -82,36 +104,57 @@ public final class FileTreeStore: @unchecked Sendable {
     /// - Parameter projectRoot: 项目根目录的绝对路径
     /// - Returns: 相对路径集合
     public func expandedPaths(for projectRoot: String) -> Set<String> {
+        // 优先从内存缓存读取
+        if let cached = expandedPathsCache[projectRoot] {
+            return cached
+        }
+        
+        // 缓存未命中，从磁盘加载
         let key = expandedPathsKey(for: projectRoot)
         guard let paths = object(forKey: key) as? [String] else { return [] }
-        return Set(paths)
+        let pathSet = Set(paths)
+        expandedPathsCache[projectRoot] = pathSet
+        return pathSet
     }
 
-    /// 保存已展开的文件夹相对路径集合
+    /// 保存已展开的文件夹相对路径集合（立即落盘）
     ///
     /// - Parameters:
     ///   - paths: 相对路径集合
     ///   - projectRoot: 项目根目录的绝对路径
     @discardableResult
     public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
+        expandedPathsCache[projectRoot] = paths
         let key = expandedPathsKey(for: projectRoot)
         return set(Array(paths), forKey: key)
     }
 
-    /// 添加一个展开的文件夹路径
+    /// 添加一个展开的文件夹路径（内存缓存 + 防抖落盘）
     @discardableResult
     public func addExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         var paths = expandedPaths(for: projectRoot)
         paths.insert(relativePath)
-        return setExpandedPaths(paths, for: projectRoot)
+        expandedPathsCache[projectRoot] = paths
+        schedulePersist(for: projectRoot)
+        return true
     }
 
-    /// 移除一个折叠的文件夹路径
+    /// 移除一个折叠的文件夹路径（内存缓存 + 防抖落盘）
     @discardableResult
     public func removeExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
         var paths = expandedPaths(for: projectRoot)
         paths.remove(relativePath)
-        return setExpandedPaths(paths, for: projectRoot)
+        expandedPathsCache[projectRoot] = paths
+        schedulePersist(for: projectRoot)
+        return true
+    }
+
+    /// 立即将所有脏缓存落盘（用于应用退出等场景）
+    public func flushDirtyCache() {
+        queue.sync {
+            guard hasDirtyCache else { return }
+            persistDirtyCacheSync()
+        }
     }
 
     /// 记录上次打开的项目路径
@@ -140,6 +183,48 @@ public final class FileTreeStore: @unchecked Sendable {
                 String(format: "%02x", byte)
             }.joined()
         } ?? key
+    }
+
+    /// 调度防抖落盘任务
+    private func schedulePersist(for projectRoot: String) {
+        hasDirtyCache = true
+        
+        // 取消之前的任务
+        persistTask?.cancel()
+        
+        // 创建新的防抖任务
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.persistDirtyCache()
+        }
+        persistTask = workItem
+        
+        queue.asyncAfter(deadline: .now() + persistDebounceInterval, execute: workItem)
+    }
+
+    /// 执行落盘（异步队列中）
+    private func persistDirtyCache() {
+        queue.async { [weak self] in
+            self?.persistDirtyCacheSync()
+        }
+    }
+
+    /// 同步落盘所有脏缓存（必须在 queue 中调用）
+    private func persistDirtyCacheSync() {
+        guard hasDirtyCache else { return }
+        
+        // 加载现有磁盘数据
+        var dict = readDict() ?? [:]
+        
+        // 将内存缓存写入字典
+        for (projectRoot, paths) in expandedPathsCache {
+            let key = expandedPathsKey(for: projectRoot)
+            dict[key] = Array(paths)
+        }
+        
+        // 写入磁盘
+        if writeDict(dict) {
+            hasDirtyCache = false
+        }
     }
 
     /// 从文件读取字典

@@ -12,7 +12,10 @@ final class SelectionState: ObservableObject {
     @Published private(set) var selectedPaths: Set<String> = []
     @Published private(set) var anchorPath: String?
 
+    /// 可见路径的有序数组（保持插入顺序）
     private var visibleOrder: [String] = []
+    /// 路径到索引的映射（用于 O(1) 查找）
+    private var visibleOrderIndex: [String: Int] = [:]
 
     func isSelected(_ url: URL) -> Bool {
         selectedPaths.contains(normalizedPath(url))
@@ -43,17 +46,30 @@ final class SelectionState: ObservableObject {
 
     func trackVisible(_ url: URL) {
         let path = normalizedPath(url)
-        guard !visibleOrder.contains(path) else { return }
+        guard visibleOrderIndex[path] == nil else { return }
+        visibleOrderIndex[path] = visibleOrder.count
         visibleOrder.append(path)
     }
 
     func untrackVisible(_ url: URL) {
         let path = normalizedPath(url)
-        visibleOrder.removeAll { $0 == path }
+        guard let index = visibleOrderIndex[path] else { return }
+        
+        // 从字典中移除
+        visibleOrderIndex.removeValue(forKey: path)
+        
+        // 从数组中移除
+        visibleOrder.remove(at: index)
+        
+        // 更新后续元素的索引
+        for i in index..<visibleOrder.count {
+            visibleOrderIndex[visibleOrder[i]] = i
+        }
     }
 
     func resetVisibleOrder() {
         visibleOrder = []
+        visibleOrderIndex = [:]
     }
 
     func clearSelection() {
@@ -110,8 +126,8 @@ final class SelectionState: ObservableObject {
 
     private func applyShiftSelection(path: String) {
         guard let anchorPath,
-              let anchorIndex = visibleOrder.firstIndex(of: anchorPath),
-              let targetIndex = visibleOrder.firstIndex(of: path) else {
+              let anchorIndex = visibleOrderIndex[anchorPath],
+              let targetIndex = visibleOrderIndex[path] else {
             selectedPaths = [path]
             anchorPath = path
             return

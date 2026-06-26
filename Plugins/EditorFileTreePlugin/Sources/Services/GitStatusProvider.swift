@@ -53,7 +53,7 @@ public enum GitStatus: String, CaseIterable, Sendable {
 }
 
 /// 单个文件的 Git 状态条目
-public struct GitStatusEntry: Sendable {
+public struct GitStatusEntry: Sendable, Equatable {
     /// 相对于仓库根目录的 POSIX 路径
     public let relativePath: String
     /// 文件状态
@@ -69,7 +69,7 @@ public struct GitStatusEntry: Sendable {
 }
 
 /// Git 状态快照，供文件树视图只读查询
-public struct GitStatusSnapshot: Sendable {
+public struct GitStatusSnapshot: Sendable, Equatable {
     /// 文件路径 → 状态条目（相对路径为 key）
     public let entriesByRelativePath: [String: GitStatusEntry]
 

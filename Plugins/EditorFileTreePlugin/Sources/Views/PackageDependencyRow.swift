@@ -12,47 +12,45 @@ public struct PackageDependencyRow: View {
     @State private var isHovering = false
 
     public var body: some View {
-        return AnyView(
-            HStack(spacing: 4) {
-                Color.clear.frame(width: 12)
+        HStack(spacing: 4) {
+            Color.clear.frame(width: 12)
 
-                Image(systemName: dependency.kind == .local ? "folder" : "shippingbox")
-                    .font(.system(size: 12))
-                    .foregroundColor(iconColor)
-                    .frame(width: 16)
+            Image(systemName: dependency.kind == .local ? "folder" : "shippingbox")
+                .font(.system(size: 12))
+                .foregroundColor(iconColor)
+                .frame(width: 16)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(dependency.displayName)
-                        .font(.appCaption)
-                        .foregroundColor(uiTheme.textPrimary)
-                        .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(dependency.displayName)
+                    .font(.appCaption)
+                    .foregroundColor(uiTheme.textPrimary)
+                    .lineLimit(1)
 
-                    Text(dependency.subtitle)
-                        .font(.appMicro)
-                        .foregroundColor(uiTheme.textSecondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 4)
-
-                if dependency.status != .resolved {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(.orange.opacity(0.8))
-                        .help(dependency.status.displayText)
-                }
+                Text(dependency.subtitle)
+                    .font(.appMicro)
+                    .foregroundColor(uiTheme.textSecondary)
+                    .lineLimit(1)
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 6)
-            .padding(.leading, CGFloat(depth) * 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isHovering ? uiTheme.textPrimary.opacity(0.06) : Color.clear)
-            .contentShape(Rectangle())
-            .onHover { isHovering = $0 }
-            .contextMenu { contextMenuContent }
-            .onTapGesture(count: 2) { openLocation() }
-            .help(dependency.location)
-        )
+
+            Spacer(minLength: 4)
+
+            if dependency.status != .resolved {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.orange.opacity(0.8))
+                    .help(dependency.status.displayText)
+            }
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.leading, CGFloat(depth) * 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isHovering ? uiTheme.textPrimary.opacity(0.06) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .contextMenu { contextMenuContent }
+        .onTapGesture(count: 2) { openLocation() }
+        .help(dependency.location)
     }
 
     private var iconColor: Color {

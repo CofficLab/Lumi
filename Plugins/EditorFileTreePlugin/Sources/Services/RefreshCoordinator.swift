@@ -34,6 +34,15 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
     @Published var refreshToken: Int = 0
 
+    /// 精准刷新令牌：watcher 检测到具体目录变化时递增。
+    /// 节点结合 `changedDirectoryPaths` 判断自身是否需要 reload，避免全树重载。
+    @Published var targetedRefreshToken: Int = 0
+
+    /// 最近一次精准刷新命中的目录绝对路径集合（标准化后）。
+    /// 视图监听 `targetedRefreshToken` 变化后，比对此集合决定是否 reload。
+    /// 空集合表示无具体目标（节点应跳过 reload）。
+    @Published var changedDirectoryPaths: Set<String> = []
+
     /// Git 状态快照，视图通过只读映射查询
     @Published var gitStatusSnapshot: GitStatusSnapshot = .empty
 
@@ -57,6 +66,13 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 防抖任务
     private var debounceTask: Task<Void, Never>?
+
+    /// 待下发的变化目录缓冲集合（标准化后的绝对路径）。
+    /// watcher 事件累加进来，防抖结束后随 `targetedRefreshToken` 一起发布。
+    private var pendingChangedPaths: Set<String> = []
+
+    /// 是否正在进行防抖窗口等待（用于首帧即时策略）
+    private var isDebouncePending: Bool = false
 
     /// 防抖间隔（纳秒）
     private let debounceInterval: UInt64 = 300_000_000 // 0.3 秒
@@ -94,6 +110,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         // 清理旧项目的状态
         watcher.stopAll()
         expandedPaths.removeAll()
+        pendingChangedPaths.removeAll()
+        isDebouncePending = false
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
 
@@ -121,6 +139,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     public func stop() {
         watcher.stopAll()
         debounceTask?.cancel()
+        pendingChangedPaths.removeAll()
+        isDebouncePending = false
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
     }
@@ -213,11 +233,14 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         if Self.verbose {
             Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
         }
-        triggerRefresh()
+        // 收集变化目录的标准化路径，随精准刷新下发，避免全树重载
+        pendingChangedPaths.insert(PathFormatter.normalizedFilePath(url))
+        triggerTargetedRefresh()
         scheduleGitStatusRefresh()
     }
 
-    /// 防抖刷新：短时间内多次变化合并为一次
+    /// 全量防抖刷新：短时间内多次变化合并为一次，驱动整棵树重新加载。
+    /// 用于手动刷新、项目切换、文件树内部增删改等需要触及全部节点的场景。
     private func triggerRefresh() {
         debounceTask?.cancel()
         let interval = self.debounceInterval
@@ -227,6 +250,60 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             self.refreshToken += 1
             if Self.verbose {
                 Self.logger.info("\(Self.t)✅ 刷新令牌递增：\(self.refreshToken)")
+            }
+        }
+    }
+
+    /// 精准刷新策略：首帧即时 + 后续合并
+    ///
+    /// 工作原理：
+    /// 1. 当第一个 FS 事件到来时（isDebouncePending == false），立即发布当前 pendingChangedPaths 并递增 targetedRefreshToken
+    /// 2. 设置 isDebouncePending = true，启动 trailing debounce 计时器
+    /// 3. 在 debounce 窗口期间，后续事件继续累积到 pendingChangedPaths
+    /// 4. 当 debounce 窗口结束（无新事件），发布累积的 paths 并重置状态
+    ///
+    /// 优势：首帧立即响应，用户感知延迟从 300ms 降到 0ms；后续事件仍然合并，避免频繁刷新
+    private func triggerTargetedRefresh() {
+        if !isDebouncePending {
+            // 首帧即时：立即发布当前变更
+            isDebouncePending = true
+            publishTargetedRefresh()
+            // 启动 trailing debounce 窗口
+            startTrailingDebounce()
+        } else {
+            // 后续事件：继续累积到 pendingChangedPaths，等待 debounce 窗口结束
+            if Self.verbose {
+                Self.logger.info("\(Self.t)⏳ 精准刷新防抖中，累积变更路径：\(self.pendingChangedPaths.count) 个")
+            }
+        }
+    }
+
+    /// 发布精准刷新：将 pendingChangedPaths 发布到 changedDirectoryPaths 并递增 targetedRefreshToken
+    private func publishTargetedRefresh() {
+        guard !pendingChangedPaths.isEmpty else {
+            isDebouncePending = false
+            return
+        }
+        changedDirectoryPaths = pendingChangedPaths
+        pendingChangedPaths.removeAll()
+        targetedRefreshToken += 1
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🎯 精准刷新：\(self.changedDirectoryPaths.count) 个目录，令牌：\(self.targetedRefreshToken)")
+        }
+    }
+
+    /// 启动 trailing debounce 计时器：等待 debounceInterval 后发布累积的变更
+    private func startTrailingDebounce() {
+        debounceTask?.cancel()
+        let interval = self.debounceInterval
+        debounceTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: interval)
+            guard let self else { return }
+            // 窗口结束：发布累积的变更并重置状态
+            self.publishTargetedRefresh()
+            self.isDebouncePending = false
+            if Self.verbose {
+                Self.logger.info("\(Self.t)✅ 精准刷新防抖窗口结束")
             }
         }
     }
