@@ -15,12 +15,8 @@ struct CofficLogoView: View {
                 switch scene {
                 case .general, .appIcon, .about, .custom:
                     animatedLogo(size: size)
-                case .statusBarInactive:
-                    // 菜单栏图标渲染为单色模板图（由系统统一着色），
-                    // 非激活态降低不透明度，与激活态做视觉区分。
-                    monochromeLogo(size: size)
-                        .opacity(0.55)
-                case .statusBarActive:
+                case .statusBar:
+                    // 菜单栏图标渲染为单色模板图（由系统统一着色），恒为单色、无激活态。
                     monochromeLogo(size: size)
                 }
             }
@@ -35,7 +31,7 @@ struct CofficLogoView: View {
     private var allowsAnimation: Bool {
         switch scene {
         case .general, .appIcon, .about, .custom: true
-        case .statusBarInactive, .statusBarActive: false
+        case .statusBar: false
         }
     }
 

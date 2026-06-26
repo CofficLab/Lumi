@@ -14,10 +14,9 @@ struct SmartLightLogoView: View {
                 switch scene {
                 case .general, .appIcon, .about, .custom:
                     animatedColorLogo(size: size)
-                case .statusBarInactive:
+                case .statusBar:
+                    // 菜单栏图标渲染为单色模板图（由系统统一着色），恒为单色、无激活态。
                     monochromeLogo(size: size)
-                case .statusBarActive:
-                    staticColorLogo(size: size)
                 }
             }
             .frame(width: size, height: size)
@@ -37,7 +36,7 @@ struct SmartLightLogoView: View {
         switch scene {
         case .general, .appIcon, .about, .custom:
             true
-        case .statusBarInactive, .statusBarActive:
+        case .statusBar:
             false
         }
     }
@@ -45,11 +44,6 @@ struct SmartLightLogoView: View {
     @ViewBuilder
     private func animatedColorLogo(size: CGFloat) -> some View {
         colorLogo(size: size, glowScale: isBreathing ? 1.15 : 1, glowOpacity: isBreathing ? 1 : 0.6)
-    }
-
-    @ViewBuilder
-    private func staticColorLogo(size: CGFloat) -> some View {
-        colorLogo(size: size, glowScale: 1, glowOpacity: 0.35)
     }
 
     @ViewBuilder
@@ -134,15 +128,9 @@ struct SmartLightLogoView: View {
                 .font(.caption2)
         }
         VStack {
-            SmartLightLogoView(scene: .statusBarInactive)
+            SmartLightLogoView(scene: .statusBar)
                 .frame(width: 48, height: 48)
-            Text("Inactive")
-                .font(.caption2)
-        }
-        VStack {
-            SmartLightLogoView(scene: .statusBarActive)
-                .frame(width: 48, height: 48)
-            Text("Active")
+            Text("Status Bar")
                 .font(.caption2)
         }
     }

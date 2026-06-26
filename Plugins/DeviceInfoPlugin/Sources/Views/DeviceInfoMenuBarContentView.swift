@@ -8,7 +8,9 @@ struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
-    @StateObject private var viewModel = DeviceInfoMenuBarContentViewModel()
+    // 菜单栏内容经 ImageRenderer 逐帧快照，视图每次都会重建；必须用共享 ViewModel，
+    // 否则 @StateObject 会反复创建/销毁，快照永远落在空的初始 metrics 上。
+    @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
 
     // MARK: - Body
 
@@ -29,19 +31,14 @@ struct DeviceInfoMenuBarContentView: View {
 
 @MainActor
 final class DeviceInfoMenuBarContentViewModel: ObservableObject {
+    static let shared = DeviceInfoMenuBarContentViewModel()
+
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    private init() {
         startMonitoring()
-    }
-
-    deinit {
-        Task { @MainActor in
-            CPUService.shared.stopMonitoring()
-            MemoryService.shared.stopMonitoring()
-        }
     }
 
     private func startMonitoring() {

@@ -40,7 +40,7 @@ final class CaffeinateManager: SuperLog {
     private init() {
         if Self.verbose {
             if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(self.t)CaffeinateManager initialized")
+                CaffeinatePlugin.logger.info("\(self.t)CaffeinateManager initialized")
             }
         }
     }
@@ -70,7 +70,7 @@ final class CaffeinateManager: SuperLog {
             try task.run()
         } catch {
             if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.error("\(self.t)Failed to turn off display: \(error.localizedDescription)")
+                CaffeinatePlugin.logger.error("\(self.t)Failed to turn off display: \(error.localizedDescription)")
             }
         }
     }
@@ -79,7 +79,7 @@ final class CaffeinateManager: SuperLog {
         guard !isActive else {
             if Self.verbose {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate already active, ignoring activation request")
+                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate already active, ignoring activation request")
                 }
             }
             return
@@ -114,7 +114,7 @@ final class CaffeinateManager: SuperLog {
 
             if Self.verbose {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate activated successfully with duration: \(duration)s")
+                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate activated successfully with duration: \(duration)s")
                 }
             }
 
@@ -122,18 +122,15 @@ final class CaffeinateManager: SuperLog {
             if duration > 0 {
                 startTimer(duration: duration)
             }
-
-            // Notify system to update status bar appearance
-            NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.error("\(self.t)Failed to create system sleep assertion: \(systemResult)")
+                    CaffeinatePlugin.logger.error("\(self.t)Failed to create system sleep assertion: \(systemResult)")
                 }
             }
             if displayResult != kIOReturnSuccess {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.error("\(self.t)Failed to create display sleep assertion: \(displayResult)")
+                    CaffeinatePlugin.logger.error("\(self.t)Failed to create display sleep assertion: \(displayResult)")
                 }
             }
             if assertionID != 0 {
@@ -152,7 +149,7 @@ final class CaffeinateManager: SuperLog {
         guard isActive else {
             if Self.verbose {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate not active, ignoring deactivation request")
+                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate not active, ignoring deactivation request")
                 }
             }
             return
@@ -174,21 +171,18 @@ final class CaffeinateManager: SuperLog {
 
             if Self.verbose {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate deactivated successfully")
+                    CaffeinatePlugin.logger.info("\(self.t)Caffeinate deactivated successfully")
                 }
             }
-
-            // Notify system to restore status bar appearance
-            NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.error("\(self.t)Failed to release system sleep assertion: \(systemResult)")
+                    CaffeinatePlugin.logger.error("\(self.t)Failed to release system sleep assertion: \(systemResult)")
                 }
             }
             if displayResult != kIOReturnSuccess {
                 if CaffeinatePlugin.verbose {
-                                    CaffeinatePlugin.logger.error("\(self.t)Failed to release display sleep assertion: \(displayResult)")
+                    CaffeinatePlugin.logger.error("\(self.t)Failed to release display sleep assertion: \(displayResult)")
                 }
             }
         }
@@ -220,7 +214,7 @@ final class CaffeinateManager: SuperLog {
                 guard let self = self else { return }
                 if Self.verbose {
                     if CaffeinatePlugin.verbose {
-                                            CaffeinatePlugin.logger.info("\(Self.t)Timer expired, deactivating caffeinate")
+                        CaffeinatePlugin.logger.info("\(Self.t)Timer expired, deactivating caffeinate")
                     }
                 }
                 self.deactivate()
@@ -228,7 +222,7 @@ final class CaffeinateManager: SuperLog {
         }
         if Self.verbose {
             if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(self.t)Timer scheduled for \(duration)s")
+                CaffeinatePlugin.logger.info("\(self.t)Timer scheduled for \(duration)s")
             }
         }
     }

@@ -8,7 +8,6 @@ final class AppUpdateStatusBarStore: ObservableObject {
     @Published private(set) var pendingVersion: String?
 
     private var cancellables = Set<AnyCancellable>()
-    private let menuBarSource = "AppUpdateStatusBarPlugin"
 
     var hasPendingUpdate: Bool {
         pendingVersion != nil
@@ -23,7 +22,6 @@ final class AppUpdateStatusBarStore: ObservableObject {
                 guard let self else { return }
                 let version = notification.userInfo?["version"] as? String
                 self.pendingVersion = version?.isEmpty == false ? version : nil
-                NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: true, source: self.menuBarSource)
             }
             .store(in: &cancellables)
 
@@ -46,6 +44,5 @@ final class AppUpdateStatusBarStore: ObservableObject {
 
     private func clearPendingUpdate() {
         pendingVersion = nil
-        NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: false, source: menuBarSource)
     }
 }
