@@ -41,9 +41,13 @@ final class ToolService: LumiToolServicing {
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
             let output = try await tool.execute(arguments: arguments, context: context)
+            // 工具可能在执行过程中通过 context.attachImage 注册了要回传的图片
+            // （如 read_file 读取图片文件），这里收集并填入结果。
+            let images = context.collectImages()
             return LumiToolResult(
                 content: output,
-                duration: Date().timeIntervalSince(startedAt)
+                duration: Date().timeIntervalSince(startedAt),
+                imageAttachments: images
             )
         } catch {
             return LumiToolResult(

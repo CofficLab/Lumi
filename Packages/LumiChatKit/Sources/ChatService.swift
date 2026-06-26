@@ -701,12 +701,24 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                     continue
                 }
 
+                var metadata: [String: String] = [:]
+                // 将工具产出的图片注入 tool 消息，复用与用户附图相同的视觉通道。
+                // 下游 LumiVisionMessageSupport.convert 会从该 metadata 还原 MessageImage，
+                // provider adapter 的 tool_result-with-images 分支据此序列化为 image 块。
+                if !result.imageAttachments.isEmpty {
+                    metadata["hasImages"] = "true"
+                    if let encoded = MessageManager.encodeImageAttachments(result.imageAttachments) {
+                        metadata["imageAttachments"] = encoded
+                    }
+                }
+
                 expanded.append(
                     LumiChatMessage(
                         conversationID: message.conversationID,
                         role: .tool,
                         content: result.content,
                         isError: result.isError,
+                        metadata: metadata,
                         toolCallID: toolCall.id
                     )
                 )

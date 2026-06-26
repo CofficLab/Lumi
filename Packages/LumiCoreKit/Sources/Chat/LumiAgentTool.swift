@@ -123,10 +123,45 @@ public struct LumiToolResult: Codable, Equatable, Sendable {
     public let duration: TimeInterval?
     public let isError: Bool
 
-    public init(content: String, duration: TimeInterval? = nil, isError: Bool = false) {
+    /// 工具执行结果中携带的图片附件。
+    ///
+    /// 当工具（如 `read_file` 读取图片、截图工具）产出图片时，回传给 LLM 作为视觉输入。
+    /// 图片不进入 `content` 文本，而是由调用方注入对应 `LumiChatMessage` 的 `metadata["imageAttachments"]`，
+    /// 复用与用户附图相同的视觉通道（详见 `LumiVisionMessageSupport` / `VisionMessageContentBuilder`）。
+    public let imageAttachments: [LumiImageAttachment]
+
+    public init(
+        content: String,
+        duration: TimeInterval? = nil,
+        isError: Bool = false,
+        imageAttachments: [LumiImageAttachment] = []
+    ) {
         self.content = content
         self.duration = duration
         self.isError = isError
+        self.imageAttachments = imageAttachments
+    }
+
+    // MARK: - Codable（向后兼容：旧数据无 imageAttachments 字段时回退为空）
+
+    private enum CodingKeys: String, CodingKey {
+        case content, duration, isError, imageAttachments
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        content = try c.decode(String.self, forKey: .content)
+        duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
+        isError = try c.decodeIfPresent(Bool.self, forKey: .isError) ?? false
+        imageAttachments = try c.decodeIfPresent([LumiImageAttachment].self, forKey: .imageAttachments) ?? []
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(content, forKey: .content)
+        if let duration { try c.encode(duration, forKey: .duration) }
+        if isError { try c.encode(isError, forKey: .isError) }
+        if !imageAttachments.isEmpty { try c.encode(imageAttachments, forKey: .imageAttachments) }
     }
 }
 
@@ -147,6 +182,14 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
     public let toolName: String
     public let currentProjectPath: String?
     public let allowedDirectories: [String]
+
+    /// 工具执行过程中收集的图片附件（线程安全）。
+    ///
+    /// 工具在 `execute` 内可通过 `attachImage(_:)` 注册要回传给 LLM 的图片，
+    /// 由 `LumiToolServicing.execute` 在执行结束后读取并填入 `LumiToolResult.imageAttachments`。
+    /// 这样无需改变 `LumiAgentTool.execute -> String` 的签名，只有需要回传图片的工具主动调用即可。
+    private let collectedImages = NSLock()
+    private var _collectedImages: [LumiImageAttachment] = []
 
     public init(
         conversationID: UUID,
@@ -177,6 +220,32 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
         let expanded = (path as NSString).expandingTildeInPath
         let resolved = URL(fileURLWithPath: expanded).resolvingSymlinksInPath().standardizedFileURL.path
         return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+    }
+
+    // MARK: - Image Collection
+
+    /// 注册一张要回传给 LLM 的图片。
+    public func attachImage(_ image: LumiImageAttachment) {
+        collectedImages.lock()
+        _collectedImages.append(image)
+        collectedImages.unlock()
+    }
+
+    /// 注册一组要回传给 LLM 的图片。
+    public func attachImages(_ images: [LumiImageAttachment]) {
+        guard !images.isEmpty else { return }
+        collectedImages.lock()
+        _collectedImages.append(contentsOf: images)
+        collectedImages.unlock()
+    }
+
+    /// 读取并清空已收集的图片（由 `LumiToolServicing.execute` 在工具执行后调用）。
+    public func collectImages() -> [LumiImageAttachment] {
+        collectedImages.lock()
+        let images = _collectedImages
+        _collectedImages = []
+        collectedImages.unlock()
+        return images
     }
 }
 
