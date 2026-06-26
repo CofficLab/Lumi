@@ -15,7 +15,7 @@ struct LumiLLMProviderSupportErrorTests {
     }
 
     @Test func userFacingDescriptionIncludesResponseExcerpt() {
-        let error = HTTPClientError.httpError(statusCode: 401, message: "URL: https://example.com\nResponse: invalid_api_key")
+        let error = HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
         let description = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
 
         #expect(description.contains("invalid_api_key"))

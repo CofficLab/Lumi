@@ -88,10 +88,17 @@ public enum LumiLLMFailureDetailResolver {
         case .invalidResponse:
             return .message(LumiLLMProviderSupportLocalization.string("Invalid response", locale: locale))
         case let .httpError(statusCode, message):
+            let body = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            let summary = bodyExcerpt(from: body)
+                ?? LumiLLMProviderSupportLocalization.format(
+                    "HTTP %d",
+                    locale: locale,
+                    statusCode
+                )
             return LumiLLMFailureDetail(
-                summary: responseExcerpt(from: message) ?? "",
+                summary: summary,
                 httpStatusCode: statusCode,
-                transportDetails: message
+                transportDetails: body.isEmpty ? nil : body
             )
         }
     }
@@ -117,19 +124,14 @@ public enum LumiLLMFailureDetailResolver {
         )
     }
 
-    private static func responseExcerpt(from transportMessage: String) -> String? {
-        guard let range = transportMessage.range(of: "Response:") else {
-            return nil
-        }
-
-        let response = transportMessage[range.upperBound...]
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !response.isEmpty else { return nil }
+    private static func bodyExcerpt(from body: String) -> String? {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
 
         let maxLength = 240
-        if response.count <= maxLength {
-            return response
+        if trimmed.count <= maxLength {
+            return trimmed
         }
-        return String(response.prefix(maxLength)) + "..."
+        return String(trimmed.prefix(maxLength)) + "..."
     }
 }
