@@ -1,8 +1,9 @@
 import Foundation
 import OSLog
+import SuperLogKit
 
 /// FreeModel 供应商诊断日志（测试阶段开启，便于从 Xcode 控制台或 Console.app 复制）
-enum FreeModelDiagnosticLog {
+enum FreeModelDiagnosticLog: SuperLog {
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.freemodel")
 
     /// 设为 `false` 可关闭详细日志（编译期常量，避免并发检查）
@@ -11,7 +12,7 @@ enum FreeModelDiagnosticLog {
     static func log(_ message: String) {
         guard enabled else { return }
         logger.notice("\(message, privacy: .public)")
-        print("[FreeModel] \(message)")
+        print("\(Self.t)\(message)")
     }
 
     static func logChunkPreview(_ label: String, data: Data) {
