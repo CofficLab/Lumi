@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [
