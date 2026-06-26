@@ -7,16 +7,16 @@ import Foundation
 @Suite struct EditorPackageResolvedTests {
 
     @Test func identityFromLocationStripsGitSuffix() {
-        #expect(EditorPackageResolved.identityFromLocation("https://github.com/Foo/Bar.git") == "Bar")
+        #expect(PackageResolved.identityFromLocation("https://github.com/Foo/Bar.git") == "Bar")
     }
 
     @Test func identityFromLocationHandlesBarePath() {
-        #expect(EditorPackageResolved.identityFromLocation("/abs/path/Bar") == "Bar")
-        #expect(EditorPackageResolved.identityFromLocation("Bar") == "Bar")
+        #expect(PackageResolved.identityFromLocation("/abs/path/Bar") == "Bar")
+        #expect(PackageResolved.identityFromLocation("Bar") == "Bar")
     }
 
     @Test func normalizeIdentityLowercases() {
-        #expect(EditorPackageResolved.normalizeIdentity("https://github.com/Foo/MyLib.git") == "mylib")
+        #expect(PackageResolved.normalizeIdentity("https://github.com/Foo/MyLib.git") == "mylib")
     }
 
     @Test func parseV2FormatPins() throws {
@@ -29,7 +29,7 @@ import Foundation
           ]
         }
         """
-        let pins = try EditorPackageResolved.parse(data: Data(json.utf8))
+        let pins = try PackageResolved.parse(data: Data(json.utf8))
         #expect(pins.count == 2)
         #expect(pins[0].identity == "swift-markdown")
         #expect(pins[0].version == "0.3.0")
@@ -49,7 +49,7 @@ import Foundation
           }
         }
         """
-        let pins = try EditorPackageResolved.parse(data: Data(json.utf8))
+        let pins = try PackageResolved.parse(data: Data(json.utf8))
         #expect(pins.count == 1)
         #expect(pins[0].identity == "alamofire")
         #expect(pins[0].location.contains("Alamofire.git"))
@@ -57,14 +57,14 @@ import Foundation
     }
 
     @Test func parseEmptyObjectReturnsEmpty() throws {
-        #expect(try EditorPackageResolved.parse(data: Data("{}".utf8)) == [])
+        #expect(try PackageResolved.parse(data: Data("{}".utf8)) == [])
     }
 
     @Test func parseFallsBackToIdentityFromLocation() throws {
         let json = """
         { "pins": [ { "location": "https://github.com/Foo/NoIdentity.git" } ] }
         """
-        let pins = try EditorPackageResolved.parse(data: Data(json.utf8))
+        let pins = try PackageResolved.parse(data: Data(json.utf8))
         // Missing identity → V2 requires identity key, so dropped.
         #expect(pins.isEmpty)
     }
@@ -82,7 +82,7 @@ import Foundation
         "\t\t};"
 
     @Test func parseRemoteReference() {
-        let refs = EditorXcodePackageReferenceParser.parse(contents: remotePbxproj)
+        let refs = XcodePackageReferenceParser.parse(contents: remotePbxproj)
         #expect(refs.count >= 1)
         let remote = refs.first { $0.kind == .remote }
         #expect(remote != nil)
@@ -91,12 +91,12 @@ import Foundation
     }
 
     @Test func remoteReferenceIdentityIsNormalized() {
-        let refs = EditorXcodePackageReferenceParser.parse(contents: remotePbxproj)
+        let refs = XcodePackageReferenceParser.parse(contents: remotePbxproj)
         let remote = refs.first { $0.kind == .remote }
         #expect(remote?.identity == "mypackage")
     }
 
     @Test func parseEmptyContentsReturnsEmpty() {
-        #expect(EditorXcodePackageReferenceParser.parse(contents: "").isEmpty)
+        #expect(XcodePackageReferenceParser.parse(contents: "").isEmpty)
     }
 }

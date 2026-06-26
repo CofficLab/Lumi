@@ -8,7 +8,7 @@ import os
 /// 文件树中单个文件的 Git 状态类型
 ///
 /// 优先级（高→低）：conflicted > deleted > renamed > added/untracked > modified > staged
-public enum EditorFileTreeGitStatus: String, CaseIterable, Sendable {
+public enum GitStatus: String, CaseIterable, Sendable {
     case modified = "M"
     case added = "A"
     case deleted = "D"
@@ -47,21 +47,21 @@ public enum EditorFileTreeGitStatus: String, CaseIterable, Sendable {
     }
 
     /// 取两个状态中优先级更高的那个
-    public static func highest(_ a: EditorFileTreeGitStatus, _ b: EditorFileTreeGitStatus) -> EditorFileTreeGitStatus {
+    public static func highest(_ a: GitStatus, _ b: GitStatus) -> GitStatus {
         a.priority >= b.priority ? a : b
     }
 }
 
 /// 单个文件的 Git 状态条目
-public struct EditorFileTreeGitStatusEntry: Sendable {
+public struct GitStatusEntry: Sendable {
     /// 相对于仓库根目录的 POSIX 路径
     public let relativePath: String
     /// 文件状态
-    public let status: EditorFileTreeGitStatus
+    public let status: GitStatus
     /// 是否已暂存
     public let isStaged: Bool
 
-    public init(relativePath: String, status: EditorFileTreeGitStatus, isStaged: Bool = false) {
+    public init(relativePath: String, status: GitStatus, isStaged: Bool = false) {
         self.relativePath = relativePath
         self.status = status
         self.isStaged = isStaged
@@ -69,12 +69,12 @@ public struct EditorFileTreeGitStatusEntry: Sendable {
 }
 
 /// Git 状态快照，供文件树视图只读查询
-public struct EditorFileTreeGitStatusSnapshot: Sendable {
+public struct GitStatusSnapshot: Sendable {
     /// 文件路径 → 状态条目（相对路径为 key）
-    public let entriesByRelativePath: [String: EditorFileTreeGitStatusEntry]
+    public let entriesByRelativePath: [String: GitStatusEntry]
 
     /// 目录路径 → 聚合的最高优先级状态（用于文件夹行显示）
-    public let directoryAggregateByRelativePath: [String: EditorFileTreeGitStatus]
+    public let directoryAggregateByRelativePath: [String: GitStatus]
 
     /// 仓库根目录绝对路径
     public let repoRootPath: String
@@ -83,7 +83,7 @@ public struct EditorFileTreeGitStatusSnapshot: Sendable {
     public let capturedAt: Date
 
     /// 空 snapshot（非 Git 仓库或查询失败时使用）
-    public static let empty = EditorFileTreeGitStatusSnapshot(
+    public static let empty = GitStatusSnapshot(
         entriesByRelativePath: [:],
         directoryAggregateByRelativePath: [:],
         repoRootPath: "",
@@ -96,12 +96,12 @@ public struct EditorFileTreeGitStatusSnapshot: Sendable {
     }
 
     /// 查询指定相对路径的文件状态
-    public func statusForPath(_ relativePath: String) -> EditorFileTreeGitStatus? {
+    public func statusForPath(_ relativePath: String) -> GitStatus? {
         entriesByRelativePath[relativePath]?.status
     }
 
     /// 查询指定目录的聚合状态
-    public func aggregateStatusForDirectory(_ relativePath: String) -> EditorFileTreeGitStatus? {
+    public func aggregateStatusForDirectory(_ relativePath: String) -> GitStatus? {
         directoryAggregateByRelativePath[relativePath]
     }
 }
@@ -112,7 +112,7 @@ public struct EditorFileTreeGitStatusSnapshot: Sendable {
 ///
 /// 负责在后台线程执行 Git status 查询，构建轻量 snapshot 供 UI 层只读使用。
 /// 不持有任何 MainActor 状态，所有查询结果通过返回值传递给调用方。
-public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLog {
+public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
     public nonisolated static let emoji = "🌳"
     public nonisolated static let verbose: Bool = false
@@ -128,7 +128,7 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
     ///
     /// - Parameter projectRootPath: 项目根目录的绝对路径
     /// - Returns: 快照，或 nil 表示查询失败
-    public func captureSnapshot(projectRootPath: String) -> EditorFileTreeGitStatusSnapshot? {
+    public func captureSnapshot(projectRootPath: String) -> GitStatusSnapshot? {
         // 1. 检测是否为 Git 仓库
         guard LibGit2.isGitRepository(at: projectRootPath) else {
             if Self.verbose {
@@ -156,13 +156,13 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
         // getDiffFileList 返回的 changeType 包含 "M"/"A"/"D"/"R"/"?"/"C" 等
 
         // 5. 构建条目
-        var entries: [String: EditorFileTreeGitStatusEntry] = [:]
+        var entries: [String: GitStatusEntry] = [:]
 
         // 先处理 staged 文件
         for file in stagedDiffFiles {
             let normalizedPath = normalizePath(file.file, relativeTo: repoRootPath)
             let status = parseStatus(file.changeType)
-            let entry = EditorFileTreeGitStatusEntry(
+            let entry = GitStatusEntry(
                 relativePath: normalizedPath,
                 status: status,
                 isStaged: true
@@ -178,14 +178,14 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
 
             if let existing = entries[normalizedPath] {
                 // 同一个文件既有 staged 又有 unstaged 变更：取优先级更高的状态
-                let mergedStatus = EditorFileTreeGitStatus.highest(existing.status, status)
-                entries[normalizedPath] = EditorFileTreeGitStatusEntry(
+                let mergedStatus = GitStatus.highest(existing.status, status)
+                entries[normalizedPath] = GitStatusEntry(
                     relativePath: normalizedPath,
                     status: mergedStatus,
                     isStaged: existing.isStaged
                 )
             } else {
-                entries[normalizedPath] = EditorFileTreeGitStatusEntry(
+                entries[normalizedPath] = GitStatusEntry(
                     relativePath: normalizedPath,
                     status: status,
                     isStaged: false
@@ -200,7 +200,7 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
             Self.logger.info("\(Self.t)捕获 Git 状态快照：\(entries.count) 文件，\(directoryAggregate.count) 目录")
         }
 
-        return EditorFileTreeGitStatusSnapshot(
+        return GitStatusSnapshot(
             entriesByRelativePath: entries,
             directoryAggregateByRelativePath: directoryAggregate,
             repoRootPath: repoRootPath,
@@ -252,8 +252,8 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
         return normalized
     }
 
-    /// 将 Git changeType 字符串映射为 EditorFileTreeGitStatus
-    private func parseStatus(_ changeType: String) -> EditorFileTreeGitStatus {
+    /// 将 Git changeType 字符串映射为 GitStatus
+    private func parseStatus(_ changeType: String) -> GitStatus {
         switch changeType {
         case "M":  return .modified
         case "A":  return .added
@@ -270,9 +270,9 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
     /// 对于每个文件条目，向上遍历其所有父目录，取最高优先级状态。
     /// 例如：src/foo/bar.swift (M) → src/foo/ (M), src/ (M)
     private func computeDirectoryAggregate(
-        entries: [String: EditorFileTreeGitStatusEntry]
-    ) -> [String: EditorFileTreeGitStatus] {
-        var aggregate: [String: EditorFileTreeGitStatus] = [:]
+        entries: [String: GitStatusEntry]
+    ) -> [String: GitStatus] {
+        var aggregate: [String: GitStatus] = [:]
 
         for (_, entry) in entries {
             let path = entry.relativePath
@@ -288,7 +288,7 @@ public final class EditorFileTreeGitStatusProvider: @unchecked Sendable, SuperLo
                 }
 
                 if let existing = aggregate[dirPath] {
-                    aggregate[dirPath] = EditorFileTreeGitStatus.highest(existing, entry.status)
+                    aggregate[dirPath] = GitStatus.highest(existing, entry.status)
                 } else {
                     aggregate[dirPath] = entry.status
                 }

@@ -6,7 +6,7 @@ import SwiftUI
 import LumiUI
 
 /// Editor Rail 文件树根视图
-public struct EditorFileTreeView: View, SuperLog {
+public struct TreeView: View, SuperLog {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var editorContext: EditorContext
     @EnvironmentObject var conversationVM: WindowConversationVM
@@ -20,13 +20,13 @@ public struct EditorFileTreeView: View, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
-    @StateObject private var coordinator = EditorFileTreeRefreshCoordinator()
+    @StateObject private var coordinator = RefreshCoordinator()
 
     /// 文件树多选状态
-    @StateObject private var selectionState = EditorFileTreeSelectionState()
+    @StateObject private var selectionState = SelectionState()
 
     /// Swift Package Dependencies 数据源
-    @StateObject private var packageStore = EditorPackageDependencyStore()
+    @StateObject private var packageStore = PackageDependencyStore()
 
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
@@ -38,7 +38,7 @@ public struct EditorFileTreeView: View, SuperLog {
 
     private var showPackageDependencies: Bool {
         guard !projectVM.currentProjectPath.isEmpty else { return false }
-        return EditorPackageDependencyResolver.shouldShowPackageDependencies(
+        return PackageDependencyResolver.shouldShowPackageDependencies(
             projectRootURL: URL(fileURLWithPath: projectVM.currentProjectPath)
         )
     }
@@ -46,11 +46,11 @@ public struct EditorFileTreeView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             if projectVM.currentProjectPath.isEmpty {
-                EditorFileTreeNoProjectView()
+                NoProjectView()
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 6) {
-                        EditorFileTreeNodeView(
+                        NodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
                             onSelect: { selectedURL in
@@ -72,7 +72,7 @@ public struct EditorFileTreeView: View, SuperLog {
                             Divider()
                                 .opacity(0.35)
 
-                            EditorPackageDependencySection(
+                            PackageDependencySection(
                                 projectRootPath: projectVM.currentProjectPath,
                                 dependencies: packageStore.dependencies,
                                 isLoading: packageStore.isLoading,
@@ -215,7 +215,7 @@ public struct EditorFileTreeView: View, SuperLog {
 // MARK: - Preview
 
 #Preview {
-    EditorFileTreeView()
+    TreeView()
         .inRootView()
         .frame(width: 250, height: 400)
 }

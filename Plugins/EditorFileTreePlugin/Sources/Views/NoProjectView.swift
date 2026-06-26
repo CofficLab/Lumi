@@ -2,7 +2,7 @@ import SwiftUI
 import LumiCoreKit
 
 /// 文件树无项目视图（未选择项目）
-public struct EditorFileTreeNoProjectView: View {
+public struct NoProjectView: View {
     public var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder")
@@ -17,6 +17,6 @@ public struct EditorFileTreeNoProjectView: View {
 }
 
 #Preview {
-    EditorFileTreeNoProjectView()
+    NoProjectView()
         .frame(width: 200, height: 300)
 }

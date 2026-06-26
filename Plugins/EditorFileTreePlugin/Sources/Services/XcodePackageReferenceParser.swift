@@ -1,38 +1,38 @@
 import Foundation
 
-public struct EditorXcodePackageReference: Equatable, Sendable {
+public struct XcodePackageReference: Equatable, Sendable {
     public let id: String
     public let displayName: String
     public let location: String
-    public let kind: EditorPackageDependencyKind
+    public let kind: PackageDependencyKind
     public let requirementKind: String?
     public let version: String?
     public let branch: String?
     public let revision: String?
 
     public var identity: String {
-        EditorPackageResolved.normalizeIdentity(location)
+        PackageResolved.normalizeIdentity(location)
     }
 }
 
-public enum EditorXcodePackageReferenceParser {
-    public static func parse(projectURL: URL) throws -> [EditorXcodePackageReference] {
+public enum XcodePackageReferenceParser {
+    public static func parse(projectURL: URL) throws -> [XcodePackageReference] {
         let pbxprojURL = projectURL.appendingPathComponent("project.pbxproj")
         var encoding = String.Encoding.utf8
         let contents = try String(contentsOf: pbxprojURL, usedEncoding: &encoding)
         return parse(contents: contents)
     }
 
-    public static func parse(contents: String) -> [EditorXcodePackageReference] {
+    public static func parse(contents: String) -> [XcodePackageReference] {
         parseRemoteReferences(contents: contents) + parseLocalReferences(contents: contents)
     }
 
-    private static func parseRemoteReferences(contents: String) -> [EditorXcodePackageReference] {
+    private static func parseRemoteReferences(contents: String) -> [XcodePackageReference] {
         objects(in: contents, isa: "XCRemoteSwiftPackageReference").compactMap { object in
             guard let location = field("repositoryURL", in: object.body) else { return nil }
-            let displayName = object.comment ?? EditorPackageResolved.identityFromLocation(location)
+            let displayName = object.comment ?? PackageResolved.identityFromLocation(location)
             let requirement = block("requirement", in: object.body)
-            return EditorXcodePackageReference(
+            return XcodePackageReference(
                 id: object.id,
                 displayName: displayName,
                 location: location,
@@ -45,11 +45,11 @@ public enum EditorXcodePackageReferenceParser {
         }
     }
 
-    private static func parseLocalReferences(contents: String) -> [EditorXcodePackageReference] {
+    private static func parseLocalReferences(contents: String) -> [XcodePackageReference] {
         objects(in: contents, isa: "XCLocalSwiftPackageReference").compactMap { object in
             guard let path = field("relativePath", in: object.body) else { return nil }
             let displayName = object.comment ?? URL(fileURLWithPath: path).lastPathComponent
-            return EditorXcodePackageReference(
+            return XcodePackageReference(
                 id: object.id,
                 displayName: displayName,
                 location: path,

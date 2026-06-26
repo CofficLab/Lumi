@@ -3,11 +3,11 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-public struct EditorPackageDependencySection: View {
+public struct PackageDependencySection: View {
     @LumiTheme private var uiTheme
 
     public let projectRootPath: String
-    public let dependencies: [EditorPackageDependency]
+    public let dependencies: [PackageDependency]
     public let isLoading: Bool
     public let diagnostic: String?
     public let onRetry: () -> Void
@@ -19,7 +19,7 @@ public struct EditorPackageDependencySection: View {
             VStack(alignment: .leading, spacing: 0) {
                 Button {
                     isExpanded.toggle()
-                    EditorFileTreeStore.shared.setPackageDependencySectionExpanded(isExpanded, for: projectRootPath)
+                    FileTreeSettings.shared.setPackageDependencySectionExpanded(isExpanded, for: projectRootPath)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
@@ -70,17 +70,17 @@ public struct EditorPackageDependencySection: View {
                     } else {
                         VStack(spacing: 1) {
                             ForEach(dependencies) { dependency in
-                                EditorPackageDependencyRow(dependency: dependency, depth: 1)
+                                PackageDependencyRow(dependency: dependency, depth: 1)
                             }
                         }
                     }
                 }
             }
             .onAppear {
-                isExpanded = EditorFileTreeStore.shared.isPackageDependencySectionExpanded(for: projectRootPath)
+                isExpanded = FileTreeSettings.shared.isPackageDependencySectionExpanded(for: projectRootPath)
             }
             .onChange(of: projectRootPath) { _, newPath in
-                isExpanded = EditorFileTreeStore.shared.isPackageDependencySectionExpanded(for: newPath)
+                isExpanded = FileTreeSettings.shared.isPackageDependencySectionExpanded(for: newPath)
             }
         )
     }

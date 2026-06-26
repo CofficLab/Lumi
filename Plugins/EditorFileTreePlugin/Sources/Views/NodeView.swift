@@ -4,9 +4,9 @@ import LumiUI
 import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
-public struct EditorFileTreeNodeView: View {
+public struct NodeView: View {
     @EnvironmentObject private var editorContext: EditorContext
-    @EnvironmentObject private var selectionState: EditorFileTreeSelectionState
+    @EnvironmentObject private var selectionState: SelectionState
     @LumiTheme private var uiTheme
     public let url: URL
     public let depth: Int
@@ -30,7 +30,7 @@ public struct EditorFileTreeNodeView: View {
     public let onTreeMutation: (() -> Void)?
 
     /// Git 状态快照（由协调器提供，节点视图只读查询）
-    public let gitStatusSnapshot: EditorFileTreeGitStatusSnapshot
+    public let gitStatusSnapshot: GitStatusSnapshot
 
     /// 本地展开状态
     @State private var isExpanded: Bool = false
@@ -90,7 +90,7 @@ public struct EditorFileTreeNodeView: View {
         projectRootPath: String = "",
         onExpansionChange: ((String, Bool) -> Void)? = nil,
         onTreeMutation: (() -> Void)? = nil,
-        gitStatusSnapshot: EditorFileTreeGitStatusSnapshot = .empty
+        gitStatusSnapshot: GitStatusSnapshot = .empty
     ) {
         self.url = url
         self.depth = depth
@@ -103,7 +103,7 @@ public struct EditorFileTreeNodeView: View {
         self.gitStatusSnapshot = gitStatusSnapshot
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
-        self.isDirectory = EditorFileTreeService.isDirectory(url)
+        self.isDirectory = FileTreeFacade.isDirectory(url)
         self.iconMetadata = FileTreeIconMetadata(
             fileName: url.lastPathComponent,
             fileExtension: url.pathExtension.lowercased(),
@@ -115,8 +115,8 @@ public struct EditorFileTreeNodeView: View {
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
-            let relativePath = EditorFileTreePathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
-            let store = EditorFileTreeStore.shared
+            let relativePath = PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
+            let store = FileTreeSettings.shared
             _isExpanded = State(initialValue: store.expandedPaths(for: projectRootPath).contains(relativePath))
         }
     }
@@ -211,7 +211,7 @@ public struct EditorFileTreeNodeView: View {
                     } else {
                         VStack(spacing: 2) {
                             ForEach(children, id: \.self) { childURL in
-                                EditorFileTreeNodeView(
+                                NodeView(
                                     url: childURL,
                                     depth: depth + 1,
                                     onSelect: onSelect,
@@ -325,7 +325,7 @@ public struct EditorFileTreeNodeView: View {
     // MARK: - View Helpers
 
     /// 当前节点的 Git 状态（从 snapshot 查询，文件查文件状态，目录查聚合状态）
-    private var currentGitStatus: EditorFileTreeGitStatus? {
+    private var currentGitStatus: GitStatus? {
         guard !gitStatusSnapshot.isEmpty else { return nil }
         let path = gitRelativePath
         if isDirectory {
@@ -337,12 +337,12 @@ public struct EditorFileTreeNodeView: View {
 
     /// 用于 Git 状态查询的相对路径（与 snapshot 中 key 的格式匹配）
     private var gitRelativePath: String {
-        EditorFileTreePathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
+        PathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
     }
 
     /// Git 状态标记颜色
     private func gitStatusColor(
-        _ status: EditorFileTreeGitStatus,
+        _ status: GitStatus,
         isSelected: Bool
     ) -> Color {
         // 选中行时使用更亮的颜色保持对比度
@@ -415,11 +415,11 @@ public struct EditorFileTreeNodeView: View {
         let targets = selectionState.actionTargets(for: url)
         guard !projectRootPath.isEmpty else { return targets }
 
-        let rootPath = EditorFileTreePathFormatter.normalizedFilePath(
+        let rootPath = PathFormatter.normalizedFilePath(
             URL(fileURLWithPath: projectRootPath)
         )
         return targets.filter {
-            EditorFileTreePathFormatter.normalizedFilePath($0) != rootPath
+            PathFormatter.normalizedFilePath($0) != rootPath
         }
     }
 
@@ -484,18 +484,18 @@ private struct FileTreeIconMetadata {
 
 // MARK: - Actions
 
-extension EditorFileTreeNodeView {
+extension NodeView {
     // MARK: - Expansion Persistence
 
     /// 当前节点相对于项目根目录的路径，保留开头的 "/" 以兼容已持久化的展开状态。
     private var relativePath: String {
-        EditorFileTreePathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
+        PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
     }
 
     /// 将当前展开/折叠状态持久化到 store
     private func persistExpansionState() {
         guard !projectRootPath.isEmpty else { return }
-        let store = EditorFileTreeStore.shared
+        let store = FileTreeSettings.shared
         if isExpanded {
             store.addExpandedPath(relativePath, for: projectRootPath)
         } else {
@@ -517,7 +517,7 @@ extension EditorFileTreeNodeView {
         loadChildrenTask = Task { @MainActor in
             do {
                 let sorted = try await Task.detached(priority: .userInitiated) {
-                    try EditorFileTreeService.loadContents(of: currentURL)
+                    try FileTreeFacade.loadContents(of: currentURL)
                 }.value
                 guard !Task.isCancelled else { return }
                 children = sorted
@@ -535,21 +535,21 @@ extension EditorFileTreeNodeView {
     private func reloadChildren() { loadChildren() }
 
     private func createNewFile() {
-        if EditorFileTreeService.createFile(in: url, name: newItemName) != nil {
+        if FileTreeFacade.createFile(in: url, name: newItemName) != nil {
             reloadChildren()
             notifyTreeMutation()
         }
     }
 
     private func createNewFolder() {
-        if EditorFileTreeService.createFolder(in: url, name: newItemName) != nil {
+        if FileTreeFacade.createFolder(in: url, name: newItemName) != nil {
             reloadChildren()
             notifyTreeMutation()
         }
     }
 
     private func renameItem() {
-        if let newURL = EditorFileTreeService.renameItem(at: url, newName: newItemName) {
+        if let newURL = FileTreeFacade.renameItem(at: url, newName: newItemName) {
             onSelect(newURL)
             notifyTreeMutation()
         }
@@ -557,7 +557,7 @@ extension EditorFileTreeNodeView {
 
     private func deleteItems() {
         guard !batchActionURLs.isEmpty else { return }
-        if EditorFileTreeService.trashItems(at: batchActionURLs) > 0 {
+        if FileTreeFacade.trashItems(at: batchActionURLs) > 0 {
             selectionState.clearSelection()
             notifyTreeMutation()
         }
@@ -568,19 +568,19 @@ extension EditorFileTreeNodeView {
     }
 
     private func openInFinder() {
-        EditorFileTreeService.openInFinder(url)
+        FileTreeFacade.openInFinder(url)
     }
 
     private func openInVSCode() {
-        EditorFileTreeService.openInVSCode(url)
+        FileTreeFacade.openInVSCode(url)
     }
 
     private func openInTerminal() {
-        EditorFileTreeService.openInTerminal(url)
+        FileTreeFacade.openInTerminal(url)
     }
 
     private func copyPath() {
-        EditorFileTreeService.copyPath(url)
+        FileTreeFacade.copyPath(url)
     }
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
@@ -594,11 +594,11 @@ extension EditorFileTreeNodeView {
 #Preview {
     let testURL = URL(fileURLWithPath: NSHomeDirectory())
 
-    return EditorFileTreeNodeView(
+    return NodeView(
         url: testURL,
         depth: 0,
         onSelect: { _ in }
     )
-    .environmentObject(EditorFileTreeSelectionState())
+    .environmentObject(SelectionState())
     .frame(width: 250, height: 400)
 }

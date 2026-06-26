@@ -8,7 +8,7 @@ import FileTreeKit
 ///
 /// 作为 FileTreeKit.FileTreeService 的薄包装层，
 /// 保留插件特有的方法（openInTerminal、openInVSCode 等 UI 操作）。
-public enum EditorFileTreeService {
+public enum FileTreeFacade {
     // MARK: - 委托给 FileTreeKit
 
     /// 过滤并排序目录内容
@@ -108,7 +108,7 @@ public enum EditorFileTreeService {
     /// 批量移入废纸篓，自动跳过嵌套子路径。
     @discardableResult
     public static func trashItems(at urls: [URL]) -> Int {
-        let targets = EditorFileTreePathFormatter.topLevelURLs(from: urls)
+        let targets = PathFormatter.topLevelURLs(from: urls)
         var successCount = 0
         for url in targets where trashItem(at: url) {
             successCount += 1

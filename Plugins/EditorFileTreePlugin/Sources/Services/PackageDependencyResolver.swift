@@ -1,6 +1,6 @@
 import Foundation
 
-public enum EditorPackageDependencyResolver {
+public enum PackageDependencyResolver {
     /// Swift Package Dependencies 仅适用于 Xcode 工程或 Swift Package 项目。
     public static func shouldShowPackageDependencies(projectRootURL: URL) -> Bool {
         let root = projectRootURL.standardizedFileURL
@@ -9,13 +9,13 @@ public enum EditorPackageDependencyResolver {
         return hasSwiftPackageManifest(at: root)
     }
 
-    public static func resolve(projectRootURL: URL) -> [EditorPackageDependency] {
+    public static func resolve(projectRootURL: URL) -> [PackageDependency] {
         let projectRootURL = projectRootURL.standardizedFileURL
         guard let projectURL = findXcodeProject(in: projectRootURL) else {
             return resolveSwiftPackage(projectRootURL: projectRootURL)
         }
 
-        let references = (try? EditorXcodePackageReferenceParser.parse(projectURL: projectURL)) ?? []
+        let references = (try? XcodePackageReferenceParser.parse(projectURL: projectURL)) ?? []
         let pins = pinsByIdentity(resolvedFileCandidates(projectRootURL: projectRootURL, projectURL: projectURL))
 
         return references
@@ -80,13 +80,13 @@ public enum EditorPackageDependencyResolver {
         return urls
     }
 
-    private static func resolveSwiftPackage(projectRootURL: URL) -> [EditorPackageDependency] {
+    private static func resolveSwiftPackage(projectRootURL: URL) -> [PackageDependency] {
         let pins = pinsByIdentity(resolvedFileCandidates(projectRootURL: projectRootURL))
         return pins.values
             .map { pin in
-                EditorPackageDependency(
+                PackageDependency(
                     identity: pin.identity,
-                    displayName: EditorPackageResolved.identityFromLocation(pin.location),
+                    displayName: PackageResolved.identityFromLocation(pin.location),
                     location: pin.location,
                     kind: .remote,
                     version: pin.version,
@@ -98,11 +98,11 @@ public enum EditorPackageDependencyResolver {
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
-    private static func pinsByIdentity(_ candidates: [URL]) -> [String: EditorResolvedPackagePin] {
+    private static func pinsByIdentity(_ candidates: [URL]) -> [String: ResolvedPackagePin] {
         let fileManager = FileManager.default
         for url in candidates where fileManager.fileExists(atPath: url.path) {
-            let pins = (try? EditorPackageResolved.parse(url: url)) ?? []
-            return pins.reduce(into: [String: EditorResolvedPackagePin]()) { result, pin in
+            let pins = (try? PackageResolved.parse(url: url)) ?? []
+            return pins.reduce(into: [String: ResolvedPackagePin]()) { result, pin in
                 result[pin.identity] = pin
             }
         }
@@ -110,14 +110,14 @@ public enum EditorPackageDependencyResolver {
     }
 
     private static func dependency(
-        reference: EditorXcodePackageReference,
+        reference: XcodePackageReference,
         projectRootURL: URL,
-        pins: [String: EditorResolvedPackagePin]
-    ) -> EditorPackageDependency {
+        pins: [String: ResolvedPackagePin]
+    ) -> PackageDependency {
         if reference.kind == .local {
             let pathURL = URL(fileURLWithPath: reference.location, relativeTo: projectRootURL).standardizedFileURL
             let exists = FileManager.default.fileExists(atPath: pathURL.path)
-            return EditorPackageDependency(
+            return PackageDependency(
                 identity: reference.identity,
                 displayName: reference.displayName,
                 location: pathURL.path,
@@ -130,7 +130,7 @@ public enum EditorPackageDependencyResolver {
         }
 
         let pin = pins[reference.identity]
-        return EditorPackageDependency(
+        return PackageDependency(
             identity: reference.identity,
             displayName: reference.displayName,
             location: reference.location,

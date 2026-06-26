@@ -3,12 +3,12 @@ import SuperLogKit
 import os
 
 @MainActor
-public final class EditorPackageDependencyStore: ObservableObject, SuperLog {
+public final class PackageDependencyStore: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📦"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.packages")
 
-    @Published private(set) var dependencies: [EditorPackageDependency] = []
+    @Published private(set) var dependencies: [PackageDependency] = []
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var diagnostic: String?
 
@@ -43,7 +43,7 @@ public final class EditorPackageDependencyStore: ObservableObject, SuperLog {
         isLoading = true
         refreshTask = Task { @MainActor [weak self] in
             let result = await Task.detached(priority: .utility) {
-                EditorPackageDependencyResolver.resolve(projectRootURL: URL(fileURLWithPath: path))
+                PackageDependencyResolver.resolve(projectRootURL: URL(fileURLWithPath: path))
             }.value
             guard let self, !Task.isCancelled, self.projectRootPath == path else { return }
             self.dependencies = result
@@ -54,7 +54,7 @@ public final class EditorPackageDependencyStore: ObservableObject, SuperLog {
 
     private func shouldResolve(for path: String) -> Bool {
         guard !path.isEmpty else { return false }
-        return EditorPackageDependencyResolver.shouldShowPackageDependencies(
+        return PackageDependencyResolver.shouldShowPackageDependencies(
             projectRootURL: URL(fileURLWithPath: path)
         )
     }

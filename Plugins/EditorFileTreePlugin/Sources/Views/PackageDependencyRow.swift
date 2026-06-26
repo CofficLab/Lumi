@@ -3,10 +3,10 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-public struct EditorPackageDependencyRow: View {
+public struct PackageDependencyRow: View {
     @LumiTheme private var uiTheme
 
-    public let dependency: EditorPackageDependency
+    public let dependency: PackageDependency
     public let depth: Int
 
     @State private var isHovering = false
@@ -96,6 +96,6 @@ public struct EditorPackageDependencyRow: View {
 
     private func openInTerminal() {
         guard dependency.kind == .local else { return }
-        EditorFileTreeService.openInTerminal(URL(fileURLWithPath: dependency.location))
+        FileTreeFacade.openInTerminal(URL(fileURLWithPath: dependency.location))
     }
 }

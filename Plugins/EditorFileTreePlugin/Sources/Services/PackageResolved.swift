@@ -1,6 +1,6 @@
 import Foundation
 
-public struct EditorResolvedPackagePin: Equatable, Sendable {
+public struct ResolvedPackagePin: Equatable, Sendable {
     public let identity: String
     public let location: String
     public let version: String?
@@ -8,13 +8,13 @@ public struct EditorResolvedPackagePin: Equatable, Sendable {
     public let revision: String?
 }
 
-public enum EditorPackageResolved {
-    public static func parse(url: URL) throws -> [EditorResolvedPackagePin] {
+public enum PackageResolved {
+    public static func parse(url: URL) throws -> [ResolvedPackagePin] {
         let data = try Data(contentsOf: url)
         return try parse(data: data)
     }
 
-    public static func parse(data: Data) throws -> [EditorResolvedPackagePin] {
+    public static func parse(data: Data) throws -> [ResolvedPackagePin] {
         let object = try JSONSerialization.jsonObject(with: data)
         guard let root = object as? [String: Any] else { return [] }
 
@@ -30,11 +30,11 @@ public enum EditorPackageResolved {
         return []
     }
 
-    private static func parseV2Pin(_ pin: [String: Any]) -> EditorResolvedPackagePin? {
+    private static func parseV2Pin(_ pin: [String: Any]) -> ResolvedPackagePin? {
         guard let identity = pin["identity"] as? String else { return nil }
         let location = (pin["location"] as? String) ?? identity
         let state = pin["state"] as? [String: Any] ?? [:]
-        return EditorResolvedPackagePin(
+        return ResolvedPackagePin(
             identity: normalizeIdentity(identity),
             location: location,
             version: state["version"] as? String,
@@ -43,12 +43,12 @@ public enum EditorPackageResolved {
         )
     }
 
-    private static func parseV1Pin(_ pin: [String: Any]) -> EditorResolvedPackagePin? {
+    private static func parseV1Pin(_ pin: [String: Any]) -> ResolvedPackagePin? {
         guard let package = pin["package"] as? String else { return nil }
         let repositoryURL = (pin["repositoryURL"] as? String) ?? package
         let state = pin["state"] as? [String: Any] ?? [:]
         let identity = (pin["identity"] as? String) ?? identityFromLocation(repositoryURL)
-        return EditorResolvedPackagePin(
+        return ResolvedPackagePin(
             identity: normalizeIdentity(identity),
             location: repositoryURL,
             version: state["version"] as? String,

@@ -20,11 +20,11 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
 /// - 管理文件树 Git 状态快照
 ///
 /// 使用方式：
-/// 1. EditorFileTreeView 持有 coordinator
-/// 2. EditorFileTreeNodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
+/// 1. TreeView 持有 coordinator
+/// 2. NodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
 /// 3. coordinator 自动更新 watcher 的监控列表
 /// 4. 文件系统变化时 coordinator 递增刷新令牌并刷新 Git 状态
-public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
+public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
 
@@ -35,7 +35,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
     @Published var refreshToken: Int = 0
 
     /// Git 状态快照，视图通过只读映射查询
-    @Published var gitStatusSnapshot: EditorFileTreeGitStatusSnapshot = .empty
+    @Published var gitStatusSnapshot: GitStatusSnapshot = .empty
 
     /// 当前项目根路径
     private var projectRootPath: String = ""
@@ -47,7 +47,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
     private let watcher: FileTreeWatcher
 
     /// Git 状态提供器（线程安全，无 MainActor 依赖）
-    private let gitStatusProvider = EditorFileTreeGitStatusProvider()
+    private let gitStatusProvider = GitStatusProvider()
 
     /// Git 状态刷新任务
     private var gitStatusRefreshTask: Task<Void, Never>?
@@ -72,7 +72,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
     // MARK: - Init
 
     public init() {
-        let weakBox = WeakBox<EditorFileTreeRefreshCoordinator>()
+        let weakBox = WeakBox<RefreshCoordinator>()
         watcher = FileTreeWatcher { changedURL in
             weakBox.value?.handleDirectoryChanged(url: changedURL)
         }
@@ -103,7 +103,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
         gitStatusSnapshot = .empty
 
         if !path.isEmpty {
-            let store = EditorFileTreeStore.shared
+            let store = FileTreeSettings.shared
             expandedPaths = store.expandedPaths(for: path)
             updateWatcher()
 
@@ -127,14 +127,14 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
 
     // MARK: - Public - Expansion Tracking
 
-    /// 添加一个已展开的目录（EditorFileTreeNodeView 展开时调用）
+    /// 添加一个已展开的目录（NodeView 展开时调用）
     public func addExpandedPath(_ relativePath: String) {
         guard !projectRootPath.isEmpty else { return }
         expandedPaths.insert(relativePath)
         updateWatcher()
     }
 
-    /// 移除一个已折叠的目录（EditorFileTreeNodeView 折叠时调用）
+    /// 移除一个已折叠的目录（NodeView 折叠时调用）
     public func removeExpandedPath(_ relativePath: String) {
         guard !projectRootPath.isEmpty else { return }
         expandedPaths.remove(relativePath)
@@ -147,7 +147,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
     /// 从 store 同步展开状态（用于初始化恢复）
     public func syncExpandedPathsFromStore() {
         guard !projectRootPath.isEmpty else { return }
-        let store = EditorFileTreeStore.shared
+        let store = FileTreeSettings.shared
         expandedPaths = store.expandedPaths(for: projectRootPath)
         updateWatcher()
     }
@@ -193,7 +193,7 @@ public final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecke
             }
         }
 
-        for manifestURL in EditorPackageDependencyResolver.watchedManifestURLs(projectRootURL: rootURL) {
+        for manifestURL in PackageDependencyResolver.watchedManifestURLs(projectRootURL: rootURL) {
             let directoryURL = manifestURL.deletingLastPathComponent().standardizedFileURL
             var isDir: ObjCBool = false
             if FileManager.default.fileExists(atPath: directoryURL.path, isDirectory: &isDir), isDir.boolValue {

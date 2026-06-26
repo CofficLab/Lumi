@@ -1,11 +1,11 @@
 import Foundation
 
-public enum EditorPackageDependencyKind: String, Codable, Sendable {
+public enum PackageDependencyKind: String, Codable, Sendable {
     case remote
     case local
 }
 
-public enum EditorPackageDependencyStatus: Equatable, Sendable {
+public enum PackageDependencyStatus: Equatable, Sendable {
     case resolved
     case unresolved
     case missing(String)
@@ -22,15 +22,15 @@ public enum EditorPackageDependencyStatus: Equatable, Sendable {
     }
 }
 
-public struct EditorPackageDependency: Identifiable, Equatable, Sendable {
+public struct PackageDependency: Identifiable, Equatable, Sendable {
     public let identity: String
     public let displayName: String
     public let location: String
-    public let kind: EditorPackageDependencyKind
+    public let kind: PackageDependencyKind
     public let version: String?
     public let branch: String?
     public let revision: String?
-    public let status: EditorPackageDependencyStatus
+    public let status: PackageDependencyStatus
 
     public var id: String { identity }
 

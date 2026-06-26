@@ -9,11 +9,11 @@ import LumiCoreKit
 ///
 /// 作为 FileTreeKit.FileTreeStore 的单例包装器，
 /// 使用 AppConfig 注入存储目录。
-public final class EditorFileTreeStore: @unchecked Sendable {
+public final class FileTreeSettings: @unchecked Sendable {
 
     // MARK: - Singleton
 
-    public static let shared = EditorFileTreeStore()
+    public static let shared = FileTreeSettings()
 
     // MARK: - Properties
 

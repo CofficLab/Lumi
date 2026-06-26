@@ -47,7 +47,7 @@ public struct EditorFileTreeEmptyView: View {
     VStack(spacing: 20) {
         EditorFileTreeLoadingView()
         EditorFileTreeEmptyView()
-        EditorFileTreeNoProjectView()
+        NoProjectView()
     }
     .frame(width: 200)
 }
