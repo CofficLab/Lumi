@@ -10,6 +10,7 @@ public struct AppHTTPResponseView: View {
     }
 
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     private let response: AppHTTPResponse
     private let title: String?
@@ -17,6 +18,7 @@ public struct AppHTTPResponseView: View {
     private let bodyMinHeight: CGFloat
 
     @State private var bodyDisplayMode: BodyDisplayMode = .pretty
+    @State private var showCopyFeedback = false
 
     public init(
         response: AppHTTPResponse,
@@ -93,10 +95,21 @@ public struct AppHTTPResponseView: View {
 
             Spacer()
 
-            AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+            AppIconButton(
+                systemImage: showCopyFeedback ? "checkmark" : "doc.on.doc",
+                label: showCopyFeedback
+                    ? LumiUILocalization.string("Copied")
+                    : nil,
+                tint: showCopyFeedback ? theme.success : theme.textSecondary,
+                size: .compact
+            ) {
                 copyResponse()
             }
             .help(LumiUILocalization.string("Copy"))
+            .animation(
+                AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference),
+                value: showCopyFeedback
+            )
         }
     }
 
@@ -205,6 +218,16 @@ public struct AppHTTPResponseView: View {
         let text = response.copyText.trimmingCharacters(in: .whitespacesAndNewlines)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text.isEmpty ? "-" : text, forType: .string)
+
+        AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+            showCopyFeedback = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
+                showCopyFeedback = false
+            }
+        }
     }
 }
 
