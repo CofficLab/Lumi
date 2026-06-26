@@ -66,6 +66,7 @@ struct ChatComposerSectionView: View {
                 isSending: isSending,
                 hasConversation: selectedID != nil || !conversations.isEmpty,
                 hasAttachments: !coordinator.imageAttachments.isEmpty,
+                canAttachImages: coordinator.canAttachImages(for: selectedID),
                 leadingToolbarItems: coordinator.chatSectionToolbarItems.filter {
                     $0.placement == .leading
                 },
@@ -73,6 +74,7 @@ struct ChatComposerSectionView: View {
                     $0.placement == .trailing
                 },
                 onAttachImage: coordinator.selectImageAttachment,
+                onAttachImageBlocked: { coordinator.showImageUnsupportedAlert = true },
                 onFileDrop: coordinator.handleFileDrop,
                 onSend: coordinator.send,
                 onStop: { coordinator.chatService.cancelSending(for: selectedID) },
@@ -104,6 +106,12 @@ struct ChatComposerSectionView: View {
                   let text = userInfo["text"] as? String,
                   !text.isEmpty else { return }
             coordinator.appendToDraft(text)
+        }
+        .alert(
+            LumiPluginLocalization.string("当前模型不支持图片", bundle: .module),
+            isPresented: $coordinator.showImageUnsupportedAlert
+        ) {
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
         }
         .alert(
             "Approve high-risk tool?",

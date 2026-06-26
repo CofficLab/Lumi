@@ -15,9 +15,11 @@ struct ComposerView: View {
     let isSending: Bool
     let hasConversation: Bool
     let hasAttachments: Bool
+    let canAttachImages: Bool
     let leadingToolbarItems: [LumiChatSectionToolbarItem]
     let trailingToolbarItems: [LumiChatSectionToolbarItem]
     let onAttachImage: () -> Void
+    let onAttachImageBlocked: () -> Void
     let onFileDrop: (URL) -> Void
     let onSend: () -> Void
     let onStop: () -> Void
@@ -53,7 +55,15 @@ struct ComposerView: View {
                     canAttach: hasConversation,
                     action: { screenshotState.startCapture() }
                 )
-                ToolbarButton(systemImage: "photo", help: "图片", action: onAttachImage)
+                ToolbarButton(
+                    systemImage: "photo",
+                    help: canAttachImages
+                        ? LumiPluginLocalization.string("图片", bundle: .module)
+                        : LumiPluginLocalization.string("当前模型不支持图片", bundle: .module),
+                    isEnabled: canAttachImages,
+                    action: onAttachImage,
+                    onDisabledTap: onAttachImageBlocked
+                )
 
                 ForEach(leadingToolbarItems) { item in
                     item.makeView()

@@ -41,10 +41,14 @@ struct ModelSelectorModelRow: View {
         availabilityStore.status(providerId: provider.id, modelId: model) ?? .unknown
     }
 
+    private var hasMetricBadges: Bool {
+        (stat?.avgTPS ?? 0) > 0 || (stat?.sampleCount ?? 0) > 0
+    }
+
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
+                HStack(spacing: 8) {
                     availabilityStatusIcon(availabilityStatus)
 
                     Text(modelDisplayName)
@@ -58,49 +62,57 @@ struct ModelSelectorModelRow: View {
                             .foregroundColor(theme.primary)
                     }
 
-                    Spacer()
-
-                    if let contextSize = provider.contextWindowSizes[model] {
-                        AppTag(ModelSelectorFormatService.contextSize(contextSize), systemImage: "text.viewfinder")
-                    }
-
-                    if let stat, stat.avgTPS > 0 {
-                        AppTag(ModelSelectorFormatService.tps(stat.avgTPS), systemImage: "speedometer")
-                    }
-
-                    if let stat, stat.sampleCount > 0 {
-                        AppTag("\(stat.sampleCount)", systemImage: "bubble.left.and.bubble.right")
-                    }
+                    Spacer(minLength: 0)
                 }
 
-                // MARK: - 能力 Badge
-                if let capabilities {
-                    HStack(spacing: 6) {
-                        capabilityBadge(
-                            title: capabilities.supportsVision ? "Image" : "Text",
-                            systemImage: capabilities.supportsVision ? "photo" : "text.bubble"
-                        )
+                capabilityBadges
 
-                        if capabilities.supportsTools {
-                            capabilityBadge(title: "Tools", systemImage: "wrench.and.screwdriver")
-                        }
-
-                        if capabilities.supportsTTS {
-                            capabilityBadge(title: "TTS", systemImage: "waveform")
-                        }
-
-                        Spacer()
-                    }
-                } else {
-                    HStack(spacing: 6) {
-                        AppTag(provider.displayName)
-                        AppTag(provider.id, systemImage: "cloud")
-                        Spacer()
-                    }
+                if hasMetricBadges {
+                    metricBadges
                 }
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var capabilityBadges: some View {
+        HStack(spacing: 6) {
+            if let capabilities {
+                capabilityBadge(
+                    title: capabilities.supportsVision ? "Image" : "Text",
+                    systemImage: capabilities.supportsVision ? "photo" : "text.bubble"
+                )
+
+                if capabilities.supportsTools {
+                    capabilityBadge(title: "Tools", systemImage: "wrench.and.screwdriver")
+                }
+
+                if capabilities.supportsTTS {
+                    capabilityBadge(title: "TTS", systemImage: "waveform")
+                }
+            } else {
+                AppTag(provider.displayName)
+                AppTag(provider.id, systemImage: "cloud")
+            }
+
+            if let contextSize = provider.contextWindowSizes[model] {
+                AppTag(ModelSelectorFormatService.contextSize(contextSize), systemImage: "text.viewfinder")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var metricBadges: some View {
+        HStack(spacing: 6) {
+            if let stat, stat.avgTPS > 0 {
+                AppTag(ModelSelectorFormatService.tps(stat.avgTPS), systemImage: "speedometer")
+            }
+
+            if let stat, stat.sampleCount > 0 {
+                AppTag("\(stat.sampleCount)", systemImage: "bubble.left.and.bubble.right")
+            }
         }
     }
 
