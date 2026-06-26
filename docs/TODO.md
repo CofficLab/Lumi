@@ -1031,3 +1031,55 @@ FileEditTool/
 - [ ] `temp/`、`DerivedData-*` 等无关目录不再出现在搜索结果的扫描路径中
 - [ ] 用户无需手动配置即可获得合理的搜索性能
 - [ ] 👤 需要用户参与：在 Lumi 项目上分别测试 keyword、semantic、hybrid 三种模式的响应时间
+
+---
+
+## 24. 编辑器文件树 UI 流畅度优化
+
+> 目标：让 `EditorFileTreePlugin` 的文件树在大项目、批量刷新、快速展开/折叠等高频路径下保持流畅，避免整树重建和无效磁盘 I/O。
+> 分析来源：`Plugins/EditorFileTreePlugin` 与 `Packages/FileTreeKit` 源码审查。
+> 涉及文件：`EditorFileTreeNodeView.swift`、`EditorFileTreeView.swift`、`EditorFileTreeRefreshCoordinator.swift`、`EditorFileTreeGitStatusProvider.swift`、`FileTreeWatcher.swift`、`FileTreeStore.swift`
+
+### 根因分析
+
+| 排序 | 根因 | 位置 | 影响 |
+|------|------|------|------|
+| 1 | 节点视图未实现 `Equatable` | `EditorFileTreeNodeView` + `ForEach(children)` | 每次 `refreshToken` 变化，整棵展开树所有节点 `body` 全量重新求值 |
+| 2 | 刷新令牌 `onChange` 让每个节点都重载子项 | `EditorFileTreeNodeView.body` 的 `.onChange(of: refreshToken)` | 所有已展开目录都重新 `loadContents` 做磁盘 I/O，即使自身未变 |
+| 3 | watcher 已知变化目录却被丢弃，改全量刷新 | `handleDirectoryChanged` 丢弃 `url`，`triggerRefresh` 全量 +1 | 精准刷新信息丢失，放大 #1/#2 的重建成本 |
+| 4 | 刷新防抖固定 0.3s，首帧延迟 | `debounceInterval = 300_000_000` | `git checkout`、`npm install` 等持续刷盘场景观感迟钝 |
+| 5 | `body` 每次都 `new` icon contributor + 重算 `gitRelativePath` | `resolvedIcon`、`currentGitStatus` | 配合全量重建，每个可见节点每次刷新都重复分配和路径标准化 |
+| 6 | 多处 `AnyView` 包裹阻断 SwiftUI diff 优化 | `EditorFileTreeNodeView`/`EditorPackageDependencyRow`/`EditorPackageDependencySection` 的 `body` | 强制动态派发，递归树里成本放大 |
+| 7 | 展开状态每次增删都全量读写 plist | `FileTreeStore.addExpandedPath/removeExpandedPath` | 连续展开含几十个子目录的大目录时触发几十次原子磁盘写 |
+| 8 | `visibleOrder` 数组 + O(n) `removeAll` | `EditorFileTreeSelectionState.untrackVisible` | 快速滚动时每行消失 O(n) 扫描 |
+
+### Phase 1: 消除整树全量重建（高优先级，收益最大）
+
+- [ ] **为 `EditorFileTreeNodeView` 实现 `Equatable`**：定义 `static func ==`，比较 `url / isExpanded / children / 选中态 / gitStatusSnapshot / refreshToken`；在递归 `ForEach` 处用 `.equatable()` 包裹，让未变化的子节点跳过 `body`
+- [ ] **在 `init` 缓存 `gitRelativePath`**：仿照已有 `iconMetadata` 的做法，把 `currentGitStatus` 依赖的相对路径一次性算好，避免 `body` 里反复跑 `EditorFileTreePathFormatter.gitPath` → `standardizingPath`
+- [ ] **去掉 `body` 中的 `AnyView`**：`EditorFileTreeNodeView`、`EditorPackageDependencyRow`、`EditorPackageDependencySection` 改用 `@ViewBuilder`，让 SwiftUI 走静态 diff
+
+### Phase 2: 精准刷新，消除无效 I/O（高优先级）
+
+- [ ] **透传 watcher 的变化目录**：`FileTreeWatcher` 回调已带 `url`，让 `EditorFileTreeRefreshCoordinator` 把变更路径集合随 `refreshToken` 下发，节点仅在自己或后代目录命中时才 `reloadChildren`
+- [ ] **缩小节点 `.onChange(of: refreshToken)` 的副作用**：仅命中变更的节点重载，其余节点只靠 `Equatable` 跳过
+- [ ] **刷新防抖改为"首帧即时 + 后续合并"**：第一次 FS 事件立即刷新响应首帧，后续事件做 trailing debounce，解决持续刷盘场景的感知延迟
+
+### Phase 3: 减少 body 内重复开销（中优先级）
+
+- [ ] **缓存 `LumiDefaultFileIconThemeContributor`**：改为静态常量或单例，避免每个节点每次 `body` 都分配新实例；或在 `init` 阶段就把最终 `LumiFileIcon` 解析结果缓存
+- [ ] **`DragPreview` 复用节点的 `isDirectory`**：把已缓存的 `isDirectory` 传入 `FileTreeDragPreview`，避免拖拽热路径上再做 `resourceValues(forKeys: [.isDirectoryKey])` 文件系统 I/O
+- [ ] **隔离选中态失效范围**：`selectionState.isSelected(url)` 放在 `body` 顶部会让任意选中变化使所有可见节点失效；配合 Phase 1 的 `Equatable` 后评估是否只需让选中/上次选中两个节点感知变化
+
+### Phase 4: 持久化与多选数据结构（低优先级）
+
+- [ ] **`EditorFileTreeStore` 内存缓存 + 防抖落盘**：展开/折叠操作只改内存，用 ~1s 防抖批量写 plist，避免每次增删都全量原子写盘
+- [ ] **`visibleOrder` 改为有序集合或索引字典**：替换数组 + `removeAll { $0 == path }`，让 `untrackVisible` 和 Shift 多选的 `firstIndex` 不再 O(n)
+- [ ] **评估 `EditorFileTreeView` 的 `ScrollView + VStack` 改为懒加载**：当前 `VStack` 是 eager 的，超大项目可考虑 `LazyVStack`，但需权衡与展开动画的兼容性
+
+### 成功标准
+
+- [ ] 展开 500+ 文件的项目后，文件系统刷新不再重建整棵树（仅受影响节点更新）
+- [ ] `git checkout`、`npm install` 等持续刷盘场景下文件树无明显周期性掉帧
+- [ ] 快速展开/折叠含大量子目录的目录时不触发密集磁盘写
+- [ ] 👤 需要用户参与：在大项目上验证滚动、展开/折叠、Git 状态刷新、多选交互的流畅度

@@ -8,7 +8,7 @@ import AppKit
 /// - Cmd+点击：切换选中项，不打开文件
 /// - Shift+点击：在可见行范围内连续多选，不打开文件
 @MainActor
-final class EditorFileTreeSelectionState: ObservableObject {
+final class SelectionState: ObservableObject {
     @Published private(set) var selectedPaths: Set<String> = []
     @Published private(set) var anchorPath: String?
 
@@ -123,7 +123,7 @@ final class EditorFileTreeSelectionState: ObservableObject {
     }
 
     private func normalizedPath(_ url: URL) -> String {
-        EditorFileTreePathFormatter.normalizedFilePath(url)
+        PathFormatter.normalizedFilePath(url)
     }
 }
 

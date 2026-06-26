@@ -1,6 +1,6 @@
 import Foundation
 
-enum EditorFileTreePathFormatter {
+enum PathFormatter {
     static func expansionPath(for nodeURL: URL, projectRootPath: String) -> String {
         relativePath(
             for: nodeURL,
