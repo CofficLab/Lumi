@@ -30,8 +30,8 @@ final class FreeModelClaudeBackend: AnthropicCompatibleLumiProvider, @unchecked 
             request.addValue(betas, forHTTPHeaderField: "anthropic-beta")
         }
 
-        FreeModelDiagnosticLog.log(
-            "anthropic request node=\(nodeLabel) url=\(url.absoluteString) ua=\(FreeModelClaudeCodeEmulation.userAgent()) session=\(FreeModelClaudeCodeEmulation.sessionID)"
+        FreeModelDiagnosticLog.logger.info(
+            "\(FreeModelDiagnosticLog.t)anthropic request node=\(nodeLabel) url=\(url.absoluteString) ua=\(FreeModelClaudeCodeEmulation.userAgent()) session=\(FreeModelClaudeCodeEmulation.sessionID)"
         )
         return request
     }
@@ -55,8 +55,8 @@ final class FreeModelClaudeBackend: AnthropicCompatibleLumiProvider, @unchecked 
         )
         body["metadata"] = FreeModelClaudeCodeEmulation.metadata()
 
-        FreeModelDiagnosticLog.log(
-            "anthropic body node=\(nodeLabel) model=\(request.model) fingerprint=\(fingerprint) betas=\(FreeModelClaudeCodeEmulation.anthropicBetaHeader(for: request.model))"
+        FreeModelDiagnosticLog.logger.info(
+            "\(FreeModelDiagnosticLog.t)anthropic body node=\(nodeLabel) model=\(request.model) fingerprint=\(fingerprint) betas=\(FreeModelClaudeCodeEmulation.anthropicBetaHeader(for: request.model))"
         )
     }
 
