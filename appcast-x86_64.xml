@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.9.0</title>
-            <pubDate>Thu, 25 Jun 2026 04:45:59 +0000</pubDate>
-            <sparkle:version>235</sparkle:version>
-            <sparkle:shortVersionString>4.9.0</sparkle:shortVersionString>
+            <title>4.9.1</title>
+            <pubDate>Fri, 26 Jun 2026 12:44:42 +0000</pubDate>
+            <sparkle:version>236</sparkle:version>
+            <sparkle:shortVersionString>4.9.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.9.0</h2>
-<h3>Changes since v4.8.0</h3>
+            <description><![CDATA[<h2>Release v4.9.1</h2>
+<h3>Changes since v4.9.0</h3>
 <ul>
-<li>docs: add quantified pure-logic coverage report</li>
-<li>feat: add model availability check to LumiLLMProvider protocol</li>
-<li>feat(editor-preview): add DOC/DOCX file preview and screenshot support</li>
-<li>feat(plugin): support plugin-contributed onboarding pages via protocol hook</li>
-<li>feat(ui): add bottom shadow to rail, breadcrumb, and chat header views</li>
-<li>fix: prevent onboarding from appearing in settings window</li>
-<li>fix: remove chat section maximum width limit to allow free resizing</li>
-<li>fix(agent-temp-storage): set plugin policy to alwaysOn</li>
-<li>fix(chat): insert conversations missed by create event on update</li>
-<li>fix(chat): stop chat input from reclaiming first responder on update</li>
-<li>fix(device-info): correctly detect battery power source</li>
-<li>fix(device-info): detect internal battery on Apple Silicon Macs</li>
-<li>fix(device-info): remove battery indicator from menu bar</li>
-<li>fix(download-kit): guard against lagged progress overwriting cancelled state</li>
-<li>fix(editor-call-hierarchy): set plugin policy to alwaysOn</li>
-<li>fix(editor-problems): set plugin policy to alwaysOn</li>
-<li>fix(editor-references): set plugin policy to alwaysOn</li>
-<li>fix(editor-search): set plugin policy to alwaysOn</li>
-<li>fix(editor-symbols): set plugin policy to alwaysOn</li>
-<li>fix(editor): align QuickLook Office preview scrollbar and content layout</li>
+<li>feat(agent-tools): enable image passthrough from tool results to LLM</li>
+<li>feat(aliyun): add 5-minute disk cache for availability checks</li>
+<li>feat(aliyun): map unsupported Coding Plan models to structured availability</li>
+<li>feat(availability): HTTP response UI and provider check improvements</li>
+<li>feat(chat): gate image upload on vision support and refine model row layout</li>
+<li>feat(download-kit): add bandwidth rate limiting via token bucket algorithm</li>
+<li>feat(llm-provider-mlx): add Coder/DeepSeek/Microsoft series and fix series selector</li>
+<li>feat(llm-provider-mlx): auto-unload idle model + delete cached models</li>
+<li>feat(llm-provider-mlx): record streaming metrics so TPS shows in toolbar</li>
+<li>feat(llm-provider-mlx): show download speed in model download UI</li>
+<li>feat(llm-provider): add 5-minute disk cache to all remote LLM providers</li>
+<li>feat(llm): require explicit providerStatus on each LLM provider</li>
+<li>feat(lumi-ui): show copied feedback on HTTP response copy button</li>
+<li>feat(message-renderer): hide message header in brief verbosity mode</li>
+<li>feat(mlx): support configurable download speed limit for MLX models</li>
+<li>feat(model-selector): add hover highlight effect to model provider picker</li>
+<li>feat(model-selector): display friendly model names instead of raw IDs</li>
+<li>feat(model-selector): distinguish unsupported models in availability UI</li>
+<li>feat(model-selector): show provider status, availability errors, and usage charts</li>
+<li>feat(xiaomi): split into TokenPlan + Xiaomi API and show inline API key setup on missing key</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.9.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.9.0/Lumi_4.9.0_x86_64.dmg" length="52916705" type="application/octet-stream" sparkle:edSignature="ThLvzMk0KXee3UE+LikDuhmdSCe7Sbrsm/KBxdoashUNckaOyXFDnhhLdl9iI0cBuMiD4/Z5atkmzA9XLge8Dw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.9.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.9.1/Lumi_4.9.1_x86_64.dmg" length="52732318" type="application/octet-stream" sparkle:edSignature="uqwlkt459m+pqPJ76u7l+RunAPFLv+GJBZtz3d92C5MXsdORwIA/Ic4woPOBwVzHtOc2+sOWYpodAMd+vvgIBg=="/>
         </item>
     </channel>
 </rss>
