@@ -144,29 +144,21 @@ struct ModelRow: View {
 
     @ViewBuilder
     private func availabilityErrorBlock(_ failure: LumiLLMFailureDetail) -> some View {
-        let message = availabilityErrorText(for: failure)
+        let message = failure.availabilityDisplayText
+        let isUnsupported = failure.reason == .unsupportedModel
         if !message.isEmpty {
             Text(message)
                 .font(.system(size: 12))
-                .foregroundColor(.red)
+                .foregroundColor(isUnsupported ? theme.textSecondary : .red)
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
                 .background(
-                    Color.red.opacity(0.08),
+                    (isUnsupported ? theme.textTertiary.opacity(0.12) : Color.red.opacity(0.08)),
                     in: RoundedRectangle(cornerRadius: 6, style: .continuous)
                 )
         }
-    }
-
-    private func availabilityErrorText(for failure: LumiLLMFailureDetail) -> String {
-        if let transport = failure.transportDetails?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            !transport.isEmpty {
-            return transport
-        }
-        return failure.availabilityDisplayText
     }
 
     @ViewBuilder
@@ -180,10 +172,16 @@ struct ModelRow: View {
             ProgressView()
                 .scaleEffect(0.5)
                 .frame(width: 12, height: 12)
-        case .unavailable:
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 11))
-                .foregroundColor(.red)
+        case .unavailable(let failure):
+            if failure.reason == .unsupportedModel {
+                Image(systemName: "minus.circle.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(theme.textSecondary)
+            } else {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(.red)
+            }
         case .unknown:
             Image(systemName: "questionmark.circle.fill")
                 .font(.system(size: 11))
