@@ -77,6 +77,22 @@ import Testing
     #expect(renderers.first { $0.id == "core-error-message" }?.canRender(aliyunError) == false)
 }
 
+@MainActor
+@Test func coreErrorRendererDefersToXiaomiRenderKind() {
+    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+    let conversationID = UUID()
+    let xiaomiAPIKeyError = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "xiaomi-api",
+        isError: true,
+        renderKind: "xiaomi-api-key-missing"
+    )
+
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(xiaomiAPIKeyError) == false)
+}
+
 private var testContext: LumiPluginContext {
     LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
 }

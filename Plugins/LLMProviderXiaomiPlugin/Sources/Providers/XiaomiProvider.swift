@@ -53,42 +53,9 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
         )
     }
 
-    // MARK: - Send（捕获错误并转换为可渲染的错误消息）
-
-    public override func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.send(request)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return XiaomiErrorHandling.errorMessage(
-                providerID: Self.info.id,
-                conversationID: conversationID,
-                error: error
-            )
-        }
+    public override func errorRenderKind(for error: Error) -> String? {
+        XiaomiErrorHandling.renderKind(for: error)
     }
-
-    public override func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.sendStreaming(request, onChunk: onChunk)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return XiaomiErrorHandling.errorMessage(
-                providerID: Self.info.id,
-                conversationID: conversationID,
-                error: error
-            )
-        }
-    }
-
-    // MARK: - API Key
 
     public static func getApiKey() -> String {
         LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
@@ -96,5 +63,9 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
+    }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
     }
 }

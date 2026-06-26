@@ -68,4 +68,9 @@ final class FreeModelClaudeBackend: AnthropicCompatibleLumiProvider, @unchecked 
         pendingStreamingModel.withLock { $0 = nil }
         return message
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

@@ -217,6 +217,10 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
         }
         return BackendSelection(label: "openai", provider: openAIBackend)
     }
+
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await backendSelection(for: model).provider.checkAvailability(model: model)
+    }
 }
 
 struct BackendSelection {

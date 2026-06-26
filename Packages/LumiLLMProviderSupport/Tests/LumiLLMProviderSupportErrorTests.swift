@@ -46,4 +46,14 @@ struct LumiLLMProviderSupportErrorTests {
 
         #expect(description == "所有供应商接口均请求失败。")
     }
+
+    @Test func missingAPIKeyIsNotRetryable() {
+        let error = LumiLLMProviderSupportError.missingAPIKey("Test")
+        #expect(error.llmErrorDisposition.isRetryable == false)
+    }
+
+    @Test func streamingFailedIsRetryable() {
+        let error = LumiLLMProviderSupportError.streamingFailed("timeout")
+        #expect(error.llmErrorDisposition.isRetryable == true)
+    }
 }

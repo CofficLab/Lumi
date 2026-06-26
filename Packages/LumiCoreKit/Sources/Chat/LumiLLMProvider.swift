@@ -101,9 +101,54 @@ public protocol LumiLLMProvider: Sendable {
     /// - Parameter model: 模型名称
     /// - Returns: 模型可用性检测结果
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult
+
+    /// 供应商对单次失败的重试决策；子类可 override。
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition
+
+    /// 将异常映射为错误消息的 `renderKind`；无自定义渲染时返回 `nil`。
+    func errorRenderKind(for error: Error) -> String?
+
+    /// 由调用方在重试耗尽或不可重试时，将 throw 的错误转为可展示的错误消息。
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage
 }
 
 public extension LumiLLMProvider {
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        if let providing = error as? LumiLLMErrorDispositionProviding {
+            return providing.llmErrorDisposition
+        }
+        return .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        let metadata = disposition.metadataEntries
+        let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: Self.info.id,
+            modelName: request.model,
+            isError: true,
+            rawErrorDetail: detail,
+            metadata: metadata
+        )
+    }
+
     func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -114,9 +159,5 @@ public extension LumiLLMProvider {
         }
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
         return message
-    }
-
-    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        .unavailable(reason: "Provider does not implement availability checks.")
     }
 }

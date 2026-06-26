@@ -9,7 +9,7 @@ import LumiLLMProviderSupport
 /// 两者模型清单一致，方便用户在「按 Token 计费」与「标准 API」间切换。
 public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
     /// 获取 API Key 的帮助页面（小米 MIMO 开放平台）。
-    public static let apiKeyHelpURL: String? = "https://platform.xiaomimimo.com/"
+    public static let apiKeyHelpURL: String? = "https://platform.xiaomimimo.com/console/api-keys"
 
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
@@ -58,39 +58,8 @@ public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked S
         )
     }
 
-    // MARK: - Send（捕获错误并转换为可渲染的错误消息）
-
-    public override func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.send(request)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return XiaomiErrorHandling.errorMessage(
-                providerID: Self.info.id,
-                conversationID: conversationID,
-                error: error
-            )
-        }
-    }
-
-    public override func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.sendStreaming(request, onChunk: onChunk)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return XiaomiErrorHandling.errorMessage(
-                providerID: Self.info.id,
-                conversationID: conversationID,
-                error: error
-            )
-        }
+    public override func errorRenderKind(for error: Error) -> String? {
+        XiaomiErrorHandling.renderKind(for: error)
     }
 
     // MARK: - API Key
@@ -101,5 +70,9 @@ public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked S
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
+    }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
     }
 }

@@ -37,6 +37,34 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         self.adapter = OpenAICompatibleProviderAdapter(configuration: configuration)
     }
 
+    open var lumiAPIService: LLMAPIService { apiService }
+    open var lumiOpenAIAdapter: OpenAICompatibleProviderAdapter { adapter }
+    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        LumiLLMErrorDispositionResolver.disposition(for: error, context: context)
+    }
+
+    open func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    open func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
+            conversationID: conversationID,
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
+        )
+    }
+
     open func buildRequest(url: URL, apiKey: String) -> URLRequest {
         adapter.buildRequest(url: url, apiKey: apiKey)
     }
@@ -45,39 +73,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         try await sendStreaming(request) { _ in }
     }
 
-    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        guard let apiKeyValue = try? apiKey() else {
-            return .unavailable(reason: "Missing API key")
-        }
-
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            return .unavailable(reason: "无效的 Base URL")
-        }
-
-        let body: [String: Any]
-        do {
-            body = try adapter.buildRequestBody(
-                messages: [ChatMessage(role: .user, content: "ping")],
-                model: model,
-                tools: nil,
-                systemPrompt: ""
-            )
-        } catch {
-            return .unavailable(reason: error.localizedDescription)
-        }
-
-        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
-
-        do {
-            _ = try await apiService.sendChatRequest(
-                request: httpRequest,
-                body: body
-            )
-            return .available
-        } catch {
-            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-            return .unavailable(reason: errorDesc)
-        }
+    open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        fatalError("\(Self.self) must override checkAvailability(model:)")
     }
 
     open func sendStreaming(
@@ -419,6 +416,34 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         self.adapter = AnthropicCompatibleProviderAdapter(configuration: configuration)
     }
 
+    open var lumiAPIService: LLMAPIService { apiService }
+    open var lumiAnthropicAdapter: AnthropicCompatibleProviderAdapter { adapter }
+    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        LumiLLMErrorDispositionResolver.disposition(for: error, context: context)
+    }
+
+    open func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    open func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
+            conversationID: conversationID,
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
+        )
+    }
+
     open func buildRequest(url: URL, apiKey: String) -> URLRequest {
         adapter.buildRequest(url: url, apiKey: apiKey)
     }
@@ -428,38 +453,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     }
 
     open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        guard let apiKeyValue = try? apiKey() else {
-            return .unavailable(reason: "Missing API key")
-        }
-
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            return .unavailable(reason: "无效的 Base URL")
-        }
-
-        let body: [String: Any]
-        do {
-            body = try adapter.buildRequestBody(
-                messages: [ChatMessage(role: .user, content: "ping")],
-                model: model,
-                tools: nil,
-                systemPrompt: ""
-            )
-        } catch {
-            return .unavailable(reason: error.localizedDescription)
-        }
-
-        let httpRequest = buildRequest(url: url, apiKey: apiKeyValue)
-
-        do {
-            _ = try await apiService.sendChatRequest(
-                request: httpRequest,
-                body: body
-            )
-            return .available
-        } catch {
-            let errorDesc = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-            return .unavailable(reason: errorDesc)
-        }
+        fatalError("\(Self.self) must override checkAvailability(model:)")
     }
 
     open func sendStreaming(
@@ -648,20 +642,19 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     }
 }
 
-public enum LumiLLMProviderSupportError: LocalizedError, NonRetryableErrorProviding {
+public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDispositionProviding {
     case emptyConversation
     case invalidBaseURL(String)
     case missingAPIKey(String)
     case allEndpointsFailed
     case streamingFailed(String)
 
-    /// 配置类错误（API Key 未配置、Base URL 无效等）属于确定性失败，不应重试。
-    public var isNonRetryable: Bool {
+    public var llmErrorDisposition: LumiLLMErrorDisposition {
         switch self {
         case .emptyConversation, .invalidBaseURL, .missingAPIKey:
-            return true
+            return .nonRetryable
         case .allEndpointsFailed, .streamingFailed:
-            return false
+            return .retryable()
         }
     }
 

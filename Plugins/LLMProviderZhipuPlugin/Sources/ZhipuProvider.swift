@@ -100,31 +100,16 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
         return request
     }
 
-    // MARK: - Send (with error rendering)
-
-    public override func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.send(request)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return Self.errorMessage(conversationID: conversationID, error: error)
+    public override func errorRenderKind(for error: Error) -> String? {
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            return ZhipuRenderKind.apiKeyMissing
         }
-    }
 
-    public override func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.sendStreaming(request, onChunk: onChunk)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return Self.errorMessage(conversationID: conversationID, error: error)
+        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+            return ZhipuRenderKind.http(statusCode)
         }
+
+        return ZhipuRenderKind.requestFailed
     }
 
     // MARK: - API Key
@@ -135,65 +120,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
-    // MARK: - Error Handling
-
-    static func errorMessage(conversationID: UUID, error: Error) -> LumiChatMessage {
-        let fullDetail = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-        let split = LumiLLMTransportDetails.split(fullDetail)
-        return LumiChatMessage(
-            conversationID: conversationID,
-            role: .error,
-            content: "",
-            providerID: info.id,
-            isError: true,
-            rawErrorDetail: split.summary,
-            renderKind: renderKind(for: error),
-            metadata: LumiLLMTransportDetails.metadata(from: split)
-        )
-    }
-
-    private static func renderKind(for error: Error) -> String {
-        if case LumiLLMProviderSupportError.missingAPIKey = error {
-            return ZhipuRenderKind.apiKeyMissing
-        }
-
-        if case let HTTPClientError.httpError(statusCode, _) = error {
-            return ZhipuRenderKind.http(statusCode)
-        }
-
-        if case let LumiLLMProviderSupportError.streamingFailed(message) = error,
-           let statusCode = parseHTTPStatusCode(from: message) {
-            return ZhipuRenderKind.http(statusCode)
-        }
-
-        return ZhipuRenderKind.requestFailed
-    }
-
-    private static func parseHTTPStatusCode(from text: String) -> Int? {
-        let patterns = [
-            #"HTTP 错误 \((\d+)\)"#,
-            #"HTTP 错误（(\d+)）"#,
-            #"HTTP error \((\d+)\)"#,
-            #"HTTP (\d+)"#,
-            #"\b(\d{3})\b"#,
-        ]
-
-        for pattern in patterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern),
-                  let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-                  match.numberOfRanges > 1,
-                  let range = Range(match.range(at: 1), in: text),
-                  let code = Int(text[range]),
-                  (100 ... 599).contains(code)
-            else {
-                continue
-            }
-            return code
-        }
-
-        return nil
     }
 
     // MARK: - Claude Code 模拟辅助方法
@@ -219,5 +145,9 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
         userAgent += ")"
 
         return userAgent
+    }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
     }
 }

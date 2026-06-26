@@ -9,6 +9,7 @@ struct MessageViewChrome<Content: View>: View {
     @Binding var showRawMessage: Bool
     var showsResendButton = false
     var showsHeader = true
+    var errorTransportDetails: ResolvedErrorTransportDetails?
     @State private var didCopy = false
     @ViewBuilder let content: () -> Content
 
@@ -38,6 +39,10 @@ struct MessageViewChrome<Content: View>: View {
                             title: MessageViewHelpers.formatTimestamp(message.createdAt),
                             titleColor: theme.textSecondary
                         )
+
+                        if let errorTransportDetails, errorTransportDetails.hasTransportDetails {
+                            ErrorTransportDetailsButton(details: errorTransportDetails)
+                        }
 
                         MessageInfoButton(message: message)
                     }

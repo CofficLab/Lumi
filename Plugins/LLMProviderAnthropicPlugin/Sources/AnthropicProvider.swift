@@ -53,4 +53,8 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
             configuration: LumiAnthropicCompatibleProviderConfiguration(baseURL: "https://api.anthropic.com/v1/messages")
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
 }

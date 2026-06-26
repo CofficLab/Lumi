@@ -58,7 +58,7 @@ struct MessageInfoPopoverContent: View {
                     }
                 }
 
-                if let detail = message.rawErrorDetail, !detail.isEmpty {
+                if let detail = errorDetailSummary(for: message), !detail.isEmpty {
                     infoSection("错误详情") {
                         infoMultilineRow("原始错误", value: detail)
                     }
@@ -190,6 +190,12 @@ struct MessageInfoPopoverContent: View {
             parts.append(MessageViewHelpers.formatDuration(duration))
         }
         return parts.joined(separator: " · ")
+    }
+
+    private func errorDetailSummary(for message: LumiChatMessage) -> String? {
+        let resolved = ErrorTransportDetailsResolver.resolve(for: message)
+        let summary = resolved.displaySummary
+        return summary.isEmpty ? nil : summary
     }
 
     private func displayValue(_ value: String?) -> String {

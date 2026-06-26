@@ -3,8 +3,8 @@ import LumiCoreKit
 /// 小米供应商错误消息的渲染类型判定。
 ///
 /// 小米 TokenPlan（`xiaomi`）与小米 API（`xiaomi-api`）共用同一套错误渲染界面，
-/// 因此 `isXiaomiError` 同时匹配这两个 provider id。错误消息由各自的 provider
-/// 在 `send`/`sendStreaming` 中捕获异常后转换而来，携带 `renderKind` 用于选择渲染器。
+/// 因此 `isXiaomiError` 同时匹配这两个 provider id。错误消息的 `renderKind` 由
+/// `errorRenderKind(for:)` 设置，供 `XiaomiPlugin.messageRenderers` 选择渲染器。
 enum XiaomiRenderKind {
     static let apiKeyMissing = "xiaomi-api-key-missing"
     static let requestFailed = "xiaomi-request-failed"

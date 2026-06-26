@@ -124,4 +124,8 @@ private struct MockLLMProvider: LumiLLMProvider {
     func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         LumiChatMessage(conversationID: UUID(), role: .assistant, content: "ok")
     }
+
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        .available
+    }
 }

@@ -37,4 +37,9 @@ public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked S
         )
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

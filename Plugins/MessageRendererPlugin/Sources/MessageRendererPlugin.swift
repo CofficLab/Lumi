@@ -43,7 +43,9 @@ public enum MessageRendererPlugin: LumiPlugin {
                         return false
                     }
                     if let renderKind = message.renderKind,
-                       renderKind.hasPrefix("zhipu-") || renderKind.hasPrefix("aliyun-") {
+                       renderKind.hasPrefix("zhipu-")
+                           || renderKind.hasPrefix("aliyun-")
+                           || renderKind.hasPrefix("xiaomi-") {
                         return false
                     }
                     return true

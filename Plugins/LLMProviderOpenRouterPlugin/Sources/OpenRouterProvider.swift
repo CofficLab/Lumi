@@ -91,4 +91,9 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
         )
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

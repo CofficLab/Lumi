@@ -67,4 +67,9 @@ public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
         )
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

@@ -49,4 +49,9 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
         )
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

@@ -40,4 +40,9 @@ public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Senda
         )
         )
     }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await checkAvailabilityUsingChatPing(model: model)
+    }
+
 }

@@ -162,3 +162,65 @@ import LumiCoreKit
         #expect(ToolCallResultVisualState.completed.systemImage == "doc.text.magnifyingglass")
     }
 }
+
+@Suite struct ErrorTransportDetailsResolverTests {
+
+    private static let separator = "\n\n--- Request / Response Details ---\n"
+
+    private func errorMessage(
+        content: String = "",
+        rawErrorDetail: String? = nil,
+        metadata: [String: String] = [:]
+    ) -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: UUID(),
+            role: .error,
+            content: content,
+            isError: true,
+            rawErrorDetail: rawErrorDetail,
+            metadata: metadata
+        )
+    }
+
+    @Test func splitsEmbeddedTransportDetailsFromLongestField() {
+        let summary = #"HTTP 错误 (429): { "error": { "code": "429" } }"#
+        let request = "Request URL: https://example.com"
+        let full = summary + Self.separator + request
+
+        let resolved = ErrorTransportDetailsResolver.resolve(
+            for: errorMessage(content: full, rawErrorDetail: full)
+        )
+
+        #expect(resolved.displaySummary == summary)
+        #expect(resolved.requestDetails == request)
+        #expect(resolved.responseDetails == nil)
+        #expect(resolved.hasTransportDetails)
+    }
+
+    @Test func prefersMetadataTransportDetails() {
+        let resolved = ErrorTransportDetailsResolver.resolve(
+            for: errorMessage(
+                rawErrorDetail: "HTTP 401",
+                metadata: [
+                    "llm.transport.request": "Request URL: https://example.com",
+                    "llm.transport.response": "Response Status: 401",
+                ]
+            )
+        )
+
+        #expect(resolved.displaySummary == "HTTP 401")
+        #expect(resolved.requestDetails?.contains("Request URL") == true)
+        #expect(resolved.responseDetails?.contains("Response Status") == true)
+        #expect(resolved.hasTransportDetails)
+    }
+
+    @Test func keepsSummaryWhenNoTransportDetailsExist() {
+        let summary = #"HTTP 错误 (403): forbidden"#
+        let resolved = ErrorTransportDetailsResolver.resolve(
+            for: errorMessage(content: summary, rawErrorDetail: summary)
+        )
+
+        #expect(resolved.displaySummary == summary)
+        #expect(!resolved.hasTransportDetails)
+    }
+}
