@@ -8,18 +8,21 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
     private var eventMonitor: Any?
-
-    /// CPU/内存/网速等内容随时间变化，但状态栏图标渲染为单张模板图快照，
-    /// 必须定时重绘才能让图表/数值实时更新。
     private var contentTimer: DispatchSourceTimer?
-
-    /// 重绘间隔（秒）。与 DeviceInfo 的 ~80ms 去抖相协调，兼顾流畅度与功耗。
     private let contentRefreshInterval: TimeInterval = 1.0
+    nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
 
     init(pluginService: PluginService) {
         self.pluginService = pluginService
         super.init()
+        observeSystemThemeChanges()
         scheduleMenuBarSetup()
+    }
+
+    deinit {
+        if let systemThemeObserver {
+            DistributedNotificationCenter.default.removeObserver(systemThemeObserver)
+        }
     }
 
     func refresh() {
@@ -33,7 +36,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
                 return
             }
 
-            self.updateStatusItemImage()
+            self.updateButtonImage()
 
             if self.popover?.isShown == true {
                 self.popover?.contentViewController = NSHostingController(rootView: self.makePopupView())
@@ -60,56 +63,62 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             return
         }
 
-        // 先用一个占位长度创建 status item，待图片渲染后按真实宽度校正。
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let items = pluginService.menuBarContentItems(context: menuBarContext)
+        statusItem = NSStatusBar.system.statusItem(withLength: menuBarWidthEstimate(for: items))
 
         guard let button = statusItem?.button else {
             return
         }
 
+        // 占位 template 图，避免部分 macOS 版本非活跃屏幕着色异常（见 Stats #2131）。
+        button.image = NSImage()
         button.target = self
         button.action = #selector(togglePopover)
 
-        updateStatusItemImage()
+        updateButtonImage()
         startContentTimer()
     }
 
-    /// 把菜单栏内容（Logo + CPU/内存/网速）渲染成单色模板图交给系统着色。
-    ///
-    /// 模板图（`isTemplate = true`）不依赖任何 `NSAppearance` 求值，系统会按菜单栏
-    /// 真实外观（系统明暗 + 壁纸亮度自适应）自动涂黑或涂白，永远与其它系统图标一致，
-    /// 不受 Lumi 主题窗口外观污染。
-    private func updateStatusItemImage() {
+    private func updateButtonImage() {
         guard let button = statusItem?.button else { return }
 
         let items = pluginService.menuBarContentItems(context: menuBarContext)
-        let iconView = MenuBarIconView(contentItems: items)
+        let view = MenuBarIconView(contentItems: items)
 
-        let renderer = ImageRenderer(content: iconView)
-        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        guard let image = renderer.nsImage else { return }
+        guard let image = MenuBarTemplateImageRenderer.render(view) else {
+            return
+        }
 
-        image.isTemplate = true
         button.image = image
-        button.imagePosition = .imageOnly
-        statusItem?.length = image.size.width
+        button.image?.isTemplate = true
+        statusItem?.length = max(24, image.size.width + 4)
     }
 
-    /// 启动定时重绘，让菜单栏内的 CPU/内存/网速图表实时刷新。
+    private func observeSystemThemeChanges() {
+        systemThemeObserver = DistributedNotificationCenter.default.addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateButtonImage()
+            }
+        }
+    }
+
     private func startContentTimer() {
         guard contentTimer == nil else { return }
         let timer = DispatchSource.makeTimerSource(queue: .main)
         timer.schedule(deadline: .now() + contentRefreshInterval, repeating: contentRefreshInterval)
         timer.setEventHandler { [weak self] in
-            self?.updateStatusItemImage()
+            self?.updateButtonImage()
         }
         timer.activate()
         contentTimer = timer
     }
 
-    private func stopContentTimer() {
-        contentTimer?.cancel()
-        contentTimer = nil
+    private func menuBarWidthEstimate(for items: [LumiMenuBarContentItem]) -> CGFloat {
+        max(24, 24 + CGFloat(items.count * 44))
     }
 
     @objc private func togglePopover() {

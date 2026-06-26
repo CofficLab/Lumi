@@ -19,8 +19,8 @@ struct MemoryMenuBarChartRenderer {
     // 不再使用品牌紫色 / 警告红色（模板着色会覆盖任意颜色）。
     // 警告态（≥80%）用全不透明填充，与正常态的低透明槽 + 实心柱做视觉区分。
 
-    private static let trackColor = NSColor.labelColor.withAlphaComponent(0.18)
-    private static let barColor = NSColor.labelColor
+    private static let trackColor = NSColor.black.withAlphaComponent(0.18)
+    private static let barColor = NSColor.black
 
     // MARK: - Public Methods
 

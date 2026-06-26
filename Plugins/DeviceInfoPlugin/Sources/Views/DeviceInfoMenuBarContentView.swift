@@ -8,8 +8,7 @@ struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
-    // 菜单栏内容经 ImageRenderer 逐帧快照，视图每次都会重建；必须用共享 ViewModel，
-    // 否则 @StateObject 会反复创建/销毁，快照永远落在空的初始 metrics 上。
+    // 共享 ViewModel 保证 CPU/内存指标持续更新；图表为黑色 template 图（见 docs/macos-menu-bar-appearance.md）。
     @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
 
     // MARK: - Body
@@ -19,11 +18,15 @@ struct DeviceInfoMenuBarContentView: View {
             // CPU 柱状图
             Image(nsImage: viewModel.snapshot.cpuImage)
                 .interpolation(.none)
+                .renderingMode(.template)
+                .foregroundStyle(.black)
                 .help(viewModel.snapshot.cpuHelpText)
 
             // 内存柱状图
             Image(nsImage: viewModel.snapshot.memoryImage)
                 .interpolation(.none)
+                .renderingMode(.template)
+                .foregroundStyle(.black)
                 .help(viewModel.snapshot.memoryHelpText)
         }
     }
