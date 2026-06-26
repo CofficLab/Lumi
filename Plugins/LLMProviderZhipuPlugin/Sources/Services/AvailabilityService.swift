@@ -21,18 +21,36 @@ enum AvailabilityService {
     ) -> LumiModelAvailabilityResult {
         guard case .unavailable(let failure) = result else { return result }
 
+        guard let summary = displaySummary(from: failure) else { return result }
+
+        return .unavailable(failure.remapped(summary: summary))
+    }
+
+    static func displaySummary(from failure: LumiLLMFailureDetail) -> String? {
+        if let message = apiErrorMessage(from: failure) {
+            return message
+        }
+
         if isRateLimitedFailure(failure) {
-            return .unavailable(
-                failure.remapped(
-                    summary: LumiPluginLocalization.string(
-                        "Zhipu quota exhausted or rate limited",
-                        bundle: .module
-                    )
-                )
+            return LumiPluginLocalization.string(
+                "Zhipu quota exhausted or rate limited",
+                bundle: .module
             )
         }
 
-        return result
+        return nil
+    }
+
+    static func apiErrorMessage(from failure: LumiLLMFailureDetail) -> String? {
+        for source in [failure.transportDetails, failure.summary].compactMap({ $0 }) {
+            let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            if trimmed.hasPrefix("{"), let message = parsedAPIErrorMessage(from: trimmed) {
+                return message
+            }
+        }
+        return nil
     }
 
     static func isRateLimitedFailure(_ failure: LumiLLMFailureDetail) -> Bool {
@@ -42,6 +60,7 @@ enum AvailabilityService {
 
         let lower = combinedText(from: failure).lowercased()
         return lower.contains("rate limit")
+            || lower.contains("rate_limit")
             || lower.contains("too many requests")
             || lower.contains("quota")
     }
@@ -51,6 +70,31 @@ enum AvailabilityService {
             return true
         }
         return isRateLimitedFailure(LumiLLMFailureDetailResolver.resolve(from: error))
+    }
+
+    static func parsedAPIErrorMessage(from text: String) -> String? {
+        guard let data = text.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        if let error = json["error"] as? [String: Any] {
+            if let message = error["message"] as? String {
+                let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { return trimmed }
+            }
+            if let message = error["msg"] as? String {
+                let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { return trimmed }
+            }
+        }
+
+        if let message = json["message"] as? String {
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { return trimmed }
+        }
+
+        return nil
     }
 
     private static func combinedText(from failure: LumiLLMFailureDetail) -> String {

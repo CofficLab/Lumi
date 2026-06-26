@@ -97,7 +97,7 @@ struct PluginLLMProviderZhipuTests {
         #expect(RequestFailedRenderer.item.canRender(message))
     }
 
-    @Test func rateLimitedMapsToFriendlyMessage() {
+    @Test func rateLimitedShowsAPIErrorMessage() {
         let body = #"{"error":{"message":"rate limit exceeded"}}"#
         let error = HTTPClientError.httpError(statusCode: 429, message: body)
 
@@ -112,11 +112,29 @@ struct PluginLLMProviderZhipuTests {
             return
         }
 
+        #expect(failure.availabilityDisplayText == "rate limit exceeded")
         #expect(!failure.availabilityDisplayText.contains("{"))
-        #expect(!failure.availabilityDisplayText.lowercased().contains("rate limit"))
         #expect(failure.hasTransportDiagnostics)
         #expect(failure.httpStatusCode == 429)
         #expect(failure.transportDetails?.contains("rate limit exceeded") == true)
+    }
+
+    @Test func rateLimitedShowsZhipuNestedErrorMessage() {
+        let body = #"{"error":{"code":"1302","message":"[1302][您的账户已达到速率限制，请您控制请求频率][202606261713470daee3d970fa4cbc]","type":"rate_limit_error"},"request_id":"202606261713470daee3d970fa4cbc","type":"error"}"#
+        let error = HTTPClientError.httpError(statusCode: 429, message: body)
+
+        let mapped = AvailabilityService.mapFriendlyFailureResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(failure.availabilityDisplayText.contains("速率限制"))
+        #expect(failure.availabilityDisplayText.contains("1302"))
+        #expect(!failure.availabilityDisplayText.contains("智谱额度"))
     }
 
     @Test func schedulerEnforcesMinimumInterval() async {
