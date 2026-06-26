@@ -8,7 +8,7 @@ struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
-    // 共享 ViewModel 保证 CPU/内存指标持续更新；图表为黑色 template 图（见 docs/macos-menu-bar-appearance.md）。
+    // 共享 ViewModel 保证 CPU/内存指标持续更新。
     @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
 
     // MARK: - Body
@@ -18,15 +18,11 @@ struct DeviceInfoMenuBarContentView: View {
             // CPU 柱状图
             Image(nsImage: viewModel.snapshot.cpuImage)
                 .interpolation(.none)
-                .renderingMode(.template)
-                .foregroundStyle(.black)
                 .help(viewModel.snapshot.cpuHelpText)
 
             // 内存柱状图
             Image(nsImage: viewModel.snapshot.memoryImage)
                 .interpolation(.none)
-                .renderingMode(.template)
-                .foregroundStyle(.black)
                 .help(viewModel.snapshot.memoryHelpText)
         }
     }
@@ -38,10 +34,33 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
 
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 
+    private var lastMetrics = DeviceInfoMenuBarMetrics.empty
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
         startMonitoring()
+        observeMenuBarAppearanceChanges()
+    }
+
+    private func observeMenuBarAppearanceChanges() {
+        NotificationCenter.default.publisher(for: .lumiMenuBarAppearanceDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let button = notification.object as? NSStatusBarButton {
+                    let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
+                    appearance.performAsCurrentDrawingAppearance {
+                        self.refreshSnapshotForCurrentAppearance()
+                    }
+                } else {
+                    self.refreshSnapshotForCurrentAppearance()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func refreshSnapshotForCurrentAppearance() {
+        snapshot = DeviceInfoMenuBarSnapshot(metrics: lastMetrics)
     }
 
     private func startMonitoring() {
@@ -78,9 +97,10 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
             .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
             .map { DeviceInfoMenuBarMetrics(cpu: $0, memory: $1) }
             .removeDuplicates()
-            .map(DeviceInfoMenuBarSnapshot.init(metrics:))
-            .sink { [weak self] snapshot in
-                self?.snapshot = snapshot
+            .sink { [weak self] metrics in
+                guard let self else { return }
+                self.lastMetrics = metrics
+                self.snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
             }
             .store(in: &cancellables)
     }

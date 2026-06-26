@@ -16,6 +16,5 @@ struct MenuBarIconView: View {
         }
         .padding(.horizontal, 2)
         .frame(height: 20)
-        .foregroundStyle(.black)
     }
 }

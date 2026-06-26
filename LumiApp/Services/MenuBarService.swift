@@ -1,27 +1,37 @@
 import AppKit
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 @MainActor
 final class MenuBarService: NSObject, NSPopoverDelegate {
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?
+    private var hostingView: MenuBarHostingView<MenuBarIconView>?
     private var popover: NSPopover?
     private var eventMonitor: Any?
     private var contentTimer: DispatchSourceTimer?
     private let contentRefreshInterval: TimeInterval = 1.0
+    private var effectiveAppearanceObservation: NSKeyValueObservation?
+    private var windowAppearanceObservation: NSKeyValueObservation?
+    private var buttonWindowObservation: NSKeyValueObservation?
     nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var themeSyncObserver: NSObjectProtocol?
 
     init(pluginService: PluginService) {
         self.pluginService = pluginService
         super.init()
-        observeSystemThemeChanges()
+        observeSystemAppearanceChanges()
+        observeThemeWindowSync()
         scheduleMenuBarSetup()
     }
 
     deinit {
         if let systemThemeObserver {
             DistributedNotificationCenter.default.removeObserver(systemThemeObserver)
+        }
+        if let themeSyncObserver {
+            NotificationCenter.default.removeObserver(themeSyncObserver)
         }
     }
 
@@ -36,7 +46,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
                 return
             }
 
-            self.updateButtonImage()
+            self.replaceMenuBarContent()
 
             if self.popover?.isShown == true {
                 self.popover?.contentViewController = NSHostingController(rootView: self.makePopupView())
@@ -70,38 +80,103 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             return
         }
 
-        // 占位 template 图，避免部分 macOS 版本非活跃屏幕着色异常（见 Stats #2131）。
-        button.image = NSImage()
+        let hostingView = MenuBarHostingView(rootView: makeMenuBarIconView(items: items))
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        self.hostingView = hostingView
+
+        button.image = nil
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.addSubview(hostingView)
         button.target = self
         button.action = #selector(togglePopover)
 
-        updateButtonImage()
+        NSLayoutConstraint.activate([
+            hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            hostingView.heightAnchor.constraint(equalToConstant: 22),
+        ])
+
+        restoreMenuBarSystemAppearance()
+        observeMenuBarAppearance(button: button)
+        updateStatusItemLength()
         startContentTimer()
     }
 
-    private func updateButtonImage() {
-        guard let button = statusItem?.button else { return }
-
-        let items = pluginService.menuBarContentItems(context: menuBarContext)
-        let view = MenuBarIconView(contentItems: items)
-
-        guard let image = MenuBarTemplateImageRenderer.render(view) else {
-            return
-        }
-
-        button.image = image
-        button.image?.isTemplate = true
-        statusItem?.length = max(24, image.size.width + 4)
+    private func makeMenuBarIconView(items: [LumiMenuBarContentItem]) -> MenuBarIconView {
+        MenuBarIconView(contentItems: items)
     }
 
-    private func observeSystemThemeChanges() {
+    private func replaceMenuBarContent() {
+        guard let button = statusItem?.button else { return }
+
+        restoreMenuBarSystemAppearance()
+
+        MenuBarAppearance.performAsCurrent(for: button) {
+            let items = pluginService.menuBarContentItems(context: menuBarContext)
+            hostingView?.rootView = makeMenuBarIconView(items: items)
+        }
+
+        NotificationCenter.default.post(name: .lumiMenuBarAppearanceDidChange, object: button)
+        hostingView?.needsDisplay = true
+        updateStatusItemLength()
+    }
+
+    /// 清除 Lumi 主题同步对菜单栏系统窗口的 `appearance` 污染。
+    private func restoreMenuBarSystemAppearance() {
+        ThemeWindowAppearanceSync.restoreMenuBarSystemAppearance()
+        statusItem?.button?.appearance = nil
+        hostingView?.appearance = nil
+    }
+
+    private func observeMenuBarAppearance(button: NSStatusBarButton) {
+        guard effectiveAppearanceObservation == nil else { return }
+
+        effectiveAppearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+
+        buttonWindowObservation = button.observe(\.window, options: [.new]) { [weak self] button, _ in
+            Task { @MainActor in
+                self?.observeWindowAppearance(button.window)
+                self?.replaceMenuBarContent()
+            }
+        }
+
+        observeWindowAppearance(button.window)
+    }
+
+    private func observeWindowAppearance(_ window: NSWindow?) {
+        windowAppearanceObservation?.invalidate()
+        windowAppearanceObservation = window?.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+    }
+
+    private func observeSystemAppearanceChanges() {
         systemThemeObserver = DistributedNotificationCenter.default.addObserver(
             forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.updateButtonImage()
+                self?.replaceMenuBarContent()
+            }
+        }
+    }
+
+    private func observeThemeWindowSync() {
+        themeSyncObserver = NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidSyncWindowAppearances,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
             }
         }
     }
@@ -111,10 +186,16 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
         let timer = DispatchSource.makeTimerSource(queue: .main)
         timer.schedule(deadline: .now() + contentRefreshInterval, repeating: contentRefreshInterval)
         timer.setEventHandler { [weak self] in
-            self?.updateButtonImage()
+            self?.replaceMenuBarContent()
         }
         timer.activate()
         contentTimer = timer
+    }
+
+    private func updateStatusItemLength() {
+        guard let hostingView, let statusItem else { return }
+        hostingView.layoutSubtreeIfNeeded()
+        statusItem.length = max(24, hostingView.fittingSize.width)
     }
 
     private func menuBarWidthEstimate(for items: [LumiMenuBarContentItem]) -> CGFloat {

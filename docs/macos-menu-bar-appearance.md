@@ -1,6 +1,6 @@
 # macOS 菜单栏图标外观规范
 
-本文档基于 **Apple 官方文档** 与 **开源项目实践** 整理，用于指导 Lumi 菜单栏（`NSStatusItem`）图标的实现，避免自定义对比度采样、`NSHostingView` 子视图等脆弱方案。
+本文档基于 **Apple 官方文档**、**开源项目实践** 与 **Lumi v2/v3 历史实现** 整理，用于指导菜单栏（`NSStatusItem`）图标的外观行为。
 
 ---
 
@@ -8,11 +8,11 @@
 
 | 场景 | 推荐方案 |
 |------|----------|
-| 静态单色图标 | `button.image` + `NSImage.isTemplate = true` |
-| 动态复杂内容（CPU 图、网速文字） | 将内容绘制成 **黑色+透明** 的 `NSImage`，设 `isTemplate = true`，赋给 `button.image` |
+| 静态单色图标（简单 App） | `button.image` + `NSImage.isTemplate = true` |
+| 动态复合内容（Lumi：Logo + CPU + 网速） | `NSHostingView` 子视图 + **钉住** `button.effectiveAppearance` |
 | 纯 SwiftUI、无插件架构的简单应用 | `MenuBarExtra` + `.renderingMode(.template)` |
 
-**不要**在 `NSStatusBarButton` 上挂 `NSHostingView` 子视图来显示图标，也**不要**用屏幕截图采样或 `effectiveAppearance` 猜测菜单栏前景色。
+**Lumi 实测**：`ImageRenderer` 烘焙 template 图在壁纸自适应菜单栏下**不可靠**；v2/v3 使用的 `NSHostingView` + 外观同步方案稳定。
 
 ---
 
@@ -95,58 +95,70 @@ Lumi 使用插件化 `NSStatusItem` 架构，不迁移到 `MenuBarExtra`，但 *
 
 ---
 
-## Lumi 实现规范
+## Lumi 实现规范（v2/v3 验证方案）
+
+### 根因
+
+`ThemeWindowAppearanceSync.syncAllWindows()` 曾把 Lumi 主题的 `NSAppearance`（`aqua` / `darkAqua`）写到 **包括菜单栏在内的所有 `NSApp.windows`**，覆盖系统对壁纸自适应菜单栏的着色。v3 时代尚无此逻辑，故表现正常。
 
 ### 架构
 
 ```
 Plugin menuBarContentItems
         ↓
-MenuBarIconView（SwiftUI，全部黑色前景）
+MenuBarIconView（SwiftUI，使用 .primary / labelColor）
         ↓
-ImageRenderer → NSImage（isTemplate = true）
+MenuBarHostingView（NSHostingView 子视图，点击穿透）
         ↓
-statusItem.button.image
+statusItem.button.addSubview(hostingView)
+        ↓
+ThemeWindowAppearanceSync 跳过 `.statusBar` 窗口；定期 restoreMenuBarSystemAppearance()
 ```
+
+### 关键机制
+
+1. **`ThemeWindowAppearanceSync`**：`isMenuBarOwnedWindow`（`level == .statusBar`）的窗口不参与主题同步。
+2. **`MenuBarService.restoreMenuBarSystemAppearance()`**：主题同步后把菜单栏窗口 `appearance` 清回 `nil`，恢复系统壁纸自适应。
+3. SwiftUI 内容使用 **`.primary` / `labelColor`**，由菜单栏窗口的有效外观驱动（与 v3 相同）。
 
 ### 必须遵守
 
-1. **只通过 `button.image` 显示图标**，不在 `button` 上 `addSubview`。
-2. **所有菜单栏内容使用黑色前景**（`Color.black` / `NSColor.black`），背景透明。
-3. 渲染完成后用 **alpha 掩模** 转为黑+透明，再设 `isTemplate = true` 赋给 `button.image`（`ImageRenderer` 直接输出不可信）。
-4. 动态内容（CPU、网速）用定时器刷新 image，间隔与数据更新频率匹配（当前约 1s）。
-5. 插件 `LogoScene.statusBar` 分支：单色、无动画、黑色填充。
-6. 图表类内容（`CPUMenuBarChartRenderer` 等）：AppKit 绘制黑色柱形 + `isTemplate = true`（已实现）。
+1. 在 `button` 上挂 `MenuBarHostingView`，**不用** `ImageRenderer` 烘焙 `button.image`。
+2. 菜单栏内容使用 **语义色**：`.primary`、`NSColor.labelColor`，**不要**写死 `.black` / `.white`。
+3. Logo `statusBar` 场景：单色、无动画；SmartLight 用 `.primary` + `.colorInvert()`（v3 同款）。
+4. 图表（`CPUMenuBarChartRenderer`）：`NSColor.labelColor` 填充 + `isTemplate = true`。
+5. 动态内容用定时器刷新 `hostingView.rootView`（约 1s）。
+6. `MenuBarHostingView.hitTest` 返回 `nil`，让点击穿透到 `NSStatusBarButton`。
 
 ### 禁止 / 不推荐
 
 | 做法 | 原因 |
 |------|------|
-| `button.addSubview(NSHostingView)` | 绕过 AppKit template 着色；主题切换后颜色易错 |
-| `CGWindowListCreateImage` 屏幕采样 | 脆弱、需辅助功能权限、与系统行为重复 |
-| `button.effectiveAppearance` / `labelColor` 推断前景色 | 浅色系统 + 深色壁纸切换后不可靠 |
+| `ImageRenderer` → `button.image` + `isTemplate` | 程序化 template 在壁纸自适应菜单栏下不着色 |
+| 写死 `.foregroundStyle(.black)` | 浅色系统 + 深色壁纸时应为白色 |
+| `CGWindowListCreateImage` 屏幕采样 | 脆弱、需权限、重复系统行为 |
+| 依赖 `NSApp.effectiveAppearance` | 被 Lumi 主题窗口污染 |
 | `button.contentTintColor` | `NSStatusBarButton` 上不可靠（FB8530353） |
-| `ImageRenderer` 直接设 `isTemplate` | 深色外观下会渲成白色像素，系统无法正确着色 |
-| `statusItem.view = customView` | Deprecated，无法覆盖全部菜单栏状态 |
+| `statusItem.view = customView` | Deprecated API |
 
 ### 插件作者指南
 
 贡献 `menuBarContentItems` 时：
 
 ```swift
-// ✅ 单色 template 内容
+// ✅ 语义色，随 hostingView.appearance 自适应
 HStack {
     Image(systemName: "bolt.fill")
     Text("42%")
 }
-.foregroundStyle(.black)
+// 继承 .primary 即可，无需显式设色
 
-// ❌ 不要在菜单栏内容中使用主题色、渐变、彩色背景
+// ❌ 写死颜色或 App 主题色
+.foregroundStyle(.black)
 .foregroundColor(theme.info)
-.appSurface(style: .custom(...))
 ```
 
-图表优先用 AppKit 绘制黑色 template `NSImage`，或在 SwiftUI 中用 `.renderingMode(.template)` + `.foregroundStyle(.black)`。
+图表用 `NSColor.labelColor` 绘制并设 `isTemplate = true`。
 
 ---
 

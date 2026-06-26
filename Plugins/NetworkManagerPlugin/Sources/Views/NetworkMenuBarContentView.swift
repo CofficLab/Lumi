@@ -27,7 +27,6 @@ public struct NetworkMenuBarContentView: View {
                 .fixedSize()
         }
         .frame(width: 38)
-        .foregroundStyle(.black)
     }
 }
 

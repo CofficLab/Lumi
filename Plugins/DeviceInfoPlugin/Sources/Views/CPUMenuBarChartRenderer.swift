@@ -39,7 +39,7 @@ struct CPUMenuBarChartRenderer {
             )
             
             let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
-            NSColor.black.setFill()
+            NSColor.labelColor.setFill()
             path.fill()
         }
         

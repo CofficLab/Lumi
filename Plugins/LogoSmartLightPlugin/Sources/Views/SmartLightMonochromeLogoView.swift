@@ -1,17 +1,22 @@
 import SwiftUI
 
-/// Monochrome smart light logo view
-/// Used for statusBar scene
-/// Menu bar icon rendered as monochrome template image (tinted by system), always monochrome, no active state.
+/// 单色智能灯 Logo，用于菜单栏。
 struct SmartLightMonochromeLogoView: View {
     let size: CGFloat
 
     var body: some View {
-        Image(systemName: "bolt.circle.fill")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .foregroundStyle(.black)
-            .frame(width: size, height: size)
+        ZStack {
+            Circle()
+                .fill(.primary)
+                .frame(width: size * 0.8, height: size * 0.8)
+
+            Image(systemName: "bolt.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .foregroundStyle(.primary)
+                .colorInvert()
+                .frame(width: size * 0.5, height: size * 0.5)
+        }
     }
 }
 

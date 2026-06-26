@@ -12,7 +12,7 @@ struct AppUpdateStatusBarContentView: View {
                 Text(PluginAppUpdateStatusBarLocalization.string("Update"))
                     .font(.appMicroEmphasized)
             }
-            .foregroundStyle(.black)
+            .foregroundStyle(.primary)
         }
     }
 }
