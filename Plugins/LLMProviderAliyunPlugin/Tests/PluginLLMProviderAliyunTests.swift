@@ -143,8 +143,8 @@ struct PluginLLMProviderAliyunTests {
         )
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
-        #expect(message.rawErrorDetail?.contains("401") == true)
-        #expect(message.rawErrorDetail?.contains("invalid_api_key") == true)
+        #expect(message.rawErrorDetail == "invalid_api_key")
+        #expect(message.metadata[LumiLLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
@@ -157,16 +157,19 @@ struct PluginLLMProviderAliyunTests {
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "true")
     }
 
-    @Test func errorMessageMapsHTTP401FromLocalizedStreamingFailed() {
-        let detail = LumiLLMProviderSupportLocalization.userFacingDescription(
-            for: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key"),
-            locale: Locale(identifier: "zh-Hans")
-        )
+    @Test func errorMessageMapsHTTP401FromStreamingFailedWithTransportMetadata() {
+        let transport = """
+        Request URL: https://example.com/v1/messages
+        Response Status: 401
+        Response Body: invalid_api_key
+        """
+        let full = "invalid_api_key" + LumiLLMTransportDetails.summarySeparator + transport
         let message = makeMessage(
-            for: LumiLLMProviderSupportError.streamingFailed(detail)
+            for: LumiLLMProviderSupportError.streamingFailed(full)
         )
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
-        #expect(message.rawErrorDetail == detail)
+        #expect(message.rawErrorDetail == "invalid_api_key")
+        #expect(message.metadata[LumiLLMTransportMetadata.requestDetails]?.contains("Request URL") == true)
     }
 }

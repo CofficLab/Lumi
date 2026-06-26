@@ -68,4 +68,12 @@ public final class XiaomiProvider: OpenAICompatibleLumiProvider, @unchecked Send
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await checkAvailabilityUsingChatPing(model: model)
     }
+
+    public override func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
+            providerID: Self.info.id,
+            displayName: Self.info.displayName,
+            isLocal: Self.info.isLocal
+        )
+    }
 }

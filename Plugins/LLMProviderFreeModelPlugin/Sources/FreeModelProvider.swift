@@ -221,6 +221,13 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await backendSelection(for: model).provider.checkAvailability(model: model)
     }
+
+    public func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
+            providerID: Self.info.id,
+            displayName: Self.info.displayName
+        )
+    }
 }
 
 struct BackendSelection {

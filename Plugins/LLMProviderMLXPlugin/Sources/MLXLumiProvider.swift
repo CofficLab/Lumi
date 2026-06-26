@@ -36,7 +36,11 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         if Self.info.availableModels.contains(model) {
             return .available
         }
-        return .unavailable(reason: "模型 \(model) 未注册或不可用")
+        return .unavailable(.message("模型 \(model) 未注册或不可用"))
+    }
+
+    public func providerStatus() -> LumiLLMProviderStatus? {
+        nil
     }
 
     public func sendStreaming(
