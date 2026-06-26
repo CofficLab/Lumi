@@ -9,6 +9,18 @@ public enum LlamaModels {
     /// 所有 Llama 模型列表
     public static let all: [LocalModelInfo] = [
         LocalModelInfo(
+            id: "mlx-community/Llama-3.2-1B-Instruct-4bit",
+            displayName: LumiPluginLocalization.string("Llama 3.2 1B", bundle: .module),
+            description: LumiPluginLocalization.string("超小体积，适合入门与低内存设备", bundle: .module),
+            size: "~0.7 GB",
+            minRAM: 4,
+            expectedBytes: 712_593_855,
+            supportsVision: false,
+            supportsTools: true,
+            priority: 4,
+            series: "Llama 系列"
+        ),
+        LocalModelInfo(
             id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
             displayName: LumiPluginLocalization.string("Llama 3.2 3B", bundle: .module),
             description: LumiPluginLocalization.string("超轻量，适合低配置设备", bundle: .module),

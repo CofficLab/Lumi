@@ -72,28 +72,54 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
 
+    /// 下载限速设置的 UserDefaults key（字节/秒，0 表示不限速）。
+    ///
+    /// 单独定义为常量，便于 UI（MLXLocalProviderSettingsView 的 @AppStorage）与
+    /// 本管理器读写同一 key，避免字符串散落不一致。标记 nonisolated 以允许从
+    /// `nonisolated` 的 `currentSpeedLimitBytes()` 中引用。
+    nonisolated static let downloadSpeedLimitKey = "mlx.download.maxBytesPerSecond"
+
+    /// 当前下载限速（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 值来源于 UserDefaults[key]：0 或缺失视为不限速。调用 `updateDownloadSpeed`
+    /// 会同时更新本字段与底层 DownloadKit 限速器（即时作用于进行中的下载）。
+    @Published public private(set) var downloadSpeedLimit: Int?
+
     // MARK: - Pause/Resume State
 
     private var pausedModelId: String?
     private var pausedProgress: MLXDownloadProgress?
 
+    /// 恢复下载时的进度地板（fraction 下限）。
+    ///
+    /// 暂停时正在下载的文件会被重新下载，其已下载部分字节不再计入新的 `downloadedBytes`，
+    /// 导致恢复瞬间 fraction 从「含部分字节」跌到「仅完整文件」，进度条先跌后涨。
+    /// 记录暂停时刻的 fraction 作为地板：恢复后任何重算的 fraction 不低于它，
+    /// 进度条保持暂停值，直到真实下载进度自然超过它。设为 nil 表示无地板（首次下载）。
+    private var resumeFloorFraction: Double?
+
     // MARK: - Initialization
 
     private override init() {
+        let initialLimit = MLXDownloadManager.readSpeedLimit()
         let config = DownloadManager.Configuration(
             downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
             maxConcurrentDownloads: 3,
             timeoutInterval: 3600,
-            enableResume: true
+            enableResume: true,
+            maxBytesPerSecond: initialLimit
         )
         self.downloadManager = DownloadManager(configuration: config)
 
         super.init()
 
+        // @Published 属性需在 super.init 之后赋值；此处与传入 DownloadManager 的值保持一致。
+        downloadSpeedLimit = initialLimit
+
         try? fileManager.createDirectory(at: config.downloadDirectory, withIntermediateDirectories: true)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
+            Self.logger.info("\(self.t)MLXDownloadManager 已初始化，限速：\(String(describing: self.downloadSpeedLimit))")
         }
     }
 
@@ -127,6 +153,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadingModelId = modelId
         status = .downloading
         progress = MLXDownloadProgress()
+        // 全新下载无暂停历史，清除可能残留的恢复地板
+        resumeFloorFraction = nil
 
         Self.logger.info("\(self.t)🟢 开始下载模型：\(modelId)")
 
@@ -183,6 +211,35 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         cancel(resetPublishedState: true)
     }
 
+    /// 更新下载限速（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 同时写回 UserDefaults（供下次启动恢复）并同步到底层 DownloadKit 限速器，
+    /// 使设置即时作用于正在进行的下载（下载到一半改限速无需暂停/恢复）。
+    /// - Parameter bytesPerSecond: 目标限速；`nil` 解除限速。
+    public func updateDownloadSpeed(bytesPerSecond: Int?) {
+        downloadSpeedLimit = bytesPerSecond
+        UserDefaults.standard.set(bytesPerSecond ?? 0, forKey: Self.downloadSpeedLimitKey)
+        let dm = downloadManager
+        Task { await dm.setMaxBytesPerSecond(bytesPerSecond) }
+        Self.logger.info("\(self.t)🎚️ 下载限速已更新为：\(bytesPerSecond.map { "\($0) 字节/秒" } ?? "不限速")")
+    }
+
+    /// 从 UserDefaults 读取限速设置。0 或缺失返回 nil（不限速）。
+    private static func readSpeedLimit() -> Int? {
+        let value = UserDefaults.standard.object(forKey: downloadSpeedLimitKey) as? Int ?? 0
+        return value > 0 ? value : nil
+    }
+
+    /// 当前限速值（字节/秒），不限速时返回 0。供 UI Picker 作为当前选中项。
+    ///
+    /// 直接从 UserDefaults 读取（而非 `downloadSpeedLimit` 发布属性），使该方法可
+    /// `nonisolated` 调用——UI 的 `@State` 初始化发生在 `MLXDownloadManager`
+    /// 主 actor 之外，避免跨 actor 访问 `@Published` 属性。
+    nonisolated public func currentSpeedLimitBytes() -> Int {
+        let value = UserDefaults.standard.object(forKey: Self.downloadSpeedLimitKey) as? Int ?? 0
+        return value > 0 ? value : 0
+    }
+
     /// 暂停下载
     public func pause() {
         guard status == .downloading, let modelId = downloadingModelId else {
@@ -197,6 +254,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         // 保存当前状态，供 resume() 续传
         pausedModelId = modelId
+        // 清除实时速率后快照：暂停后不再有新字节流入，保留 speed 会让 UI 显示陈旧值
+        progress.speed = nil
         pausedProgress = progress
 
         // 设置状态为暂停
@@ -228,6 +287,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
         if let savedProgress = pausedProgress {
             progress = savedProgress
+            // 记录暂停时刻的 fraction 作为恢复地板：暂停时正在下载文件的部分字节
+            // 会在恢复后重下时丢失，重算 fraction 会因此下跌。地板保证恢复后进度条
+            // 不回退，停留在暂停值直到真实进度超过它。
+            resumeFloorFraction = savedProgress.fractionCompleted
         }
 
         // 清除暂停状态
@@ -260,12 +323,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 self.status = .completed
                 self.downloadingModelId = nil
+                self.resumeFloorFraction = nil
                 Self.logger.info("\(self.t)✅ 模型下载完成：\(modelId)")
 
             } catch {
                 if !Task.isCancelled {
                     self.status = .failed(error.localizedDescription)
                     self.downloadingModelId = nil
+                    self.resumeFloorFraction = nil
                     Self.logger.error("\(self.t)❌ 模型下载失败：\(modelId) - \(error.localizedDescription)")
                 } else if self.isPauseRequested {
                     // 恢复期间被暂停（异常路径）：保留 .paused 等待再次恢复
@@ -366,17 +431,21 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         var downloadedBytes: Int64 = 0
         let dm = downloadManager
 
-        // 如果从中间开始，先计算已下载文件的总大小
+        // 如果从中间开始（恢复场景）：只更新 completedFiles/totalFiles，
+        // fractionCompleted 保留 resume() 里恢复的暂停值（savedProgress.fractionCompleted）。
+        // 绝不能用「仅完整文件字节」去重算 fraction——暂停时正在下载文件的部分字节
+        // 已计入暂停值，但这里只累加完整文件，重算会让 fraction 跌到（只含完整文件的比例），
+        // 进度条先跌到接近 0、再随该文件重下爬回，视觉上像「变成 0」。
+        // downloadedBytes 局部变量仍正确累加完整文件字节，供后续进度回调
+        // `downloadedBytes + newBytes`（与正常下载一致的推进方式）。
         if startIndex > 0 {
             for index in 0..<startIndex {
                 let file = filteredFiles[index]
                 downloadedBytes += file.size ?? 0
             }
-            // 必须同时传 totalBytes，否则 updateProgress 不会重算 fractionCompleted，
-            // 恢复后进度条会冻结在暂停时的旧值，直到下一个完整文件下载完才跳动。
             updateProgress(
                 completedFiles: Int64(startIndex),
-                downloadedBytes: downloadedBytes,
+                totalFiles: Int64(filteredFiles.count),
                 totalBytes: totalBytes
             )
             Self.logger.info("\(self.t)▶️ 从第 \(startIndex) 个文件继续下载")
@@ -398,7 +467,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             let expectedSize = file.size ?? 0
 
-            // 检查是否已下载
+            // 检查已存在的本地文件，决定是跳过、续传还是全新下载。
+            // existingSize 用于续传起点：部分文件（暂停时下载了一部分）保留不删，
+            // 交给 DownloadKit 用 HTTP Range 从断点继续——这正是「不重头下载、不浪费」的关键。
+            var fileResumeBytes: Int64 = 0
             if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
                let existingSize = attrs[.size] as? Int64 {
                 if existingSize == expectedSize, expectedSize > 0 {
@@ -406,10 +478,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                     downloadedBytes += expectedSize
                     updateProgress(completedFiles: Int64(index + 1), downloadedBytes: downloadedBytes, totalBytes: totalBytes)
                     continue
-                } else if expectedSize > 0 {
-                    // 文件存在但大小不匹配，删除旧文件重新下载（暂停的部分文件会在此被删除）
-                    Self.logger.warning("\(self.t)⚠️ 文件大小不匹配，删除旧文件：\(file.path) (期望 \(expectedSize), 实际 \(existingSize))")
-                    try? fileManager.removeItem(at: fileURL)
+                } else if expectedSize > 0, existingSize > 0, existingSize < expectedSize {
+                    // 部分文件：保留，作为字节级续传起点（DownloadKit 会发 Range 请求继续）
+                    fileResumeBytes = existingSize
+                    Self.logger.info("\(self.t)⏏️ 续传文件：\(file.path) (已下载 \(existingSize)/\(expectedSize) 字节)")
                 }
             }
 
@@ -423,10 +495,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
             Self.logger.info("\(self.t)📥 下载文件 [\(index + 1)/\(filteredFiles.count)]：\(file.path) (\(expectedSize) 字节)")
 
-            // 更新当前下载的文件名和大小
+            // 更新当前下载的文件名和大小；已下载字节从续传起点初始化，进度条不回退到 0
             currentFileName = file.path
             currentFileSize = expectedSize
-            currentFileDownloadedBytes = 0
+            currentFileDownloadedBytes = fileResumeBytes
 
             let task = DownloadTask(
                 id: file.path,
@@ -436,8 +508,14 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             )
 
             do {
+                // 下载进度回调是 @Sendable，会在非 MainActor 的并发上下文执行；
+                // 若直接捕获外层 var downloadedBytes 再传给内部 @MainActor Task，
+                // Swift 6 会判定该变量跨越 actor 边界存在数据竞争。
+                // 这里先取不可变快照，闭包只捕获 Sendable 的 let，规避竞争。
+                let baseDownloadedBytes = downloadedBytes
                 _ = try await dm.download(task) { [weak self] progress in
                     let newBytes = progress.downloadedBytes
+                    let speed = progress.bytesPerSecond
                     Task { @MainActor in
                         guard let self else { return }
                         // 只在新值大于当前值时更新，避免并发 Task 调度乱序导致进度回退显示
@@ -445,8 +523,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                             self.currentFileDownloadedBytes = newBytes
                             // 将当前文件的实时字节数纳入整体进度，避免进度条在大文件下载期间冻结
                             self.updateProgress(
-                                downloadedBytes: downloadedBytes + newBytes,
-                                totalBytes: totalBytes
+                                downloadedBytes: baseDownloadedBytes + newBytes,
+                                totalBytes: totalBytes,
+                                speed: speed
                             )
                         }
                     }
@@ -487,6 +566,27 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 throw MLXDownloadError.emptySafetensorsFile(file.path)
             }
             Self.logger.info("\(self.t)✅ safetensors 验证通过：\(file.path) (\(size) 字节)")
+        }
+
+        // 验证加载模型必需的配置文件（swift-transformers 硬性要求 tokenizer.json 存在）
+        let requiredConfigFiles = ["tokenizer.json", "config.json"]
+        for fileName in requiredConfigFiles {
+            // 仅验证 filterFiles 已包含的文件：如果原始文件列表中没有该文件则跳过
+            guard filteredFiles.contains(where: { $0.path.components(separatedBy: "/").last == fileName }) else {
+                continue
+            }
+            let fileURL = localDir.appendingPathComponent(fileName)
+            guard fileManager.fileExists(atPath: fileURL.path) else {
+                Self.logger.error("\(self.t)❌ 缺失必需配置文件：\(fileName)")
+                throw MLXDownloadError.missingFile(fileName)
+            }
+            let attrs = try fileManager.attributesOfItem(atPath: fileURL.path)
+            let size = attrs[.size] as? Int64 ?? 0
+            if size == 0 {
+                Self.logger.error("\(self.t)❌ 必需配置文件为空：\(fileName)")
+                throw MLXDownloadError.emptySafetensorsFile(fileName)
+            }
+            Self.logger.info("\(self.t)✅ 配置文件验证通过：\(fileName) (\(size) 字节)")
         }
         Self.logger.info("\(self.t)所有文件下载和验证完成")
     }
@@ -601,14 +701,25 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Status Updates
 
     private func updateProgress(completedFiles: Int64? = nil, downloadedBytes: Int64? = nil,
-                                totalFiles: Int64? = nil, totalBytes: Int64? = nil) {
+                                totalFiles: Int64? = nil, totalBytes: Int64? = nil,
+                                speed: Double? = nil) {
         if let cf = completedFiles { progress.completedFiles = cf }
         if let tf = totalFiles { progress.totalFiles = tf }
+        // 速度即时刷新：DownloadKit 回调给出的 bytesPerSecond 直接反映当前文件实时速率，
+        // 每次回调都覆盖，避免停留陈旧值（回调频率高，无需额外平滑）。
+        if let speed { progress.speed = speed }
         if let db = downloadedBytes, let tb = totalBytes {
-            progress.fractionCompleted = Self.downloadProgressFraction(
+            var fraction = Self.downloadProgressFraction(
                 writtenBytes: db,
                 totalBytes: tb
             )
+            // 恢复场景的地板：重算的 fraction 不应低于暂停时刻的值。
+            // 暂停时正在下载文件的部分字节在恢复后会因重下而短暂缺失，
+            // 没有地板的话进度条会先跌到「仅完整文件」比例，视觉上像变成 0。
+            if let floor = resumeFloorFraction, fraction < floor {
+                fraction = floor
+            }
+            progress.fractionCompleted = fraction
         }
     }
 
@@ -628,6 +739,8 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         currentFileName = nil
         currentFileSize = 0
         progress = MLXDownloadProgress()
+        // 复位时一并清除恢复地板，避免残留到下次下载
+        resumeFloorFraction = nil
     }
 }
 

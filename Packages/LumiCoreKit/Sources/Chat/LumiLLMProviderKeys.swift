@@ -29,6 +29,7 @@ public enum LumiLLMProviderKeys {
         case "lpgpt": return "DevAssistant_ApiKey_LPgpt"
         case "megallm": return "DevAssistant_ApiKey_MegaLLM"
         case "xiaomi": return "DevAssistant_ApiKey_Xiaomi"
+        case "xiaomi-api": return "DevAssistant_ApiKey_XiaomiAPI"
         case "xybbz": return "DevAssistant_ApiKey_Xybbz"
         default: return "DevAssistant_ApiKey_\(id)"
         }

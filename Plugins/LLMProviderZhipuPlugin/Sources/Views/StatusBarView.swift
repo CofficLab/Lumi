@@ -123,9 +123,9 @@ struct StatusBarView: View {
 
     private func refreshQuota() {
         Task {
-            let result = await QuotaService.fetchQuota()
+            let status = await QuotaService.fetchQuota()
             await MainActor.run {
-                quotaStatus = result.status
+                quotaStatus = status
                 lastUpdateTime = Date()
             }
         }

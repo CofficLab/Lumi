@@ -100,31 +100,16 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
         return request
     }
 
-    // MARK: - Send (with error rendering)
-
-    public override func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.send(request)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return Self.errorMessage(conversationID: conversationID, error: error)
+    public override func errorRenderKind(for error: Error) -> String? {
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            return ZhipuRenderKind.apiKeyMissing
         }
-    }
 
-    public override func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        let conversationID = request.messages.first?.conversationID ?? UUID()
-        do {
-            return try await super.sendStreaming(request, onChunk: onChunk)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return Self.errorMessage(conversationID: conversationID, error: error)
+        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+            return ZhipuRenderKind.http(statusCode)
         }
+
+        return ZhipuRenderKind.requestFailed
     }
 
     // MARK: - API Key
@@ -135,98 +120,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
-    // MARK: - Error Handling
-
-    static func errorMessage(conversationID: UUID, error: Error) -> LumiChatMessage {
-        let fullDetail = LumiLLMProviderSupportLocalization.userFacingDescription(for: error)
-        let split = splitTransportDetails(fullDetail)
-        var metadata: [String: String] = [:]
-        if let request = split.requestDetails, !request.isEmpty {
-            metadata["llm.transport.request"] = request
-        }
-        if let response = split.responseDetails, !response.isEmpty {
-            metadata["llm.transport.response"] = response
-        }
-        return LumiChatMessage(
-            conversationID: conversationID,
-            role: .error,
-            content: "",
-            providerID: info.id,
-            isError: true,
-            rawErrorDetail: split.summary,
-            renderKind: renderKind(for: error),
-            metadata: metadata
-        )
-    }
-
-    private static func splitTransportDetails(_ fullDetail: String) -> (summary: String, requestDetails: String?, responseDetails: String?) {
-        let separator = "\n\n--- Request / Response Details ---\n"
-        guard let separatorRange = fullDetail.range(of: separator) else {
-            return (summary: fullDetail, requestDetails: nil, responseDetails: nil)
-        }
-
-        let summary = String(fullDetail[..<separatorRange.lowerBound])
-        let detailsBlock = String(fullDetail[separatorRange.upperBound...])
-        guard let responseRange = detailsBlock.range(of: "Response Status:") else {
-            let request = detailsBlock.trimmingCharacters(in: .whitespacesAndNewlines)
-            return (
-                summary: summary,
-                requestDetails: request.isEmpty ? nil : request,
-                responseDetails: nil
-            )
-        }
-
-        let request = String(detailsBlock[..<responseRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let response = String(detailsBlock[responseRange.lowerBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-        return (
-            summary: summary,
-            requestDetails: request.isEmpty ? nil : request,
-            responseDetails: response.isEmpty ? nil : response
-        )
-    }
-
-    private static func renderKind(for error: Error) -> String {
-        if case LumiLLMProviderSupportError.missingAPIKey = error {
-            return ZhipuRenderKind.apiKeyMissing
-        }
-
-        if case let HTTPClientError.httpError(statusCode, _) = error {
-            return ZhipuRenderKind.http(statusCode)
-        }
-
-        if case let LumiLLMProviderSupportError.streamingFailed(message) = error,
-           let statusCode = parseHTTPStatusCode(from: message) {
-            return ZhipuRenderKind.http(statusCode)
-        }
-
-        return ZhipuRenderKind.requestFailed
-    }
-
-    private static func parseHTTPStatusCode(from text: String) -> Int? {
-        let patterns = [
-            #"HTTP 错误 \((\d+)\)"#,
-            #"HTTP 错误（(\d+)）"#,
-            #"HTTP error \((\d+)\)"#,
-            #"HTTP (\d+)"#,
-            #"\b(\d{3})\b"#,
-        ]
-
-        for pattern in patterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern),
-                  let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-                  match.numberOfRanges > 1,
-                  let range = Range(match.range(at: 1), in: text),
-                  let code = Int(text[range]),
-                  (100 ... 599).contains(code)
-            else {
-                continue
-            }
-            return code
-        }
-
-        return nil
     }
 
     // MARK: - Claude Code 模拟辅助方法
@@ -252,5 +145,17 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
         userAgent += ")"
 
         return userAgent
+    }
+
+    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await AvailabilityService.checkAvailability(provider: self, model: model)
+    }
+
+    public override func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
+            providerID: Self.info.id,
+            displayName: Self.info.displayName,
+            isLocal: Self.info.isLocal
+        )
     }
 }

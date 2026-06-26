@@ -1,11 +1,12 @@
 import Testing
 @testable import LLMProviderFreeModelPlugin
 
+@Suite(.serialized)
 struct PluginLLMProviderFreeModelTests {
     @Test func pluginMetadata() {
-        #expect(FreeModelPlugin.id.isEmpty == false)
-        #expect(FreeModelPlugin.displayName.isEmpty == false)
-        #expect(FreeModelPlugin.description.isEmpty == false)
+        #expect(FreeModelPlugin.info.id.isEmpty == false)
+        #expect(FreeModelPlugin.info.displayName.isEmpty == false)
+        #expect(FreeModelPlugin.info.description.isEmpty == false)
         #expect(FreeModelPlugin.iconName.isEmpty == false)
         #expect(FreeModelPlugin.category == .llmProvider)
     }

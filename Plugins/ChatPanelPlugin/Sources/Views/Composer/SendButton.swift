@@ -4,13 +4,12 @@ import SwiftUI
 struct SendButton: View {
     @LumiTheme private var theme
 
-    let isSending: Bool
     let canSend: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: isSending ? "hourglass" : "paperplane.fill")
+            Image(systemName: "paperplane.fill")
                 .font(.system(size: ToolbarMetrics.iconSize, weight: ToolbarMetrics.iconWeight))
                 .foregroundColor(canSend ? .white : theme.textSecondary.opacity(0.28))
                 .frame(width: ToolbarMetrics.iconButtonSize, height: ToolbarMetrics.iconButtonSize)

@@ -4,11 +4,12 @@ import MarkdownKit
 import SwiftUI
 
 struct AssistantMessageView: View {
+    @Environment(\.lumiResponseVerbosity) private var verbosity
     let message: LumiChatMessage
     @Binding var showRawMessage: Bool
 
     var body: some View {
-        MessageViewChrome(message: message, showRawMessage: $showRawMessage) {
+        MessageViewChrome(message: message, showRawMessage: $showRawMessage, showsHeader: verbosity != .brief) {
             AssistantMessageBody(message: message, shouldHideAssistantBody: message.isToolExecutionOnly)
         }
     }

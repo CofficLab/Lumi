@@ -4,8 +4,8 @@ import Foundation
 public enum LumiModelAvailabilityResult: Sendable, Equatable {
     /// 模型可用
     case available
-    /// 模型不可用，附带不可用原因
-    case unavailable(reason: String)
+    /// 模型不可用，附带结构化失败信息
+    case unavailable(LumiLLMFailureDetail)
 }
 
 /// 模型能力声明
@@ -38,6 +38,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let contextWindowSizes: [String: Int]
     /// 各模型的能力声明（key 为模型 ID）
     public let modelCapabilities: [String: LumiModelCapabilities]
+    /// 各模型的展示名称（key 为模型 ID）；未命中时 UI 回退到原始 ID
+    public let modelDisplayNames: [String: String]
     /// 供应商官网/控制台页面（用于设置页跳转）
     public let websiteURL: URL
 
@@ -50,6 +52,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         isLocal: Bool = false,
         contextWindowSizes: [String: Int] = [:],
         modelCapabilities: [String: LumiModelCapabilities] = [:],
+        modelDisplayNames: [String: String] = [:],
         websiteURL: URL
     ) {
         self.id = id
@@ -60,6 +63,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.isLocal = isLocal
         self.contextWindowSizes = contextWindowSizes
         self.modelCapabilities = modelCapabilities
+        self.modelDisplayNames = modelDisplayNames
         self.websiteURL = websiteURL
     }
 }
@@ -97,9 +101,58 @@ public protocol LumiLLMProvider: Sendable {
     /// - Parameter model: 模型名称
     /// - Returns: 模型可用性检测结果
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult
+
+    /// 供应商为模型选择器等 UI 提供的当前状态说明（如缺少 API Key、套餐过期）。
+    /// 每个供应商都必须实现；无问题时返回 `nil`。
+    func providerStatus() -> LumiLLMProviderStatus?
+
+    /// 供应商对单次失败的重试决策；子类可 override。
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition
+
+    /// 将异常映射为错误消息的 `renderKind`；无自定义渲染时返回 `nil`。
+    func errorRenderKind(for error: Error) -> String?
+
+    /// 由调用方在重试耗尽或不可重试时，将 throw 的错误转为可展示的错误消息。
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage
 }
 
 public extension LumiLLMProvider {
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        if let providing = error as? LumiLLMErrorDispositionProviding {
+            return providing.llmErrorDisposition
+        }
+        return .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        let metadata = disposition.metadataEntries
+        let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: Self.info.id,
+            modelName: request.model,
+            isError: true,
+            rawErrorDetail: detail,
+            metadata: metadata
+        )
+    }
+
     func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -110,9 +163,5 @@ public extension LumiLLMProvider {
         }
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
         return message
-    }
-
-    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        .unavailable(reason: "Provider does not implement availability checks.")
     }
 }

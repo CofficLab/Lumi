@@ -13,18 +13,23 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     private(set) var downloadCallCount = 0
     private(set) var lastURL: URL?
     private(set) var lastDestination: URL?
+    /// 收到最近一次 download 调用传入的 existingBytes（续传起点），用于断言续传链路。
+    private(set) var lastExistingBytes: Int64 = 0
 
     func download(
         from url: URL,
         to destination: URL,
-        resumeData: Data?,
-        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void
-    ) async throws -> Data? {
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
         downloadCallCount += 1
         lastURL = url
         lastDestination = destination
+        lastExistingBytes = existingBytes
 
-        // 模拟进度更新
+        // 模拟进度更新（progressUpdates 是「累计值」，调用方可据此模拟续传进度）
         for (downloaded, total) in progressUpdates {
             progressHandler(downloaded, total)
         }
@@ -34,26 +39,44 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
             if emitProgressDuringDelay {
                 // 在延迟期间持续发送进度，模拟真实下载：取消后仍有滞后进度回调到达
                 let deadline = ContinuousClock().now.advanced(by: delay)
-                var bytes: Int64 = 0
+                var bytes: Int64 = existingBytes  // 从续传起点累加，模拟累计值语义
                 while ContinuousClock().now < deadline {
                     bytes += 1000
                     progressHandler(bytes, Int64.max)
-                    try await Task.sleep(for: .milliseconds(10))
+                    do {
+                        try await Task.sleep(for: .milliseconds(10))
+                    } catch {
+                        // 被取消：流式写入已落盘，回调 nil（无 resume data blob）
+                        onCancelled(nil)
+                        throw CancellationError()
+                    }
                     try Task.checkCancellation()
                 }
             } else {
-                try await Task.sleep(for: delay)
+                do {
+                    try await Task.sleep(for: delay)
+                } catch {
+                    onCancelled(nil)
+                    throw CancellationError()
+                }
             }
         }
 
         // 返回结果
         switch downloadResult {
         case .success(let data):
-            // 写入文件到 destination
+            // 模拟流式追加写入：existingBytes > 0 时追加，否则覆盖写（与 DefaultHTTPClient 一致）
             if let data {
-                try data.write(to: destination)
+                if existingBytes > 0, FileManager.default.fileExists(atPath: destination.path) {
+                    let handle = try FileHandle(forWritingTo: destination)
+                    try handle.seekToEnd()
+                    try handle.write(contentsOf: data)
+                    try handle.close()
+                } else {
+                    try data.write(to: destination)
+                }
             }
-            return data
+            return Int64(data?.count ?? 0)
         case .failure(let error):
             throw error
         }
@@ -67,6 +90,7 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         downloadCallCount = 0
         lastURL = nil
         lastDestination = nil
+        lastExistingBytes = 0
     }
 }
 
@@ -230,7 +254,9 @@ struct DownloadManagerTests {
             try await Task.sleep(for: .milliseconds(200))
 
             let values = await collector.values
-            #expect(values.count == 3)
+            // 至少收到 Mock 发出的 3 次进度回调（同步投递可靠）；
+            // 另有完成时补发的最终进度，故用 >= 3 容纳实现细节，避免脆弱时序断言。
+            #expect(values.count >= 3, "应至少收到 3 次进度回调，实际：\(values.count)")
         }
     }
 
@@ -373,6 +399,119 @@ struct DownloadManagerTests {
             case .failure:
                 Issue.record("cancelAll 后重新下载同 id 应成功，不应残留「任务已在进行中」状态")
             }
+        }
+    }
+
+    @Test("磁盘部分文件作为续传起点传给 HTTPClient（字节级续传回归）")
+    func existingBytesDrivenFromPartialFile() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+
+            let destination = tempDir.appendingPathComponent("file.bin")
+            // 模拟暂停时已下载的部分文件：预先写入 400 字节
+            let partialBytes: Int64 = 400
+            try Data(repeating: 0x55, count: Int(partialBytes)).write(to: destination)
+            #expect(FileManager.default.fileExists(atPath: destination.path))
+
+            // 续传语义：Mock 追加写入「剩余 600 字节」，加上已有的 400 = 完整 1000 字节
+            let remainingContent = Data(repeating: 0xAB, count: 600)
+            mockClient.downloadResult = .success(remainingContent)
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let task = DownloadTask(
+                id: "resume-id",
+                url: URL(string: "https://example.com/file.bin")!,
+                destination: destination,
+                expectedSize: 1000  // 400(已有) + 600(续传) = 1000
+            )
+
+            // performDownload 应读取 destination 已有字节数作为 existingBytes 传给 HTTPClient
+            _ = try await manager.download(task)
+
+            #expect(
+                mockClient.lastExistingBytes == partialBytes,
+                "应读取部分文件大小作为续传起点传给 HTTPClient，实际：\(mockClient.lastExistingBytes)"
+            )
+            // 续传追加后文件应为完整 1000 字节
+            let attrs = try FileManager.default.attributesOfItem(atPath: destination.path)
+            #expect((attrs[.size] as? Int64) == 1000, "续传后文件应为完整大小")
+        }
+    }
+
+    @Test("无文件时 existingBytes 为 0（全新下载）")
+    func existingBytesZeroForFreshDownload() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            mockClient.downloadResult = .success(Data("content".utf8))
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("fresh.bin")
+            // 不预置文件
+            let task = DownloadTask(
+                id: "fresh-id",
+                url: URL(string: "https://example.com/fresh.bin")!,
+                destination: destination
+            )
+
+            _ = try await manager.download(task)
+
+            #expect(mockClient.lastExistingBytes == 0, "全新下载 existingBytes 应为 0")
+        }
+    }
+
+    @Test("禁用续传时忽略部分文件（existingBytes 为 0）")
+    func existingBytesIgnoredWhenResumeDisabled() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            mockClient.downloadResult = .success(Data(repeating: 0xAB, count: 500))
+
+            // enableResume = false：不读取部分文件作为续传起点
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir, enableResume: false)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("file.bin")
+            try Data(repeating: 0x55, count: 300).write(to: destination)
+
+            let task = DownloadTask(
+                id: "no-resume-id",
+                url: URL(string: "https://example.com/file.bin")!,
+                destination: destination,
+                expectedSize: 500
+            )
+
+            _ = try await manager.download(task)
+
+            #expect(mockClient.lastExistingBytes == 0, "禁用续传时 existingBytes 应为 0")
+        }
+    }
+
+    @Test("setMaxBytesPerSecond 在默认 client 下生效并返回 true")
+    func setMaxBytesPerSecondWithDefaultClient() async throws {
+        try await withTempDir { tempDir in
+            // 不注入 HTTPClient，使用内部 DefaultHTTPClient + 共享 RateLimiter
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir, maxBytesPerSecond: nil)
+            let manager = DownloadManager(configuration: config, httpClient: nil)
+
+            // 默认 client：setter 应返回 true
+            let ok = await manager.setMaxBytesPerSecond(1024 * 1024)
+            #expect(ok, "使用默认 HTTPClient 时 setMaxBytesPerSecond 应返回 true")
+        }
+    }
+
+    @Test("setMaxBytesPerSecond 在注入 client 下返回 false")
+    func setMaxBytesPerSecondWithInjectedClient() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            // 注入了 HTTPClient：无共享 RateLimiter，setter 应返回 false（不生效）
+            let ok = await manager.setMaxBytesPerSecond(1024 * 1024)
+            #expect(ok == false, "注入自定义 HTTPClient 时 setMaxBytesPerSecond 应返回 false")
         }
     }
 }

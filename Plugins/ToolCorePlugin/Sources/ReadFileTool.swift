@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LumiCoreKit
 
@@ -79,6 +80,13 @@ public struct ReadFileTool: LumiAgentTool {
         do {
             let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
             let data = try Data(contentsOf: url)
+
+            // 图片文件：读取并以图片形式回传给 LLM（而非报 UTF-8 错误）。
+            if let mimeType = Self.imageMimeType(forPathExtension: url.pathExtension),
+               let imageMessage = Self.readAsImage(data: data, url: url, mimeType: mimeType, context: context) {
+                return imageMessage
+            }
+
             guard let content = String(data: data, encoding: .utf8) else {
                 return "Error: File content is not valid UTF-8 text."
             }
@@ -97,6 +105,53 @@ public struct ReadFileTool: LumiAgentTool {
         } catch {
             return "Error reading file: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Image Handling
+
+    /// 已知图片扩展名到 MIME 类型的映射。返回 `nil` 表示不是图片。
+    private static func imageMimeType(forPathExtension ext: String) -> String? {
+        switch ext.lowercased() {
+        case "png": return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "gif": return "image/gif"
+        case "webp": return "image/webp"
+        case "bmp": return "image/bmp"
+        default: return nil
+        }
+    }
+
+    /// 将文件数据作为图片读取并注册到执行上下文，供 LLM 作为视觉输入。
+    /// - Returns: 成功时返回面向 LLM 的文本说明；无法识别为有效图片时返回 `nil`（交由上层按文本/报错处理）。
+    private static func readAsImage(
+        data: Data,
+        url: URL,
+        mimeType: String,
+        context: LumiToolExecutionContext
+    ) -> String? {
+        // NSImage(data:) 与 representations 读取在后台线程安全可用。
+        guard let image = NSImage(data: data), image.isValid else {
+            return nil
+        }
+
+        let pixelSize = image.representations.reduce(into: (width: 0, height: 0)) { acc, rep in
+            acc.width = max(acc.width, rep.pixelsWide)
+            acc.height = max(acc.height, rep.pixelsHigh)
+        }
+
+        context.attachImage(
+            LumiImageAttachment(
+                mimeType: mimeType,
+                base64Data: data.base64EncodedString(),
+                fileName: url.lastPathComponent
+            )
+        )
+
+        let sizeDescription = pixelSize.width > 0 && pixelSize.height > 0
+            ? "，\(pixelSize.width)×\(pixelSize.height) 像素"
+            : ""
+        let byteCount = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+        return "已加载图片：\(url.lastPathComponent)\(sizeDescription)（\(byteCount)）。图片已随结果返回，可直接查看其内容。"
     }
 
     private func intArgument(_ value: LumiJSONValue?) -> Int? {

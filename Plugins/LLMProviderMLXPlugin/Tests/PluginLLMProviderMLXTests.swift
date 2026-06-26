@@ -1834,8 +1834,8 @@ enum MLXModelManagerRealFilesystemTests {
         let manager = MLXModelManager(fileManager: .default, cacheDirectory: tempRoot)
         manager.stopMonitoring()  // 停止后台扫描，避免跨用例干扰
 
-        // 在 MLXModels 真实缓存根目录下创建一个已知模型的有效 safetensors，
-        // 验证 refreshCachedModels 能识别它。
+        // 在 MLXModels 真实缓存根目录下创建一个已知模型的目录，但只放部分文件
+        // （2MB safetensors，远小于模型的 expectedBytes）。
         let cachedId = MLXModels.recommended.first!.id
         let cacheDir = MLXModels.cacheDirectory(for: cachedId)
         try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
@@ -1844,8 +1844,11 @@ enum MLXModelManagerRealFilesystemTests {
         defer { try? FileManager.default.removeItem(at: cacheDir) }
 
         manager.refreshCachedModels()
-        #expect(manager.isModelCached(id: cachedId))
-        #expect(manager.getModelState(id: cachedId) == .cached)
+        // 修复后：缓存完整性校验基于目录大小是否达到 expectedBytes。
+        // 仅 2MB 的部分文件（远小于真实模型的数 GB）不应被误判为已缓存，
+        // 否则下载中途按钮会错乱地变成「加载」。
+        #expect(manager.isModelCached(id: cachedId) == false,
+                "部分文件（未达期望大小）不应被判定为已缓存")
     }
 
     @Test
@@ -2104,7 +2107,7 @@ enum MLXDownloadManagerSharedStateTests {
         resumeTask.cancel()
     }
 
-    // MARK: - 进度恢复（回归 #3：恢复后进度曾冻结）
+    // MARK: - 进度恢复（回归 #3：恢复后进度曾冻结；回归 #4：恢复瞬间进度曾回退）
 
     /// downloadProgressFraction 在已知字节数下应立即重算，不再卡在旧值。
     /// 这里直接验证纯函数：恢复路径的 updateProgress 依赖它计算 fraction。
@@ -2119,22 +2122,53 @@ enum MLXDownloadManagerSharedStateTests {
         #expect(fraction > 0, "进度必须非零，否则进度条冻结")
     }
 
-    /// updateProgress 同时传 downloadedBytes + totalBytes 时应更新 fractionCompleted。
-    /// 验证 MLXDownloadProgress 在 startIndex 续传块后会被正确刷新。
+    /// 续传块不再用「仅完整文件字节」重算 fraction（会丢掉暂停文件的部分字节），
+    /// 改为保留暂停 fraction 并由 resumeFloorFraction 兜底。本用例守护这个契约：
+    /// 「仅完整文件」算出的 fraction 必然低于「含部分字节」的暂停值，地板应取后者。
     @Test
-    static func progressUpdatesFractionWhenBothBytesProvided() {
-        // 等价于 downloadAllFiles 续传块现在的调用：
-        // updateProgress(completedFiles:downloadedBytes:totalBytes:)
+    static func resumeFloorKeepsFractionAbovePartialFileLoss() {
+        let totalBytes: Int64 = 1_000_000_000
+
+        // 暂停时刻：2 个完整文件(各 200MB) + 第 3 个文件已下 300MB = 700MB
+        let pausedFraction = MLXDownloadManager.downloadProgressFraction(
+            writtenBytes: 700_000_000,
+            totalBytes: totalBytes
+        )
+
+        // 恢复重算：仅 2 个完整文件 = 400MB（第 3 个文件的部分字节丢失）
+        let recomputedFraction = MLXDownloadManager.downloadProgressFraction(
+            writtenBytes: 400_000_000,
+            totalBytes: totalBytes
+        )
+
+        // 没有地板时，恢复瞬间会从暂停值下跌（这就是 bug）
+        #expect(recomputedFraction < pausedFraction,
+                "恢复重算的 fraction 必然低于暂停值（部分字节丢失）")
+
+        // 地板机制：取 max(recomputed, paused) 保证不回退
+        let flooredFraction = max(recomputedFraction, pausedFraction)
+        #expect(flooredFraction == pausedFraction,
+                "地板应让恢复后的 fraction 不低于暂停值，实际：\(flooredFraction)")
+    }
+
+    /// 验证 MLXDownloadProgress 在 startIndex 续传块后的状态：fraction 保留暂停值。
+    @Test
+    static func progressKeepsPausedFractionOnResume() {
         var progress = MLXDownloadProgress()
         progress.totalFiles = 10
         progress.completedFiles = 5
-        let totalBytes: Int64 = 1_000_000_000
-        // 续传块算出的 fraction（与 downloadAllFiles 内部一致）
-        progress.fractionCompleted = MLXDownloadManager.downloadProgressFraction(
-            writtenBytes: 500_000_000,
-            totalBytes: totalBytes
+        // 暂停值（含部分文件字节）
+        let pausedFraction = MLXDownloadManager.downloadProgressFraction(
+            writtenBytes: 700_000_000,
+            totalBytes: 1_000_000_000
         )
-        #expect(progress.fractionCompleted > 0.4)
+        progress.fractionCompleted = pausedFraction
+
+        // 续传块现在只更新 completedFiles/totalFiles，不重算 fraction（保留暂停值）
+        progress.completedFiles = 5  // 恢复时 startIndex=5
+        // fractionCompleted 不被覆盖
+        #expect(progress.fractionCompleted == pausedFraction,
+                "恢复瞬间应保留暂停 fraction，实际：\(progress.fractionCompleted)")
     }
 }
 

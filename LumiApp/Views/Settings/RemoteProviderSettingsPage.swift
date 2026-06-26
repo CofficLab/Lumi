@@ -11,6 +11,7 @@ struct RemoteProviderSettingsPage: View {
     @State private var apiKey = ""
     @State private var isLoadingSettings = false
     @State private var searchText = ""
+    @State private var stats: ModelUsageStatsSnapshot?
 
     private let settingsStore = ProviderSettingsStore.shared
 
@@ -57,6 +58,9 @@ struct RemoteProviderSettingsPage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onAppear(perform: onAppear)
+        .onChange(of: chatService.revision) { _, _ in
+            reloadStats()
+        }
         .onChange(of: filteredProviders.map(\.id)) { _, ids in
             guard ids.contains(selectedProviderID) else {
                 selectedProviderID = ids.first ?? ""
@@ -231,11 +235,13 @@ struct RemoteProviderSettingsPage: View {
             VStack(spacing: 0) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(Array(models.enumerated()), id: \.element) { index, model in
-                    AppSettingsModelRow(
+                    ModelSettingsRow(
                         model: model,
                         supportsVision: selectedProvider?.modelCapabilities[model]?.supportsVision,
                         supportsTools: selectedProvider?.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: selectedProvider?.modelCapabilities[model]?.supportsTTS
+                        supportsTTS: selectedProvider?.modelCapabilities[model]?.supportsTTS,
+                        stat: stat(for: selectedProviderID, modelName: model),
+                        dailyUsage: dailyUsage(for: selectedProviderID, modelName: model)
                     )
 
                     if index < models.count - 1 {
@@ -250,6 +256,23 @@ struct RemoteProviderSettingsPage: View {
     private func onAppear() {
         loadSelectedProviderID()
         loadSettings()
+        reloadStats()
+    }
+
+    private func reloadStats() {
+        let messages = chatService.conversations.flatMap { chatService.messages(for: $0.id) }
+        stats = ModelUsageStatsService.buildSnapshot(
+            messages: messages,
+            providers: chatService.providerInfos
+        )
+    }
+
+    private func stat(for providerID: String, modelName: String) -> ModelPerformanceStats? {
+        stats?.detailedStats["\(providerID)|\(modelName)"]
+    }
+
+    private func dailyUsage(for providerID: String, modelName: String) -> ModelDailyTokenSeries? {
+        stats?.dailyUsage["\(providerID)|\(modelName)"]
     }
 
     private func loadSelectedProviderID() {

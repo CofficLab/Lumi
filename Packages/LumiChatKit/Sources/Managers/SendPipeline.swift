@@ -238,16 +238,17 @@ final class SendPipeline {
         )
 
         var lastError: Error?
-        for attempt in 0..<service.llmRetryCount {
+        var lastDisposition = LumiLLMErrorDisposition.nonRetryable
+        let maxAttempts = service.llmRetryCount
+
+        for attempt in 0..<maxAttempts {
             try Task.checkCancellation()
             if attempt > 0 {
                 service.statusState.setStatus(
                     conversationID: conversationID,
-                    content: "重试中（\(attempt + 1)/\(service.llmRetryCount)）..."
+                    content: "重试中（\(attempt + 1)/\(maxAttempts)）..."
                 )
                 service.revision += 1
-                let delay = UInt64(pow(2.0, Double(attempt))) * 500_000_000
-                try await Task.sleep(nanoseconds: delay)
             }
 
             do {
@@ -262,21 +263,33 @@ final class SendPipeline {
                 throw CancellationError()
             } catch {
                 lastError = error
-                // 确定性失败（如 API Key 未配置、供应商未找到）不应重试
-                if NonRetryableErrorChecker.isNonRetryable(error) {
+                let context = LumiLLMRetryContext(attempt: attempt + 1, maxAttempts: maxAttempts)
+                lastDisposition = provider.retryDisposition(for: error, context: context)
+                guard lastDisposition.isRetryable, attempt + 1 < maxAttempts else {
                     break
                 }
+
+                let delaySeconds = lastDisposition.retryDelaySeconds ?? pow(2.0, Double(attempt)) * 0.5
+                try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
             }
+        }
+
+        if let lastError {
+            return provider.makeErrorMessage(
+                conversationID: conversationID,
+                request: request,
+                error: lastError,
+                disposition: lastDisposition
+            )
         }
 
         return LumiChatMessage(
             conversationID: conversationID,
             role: .error,
-            content: lastError?.localizedDescription ?? "Request failed.",
+            content: "Request failed.",
             providerID: providerInfo.id,
             modelName: model,
-            isError: true,
-            rawErrorDetail: lastError?.localizedDescription
+            isError: true
         )
     }
 

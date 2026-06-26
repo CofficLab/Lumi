@@ -177,10 +177,10 @@ public struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
                 checking += 1
             case .available:
                 available += 1
-            case .unavailable(let reason):
+            case .unavailable(let failure):
                 unavailable += 1
                 if unavailableReasons.count < 3 {
-                    unavailableReasons.append(reason)
+                    unavailableReasons.append(failure.logSummary)
                 }
             }
         }

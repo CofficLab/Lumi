@@ -8,7 +8,8 @@ struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
-    @StateObject private var viewModel = DeviceInfoMenuBarContentViewModel()
+    // 共享 ViewModel 保证 CPU/内存指标持续更新。
+    @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
 
     // MARK: - Body
 
@@ -29,19 +30,37 @@ struct DeviceInfoMenuBarContentView: View {
 
 @MainActor
 final class DeviceInfoMenuBarContentViewModel: ObservableObject {
+    static let shared = DeviceInfoMenuBarContentViewModel()
+
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 
+    private var lastMetrics = DeviceInfoMenuBarMetrics.empty
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    private init() {
         startMonitoring()
+        observeMenuBarAppearanceChanges()
     }
 
-    deinit {
-        Task { @MainActor in
-            CPUService.shared.stopMonitoring()
-            MemoryService.shared.stopMonitoring()
-        }
+    private func observeMenuBarAppearanceChanges() {
+        NotificationCenter.default.publisher(for: .lumiMenuBarAppearanceDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let button = notification.object as? NSStatusBarButton {
+                    let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
+                    appearance.performAsCurrentDrawingAppearance {
+                        self.refreshSnapshotForCurrentAppearance()
+                    }
+                } else {
+                    self.refreshSnapshotForCurrentAppearance()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func refreshSnapshotForCurrentAppearance() {
+        snapshot = DeviceInfoMenuBarSnapshot(metrics: lastMetrics)
     }
 
     private func startMonitoring() {
@@ -78,9 +97,10 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
             .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
             .map { DeviceInfoMenuBarMetrics(cpu: $0, memory: $1) }
             .removeDuplicates()
-            .map(DeviceInfoMenuBarSnapshot.init(metrics:))
-            .sink { [weak self] snapshot in
-                self?.snapshot = snapshot
+            .sink { [weak self] metrics in
+                guard let self else { return }
+                self.lastMetrics = metrics
+                self.snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
             }
             .store(in: &cancellables)
     }

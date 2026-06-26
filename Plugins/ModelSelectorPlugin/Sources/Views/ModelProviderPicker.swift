@@ -8,6 +8,7 @@ struct ModelProviderPicker: View {
     @ObservedObject private var chatService: ChatService
 
     @State private var isPresented = false
+    @State private var isHovering = false
 
     init(chatService: any LumiChatServicing) {
         guard let chatService = chatService as? ChatService else {
@@ -34,9 +35,16 @@ struct ModelProviderPicker: View {
             .foregroundColor(theme.textSecondary)
             .padding(.horizontal, ToolbarMetrics.composerChipHorizontalPadding)
             .padding(.vertical, ToolbarMetrics.composerChipVerticalPadding)
+            .background(
+                RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous)
+                    .fill(isHovering ? theme.textPrimary.opacity(0.08) : Color.clear)
+            )
             .contentShape(RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ModelSelectorView(
                 chatService: chatService,
@@ -63,7 +71,8 @@ struct ModelProviderPicker: View {
         }
 
         if let model = chatService.modelName(for: conversationID) {
-            return "\(provider.displayName) · \(model)"
+            let displayModel = provider.modelDisplayNames[model] ?? model
+            return "\(provider.displayName) · \(displayModel)"
         }
         return provider.displayName
     }

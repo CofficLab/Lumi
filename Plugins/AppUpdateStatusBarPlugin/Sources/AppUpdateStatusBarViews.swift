@@ -2,8 +2,6 @@ import LumiUI
 import SwiftUI
 
 struct AppUpdateStatusBarContentView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
     @ObservedObject var store: AppUpdateStatusBarStore
 
     var body: some View {
@@ -14,10 +12,7 @@ struct AppUpdateStatusBarContentView: View {
                 Text(PluginAppUpdateStatusBarLocalization.string("Update"))
                     .font(.appMicroEmphasized)
             }
-            .foregroundColor(theme.info)
-            .padding(.horizontal, 5)
-            .frame(height: 16)
-            .appSurface(style: .custom(theme.info.opacity(0.14)), cornerRadius: 4)
+            .foregroundStyle(.primary)
         }
     }
 }

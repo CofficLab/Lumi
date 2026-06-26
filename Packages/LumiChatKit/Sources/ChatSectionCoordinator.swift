@@ -16,6 +16,7 @@ public final class ChatSectionCoordinator: ObservableObject {
     @Published public var isImageDragHovering = false
     @Published public var imageAttachments: [LumiImageAttachment] = []
     @Published public var showCommandSuggestions = false
+    @Published public var showImageUnsupportedAlert = false
     @Published public private(set) var chatSectionToolbarItems: [LumiChatSectionToolbarItem] = []
 
     public let chatService: ChatService
@@ -99,7 +100,21 @@ public final class ChatSectionCoordinator: ObservableObject {
         }
     }
 
+    public func canAttachImages(for conversationID: UUID?) -> Bool {
+        LumiModelVisionSupport.supportsVision(
+            providerInfos: chatService.providerInfos,
+            routingMode: chatService.routingMode,
+            providerID: chatService.providerID(for: conversationID),
+            model: chatService.modelName(for: conversationID)
+        )
+    }
+
     public func selectImageAttachment() {
+        guard canAttachImages(for: selectedConversationID) else {
+            showImageUnsupportedAlert = true
+            return
+        }
+
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
@@ -116,6 +131,10 @@ public final class ChatSectionCoordinator: ObservableObject {
     public func handleFileDrop(_ url: URL) {
         let fileURL = url.standardizedFileURL
         if ChatInputEditorRules.isChatImageFileURL(fileURL) {
+            guard canAttachImages(for: selectedConversationID) else {
+                showImageUnsupportedAlert = true
+                return
+            }
             addImageAttachment(url: fileURL)
         } else {
             appendToDraft(fileURL.path)
@@ -143,6 +162,11 @@ public final class ChatSectionCoordinator: ObservableObject {
     }
 
     public func addImageAttachment(data: Data, mimeType: String = "image/png", fileName: String? = nil) {
+        guard canAttachImages(for: selectedConversationID) else {
+            showImageUnsupportedAlert = true
+            return
+        }
+
         let resolvedFileName = fileName ?? defaultScreenshotFileName()
         imageAttachments.append(
             LumiImageAttachment(

@@ -17,6 +17,8 @@ public struct MLXLocalProviderSettingsView: View {
     @State private var actionError: String?
     @State private var errorModelId: String?
     @State private var selectedSeriesId: String?
+    /// 下载限速档位（字节/秒）。0 表示不限速。
+    @State private var speedLimitBytes: Int = MLXDownloadManager.shared.currentSpeedLimitBytes()
 
     public init() {}
 
@@ -54,6 +56,34 @@ public struct MLXLocalProviderSettingsView: View {
                 }
                 .help(LumiPluginLocalization.string("在访达中打开缓存目录", bundle: .module))
             }
+            downloadSpeedRow
+        }
+    }
+
+    /// 下载限速选择行。
+    ///
+    /// 限速值存储为字节/秒（0 = 不限速），由 `MLXDownloadManager` 同步到底层
+    /// DownloadKit 限速器，下载进行中调整也即时生效。
+    private var downloadSpeedRow: some View {
+        HStack {
+            Text(LumiPluginLocalization.string("下载限速", bundle: .module))
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
+            Spacer()
+            Picker("", selection: $speedLimitBytes) {
+                Text(LumiPluginLocalization.string("不限速", bundle: .module)).tag(0)
+                Text("512 KB/s").tag(512 * 1024)
+                Text("1 MB/s").tag(1024 * 1024)
+                Text("2 MB/s").tag(2 * 1024 * 1024)
+                Text("5 MB/s").tag(5 * 1024 * 1024)
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(maxWidth: 140)
+            .onChange(of: speedLimitBytes) { _, newValue in
+                let bytesPerSecond = newValue > 0 ? newValue : nil
+                downloadManager.updateDownloadSpeed(bytesPerSecond: bytesPerSecond)
+            }
         }
     }
 
@@ -73,13 +103,11 @@ public struct MLXLocalProviderSettingsView: View {
             spacing: 12
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 8) {
-                        ForEach(allSeries) { series in
-                            seriesTab(series, isSelected: series.id == selectedSeries?.id)
-                        }
+                // 系列选择器用流式布局：全部平铺、一行放不下自动换行，避免横向滚动条。
+                FlowLayout(spacing: 8) {
+                    ForEach(allSeries) { series in
+                        seriesTab(series, isSelected: series.id == selectedSeries?.id)
                     }
-                    .padding(.horizontal, 2)
                 }
 
                 if let series = selectedSeries {
@@ -105,9 +133,12 @@ public struct MLXLocalProviderSettingsView: View {
                     selectedSeriesId = firstSeries.id
                 }
             }
-            .onChange(of: allSeries) { _, newSeries in
-                if let firstSeries = newSeries.first {
-                    selectedSeriesId = firstSeries.id
+            .onChange(of: allSeries) { oldSeries, newSeries in
+                // 列表变化时（如 RAM 改变导致可用模型增减），仅当用户当前选中的系列
+                // 已不存在才回退到第一个；否则保留用户选择，避免每次刷新都重置 tab。
+                // 旧逻辑无脑取 newSeries.first，会反复把选中重置回第一个系列。
+                if selectedSeriesId.map({ id in newSeries.contains { $0.id == id } }) == false {
+                    selectedSeriesId = newSeries.first?.id ?? oldSeries.first?.id
                 }
             }
         }
@@ -144,11 +175,13 @@ public struct MLXLocalProviderSettingsView: View {
 
     @ViewBuilder
     private func modelRow(_ model: LocalModelInfo) -> some View {
-        let isCached = modelManager.isModelCached(id: model.id)
         let isDownloading = downloadManager.downloadingModelId == model.id && downloadManager.status == .downloading
         let isPaused = downloadManager.downloadingModelId == model.id && downloadManager.status == .paused
+        // 正在下载/暂停的模型不算已缓存：下载中途的部分文件可能被 isModelCached 误判为已缓存
+        // （它只检查 safetensors 是否 ≥1MB，不校验完整性），导致按钮在下载中途错乱地变成「加载」。
+        let isActiveDownload = isDownloading || isPaused
+        let isCached = !isActiveDownload && modelManager.isModelCached(id: model.id)
         let isLoaded = inferenceService.currentModelId == model.id
-        let isLoading = inferenceService.state == .loading && inferenceService.currentModelId == model.id
         let hasError = errorModelId == model.id && actionError != nil
 
         VStack(alignment: .leading, spacing: 8) {
@@ -169,15 +202,6 @@ public struct MLXLocalProviderSettingsView: View {
 
             HStack(spacing: 8) {
                 if isCached {
-                    AppButton(
-                        LumiPluginLocalization.string("加载", bundle: .module),
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        Task { await loadModel(model.id) }
-                    }
-                    .disabled(isLoading || isLoaded)
-
                     if isLoaded {
                         AppButton(
                             LumiPluginLocalization.string("卸载", bundle: .module),
@@ -186,6 +210,13 @@ public struct MLXLocalProviderSettingsView: View {
                         ) {
                             Task { await unloadModel() }
                         }
+                    }
+                    AppButton(
+                        LumiPluginLocalization.string("删除", bundle: .module),
+                        style: .ghost,
+                        size: .small
+                    ) {
+                        Task { await deleteModel(model.id) }
                     }
                 } else {
                     if isDownloading {
@@ -271,6 +302,13 @@ public struct MLXLocalProviderSettingsView: View {
                         Text("\(downloadManager.progress.completedFiles)/\(downloadManager.progress.totalFiles)")
                             .font(.caption)
                             .foregroundColor(theme.textSecondary)
+
+                        // 实时下载速度（暂停时 speed 被清空，仅下载中显示）
+                        if isDownloading, !downloadManager.progress.speedLabel.isEmpty {
+                            Text(downloadManager.progress.speedLabel)
+                                .font(.caption)
+                                .foregroundColor(theme.textSecondary)
+                        }
                     }
                 }
             }
@@ -320,27 +358,78 @@ public struct MLXLocalProviderSettingsView: View {
     }
 
     @MainActor
-    private func loadModel(_ modelID: String) async {
-        actionError = nil
-        errorModelId = nil
-        do {
-            try await inferenceService.loadModel(id: modelID)
-        } catch {
-            actionError = error.localizedDescription
-            errorModelId = modelID
-        }
-    }
-
-    @MainActor
     private func unloadModel() async {
         actionError = nil
         errorModelId = nil
         await inferenceService.unloadModel()
     }
 
+    @MainActor
+    private func deleteModel(_ modelID: String) async {
+        actionError = nil
+        errorModelId = nil
+
+        // 如果模型正在使用，先卸载
+        if inferenceService.currentModelId == modelID {
+            await inferenceService.unloadModel()
+        }
+
+        do {
+            try modelManager.deleteModel(id: modelID)
+        } catch {
+            actionError = error.localizedDescription
+            errorModelId = modelID
+        }
+    }
+
     private func formattedFileSize(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         return formatter.string(fromByteCount: bytes)
+    }
+}
+
+// MARK: - Flow Layout
+
+/// 简单的流式布局：子视图横向依次排列，一行放不下时自动换到下一行。
+///
+/// 用于模型系列选择器，避免横向滚动条，让所有系列标签全部铺开展示。
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(proposal: proposal, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
+                proposal: .unspecified
+            )
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
     }
 }

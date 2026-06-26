@@ -45,15 +45,27 @@ public enum QwenModels {
             series: "Qwen 系列"
         ),
         LocalModelInfo(
-            id: "mlx-community/Qwen3.5-14B-4bit",
-            displayName: LumiPluginLocalization.string("Qwen 3.5 14B", bundle: .module),
-            description: LumiPluginLocalization.string("更强的中文模型，适合复杂任务", bundle: .module),
-            size: "~9 GB",
-            minRAM: 24,
-            expectedBytes: 9_000_000_000,
-            supportsVision: false,
-            supportsTools: true,
-            priority: 3,
+            id: "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+            displayName: LumiPluginLocalization.string("Qwen3 VL 2B", bundle: .module),
+            description: LumiPluginLocalization.string("新一代轻量视觉语言模型，支持图片理解", bundle: .module),
+            size: "~1.8 GB",
+            minRAM: 8,
+            expectedBytes: 1_798_023_774,
+            supportsVision: true,
+            supportsTools: false,
+            priority: 9,
+            series: "Qwen 系列"
+        ),
+        LocalModelInfo(
+            id: "mlx-community/Qwen3-VL-4B-Instruct-4bit",
+            displayName: LumiPluginLocalization.string("Qwen3 VL 4B", bundle: .module),
+            description: LumiPluginLocalization.string("新一代视觉语言模型，图片理解能力强", bundle: .module),
+            size: "~3.1 GB",
+            minRAM: 8,
+            expectedBytes: 3_109_732_071,
+            supportsVision: true,
+            supportsTools: false,
+            priority: 10,
             series: "Qwen 系列"
         ),
         LocalModelInfo(
@@ -65,7 +77,7 @@ public enum QwenModels {
             expectedBytes: 5_000_000_000,
             supportsVision: true,
             supportsTools: false,
-            priority: 10,
+            priority: 11,
             series: "Qwen 系列"
         ),
     ]

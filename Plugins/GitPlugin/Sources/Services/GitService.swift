@@ -286,13 +286,31 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func commit(path: String?, message: String, files: [String], amend: Bool) async throws -> GitCommitResult {
         let repoPath = Self.resolvePath(path)
 
+        // 将绝对路径转换为相对路径（相对于仓库根目录）
+        // LibGit2 的 index 操作需要相对路径，绝对路径会导致 stage 静默失败
+        let resolvedFiles: [String]
+        if files.isEmpty {
+            resolvedFiles = files
+        } else {
+            resolvedFiles = files.map { filePath -> String in
+                let resolved = Self.resolvePath(filePath)
+                // 如果路径以仓库根目录开头，转换为相对路径
+                if resolved.hasPrefix(repoPath) {
+                    let relative = String(resolved.dropFirst(repoPath.count))
+                    // 移除开头的 /
+                    return relative.hasPrefix("/") ? String(relative.dropFirst()) : relative
+                }
+                return filePath
+            }
+        }
+
         let commitHash: String = try await performOnGitQueue {
             if amend {
                 return try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
             }
             // addAndCommit with empty files correctly stages ALL changes then commits.
             // Direct createCommit would only commit what's already staged, leaving working tree changes behind.
-            return try LibGit2.addAndCommit(files: files, message: message, at: repoPath, verbose: Self.verbose)
+            return try LibGit2.addAndCommit(files: resolvedFiles, message: message, at: repoPath, verbose: Self.verbose)
         }
 
         // 获取提交详情
@@ -345,6 +363,14 @@ public final class GitService: @unchecked Sendable, SuperLog {
     private static func resolvePath(_ path: String?) -> String {
         let rawPath = path ?? FileManager.default.currentDirectoryPath
         let expanded = (rawPath as NSString).expandingTildeInPath
+        // 优先使用 realpath() 解析符号链接（在 macOS 上 /var -> /private/var）
+        // URL.resolvingSymlinksInPath() 在某些沙箱环境下不可靠
+        if let cStr = realpath(expanded, nil) {
+            let resolved = String(cString: cStr)
+            free(cStr)
+            return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
+        }
+        // fallback：如果 realpath 失败（路径不存在等），使用 URL 解析
         let url = URL(fileURLWithPath: expanded)
         let resolved = url.resolvingSymlinksInPath().path
         return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved

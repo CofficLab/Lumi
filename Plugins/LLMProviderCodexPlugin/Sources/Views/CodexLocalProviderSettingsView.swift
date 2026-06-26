@@ -48,17 +48,55 @@ public struct CodexLocalProviderSettingsView: View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
                 ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                    AppSettingsModelRow(
-                        model: model,
-                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS
-                    )
+                    AppListRow {
+                        readOnlyModelRow(
+                            model: model,
+                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
+                        )
+                    }
 
                     if index < provider.availableModels.count - 1 {
                         AppSettingsDivider()
                             .padding(.horizontal, 8)
                     }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func readOnlyModelRow(
+        model: String,
+        supportsVision: Bool?,
+        supportsTools: Bool?,
+        supportsTTS: Bool?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(model)
+                .font(.appBody)
+                .foregroundColor(theme.textPrimary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if supportsVision != nil || supportsTools == true || supportsTTS == true {
+                HStack(spacing: 6) {
+                    if let supportsVision {
+                        AppTag(
+                            supportsVision ? "Image" : "Text",
+                            systemImage: supportsVision ? "photo" : "text.bubble",
+                            style: .subtle
+                        )
+                    }
+                    if supportsTools == true {
+                        AppTag("Tools", systemImage: "wrench.and.screwdriver", style: .subtle)
+                    }
+                    if supportsTTS == true {
+                        AppTag("TTS", systemImage: "waveform", style: .subtle)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
         }

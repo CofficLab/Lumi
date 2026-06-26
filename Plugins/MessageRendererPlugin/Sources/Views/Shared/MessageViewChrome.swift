@@ -8,36 +8,44 @@ struct MessageViewChrome<Content: View>: View {
     let message: LumiChatMessage
     @Binding var showRawMessage: Bool
     var showsResendButton = false
+    var showsHeader = true
+    var errorTransportDetails: ResolvedErrorTransportDetails?
     @State private var didCopy = false
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            CompactMessageHeaderView {
-                HStack(alignment: .center, spacing: 6) {
-                    ChatAvatarView(kind: MessageViewHelpers.avatarKind(for: message.role))
-                    AppIdentityRow(
-                        title: MessageViewHelpers.headerTitle(for: message),
-                        metadata: MessageViewHelpers.metadataItems(for: message)
-                    )
-                }
-            } trailing: {
-                HStack(alignment: .center, spacing: 12) {
-                    CopyMessageButton(
-                        content: MessageViewHelpers.copyContent(for: message),
-                        showFeedback: $didCopy
-                    )
-
-                    if showsResendButton, !message.content.isEmpty {
-                        ResendMessageButton(message: message)
+            if showsHeader {
+                CompactMessageHeaderView {
+                    HStack(alignment: .center, spacing: 6) {
+                        ChatAvatarView(kind: MessageViewHelpers.avatarKind(for: message.role))
+                        AppIdentityRow(
+                            title: MessageViewHelpers.headerTitle(for: message),
+                            metadata: MessageViewHelpers.metadataItems(for: message)
+                        )
                     }
+                } trailing: {
+                    HStack(alignment: .center, spacing: 12) {
+                        CopyMessageButton(
+                            content: MessageViewHelpers.copyContent(for: message),
+                            showFeedback: $didCopy
+                        )
 
-                    AppIdentityRow(
-                        title: MessageViewHelpers.formatTimestamp(message.createdAt),
-                        titleColor: theme.textSecondary
-                    )
+                        if showsResendButton, !message.content.isEmpty {
+                            ResendMessageButton(message: message)
+                        }
 
-                    MessageInfoButton(message: message)
+                        AppIdentityRow(
+                            title: MessageViewHelpers.formatTimestamp(message.createdAt),
+                            titleColor: theme.textSecondary
+                        )
+
+                        if let errorTransportDetails, errorTransportDetails.hasTransportDetails {
+                            ErrorTransportDetailsButton(details: errorTransportDetails)
+                        }
+
+                        MessageInfoButton(message: message)
+                    }
                 }
             }
 

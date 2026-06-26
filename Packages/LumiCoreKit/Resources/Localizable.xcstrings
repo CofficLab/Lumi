@@ -1904,6 +1904,22 @@
           }
         }
       }
+    },
+    "API Key not configured" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key not configured"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未配置 API Key"
+          }
+        }
+      }
     }
   }
 }

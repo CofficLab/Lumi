@@ -118,10 +118,16 @@ struct ModelAvailabilityView: View {
             ProgressView()
                 .scaleEffect(0.5)
                 .frame(width: 12, height: 12)
-        case .unavailable:
-            Image(systemName: "xmark.circle.fill")
-                .foregroundColor(.red)
-                .font(.system(size: 11))
+        case .unavailable(let failure):
+            if failure.reason == .unsupportedModel {
+                Image(systemName: "minus.circle.fill")
+                    .foregroundColor(theme.textSecondary)
+                    .font(.system(size: 11))
+            } else {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                    .font(.system(size: 11))
+            }
         case .unknown:
             Image(systemName: "questionmark.circle.fill")
                 .foregroundColor(.secondary)
@@ -140,11 +146,8 @@ struct ModelAvailabilityView: View {
             Text(LumiPluginLocalization.string("Checking...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
-        case .unavailable(let reason):
-            Text(reason)
-                .font(.appCaption)
-                .foregroundColor(.red)
-                .lineLimit(1)
+        case .unavailable(let failure):
+            AvailabilityFailureStatusLabel(failure: failure)
         case .unknown:
             Text(LumiPluginLocalization.string("Unknown", bundle: .module))
                 .font(.appCaption)

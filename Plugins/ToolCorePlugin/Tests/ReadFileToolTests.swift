@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LumiCoreKit
 import Testing
@@ -149,4 +150,75 @@ final class ReadFileToolTests {
         )
         #expect(result.contains("Line 5"))
     }
+
+    // MARK: - Image Reading
+
+    @Test func readsImageFileAndAttachesItToContext() async throws {
+        let pngData = try makePNG(width: 4, height: 3)
+        let file = tmpDir.appendingPathComponent("photo.png")
+        try pngData.write(to: file)
+
+        let context = makeContext()
+        let tool = ReadFileTool()
+        let result = try await tool.execute(arguments: ["path": .string(file.path)], context: context)
+
+        // 返回人类可读说明（非 UTF-8 报错）
+        #expect(!result.contains("UTF-8"))
+        #expect(result.contains("photo.png"))
+
+        // 图片被注册到执行上下文，供 ToolService 收集回传给 LLM
+        let collected = context.collectImages()
+        #expect(collected.count == 1)
+        #expect(collected.first?.mimeType == "image/png")
+        #expect(collected.first?.fileName == "photo.png")
+        #expect(Data(base64Encoded: collected.first?.base64Data ?? "") == pngData)
+    }
+
+    @Test func supportsJpegExtension() async throws {
+        let pngData = try makePNG(width: 2, height: 2)
+        let file = tmpDir.appendingPathComponent("pic.jpg")
+        try pngData.write(to: file)
+
+        let context = makeContext()
+        let tool = ReadFileTool()
+        _ = try await tool.execute(arguments: ["path": .string(file.path)], context: context)
+
+        // 即使内容是 PNG 数据，扩展名决定 MIME；图片仍被回传
+        let collected = context.collectImages()
+        #expect(collected.count == 1)
+        #expect(collected.first?.mimeType == "image/jpeg")
+    }
+
+    @Test func invalidImageBytesWithImageExtensionReportsError() async throws {
+        // 非 UTF-8 且非有效图片 → 应返回 UTF-8 错误，不误回传空图
+        let file = tmpDir.appendingPathComponent("broken.png")
+        try Data([0xFF, 0xFE, 0x80, 0x00]).write(to: file)
+
+        let context = makeContext()
+        let tool = ReadFileTool()
+        let result = try await tool.execute(arguments: ["path": .string(file.path)], context: context)
+
+        #expect(result.contains("UTF-8"))
+        #expect(context.collectImages().isEmpty)
+    }
+}
+
+/// 生成最小有效 PNG 数据（指定宽高），用于图片读取测试。
+private func makePNG(width: Int, height: Int) throws -> Data {
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: width,
+        pixelsHigh: height,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ),
+        let png = rep.representation(using: .png, properties: [:]) else {
+        throw NSError(domain: "TestSupport", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to create PNG"])
+    }
+    return png
 }

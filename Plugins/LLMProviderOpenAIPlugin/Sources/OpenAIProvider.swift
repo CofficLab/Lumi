@@ -89,15 +89,19 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await AvailabilityService.checkAvailability(provider: self, model: model)
+    }
+
+    func performAvailabilityCheck(model: String) async -> LumiModelAvailabilityResult {
         let apiKeyValue: String
         do {
             apiKeyValue = try apiKey()
         } catch {
-            return .unavailable(reason: error.localizedDescription)
+            return .unavailable(.message(error.localizedDescription))
         }
 
         guard let url = URL(string: adapter.configuration.baseURL) else {
-            return .unavailable(reason: "无效的 Base URL")
+            return .unavailable(.message("无效的 Base URL"))
         }
 
         let body: [String: Any]
@@ -109,7 +113,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 systemPrompt: ""
             )
         } catch {
-            return .unavailable(reason: error.localizedDescription)
+            return .unavailable(.message(error.localizedDescription))
         }
 
         let httpRequest = adapter.buildRequest(url: url, apiKey: apiKeyValue)
@@ -121,8 +125,15 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             )
             return .available
         } catch {
-            return .unavailable(reason: LumiLLMProviderSupportLocalization.userFacingDescription(for: error))
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
         }
+    }
+
+    public func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
+            providerID: Self.info.id,
+            displayName: Self.info.displayName
+        )
     }
 
     private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {

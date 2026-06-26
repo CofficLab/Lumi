@@ -58,6 +58,10 @@ private final class AgentTurnMockProvider: LumiLLMProvider, @unchecked Sendable 
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         .available
     }
+
+    func providerStatus() -> LumiLLMProviderStatus? {
+        nil
+    }
 }
 
 @MainActor

@@ -6,7 +6,7 @@ public enum LogoScene: String, CaseIterable, Sendable {
     case general
     case appIcon
     case about
-    case statusBarInactive
-    case statusBarActive
+    /// 系统菜单栏图标：恒为单色模板图（由系统统一着色），无动画。
+    case statusBar
     case custom
 }

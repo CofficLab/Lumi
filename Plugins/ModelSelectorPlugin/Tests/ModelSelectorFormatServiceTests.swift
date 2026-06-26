@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import LumiCoreKit
 @testable import ModelSelectorPlugin
 
 /// Unit tests for `ModelSelectorFormatService` (pure formatting) and the
@@ -52,6 +53,26 @@ import Foundation
     @Test func contextSizeSmall() {
         #expect(ModelSelectorFormatService.contextSize(999) == "999")
         #expect(ModelSelectorFormatService.contextSize(0) == "0")
+    }
+}
+
+@Suite struct ModelSelectorFormatServiceTokenCountTests {
+
+    @Test func tokenCountMillions() {
+        #expect(ModelSelectorFormatService.tokenCount(1_000_000) == "1M")
+        #expect(ModelSelectorFormatService.tokenCount(3_400_000) == "3.4M")
+    }
+
+    @Test func tokenCountThousandsKeepsOneDecimal() {
+        // Unlike contextSize, the K tier keeps one decimal for usage.
+        #expect(ModelSelectorFormatService.tokenCount(1_000) == "1K")
+        #expect(ModelSelectorFormatService.tokenCount(1_234) == "1.2K")
+        #expect(ModelSelectorFormatService.tokenCount(12_300) == "12.3K")
+    }
+
+    @Test func tokenCountSmall() {
+        #expect(ModelSelectorFormatService.tokenCount(999) == "999")
+        #expect(ModelSelectorFormatService.tokenCount(0) == "0")
     }
 }
 

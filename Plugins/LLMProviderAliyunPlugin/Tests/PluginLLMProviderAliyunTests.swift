@@ -7,6 +7,26 @@ import Testing
 
 @Suite(.serialized)
 struct PluginLLMProviderAliyunTests {
+    private func makeMessage(for error: Error, conversationID: UUID = UUID()) -> LumiChatMessage {
+        let provider = AliyunProvider()
+        let request = LumiLLMRequest(
+            messages: [
+                LumiChatMessage(conversationID: conversationID, role: .user, content: "test")
+            ],
+            model: AliyunProvider.info.defaultModel
+        )
+        let disposition = provider.retryDisposition(
+            for: error,
+            context: LumiLLMRetryContext(attempt: 1, maxAttempts: 3)
+        )
+        return provider.makeErrorMessage(
+            conversationID: conversationID,
+            request: request,
+            error: error,
+            disposition: disposition
+        )
+    }
+
     @Test func pluginMetadata() {
         #expect(AliyunPlugin.info.id.isEmpty == false)
         #expect(AliyunPlugin.info.displayName.isEmpty == false)
@@ -107,38 +127,72 @@ struct PluginLLMProviderAliyunTests {
     }
 
     @Test func errorMessageMapsMissingAPIKey() {
-        let message = AliyunProvider.errorMessage(
-            conversationID: UUID(),
-            error: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.displayName)
+        let message = makeMessage(
+            for: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.displayName)
         )
 
         #expect(message.renderKind == AliyunRenderKind.apiKeyMissing)
         #expect(message.providerID == AliyunProvider.info.id)
         #expect(message.isError)
+        #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
     @Test func errorMessageMapsHTTP401FromHTTPClientError() {
-        let message = AliyunProvider.errorMessage(
-            conversationID: UUID(),
-            error: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
+        let message = makeMessage(
+            for: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key")
         )
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
-        #expect(message.rawErrorDetail?.contains("401") == true)
-        #expect(message.rawErrorDetail?.contains("invalid_api_key") == true)
+        #expect(message.rawErrorDetail == "invalid_api_key")
+        #expect(message.metadata[LumiLLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
+        #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
-    @Test func errorMessageMapsHTTP401FromLocalizedStreamingFailed() {
-        let detail = LumiLLMProviderSupportLocalization.userFacingDescription(
-            for: HTTPClientError.httpError(statusCode: 401, message: "invalid_api_key"),
-            locale: Locale(identifier: "zh-Hans")
+    @Test func errorMessageMapsHTTP429AsRetryable() {
+        let message = makeMessage(
+            for: HTTPClientError.httpError(statusCode: 429, message: "rate limited")
         )
-        let message = AliyunProvider.errorMessage(
-            conversationID: UUID(),
-            error: LumiLLMProviderSupportError.streamingFailed(detail)
+
+        #expect(message.renderKind == AliyunRenderKind.http(429))
+        #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "true")
+    }
+
+    @Test func errorMessageMapsHTTP401FromStreamingFailedWithTransportMetadata() {
+        let transport = """
+        Request URL: https://example.com/v1/messages
+        Response Status: 401
+        Response Body: invalid_api_key
+        """
+        let full = "invalid_api_key" + LumiLLMTransportDetails.summarySeparator + transport
+        let message = makeMessage(
+            for: LumiLLMProviderSupportError.streamingFailed(full)
         )
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
-        #expect(message.rawErrorDetail == detail)
+        #expect(message.rawErrorDetail == "invalid_api_key")
+        #expect(message.metadata[LumiLLMTransportMetadata.requestDetails]?.contains("Request URL") == true)
+    }
+
+    @Test func unsupportedModelAvailabilityMapsToStructuredFailure() {
+        let body = #"{"error":{"code":"invalid_parameter_error","message":"model not supported"}}"#
+        let error = HTTPClientError.httpError(statusCode: 400, message: body)
+
+        #expect(AvailabilityService.isUnsupportedModelError(error))
+
+        let mapped = AvailabilityService.mapUnsupportedModelResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(failure.reason == .unsupportedModel)
+        #expect(!failure.availabilityDisplayText.contains("invalid_parameter"))
+        #expect(!failure.availabilityDisplayText.contains("URL:"))
+        #expect(failure.hasTransportDiagnostics)
+        #expect(failure.transportDetails?.contains("invalid_parameter") == true)
+        #expect(failure.httpStatusCode == 400)
     }
 }

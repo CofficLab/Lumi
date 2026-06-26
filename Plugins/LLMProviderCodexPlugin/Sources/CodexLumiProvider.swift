@@ -32,9 +32,19 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         guard cli.isAvailable else {
-            return .unavailable(reason: "Codex CLI not found at \(cli.executablePath)")
+            return .unavailable(.message("Codex CLI not found at \(cli.executablePath)"))
         }
         return .available
+    }
+
+    public func providerStatus() -> LumiLLMProviderStatus? {
+        guard cli.isAvailable else {
+            return LumiLLMProviderStatus(
+                message: LumiPluginLocalization.string("Codex CLI not found", bundle: .module),
+                level: .warning
+            )
+        }
+        return nil
     }
 
     public func sendStreaming(

@@ -116,7 +116,7 @@ struct HTTPClientTests {
         }
     }
 
-    @Test("validateResponse error message includes URL and status code")
+    @Test("validateResponse error message is raw response body")
     func validateResponseErrorMessageFormat() {
         let client = HTTPClient()
         let url = URL(string: "https://api.example.com/v1/data")!
@@ -132,9 +132,8 @@ struct HTTPClientTests {
         } catch let error as HTTPClientError {
             if case let .httpError(statusCode, message) = error {
                 #expect(statusCode == 403)
-                #expect(message.contains("403"))
-                #expect(message.contains("api.example.com"))
-                #expect(message.contains("Forbidden"))
+                #expect(message == "Forbidden")
+                #expect(!message.contains("URL:"))
             } else {
                 Issue.record("Expected httpError")
             }

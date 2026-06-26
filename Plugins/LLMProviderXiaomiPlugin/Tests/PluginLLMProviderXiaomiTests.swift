@@ -1,19 +1,95 @@
+import Foundation
+import HttpKit
+import LumiCoreKit
+import LumiLLMProviderSupport
 import Testing
 @testable import LLMProviderXiaomiPlugin
 
+@Suite(.serialized)
 struct PluginLLMProviderXiaomiTests {
     @Test func pluginMetadata() {
-        #expect(XiaomiPlugin.id.isEmpty == false)
-        #expect(XiaomiPlugin.displayName.isEmpty == false)
-        #expect(XiaomiPlugin.description.isEmpty == false)
+        #expect(XiaomiPlugin.info.id.isEmpty == false)
+        #expect(XiaomiPlugin.info.displayName.isEmpty == false)
+        #expect(XiaomiPlugin.info.description.isEmpty == false)
         #expect(XiaomiPlugin.iconName.isEmpty == false)
         #expect(XiaomiPlugin.category == .llmProvider)
-        #expect(XiaomiPlugin.shared.llmProviderType() == XiaomiProvider.self)
     }
 
     @Test func providerMetadata() {
-        #expect(XiaomiProvider.id.isEmpty == false)
-        #expect(XiaomiProvider.displayName.isEmpty == false)
-        #expect(XiaomiProvider.defaultModel.isEmpty == false)
+        #expect(XiaomiProvider.info.id == "xiaomi")
+        #expect(XiaomiProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiProvider.info.defaultModel.isEmpty == false)
+    }
+
+    @Test func apiProviderMetadata() {
+        #expect(XiaomiAPIProvider.info.id == "xiaomi-api")
+        #expect(XiaomiAPIProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiAPIProvider.info.defaultModel.isEmpty == false)
+    }
+
+    @Test func providersUseDistinctAPIKeyStorage() {
+        // TokenPlan 与小米 API 是独立服务，API Key 必须分开存储
+        #expect(XiaomiProvider.apiKeyStorageKey != XiaomiAPIProvider.apiKeyStorageKey)
+    }
+
+    @Test func unsupportedTokenPlanModelMapsToStructuredFailure() {
+        let body = #"{"error":{"code":"400","message":"Not supported model mimo-v2-flash","param":"Param Incorrect"}}"#
+        let error = HTTPClientError.httpError(statusCode: 400, message: body)
+
+        #expect(AvailabilityService.isUnsupportedModelError(error))
+
+        let mapped = AvailabilityService.mapFriendlyFailureResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            kind: .tokenPlan
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(failure.reason == .unsupportedModel)
+        #expect(failure.availabilityDisplayText.contains("Token Plan"))
+        #expect(!failure.availabilityDisplayText.contains("mimo-v2-flash"))
+    }
+
+    @Test func invalidAPIKeyMapsToFriendlyMessage() {
+        let body = #"{"error":{"message":"invalid_api_key","type":"invalid_request_error"}}"#
+        let error = HTTPClientError.httpError(statusCode: 401, message: body)
+
+        let mapped = AvailabilityService.mapFriendlyFailureResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            kind: .api
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(failure.reason == nil)
+        #expect(failure.availabilityDisplayText.contains("API Key"))
+        #expect(!failure.availabilityDisplayText.contains("invalid_api_key"))
+    }
+
+    @Test func quotaExhaustedMapsToFriendlyMessage() {
+        let body = #"{"error":{"message":"quota exhausted"}}"#
+        let error = HTTPClientError.httpError(statusCode: 429, message: body)
+
+        let mapped = AvailabilityService.mapFriendlyFailureResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            kind: .tokenPlan
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(!failure.availabilityDisplayText.contains("{"))
+        #expect(!failure.availabilityDisplayText.contains("quota exhausted"))
+        #expect(failure.hasTransportDiagnostics)
+        #expect(failure.httpStatusCode == 429)
+        #expect(failure.transportDetails?.contains("quota exhausted") == true)
     }
 }

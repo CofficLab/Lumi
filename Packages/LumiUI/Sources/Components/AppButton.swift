@@ -1,4 +1,3 @@
-import LumiCoreKit
 import SwiftUI
 
 public struct AppButton: View {
@@ -82,27 +81,6 @@ public struct AppButton: View {
         self.style = style
         self.size = size
         self.showsTitle = true
-        self.fillsWidth = fillsWidth
-        self.isDisabled = false
-        self.action = action
-    }
-
-    /// 本地化标题（String Catalog table）。
-    public init(
-        localized title: String,
-        table: String,
-        bundle: Bundle,
-        systemImage: String? = nil,
-        style: Style = .secondary,
-        size: Size = .medium,
-        fillsWidth: Bool = false,
-        action: @escaping () -> Void
-    ) {
-        self.title = Text(verbatim: LumiPluginLocalization.string(title, bundle: bundle, table: table))
-        self.systemImage = systemImage
-        self.showsTitle = true
-        self.style = style
-        self.size = size
         self.fillsWidth = fillsWidth
         self.isDisabled = false
         self.action = action

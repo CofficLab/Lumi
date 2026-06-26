@@ -1,53 +1,37 @@
 import AppKit
 import LumiCoreKit
+import LumiUI
 import SwiftUI
-
-// MARK: - Notification Names
-
-private extension Notification.Name {
-    /// 由 CaffeinatePlugin / AppUpdateStatusBarPlugin 发出，
-    /// 用于通知菜单栏图标切换 active/inactive 外观
-    static let requestMenuBarAppearanceUpdate =
-        Notification.Name("requestMenuBarAppearanceUpdate")
-}
 
 @MainActor
 final class MenuBarService: NSObject, NSPopoverDelegate {
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?
-    private var hostingView: NSHostingView<MenuBarIconView>?
+    private var hostingView: MenuBarHostingView<MenuBarIconView>?
     private var popover: NSPopover?
     private var eventMonitor: Any?
-    nonisolated(unsafe) private var appearanceObserver: NSObjectProtocol?
-
-    /// 是否有需要用户注意的事件（caffeinate 激活、有更新等）
-    private var isAppearanceActive: Bool = false
+    private var contentTimer: DispatchSourceTimer?
+    private let contentRefreshInterval: TimeInterval = 1.0
+    private var effectiveAppearanceObservation: NSKeyValueObservation?
+    private var windowAppearanceObservation: NSKeyValueObservation?
+    private var buttonWindowObservation: NSKeyValueObservation?
+    nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var themeSyncObserver: NSObjectProtocol?
 
     init(pluginService: PluginService) {
         self.pluginService = pluginService
         super.init()
-        observeAppearanceUpdates()
+        observeSystemAppearanceChanges()
+        observeThemeWindowSync()
         scheduleMenuBarSetup()
     }
 
     deinit {
-        if let appearanceObserver {
-            NotificationCenter.default.removeObserver(appearanceObserver)
+        if let systemThemeObserver {
+            DistributedNotificationCenter.default.removeObserver(systemThemeObserver)
         }
-    }
-
-    // MARK: - Appearance
-
-    private func observeAppearanceUpdates() {
-        appearanceObserver = NotificationCenter.default.addObserver(
-            forName: .requestMenuBarAppearanceUpdate,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self else { return }
-            let isActive = notification.userInfo?["isActive"] as? Bool ?? false
-            self.isAppearanceActive = isActive
-            self.refresh()
+        if let themeSyncObserver {
+            NotificationCenter.default.removeObserver(themeSyncObserver)
         }
     }
 
@@ -62,9 +46,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
                 return
             }
 
-            let items = self.pluginService.menuBarContentItems(context: self.menuBarContext)
-            self.hostingView?.rootView = MenuBarIconView(contentItems: items, isActive: self.isAppearanceActive)
-            self.statusItem?.length = self.menuBarWidth(for: items)
+            self.replaceMenuBarContent()
 
             if self.popover?.isShown == true {
                 self.popover?.contentViewController = NSHostingController(rootView: self.makePopupView())
@@ -92,14 +74,13 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
         }
 
         let items = pluginService.menuBarContentItems(context: menuBarContext)
-        statusItem = NSStatusBar.system.statusItem(withLength: menuBarWidth(for: items))
+        statusItem = NSStatusBar.system.statusItem(withLength: menuBarWidthEstimate(for: items))
 
         guard let button = statusItem?.button else {
             return
         }
 
-        let rootView = MenuBarIconView(contentItems: items, isActive: isAppearanceActive)
-        let hostingView = NSHostingView(rootView: rootView)
+        let hostingView = MenuBarHostingView(rootView: makeMenuBarIconView(items: items))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         self.hostingView = hostingView
 
@@ -113,11 +94,111 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
             hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            hostingView.heightAnchor.constraint(equalToConstant: 22)
+            hostingView.heightAnchor.constraint(equalToConstant: 22),
         ])
+
+        restoreMenuBarSystemAppearance()
+        observeMenuBarAppearance(button: button)
+        updateStatusItemLength()
+        startContentTimer()
     }
 
-    private func menuBarWidth(for items: [LumiMenuBarContentItem]) -> CGFloat {
+    private func makeMenuBarIconView(items: [LumiMenuBarContentItem]) -> MenuBarIconView {
+        MenuBarIconView(contentItems: items)
+    }
+
+    private func replaceMenuBarContent() {
+        guard let button = statusItem?.button else { return }
+
+        restoreMenuBarSystemAppearance()
+
+        MenuBarAppearance.performAsCurrent(for: button) {
+            let items = pluginService.menuBarContentItems(context: menuBarContext)
+            hostingView?.rootView = makeMenuBarIconView(items: items)
+        }
+
+        NotificationCenter.default.post(name: .lumiMenuBarAppearanceDidChange, object: button)
+        hostingView?.needsDisplay = true
+        updateStatusItemLength()
+    }
+
+    /// 清除 Lumi 主题同步对菜单栏系统窗口的 `appearance` 污染。
+    private func restoreMenuBarSystemAppearance() {
+        ThemeWindowAppearanceSync.restoreMenuBarSystemAppearance()
+        statusItem?.button?.appearance = nil
+        hostingView?.appearance = nil
+    }
+
+    private func observeMenuBarAppearance(button: NSStatusBarButton) {
+        guard effectiveAppearanceObservation == nil else { return }
+
+        effectiveAppearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+
+        buttonWindowObservation = button.observe(\.window, options: [.new]) { [weak self] button, _ in
+            Task { @MainActor in
+                self?.observeWindowAppearance(button.window)
+                self?.replaceMenuBarContent()
+            }
+        }
+
+        observeWindowAppearance(button.window)
+    }
+
+    private func observeWindowAppearance(_ window: NSWindow?) {
+        windowAppearanceObservation?.invalidate()
+        windowAppearanceObservation = window?.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+    }
+
+    private func observeSystemAppearanceChanges() {
+        systemThemeObserver = DistributedNotificationCenter.default.addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+    }
+
+    private func observeThemeWindowSync() {
+        themeSyncObserver = NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidSyncWindowAppearances,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.replaceMenuBarContent()
+            }
+        }
+    }
+
+    private func startContentTimer() {
+        guard contentTimer == nil else { return }
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + contentRefreshInterval, repeating: contentRefreshInterval)
+        timer.setEventHandler { [weak self] in
+            self?.replaceMenuBarContent()
+        }
+        timer.activate()
+        contentTimer = timer
+    }
+
+    private func updateStatusItemLength() {
+        guard let hostingView, let statusItem else { return }
+        hostingView.layoutSubtreeIfNeeded()
+        statusItem.length = max(24, hostingView.fittingSize.width)
+    }
+
+    private func menuBarWidthEstimate(for items: [LumiMenuBarContentItem]) -> CGFloat {
         max(24, 24 + CGFloat(items.count * 44))
     }
 

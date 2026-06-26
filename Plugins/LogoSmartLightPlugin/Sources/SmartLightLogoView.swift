@@ -4,8 +4,6 @@ import SwiftUI
 struct SmartLightLogoView: View {
     var scene: LogoScene = .general
 
-    @State private var isBreathing = false
-
     var body: some View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
@@ -13,98 +11,14 @@ struct SmartLightLogoView: View {
             ZStack {
                 switch scene {
                 case .general, .appIcon, .about, .custom:
-                    animatedColorLogo(size: size)
-                case .statusBarInactive:
-                    monochromeLogo(size: size)
-                case .statusBarActive:
-                    staticColorLogo(size: size)
+                    SmartLightAnimatedLogoView(size: size)
+                case .statusBar:
+                    // Menu bar icon rendered as monochrome template image (tinted by system), always monochrome, no active state.
+                    SmartLightMonochromeLogoView(size: size)
                 }
             }
             .frame(width: size, height: size)
-            .onAppear {
-                guard allowsAnimation else {
-                    return
-                }
-
-                withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                    isBreathing = true
-                }
-            }
         }
-    }
-
-    private var allowsAnimation: Bool {
-        switch scene {
-        case .general, .appIcon, .about, .custom:
-            true
-        case .statusBarInactive, .statusBarActive:
-            false
-        }
-    }
-
-    @ViewBuilder
-    private func animatedColorLogo(size: CGFloat) -> some View {
-        colorLogo(size: size, glowScale: isBreathing ? 1.15 : 1, glowOpacity: isBreathing ? 1 : 0.6)
-    }
-
-    @ViewBuilder
-    private func staticColorLogo(size: CGFloat) -> some View {
-        colorLogo(size: size, glowScale: 1, glowOpacity: 0.35)
-    }
-
-    @ViewBuilder
-    private func colorLogo(size: CGFloat, glowScale: CGFloat, glowOpacity: Double) -> some View {
-        let mainSize = size * 0.8
-
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [
-                        Color.orange.opacity(0.5),
-                        Color.clear
-                    ],
-                    center: .center,
-                    startRadius: mainSize * 0.3,
-                    endRadius: size * 0.5
-                )
-            )
-            .scaleEffect(glowScale)
-            .opacity(glowOpacity)
-
-        Circle()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        .orange,
-                        .yellow.opacity(0.85)
-                    ],
-                    startPoint: .bottom,
-                    endPoint: .top
-                )
-            )
-            .frame(width: mainSize, height: mainSize)
-            .shadow(color: .orange.opacity(0.3), radius: glowScale > 1 ? 8 : 4)
-
-        Image(systemName: "bolt.fill")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .foregroundStyle(.white)
-            .frame(width: mainSize * 0.35, height: mainSize * 0.35)
-            .shadow(color: .white.opacity(0.6), radius: 2)
-    }
-
-    @ViewBuilder
-    private func monochromeLogo(size: CGFloat) -> some View {
-        Circle()
-            .fill(.primary)
-            .frame(width: size * 0.8, height: size * 0.8)
-
-        Image(systemName: "bolt.fill")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .foregroundStyle(.primary)
-            .colorInvert()
-            .frame(width: size * 0.5, height: size * 0.5)
     }
 }
 
@@ -134,15 +48,9 @@ struct SmartLightLogoView: View {
                 .font(.caption2)
         }
         VStack {
-            SmartLightLogoView(scene: .statusBarInactive)
+            SmartLightLogoView(scene: .statusBar)
                 .frame(width: 48, height: 48)
-            Text("Inactive")
-                .font(.caption2)
-        }
-        VStack {
-            SmartLightLogoView(scene: .statusBarActive)
-                .frame(width: 48, height: 48)
-            Text("Active")
+            Text("Status Bar")
                 .font(.caption2)
         }
     }

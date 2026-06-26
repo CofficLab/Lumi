@@ -44,9 +44,9 @@ public struct AddTemplateView: View {
             }
 
             HStack {
-                AppButton(localized: "Cancel", table: "Localizable", bundle: .module, style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost, fillsWidth: true, action: { isPresented = false })
                 Spacer()
-                AppButton(localized: "Add", table: "Localizable", bundle: .module, style: .primary, fillsWidth: true, action: {
+                AppButton(LumiPluginLocalization.string("Add", bundle: .module), style: .primary, fillsWidth: true, action: {
                     guard let normalizedName = NewFileTemplate.normalizedName(name) else {
                         showNameError = true
                         return

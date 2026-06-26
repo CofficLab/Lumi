@@ -46,7 +46,7 @@ public struct RClickSettingsView: View {
                             }
 
                             HStack(spacing: 8) {
-                                AppButton(localized: "Open System Settings", table: "Localizable", bundle: .module, style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
+                                AppButton(LumiPluginLocalization.string("Open System Settings", bundle: .module), style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
                                 .frame(width: 180)
 
                                 Spacer()
@@ -96,7 +96,7 @@ public struct RClickSettingsView: View {
                                     .font(.appTitle)
                                     .foregroundColor(theme.textPrimary)
                                 Spacer()
-                                AppButton(localized: "Add Template", table: "Localizable", bundle: .module, style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
+                                AppButton(LumiPluginLocalization.string("Add Template", bundle: .module), style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
                                 .frame(width: 120)
                             }
 
@@ -154,7 +154,7 @@ public struct RClickSettingsView: View {
                                 .font(.appBodyEmphasized)
                                 .foregroundColor(theme.error)
                             Spacer()
-                            AppButton(localized: "Reset", table: "Localizable", bundle: .module, style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
+                            AppButton(LumiPluginLocalization.string("Reset", bundle: .module), style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
                             .frame(width: 100)
                         }
                     }

@@ -39,6 +39,7 @@ let package = Package(
             name: "ModelSelectorPluginTests",
             dependencies: [
                 "ModelSelectorPlugin",
+                .product(name: "LLMAvailabilityPlugin", package: "LLMAvailabilityPlugin"),
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],

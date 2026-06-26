@@ -8,22 +8,29 @@ struct ErrorMessageView: View {
     let message: LumiChatMessage
     @Binding var showRawMessage: Bool
 
-    var body: some View {
-        MessageViewChrome(message: message, showRawMessage: $showRawMessage) {
-            BorderedUtilityContent(tint: theme.error, role: .error) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(message.content.isEmpty ? "Request failed." : message.content)
-                        .font(.appBody)
-                        .foregroundColor(theme.error)
-                        .textSelection(.enabled)
+    private var transportDetails: ResolvedErrorTransportDetails {
+        ErrorTransportDetailsResolver.resolve(for: message)
+    }
 
-                    if let detail = message.rawErrorDetail, !detail.isEmpty {
-                        Text(detail)
-                            .font(.appMonoCaption)
-                            .foregroundColor(theme.textSecondary)
-                            .textSelection(.enabled)
-                    }
-                }
+    private var summaryText: String {
+        let summary = transportDetails.displaySummary
+        if !summary.isEmpty {
+            return summary
+        }
+        return LumiPluginLocalization.string("Request failed.", bundle: .module)
+    }
+
+    var body: some View {
+        MessageViewChrome(
+            message: message,
+            showRawMessage: $showRawMessage,
+            errorTransportDetails: transportDetails
+        ) {
+            BorderedUtilityContent(tint: theme.error, role: .error) {
+                Text(summaryText)
+                    .font(.appBody)
+                    .foregroundColor(theme.error)
+                    .textSelection(.enabled)
             }
         }
     }

@@ -22,17 +22,21 @@ public actor DownloadManager {
         public var timeoutInterval: TimeInterval
         /// 是否启用断点续传
         public var enableResume: Bool
+        /// 下载速率限制（字节/秒）。`nil` 表示不限速
+        public var maxBytesPerSecond: Int?
 
         public init(
             downloadDirectory: URL? = nil,
             maxConcurrentDownloads: Int = 3,
             timeoutInterval: TimeInterval = 3600,
-            enableResume: Bool = true
+            enableResume: Bool = true,
+            maxBytesPerSecond: Int? = nil
         ) {
             self.downloadDirectory = downloadDirectory ?? URL.temporaryDirectory.appendingPathComponent("DownloadKit")
             self.maxConcurrentDownloads = maxConcurrentDownloads
             self.timeoutInterval = timeoutInterval
             self.enableResume = enableResume
+            self.maxBytesPerSecond = maxBytesPerSecond
         }
     }
 
@@ -43,6 +47,13 @@ public actor DownloadManager {
     private let fileValidator: FileValidator
     private let resumeHandler: ResumeHandler
     private let fileManager = FileManager.default
+
+    /// 共享限速器。
+    ///
+    /// 仅当内部使用默认 `DefaultHTTPClient` 时被注入（见 init），由所有下载复用，
+    /// 使 `setMaxBytesPerSecond(_:)` 的运行时调整能即时作用于正在进行的下载。
+    /// 用户注入自定义 HTTPClient 时为 nil，退回每次下载按 `maxBytesPerSecond` 限速的旧行为。
+    private let rateLimiter: RateLimiter?
 
     /// 当前活跃任务
     private var activeTasks: [String: Task<Void, Never>] = [:]
@@ -58,7 +69,18 @@ public actor DownloadManager {
         httpClient: HTTPClient? = nil
     ) {
         self.configuration = configuration
-        self.httpClient = httpClient ?? DefaultHTTPClient()
+
+        // 用户未提供 HTTPClient 时，创建带共享限速器的 DefaultHTTPClient，
+        // 使运行时 setMaxBytesPerSecond 能即时生效（下载到一半改限速）。
+        if let httpClient {
+            self.httpClient = httpClient
+            self.rateLimiter = nil
+        } else {
+            let limiter = RateLimiter(bytesPerSecond: configuration.maxBytesPerSecond)
+            self.rateLimiter = limiter
+            self.httpClient = DefaultHTTPClient(rateLimiter: limiter)
+        }
+
         self.fileValidator = FileValidator()
         self.resumeHandler = ResumeHandler()
 
@@ -158,6 +180,18 @@ public actor DownloadManager {
         return taskStates
     }
 
+    /// 运行时更新下载速率限制（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 需配合内部共享限速器（默认 `DefaultHTTPClient`）使用：调用后正在进行的下载
+    /// 会在下一次令牌补充时按新值限速，无需重启任务。用户注入了自定义 HTTPClient 时
+    /// 此方法不生效（返回 false），限速应由该 client 自行处理。
+    @discardableResult
+    public func setMaxBytesPerSecond(_ maxBytesPerSecond: Int?) -> Bool {
+        guard let rateLimiter else { return false }
+        rateLimiter.update(bytesPerSecond: maxBytesPerSecond)
+        return true
+    }
+
     // MARK: - Private Methods
 
     private func performDownload(_ task: DownloadTask) async {
@@ -179,25 +213,35 @@ public actor DownloadManager {
             let directory = task.destination.deletingLastPathComponent()
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
-            // 获取断点续传数据
-            var resumeData: Data? = nil
-            if configuration.enableResume {
-                resumeData = await resumeHandler.getResumeData(for: task.destination)
-            }
+            // 计算断点续传起点：读目标文件已存在的字节数（部分文件）。
+            // 字节级续传以「磁盘上已下载字节数」为续传点，不再依赖 URLSession 的 resume data blob。
+            let existingBytes: Int64 = {
+                guard configuration.enableResume,
+                      let attrs = try? fileManager.attributesOfItem(atPath: task.destination.path),
+                      let size = attrs[.size] as? Int64 else {
+                    return 0
+                }
+                return size
+            }()
 
-            // 执行下载
+            // 执行下载（流式追加写入，常驻内存恒定）
             let progressStartTime = Date()
             let taskId = task.id
+            // 捕获用户进度回调为局部 Sendable 引用：HTTPClient 的 progressHandler 在后台线程
+            // 同步执行，这里直接同步投递给用户，避免经 actor 异步派发（updateStateAndNotify）
+            // 时，下载快速完成导致状态先变 final、滞后的中间进度回调被吞掉。
+            let userProgressHandler = progressHandlers[taskId]
 
-            let downloadedData = try await httpClient.download(
+            _ = try await httpClient.download(
                 from: task.url,
                 to: task.destination,
-                resumeData: resumeData,
+                existingBytes: existingBytes,
+                maxBytesPerSecond: configuration.maxBytesPerSecond,
                 progressHandler: { [weak self] downloadedBytes, totalBytes in
-                    guard let self else { return }
-
                     let elapsed = Date().timeIntervalSince(progressStartTime)
-                    let speed = elapsed > 0 ? Double(downloadedBytes) / elapsed : nil
+                    // speed 以「本次新下载字节」计，避免续传时把 existingBytes 计入速率导致偏低
+                    let newBytes = max(0, downloadedBytes - existingBytes)
+                    let speed = elapsed > 0 ? Double(newBytes) / elapsed : nil
 
                     let progress = DownloadProgress(
                         downloadedBytes: downloadedBytes,
@@ -206,26 +250,35 @@ public actor DownloadManager {
                         totalFiles: 1,
                         bytesPerSecond: speed
                     )
-                    // 异步更新状态。若任务已被取消/完成，updateStateAndNotify 内部会
+                    // 同步投递给用户（可靠，不受 actor 调度时序影响）
+                    userProgressHandler?(progress)
+                    // 异步更新内部状态。若任务已被取消/完成，updateStateAndNotify 内部会
                     // 跳过覆盖（见下方实现），避免滞后的进度回调把 .cancelled 改回
                     // .downloading，从而让取消后重新下载同 id 被误判为「已在进行中」。
                     Task { [weak self] in
                         await self?.updateStateAndNotify(taskId, progress)
                     }
+                },
+                onCancelled: { _ in
+                    // 流式写入已即时落盘，取消时磁盘上的部分文件即为下次续传的起点，
+                    // 无需 resume data blob。回调保留以满足协议契约。
                 }
             )
-
-            // 将下载的数据写入目标文件
-            if let data = downloadedData {
-                try data.write(to: task.destination, options: .atomic)
-            }
 
             // 验证文件
             _ = try fileValidator.validate(fileAt: task.destination, expectedSize: task.expectedSize)
 
-            // 清理断点续传数据
-            if configuration.enableResume {
-                await resumeHandler.removeResumeData(for: task.destination)
+            // 投递最终进度（100%）：下载完成时同步补发一次，确保订阅者能收到完成态进度，
+            // 即便中间回调因时序未全部送达。
+            if let finalHandler = userProgressHandler {
+                let finalProgress = DownloadProgress(
+                    downloadedBytes: task.expectedSize ?? 0,
+                    totalBytes: task.expectedSize,
+                    downloadedFiles: 1,
+                    totalFiles: 1,
+                    bytesPerSecond: nil
+                )
+                finalHandler(finalProgress)
             }
 
             // 更新状态为完成
