@@ -68,9 +68,10 @@ struct ComposerView: View {
                 if isSending {
                     StopButton(action: onStop)
                         .help(LumiPluginLocalization.string("Stop", bundle: .module))
+                } else {
+                    SendButton(canSend: canSend, action: sendIfPossible)
+                        .help(LumiPluginLocalization.string("Send", bundle: .module))
                 }
-                SendButton(isSending: isSending, canSend: canSend, action: sendIfPossible)
-                    .help(LumiPluginLocalization.string("Send", bundle: .module))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
