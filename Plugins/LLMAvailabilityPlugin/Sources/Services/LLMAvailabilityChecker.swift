@@ -216,7 +216,7 @@ public final class LLMAvailabilityChecker {
             model: modelId,
             providerId: providerId
         )
-        if let maxTokens { config.maxTokens = maxTokens }
+        config.maxTokens = maxTokens ?? 1
 
         // 构建最小测试请求（单条简短消息）
         let testMessages: [ChatMessage] = [

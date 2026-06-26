@@ -57,6 +57,12 @@ public enum LumiAnthropicCompatibleAvailability {
 }
 
 enum LumiLLMProviderAvailabilitySupport {
+    static let pingMaxTokens = 1
+
+    static func applyPingTokenLimit(to body: inout [String: Any]) {
+        body["max_tokens"] = pingMaxTokens
+    }
+
     static func chatPing(
         model: String,
         baseURL: String,
@@ -78,7 +84,9 @@ enum LumiLLMProviderAvailabilitySupport {
 
         let body: [String: Any]
         do {
-            body = try buildRequestBody(model)
+            var builtBody = try buildRequestBody(model)
+            applyPingTokenLimit(to: &builtBody)
+            body = builtBody
         } catch {
             return .unavailable(.message(error.localizedDescription))
         }
