@@ -23,7 +23,14 @@ public struct LumiLLMTransportDetailsSplit: Equatable, Sendable {
 
 public enum LumiLLMTransportDetails {
     public static let summarySeparator = "\n\n--- Request / Response Details ---\n"
+    public static let maxBodyDisplayCharacters = 2_000
     private static let responseSectionMarker = "Response Status:"
+
+    public static func truncatedBodyForDisplay(_ text: String) -> String {
+        guard text.count > maxBodyDisplayCharacters else { return text }
+        let prefix = String(text.prefix(maxBodyDisplayCharacters))
+        return prefix + "\n...[truncated, \(text.count) characters total]"
+    }
 
     public static func split(_ fullDetail: String) -> LumiLLMTransportDetailsSplit {
         guard let separatorRange = fullDetail.range(of: summarySeparator) else {

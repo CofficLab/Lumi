@@ -276,7 +276,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         lines.append("Request Headers:")
         lines.append(prettyHeaders(maskedHeaders(request.allHTTPHeaderFields ?? [:])))
         lines.append("Request Body:")
-        lines.append(prettyJSON(requestBody))
+        lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(prettyJSON(requestBody)))
 
         if let state {
             let status = await state.httpStatusCode
@@ -286,7 +286,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             lines.append("Response Headers:")
             lines.append(prettyHeaders(maskedHeaders(responseHeaders)))
             lines.append("Response Body:")
-            lines.append(responseBody)
+            lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(responseBody))
         }
 
         return lines.joined(separator: "\n")
