@@ -146,7 +146,9 @@ public final class LumiUIThemeStore: ObservableObject {
     }
 
     public func setTheme(_ theme: any LumiUITheme) {
-        self.theme = theme
+        Task { @MainActor in
+            self.theme = theme
+        }
     }
 
     /// 系统外观变化时触发依赖 `@LumiTheme` 的视图重绘。

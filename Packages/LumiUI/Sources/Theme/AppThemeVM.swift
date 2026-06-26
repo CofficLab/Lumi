@@ -16,7 +16,9 @@ public final class AppThemeVM: ObservableObject {
     public init(registry: LumiUIThemeRegistry = .shared) {
         self.registry = registry
         cancellable = registry.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            Task { @MainActor in
+                self?.objectWillChange.send()
+            }
         }
     }
 }
