@@ -191,5 +191,8 @@ struct PluginLLMProviderAliyunTests {
         #expect(failure.reason == .unsupportedModel)
         #expect(!failure.availabilityDisplayText.contains("invalid_parameter"))
         #expect(!failure.availabilityDisplayText.contains("URL:"))
+        #expect(failure.hasTransportDiagnostics)
+        #expect(failure.transportDetails?.contains("invalid_parameter") == true)
+        #expect(failure.httpStatusCode == 400)
     }
 }

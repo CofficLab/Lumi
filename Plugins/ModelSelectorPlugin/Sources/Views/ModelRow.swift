@@ -6,6 +6,7 @@ import SwiftUI
 struct ModelRow: View {
     @LumiTheme private var theme
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    @State private var presentedTransportFailure: LumiLLMFailureDetail?
 
     let provider: LumiLLMProviderInfo
     let model: String
@@ -76,7 +77,9 @@ struct ModelRow: View {
                 }
 
                 if let availabilityFailure {
-                    availabilityErrorBlock(availabilityFailure)
+                    availabilityErrorBlock(availabilityFailure) {
+                        presentedTransportFailure = availabilityFailure
+                    }
                 }
 
                 capabilityBadges
@@ -92,6 +95,22 @@ struct ModelRow: View {
             .padding(.vertical, 4)
             .padding(.horizontal, 8)
         }
+        .popover(isPresented: transportDetailsPopoverBinding, arrowEdge: .bottom) {
+            if let failure = presentedTransportFailure {
+                AvailabilityTransportDetailsPopoverContent(failure: failure)
+            }
+        }
+    }
+
+    private var transportDetailsPopoverBinding: Binding<Bool> {
+        Binding(
+            get: { presentedTransportFailure != nil },
+            set: { isPresented in
+                if !isPresented {
+                    presentedTransportFailure = nil
+                }
+            }
+        )
     }
 
     @ViewBuilder
@@ -143,21 +162,30 @@ struct ModelRow: View {
     }
 
     @ViewBuilder
-    private func availabilityErrorBlock(_ failure: LumiLLMFailureDetail) -> some View {
+    private func availabilityErrorBlock(
+        _ failure: LumiLLMFailureDetail,
+        onShowTransportDetails: @escaping () -> Void
+    ) -> some View {
         let message = failure.availabilityDisplayText
         let isUnsupported = failure.reason == .unsupportedModel
         if !message.isEmpty {
-            Text(message)
-                .font(.system(size: 12))
-                .foregroundColor(isUnsupported ? theme.textSecondary : .red)
-                .lineLimit(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(
-                    (isUnsupported ? theme.textTertiary.opacity(0.12) : Color.red.opacity(0.08)),
-                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-                )
+            HStack(alignment: .top, spacing: 6) {
+                Text(message)
+                    .font(.system(size: 12))
+                    .foregroundColor(isUnsupported ? theme.textSecondary : .red)
+                    .lineLimit(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if failure.hasTransportDiagnostics {
+                    AvailabilityTransportDetailsTrigger(action: onShowTransportDetails)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                (isUnsupported ? theme.textTertiary.opacity(0.12) : Color.red.opacity(0.08)),
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
         }
     }
 

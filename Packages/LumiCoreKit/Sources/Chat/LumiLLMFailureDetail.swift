@@ -34,6 +34,42 @@ public struct LumiLLMFailureDetail: Equatable, Sendable {
         LumiLLMFailureDetail(summary: summary, reason: .unsupportedModel)
     }
 
+    /// Whether raw HTTP diagnostics are available for a details popover.
+    public var hasTransportDiagnostics: Bool {
+        if httpStatusCode != nil {
+            return true
+        }
+        guard let transportDetails else { return false }
+        return !transportDetails.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Raw HTTP status and response body for debugging popovers.
+    public var transportDiagnosticsText: String {
+        var sections: [String] = []
+        if let httpStatusCode {
+            sections.append("HTTP Status: \(httpStatusCode)")
+        }
+        if let body = transportDetails?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !body.isEmpty {
+            sections.append("Response Body:")
+            sections.append(body)
+        }
+        return sections.joined(separator: "\n")
+    }
+
+    /// Replace the user-facing summary while keeping transport diagnostics.
+    public func remapped(
+        summary: String,
+        reason: LumiLLMFailureReason? = nil
+    ) -> LumiLLMFailureDetail {
+        LumiLLMFailureDetail(
+            summary: summary,
+            httpStatusCode: httpStatusCode,
+            transportDetails: transportDetails,
+            reason: reason
+        )
+    }
+
     /// Primary text for compact availability rows.
     public var availabilityDisplayText: String {
         let trimmedSummary = summary.trimmingCharacters(in: .whitespacesAndNewlines)

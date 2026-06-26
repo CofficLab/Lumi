@@ -19,11 +19,12 @@ enum AvailabilityService {
         guard isUnsupportedModelFailure(failure) else { return result }
 
         return .unavailable(
-            .unsupportedModel(
-                LumiPluginLocalization.string(
+            failure.remapped(
+                summary: LumiPluginLocalization.string(
                     "This model is not included in your Coding Plan",
                     bundle: .module
-                )
+                ),
+                reason: .unsupportedModel
             )
         )
     }

@@ -1357,6 +1357,40 @@
         }
       }
     },
+    "Zhipu quota exhausted or rate limited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhipu quota exhausted or rate limited"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智谱额度已用尽或请求过于频繁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜額度已用盡或請求過於頻繁"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜額度已用盡或請求過於頻繁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜額度已用盡或請求過於頻繁"
+          }
+        }
+      }
+    },
     "加载中..." : {
       "localizations" : {
         "en" : {

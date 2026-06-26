@@ -37,6 +37,7 @@ let package = Package(
             name: "LLMProviderXiaomiPluginTests",
             dependencies: [
                 "LLMProviderXiaomiPlugin",
+                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
             ],

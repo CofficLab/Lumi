@@ -147,10 +147,7 @@ struct ModelAvailabilityView: View {
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         case .unavailable(let failure):
-            Text(failure.availabilityDisplayText)
-                .font(.appCaption)
-                .foregroundColor(failure.reason == .unsupportedModel ? theme.textSecondary : .red)
-                .lineLimit(1)
+            AvailabilityFailureStatusLabel(failure: failure)
         case .unknown:
             Text(LumiPluginLocalization.string("Unknown", bundle: .module))
                 .font(.appCaption)

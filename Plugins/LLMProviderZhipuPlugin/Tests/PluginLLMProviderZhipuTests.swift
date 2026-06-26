@@ -1,5 +1,7 @@
 import Foundation
+import HttpKit
 import LumiCoreKit
+import LumiLLMProviderSupport
 import Testing
 @testable import LLMProviderZhipuPlugin
 
@@ -93,5 +95,57 @@ struct PluginLLMProviderZhipuTests {
         )
 
         #expect(RequestFailedRenderer.item.canRender(message))
+    }
+
+    @Test func rateLimitedMapsToFriendlyMessage() {
+        let body = #"{"error":{"message":"rate limit exceeded"}}"#
+        let error = HTTPClientError.httpError(statusCode: 429, message: body)
+
+        #expect(AvailabilityService.isRateLimitedError(error))
+
+        let mapped = AvailabilityService.mapFriendlyFailureResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        )
+
+        guard case .unavailable(let failure) = mapped else {
+            Issue.record("Expected unavailable result")
+            return
+        }
+
+        #expect(!failure.availabilityDisplayText.contains("{"))
+        #expect(!failure.availabilityDisplayText.lowercased().contains("rate limit"))
+        #expect(failure.hasTransportDiagnostics)
+        #expect(failure.httpStatusCode == 429)
+        #expect(failure.transportDetails?.contains("rate limit exceeded") == true)
+    }
+
+    @Test func schedulerEnforcesMinimumInterval() async {
+        let scheduler = AvailabilityScheduler(minimumInterval: .milliseconds(250))
+        let start = ContinuousClock.now
+
+        await scheduler.run { }
+        await scheduler.run { }
+
+        let elapsed = ContinuousClock.now - start
+        #expect(elapsed >= .milliseconds(250))
+    }
+
+    @Test func schedulerSerializesConcurrentChecks() async {
+        let scheduler = AvailabilityScheduler(minimumInterval: .milliseconds(200))
+        let start = ContinuousClock.now
+
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await scheduler.run {
+                    try? await Task.sleep(for: .milliseconds(30))
+                }
+            }
+            group.addTask {
+                await scheduler.run { }
+            }
+        }
+
+        let elapsed = ContinuousClock.now - start
+        #expect(elapsed >= .milliseconds(200))
     }
 }
