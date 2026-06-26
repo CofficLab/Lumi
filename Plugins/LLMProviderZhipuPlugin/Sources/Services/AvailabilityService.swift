@@ -4,16 +4,27 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 enum AvailabilityService {
+    private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderZhipuPlugin")
+
     static func checkAvailability(
         provider: ZhipuProvider,
         model: String,
         scheduler: AvailabilityScheduler = .shared
     ) async -> LumiModelAvailabilityResult {
-        await scheduler.run {
+        // 优先读磁盘缓存
+        if let cached = cache.read(model: model),
+           Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
+            return cached.result
+        }
+
+        let result = await scheduler.run {
             await mapFriendlyFailureResult(
                 await provider.checkAvailabilityUsingChatPing(model: model)
             )
         }
+
+        cache.write(model: model, result: result, timestamp: Date())
+        return result
     }
 
     static func mapFriendlyFailureResult(

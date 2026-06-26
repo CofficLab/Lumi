@@ -3,13 +3,27 @@ import HttpKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
+// MARK: - AvailabilityService
+
 enum AvailabilityService {
+    private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderAliyun")
+
     static func checkAvailability(
         provider: AliyunProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
+        // 优先读磁盘缓存
+        if let cached = cache.read(model: model),
+           Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
+            return cached.result
+        }
+
         let result = await provider.checkAvailabilityUsingChatPing(model: model)
-        return mapUnsupportedModelResult(result)
+        let mapped = mapUnsupportedModelResult(result)
+
+        cache.write(model: model, result: mapped, timestamp: Date())
+
+        return mapped
     }
 
     static func mapUnsupportedModelResult(

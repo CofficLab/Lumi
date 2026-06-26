@@ -69,7 +69,7 @@ public final class FlyMuxProvider: OpenAICompatibleLumiProvider, @unchecked Send
     }
 
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await checkAvailabilityUsingChatPing(model: model)
+        await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {

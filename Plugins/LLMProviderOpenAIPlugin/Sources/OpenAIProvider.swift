@@ -89,6 +89,10 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await AvailabilityService.checkAvailability(provider: self, model: model)
+    }
+
+    func performAvailabilityCheck(model: String) async -> LumiModelAvailabilityResult {
         let apiKeyValue: String
         do {
             apiKeyValue = try apiKey()

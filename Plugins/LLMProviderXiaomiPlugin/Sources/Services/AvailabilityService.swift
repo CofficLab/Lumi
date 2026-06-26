@@ -4,6 +4,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 enum AvailabilityService {
+    private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXiaomiPlugin")
+
     enum ProviderKind {
         case tokenPlan
         case api
@@ -28,20 +30,36 @@ enum AvailabilityService {
         provider: XiaomiProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
-        await mapFriendlyFailureResult(
+        if let cached = cache.read(model: model),
+           Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
+            return cached.result
+        }
+
+        let result = await mapFriendlyFailureResult(
             await provider.checkAvailabilityUsingChatPing(model: model),
             kind: .tokenPlan
         )
+
+        cache.write(model: model, result: result, timestamp: Date())
+        return result
     }
 
     static func checkAvailability(
         provider: XiaomiAPIProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
-        await mapFriendlyFailureResult(
+        if let cached = cache.read(model: model),
+           Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
+            return cached.result
+        }
+
+        let result = await mapFriendlyFailureResult(
             await provider.checkAvailabilityUsingChatPing(model: model),
             kind: .api
         )
+
+        cache.write(model: model, result: result, timestamp: Date())
+        return result
     }
 
     static func mapFriendlyFailureResult(
