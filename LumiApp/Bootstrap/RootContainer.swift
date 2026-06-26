@@ -49,8 +49,8 @@ final class RootContainer: ObservableObject {
         LumiUIThemeRegistry.shared.onSystemAppearanceDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()
         }
-        _ = UpdateController.shared
         Task {
+            // 异步触发 UpdateController 单例初始化，不阻塞主线程
             await UpdateController.shared.setupFeedURLIfNeeded()
         }
         LayoutPlugin.restorePersistedStateIfNeeded()

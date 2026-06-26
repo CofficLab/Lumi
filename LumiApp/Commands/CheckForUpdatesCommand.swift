@@ -27,9 +27,12 @@ private final class CheckForUpdatesViewModel: ObservableObject {
     private var cancellable: AnyCancellable?
 
     init() {
-        let updater = UpdateController.shared.updater
-        cancellable = updater.publisher(for: \.canCheckForUpdates)
-            .receive(on: RunLoop.main)
-            .assign(to: \.canCheckForUpdates, on: self)
+        // 使用可选绑定：如果 updater 尚未初始化（冷启动场景），
+        // canCheckForUpdates 默认为 false，按钮禁用，直到 setupFeedURLIfNeeded 完成
+        if let updater = UpdateController.shared.updater {
+            cancellable = updater.publisher(for: \.canCheckForUpdates)
+                .receive(on: RunLoop.main)
+                .assign(to: \.canCheckForUpdates, on: self)
+        }
     }
 }

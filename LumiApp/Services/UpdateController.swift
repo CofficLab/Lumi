@@ -10,19 +10,10 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
 
     static let shared = UpdateController()
 
-    private lazy var updaterController: SPUStandardUpdaterController = {
-        let controller = SPUStandardUpdaterController(
-            startingUpdater: false,
-            updaterDelegate: self,
-            userDriverDelegate: nil
-        )
-        // 同步设置正确的 feed URL，避免使用 Info.plist 中的默认值
-        controller.updater.setFeedURL(primaryFeedURL)
-        Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
-        // 启动 updater
-        controller.startUpdater()
-        return controller
-    }()
+    /// 延迟初始化 updaterController，避免在应用启动时阻塞主线程。
+    /// Sparkle 的 SPUStandardUpdaterController 初始化涉及内部状态检查、
+    /// 定时器注册等操作，推迟到实际需要时再创建。
+    private(set) var updaterController: SPUStandardUpdaterController?
 
     private var pendingImmediateInstallHandler: (() -> Void)?
 
@@ -47,10 +38,6 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     /// 缓存网络检测结果，避免每次检查都做网络请求
     private var lastDetectionTime: Date?
 
-    var updater: SPUUpdater {
-        updaterController.updater
-    }
-
     override init() {
         super.init()
         NotificationCenter.default.addObserver(
@@ -67,9 +54,35 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
         )
     }
 
+    /// 提供对 SPUUpdater 的安全访问。
+    /// 如果 updaterController 尚未初始化，返回 nil。
+    var updater: SPUUpdater? {
+        updaterController?.updater
+    }
+
+    /// 延迟初始化 Sparkle updater，避免在应用启动时阻塞主线程。
+    /// 该方法保证返回有效的 updaterController 实例。
+    @MainActor
+    private func ensureUpdaterInitialized() {
+        guard updaterController == nil else { return }
+
+        let controller = SPUStandardUpdaterController(
+            startingUpdater: false,
+            updaterDelegate: self,
+            userDriverDelegate: nil
+        )
+        // 使用 primaryFeedURL 作为初始值，后续 setupFeedURLIfNeeded 会更新为可达的 URL
+        controller.updater.setFeedURL(primaryFeedURL)
+        Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
+        // 启动 updater
+        controller.startUpdater()
+        self.updaterController = controller
+    }
+
     /// 检测可用的 feed URL 并设置给 Sparkle
     ///
     /// 在应用启动时调用一次。先尝试自有服务器，不可达则使用 GitHub。
+    /// 该方法也会触发 updaterController 的延迟初始化。
     func setupFeedURLIfNeeded() async {
         // 30 分钟内不重复检测
         if let lastDetectionTime,
@@ -82,7 +95,8 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
 
         // setFeedURL 必须在主线程调用
         await MainActor.run {
-            updaterController.updater.setFeedURL(url)
+            ensureUpdaterInitialized()
+            updaterController?.updater.setFeedURL(url)
             Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
         }
     }
@@ -118,9 +132,9 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     }
 
     func checkForUpdates() {
-        // 确保 feed URL 已设置（通过访问 lazy var 触发初始化）
-        _ = updaterController
-        updaterController.checkForUpdates(nil)
+        // 延迟初始化 updaterController
+        ensureUpdaterInitialized()
+        updaterController?.checkForUpdates(nil)
     }
 
     func updater(
