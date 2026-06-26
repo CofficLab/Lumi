@@ -72,6 +72,19 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
 
+    /// 下载限速设置的 UserDefaults key（字节/秒，0 表示不限速）。
+    ///
+    /// 单独定义为常量，便于 UI（MLXLocalProviderSettingsView 的 @AppStorage）与
+    /// 本管理器读写同一 key，避免字符串散落不一致。标记 nonisolated 以允许从
+    /// `nonisolated` 的 `currentSpeedLimitBytes()` 中引用。
+    nonisolated static let downloadSpeedLimitKey = "mlx.download.maxBytesPerSecond"
+
+    /// 当前下载限速（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 值来源于 UserDefaults[key]：0 或缺失视为不限速。调用 `updateDownloadSpeed`
+    /// 会同时更新本字段与底层 DownloadKit 限速器（即时作用于进行中的下载）。
+    @Published public private(set) var downloadSpeedLimit: Int?
+
     // MARK: - Pause/Resume State
 
     private var pausedModelId: String?
@@ -88,20 +101,25 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     // MARK: - Initialization
 
     private override init() {
+        let initialLimit = MLXDownloadManager.readSpeedLimit()
         let config = DownloadManager.Configuration(
             downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
             maxConcurrentDownloads: 3,
             timeoutInterval: 3600,
-            enableResume: true
+            enableResume: true,
+            maxBytesPerSecond: initialLimit
         )
         self.downloadManager = DownloadManager(configuration: config)
 
         super.init()
 
+        // @Published 属性需在 super.init 之后赋值；此处与传入 DownloadManager 的值保持一致。
+        downloadSpeedLimit = initialLimit
+
         try? fileManager.createDirectory(at: config.downloadDirectory, withIntermediateDirectories: true)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
+            Self.logger.info("\(self.t)MLXDownloadManager 已初始化，限速：\(String(describing: self.downloadSpeedLimit))")
         }
     }
 
@@ -191,6 +209,35 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     /// 取消下载
     public func cancel() {
         cancel(resetPublishedState: true)
+    }
+
+    /// 更新下载限速（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 同时写回 UserDefaults（供下次启动恢复）并同步到底层 DownloadKit 限速器，
+    /// 使设置即时作用于正在进行的下载（下载到一半改限速无需暂停/恢复）。
+    /// - Parameter bytesPerSecond: 目标限速；`nil` 解除限速。
+    public func updateDownloadSpeed(bytesPerSecond: Int?) {
+        downloadSpeedLimit = bytesPerSecond
+        UserDefaults.standard.set(bytesPerSecond ?? 0, forKey: Self.downloadSpeedLimitKey)
+        let dm = downloadManager
+        Task { await dm.setMaxBytesPerSecond(bytesPerSecond) }
+        Self.logger.info("\(self.t)🎚️ 下载限速已更新为：\(bytesPerSecond.map { "\($0) 字节/秒" } ?? "不限速")")
+    }
+
+    /// 从 UserDefaults 读取限速设置。0 或缺失返回 nil（不限速）。
+    private static func readSpeedLimit() -> Int? {
+        let value = UserDefaults.standard.object(forKey: downloadSpeedLimitKey) as? Int ?? 0
+        return value > 0 ? value : nil
+    }
+
+    /// 当前限速值（字节/秒），不限速时返回 0。供 UI Picker 作为当前选中项。
+    ///
+    /// 直接从 UserDefaults 读取（而非 `downloadSpeedLimit` 发布属性），使该方法可
+    /// `nonisolated` 调用——UI 的 `@State` 初始化发生在 `MLXDownloadManager`
+    /// 主 actor 之外，避免跨 actor 访问 `@Published` 属性。
+    nonisolated public func currentSpeedLimitBytes() -> Int {
+        let value = UserDefaults.standard.object(forKey: Self.downloadSpeedLimitKey) as? Int ?? 0
+        return value > 0 ? value : 0
     }
 
     /// 暂停下载

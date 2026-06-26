@@ -488,4 +488,30 @@ struct DownloadManagerTests {
             #expect(mockClient.lastExistingBytes == 0, "禁用续传时 existingBytes 应为 0")
         }
     }
+
+    @Test("setMaxBytesPerSecond 在默认 client 下生效并返回 true")
+    func setMaxBytesPerSecondWithDefaultClient() async throws {
+        try await withTempDir { tempDir in
+            // 不注入 HTTPClient，使用内部 DefaultHTTPClient + 共享 RateLimiter
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir, maxBytesPerSecond: nil)
+            let manager = DownloadManager(configuration: config, httpClient: nil)
+
+            // 默认 client：setter 应返回 true
+            let ok = await manager.setMaxBytesPerSecond(1024 * 1024)
+            #expect(ok, "使用默认 HTTPClient 时 setMaxBytesPerSecond 应返回 true")
+        }
+    }
+
+    @Test("setMaxBytesPerSecond 在注入 client 下返回 false")
+    func setMaxBytesPerSecondWithInjectedClient() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            // 注入了 HTTPClient：无共享 RateLimiter，setter 应返回 false（不生效）
+            let ok = await manager.setMaxBytesPerSecond(1024 * 1024)
+            #expect(ok == false, "注入自定义 HTTPClient 时 setMaxBytesPerSecond 应返回 false")
+        }
+    }
 }

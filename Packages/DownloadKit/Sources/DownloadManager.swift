@@ -48,6 +48,13 @@ public actor DownloadManager {
     private let resumeHandler: ResumeHandler
     private let fileManager = FileManager.default
 
+    /// 共享限速器。
+    ///
+    /// 仅当内部使用默认 `DefaultHTTPClient` 时被注入（见 init），由所有下载复用，
+    /// 使 `setMaxBytesPerSecond(_:)` 的运行时调整能即时作用于正在进行的下载。
+    /// 用户注入自定义 HTTPClient 时为 nil，退回每次下载按 `maxBytesPerSecond` 限速的旧行为。
+    private let rateLimiter: RateLimiter?
+
     /// 当前活跃任务
     private var activeTasks: [String: Task<Void, Never>] = [:]
     /// 任务状态
@@ -62,7 +69,18 @@ public actor DownloadManager {
         httpClient: HTTPClient? = nil
     ) {
         self.configuration = configuration
-        self.httpClient = httpClient ?? DefaultHTTPClient()
+
+        // 用户未提供 HTTPClient 时，创建带共享限速器的 DefaultHTTPClient，
+        // 使运行时 setMaxBytesPerSecond 能即时生效（下载到一半改限速）。
+        if let httpClient {
+            self.httpClient = httpClient
+            self.rateLimiter = nil
+        } else {
+            let limiter = RateLimiter(bytesPerSecond: configuration.maxBytesPerSecond)
+            self.rateLimiter = limiter
+            self.httpClient = DefaultHTTPClient(rateLimiter: limiter)
+        }
+
         self.fileValidator = FileValidator()
         self.resumeHandler = ResumeHandler()
 
@@ -160,6 +178,18 @@ public actor DownloadManager {
     /// - Returns: 所有任务 ID 到状态的映射
     public func allTaskStates() -> [String: DownloadTaskState] {
         return taskStates
+    }
+
+    /// 运行时更新下载速率限制（字节/秒）。`nil` 表示不限速。
+    ///
+    /// 需配合内部共享限速器（默认 `DefaultHTTPClient`）使用：调用后正在进行的下载
+    /// 会在下一次令牌补充时按新值限速，无需重启任务。用户注入了自定义 HTTPClient 时
+    /// 此方法不生效（返回 false），限速应由该 client 自行处理。
+    @discardableResult
+    public func setMaxBytesPerSecond(_ maxBytesPerSecond: Int?) -> Bool {
+        guard let rateLimiter else { return false }
+        rateLimiter.update(bytesPerSecond: maxBytesPerSecond)
+        return true
     }
 
     // MARK: - Private Methods

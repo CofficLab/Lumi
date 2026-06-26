@@ -53,8 +53,16 @@ public extension HTTPClient {
 public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
     private let session: URLSession
 
-    public init(configuration: URLSessionConfiguration = .default) {
+    /// 可选的共享限速器。
+    ///
+    /// 注入后，所有下载统一走该限速器（`maxBytesPerSecond` 参数将被忽略），从而支持
+    /// 运行时动态调整限速（用户「下载到一半改限速」时无需重启下载任务）。
+    /// 为 `nil` 时退回每次下载用 `maxBytesPerSecond` 创建临时限速器的旧行为。
+    private let rateLimiter: RateLimiter?
+
+    public init(configuration: URLSessionConfiguration = .default, rateLimiter: RateLimiter? = nil) {
         self.session = URLSession(configuration: configuration)
+        self.rateLimiter = rateLimiter
     }
 
     deinit {
@@ -69,8 +77,9 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64? {
-        // 创建速率限制器（nil 表示不限速，acquire 立即返回）
-        let rateLimiter = RateLimiter(bytesPerSecond: maxBytesPerSecond)
+        // 注入了共享限速器则统一使用它（忽略 maxBytesPerSecond，以支持运行时动态调整）；
+        // 否则退回旧行为：按本次 maxBytesPerSecond 创建临时限速器。
+        let limiter = rateLimiter ?? RateLimiter(bytesPerSecond: maxBytesPerSecond)
 
         var request = URLRequest(url: url)
         // 断点续传：已有字节时用 Range 请求剩余部分。
@@ -146,7 +155,7 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
             for try await byte in bytes {
                 buffer.append(byte)
                 if buffer.count >= bufferSize {
-                    try await rateLimiter.acquire(bytes: buffer.count)
+                    try await limiter.acquire(bytes: buffer.count)
                     try handle.write(contentsOf: buffer)
                     writtenThisSession += Int64(buffer.count)
                     buffer.removeAll(keepingCapacity: true)
@@ -155,7 +164,7 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
             }
             // flush 残余：写入前申请剩余字节令牌
             if !buffer.isEmpty {
-                try await rateLimiter.acquire(bytes: buffer.count)
+                try await limiter.acquire(bytes: buffer.count)
                 try handle.write(contentsOf: buffer)
                 writtenThisSession += Int64(buffer.count)
                 progressHandler(resumeBaseBytes + writtenThisSession, remainingTotal.map { resumeBaseBytes + $0 })

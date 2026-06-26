@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%@ / %@" : {
       "localizations" : {
         "en" : {
@@ -51,6 +54,18 @@
           }
         }
       }
+    },
+    "1 MB/s" : {
+
+    },
+    "2 MB/s" : {
+
+    },
+    "5 MB/s" : {
+
+    },
+    "512 KB/s" : {
+
     },
     "DeepSeek R1 Distill 1.5B" : {
       "localizations" : {

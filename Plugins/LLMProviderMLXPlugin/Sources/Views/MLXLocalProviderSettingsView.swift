@@ -17,6 +17,8 @@ public struct MLXLocalProviderSettingsView: View {
     @State private var actionError: String?
     @State private var errorModelId: String?
     @State private var selectedSeriesId: String?
+    /// 下载限速档位（字节/秒）。0 表示不限速。
+    @State private var speedLimitBytes: Int = MLXDownloadManager.shared.currentSpeedLimitBytes()
 
     public init() {}
 
@@ -53,6 +55,34 @@ public struct MLXLocalProviderSettingsView: View {
                     openCacheDirectory()
                 }
                 .help(LumiPluginLocalization.string("在访达中打开缓存目录", bundle: .module))
+            }
+            downloadSpeedRow
+        }
+    }
+
+    /// 下载限速选择行。
+    ///
+    /// 限速值存储为字节/秒（0 = 不限速），由 `MLXDownloadManager` 同步到底层
+    /// DownloadKit 限速器，下载进行中调整也即时生效。
+    private var downloadSpeedRow: some View {
+        HStack {
+            Text(LumiPluginLocalization.string("下载限速", bundle: .module))
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
+            Spacer()
+            Picker("", selection: $speedLimitBytes) {
+                Text(LumiPluginLocalization.string("不限速", bundle: .module)).tag(0)
+                Text("512 KB/s").tag(512 * 1024)
+                Text("1 MB/s").tag(1024 * 1024)
+                Text("2 MB/s").tag(2 * 1024 * 1024)
+                Text("5 MB/s").tag(5 * 1024 * 1024)
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(maxWidth: 140)
+            .onChange(of: speedLimitBytes) { _, newValue in
+                let bytesPerSecond = newValue > 0 ? newValue : nil
+                downloadManager.updateDownloadSpeed(bytesPerSecond: bytesPerSecond)
             }
         }
     }
