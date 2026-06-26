@@ -54,8 +54,8 @@ public final class AvailabilityDiskCache: @unchecked Sendable {
     /// - Returns: 缓存的结果和时间戳，缓存不存在或已过期时返回 nil
     public func read(model: String) -> (result: LumiModelAvailabilityResult, timestamp: Date)? {
         queue.sync {
-            guard let dict = readCacheDict(),
-                  let entryDict = dict[model] as? [String: Any],
+            let dict = readCacheDict()
+            guard let entryDict = dict[model] as? [String: Any],
                   let timestamp = entryDict["timestamp"] as? TimeInterval,
                   let serializable = entryDict["result"] as? [String: Any],
                   let cachedResult = deserialize(result: serializable)
@@ -74,7 +74,7 @@ public final class AvailabilityDiskCache: @unchecked Sendable {
     public func write(model: String, result: LumiModelAvailabilityResult, timestamp: Date) {
         guard let serializable = serialize(result: result) else { return }
 
-        queue.async { [weak self] in
+        queue.async { [weak self, serializable] in
             guard let self else { return }
             // 确保插件目录存在
             try? FileManager.default.createDirectory(
