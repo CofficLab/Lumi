@@ -10,29 +10,21 @@
 
 > 目标：让整个 app 的通用 UI 尽可能由 `Packages/LumiUI` 承担，app 和插件只表达业务结构、状态和少量领域特定布局。首轮审计见 `docs/lumiui-migration-audit.md`，可重复运行 `scripts/audit-lumiui-styles.sh LumiApp` 更新基线。
 
-### Phase 1: 审计和边界定义
-
-- [ ] 标记可直接替换为现有 LumiUI 组件的调用点，例如 `Button` -> `AppButton/AppIconButton`、自定义 row -> `AppListRow/GlassRow`、空态 -> `AppEmptyState`、错误态 -> `AppErrorBanner`、搜索框 -> `AppSearchBar`。
-- [ ] 标记不能直接替换的重复模式，沉淀为 LumiUI 新组件或组件参数，而不是在 app 层复制 modifier。
-- [ ] 明确例外清单：编辑器语法高亮、terminal、QuickLook/PDF/image preview、营销截图、第三方嵌入控件。
-
-### Phase 2: 补齐 LumiUI 缺口
-
-- [ ] 完善 settings/form/list scaffold：settings section、row、picker row、text field row、toggle row、footer actions。
-- [ ] 完善状态组件：metric card、status pill、inline progress、inline loading、empty/loading/error state。
-
 ### Phase 3: 第一批迁移
 
-- [ ] 迁移 Core Settings 中重复 row/page：`PluginSettingsView`、`LocalModelRow`、provider/model row 系列。
-- [ ] 迁移状态栏和菜单栏详情：DeviceInfo、NetworkManager、HistoryDB、AgentRequestLog、RAG status detail。
+- [ ] 迁移状态栏和菜单栏详情：DeviceInfo、NetworkManager、HistoryDB 等。
 - [ ] 迁移管理类插件详情页：Git commit detail、Docker images、Model availability、GitHub plugin settings。
 - [ ] 每批迁移后重新运行审计脚本，记录数量下降和剩余例外。
 
+### 剩余逃逸点清理（LumiApp 17 处）
+
+- [ ] `RoundedRectangle` (17 处)：Settings 页面背景裁剪，可替换为 `AppCard` 或提取为 LumiUI 修饰器
+- [ ] `.font(.system(size: 38, weight: .semibold))` (4 处)：Settings 页面大数字显示，可考虑添加 `AppTypography.displayNumber` 
+- [ ] `Color(hex:)` (3 处)：`MenuBarPopupView` 特定颜色，可提取为语义色
+- [ ] `.foregroundColor(` (4 处)：Settings 页面主题色引用，改用 `theme.textPrimary` 等语义色
+
 ### 成功标准
 
-- [ ] Core Views 和主要插件视图不再直接写通用颜色、字号、圆角、阴影和动效。
-- [ ] 主题切换能覆盖主要 app chrome、设置页、聊天页、状态栏弹层和插件管理页。
-- [ ] 新 UI 能从 LumiUI 组合出来，缺组件时优先补 LumiUI，而不是在业务层临时写样式。
 - [ ] 👤 需要用户参与：深色/浅色主题各完成一轮视觉验收。
 
 ---
