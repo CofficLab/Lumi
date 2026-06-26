@@ -11,6 +11,7 @@ struct LocalProviderSettingsPage: View {
 
     @State private var selectedProviderID = ""
     @State private var searchText = ""
+    @State private var stats: ModelUsageStatsSnapshot?
 
     private let settingsStore = ProviderSettingsStore.shared
 
@@ -56,7 +57,13 @@ struct LocalProviderSettingsPage: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .onAppear(perform: loadSelectedProviderID)
+        .onAppear {
+            loadSelectedProviderID()
+            reloadStats()
+        }
+        .onChange(of: chatService.revision) { _, _ in
+            reloadStats()
+        }
         .onChange(of: filteredProviders.map(\.id)) { _, ids in
             guard ids.contains(selectedProviderID) else {
                 selectedProviderID = ids.first ?? ""
@@ -200,11 +207,13 @@ struct LocalProviderSettingsPage: View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
                 ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                    AppSettingsModelRow(
+                    ModelSettingsRow(
                         model: model,
                         supportsVision: provider.modelCapabilities[model]?.supportsVision,
                         supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS
+                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS,
+                        stat: stat(for: provider.id, modelName: model),
+                        dailyUsage: dailyUsage(for: provider.id, modelName: model)
                     )
 
                     if index < provider.availableModels.count - 1 {
@@ -224,6 +233,22 @@ struct LocalProviderSettingsPage: View {
                     .foregroundColor(.secondary)
             }
         }
+    }
+
+    private func reloadStats() {
+        let messages = chatService.conversations.flatMap { chatService.messages(for: $0.id) }
+        stats = ModelUsageStatsService.buildSnapshot(
+            messages: messages,
+            providers: chatService.providerInfos
+        )
+    }
+
+    private func stat(for providerID: String, modelName: String) -> ModelPerformanceStats? {
+        stats?.detailedStats["\(providerID)|\(modelName)"]
+    }
+
+    private func dailyUsage(for providerID: String, modelName: String) -> ModelDailyTokenSeries? {
+        stats?.dailyUsage["\(providerID)|\(modelName)"]
     }
 
     private func loadSelectedProviderID() {

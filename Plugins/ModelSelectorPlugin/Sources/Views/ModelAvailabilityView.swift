@@ -140,8 +140,8 @@ struct ModelAvailabilityView: View {
             Text(LumiPluginLocalization.string("Checking...", bundle: .module))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
-        case .unavailable(let reason):
-            Text(reason)
+        case .unavailable(let failure):
+            Text(failure.availabilityDisplayText)
                 .font(.appCaption)
                 .foregroundColor(.red)
                 .lineLimit(1)

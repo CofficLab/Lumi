@@ -15,7 +15,8 @@ struct ModelSelectorView: View {
     @State private var selectedTab: ModelSelectorTab = .current
     @State private var searchText = ""
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
-    @State private var fastModels: [(provider: LumiLLMProviderInfo, model: String, avgTPS: Double, sampleCount: Int)] = []
+    @State private var fastModels: [ModelFastModelEntry] = []
+    @State private var dailyUsage: [String: ModelDailyTokenSeries] = [:]
     @State private var checkingProviderID: String? = nil
 
     init(
@@ -73,6 +74,7 @@ struct ModelSelectorView: View {
         )
         detailedStats = snapshot.detailedStats
         fastModels = snapshot.fastModels
+        dailyUsage = snapshot.dailyUsage
     }
 
     @ViewBuilder
@@ -123,13 +125,14 @@ struct ModelSelectorView: View {
                 ForEach(visibleProviders) { provider in
                     Section(header: sectionHeader(for: provider)) {
                         ForEach(filteredModels(for: provider), id: \.self) { model in
-                            ModelSelectorModelRow(
+                            ModelRow(
                                 provider: provider,
                                 model: model,
                                 isSelected: chatService.providerID(for: conversationID) == provider.id
                                     && chatService.modelName(for: conversationID) == model
                                     && chatService.routingMode == .manual,
                                 stat: detailedStat(providerID: provider.id, modelName: model),
+                                dailyUsage: dailyUsage(for: provider.id, modelName: model),
                                 onSelect: {
                                     selectModel(providerID: provider.id, model: model)
                                 }
@@ -216,12 +219,13 @@ struct ModelSelectorView: View {
                 Section(LumiPluginLocalization.string(title, bundle: .module)) {
                     ForEach(ranked.indices, id: \.self) { index in
                         let entry = ranked[index]
-                        ModelSelectorModelRow(
+                        ModelRow(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id
                                 && chatService.modelName(for: conversationID) == entry.model,
                             stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
+                            dailyUsage: dailyUsage(for: entry.provider.id, modelName: entry.model),
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -251,12 +255,13 @@ struct ModelSelectorView: View {
                 Section(LumiPluginLocalization.string("Fast Models", bundle: .module)) {
                     ForEach(fastModels.indices, id: \.self) { index in
                         let entry = fastModels[index]
-                        ModelSelectorModelRow(
+                        ModelRow(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id
                                 && chatService.modelName(for: conversationID) == entry.model,
                             stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
+                            dailyUsage: dailyUsage(for: entry.provider.id, modelName: entry.model),
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -272,6 +277,61 @@ struct ModelSelectorView: View {
 
     private func detailedStat(providerID: String, modelName: String) -> ModelPerformanceStats? {
         detailedStats["\(providerID)|\(modelName)"]
+    }
+
+    private func dailyUsage(for providerID: String, modelName: String) -> ModelDailyTokenSeries? {
+        dailyUsage["\(providerID)|\(modelName)"]
+    }
+
+    private func resolvedProviderStatus(for provider: LumiLLMProviderInfo) -> LumiLLMProviderStatus? {
+        ModelSelectorStatusResolver.resolve(provider: provider, chatService: chatService)
+    }
+
+    private func providerStatusColor(for level: LumiLLMProviderStatus.Level) -> Color {
+        switch level {
+        case .info:
+            theme.textSecondary
+        case .warning:
+            theme.warning
+        case .error:
+            theme.error
+        }
+    }
+
+    private func sectionHeader(for provider: LumiLLMProviderInfo) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(provider.displayName)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(theme.textPrimary)
+
+                if checkingProviderID == provider.id {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .frame(width: 16, height: 16)
+                } else {
+                    Button {
+                        checkProviderAvailability(provider)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(theme.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Re-check availability")
+                }
+
+                Spacer()
+            }
+
+            if let status = resolvedProviderStatus(for: provider) {
+                Text(status.message)
+                    .font(.system(size: 12))
+                    .foregroundColor(providerStatusColor(for: status.level))
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     private func selectModel(providerID: String, model: String) {
@@ -317,33 +377,6 @@ struct ModelSelectorView: View {
 
     private var normalizedSearch: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func sectionHeader(for provider: LumiLLMProviderInfo) -> some View {
-        HStack {
-            Text(provider.displayName)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(theme.textPrimary)
-
-            if checkingProviderID == provider.id {
-                ProgressView()
-                    .scaleEffect(0.6)
-                    .frame(width: 16, height: 16)
-            } else {
-                Button {
-                    checkProviderAvailability(provider)
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help("Re-check availability")
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 4)
     }
 
     private func checkProviderAvailability(_ provider: LumiLLMProviderInfo) {

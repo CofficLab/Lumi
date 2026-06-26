@@ -3,7 +3,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ModelSelectorModelRow: View {
+struct ModelRow: View {
     @LumiTheme private var theme
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
@@ -11,6 +11,7 @@ struct ModelSelectorModelRow: View {
     let model: String
     let isSelected: Bool
     let stat: ModelPerformanceStats?
+    let dailyUsage: ModelDailyTokenSeries?
     let onSelect: () -> Void
 
     init(
@@ -18,12 +19,14 @@ struct ModelSelectorModelRow: View {
         model: String,
         isSelected: Bool,
         stat: ModelPerformanceStats? = nil,
+        dailyUsage: ModelDailyTokenSeries? = nil,
         onSelect: @escaping () -> Void
     ) {
         self.provider = provider
         self.model = model
         self.isSelected = isSelected
         self.stat = stat
+        self.dailyUsage = dailyUsage
         self.onSelect = onSelect
     }
 
@@ -43,6 +46,13 @@ struct ModelSelectorModelRow: View {
 
     private var hasMetricBadges: Bool {
         (stat?.avgTPS ?? 0) > 0 || (stat?.sampleCount ?? 0) > 0
+    }
+
+    private var availabilityFailure: LumiLLMFailureDetail? {
+        if case .unavailable(let failure) = availabilityStatus {
+            return failure
+        }
+        return nil
     }
 
     var body: some View {
@@ -65,10 +75,18 @@ struct ModelSelectorModelRow: View {
                     Spacer(minLength: 0)
                 }
 
+                if let availabilityFailure {
+                    availabilityErrorBlock(availabilityFailure)
+                }
+
                 capabilityBadges
 
                 if hasMetricBadges {
                     metricBadges
+                }
+
+                if let dailyUsage, dailyUsage.hasData {
+                    AppBarChart(data: ModelDailyTokenBarChartMapper.chartData(from: dailyUsage))
                 }
             }
             .padding(.vertical, 4)
@@ -122,6 +140,33 @@ struct ModelSelectorModelRow: View {
     private func capabilityBadge(title: String, systemImage: String) -> some View {
         AppTag(title, systemImage: systemImage, style: .subtle)
             .help(title)
+    }
+
+    @ViewBuilder
+    private func availabilityErrorBlock(_ failure: LumiLLMFailureDetail) -> some View {
+        let message = availabilityErrorText(for: failure)
+        if !message.isEmpty {
+            Text(message)
+                .font(.system(size: 12))
+                .foregroundColor(.red)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(
+                    Color.red.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                )
+        }
+    }
+
+    private func availabilityErrorText(for failure: LumiLLMFailureDetail) -> String {
+        if let transport = failure.transportDetails?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !transport.isEmpty {
+            return transport
+        }
+        return failure.availabilityDisplayText
     }
 
     @ViewBuilder
