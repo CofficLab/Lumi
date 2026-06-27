@@ -552,7 +552,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         case .parseFromDerivedDataOnly:
             let parsed = await XcodeSemanticIndexRunner.syncCompileDatabaseFromDerivedData(request)
             failureReason = parsed ? nil : "Unable to parse compile database from derived data"
-        case .cleanBuildAndParse:
+        case .cleanBuildAndParse, .incrementalBuildAndMerge:
             failureReason = await XcodeSemanticIndexRunner.buildAndParseCompileDatabase(request)
         }
 

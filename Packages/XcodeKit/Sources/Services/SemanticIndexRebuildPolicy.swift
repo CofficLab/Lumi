@@ -6,6 +6,10 @@ public enum SemanticIndexRebuildPolicy {
         case skip
         case parseFromDerivedDataOnly
         case cleanBuildAndParse
+        /// An incremental `xcodebuild build` (no `clean`) whose parsed result is merged into the
+        /// existing `.compile`. Used when the project structure changed (pbxproj / Package.resolved)
+        /// but the DerivedData is still valid, so only the affected targets need recompiling.
+        case incrementalBuildAndMerge
     }
 
     public static func strategy(
@@ -15,6 +19,8 @@ public enum SemanticIndexRebuildPolicy {
         configuration: String,
         destination: String
     ) -> Strategy {
+        // No manifest → nothing to merge into, so the first build must be a (clean) full build that
+        // produces a complete `.compile` from scratch.
         guard let manifest else { return .cleanBuildAndParse }
 
         if manifest.scheme == scheme,
@@ -25,9 +31,11 @@ public enum SemanticIndexRebuildPolicy {
             return .skip
         }
 
+        // Project structure changed but we already have a database to merge into → recompile only the
+        // affected targets (incremental) and merge, instead of a costly clean full rebuild.
         if manifest.inputs.pbxprojHash != inputs.pbxprojHash
             || manifest.inputs.packageResolvedHash != inputs.packageResolvedHash {
-            return .cleanBuildAndParse
+            return .incrementalBuildAndMerge
         }
 
         if manifest.scheme != scheme
@@ -36,6 +44,6 @@ public enum SemanticIndexRebuildPolicy {
             return .parseFromDerivedDataOnly
         }
 
-        return .cleanBuildAndParse
+        return .incrementalBuildAndMerge
     }
 }

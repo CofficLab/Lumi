@@ -11,7 +11,10 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
         )
     }
 
-    func testXcodebuildArgumentsPerformCleanBuild() {
+    func testXcodebuildArgumentsPerformIncrementalBuild() {
+        // Semantic indexing now uses an *incremental* build (no `clean`) and merges the partial
+        // result into the existing `.compile`. Asserting that `clean` is absent is the guardrail that
+        // prevents a regression to the expensive full-rebuild-on-every-reindex behavior.
         let request = XcodeSemanticIndexRunner.Request(
             workspaceURL: URL(fileURLWithPath: "/tmp/Example.xcodeproj"),
             scheme: "Lumi",
@@ -25,20 +28,16 @@ final class XcodeSemanticIndexRunnerTests: XCTestCase {
 
         let args = XcodeSemanticIndexRunner.xcodebuildArguments(for: request)
 
-        XCTAssertEqual(
-            Array(args.suffix(2)),
-            ["clean", "build"],
-            "Semantic index must clean build so xcode-build-server parse captures every target"
+        XCTAssertEqual(args.last, "build", "Semantic index must end with a build action")
+        XCTAssertFalse(
+            args.contains("clean"),
+            "Semantic index must NOT clean build — incremental builds + merge keep the CPU cost low"
         )
-        let cleanIndex = try? XCTUnwrap(args.firstIndex(of: "clean"))
         let buildIndex = try? XCTUnwrap(args.firstIndex(of: "build"))
-        XCTAssertNotNil(cleanIndex)
         XCTAssertNotNil(buildIndex)
-        if let cleanIndex, let buildIndex {
-            XCTAssertLessThan(cleanIndex, buildIndex)
-        }
         XCTAssertTrue(args.contains("-project"))
         XCTAssertTrue(args.contains("/tmp/Example.xcodeproj"))
+        XCTAssertTrue(args.contains("-derivedDataPath"))
     }
 
     func testXcodebuildArgumentsUseWorkspaceFlagForWorkspaces() {

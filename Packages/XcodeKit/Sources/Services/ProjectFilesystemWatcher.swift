@@ -46,7 +46,10 @@ public final class ProjectFilesystemWatcher {
     private func scheduleNeedsResync() {
         debounceTask?.cancel()
         debounceTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            // Coalesce bursts of structural edits (adding/removing files, toggling build settings in
+            // Xcode) into a single re-index. A short debounce fired a full incremental build on every
+            // edit; 15s lets a sequence of pbxproj mutations settle before triggering one build.
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
             guard !Task.isCancelled else { return }
             self?.onNeedsResync?()
         }
