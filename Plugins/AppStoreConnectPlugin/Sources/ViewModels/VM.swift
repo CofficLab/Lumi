@@ -7,7 +7,7 @@ import SuperLogKit
 @MainActor
 final class VM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🏪"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect")
 
     static let shared = VM()
