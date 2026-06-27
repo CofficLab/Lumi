@@ -43,6 +43,31 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         nil
     }
 
+    public func errorRenderKind(for error: Error) -> String? {
+        MLXErrorHandling.renderKind(for: error)
+    }
+
+    public func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        let metadata = disposition.metadataEntries
+        let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: Self.info.id,
+            modelName: request.model,
+            isError: true,
+            rawErrorDetail: detail,
+            renderKind: errorRenderKind(for: error),
+            metadata: metadata
+        )
+    }
+
     public func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
