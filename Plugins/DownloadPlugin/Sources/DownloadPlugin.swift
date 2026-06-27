@@ -54,17 +54,17 @@ public enum DownloadPlugin: LumiPlugin {
 
 extension DownloadPlugin {
     /// 默认下载目录：~/Downloads/LumiDownloads
+    ///
+    /// 仅计算目录 URL，不创建目录——避免 app 启动时仅访问 `sharedManager`（懒加载触发
+    /// 本方法）就在用户 `~/Downloads` 下空建一个 `LumiDownloads` 目录。真正发起下载时，
+    /// `DownloadManager.performDownload` 会为目标目录调用 `createDirectory`，按需创建。
     static func defaultDownloadDirectory() -> URL {
         let fileManager = FileManager.default
         guard let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
             // 降级到临时目录
-            let fallback = fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads")
-            try? fileManager.createDirectory(at: fallback, withIntermediateDirectories: true)
-            return fallback
+            return fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads", isDirectory: true)
         }
-        let dir = downloads.appendingPathComponent("LumiDownloads", isDirectory: true)
-        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
+        return downloads.appendingPathComponent("LumiDownloads", isDirectory: true)
     }
 
     /// 从 URL 字符串提取文件名
