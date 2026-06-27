@@ -1,4 +1,5 @@
 import XCTest
+import Darwin
 @testable import WorkspaceFileKit
 
 final class WorkspaceFileKitTests: XCTestCase {
@@ -227,6 +228,158 @@ final class WorkspaceFileKitTests: XCTestCase {
         } else {
             XCTFail("Expected updated outcome")
         }
+    }
+
+    // MARK: - 1GB 大小保护
+
+    func testEditRejectsOversizedFile() throws {
+        let path = temporaryDirectory.appendingPathComponent("huge.txt").path
+        // 用 ftruncate 创建一个「逻辑大小」超过上限的稀疏文件——不实际占用磁盘空间，
+        // 但 FileManager 报告的 size 会超过 maxFileSizeBytes，从而触发编辑前的 size 守卫。
+        let fd = open(path, O_CREAT | O_RDWR, 0o644)
+        XCTAssertGreaterThan(fd, 0)
+        defer { close(fd) }
+        let targetSize = off_t(WorkspaceFileEditor.maxFileSizeBytes + 1)
+        XCTAssertEqual(ftruncate(fd, targetSize), 0)
+
+        XCTAssertThrowsError(try WorkspaceFileEditor().edit(filePath: path, oldString: "", newString: "x")) { error in
+            XCTAssertTrue(error.localizedDescription.contains("too large"), "got: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - 乐观并发控制（读取后被外部修改则拒绝）
+
+    func testEditRejectedWhenFileModifiedAfterRead() throws {
+        let path = temporaryDirectory.appendingPathComponent("concurrent.txt").path
+        try "before".write(toFile: path, atomically: true, encoding: .utf8)
+
+        let conversationID = UUID()
+        let state = WorkspaceReadFileState()
+
+        // 模拟「已读取」：记录读取时刻的修改时间
+        let readMtime = (try FileManager.default.attributesOfItem(atPath: path))[.modificationDate] as! Date
+        state.recordRead(conversationID: conversationID, path: path, snapshot: WorkspaceReadFileSnapshot(modificationDate: readMtime))
+
+        // 模拟外部修改：改写内容并把修改时间推后
+        try "before-externally-changed".write(toFile: path, atomically: true, encoding: .utf8)
+        let future = Date(timeIntervalSinceNow: 5)
+        try FileManager.default.setAttributes([.modificationDate: future], ofItemAtPath: path)
+
+        XCTAssertThrowsError(
+            try WorkspaceFileEditor().edit(
+                filePath: path,
+                oldString: "before-externally-changed",
+                newString: "after",
+                conversationID: conversationID,
+                readState: state
+            )
+        ) { error in
+            XCTAssertTrue(error.localizedDescription.contains("modified externally"), "got: \(error.localizedDescription)")
+        }
+    }
+
+    func testEditAllowedWhenFileUnchangedAfterRead() throws {
+        let path = temporaryDirectory.appendingPathComponent("stable.txt").path
+        try "hello".write(toFile: path, atomically: true, encoding: .utf8)
+
+        let conversationID = UUID()
+        let state = WorkspaceReadFileState()
+        let readMtime = (try FileManager.default.attributesOfItem(atPath: path))[.modificationDate] as! Date
+        state.recordRead(conversationID: conversationID, path: path, snapshot: WorkspaceReadFileSnapshot(modificationDate: readMtime))
+
+        // 未被外部改动 → 编辑应成功
+        let outcome = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "hello",
+            newString: "world",
+            conversationID: conversationID,
+            readState: state
+        )
+        XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "world")
+        if case .updated = outcome { /* ok */ } else { XCTFail("Expected updated outcome") }
+    }
+
+    // MARK: - 引号风格保留
+
+    func testEditPreservesCurlyQuoteStyleInReplacement() throws {
+        let path = temporaryDirectory.appendingPathComponent("quotes.txt").path
+        // 文件使用弯引号
+        try "\u{201C}hello world\u{201D}".write(toFile: path, atomically: true, encoding: .utf8)
+
+        let outcome = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "\"hello world\"",
+            newString: "\"goodbye world\""
+        )
+        // 写回的内容应保持弯引号风格
+        XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "\u{201C}goodbye world\u{201D}")
+        if case .updated = outcome { /* ok */ } else { XCTFail("Expected updated outcome") }
+    }
+
+    func testEditDoesNotAlterStraightQuoteFiles() throws {
+        let path = temporaryDirectory.appendingPathComponent("straight.txt").path
+        try "\"hello world\"".write(toFile: path, atomically: true, encoding: .utf8)
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "\"hello world\"",
+            newString: "\"goodbye world\""
+        )
+        // 直引号文件保持直引号，不被转换
+        XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "\"goodbye world\"")
+    }
+
+    // MARK: - diff 质量
+
+    func testEditDiffShowsRemovedAndAddedLines() throws {
+        let path = temporaryDirectory.appendingPathComponent("diff.txt").path
+        try "alpha\nbeta\ngamma\n".write(toFile: path, atomically: true, encoding: .utf8)
+
+        let outcome = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "beta",
+            newString: "BETA"
+        )
+        guard case .updated(_, _, _, let diff) = outcome else {
+            XCTFail("Expected updated outcome")
+            return
+        }
+        // 旧行应标记为 -，新行应标记为 +
+        XCTAssertTrue(diff.contains("- beta"), "diff should contain removed line: \(diff)")
+        XCTAssertTrue(diff.contains("+ BETA"), "diff should contain added line: \(diff)")
+        // 上下文行（未变的 alpha/gamma）不应带 - 或 +
+        XCTAssertTrue(diff.contains("alpha"), "diff should contain context line alpha")
+    }
+
+    // MARK: - 「Did you mean?」相似文件名提示
+
+    func testEditMissingFileSuggestsSimilarFilename() throws {
+        // 目录里有一个相近文件 FooTests.swift，编辑不存在的 Foo.swift 时应给出建议
+        try "tests".write(toFile: temporaryDirectory.appendingPathComponent("FooTests.swift").path, atomically: true, encoding: .utf8)
+        let missingPath = temporaryDirectory.appendingPathComponent("Foo.swift").path
+
+        XCTAssertThrowsError(try WorkspaceFileEditor().edit(filePath: missingPath, oldString: "x", newString: "y")) { error in
+            let msg = error.localizedDescription
+            XCTAssertTrue(msg.contains("Did you mean"), "should suggest: \(msg)")
+            XCTAssertTrue(msg.contains("FooTests.swift"), "should name the similar file: \(msg)")
+        }
+    }
+
+    func testEditMissingFileNoSuggestionWhenNoSimilarFile() throws {
+        // 目录里只有完全无关的文件，不应给出无意义建议
+        try "x".write(toFile: temporaryDirectory.appendingPathComponent("README.md").path, atomically: true, encoding: .utf8)
+        let missingPath = temporaryDirectory.appendingPathComponent("TotallyDifferent.swift").path
+
+        XCTAssertThrowsError(try WorkspaceFileEditor().edit(filePath: missingPath, oldString: "x", newString: "y")) { error in
+            let msg = error.localizedDescription
+            XCTAssertFalse(msg.contains("Did you mean"), "should not suggest unrelated file: \(msg)")
+        }
+    }
+
+    func testEditDistanceBasic() {
+        XCTAssertEqual(WorkspaceFileEditor.editDistance("", ""), 0)
+        XCTAssertEqual(WorkspaceFileEditor.editDistance("abc", "abc"), 0)
+        XCTAssertEqual(WorkspaceFileEditor.editDistance("Foo.swift", "FooTests.swift"), 5) // 插入 "Tests"
     }
 
     func testListDirectorySkipsHiddenFiles() throws {
