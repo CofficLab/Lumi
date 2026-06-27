@@ -221,6 +221,13 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             }
         }
 
+        // 监控 .git 元数据目录：git commit/reset、分支切换（写 HEAD/refs/heads）、
+        // merge/rebase（写 MERGE_HEAD、rebase-merge/）等操作可能只改 .git 内部而不触动工作区，
+        // 必须主动监听才能让文件树的 Git 状态标记及时刷新。
+        for gitDir in Self.gitMetadataWatchURLs(projectRootURL: rootURL) {
+            directoryURLs.insert(gitDir)
+        }
+
         watcher.updateWatchedDirectories(directoryURLs)
 
         if Self.verbose {
@@ -228,15 +235,46 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         }
     }
 
+    /// 需要监听的 `.git` 内部目录集合。
+    ///
+    /// - `.git`：捕获 index、HEAD、MERGE_HEAD、rebase-merge/ 等顶层元数据写入
+    /// - `.git/refs`：捕获 refs/heads（分支切换）、refs/tags 等引用变更
+    /// 仅返回实际存在的目录，避免对非 Git 仓库空跑。
+    static func gitMetadataWatchURLs(projectRootURL: URL) -> [URL] {
+        let gitURL = projectRootURL.appendingPathComponent(".git").standardizedFileURL
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: gitURL.path, isDirectory: &isDir), isDir.boolValue else {
+            return []
+        }
+        var urls: [URL] = [gitURL]
+        let refsURL = gitURL.appendingPathComponent("refs").standardizedFileURL
+        var refsIsDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: refsURL.path, isDirectory: &refsIsDir), refsIsDir.boolValue {
+            urls.append(refsURL)
+        }
+        return urls
+    }
+
     /// 处理目录变化事件
     private func handleDirectoryChanged(url: URL) {
         if Self.verbose {
             Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
         }
-        // 收集变化目录的标准化路径，随精准刷新下发，避免全树重载
-        pendingChangedPaths.insert(PathFormatter.normalizedFilePath(url))
-        triggerTargetedRefresh()
-        scheduleGitStatusRefresh()
+
+        // .git 内部变化只影响 Git 状态标记，不应触发文件树内容重载（否则会把 .git
+        // 当成普通变更目录下发，导致节点无谓地重新加载子项）。
+        let normalizedPath = PathFormatter.normalizedFilePath(url)
+        let isGitMetadataChange = normalizedPath.contains("/.git")
+
+        if isGitMetadataChange {
+            // 仅刷新 Git 状态
+            scheduleGitStatusRefresh()
+        } else {
+            // 收集变化目录的标准化路径，随精准刷新下发，避免全树重载
+            pendingChangedPaths.insert(normalizedPath)
+            triggerTargetedRefresh()
+            scheduleGitStatusRefresh()
+        }
     }
 
     /// 全量防抖刷新：短时间内多次变化合并为一次，驱动整棵树重新加载。

@@ -161,7 +161,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         // 先处理 staged 文件
         for file in stagedDiffFiles {
             let normalizedPath = normalizePath(file.file, relativeTo: repoRootPath)
-            let status = parseStatus(file.changeType)
+            let status = Self.parseStatus(file.changeType)
             let entry = GitStatusEntry(
                 relativePath: normalizedPath,
                 status: status,
@@ -174,7 +174,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         // 再处理 unstaged 文件
         for file in unstagedDiffFiles {
             let normalizedPath = normalizePath(file.file, relativeTo: repoRootPath)
-            let status = parseStatus(file.changeType)
+            let status = Self.parseStatus(file.changeType)
 
             if let existing = entries[normalizedPath] {
                 // 同一个文件既有 staged 又有 unstaged 变更：取优先级更高的状态
@@ -194,7 +194,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         }
 
         // 6. 计算目录聚合状态
-        let directoryAggregate = computeDirectoryAggregate(entries: entries)
+        let directoryAggregate = Self.computeDirectoryAggregate(entries: Array(entries.values))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)捕获 Git 状态快照：\(entries.count) 文件，\(directoryAggregate.count) 目录")
@@ -253,7 +253,10 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     }
 
     /// 将 Git changeType 字符串映射为 GitStatus
-    private func parseStatus(_ changeType: String) -> GitStatus {
+    ///
+    /// 未知 changeType 一律按 modified 处理（与 git 行为一致：有 diff 即视为修改）。
+    /// 标记为 `static` 以便在不依赖 LibGit2 的情况下单元测试纯映射逻辑。
+    static func parseStatus(_ changeType: String) -> GitStatus {
         switch changeType {
         case "M":  return .modified
         case "A":  return .added
@@ -269,12 +272,12 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     ///
     /// 对于每个文件条目，向上遍历其所有父目录，取最高优先级状态。
     /// 例如：src/foo/bar.swift (M) → src/foo/ (M), src/ (M)
-    private func computeDirectoryAggregate(
-        entries: [String: GitStatusEntry]
-    ) -> [String: GitStatus] {
+    ///
+    /// 接受数组入参（而非字典）以方便单元测试构造输入；调用方传 `Array(entries.values)`。
+    static func computeDirectoryAggregate(entries: [GitStatusEntry]) -> [String: GitStatus] {
         var aggregate: [String: GitStatus] = [:]
 
-        for (_, entry) in entries {
+        for entry in entries {
             let path = entry.relativePath
             let components = path.split(separator: "/", omittingEmptySubsequences: true)
 
