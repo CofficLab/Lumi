@@ -37,8 +37,7 @@ public struct EditorPanelView: View {
         VStack(spacing: 0) {
             if EditorPanelContentRouting.hasActiveEditorSelection(editorContentSnapshot) {
                 FileInfoBannerView(
-                    service: service,
-                    warningMessage: panelService.projectContextWarningMessage(service: service)
+                    service: service
                 )
                 editorContent
             } else {
