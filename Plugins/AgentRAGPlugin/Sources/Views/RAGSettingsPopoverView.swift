@@ -8,7 +8,10 @@ struct RAGSettingsPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
-    
+    /// 向量后端运行时信息：sqlite-vec 不可用时为 nil 或 .swiftCosine，需要提示用户
+    /// 语义检索性能会下降（回退到内存逐个余弦计算）。
+    @State private var runtimeInfo: RAGRuntimeInfo?
+
     private var projectStore: ProjectsStore {
         ProjectsPlugin.sharedStore
     }
@@ -18,13 +21,18 @@ struct RAGSettingsPopoverView: View {
             title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
             systemImage: "doc.text.magnifyingglass"
         ) {
-            if trackedProjects.isEmpty {
-                Text(LumiPluginLocalization.string("No Projects", bundle: .module))
-                    .foregroundColor(theme.textSecondary)
-            } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(trackedProjects) { project in
-                        projectRow(project)
+            VStack(alignment: .leading, spacing: 12) {
+                if isVectorBackendDegraded {
+                    vectorBackendWarning
+                }
+                if trackedProjects.isEmpty {
+                    Text(LumiPluginLocalization.string("No Projects", bundle: .module))
+                        .foregroundColor(theme.textSecondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(trackedProjects) { project in
+                            projectRow(project)
+                        }
                     }
                 }
             }
@@ -38,6 +46,32 @@ struct RAGSettingsPopoverView: View {
                 Task { await loadStatus() }
             }
         }
+    }
+
+    /// sqlite-vec 扩展加载失败（回退到 swiftCosine）时提示用户语义检索会变慢。
+    private var isVectorBackendDegraded: Bool {
+        runtimeInfo?.vectorBackend != .sqliteVec
+    }
+
+    @ViewBuilder
+    private var vectorBackendWarning: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(theme.warning)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(LumiPluginLocalization.string("Vector acceleration unavailable", bundle: .module))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.warning)
+                Text(LumiPluginLocalization.string("sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring.", bundle: .module))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.warning.opacity(0.12))
+        .cornerRadius(8)
     }
 
     private var trackedProjectsKey: String {
@@ -135,6 +169,8 @@ struct RAGSettingsPopoverView: View {
                 }
             }
             statusesByPath = next
+            // 同步拉取向量后端运行时信息，用于判定是否需要展示降级提示
+            runtimeInfo = try? await service.getRuntimeInfo()
         } catch {}
     }
 }
