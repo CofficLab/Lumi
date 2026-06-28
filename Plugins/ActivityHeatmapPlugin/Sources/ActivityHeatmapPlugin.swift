@@ -15,13 +15,28 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
     public static let iconName = "chart.bar.fill"
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
         guard let historyService = context.resolve((any HistoryQueryService).self) else {
-            return nil
+            return []
         }
 
-        return AnyView(
-            ActivityHeatmapSettingsView(historyService: historyService)
-        )
+        return [AnyView(ActivityHeatmapSettingsView(historyService: historyService))]
+    }
+
+    @MainActor
+    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+        guard let historyService = context.resolve((any HistoryQueryService).self) else {
+            return []
+        }
+
+        return [
+            LumiSettingsTabItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                ActivityHeatmapSettingsView(historyService: historyService)
+            }
+        ]
     }
 }
