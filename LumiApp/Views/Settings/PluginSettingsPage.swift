@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiChatKit
 import LumiUI
 import SwiftUI
 
@@ -230,21 +231,31 @@ private struct PluginSettingsDetailView: View {
 
                 AppDivider()
 
-                if let detail = row.plugin.aboutView(context: settingsContext) {
-                    detail
-                } else {
-                    DefaultPluginAboutView(
-                        pluginName: row.displayName,
-                        pluginDescription: row.description,
-                        iconName: row.iconName
-                    )
-                }
+                pluginSettingsContent
             }
             .padding(22)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    @ViewBuilder
+    private var pluginSettingsContent: some View {
+        let settingsViews = row.plugin.addSettingsView(context: settingsContext)
+        if !settingsViews.isEmpty {
+            ForEach(Array(settingsViews.enumerated()), id: \.offset) { _, view in
+                view
+            }
+        } else if let detail = row.plugin.aboutView(context: settingsContext) {
+            detail
+        } else {
+            DefaultPluginAboutView(
+                pluginName: row.displayName,
+                pluginDescription: row.description,
+                iconName: row.iconName
+            )
+        }
     }
 
     private var settingsContext: LumiPluginContext {
