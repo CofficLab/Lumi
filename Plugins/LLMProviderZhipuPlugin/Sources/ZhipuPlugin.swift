@@ -14,7 +14,10 @@ public enum ZhipuPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [ZhipuProvider()]
+        [
+            ZhipuProvider(),
+            ZhipuAPIProvider()
+        ]
     }
 
     @MainActor
