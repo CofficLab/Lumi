@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%@ API Key required" : {
       "localizations" : {
         "en" : {
@@ -307,142 +310,6 @@
         }
       }
     },
-    "Request failed (HTTP %d)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request failed (HTTP %d)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请求失败（HTTP %d）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求失敗（HTTP %d）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求失敗（HTTP %d）"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求失敗（HTTP %d）"
-          }
-        }
-      }
-    },
-    "This model is not available on Xiaomi API" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This model is not available on Xiaomi API"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型在小米 API 下不可用"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型在小米 API 下不可用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型在小米 API 下不可用"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型在小米 API 下不可用"
-          }
-        }
-      }
-    },
-    "This model is not included in your Token Plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This model is not included in your Token Plan"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在当前 Token Plan 支持范围内"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Token Plan 支援範圍內"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Token Plan 支援範圍內"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Token Plan 支援範圍內"
-          }
-        }
-      }
-    },
-    "Xiaomi quota exhausted or rate limited" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xiaomi quota exhausted or rate limited"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米额度已用尽或请求过于频繁"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米額度已用盡或請求過於頻繁"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米額度已用盡或請求過於頻繁"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米額度已用盡或請求過於頻繁"
-          }
-        }
-      }
-    },
     "Raw error details" : {
       "localizations" : {
         "en" : {
@@ -541,6 +408,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請求 / 回應詳情"
+          }
+        }
+      }
+    },
+    "Request failed (HTTP %d)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request failed (HTTP %d)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求失败（HTTP %d）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求失敗（HTTP %d）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求失敗（HTTP %d）"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求失敗（HTTP %d）"
           }
         }
       }
@@ -681,6 +582,74 @@
         }
       }
     },
+    "This model is not available on Xiaomi API" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This model is not available on Xiaomi API"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型在小米 API 下不可用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型在小米 API 下不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型在小米 API 下不可用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型在小米 API 下不可用"
+          }
+        }
+      }
+    },
+    "This model is not included in your Token Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This model is not included in your Token Plan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在当前 Token Plan 支持范围内"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Token Plan 支援範圍內"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Token Plan 支援範圍內"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Token Plan 支援範圍內"
+          }
+        }
+      }
+    },
     "TokenPlan" : {
       "localizations" : {
         "en" : {
@@ -745,40 +714,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "小米"
-          }
-        }
-      }
-    },
-    "Xiaomi API Key is invalid or expired" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xiaomi API Key is invalid or expired"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米 API Key 无效或已过期"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米 API Key 無效或已過期"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米 API Key 無效或已過期"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小米 API Key 無效或已過期"
           }
         }
       }
@@ -851,6 +786,40 @@
         }
       }
     },
+    "Xiaomi API Key is invalid or expired" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaomi API Key is invalid or expired"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 API Key 无效或已过期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 API Key 無效或已過期"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 API Key 無效或已過期"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 API Key 無效或已過期"
+          }
+        }
+      }
+    },
     "Xiaomi HTTP %lld" : {
       "localizations" : {
         "en" : {
@@ -881,6 +850,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "小米 HTTP %lld"
+          }
+        }
+      }
+    },
+    "Xiaomi quota exhausted or rate limited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaomi quota exhausted or rate limited"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米额度已用尽或请求过于频繁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米額度已用盡或請求過於頻繁"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米額度已用盡或請求過於頻繁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米額度已用盡或請求過於頻繁"
           }
         }
       }

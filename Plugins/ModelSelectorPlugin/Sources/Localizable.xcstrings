@@ -107,7 +107,6 @@
       }
     },
     "%1$@ · %2$@ tokens (in %3$@ / out %4$@)" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -142,7 +141,6 @@
       }
     },
     "%1$@, total %2$@ tokens, peak %3$@" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -281,6 +279,7 @@
       }
     },
     "Active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2767,6 +2766,9 @@
           }
         }
       }
+    },
+    "不可用" : {
+
     },
     "最近一次路由" : {
       "extractionState" : "stale",

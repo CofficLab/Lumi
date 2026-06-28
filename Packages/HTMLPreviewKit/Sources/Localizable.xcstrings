@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "No HTML content to preview." : {
+      "comment" : "Empty state when there is no HTML to render",
       "localizations" : {
         "en" : {
           "stringUnit" : {
