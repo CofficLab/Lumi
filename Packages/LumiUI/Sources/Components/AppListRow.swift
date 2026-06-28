@@ -30,7 +30,6 @@ public struct AppListRow<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(rowBackground)
                 .overlay(rowBorder)
-                .cornerRadius(AppUI.Radius.sm)
                 .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.rowHoverScale : 1.0)
                 .shadow(color: Color.black.opacity(isHovered ? 0.06 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
         }
@@ -59,10 +58,10 @@ public struct AppListRow<Content: View>: View {
     @ViewBuilder
     private var rowBorder: some View {
         if isSelected {
-            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+            Rectangle()
                 .stroke(theme.primary.opacity(0.3), lineWidth: 1)
         } else if isHovered {
-            RoundedRectangle(cornerRadius: AppUI.Radius.sm)
+            Rectangle()
                 .stroke(theme.appHoverBorder, lineWidth: 1)
         }
     }
