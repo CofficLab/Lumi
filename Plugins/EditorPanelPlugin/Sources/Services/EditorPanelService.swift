@@ -1,6 +1,7 @@
 import EditorService
 import Foundation
 import os
+import SuperLogKit
 import LumiCoreKit
 
 /// 编辑器面板业务逻辑服务
@@ -17,7 +18,7 @@ import LumiCoreKit
 /// service.openOrActivateSession(for: url, service: service, ...)
 /// ```
 @MainActor
-public final class EditorPanelService: ObservableObject {
+public final class EditorPanelService: ObservableObject, SuperLog {
 
     // MARK: - 属性
 
@@ -45,14 +46,14 @@ public final class EditorPanelService: ObservableObject {
 
         guard let fileURL else {
             if EditorPanelPlugin.verbose {
-                EditorPanelPlugin.logger.info("fileURL 为 nil → loadFile(nil)")
+                EditorPanelPlugin.logger.info("\(Self.t)fileURL 为 nil → loadFile(nil)")
             }
             service.files.loadFile(from: nil)
             return
         }
 
         if EditorPanelPlugin.verbose {
-            EditorPanelPlugin.logger.info("打开文件: \(fileURL.path, privacy: .public)")
+            EditorPanelPlugin.logger.info("\(Self.t)打开文件: \(fileURL.path, privacy: .public)")
         }
         service.sessions.open(at: fileURL)
     }
@@ -118,51 +119,6 @@ public final class EditorPanelService: ObservableObject {
             }
             return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
         }
-    }
-
-    // MARK: - 项目上下文警告
-
-    /// 项目上下文警告信息（用于文件信息 Banner 显示）
-    public func projectContextWarningMessage(service: EditorService) -> String? {
-        guard let snapshot = service.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
-        return Self.projectContextWarningMessage(
-            snapshot: snapshot,
-            hasCurrentFile: service.files.currentFileURL != nil
-        )
-    }
-
-    nonisolated static func projectContextWarningMessage(
-        snapshot: EditorProjectContextSnapshot,
-        hasCurrentFile: Bool
-    ) -> String? {
-        switch snapshot.contextStatus {
-        case .unavailable, .needsResync:
-            return LumiPluginLocalization.string("Project semantic context is not ready, cross-file semantic capabilities may be unstable.", bundle: .module)
-        case .resolving, .unknown:
-            return nil
-        default:
-            break
-        }
-        guard hasCurrentFile else { return nil }
-        if !snapshot.currentFileIsInTarget {
-            guard snapshot.isTargetMembershipResolved else { return nil }
-            return LumiPluginLocalization.string("Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", bundle: .module)
-        }
-        if let activeScheme = snapshot.activeScheme,
-           let currentTarget = snapshot.currentFilePrimaryTarget,
-           !currentTarget.isEmpty,
-           !snapshot.activeSchemeBuildableTargets.isEmpty,
-           !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
-            return LumiPluginLocalization.string("Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", bundle: .module)
-        }
-        if snapshot.currentFileMatchedTargets.count > 1 {
-            if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
-                return LumiPluginLocalization.string("Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", bundle: .module)
-            }
-            let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
-            return LumiPluginLocalization.string("Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", bundle: .module)
-        }
-        return nil
     }
 
     // MARK: - 命令处理

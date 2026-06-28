@@ -1,13 +1,14 @@
 import Foundation
 import CommonCrypto
 import os
+import SuperLogKit
 
 /// Build Server 配置存储
 ///
 /// 管理多个项目的 `buildServer.json` 文件。
 /// 存储位置为插件专属目录（`AppConfig.getPluginDBFolderURL(pluginName:)`），
 /// 每个项目通过其 workspace 路径的 MD5 哈希分子目录区分。
-public final class XcodeBuildServerStore: @unchecked Sendable {
+public final class XcodeBuildServerStore: SuperLog, @unchecked Sendable {
 
     // MARK: - Constants
 
@@ -60,13 +61,13 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         do {
             let data = try Data(contentsOf: url)
             guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                Self.logger.error("Load buildServer.json failed: root JSON is not an object")
+                Self.logger.error("\(Self.t)Load buildServer.json failed: root JSON is not an object")
                 quarantineCorruptFile(at: url, forWorkspace: workspacePath)
                 return nil
             }
             json = parsed
         } catch {
-            Self.logger.error("Load buildServer.json failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load buildServer.json failed: \(error.localizedDescription)")
             quarantineCorruptFile(at: url, forWorkspace: workspacePath)
             return nil
         }
@@ -140,7 +141,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             try data.write(to: url, options: .atomic)
             return true
         } catch {
-            Self.logger.error("Save index manifest failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Save index manifest failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -236,7 +237,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             _ = publishBSPManifestToLSPWorkspaceRoot(forWorkspace: workspacePath)
             return true
         } catch {
-            Self.logger.error("Publish BSP compile database alias failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Publish BSP compile database alias failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -299,7 +300,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
                 }
                 try fileManager.createSymbolicLink(atPath: linkURL.path, withDestinationPath: targetURL.path)
             } catch {
-                Self.logger.error("Publish LSP workspace BSP manifest failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Publish LSP workspace BSP manifest failed: \(error.localizedDescription)")
                 return false
             }
         }
@@ -355,7 +356,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
                 withIntermediateDirectories: true
             )
         } catch {
-            Self.logger.error("Create build server store directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Create build server store directory failed: \(error.localizedDescription)")
         }
         return dir
     }
@@ -390,7 +391,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             try data.write(to: url, options: .atomic)
             return true
         } catch {
-            Self.logger.error("Update build_root failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Update build_root failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -448,7 +449,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             _ = publishCompileDatabaseForBSP(forWorkspace: workspacePath)
             return true
         } catch {
-            Self.logger.error("Sync parsed compile database settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Sync parsed compile database settings failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -473,7 +474,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         do {
             try FileManager.default.removeItem(at: dir)
         } catch {
-            Self.logger.error("Remove build server store failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Remove build server store failed: \(error.localizedDescription)")
         }
     }
 
@@ -482,7 +483,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
         do {
             try FileManager.default.removeItem(at: pluginDirectoryURL)
         } catch {
-            Self.logger.error("Remove all build server stores failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Remove all build server stores failed: \(error.localizedDescription)")
         }
     }
 
@@ -504,7 +505,7 @@ public final class XcodeBuildServerStore: @unchecked Sendable {
             }
             try FileManager.default.moveItem(at: fileURL, to: quarantineURL)
         } catch {
-            Self.logger.error("Quarantine corrupt buildServer.json failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt buildServer.json failed: \(error.localizedDescription)")
         }
     }
 

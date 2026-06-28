@@ -1,10 +1,12 @@
 import LumiCoreKit
+import LumiChatKit
 import LumiUI
 import SwiftUI
 
 struct PluginSettingsPage: View {
     @LumiTheme private var theme
     @ObservedObject var pluginService: PluginService
+    @ObservedObject var chatService: ChatService
     @State private var selectedCategory: LumiPluginCategory?
     @State private var selectedPluginID: String?
     @State private var searchText = ""
@@ -205,7 +207,8 @@ struct PluginSettingsPage: View {
         if let selectedRow {
             PluginSettingsDetailView(
                 row: selectedRow,
-                pluginService: pluginService
+                pluginService: pluginService,
+                chatService: chatService
             )
         } else {
             AppEmptyState(icon: "puzzlepiece.extension", title: "选择一个插件")
@@ -218,6 +221,7 @@ private struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
     let row: PluginSettingsRowModel
     @ObservedObject var pluginService: PluginService
+    @ObservedObject var chatService: ChatService
 
     var body: some View {
         ScrollView {
@@ -227,15 +231,7 @@ private struct PluginSettingsDetailView: View {
 
                 AppDivider()
 
-                if let detail = row.plugin.aboutView(context: settingsContext) {
-                    detail
-                } else {
-                    DefaultPluginAboutView(
-                        pluginName: row.displayName,
-                        pluginDescription: row.description,
-                        iconName: row.iconName
-                    )
-                }
+                pluginSettingsContent
             }
             .padding(22)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -244,10 +240,31 @@ private struct PluginSettingsDetailView: View {
         .appSurface(style: .panel, cornerRadius: 0)
     }
 
+    @ViewBuilder
+    private var pluginSettingsContent: some View {
+        let settingsViews = row.plugin.addSettingsView(context: settingsContext)
+        if !settingsViews.isEmpty {
+            ForEach(Array(settingsViews.enumerated()), id: \.offset) { _, view in
+                view
+            }
+        } else if let detail = row.plugin.aboutView(context: settingsContext) {
+            detail
+        } else {
+            DefaultPluginAboutView(
+                pluginName: row.displayName,
+                pluginDescription: row.description,
+                iconName: row.iconName
+            )
+        }
+    }
+
     private var settingsContext: LumiPluginContext {
-        LumiPluginContext(
+        var dependencies = LumiPluginDependencies()
+        dependencies.register((any HistoryQueryService).self, chatService)
+        return LumiPluginContext(
             activeSectionID: "settings.plugins",
-            activeSectionTitle: "插件管理"
+            activeSectionTitle: "插件管理",
+            dependencies: dependencies
         )
     }
 

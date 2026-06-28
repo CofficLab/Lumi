@@ -84,11 +84,9 @@ public actor DownloadManager {
         self.fileValidator = FileValidator()
         self.resumeHandler = ResumeHandler()
 
-        // 确保下载目录存在
-        try? fileManager.createDirectory(
-            at: configuration.downloadDirectory,
-            withIntermediateDirectories: true
-        )
+        // 不在初始化时创建下载目录：否则仅实例化 DownloadManager（如插件启动时
+        // 触发的懒加载）就会在用户磁盘上空建一个目录。真正发起下载时
+        // `performDownload` 会为目标目录调用 createDirectory，按需创建即可。
     }
 
     deinit {

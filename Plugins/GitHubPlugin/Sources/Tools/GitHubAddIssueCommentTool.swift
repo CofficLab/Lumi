@@ -103,7 +103,7 @@ public struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
             return formatAddedComment(comment)
         } catch {
             if GitHubPlugin.verbose {
-                            GitHubPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+                            GitHubPlugin.logger.error("\(self.t)添加评论失败：\(error.localizedDescription)")
             }
             return "添加评论失败：\(error.localizedDescription)"
         }

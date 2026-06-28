@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// Volar Language Server 进程生命周期管理器
 ///
@@ -11,7 +12,7 @@ import os
 /// - LSPService 负责实际的进程 fork 和 JSON-RPC 通信
 /// - VolarServiceManager 负责 Vue 特有的配置注入和健康检查
 /// - VueLanguageIntegrationCapability 负责将两者桥接
-struct VolarServiceManager: Sendable {
+struct VolarServiceManager: Sendable, SuperLog {
     nonisolated static let emoji = "🌋"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -44,7 +45,7 @@ struct VolarServiceManager: Sendable {
             options["vueVersion"] = vueVersion == .vue2 ? "2" : "3"
 
             if EditorVuePlugin.verbose {
-                logger.info("\(emoji) Volar 初始化选项: \(options)")
+                logger.info("\(VolarServiceManager.t)\(VolarServiceManager.emoji) Volar 初始化选项: \(options)")
             }
 
             return options

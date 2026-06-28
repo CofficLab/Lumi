@@ -4,7 +4,7 @@ import LumiCoreKit
 
 /// Project cleaner service - scans development directories for cleanable project dependencies.
 public final class ProjectCleanerService: @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "project-cleaner")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "project-cleaner")
     public static let shared = ProjectCleanerService()
     private let fileManager = FileManager.default
 

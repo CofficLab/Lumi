@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(path: "../EditorLanguageRuntime"),
         .package(path: "../LumiCoreKit"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

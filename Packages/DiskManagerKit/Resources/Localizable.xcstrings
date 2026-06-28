@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "應用程式快取"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用程式快取"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "應用程式打包封存檔案。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "應用程式打包封存檔案。"
@@ -82,6 +94,12 @@
             "state": "translated",
             "value": "Apple TV 除錯符號檔案。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple TV 除錯符號檔案。"
+          }
         }
       }
     },
@@ -106,6 +124,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Watch 除錯符號檔案。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Apple Watch 除錯符號檔案。"
@@ -138,6 +162,12 @@
             "state": "translated",
             "value": "封存"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "封存"
+          }
         }
       }
     },
@@ -162,6 +192,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽器快取"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "瀏覽器快取"
@@ -194,6 +230,12 @@
             "state": "translated",
             "value": "清除 Chrome、Safari、Firefox 等瀏覽器快取"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Chrome、Safari、Firefox 等瀏覽器快取"
+          }
         }
       }
     },
@@ -218,6 +260,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除系統執行階段記錄檔"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "清除系統執行階段記錄檔"
@@ -250,6 +298,12 @@
             "state": "translated",
             "value": "清除應用程式產生的暫存檔案"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除應用程式產生的暫存檔案"
+          }
         }
       }
     },
@@ -274,6 +328,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除 Xcode DerivedData、封存和套件管理員快取"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "清除 Xcode DerivedData、封存和套件管理員快取"
@@ -306,6 +366,12 @@
             "state": "translated",
             "value": "Derived Data"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derived Data"
+          }
         }
       }
     },
@@ -330,6 +396,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開發工具快取"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "開發工具快取"
@@ -362,6 +434,12 @@
             "state": "translated",
             "value": "垃圾桶中的空檔案"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶中的空檔案"
+          }
         }
       }
     },
@@ -369,7 +447,7 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
             "value": "Failed to remove %1$@: %2$@"
           }
         },
@@ -386,6 +464,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除 %1$@ 失敗：%2$@"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "刪除 %1$@ 失敗：%2$@"
@@ -418,6 +502,12 @@
             "state": "translated",
             "value": "通用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
+          }
         }
       }
     },
@@ -442,6 +532,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建構過程中的中介檔案和索引，可以安全刪除。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "建構過程中的中介檔案和索引，可以安全刪除。"
@@ -474,6 +570,12 @@
             "state": "translated",
             "value": "iOS 裝置支援"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS 裝置支援"
+          }
         }
       }
     },
@@ -498,6 +600,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記錄"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "記錄"
@@ -530,6 +638,12 @@
             "state": "translated",
             "value": "中等"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中等"
+          }
         }
       }
     },
@@ -554,6 +668,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Node.js"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Node.js"
@@ -586,6 +706,12 @@
             "state": "translated",
             "value": "舊的模擬器記錄和除錯記錄。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "舊的模擬器記錄和除錯記錄。"
+          }
         }
       }
     },
@@ -610,6 +736,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Python"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Python"
@@ -642,6 +774,12 @@
             "state": "translated",
             "value": "有風險"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有風險"
+          }
         }
       }
     },
@@ -666,6 +804,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rust"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Rust"
@@ -698,6 +842,12 @@
             "state": "translated",
             "value": "安全"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全"
+          }
         }
       }
     },
@@ -722,6 +872,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模擬器快取"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "模擬器快取"
@@ -754,6 +910,12 @@
             "state": "translated",
             "value": "模擬器執行階段快取。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模擬器執行階段快取。"
+          }
         }
       }
     },
@@ -778,6 +940,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始掃描..."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "開始掃描..."
@@ -810,6 +978,12 @@
             "state": "translated",
             "value": "Swift/Xcode"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift/Xcode"
+          }
         }
       }
     },
@@ -834,6 +1008,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除錯連線裝置時產生的符號檔案。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "除錯連線裝置時產生的符號檔案。"
@@ -866,6 +1046,12 @@
             "state": "translated",
             "value": "系統記錄"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統記錄"
+          }
         }
       }
     },
@@ -890,6 +1076,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾桶"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "垃圾桶"
@@ -922,6 +1114,12 @@
             "state": "translated",
             "value": "tvOS 裝置支援"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tvOS 裝置支援"
+          }
         }
       }
     },
@@ -946,6 +1144,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watchOS 裝置支援"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "watchOS 裝置支援"

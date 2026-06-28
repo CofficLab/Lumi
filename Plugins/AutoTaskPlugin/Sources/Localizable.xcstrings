@@ -162,6 +162,12 @@
             "state": "translated",
             "value": "將複雜目標分解為可追蹤的任務，並驅動 Agent 自動推進。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將複雜目標分解為可追蹤的任務，並驅動 Agent 自動推進。"
+          }
         }
       }
     },

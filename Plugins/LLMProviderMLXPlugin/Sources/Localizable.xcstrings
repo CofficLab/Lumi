@@ -8,14 +8,103 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
+            "value" : "%1$@ / %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / %2$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / %2$@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / %2$@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$@ / %2$@"
           }
         }
       }
     },
+    "%@ is not downloaded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ is not downloaded"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 尚未下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 尚未下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 尚未下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 尚未下載"
+          }
+        }
+      }
+    },
     "%lld" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
     },
     "%lld GB" : {
       "localizations" : {
@@ -42,6 +131,12 @@
             "state" : "translated",
             "value" : "%lld GB"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld GB"
+          }
         }
       }
     },
@@ -49,23 +144,239 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$lld/%2$lld"
           }
         }
       }
     },
+    "%lld/%lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld · %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld · %3$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld · %3$@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld · %3$@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld · %3$@"
+          }
+        }
+      }
+    },
     "1 MB/s" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 MB/s"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 MB/s"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 MB/s"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 MB/s"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 MB/s"
+          }
+        }
+      }
     },
     "2 MB/s" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 MB/s"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 MB/s"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 MB/s"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 MB/s"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 MB/s"
+          }
+        }
+      }
     },
     "5 MB/s" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 MB/s"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 MB/s"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 MB/s"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 MB/s"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 MB/s"
+          }
+        }
+      }
     },
     "512 KB/s" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 KB/s"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 KB/s"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 KB/s"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 KB/s"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 KB/s"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製"
+          }
+        }
+      }
     },
     "DeepSeek R1 Distill 1.5B" : {
       "localizations" : {
@@ -88,6 +399,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 1.5B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "DeepSeek R1 Distill 1.5B"
@@ -120,6 +437,12 @@
             "state" : "translated",
             "value" : "DeepSeek R1 Distill 7B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
+          }
         }
       }
     },
@@ -148,6 +471,182 @@
             "state" : "translated",
             "value" : "DeepSeek R1 Distill 14B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
+          }
+        }
+      }
+    },
+    "Download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
+          }
+        }
+      }
+    },
+    "Download complete." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download complete."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载完成。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載完成。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載完成。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載完成。"
+          }
+        }
+      }
+    },
+    "Download failed: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download failed: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载失败：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載失敗：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載失敗：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載失敗：%@"
+          }
+        }
+      }
+    },
+    "Download this model to chat with it locally. You can resend your message once the download finishes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download this model to chat with it locally. You can resend your message once the download finishes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载该模型后即可在本地对话。下载完成后可重发你的消息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載該模型後即可在本機對話。下載完成後可重送你的訊息。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載該模型後即可在本機對話。下載完成後可重送你的訊息。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載該模型後即可在本機對話。下載完成後可重送你的訊息。"
+          }
+        }
+      }
+    },
+    "Error" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
         }
       }
     },
@@ -172,6 +671,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 26B-A4B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemma 4 26B-A4B"
@@ -204,6 +709,12 @@
             "state" : "translated",
             "value" : "Gemma 4 26B-A4B Instruct"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 26B-A4B Instruct"
+          }
         }
       }
     },
@@ -228,6 +739,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 31B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemma 4 31B"
@@ -260,6 +777,12 @@
             "state" : "translated",
             "value" : "Gemma 4 31B Instruct"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 31B Instruct"
+          }
         }
       }
     },
@@ -284,6 +807,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 E2B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemma 4 E2B"
@@ -316,6 +845,12 @@
             "state" : "translated",
             "value" : "Gemma 4 E2B Instruct"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 E2B Instruct"
+          }
         }
       }
     },
@@ -340,6 +875,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 E4B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemma 4 E4B"
@@ -372,6 +913,12 @@
             "state" : "translated",
             "value" : "Gemma 4 E4B Instruct"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemma 4 E4B Instruct"
+          }
         }
       }
     },
@@ -396,6 +943,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 中端基础模型，支持多模态"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google 中端基础模型，支持多模态"
@@ -428,6 +981,12 @@
             "state" : "translated",
             "value" : "Google 中端指令模型，支持多模态"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 中端指令模型，支持多模态"
+          }
         }
       }
     },
@@ -452,6 +1011,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 大型基础模型，强大的多模态能力"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google 大型基础模型，强大的多模态能力"
@@ -484,6 +1049,12 @@
             "state" : "translated",
             "value" : "Google 大型指令模型，强大的多模态能力"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 大型指令模型，强大的多模态能力"
+          }
         }
       }
     },
@@ -508,6 +1079,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 轻量级基础模型"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google 轻量级基础模型"
@@ -540,6 +1117,12 @@
             "state" : "translated",
             "value" : "Google 轻量级指令模型"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 轻量级指令模型"
+          }
         }
       }
     },
@@ -564,6 +1147,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 轻量级模型，适合低内存设备"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google 轻量级模型，适合低内存设备"
@@ -596,6 +1185,12 @@
             "state" : "translated",
             "value" : "Llama 3.2 1B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llama 3.2 1B"
+          }
         }
       }
     },
@@ -620,6 +1215,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llama 3.2 3B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Llama 3.2 3B"
@@ -651,6 +1252,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Llama 3.3 70B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llama 3.3 70B"
+          }
+        }
+      }
+    },
+    "Local" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機"
           }
         }
       }
@@ -715,6 +1356,12 @@
             "state" : "translated",
             "value" : "Local MLX models for offline chat."
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local MLX models for offline chat."
+          }
         }
       }
     },
@@ -743,6 +1390,12 @@
             "state" : "translated",
             "value" : "Local models via Apple MLX"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local models via Apple MLX"
+          }
         }
       }
     },
@@ -767,6 +1420,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mistral Nemo 12B"
@@ -833,6 +1492,12 @@
             "state" : "translated",
             "value" : "MoE 代码模型，强大的编程能力，需要高配置"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MoE 代码模型，强大的编程能力，需要高配置"
+          }
         }
       }
     },
@@ -857,6 +1522,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phi-4 mini"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phi-4 mini"
@@ -889,6 +1560,12 @@
             "state" : "translated",
             "value" : "Qwen 3.5 0.8B OptiQ"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 0.8B OptiQ"
+          }
         }
       }
     },
@@ -917,6 +1594,12 @@
             "state" : "translated",
             "value" : "Qwen 3.5 4B OptiQ"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 4B OptiQ"
+          }
         }
       }
     },
@@ -941,6 +1624,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 9B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen 3.5 9B"
@@ -974,6 +1663,12 @@
             "state" : "translated",
             "value" : "Qwen 3.5 14B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
         }
       }
     },
@@ -998,6 +1693,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen2 VL 7B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen2 VL 7B"
@@ -1030,6 +1731,12 @@
             "state" : "translated",
             "value" : "Qwen2.5 Coder 3B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen2.5 Coder 3B"
+          }
         }
       }
     },
@@ -1054,6 +1761,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen2.5 Coder 7B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen2.5 Coder 7B"
@@ -1086,6 +1799,12 @@
             "state" : "translated",
             "value" : "Qwen3 Coder 30B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen3 Coder 30B"
+          }
         }
       }
     },
@@ -1110,6 +1829,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen3 VL 2B"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen3 VL 2B"
@@ -1142,6 +1867,250 @@
             "state" : "translated",
             "value" : "Qwen3 VL 4B"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen3 VL 4B"
+          }
+        }
+      }
+    },
+    "Raw error details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raw error details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始错误详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始錯誤詳情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始錯誤詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始錯誤詳情"
+          }
+        }
+      }
+    },
+    "Received Data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收資料"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收資料"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收資料"
+          }
+        }
+      }
+    },
+    "Request / Response Details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request / Response Details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求 / 响应详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求 / 回應詳情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求 / 回應詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求 / 回應詳情"
+          }
+        }
+      }
+    },
+    "Resend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重发"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重送"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重送"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重送"
+          }
+        }
+      }
+    },
+    "Sending Data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送資料"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送資料"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送資料"
+          }
+        }
+      }
+    },
+    "Show raw error details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show raw error details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示原始错误详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示原始錯誤詳情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示原始錯誤詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示原始錯誤詳情"
+          }
+        }
+      }
+    },
+    "Show request and response details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show request and response details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示请求和响应详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示請求和回應詳情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示請求和回應詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示請求和回應詳情"
+          }
         }
       }
     },
@@ -1169,6 +2138,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "中等规模推理模型，擅长数学与逻辑"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中等规模推理模型，擅长数学与逻辑"
+          }
+        }
+      }
+    },
+    "体积 %@ · 内存 ≥ %d GB" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size %1$@ · RAM ≥ %2$d GB"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "体积 %@ · 内存 ≥ %d GB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "體積 %@ · 記憶體 ≥ %d GB"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "體積 %@ · 記憶體 ≥ %d GB"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "體積 %@ · 記憶體 ≥ %d GB"
           }
         }
       }
@@ -1198,14 +2207,150 @@
             "state" : "translated",
             "value" : "最强开源模型，需要高配置"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        }
+      }
+    },
+    "准备下载..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备下载..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備下載..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備下載..."
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備下載..."
+          }
+        }
+      }
+    },
+    "取消下载" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消下載"
+          }
         }
       }
     },
     "在访达中打开缓存目录" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在访达中打开缓存目录"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在访达中打开缓存目录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在访达中打开缓存目录"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在访达中打开缓存目录"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在访达中打开缓存目录"
+          }
+        }
+      }
     },
     "复制错误信息" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制错误信息"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制错误信息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制错误信息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制错误信息"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制错误信息"
+          }
+        }
+      }
     },
     "大型推理模型，深度思考能力强" : {
       "localizations" : {
@@ -1232,6 +2377,46 @@
             "state" : "translated",
             "value" : "大型推理模型，深度思考能力强"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大型推理模型，深度思考能力强"
+          }
+        }
+      }
+    },
+    "已暂停" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暂停"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暫停"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暫停"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暫停"
+          }
         }
       }
     },
@@ -1256,6 +2441,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平衡的代码模型，兼顾速度与能力"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "平衡的代码模型，兼顾速度与能力"
@@ -1288,6 +2479,12 @@
             "state" : "translated",
             "value" : "微软轻量模型，小体积高质量"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "微软轻量模型，小体积高质量"
+          }
         }
       }
     },
@@ -1312,6 +2509,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持图片理解的视觉语言模型"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "支持图片理解的视觉语言模型"
@@ -1344,6 +2547,12 @@
             "state" : "translated",
             "value" : "新一代视觉语言模型，图片理解能力强"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新一代视觉语言模型，图片理解能力强"
+          }
         }
       }
     },
@@ -1372,6 +2581,46 @@
             "state" : "translated",
             "value" : "新一代轻量视觉语言模型，支持图片理解"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新一代轻量视觉语言模型，支持图片理解"
+          }
+        }
+      }
+    },
+    "暂停下载" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停下載"
+          }
         }
       }
     },
@@ -1397,6 +2646,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更强的中文模型，适合复杂任务"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "更强的中文模型，适合复杂任务"
@@ -1429,6 +2684,46 @@
             "state" : "translated",
             "value" : "极小体积，适合入门与低内存设备"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "极小体积，适合入门与低内存设备"
+          }
+        }
+      }
+    },
+    "正在下载" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下載"
+          }
         }
       }
     },
@@ -1457,6 +2752,46 @@
             "state" : "translated",
             "value" : "系统内存"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统内存"
+          }
+        }
+      }
+    },
+    "继续下载" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续下载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續下載"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續下載"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續下載"
+          }
         }
       }
     },
@@ -1481,6 +2816,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存占用"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "缓存占用"
@@ -1513,6 +2854,12 @@
             "state" : "translated",
             "value" : "超小体积，适合入门与低内存设备"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超小体积，适合入门与低内存设备"
+          }
         }
       }
     },
@@ -1537,6 +2884,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "超轻量，适合低配置设备"
@@ -1569,6 +2922,12 @@
             "state" : "translated",
             "value" : "超轻量推理模型，适合入门体验思维链"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
+          }
         }
       }
     },
@@ -1593,6 +2952,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻量中文模型，OptiQ 量化"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "轻量中文模型，OptiQ 量化"
@@ -1625,6 +2990,12 @@
             "state" : "translated",
             "value" : "轻量代码模型，适合代码补全"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻量代码模型，适合代码补全"
+          }
         }
       }
     },
@@ -1649,6 +3020,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻量高效，适合日常使用"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "轻量高效，适合日常使用"
@@ -1681,6 +3058,12 @@
             "state" : "translated",
             "value" : "阿里云最新模型，中文能力强，支持工具调用"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里云最新模型，中文能力强，支持工具调用"
+          }
         }
       }
     },
@@ -1706,6 +3089,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "默认"

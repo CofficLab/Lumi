@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 public enum EditorPerfEvent: String, Sendable, CaseIterable {
     case fileOpen = "file.open"
@@ -116,7 +117,7 @@ public struct EditorPerfSummary: Sendable {
 }
 
 @MainActor
-public final class EditorPerformance {
+public final class EditorPerformance: SuperLog {
     public static let shared = EditorPerformance()
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.perf")
@@ -255,9 +256,9 @@ public final class EditorPerformance {
         }
 
         if result.isSlow {
-            logger.warning("⚡️ SLOW \(result.event.rawValue): \(String(format: "%.1f", result.duration))ms (threshold: \(String(format: "%.0f", EditorPerfResult.slowThreshold(for: result.event)))ms)")
+            logger.warning("\(self.t)⚡️ SLOW \(result.event.rawValue): \(String(format: "%.1f", result.duration))ms (threshold: \(String(format: "%.0f", EditorPerfResult.slowThreshold(for: result.event)))ms)")
         } else if result.duration > 1.0 {
-            logger.debug("⏱ \(result.event.rawValue): \(String(format: "%.2f", result.duration))ms")
+            logger.debug("\(self.t)⏱ \(result.event.rawValue): \(String(format: "%.2f", result.duration))ms")
         }
     }
 }

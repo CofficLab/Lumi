@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ModelRouterKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],

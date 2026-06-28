@@ -232,6 +232,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         limit: Int,
         context: ToolExecutionContext
     ) async -> [CodeSearchResult] {
+        let keywordStart = CFAbsoluteTimeGetCurrent()
         // 优先使用 grep，失败时回退到 Swift 逐文件搜索
         if let grepResults = try? grepSearch(
             query: query,
@@ -239,7 +240,10 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             pathFilter: pathFilter,
             limit: limit
         ) {
-            guard grepResults.count < limit else { return grepResults }
+            guard grepResults.count < limit else {
+                logKeywordTiming(start: keywordStart, count: grepResults.count, mode: "grep(capped)")
+                return grepResults
+            }
             let fallbackResults = swiftFallbackSearch(
                 query: query,
                 projectPath: projectPath,
@@ -247,17 +251,32 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 limit: limit,
                 context: context
             )
-            return mergeResults(grepResults + fallbackResults, limit: limit)
+            let merged = mergeResults(grepResults + fallbackResults, limit: limit)
+            logKeywordTiming(start: keywordStart, count: merged.count, mode: "grep+fallback")
+            return merged
         }
 
         // 回退：逐文件搜索
-        return swiftFallbackSearch(
+        let fallbackResults = swiftFallbackSearch(
             query: query,
             projectPath: projectPath,
             pathFilter: pathFilter,
             limit: limit,
             context: context
         )
+        logKeywordTiming(start: keywordStart, count: fallbackResults.count, mode: "swift-fallback")
+        return fallbackResults
+    }
+
+    /// 记录 keyword 搜索耗时；超过 5 秒时升级为 warning，便于定位性能问题。
+    private func logKeywordTiming(start: CFAbsoluteTime, count: Int, mode: String) {
+        let durationMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
+        let durationSec = durationMs / 1000
+        if durationSec > 5 {
+            RAGPlugin.logger.error("\(Self.t)search_code keyword 搜索耗时过长：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
+        } else {
+            RAGPlugin.logger.info("\(Self.t)search_code keyword 搜索耗时：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
+        }
     }
 
     /// 使用系统 grep 进行快速搜索
@@ -271,7 +290,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             "-rnIi",
             "--max-count=\(limit)",
         ]
-        + RAGFileScanner.skipDirectories.map { "--exclude-dir=\($0)" }
+        + RAGFileScanner.grepExcludeDirPatterns.map { "--exclude-dir=\($0)" }
         + RAGFileScanner.allowedExtensions.map { "--include=*.\($0)" }
         + [
             "--",
@@ -407,7 +426,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         context: ToolExecutionContext
     ) -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
-        let files = RAGFileScanner.discoverFiles(in: projectPath)
+        let files = RAGFileScanner.discoverFilesCached(in: projectPath)
             .filter { filePath in
                 guard let pathFilter else { return true }
                 return filePath.localizedCaseInsensitiveContains(pathFilter)
@@ -446,7 +465,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     ) async -> [CodeSearchResult] {
         // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
         if RAGService.isAnyIndexing() {
-            if Self.verbose {
+            if RAGPlugin.verbose {
                 RAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
             }
             return []
@@ -472,9 +491,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 )
             }
         } catch {
-            if Self.verbose, RAGPlugin.verbose {
-                RAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
-            }
+            RAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
             return []
         }
     }

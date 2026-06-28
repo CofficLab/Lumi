@@ -36,16 +36,21 @@ public struct RAGRetriever {
         let usedFallback: Bool
         if annCandidates.isEmpty {
             let lexicalStart = CFAbsoluteTimeGetCurrent()
+            // sqlite-vec 不可用（回退到 swiftCosine）时，余弦相似度需在内存逐个计算，
+            // 候选过多会导致 search_code 超时。此时把 fallback 上限压到 1500，避免大量计算。
+            // sqlite-vec 可用时仍放宽到 7000，保证召回质量。
+            let usingSwiftCosine = (store as? RAGSQLiteStore)?.runtimeInfo.vectorBackend != .sqliteVec
+            let fallbackLimit = usingSwiftCosine ? 1500 : 7000
             candidates = try store.loadCandidateChunks(
                 projectPath: projectPath,
                 queryTerms: queryTerms,
                 lexicalLimit: 2500,
-                fallbackLimit: 7000
+                fallbackLimit: fallbackLimit
             )
             let lexicalDuration = (CFAbsoluteTimeGetCurrent() - lexicalStart) * 1000
             usedFallback = true
 
-            logger.info("[RAGRetriever] 词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count)")
+            logger.info("[RAGRetriever] 词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count), 向量后端: \(usingSwiftCosine ? "swiftCosine(fallback=\(fallbackLimit))" : "sqliteVec")")
         } else {
             candidates = annCandidates
             usedFallback = false
@@ -81,8 +86,12 @@ public struct RAGRetriever {
         logger.info("[RAGRetriever] 相似度计算耗时：\(String(format: "%.2f", scoringDuration))ms, 候选数：\(candidates.count), 返回：\(top.count)")
         logger.info("[RAGRetriever] retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
 
-        if totalDuration > 200 {
-            logger.warning("[RAGRetriever]⚠️ retrieve 耗时过长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+        // 性能预警阈值：>3s 升级为 error 级（语义检索明显异常，可能 sqlite-vec 未启用或候选过多），
+        // 200ms-3s 维持 warning（轻度偏慢），便于在日志里区分严重程度。
+        if totalDuration > 3000 {
+            logger.error("[RAGRetriever]🚨 retrieve 耗时严重过长：\(String(format: "%.2f", totalDuration))ms (>3000ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+        } else if totalDuration > 200 {
+            logger.warning("[RAGRetriever]⚠️ retrieve 耗时偏长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
         }
 
         let results = top.map {

@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorChatInputKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],

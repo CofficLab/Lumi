@@ -1,4 +1,5 @@
 import Foundation
+import SuperLogKit
 import EditorService
 import SwiftUI
 import LumiCoreKit
@@ -10,7 +11,7 @@ import LumiCoreKit
 /// - Go to Script (⌘+2)
 /// - Go to Style (⌘+3)
 @MainActor
-final class VueCommandContributor: SuperEditorCommandContributor {
+final class VueCommandContributor: SuperEditorCommandContributor, SuperLog {
     let id = "vue.commands"
 
     func provideCommands(

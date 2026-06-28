@@ -1,9 +1,10 @@
 import Foundation
 import os
+import SuperLogKit
 
 // MARK: - System Utilities
 
-class SystemUtil {
+class SystemUtil: SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
     static let emoji = "🔧"
 
@@ -37,7 +38,7 @@ class SystemUtil {
     /// Log current system information
     static func logSystemInfo() {
         let version = macOSVersion()
-        logger.info("\(emoji) macOS \(version.major).\(version.minor).\(version.patch)")
-        logger.info("\(emoji) Version string: \(macOSVersionString())")
+        logger.info("\(Self.t)\(emoji) macOS \(version.major).\(version.minor).\(version.patch)")
+        logger.info("\(Self.t)\(emoji) Version string: \(macOSVersionString())")
     }
 }

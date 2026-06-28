@@ -2,8 +2,9 @@ import CoreGraphics
 import Foundation
 import IOKit
 import os
+import SuperLogKit
 
-private let ddcLog = Logger(subsystem: "com.coffic.lumi.plugin.display-control", category: "DDC")
+private let ddcLog = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control.ddc")
 
 // MARK: - Private API Declarations
 
@@ -70,7 +71,7 @@ private struct RegistryService {
 
 // MARK: - DisplayDDCBridge
 
-final class DisplayDDCBridge: @unchecked Sendable {
+final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
     private var servicesByDisplayID: [CGDirectDisplayID: DDCService] = [:]
     private var maxValues: [ControlKey: UInt16] = [:]
     private var controlCodes: [ControlKey: DDCVCPCode] = [:]

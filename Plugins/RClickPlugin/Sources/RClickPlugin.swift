@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -38,6 +39,32 @@ public enum RClickPlugin: LumiPlugin {
             description: info.description,
             kind: .general
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "cursorarrow.click.2",
+                            title: LumiPluginLocalization.string("Custom actions", bundle: .module),
+                            description: LumiPluginLocalization.string("Add your own items to Finder's right-click menu", bundle: .module)
+                        ),
+                        .init(
+                            icon: "slider.horizontal.3",
+                            title: LumiPluginLocalization.string("Configure", bundle: .module),
+                            description: LumiPluginLocalization.string("Choose commands and shortcuts per item", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Right Click from the sidebar to set up actions.", bundle: .module)
+                )
+            }
+        ]
     }
 
 }

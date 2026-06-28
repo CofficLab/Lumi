@@ -4,7 +4,7 @@ import os
 
 /// Cache cleaner service - performs cache scanning and cleaning in the background.
 public final class CacheCleanerService: @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "cache-cleaner")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "cache-cleaner")
     public static let shared = CacheCleanerService()
 
     private let coordinator = CacheCleanerScanCoordinator()

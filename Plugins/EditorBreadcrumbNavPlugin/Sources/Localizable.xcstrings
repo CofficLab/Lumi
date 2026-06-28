@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "Editor Breadcrumb"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Breadcrumb"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File path breadcrumb navigation below editor tabs."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "File path breadcrumb navigation below editor tabs."

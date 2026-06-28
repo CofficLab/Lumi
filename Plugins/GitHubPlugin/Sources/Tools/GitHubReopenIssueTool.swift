@@ -93,7 +93,7 @@ public struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
             return formatReopenedIssue(issue)
         } catch {
             if GitHubPlugin.verbose {
-                            GitHubPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+                            GitHubPlugin.logger.error("\(self.t)重新打开 Issue 失败：\(error.localizedDescription)")
             }
             return "重新打开 Issue 失败：\(error.localizedDescription)"
         }

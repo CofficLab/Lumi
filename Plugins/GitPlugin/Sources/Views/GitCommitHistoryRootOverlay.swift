@@ -1,4 +1,5 @@
 import SwiftUI
+import SuperLogKit
 import LumiCoreKit
 
 /// Git Commit 根视图覆盖层
@@ -20,7 +21,7 @@ public struct GitCommitHistoryRootOverlay<Content: View>: View {
 
             if GitPlugin.verbose {
                 if GitPlugin.verbose {
-                                    GitPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
+                                    GitPlugin.logger.info("\(GitPlugin.t)Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
                 }
             }
 

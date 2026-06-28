@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum NettoPlugin: LumiPlugin {
@@ -30,5 +31,31 @@ public enum NettoPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(NettoAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "shield.lefthalf.filled",
+                            title: LumiPluginLocalization.string("Per-app rules", bundle: .module),
+                            description: LumiPluginLocalization.string("Allow or block network access for each app", bundle: .module)
+                        ),
+                        .init(
+                            icon: "eye",
+                            title: LumiPluginLocalization.string("Visibility", bundle: .module),
+                            description: LumiPluginLocalization.string("See which apps are reaching the network", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Netto Firewall from the sidebar to review permissions.", bundle: .module)
+                )
+            }
+        ]
     }
 }

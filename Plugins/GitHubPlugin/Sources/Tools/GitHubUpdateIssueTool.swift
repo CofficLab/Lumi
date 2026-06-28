@@ -162,7 +162,7 @@ public struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
             return formatUpdatedIssue(issue)
         } catch {
             if GitHubPlugin.verbose {
-                            GitHubPlugin.logger.error("更新 Issue 失败：\(error.localizedDescription)")
+                            GitHubPlugin.logger.error("\(self.t)更新 Issue 失败：\(error.localizedDescription)")
             }
             return "更新 Issue 失败：\(error.localizedDescription)"
         }

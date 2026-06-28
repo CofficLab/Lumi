@@ -199,6 +199,12 @@
             "state" : "translated",
             "value" : "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
         }
       }
     },
@@ -1218,6 +1224,12 @@
             "state" : "translated",
             "value" : "Zhipu AI GLM"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhipu AI GLM"
+          }
         }
       }
     },
@@ -1323,40 +1335,6 @@
         }
       }
     },
-    "Zhipu request failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zhipu request failed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "智谱请求失败"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "智譜請求失敗"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "智譜請求失敗"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "智譜請求失敗"
-          }
-        }
-      }
-    },
     "Zhipu quota exhausted or rate limited" : {
       "localizations" : {
         "en" : {
@@ -1387,6 +1365,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智譜額度已用盡或請求過於頻繁"
+          }
+        }
+      }
+    },
+    "Zhipu request failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhipu request failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智谱请求失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜請求失敗"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜請求失敗"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜請求失敗"
           }
         }
       }
@@ -1426,6 +1438,7 @@
       }
     },
     "智谱" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1446,6 +1459,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智谱"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "智谱"
@@ -1484,6 +1503,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智譜 AI (GLM)"
+          }
+        }
+      }
+    },
+    "智谱 Coding Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZhiPu Coding Plan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智谱 Coding Plan"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜 Coding Plan"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜 Coding Plan"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智譜 Coding Plan"
           }
         }
       }

@@ -2,12 +2,13 @@ import Foundation
 import EditorService
 import XcodeKit
 import os
+import SuperLogKit
 import LumiCoreKit
 
 // MARK: - Quick Open Contributor
 
 @MainActor
-public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
+public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor, SuperLog {
     public let id = "builtin.xcode.quick-open"
 
     public func provideQuickOpenItems(
@@ -17,7 +18,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
         guard let projectRootPath = state.projectRootPath, !projectRootPath.isEmpty else {
             if SwiftPluginLog.verbose {
                 if SwiftPluginLog.verbose {
-                                    SwiftPluginLog.logger.warning("⚠️ XcodeProjectQuickOpenContributor | projectRootPath 为空，跳过")
+                                    SwiftPluginLog.logger.warning("\(Self.t)⚠️ XcodeProjectQuickOpenContributor | projectRootPath 为空，跳过")
                 }
             }
             return []
@@ -26,7 +27,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
         guard !normalizedQuery.isEmpty else {
             if SwiftPluginLog.verbose {
                 if SwiftPluginLog.verbose {
-                                    SwiftPluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 查询为空，跳过")
+                                    SwiftPluginLog.logger.info("\(Self.t)📂 XcodeProjectQuickOpenContributor | 查询为空，跳过")
                 }
             }
             return []
@@ -34,7 +35,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
 
         if SwiftPluginLog.verbose {
             if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始收集建议，projectRoot: \(projectRootPath), 查询: \(normalizedQuery)")
+                            SwiftPluginLog.logger.info("\(Self.t)📂 XcodeProjectQuickOpenContributor | 开始收集建议，projectRoot: \(projectRootPath), 查询: \(normalizedQuery)")
             }
         }
 
@@ -47,7 +48,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
             let elapsed = (CFAbsoluteTimeGetCurrent() - backgroundStartTime) * 1000
             if SwiftPluginLog.verbose {
                 if SwiftPluginLog.verbose {
-                                    SwiftPluginLog.logger.info("📂 XcodeProjectQuickOpenContributor [后台] | 原始匹配收集完成，\(results.count) 条，耗时 \(String(format: "%.1f", elapsed))ms")
+                                    SwiftPluginLog.logger.info("\(Self.t)📂 XcodeProjectQuickOpenContributor [后台] | 原始匹配收集完成，\(results.count) 条，耗时 \(String(format: "%.1f", elapsed))ms")
                 }
             }
             return results
@@ -55,7 +56,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
 
         if SwiftPluginLog.verbose {
             if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始构造 UI 建议，rawResults: \(rawResults.count)")
+                            SwiftPluginLog.logger.info("\(Self.t)📂 XcodeProjectQuickOpenContributor | 开始构造 UI 建议，rawResults: \(rawResults.count)")
             }
         }
 
@@ -84,7 +85,7 @@ public final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContrib
         let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
         if SwiftPluginLog.verbose {
             if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 完成，\(suggestions.count) 条结果，耗时 \(String(format: "%.1f", elapsed))ms")
+                            SwiftPluginLog.logger.info("\(Self.t)📂 XcodeProjectQuickOpenContributor | 完成，\(suggestions.count) 条结果，耗时 \(String(format: "%.1f", elapsed))ms")
             }
         }
 

@@ -3,13 +3,18 @@ import SwiftUI
 import LumiChatKit
 import LumiCoreKit
 import ProjectsPlugin
+import SuperLogKit
+import os
 
 /// RAG 插件：检索增强生成。
-public enum RAGPlugin: LumiPlugin {
+public enum RAGPlugin: LumiPlugin, SuperLog {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "doc.text.magnifyingglass"
+    public nonisolated static let emoji = "🔎"
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
+    public nonisolated static let verbose = false
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.rag",

@@ -68,11 +68,19 @@ public final class EditorService: ObservableObject {
 
     private func installNestedObservableForwarding() {
         state.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.objectWillChange.send()
+                }
+            }
             .store(in: &nestedChangeCancellables)
 
         sessionStore.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.objectWillChange.send()
+                }
+            }
             .store(in: &nestedChangeCancellables)
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 public enum SemanticIndexJobPriority: Int, Sendable, Comparable {
     case preload = 0
@@ -22,7 +23,7 @@ public struct SemanticIndexJobResult: Sendable, Equatable {
 
 /// Serializes semantic indexing jobs and manages subprocess lifecycle.
 @MainActor
-public final class SemanticIndexJobController {
+public final class SemanticIndexJobController: SuperLog {
     public static let shared = SemanticIndexJobController()
 
     public var timeoutInterval: TimeInterval = 45 * 60
@@ -117,7 +118,7 @@ public final class SemanticIndexJobController {
             activeProcess = nil
             return
         }
-        Self.logger.info("Terminating semantic index subprocess")
+        Self.logger.info("\(Self.t)Terminating semantic index subprocess")
         process.terminate()
         activeProcess = nil
     }

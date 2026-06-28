@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "Contributes OpenAI GPT models to Lumi Chat."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes OpenAI GPT models to Lumi Chat."
+          }
         }
       }
     },

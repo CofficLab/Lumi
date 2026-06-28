@@ -1,17 +1,18 @@
 import Foundation
 import os
+import SuperLogKit
 import ShellKit
 
 /// The primary namespace for DockerKit
-public enum DockerKit {
+public enum DockerKit: SuperLog {
     /// Logger instance for DockerKit operations
-    public static let logger = Logger(subsystem: "com.coffic.dockerkit", category: "docker")
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker")
     /// 是否启用日志输出
     nonisolated(unsafe) public static var verbose: Bool = false
 }
 
 /// Core service for Docker operations
-public actor DockerService {
+public actor DockerService: SuperLog {
     public static let shared = DockerService()
 
     private var dockerPath: String?
@@ -71,7 +72,7 @@ public actor DockerService {
                     images.append(image)
                 } catch {
                     if DockerKit.verbose {
-                                            DockerKit.logger.error("Failed to decode image line: \(error)")
+                                            DockerKit.logger.error("\(self.t)Failed to decode image line: \(error)")
                     }
                 }
             }
@@ -133,7 +134,7 @@ public actor DockerService {
                     history.append(item)
                 } catch {
                     if DockerKit.verbose {
-                                            DockerKit.logger.error("Failed to decode history line: \(error)")
+                                            DockerKit.logger.error("\(self.t)Failed to decode history line: \(error)")
                     }
                 }
             }

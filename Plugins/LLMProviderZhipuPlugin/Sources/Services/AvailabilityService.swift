@@ -7,9 +7,9 @@ enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderZhipuPlugin")
 
     static func checkAvailability(
-        provider: ZhipuProvider,
         model: String,
-        scheduler: AvailabilityScheduler = .shared
+        scheduler: AvailabilityScheduler = .shared,
+        check: @Sendable @escaping (String) async -> LumiModelAvailabilityResult
     ) async -> LumiModelAvailabilityResult {
         // 优先读磁盘缓存
         if let cached = cache.read(model: model),
@@ -19,7 +19,7 @@ enum AvailabilityService {
 
         let result = await scheduler.run {
             await mapFriendlyFailureResult(
-                await provider.checkAvailabilityUsingChatPing(model: model)
+                await check(model)
             )
         }
 

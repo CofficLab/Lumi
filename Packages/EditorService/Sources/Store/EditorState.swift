@@ -1697,12 +1697,16 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 优先从插件系统获取，fallback 到 EditorThemeAdapter 默认主题
     private func resolveTheme(for id: String) -> EditorTheme {
         if let contributor = editorExtensions.theme(for: id) {
-            logger.info("\(Self.t)✅ resolveTheme: found contributor for '\(id)'")
+            if Self.verbose {
+                logger.info("\(Self.t)✅ resolveTheme: found contributor for '\(id)'")
+            }
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
         let available = editorExtensions.allThemes().map(\.id)
-        logger.warning("\(Self.t)⚠️ resolveTheme: 找不到主题 contributor for '\(id)', available=\(available)")
+        if Self.verbose {
+            logger.warning("\(Self.t)⚠️ resolveTheme: 找不到主题 contributor for '\(id)', available=\(available)")
+        }
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1715,7 +1719,9 @@ public final class EditorState: ObservableObject, SuperLog {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
             }
             let available = self.editorExtensions.allThemes().map(\.id)
-            logger.info("\(Self.t)🎨 observeThemeChanges: themeId='\(themeId)', current='\(self.currentThemeId)', available=\(available)")
+            if Self.verbose {
+                logger.info("\(Self.t)🎨 observeThemeChanges: themeId='\(themeId)', current='\(self.currentThemeId)', available=\(available)")
+            }
             if self.currentThemeId == themeId {
                 self.currentTheme = self.resolveTheme(for: themeId)
                 return
@@ -1825,7 +1831,9 @@ public final class EditorState: ObservableObject, SuperLog {
         let loadGeneration = fileLoadRequestGeneration.next()
         isFileLoadInProgress = true
         fileLoadErrorMessage = nil
-        logger.info("\(self.t)loadFile: 开始加载 url=\(loadingURL.path), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
+        if Self.verbose {
+            logger.info("\(self.t)loadFile: 开始加载 url=\(loadingURL.path), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
+        }
         
         Task {
             do {
@@ -1912,11 +1920,9 @@ public final class EditorState: ObservableObject, SuperLog {
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
                             if Self.verbose {
-                                if Self.verbose {
-                                                                    self.logger.info(
-                                                                        "\(Self.t)LSP openFile 准备: file=\(loadingURL.path), languageId=\(languageId), projectRoot=\(self.projectRootPath ?? "<nil>"), chosenRoot=\(rootPath)"
-                                                                    )
-                                }
+                                self.logger.info(
+                                    "\(Self.t)LSP openFile 准备: file=\(loadingURL.path), languageId=\(languageId), projectRoot=\(self.projectRootPath ?? "<nil>"), chosenRoot=\(rootPath)"
+                                )
                             }
                             self.lspClient.setProjectRootPath(rootPath)
                             let documentVersion = self.currentDocumentVersion
@@ -1933,7 +1939,7 @@ public final class EditorState: ObservableObject, SuperLog {
                 }
             } catch {
                 if Self.verbose {
-                                    self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
+                    self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
                 }
                 await MainActor.run { [weak self] in
                     guard let self else { return }

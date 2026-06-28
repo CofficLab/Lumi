@@ -1,4 +1,6 @@
 import Foundation
+import os
+import SuperLogKit
 
 /// Git 分支监听器
 ///
@@ -17,12 +19,15 @@ import Foundation
 /// @StateObject private var monitor = GitBranchMonitor()
 ///
 /// monitor.onBranchChange { projectPath, newBranch in
-///     print("分支变化: \(projectPath) -> \(newBranch ?? "detached")")
+///     Self.logger.info("分支变化: \(projectPath) -> \(newBranch ?? "detached")")
 /// }
 /// monitor.startMonitoring(projectPath: "/path/to/project")
 /// ```
 @MainActor
-public final class GitBranchMonitor: ObservableObject {
+public final class GitBranchMonitor: ObservableObject, SuperLog {
+    nonisolated public static let emoji = "🌿"
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "git-branch-monitor")
+
     // MARK: - Types
 
     /// 分支变化回调
@@ -78,7 +83,7 @@ public final class GitBranchMonitor: ObservableObject {
         // 检查 .git/HEAD 文件是否存在
         guard FileManager.default.fileExists(atPath: headPath) else {
             if verbose {
-                print("[GitBranchMonitor] ⏭️ 跳过非 Git 项目: \(projectPath)")
+                Self.logger.info("\(self.t)⏭️ 跳过非 Git 项目: \(projectPath, privacy: .public)")
             }
             return
         }
@@ -86,7 +91,7 @@ public final class GitBranchMonitor: ObservableObject {
         // 打开文件描述符
         let fileDescriptor = Darwin.open(headPath, O_EVTONLY)
         guard fileDescriptor >= 0 else {
-            print("[GitBranchMonitor] ❌ 无法打开文件描述符: \(headPath)")
+            Self.logger.error("\(self.t)❌ 无法打开文件描述符: \(headPath, privacy: .public)")
             return
         }
 
@@ -122,7 +127,7 @@ public final class GitBranchMonitor: ObservableObject {
         )
 
         if verbose {
-            print("[GitBranchMonitor] 🎯 开始监听: \(projectPath) (当前分支: \(currentBranch ?? "nil"))")
+            Self.logger.info("\(self.t)🎯 开始监听: \(projectPath, privacy: .public) (当前分支: \(currentBranch ?? "nil", privacy: .public))")
         }
     }
 
@@ -140,7 +145,7 @@ public final class GitBranchMonitor: ObservableObject {
         monitors.removeValue(forKey: projectPath)
 
         if verbose {
-            print("[GitBranchMonitor] ⏹️ 停止监听: \(projectPath)")
+            Self.logger.info("\(self.t)⏹️ 停止监听: \(projectPath, privacy: .public)")
         }
     }
 
@@ -201,7 +206,7 @@ public final class GitBranchMonitor: ObservableObject {
             }
 
             if self.verbose {
-                print("[GitBranchMonitor] 🔄 分支变化: \(projectPath) (\(lastBranch ?? "nil") -> \(newBranch ?? "nil"))")
+                Self.logger.info("\(self.t)🔄 分支变化: \(projectPath, privacy: .public) (\(lastBranch ?? "nil", privacy: .public) -> \(newBranch ?? "nil", privacy: .public))")
             }
         }
     }

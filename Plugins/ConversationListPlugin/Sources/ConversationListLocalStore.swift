@@ -1,11 +1,12 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// ConversationList Plugin 本地存储
 ///
 /// 负责持久化插件的配置和设置项。
 /// 存储位置：ConversationListContext.databaseDirectory()/ConversationListPlugin/settings.plist
-public final class ConversationListLocalStore: @unchecked Sendable {
+public final class ConversationListLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list.local-store")
     
     // MARK: - Singleton
@@ -49,7 +50,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create conversation selection directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create conversation selection directory failed: \(error.localizedDescription)")
         }
         migrateLegacyIfNeeded()
     }
@@ -87,13 +88,13 @@ public final class ConversationListLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read conversation selection failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read conversation selection failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read conversation selection failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read conversation selection failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -110,7 +111,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
                 options: 0
             )
         } catch {
-            Self.logger.error("Encode conversation selection failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode conversation selection failed: \(error.localizedDescription)")
             return false
         }
         
@@ -127,7 +128,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
             }
             return true
         } catch {
-            Self.logger.error("Persist conversation selection failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist conversation selection failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
             return false
         }
@@ -142,7 +143,7 @@ public final class ConversationListLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt conversation selection failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt conversation selection failed: \(error.localizedDescription)")
         }
     }
     

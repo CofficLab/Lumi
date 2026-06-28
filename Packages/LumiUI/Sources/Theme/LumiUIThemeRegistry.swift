@@ -76,12 +76,14 @@ public final class LumiUIThemeRegistry: ObservableObject {
     /// 由系统外观观察者或 ``ThemeWindowAppearanceBridge`` 调用。
     public func handleSystemAppearanceDidChange() {
         guard chromeTheme.followsSystemAppearance else { return }
-        let scheme = SystemAppearanceResolver.effectiveColorScheme
-        ResolvedSystemColorScheme.current = scheme
-        systemColorScheme = scheme
-        republishCurrentUITheme()
-        onSystemAppearanceDidChange?()
-        ThemeWindowAppearanceSync.syncAllWindows()
+        Task { @MainActor in
+            let scheme = SystemAppearanceResolver.effectiveColorScheme
+            ResolvedSystemColorScheme.current = scheme
+            systemColorScheme = scheme
+            republishCurrentUITheme()
+            onSystemAppearanceDidChange?()
+            ThemeWindowAppearanceSync.syncAllWindows()
+        }
     }
 
     public func resolvedEditorSyntax(colorScheme: ColorScheme) -> ResolvedEditorSyntax? {
@@ -146,8 +148,10 @@ public final class LumiUIThemeRegistry: ObservableObject {
         let source = contribution ?? selectedContribution
         guard let source else { return }
         let resolvedUI = source.uiTheme ?? ChromeToUIThemeAdapter(chrome: source.chromeTheme)
-        uiTheme = resolvedUI
-        LumiUIThemeStore.shared.setTheme(resolvedUI)
-        ThemeWindowAppearanceSync.syncAllWindows()
+        Task { @MainActor in
+            self.uiTheme = resolvedUI
+            LumiUIThemeStore.shared.setTheme(resolvedUI)
+            ThemeWindowAppearanceSync.syncAllWindows()
+        }
     }
 }

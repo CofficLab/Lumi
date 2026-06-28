@@ -1,7 +1,8 @@
 import Foundation
 import os
+import SuperLogKit
 
-public final class AgentMCPPluginLocalStore: @unchecked Sendable {
+public final class AgentMCPPluginLocalStore: SuperLog, @unchecked Sendable {
     nonisolated(unsafe) public static var dbFolderURLProvider: @Sendable () -> URL = {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ??
             FileManager.default.temporaryDirectory
@@ -27,7 +28,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create MCP settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create MCP settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -39,7 +40,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
         do {
             return try JSONDecoder().decode([MCPServerConfig].self, from: data)
         } catch {
-            Self.logger.error("Decode MCP server configs failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Decode MCP server configs failed: \(error.localizedDescription)")
             return []
         }
     }
@@ -71,20 +72,20 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
         do {
             data = try Data(contentsOf: settingsFileURL)
         } catch {
-            Self.logger.error("Read MCP settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read MCP settings failed: \(error.localizedDescription)")
             return nil
         }
 
         do {
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read MCP settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read MCP settings failed: root plist is not a dictionary")
                 quarantineCorruptSettingsFile()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read MCP settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read MCP settings failed: \(error.localizedDescription)")
             quarantineCorruptSettingsFile()
             return [:]
         }
@@ -96,7 +97,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode MCP settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode MCP settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -108,7 +109,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
             return true
         } catch {
-            Self.logger.error("Persist MCP settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist MCP settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -132,7 +133,7 @@ public final class AgentMCPPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt MCP settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt MCP settings failed: \(error.localizedDescription)")
         }
     }
 

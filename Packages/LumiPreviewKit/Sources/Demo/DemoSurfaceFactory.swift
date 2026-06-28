@@ -53,6 +53,10 @@ public extension LumiPreviewFacade {
                 kIOSurfaceBytesPerElement: 4,
                 kIOSurfaceBytesPerRow: bytesPerRow,
                 kIOSurfacePixelFormat: Self.bgraPixelFormat,
+                // 跨进程共享：消费端通过 IOSurfaceLookup(surfaceID) 按 ID 取回 surface，
+                // 这要求 surface 必须是 global。kIOSurfaceIsGlobal 被标记为 deprecated
+                //（"Global surfaces are insecure"），但当前架构依赖 ID 跨进程序列化，
+                // 故此处有意保留该用法。迁移到 mach port 传递可彻底消除该警告。
                 kIOSurfaceIsGlobal: true
             ]
 
@@ -108,7 +112,7 @@ public extension LumiPreviewFacade {
         // 🔴 验证：直接写入内存
         private func paintRedDirectly(into surface: IOSurfaceRef) {
             // 🔍 诊断：记录 paintRedDirectly 开始
-            Self.logger.info("📝[paintRedDirectly] 开始写入 IOSurface")
+            Self.logger.info("\(self.t)📝[paintRedDirectly] 开始写入 IOSurface")
             
             var seed: UInt32 = 0
             let lockResult = IOSurfaceLock(surface, [], &seed)
@@ -116,7 +120,7 @@ public extension LumiPreviewFacade {
                 if LumiPreviewFacade.verbose {
                     Self.logger.error("\(self.t)❌ IOSurfaceLock 失败：\(lockResult)")
                 }
-                Self.logger.error("📝[paintRedDirectly] ❌ IOSurfaceLock 失败：\(lockResult)")
+                Self.logger.error("\(self.t)📝[paintRedDirectly] ❌ IOSurfaceLock 失败：\(lockResult)")
                 return
             }
             defer { _ = IOSurfaceUnlock(surface, [], &seed) }
@@ -126,17 +130,17 @@ public extension LumiPreviewFacade {
             let bytesPerRow = Int(IOSurfaceGetBytesPerRowOfPlane(surface, 0))
             
             // 🔍 诊断：IOSurface 属性
-            Self.logger.info("📝[paintRedDirectly] IOSurface 属性：\(width)×\(height), bytesPerRow=\(bytesPerRow)")
+            Self.logger.info("\(self.t)📝[paintRedDirectly] IOSurface 属性：\(width)×\(height), bytesPerRow=\(bytesPerRow)")
             
             let baseAddress = IOSurfaceGetBaseAddressOfPlane(surface, 0)
-            Self.logger.info("📝[paintRedDirectly] ✅ baseAddress 非nil")
+            Self.logger.info("\(self.t)📝[paintRedDirectly] ✅ baseAddress 非nil")
             
             // 填充红色 (BGRA: B=0, G=0, R=255, A=255)
             // 这样可以看到明显的红色，证明 IOSurface 链路是通的
             let buffer = baseAddress.bindMemory(to: UInt8.self, capacity: bytesPerRow * height)
             
             // 🔍 诊断：开始填充像素
-            Self.logger.info("📝[paintRedDirectly] 开始填充像素：上半红，下半绿")
+            Self.logger.info("\(self.t)📝[paintRedDirectly] 开始填充像素：上半红，下半绿")
             
             // 优化：只填充一半高度为红色，一半为绿色，以确认尺寸有效
             for y in 0..<height {
@@ -161,7 +165,7 @@ public extension LumiPreviewFacade {
             }
             
             // 🔍 诊断：填充完成
-            Self.logger.info("📝[paintRedDirectly] ✅ 像素填充完成")
+            Self.logger.info("\(self.t)📝[paintRedDirectly] ✅ 像素填充完成")
         }
 
     }

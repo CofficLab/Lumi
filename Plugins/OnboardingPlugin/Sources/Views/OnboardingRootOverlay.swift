@@ -1,6 +1,7 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 import SwiftUI
 
 enum OnboardingPageIndexing {
@@ -13,7 +14,7 @@ enum OnboardingPageIndexing {
 // MARK: - ViewModel
 
 @MainActor
-public final class OnboardingPluginViewModel: ObservableObject {
+public final class OnboardingPluginViewModel: ObservableObject, SuperLog {
     // MARK: - 属性
 
     @Published var isPresentingOnboarding = false
@@ -111,7 +112,7 @@ public final class OnboardingPluginViewModel: ObservableObject {
 
 // MARK: - Store
 
-public final class OnboardingPluginStore {
+public final class OnboardingPluginStore: SuperLog {
     // MARK: - 属性
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.onboarding.store")
@@ -156,7 +157,7 @@ public final class OnboardingPluginStore {
         do {
             try fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create onboarding settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Create onboarding settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -169,13 +170,13 @@ public final class OnboardingPluginStore {
             let data = try Data(contentsOf: stateFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read onboarding state failed: root plist is not a dictionary")
+                Self.logger.error("\(Self.t)Read onboarding state failed: root plist is not a dictionary")
                 quarantineCorruptState()
                 return false
             }
             return dict["completed"] as? Bool ?? false
         } catch {
-            Self.logger.error("Read onboarding state failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Read onboarding state failed: \(error.localizedDescription)")
             quarantineCorruptState()
             return false
         }
@@ -192,7 +193,7 @@ public final class OnboardingPluginStore {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: payload, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode onboarding state failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Encode onboarding state failed: \(error.localizedDescription)")
             return false
         }
 
@@ -207,7 +208,7 @@ public final class OnboardingPluginStore {
             }
             return true
         } catch {
-            Self.logger.error("Persist onboarding state failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Persist onboarding state failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tempURL)
             return false
         }
@@ -222,7 +223,7 @@ public final class OnboardingPluginStore {
             }
             try fileManager.moveItem(at: stateFileURL, to: corruptStateFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt onboarding state failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt onboarding state failed: \(error.localizedDescription)")
         }
     }
 }

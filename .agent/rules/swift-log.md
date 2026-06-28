@@ -10,6 +10,19 @@
 
 所有日志输出必须加 `self.t` 或 `Self.t` 前缀（来自 SuperLog），用于统一格式。
 
+### 通过抽象协议输出日志（适配器模式）
+
+当代码不直接依赖 `os.Logger`、而是通过自定义日志协议（如 `RAGLogger`）解耦时，前缀由 **Plugin 层提供的具体适配器统一注入**，协议调用点无需各自加前缀。适配器实现必须自行加上所属插件/类型的 `.t` 前缀：
+
+```swift
+// ✅ 适配器统一加前缀，被适配的代码无需感知
+struct OSLogRAGLogger: RAGLogger {
+    func info(_ message: String) { RAGPlugin.logger.info("\(RAGPlugin.t)\(message)") }
+    func error(_ message: String) { RAGPlugin.logger.error("\(RAGPlugin.t)\(message)") }
+    func warning(_ message: String) { RAGPlugin.logger.warning("\(RAGPlugin.t)\(message)") }
+}
+```
+
 ---
 
 ## Import 要求
@@ -203,6 +216,7 @@ Task.detached {
 
 2. **禁止 import OSLog**
    - ✅ `import os`
+   - ⚠️ **唯一例外**：需要直接访问 `OSLogStore` / `OSLogEntry` / `OSLogEntryLog` 等类型时（如 `FileLogCoordinator` 实现磁盘日志持久化），允许 `import OSLog`。仅用于日志输出（`Logger` / `os.Logger`）时仍必须用 `import os`。
 
 3. **禁止记录敏感信息**
    - ❌ 密码、Token、API Key

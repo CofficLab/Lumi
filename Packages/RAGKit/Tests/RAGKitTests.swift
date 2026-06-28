@@ -394,7 +394,25 @@ import Testing
     #expect(RAGFileScanner.shouldSkipPath("/project/.git/config"))
     #expect(RAGFileScanner.shouldSkipPath("/project/node_modules/pkg"))
     #expect(RAGFileScanner.shouldSkipPath("/project/build/output.o"))
+    // temp/ 与 SourcePackages/ 必须被跳过，避免扫描大量无关生成物
+    #expect(RAGFileScanner.shouldSkipPath("/project/temp/foo.swift"))
+    #expect(RAGFileScanner.shouldSkipPath("/project/SourcePackages/checkouts/Bar/Bar.swift"))
+    // DerivedData 变体目录（Xcode 按 scheme 命名）必须被前缀匹配跳过
+    #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-Multilang/Build/Products/x.swift"))
+    #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData/Build/Products/x.swift"))
     #expect(!RAGFileScanner.shouldSkipPath("/project/src/main.swift"))
+    // 不要误伤恰好以 DerivedData 开头的普通源码目录名（这里要求至少是目录名前缀）
+    #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/DerivedDataHelper.swift"))
+}
+
+@Test func testGrepExcludeDirPatternsCoverPrefixVariants() {
+    let patterns = Set(RAGFileScanner.grepExcludeDirPatterns)
+    // 精确名透传
+    #expect(patterns.contains("temp"))
+    #expect(patterns.contains("SourcePackages"))
+    #expect(patterns.contains("build"))
+    // 前缀模式以 glob 形式给出，覆盖 DerivedData-* 变体
+    #expect(patterns.contains("DerivedData*"))
 }
 
 @Test func testAllowedExtensions() {
@@ -460,6 +478,34 @@ import Testing
     #expect(!relative.contains("node_modules/pkg/index.ts"))
     #expect(!relative.contains("image.png"))
     #expect(!relative.contains("large.swift"))
+}
+
+@Test func testDiscoverFilesSkipsTempDerivedDataVariantsAndSourcePackages() throws {
+    let projectURL = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    // 真实源码应被发现
+    try writeFile(projectURL.appendingPathComponent("Sources/Main.swift"), "print(\"hello\")")
+    // 这些生成/派生目录下的大量文件必须被跳过
+    try writeFile(projectURL.appendingPathComponent("temp/generated.swift"), "ignored")
+    try writeFile(projectURL.appendingPathComponent("SourcePackages/checkouts/Foo/Foo.swift"), "ignored")
+    try writeFile(projectURL.appendingPathComponent("DerivedData-Lumi-Multilang/Build/x.swift"), "ignored")
+    try writeFile(projectURL.appendingPathComponent("DerivedData/Build/y.swift"), "ignored")
+
+    let projectPath = projectURL.standardizedFileURL.path
+    let files = RAGFileScanner.discoverFiles(in: projectPath)
+    let relative = Set(files.map {
+        RAGPathUtils.displayPath(
+            filePath: URL(fileURLWithPath: $0).standardizedFileURL.path,
+            projectPath: projectPath
+        )
+    })
+
+    #expect(relative.contains("Sources/Main.swift"))
+    #expect(!relative.contains("temp/generated.swift"))
+    #expect(!relative.contains("SourcePackages/checkouts/Foo/Foo.swift"))
+    #expect(!relative.contains("DerivedData-Lumi-Multilang/Build/x.swift"))
+    #expect(!relative.contains("DerivedData/Build/y.swift"))
 }
 
 // MARK: - RAGSQLiteStore (Integration)

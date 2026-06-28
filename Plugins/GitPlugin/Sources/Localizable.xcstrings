@@ -665,25 +665,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Branch name"
+            "value": "分支名称"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Branch name"
+            "value": "分支名稱"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Branch name"
+            "value": "分支名稱"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Branch name"
+            "value": "分支名稱"
           }
         }
       }
@@ -1672,6 +1672,12 @@
             "state": "translated",
             "value": "Git"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git"
+          }
         }
       }
     },
@@ -1755,25 +1761,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Git version control panel, commit history, status bar, and agent tools."
+            "value": "Git 版本控制面板、提交历史、状态栏和 Agent 工具。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Git version control panel, commit history, status bar, and agent tools."
+            "value": "Git 版本控制面板、提交歷史、狀態欄和 Agent 工具。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Git version control panel, commit history, status bar, and agent tools."
+            "value": "Git 版本控制面板、提交歷史、狀態欄和 Agent 工具。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Git version control panel, commit history, status bar, and agent tools."
+            "value": "Git 版本控制面板、提交歷史、狀態欄和 Agent 工具。"
           }
         }
       }
@@ -1789,25 +1795,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invalid Branch Name: "
+            "value": "无效的分支名称："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invalid Branch Name: "
+            "value": "無效的分支名稱："
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invalid Branch Name: "
+            "value": "無效的分支名稱："
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invalid Branch Name: "
+            "value": "無效的分支名稱："
           }
         }
       }
@@ -1926,25 +1932,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "LLM not configured"
+            "value": "未配置 LLM"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "LLM not configured"
+            "value": "未設定 LLM"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "LLM not configured"
+            "value": "未設定 LLM"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "LLM not configured"
+            "value": "未設定 LLM"
           }
         }
       }
@@ -2547,25 +2553,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search branches..."
+            "value": "搜索分支..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search branches..."
+            "value": "搜尋分支..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search branches..."
+            "value": "搜尋分支..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search branches..."
+            "value": "搜尋分支..."
           }
         }
       }
@@ -2994,25 +3000,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Working state (%lld)"
+            "value": "工作区 (%lld)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Working state (%lld)"
+            "value": "工作區 (%lld)"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Working state (%lld)"
+            "value": "工作區 (%lld)"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Working state (%lld)"
+            "value": "工作區 (%lld)"
           }
         }
       }

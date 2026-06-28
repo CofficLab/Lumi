@@ -1,11 +1,12 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// ClipboardManager 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。
 /// 存储位置：ClipboardManagerRuntime.databaseDirectory()/ClipboardManager/settings.plist
-public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
+public final class ClipboardManagerPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager.local-store")
     
     // MARK: - Singleton
@@ -35,7 +36,7 @@ public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create clipboard settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create clipboard settings directory failed: \(error.localizedDescription)")
         }
     }
     
@@ -69,13 +70,13 @@ public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read clipboard settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read clipboard settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read clipboard settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read clipboard settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -87,7 +88,7 @@ public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode clipboard settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode clipboard settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -99,7 +100,7 @@ public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
             return true
         } catch {
-            Self.logger.error("Persist clipboard settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist clipboard settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -114,7 +115,7 @@ public final class ClipboardManagerPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt clipboard settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt clipboard settings failed: \(error.localizedDescription)")
         }
     }
     

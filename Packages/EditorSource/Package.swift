@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorSource",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
@@ -32,7 +33,8 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("EditorSource/Symbols.xcassets")
+                .process("EditorSource/Symbols.xcassets"),
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

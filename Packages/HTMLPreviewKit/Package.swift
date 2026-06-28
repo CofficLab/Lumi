@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "HTMLPreviewKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -15,7 +16,10 @@ let package = Package(
     targets: [
         .target(
             name: "HTMLPreviewKit",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "HTMLPreviewKitTests",

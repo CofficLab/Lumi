@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "DownloadPlugin",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -26,6 +27,10 @@ let package = Package(
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
             ]
         ),
         .testTarget(

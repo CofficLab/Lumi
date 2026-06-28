@@ -162,6 +162,12 @@
             "state": "translated",
             "value": "(%lld)"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(%lld)"
+          }
         }
       }
     },
@@ -1450,6 +1456,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embedded preview in the editor bottom area."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Embedded preview in the editor bottom area."

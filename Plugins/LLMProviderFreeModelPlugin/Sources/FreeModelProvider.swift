@@ -1,14 +1,18 @@
 import Foundation
+import SuperLogKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
+public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Sendable {
     enum Endpoints {
         static let openAIPrimary = "https://api.freemodel.dev/v1/chat/completions"
         static let openAIFallback = "https://vip-sg.freemodel.dev/v1/chat/completions"
         static let claudeT0 = "https://cc.freemodel.dev/v1/messages"
         static let claudeT1 = "https://api-cc.freemodel.dev/v1/messages"
     }
+
+    /// Controls whether diagnostic logs are emitted (set to `true` for debugging)
+    static let verbose = FreeModelDiagnosticLog.verbose
 
     static let claudeT1Models: Set<String> = [
         "claude-opus-4-8",
@@ -93,7 +97,9 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         let backend = backendSelection(for: request.model)
-        FreeModelDiagnosticLog.log("send model=\(request.model) route=\(backend.label)")
+        if Self.verbose {
+            FreeModelDiagnosticLog.logger.info("\(FreeModelDiagnosticLog.t)send model=\(request.model) route=\(backend.label)")
+        }
         let message = try await backend.provider.send(request)
         return try await fallbackIfGatewayRejected(
             message,
@@ -107,9 +113,9 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
         let backend = backendSelection(for: request.model)
-        FreeModelDiagnosticLog.log(
-            "stream start model=\(request.model) route=\(backend.label) messages=\(request.messages.count) tools=\(request.tools.count)"
-        )
+        if Self.verbose {
+            FreeModelDiagnosticLog.logger.info("\(FreeModelDiagnosticLog.t)stream start model=\(request.model) route=\(backend.label) messages=\(request.messages.count) tools=\(request.tools.count)")
+        }
 
         let message: LumiChatMessage
         if backend.label.hasPrefix("anthropic") {
@@ -128,9 +134,9 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
 
         if backend.label.hasPrefix("anthropic"),
            FreeModelClaudeCodeEmulation.isGatewayRejection(message.content) {
-            FreeModelDiagnosticLog.log(
-                "anthropic gateway rejected CLI mimic, falling back to openai/claude"
-            )
+            if Self.verbose {
+                FreeModelDiagnosticLog.logger.info("\(FreeModelDiagnosticLog.t)anthropic gateway rejected CLI mimic, falling back to openai/claude")
+            }
             return try await streamWithLogging(
                 backend: BackendSelection(label: "openai/claude-fallback", provider: openAIBackend),
                 request: request,
@@ -164,7 +170,9 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
         else {
             return message
         }
-        FreeModelDiagnosticLog.log("anthropic gateway rejected CLI mimic, falling back to openai/claude")
+        if Self.verbose {
+            FreeModelDiagnosticLog.logger.info("\(FreeModelDiagnosticLog.t)anthropic gateway rejected CLI mimic, falling back to openai/claude")
+        }
         return try await openAIBackend.send(request)
     }
 
@@ -179,25 +187,31 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
                 let index = chunkCounter.next()
                 let contentLen = chunk.content?.count ?? 0
                 if index <= 5 || chunk.isDone || contentLen > 0 {
-                    FreeModelDiagnosticLog.log(
-                        "chunk #\(index) route=\(backend.label) contentLen=\(contentLen) isDone=\(chunk.isDone) isThinking=\(chunk.isThinking)"
-                    )
+                    if Self.verbose {
+                        FreeModelDiagnosticLog.logger.info(
+                            "\(FreeModelDiagnosticLog.t)chunk #\(index) route=\(backend.label) contentLen=\(contentLen) isDone=\(chunk.isDone) isThinking=\(chunk.isThinking)"
+                        )
+                    }
                 }
                 await onChunk(chunk)
             }
-            FreeModelDiagnosticLog.log(
-                "stream done route=\(backend.label) model=\(request.model) contentLen=\(message.content.count) preview=\(message.content.prefix(120))"
-            )
-            if message.content.isEmpty {
-                FreeModelDiagnosticLog.log(
-                    "WARN empty content route=\(backend.label) model=\(request.model)"
+            if Self.verbose {
+                FreeModelDiagnosticLog.logger.info(
+                    "\(FreeModelDiagnosticLog.t)stream done route=\(backend.label) model=\(request.model) contentLen=\(message.content.count) preview=\(message.content.prefix(120))"
                 )
+                if message.content.isEmpty {
+                    FreeModelDiagnosticLog.logger.info(
+                        "\(FreeModelDiagnosticLog.t)WARN empty content route=\(backend.label) model=\(request.model)"
+                    )
+                }
             }
             return message
         } catch {
-            FreeModelDiagnosticLog.log(
-                "stream error route=\(backend.label) model=\(request.model): \(error.localizedDescription)"
-            )
+            if Self.verbose {
+                FreeModelDiagnosticLog.logger.info(
+                    "\(FreeModelDiagnosticLog.t)stream error route=\(backend.label) model=\(request.model): \(error.localizedDescription)"
+                )
+            }
             throw error
         }
     }
@@ -210,9 +224,11 @@ public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
             return BackendSelection(label: "anthropic/claude-t0", provider: claudeT0Backend)
         }
         if model.hasPrefix("claude-") {
-            FreeModelDiagnosticLog.log(
-                "WARN model=\(model) is not in Claude catalog, falling back to openai endpoint"
-            )
+            if Self.verbose {
+                FreeModelDiagnosticLog.logger.info(
+                    "\(FreeModelDiagnosticLog.t)WARN model=\(model) is not in Claude catalog, falling back to openai endpoint"
+                )
+            }
             return BackendSelection(label: "openai/claude", provider: openAIBackend)
         }
         return BackendSelection(label: "openai", provider: openAIBackend)

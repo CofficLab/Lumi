@@ -123,7 +123,15 @@ struct ModelSelectorView: View {
         } else {
             List {
                 ForEach(visibleProviders) { provider in
-                    Section(header: sectionHeader(for: provider)) {
+                    Section {
+                        ProviderSummaryCard(
+                            provider: provider,
+                            isChecking: checkingProviderID == provider.id,
+                            onRefresh: { checkProviderAvailability(provider) },
+                            statusMessage: resolvedProviderStatus(for: provider)?.message,
+                            statusMessageColor: providerStatusColor(for: resolvedProviderStatus(for: provider)?.level ?? .info)
+                        )
+
                         ForEach(filteredModels(for: provider), id: \.self) { model in
                             ModelRow(
                                 provider: provider,

@@ -17,8 +17,8 @@ public enum DownloadPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.download-agent",
-        displayName: "Download Agent",
-        description: "文件下载 Agent 工具集：支持 HTTP/HTTPS 下载、断点续传、批量下载、进度查询与任务管理",
+        displayName: LumiPluginLocalization.string("Download Agent", bundle: .module),
+        description: LumiPluginLocalization.string("File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management.", bundle: .module),
         order: 92
     )
 
@@ -53,18 +53,18 @@ public enum DownloadPlugin: LumiPlugin {
 // MARK: - Helpers
 
 extension DownloadPlugin {
-    /// 默认下载目录：~/Downloads/LumiDownloads
+    /// 默认下载目录：用户的 ~/Downloads
+    ///
+    /// 直接复用用户下载目录，不再在其下创建二级子目录。仅计算目录 URL，不创建目录——
+    /// 避免仅访问 `sharedManager`（懒加载触发本方法）就副作用地建目录。真正发起下载时，
+    /// `DownloadManager.performDownload` 会为目标目录调用 `createDirectory`，按需创建。
     static func defaultDownloadDirectory() -> URL {
         let fileManager = FileManager.default
         guard let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
             // 降级到临时目录
-            let fallback = fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads")
-            try? fileManager.createDirectory(at: fallback, withIntermediateDirectories: true)
-            return fallback
+            return fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads", isDirectory: true)
         }
-        let dir = downloads.appendingPathComponent("LumiDownloads", isDirectory: true)
-        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
+        return downloads
     }
 
     /// 从 URL 字符串提取文件名

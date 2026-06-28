@@ -244,3 +244,55 @@ import Foundation
         #expect(UnicodeScalar(0x3400)!.isCJK)
     }
 }
+
+@Suite struct RAGFileScannerTests {
+
+    @Test func shouldSkipKnownBuildAndVcsDirs() {
+        #expect(RAGFileScanner.shouldSkipPath("/project/.git/config"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/node_modules/pkg"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/build/output.o"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/.build/foo.swift"))
+        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/main.swift"))
+    }
+
+    @Test func shouldSkipTempAndSourcePackages() {
+        // 这两个目录在大项目里常含数万个无关文件，必须被跳过，否则 search_code 会卡死。
+        #expect(RAGFileScanner.shouldSkipPath("/project/temp/generated.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/SourcePackages/checkouts/Foo.swift"))
+    }
+
+    @Test func shouldSkipDerivedDataVariantsByPrefix() {
+        // Xcode 按 scheme 生成 DerivedData-Lumi-* 变体目录，无法精确匹配，靠前缀跳过。
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-Multilang/Build/x.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData-Lumi-PluginDescriptionLocalization/Build/y.swift"))
+        #expect(RAGFileScanner.shouldSkipPath("/project/DerivedData/Build/z.swift"))
+        // 不要误伤恰好包含该前缀的普通源码文件名
+        #expect(!RAGFileScanner.shouldSkipPath("/project/Sources/DerivedDataHelper.swift"))
+    }
+
+    @Test func grepExcludeDirPatternsCoverExactNamesAndPrefixGlobs() {
+        let patterns = Set(RAGFileScanner.grepExcludeDirPatterns)
+        #expect(patterns.contains("temp"))
+        #expect(patterns.contains("SourcePackages"))
+        #expect(patterns.contains("build"))
+        // 前缀模式以 glob 形式给出，让 grep 一次性排除 DerivedData-* 全部变体
+        #expect(patterns.contains("DerivedData*"))
+    }
+
+    @Test func discoverFilesCachedReturnsSameResultsAsUncached() throws {
+        // 缓存路径应与直接扫描返回一致的结果集
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-cache-test-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try "print(1)".write(toFile: projectURL.appendingPathComponent("A.swift").path, atomically: true, encoding: .utf8)
+        try "print(2)".write(toFile: projectURL.appendingPathComponent("B.swift").path, atomically: true, encoding: .utf8)
+
+        let direct = Set(RAGFileScanner.discoverFiles(in: projectURL.path))
+        let cached = Set(RAGFileScanner.discoverFilesCached(in: projectURL.path))
+
+        #expect(!direct.isEmpty)
+        #expect(direct == cached)
+    }
+}

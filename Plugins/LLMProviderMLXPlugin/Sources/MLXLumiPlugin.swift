@@ -17,4 +17,9 @@ public enum MLXLumiPlugin: LumiPlugin {
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         [MLXLumiProvider()]
     }
+
+    @MainActor
+    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+        [ModelNotDownloadedRenderer.item]
+    }
 }

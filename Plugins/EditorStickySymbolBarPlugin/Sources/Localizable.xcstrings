@@ -60,6 +60,12 @@
             "state": "translated",
             "value": "Current symbol breadcrumb for the editor panel."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current symbol breadcrumb for the editor panel."
+          }
         }
       }
     },
@@ -84,6 +90,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Sticky Symbol Bar"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Editor Sticky Symbol Bar"

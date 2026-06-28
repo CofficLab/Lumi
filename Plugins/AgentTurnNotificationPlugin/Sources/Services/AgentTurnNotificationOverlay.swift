@@ -1,4 +1,5 @@
 import AppKit
+import SuperLogKit
 import LumiCoreKit
 import SwiftUI
 import UserNotifications
@@ -24,7 +25,7 @@ public struct AgentTurnNotificationOverlay<Content: View>: View {
 
 /// 实际执行通知发送逻辑的 Handler
 @MainActor
-public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
+public final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
     private let center = UNUserNotificationCenter.current()
 
     // MARK: - Setup
@@ -32,7 +33,7 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
     /// 注册为通知中心代理
     public func bind() {
         center.delegate = self
-        AgentTurnNotificationPlugin.logger.debug("Notification center delegate configured")
+        AgentTurnNotificationPlugin.logger.debug("\(Self.t)Notification center delegate configured")
     }
 
     // MARK: - Notification Posting
@@ -61,7 +62,7 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
                 await deliverNotification(conversationId: conversationId)
             }
         } catch {
-            AgentTurnNotificationPlugin.logger.error("Notification authorization failed: \(error.localizedDescription)")
+            AgentTurnNotificationPlugin.logger.error("\(Self.t)Notification authorization failed: \(error.localizedDescription)")
         }
     }
 
@@ -80,9 +81,9 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject {
 
         do {
             try await center.add(request)
-            AgentTurnNotificationPlugin.logger.debug("Posted turn completed notification for \(conversationId.uuidString)")
+            AgentTurnNotificationPlugin.logger.debug("\(Self.t)Posted turn completed notification for \(conversationId.uuidString)")
         } catch {
-            AgentTurnNotificationPlugin.logger.error("Failed to post notification: \(error.localizedDescription)")
+            AgentTurnNotificationPlugin.logger.error("\(Self.t)Failed to post notification: \(error.localizedDescription)")
         }
     }
 }
@@ -102,12 +103,12 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
         // 从 userInfo 中提取 conversationId
         guard let conversationIdString = userInfo["conversationId"] as? String,
               let conversationId = UUID(uuidString: conversationIdString) else {
-            AgentTurnNotificationPlugin.logger.warning("Notification missing conversationId")
+            AgentTurnNotificationPlugin.logger.warning("\(Self.t)Notification missing conversationId")
             completionHandler()
             return
         }
 
-        AgentTurnNotificationPlugin.logger.debug("User opened notification for conversation \(conversationId.uuidString)")
+        AgentTurnNotificationPlugin.logger.debug("\(Self.t)User opened notification for conversation \(conversationId.uuidString)")
 
         Task { @MainActor in
             // 1. 激活应用
@@ -120,7 +121,7 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
 
             AgentTurnNotificationRuntime.selectConversation(conversationId)
 
-            AgentTurnNotificationPlugin.logger.debug("Selected conversation \(conversationId.uuidString)")
+            AgentTurnNotificationPlugin.logger.debug("\(Self.t)Selected conversation \(conversationId.uuidString)")
         }
         completionHandler()
     }

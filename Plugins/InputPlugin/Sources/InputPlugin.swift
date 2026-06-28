@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -38,6 +39,27 @@ public enum InputPlugin: LumiPlugin {
             description: info.description,
             kind: .general
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "keyboard",
+                            title: LumiPluginLocalization.string("Behaviors", bundle: .module),
+                            description: LumiPluginLocalization.string("Configure how input is handled across Lumi", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Input Manager from the sidebar to review your settings.", bundle: .module)
+                )
+            }
+        ]
     }
 
 }

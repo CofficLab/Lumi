@@ -3,8 +3,8 @@ import LumiCoreKit
 public enum LogoCofficPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.lumi.plugin.logo-coffic",
-        displayName: "Coffic Logo",
-        description: "Coffee cup themed animated logo",
+        displayName: LumiPluginLocalization.string("Coffic Logo", bundle: .module),
+        description: LumiPluginLocalization.string("Coffee cup themed animated logo", bundle: .module),
         order: 100
     )
 

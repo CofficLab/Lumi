@@ -30,9 +30,14 @@ struct ModelSelectorSidebar: View {
                 .padding(.vertical, 6)
 
             ScrollView {
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     ForEach(providers) { provider in
-                        providerTabButton(provider)
+                        ProviderCard(
+                            provider: provider,
+                            isSelected: selectedTab == .provider(provider.id),
+                            isActive: selectedProviderID == provider.id,
+                            onSelect: { selectedTab = .provider(provider.id) }
+                        )
                     }
                 }
             }
@@ -59,45 +64,6 @@ struct ModelSelectorSidebar: View {
                     .lineLimit(1)
 
                 Spacer()
-            }
-        }
-    }
-
-    private func providerTabButton(_ provider: LumiLLMProviderInfo) -> some View {
-        let tab = ModelSelectorTab.provider(provider.id)
-        let isAvailable = isProviderAvailable(provider)
-
-        return AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
-            HStack(spacing: 4) {
-                Image(systemName: "cloud")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isAvailable ? .green : .red)
-                    .frame(width: 16)
-
-                Text(provider.displayName)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(theme.textPrimary)
-                    .lineLimit(1)
-
-                Spacer()
-
-                if selectedProviderID == provider.id {
-                    Text(verbatim: LumiPluginLocalization.string("Active", bundle: .module))
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(theme.primary)
-                        .lineLimit(1)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(theme.primary.opacity(0.12))
-                        )
-                }
-
-                Text("\(provider.availableModels.count)")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(theme.textSecondary)
-                    .lineLimit(1)
             }
         }
     }

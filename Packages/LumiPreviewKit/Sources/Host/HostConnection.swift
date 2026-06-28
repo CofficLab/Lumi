@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 public extension LumiPreviewFacade {
 
@@ -43,7 +44,7 @@ public extension LumiPreviewFacade {
     // MARK: - 进程实现
 
     /// 基于 `Process` + 管道的 `HostConnection` 实现。
-    final class ProcessHostConnection: HostConnection, @unchecked Sendable {
+    final class ProcessHostConnection: HostConnection, SuperLog, @unchecked Sendable {
         private nonisolated static let logger = Logger(
             subsystem: "com.coffic.lumi",
             category: "LumiPreviewKit.HostConnection"
@@ -302,7 +303,7 @@ public extension LumiPreviewFacade {
 
         private func logHostStderr(_ data: Data) {
             let message = String(data: data, encoding: .utf8) ?? "<non-utf8 stderr \(data.count) bytes>"
-            Self.logger.info("📝 inline host stderr pid=\(self.process.processIdentifier, privacy: .public): \(message, privacy: .public)")
+            Self.logger.info("\(self.t)📝 inline host stderr pid=\(self.process.processIdentifier, privacy: .public): \(message, privacy: .public)")
         }
 
         private func process(line data: Data) {

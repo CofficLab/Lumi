@@ -1,7 +1,8 @@
 import Foundation
 import os
+import SuperLogKit
 
-enum LumiStorageMigration {
+enum LumiStorageMigration: SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "storage.migration")
 
     static func migrateMisplacedPluginDirectories(to dataRootDirectory: URL) {
@@ -30,7 +31,7 @@ enum LumiStorageMigration {
                     withIntermediateDirectories: true
                 )
                 try FileManager.default.moveItem(at: entry, to: destination)
-                logger.info("Migrated plugin storage directory \(name, privacy: .public) into data root")
+                logger.info("\(Self.t)Migrated plugin storage directory \(name, privacy: .public) into data root")
             } catch {
                 logger.error(
                     "Failed to migrate plugin storage directory \(name, privacy: .public): \(error.localizedDescription, privacy: .public)"

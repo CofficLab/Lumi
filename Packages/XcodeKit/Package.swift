@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "XcodeKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -23,7 +24,10 @@ let package = Package(
                 .product(name: "XcodeProj", package: "XcodeProj"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "XcodeKitTests",

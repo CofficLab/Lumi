@@ -95,6 +95,12 @@
             "state": "translated",
             "value": "Midnight Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midnight Theme"
+          }
         }
       }
     }

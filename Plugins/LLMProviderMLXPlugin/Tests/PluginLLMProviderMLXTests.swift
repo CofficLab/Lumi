@@ -2190,3 +2190,160 @@ enum MLXDownloadManagerSharedStateTests {
     p.fractionCompleted = 0.001
     #expect(p.percentLabel == "0%")
 }
+
+// MARK: - MLX Error → renderKind Mapping Tests
+
+@Test func mlxErrorHandlingMapsModelNotDownloaded() {
+    #expect(MLXErrorHandling.renderKind(for: InferenceError.modelNotDownloaded) == "mlx-model-not-downloaded")
+}
+
+@Test func mlxErrorHandlingReturnsNilForOtherErrors() {
+    // 非「未下载」错误不应触发内联下载界面，交给核心错误渲染器
+    #expect(MLXErrorHandling.renderKind(for: InferenceError.loadFailed("boom")) == nil)
+    #expect(MLXErrorHandling.renderKind(for: InferenceError.notReady) == nil)
+    #expect(MLXErrorHandling.renderKind(for: MLXDownloadError.downloadFailed("network")) == nil)
+    #expect(MLXErrorHandling.renderKind(for: NSError(domain: "x", code: 1)) == nil)
+}
+
+@Test func mlxLumiProviderErrorRenderKind() {
+    let provider = MLXLumiProvider()
+    #expect(provider.errorRenderKind(for: InferenceError.modelNotDownloaded) == "mlx-model-not-downloaded")
+    #expect(provider.errorRenderKind(for: InferenceError.loadFailed("oom")) == nil)
+}
+
+@Test func mlxLumiProviderMakeErrorMessageCarriesRenderKindAndModel() async {
+    let provider = MLXLumiProvider()
+    let request = LumiLLMRequest(
+        messages: [],
+        model: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit"
+    )
+    let message = provider.makeErrorMessage(
+        conversationID: UUID(),
+        request: request,
+        error: InferenceError.modelNotDownloaded,
+        disposition: .nonRetryable
+    )
+
+    #expect(message.role == .error)
+    #expect(message.isError == true)
+    #expect(message.providerID == "mlx")
+    #expect(message.modelName == "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
+    #expect(message.renderKind == "mlx-model-not-downloaded")
+}
+
+@Test func mlxLumiProviderMakeErrorMessageWithoutRenderKindForOtherErrors() {
+    let provider = MLXLumiProvider()
+    let request = LumiLLMRequest(messages: [], model: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit")
+    let message = provider.makeErrorMessage(
+        conversationID: UUID(),
+        request: request,
+        error: InferenceError.loadFailed("oom"),
+        disposition: .nonRetryable
+    )
+    // 其它错误不应携带 mlx- 前缀的 renderKind，否则会被排除出核心错误渲染器
+    #expect(message.renderKind == nil)
+}
+
+// MARK: - MLXRenderKind Matching Tests
+
+@Test func mlxRenderKindMatchesModelNotDownloaded() {
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .error,
+        content: "",
+        providerID: "mlx",
+        modelName: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
+        isError: true,
+        rawErrorDetail: "模型未下载",
+        renderKind: "mlx-model-not-downloaded"
+    )
+    #expect(MLXRenderKind.matchesModelNotDownloaded(message) == true)
+    #expect(MLXRenderKind.isMLXError(message) == true)
+}
+
+@Test func mlxRenderKindRejectsNonMLXProvider() {
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .error,
+        content: "",
+        providerID: "openai",  // 非 MLX
+        isError: true,
+        renderKind: "mlx-model-not-downloaded"
+    )
+    #expect(MLXRenderKind.matchesModelNotDownloaded(message) == false)
+    #expect(MLXRenderKind.isMLXError(message) == false)
+}
+
+@Test func mlxRenderKindRejectsMismatchedRenderKind() {
+    // provider 是 mlx，但 renderKind 不匹配
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .error,
+        content: "",
+        providerID: "mlx",
+        isError: true,
+        renderKind: "some-other-kind"
+    )
+    #expect(MLXRenderKind.matchesModelNotDownloaded(message) == false)
+}
+
+@Test func mlxRenderKindRejectsNonErrorMessages() {
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .assistant,
+        content: "hello",
+        providerID: "mlx",
+        isError: false,
+        renderKind: "mlx-model-not-downloaded"
+    )
+    // isError == false 不算错误消息
+    #expect(MLXRenderKind.isMLXError(message) == false)
+    #expect(MLXRenderKind.matchesModelNotDownloaded(message) == false)
+}
+
+// MARK: - MLXLumiPlugin Renderer Registration Tests
+
+@MainActor
+@Test func mlxPluginRegistersModelNotDownloadedRenderer() {
+    let context = LumiPluginContext(
+        activeSectionID: "test",
+        activeSectionTitle: "Test"
+    )
+    let renderers = MLXLumiPlugin.messageRenderers(context: context)
+    #expect(renderers.contains { $0.id == "mlx-model-not-downloaded" })
+
+    let renderer = renderers.first { $0.id == "mlx-model-not-downloaded" }
+    #expect(renderer?.order == 310, "应高于核心错误渲染器 (300)")
+}
+
+@MainActor
+@Test func mlxRendererSelectsOnlyModelNotDownloadedErrors() {
+    let context = LumiPluginContext(
+        activeSectionID: "test",
+        activeSectionTitle: "Test"
+    )
+    let renderer = MLXLumiPlugin
+        .messageRenderers(context: context)
+        .first { $0.id == "mlx-model-not-downloaded" }!
+
+    let notDownloaded = LumiChatMessage(
+        conversationID: UUID(),
+        role: .error,
+        content: "",
+        providerID: "mlx",
+        modelName: "mlx-community/Qwen3.5-0.8B-OptiQ-4bit",
+        isError: true,
+        renderKind: "mlx-model-not-downloaded"
+    )
+    #expect(renderer.canRender(notDownloaded) == true)
+
+    let otherError = LumiChatMessage(
+        conversationID: UUID(),
+        role: .error,
+        content: "boom",
+        providerID: "mlx",
+        isError: true,
+        renderKind: nil
+    )
+    #expect(renderer.canRender(otherError) == false)
+}

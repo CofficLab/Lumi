@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -33,5 +34,31 @@ public enum ClipboardManagerPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(ClipboardManagerAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "clock.arrow.circlepath",
+                            title: LumiPluginLocalization.string("History", bundle: .module),
+                            description: LumiPluginLocalization.string("Browse and re-copy anything you've copied", bundle: .module)
+                        ),
+                        .init(
+                            icon: "text.append",
+                            title: LumiPluginLocalization.string("Snippets", bundle: .module),
+                            description: LumiPluginLocalization.string("Save reusable text for quick access", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Clipboard from the sidebar to revisit your history.", bundle: .module)
+                )
+            }
+        ]
     }
 }

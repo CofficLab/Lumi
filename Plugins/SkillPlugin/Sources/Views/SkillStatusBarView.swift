@@ -15,7 +15,7 @@ private enum SkillStatusBarLogging {
 /// 在 Agent 模式底部状态栏显示当前项目的可用 Skill 数量。
 /// 点击弹出 Skill 列表面板。
 /// 当 Skill 数量为 0 时自动隐藏。
-public struct SkillStatusBarView: View {
+public struct SkillStatusBarView: View, SuperLog {
     private let projectPath: String
     @State private var skills: [SkillMetadata] = []
     @State private var refreshTask: Task<Void, Never>?
@@ -65,11 +65,11 @@ public struct SkillStatusBarView: View {
     private func refreshSkills() {
         let projectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         if SkillStatusBarLogging.verbose {
-            SkillStatusBarLogging.logger.info("刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            SkillStatusBarLogging.logger.info("\(Self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
         guard !projectPath.isEmpty else {
             if SkillStatusBarLogging.verbose {
-                SkillStatusBarLogging.logger.info("项目路径为空，清空 Skill 列表")
+                SkillStatusBarLogging.logger.info("\(Self.t)项目路径为空，清空 Skill 列表")
             }
             refreshTask?.cancel()
             refreshTask = nil
@@ -87,7 +87,7 @@ public struct SkillStatusBarView: View {
                 skills = loaded
             }
             if SkillStatusBarLogging.verbose {
-                SkillStatusBarLogging.logger.info("刷新完成，找到 \(loaded.count) 个 Skill")
+                SkillStatusBarLogging.logger.info("\(Self.t)刷新完成，找到 \(loaded.count) 个 Skill")
             }
         }
     }

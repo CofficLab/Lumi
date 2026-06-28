@@ -94,6 +94,12 @@
             "state": "translated",
             "value": "Dracula Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dracula Theme"
+          }
         }
       }
     }

@@ -1,10 +1,11 @@
 import AppKit
+import SuperLogKit
 import EditorChatInputKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-public struct InputView: View {
+public struct InputView: View, SuperLog {
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var projectVM: WindowProjectVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme

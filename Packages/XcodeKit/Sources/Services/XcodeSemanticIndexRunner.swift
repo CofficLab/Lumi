@@ -1,7 +1,8 @@
 import Foundation
 import os
+import SuperLogKit
 
-enum XcodeSemanticIndexRunner {
+enum XcodeSemanticIndexRunner: SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index")
     private static let fallbackFailureReason = "Unable to build semantic index"
 
@@ -84,48 +85,157 @@ enum XcodeSemanticIndexRunner {
 
         let buildSucceeded = await runXcodeBuildCapturingLog(request: request, logURL: logURL)
         guard buildSucceeded else {
-            logger.error("Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
+            logger.error("\(Self.t)Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
             return failureReasonFromBuildLog(logURL) ?? "xcodebuild failed"
         }
 
-        // Try parsing from the derived-data build root first (binary xcactivitylog extraction).
+        // Parse the freshly built (incremental) result into a staging file, then **merge** it onto the
+        // existing `.compile`. The build is incremental, so the parsed result only contains the files
+        // that were recompiled; merging preserves the entries for skipped files (and the scheme
+        // module, if its target wasn't rebuilt) instead of clobbering them.
         //
-        // Write to a temp file and only promote it to `.compile` once validated: on some Xcode
-        // versions the xcactivitylog extractor silently yields an *empty* database (exit 0, zero
-        // entries). Parsing straight into `.compile` would clobber a good database with that empty
-        // result, so we keep `.compile` untouched until the text-log fallback (below) succeeds.
+        // We still stage before promoting: on some Xcode versions the xcactivitylog extractor silently
+        // yields an *empty* database (exit 0, zero entries). `compileDatabaseHasEntries` guards against
+        // merging that empty result on top of a good database.
+        let stagingURL = request.storeDirectory.appendingPathComponent(".compile.parse-s.tmp")
+        defer { try? FileManager.default.removeItem(at: stagingURL) }
+
+        let parsedFromDerivedData: Bool
         if let buildRoot = discoverBuildRoot(in: request.derivedDataDirectory) {
-            let stagingURL = request.storeDirectory.appendingPathComponent(".compile.parse-s.tmp")
-            let derivedParse = await runCommand(
+            parsedFromDerivedData = await runCommand(
                 executablePath: request.xcodeBuildServerPath,
                 arguments: ["parse", "-s", buildRoot, "-o", stagingURL.path],
                 workingDirectory: request.storeDirectory
             )
-            if derivedParse, await CompileDatabaseValidator.validateForPromotion(at: stagingURL, scheme: request.scheme) == nil {
-                try? FileManager.default.removeItem(at: compileURL)
-                if (try? FileManager.default.moveItem(at: stagingURL, to: compileURL)) != nil {
-                    return nil
-                }
-            } else if derivedParse {
-                logger.error("Semantic index parse(-s) produced invalid compile DB; falling back to log parse")
-            }
-            try? FileManager.default.removeItem(at: stagingURL)
+        } else {
+            parsedFromDerivedData = false
         }
 
-        let parseResult = await runCommandCapturingOutput(
-            executablePath: request.xcodeBuildServerPath,
-            arguments: ["parse", "-o", compileURL.path, logURL.path],
-            workingDirectory: request.storeDirectory
-        )
-        if parseResult.succeeded, let issue = await CompileDatabaseValidator.validateForPromotion(at: compileURL, scheme: request.scheme) {
+        var stagingURLToUse = stagingURL
+        if !parsedFromDerivedData {
+            // Fall back to parsing the text build log into the staging file.
+            let parseResult = await runCommandCapturingOutput(
+                executablePath: request.xcodeBuildServerPath,
+                arguments: ["parse", "-o", stagingURL.path, logURL.path],
+                workingDirectory: request.storeDirectory
+            )
+            guard parseResult.succeeded else {
+                let parseMessage = normalizedFailureReason(parseResult.output)
+                return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
+            }
+            stagingURLToUse = stagingURL
+        } else if !compileDatabaseHasEntries(at: stagingURLToUse) {
+            // The derived-data parse silently produced an empty database — fall back to the text log.
+            logger.error("\(Self.t)Semantic index parse(-s) produced empty compile DB; falling back to log parse")
+            let parseResult = await runCommandCapturingOutput(
+                executablePath: request.xcodeBuildServerPath,
+                arguments: ["parse", "-o", stagingURL.path, logURL.path],
+                workingDirectory: request.storeDirectory
+            )
+            guard parseResult.succeeded else {
+                let parseMessage = normalizedFailureReason(parseResult.output)
+                return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
+            }
+        }
+
+        guard compileDatabaseHasEntries(at: stagingURLToUse) else {
+            return "semantic compile database is empty after parse"
+        }
+
+        // Merge the staged (incremental) result into the existing `.compile`. On the first build there
+        // is no existing database, so this promotes the staged result as-is.
+        let existingURL = request.storeDirectory.appendingPathComponent(".compile.existing.tmp")
+        if FileManager.default.fileExists(atPath: compileURL.path) {
+            try? FileManager.default.removeItem(at: existingURL)
+            try? FileManager.default.copyItem(at: compileURL, to: existingURL)
+        } else {
+            try? FileManager.default.removeItem(at: existingURL)
+        }
+        defer { try? FileManager.default.removeItem(at: existingURL) }
+
+        guard mergeCompileDatabase(new: stagingURLToUse, existing: existingURL, into: compileURL) else {
+            return "semantic compile database merge failed"
+        }
+
+        // Validate the *merged* database for the scheme module: it must include the scheme's own
+        // target, whether provided by this incremental parse or retained from a previous full build.
+        if let issue = await CompileDatabaseValidator.validateForPromotion(at: compileURL, scheme: request.scheme) {
             return issue
         }
 
-        if parseResult.succeeded {
-            return nil
+        return nil
+    }
+
+    /// Merges a freshly parsed (incremental, possibly partial) compile database on top of an
+    /// existing one, writing the result to `destinationURL`.
+    ///
+    /// Each entry in a `.compile` database describes how a single source file is compiled, keyed by
+    /// its `directory` + `file`. An incremental `xcodebuild build` only re-logs the files that were
+    /// actually recompiled, so the freshly parsed database omits every file in targets Xcode skipped.
+    /// Merging — rather than replacing — keeps those skipped files' (still-valid) entries while
+    /// overwriting the entries for files that were just rebuilt.
+    ///
+    /// - If `existingURL` is missing or unreadable, the new database is promoted as-is (first build).
+    /// - Returns `true` if `destinationURL` was written successfully.
+    @discardableResult
+    static func mergeCompileDatabase(new newURL: URL, existing existingURL: URL, into destinationURL: URL) -> Bool {
+        let fileManager = FileManager.default
+
+        guard let newData = try? Data(contentsOf: newURL),
+              let newEntries = (try? JSONSerialization.jsonObject(with: newData)) as? [[String: Any]],
+              !newEntries.isEmpty else {
+            // Nothing valid parsed; leave whatever exists untouched.
+            return false
         }
-        let parseMessage = normalizedFailureReason(parseResult.output)
-        return parseMessage.isEmpty ? "xcode-build-server parse failed" : parseMessage
+
+        // No existing database to merge into → promote the new (complete-on-first-build) one.
+        guard fileManager.fileExists(atPath: existingURL.path),
+              let existingData = try? Data(contentsOf: existingURL),
+              let existingEntries = (try? JSONSerialization.jsonObject(with: existingData)) as? [[String: Any]] else {
+            try? fileManager.removeItem(at: destinationURL)
+            do {
+                try fileManager.moveItem(at: newURL, to: destinationURL)
+                return true
+            } catch {
+                Self.logger.error("\(Self.t)Compile DB promote failed: \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+        }
+
+        // Key entries by their source-file identity (normalized directory + file).
+        var merged: [String: [String: Any]] = [:]
+        for entry in existingEntries {
+            if let key = compileEntryKey(for: entry) { merged[key] = entry }
+        }
+        for entry in newEntries {
+            // Newly built files overwrite stale entries; previously-unseen files are added.
+            if let key = compileEntryKey(for: entry) { merged[key] = entry }
+        }
+
+        let combined = Array(merged.values)
+        guard let data = try? JSONSerialization.data(withJSONObject: combined, options: [.prettyPrinted]) else {
+            Self.logger.error("\(Self.t)Compile DB merge serialization failed")
+            return false
+        }
+
+        do {
+            try data.write(to: destinationURL, options: .atomic)
+            try? fileManager.removeItem(at: newURL)
+            return true
+        } catch {
+            Self.logger.error("\(Self.t)Compile DB merge write failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    /// Stable identity for a `.compile` entry: the source file it compiles.
+    /// Falls back to `nil` for malformed entries (which are then dropped, since they can't be keyed).
+    private static func compileEntryKey(for entry: [String: Any]) -> String? {
+        let directory = (entry["directory"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let file = (entry["file"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !file.isEmpty else { return nil }
+        let normalizedDirectory = (directory as NSString).standardizingPath
+        return "\(normalizedDirectory)/\(file)"
     }
 
     static func discoverBuildRoot(in derivedDataDirectory: URL) -> String? {
@@ -174,11 +284,16 @@ enum XcodeSemanticIndexRunner {
 
     /// Builds the `xcodebuild` arguments for a semantic-index build.
     ///
-    /// A `clean build` is used on purpose: `xcode-build-server parse` reconstructs `.compile` from
-    /// the build's xcactivitylog, which only contains the targets that were actually (re)compiled.
-    /// On an already-built DerivedData an incremental build would log just a few targets and produce
-    /// a partial compile database, so files in unbuilt targets would fall back and report spurious
-    /// "No such module" errors. Cleaning first guarantees every target is compiled and logged.
+    /// An **incremental** build is used (no `clean`): `xcode-build-server parse` reconstructs `.compile`
+    /// from the build's xcactivitylog, which only contains the targets that were actually (re)compiled.
+    /// Previously a `clean` guaranteed every target was compiled and logged, at the cost of a full
+    /// rebuild — and a very high, sustained CPU spike — on every re-index.
+    ///
+    /// With incremental builds the freshly parsed database is *partial* (only recompiled targets),
+    /// so it is **merged** into the existing `.compile` by `mergeCompileDatabase(new:existing:)`:
+    /// entries for files that were just rebuilt overwrite their stale counterparts, while entries for
+    /// files that were *not* rebuilt (in targets Xcode skipped) are preserved unchanged. This keeps
+    /// the database complete across incremental re-indexes without ever paying for a clean build.
     static func xcodebuildArguments(for request: Request) -> [String] {
         var arguments: [String] = []
         if request.workspaceURL.pathExtension == "xcworkspace" {
@@ -191,7 +306,6 @@ enum XcodeSemanticIndexRunner {
             "-configuration", request.configuration,
             "-destination", request.destinationQuery,
             "-derivedDataPath", request.derivedDataDirectory.path,
-            "clean",
             "build",
         ])
         return arguments
@@ -224,7 +338,7 @@ enum XcodeSemanticIndexRunner {
                             withIntermediateDirectories: true
                         )
                     } catch {
-                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        logger.error("\(Self.t)Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                         continuation.resume(returning: false)
                         return
                     }
@@ -239,7 +353,10 @@ enum XcodeSemanticIndexRunner {
                 }
                 if executablePath.hasSuffix("xcodebuild") {
                     var environment = ProcessInfo.processInfo.environment
-                    environment["IDEBuildOperationMaxNumberOfConcurrentCompileTasks"] = "4"
+                    // Capped at 2 (down from 4) to flatten the CPU spike during indexing builds.
+                    // Semantic indexing is background work; trading a longer build for a lower, less
+                    // noticeable CPU peak keeps the editor responsive while the index is refreshed.
+                    environment["IDEBuildOperationMaxNumberOfConcurrentCompileTasks"] = "2"
                     process.environment = environment
                 }
 
@@ -272,7 +389,7 @@ enum XcodeSemanticIndexRunner {
                 do {
                     try process.run()
                 } catch {
-                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    logger.error("\(Self.t)Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continuation.resume(returning: false)
                     return
                 }
@@ -305,7 +422,7 @@ enum XcodeSemanticIndexRunner {
                             withIntermediateDirectories: true
                         )
                     } catch {
-                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        logger.error("\(Self.t)Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                         continuation.resume(returning: (false, ""))
                         return
                     }
@@ -323,7 +440,7 @@ enum XcodeSemanticIndexRunner {
                 do {
                     try process.run()
                 } catch {
-                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    logger.error("\(Self.t)Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continuation.resume(returning: (false, ""))
                     return
                 }

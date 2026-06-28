@@ -28,7 +28,7 @@ public enum EditorFileTreePanelPlugin: LumiPlugin {
                 title: LumiPluginLocalization.string("Explorer", bundle: .module),
                 systemImage: iconName
             ) {
-                EditorFileTreeView()
+                TreeView()
             }
         ]
     }

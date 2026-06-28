@@ -1,4 +1,5 @@
 import SwiftUI
+import SuperLogKit
 import LumiCoreKit
 import LumiUI
 
@@ -9,7 +10,7 @@ import LumiUI
 ///
 /// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式）。
 /// 工作区干净时，显示项目 Git 概览信息。
-public struct GitCommitDetailView: View {
+public struct GitCommitDetailView: View, SuperLog {
 
     // MARK: - 属性
 
@@ -655,7 +656,7 @@ public struct GitCommitDetailView: View {
                     return try await GitCommitDetailService.loadUncommittedFiles(path: path)
                 } catch {
                     if GitPlugin.verbose {
-                                            GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                                            GitPlugin.logger.error("\(Self.t)加载未提交变更失败: \(error.localizedDescription)")
                     }
                     return []
                 }
@@ -733,7 +734,7 @@ public struct GitCommitDetailView: View {
                 self.errorMessage = error.localizedDescription
 
                 if GitPlugin.verbose {
-                                    GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                                    GitPlugin.logger.error("\(Self.t)加载 commit 详情失败: \(error.localizedDescription)")
                 }
             }
         }
@@ -791,7 +792,7 @@ public struct GitCommitDetailView: View {
                 }
 
                 if GitPlugin.verbose {
-                                    GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                                    GitPlugin.logger.error("\(Self.t)加载文件 diff 失败: \(error.localizedDescription)")
                 }
             }
         }

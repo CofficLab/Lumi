@@ -61,7 +61,7 @@ final class AppService: @unchecked Sendable, SuperLog {
                     do {
                         if Self.verbose {
                             if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(t)正在扫描已安装应用 (force: \(force))")
+                                                            AppManagerPlugin.logger.info("\(self.t)正在扫描已安装应用 (force: \(force))")
                             }
                         }
 
@@ -109,7 +109,7 @@ final class AppService: @unchecked Sendable, SuperLog {
                         let stats = await cacheManager.getStats()
                         if Self.verbose {
                             if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                                                            AppManagerPlugin.logger.info("\(self.t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
                             }
                         }
 
@@ -119,7 +119,7 @@ final class AppService: @unchecked Sendable, SuperLog {
 
                         if Self.verbose {
                             if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                                                            AppManagerPlugin.logger.info("\(self.t)扫描完成: 发现 \(sortedApps.count) 个应用")
                             }
                         }
                         continuation.resume(returning: sortedApps)

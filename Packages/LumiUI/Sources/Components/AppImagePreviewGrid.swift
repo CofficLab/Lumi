@@ -33,7 +33,7 @@ public struct AppImagePreviewGrid: View {
                             )
                     }
                     .buttonStyle(.plain)
-                    .help("点击预览图片")
+                    .help("Click to preview image")
                 }
             }
         }
@@ -62,7 +62,7 @@ private struct AppImagePreviewSheet: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Button("关闭") {
+                Button("Close") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)

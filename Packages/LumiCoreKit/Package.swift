@@ -13,9 +13,15 @@ let package = Package(
             targets: ["LumiCoreKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../SuperLogKit")
+    ],
     targets: [
         .target(
             name: "LumiCoreKit",
+            dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit")
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")

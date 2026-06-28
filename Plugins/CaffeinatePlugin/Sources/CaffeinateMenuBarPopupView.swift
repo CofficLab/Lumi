@@ -13,8 +13,6 @@ struct CaffeinateMenuBarPopupView: View {
         case turnOffDisplay // 防止休眠且立刻关闭屏幕
     }
 
-    @State private var activeAction: QuickActionType? = nil
-
     private let quickDurations: [(title: String, value: TimeInterval)] = [
         (PluginCaffeinateLocalization.string("Indefinite"), 0),
         (PluginCaffeinateLocalization.string("10 Min"), 600),
@@ -22,6 +20,17 @@ struct CaffeinateMenuBarPopupView: View {
         (PluginCaffeinateLocalization.string("2 Hours"), 7200),
         (PluginCaffeinateLocalization.string("5 Hours"), 18000),
     ]
+
+    /// 当前生效的快捷操作，由 manager 的真实状态推导，确保重新打开弹窗时对号仍然正确
+    private var activeAction: QuickActionType? {
+        guard manager.isActive else { return nil }
+        switch manager.mode {
+        case .systemAndDisplay:
+            return .systemAndDisplay
+        case .systemOnly:
+            return .systemOnly
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,12 +44,6 @@ struct CaffeinateMenuBarPopupView: View {
             quickActionsSection
         }
         .padding(.vertical, 8)
-        .onChange(of: manager.isActive) { _, newValue in
-            // 当防休眠状态改变时，同步更新选中状态
-            if !newValue {
-                activeAction = nil
-            }
-        }
     }
 
     // MARK: - 时间选择区块
@@ -102,8 +105,9 @@ struct CaffeinateMenuBarPopupView: View {
                 showCheckmark: false, // 瞬时操作，不显示对号
                 action: {
                     // 立即关闭屏幕，并切换到"允许关闭"模式
+                    // activateAndTurnOffDisplay 内部已将 mode 设为 .systemOnly，
+                    // activeAction 由 manager 状态推导，对号会自动出现，无需手动赋值
                     manager.activateAndTurnOffDisplay(duration: selectedDuration)
-                    activeAction = .systemOnly
                 }
             )
         }
@@ -115,11 +119,10 @@ struct CaffeinateMenuBarPopupView: View {
     private func toggleAction(_ action: QuickActionType) {
         if activeAction == action {
             // 点击已选中的项，取消选中并停止
-            activeAction = nil
+            // activeAction 由 manager 状态推导，deactivate 后会自动清空，无需手动重置
             manager.deactivate()
         } else {
             // 选中新项并启动
-            activeAction = action
             activateAction(action)
         }
     }

@@ -370,6 +370,12 @@
             "state": "translated",
             "value": "聊天附件"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天附件"
+          }
         }
       }
     },
@@ -394,6 +400,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天輸入框"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天輸入框"
@@ -426,6 +438,12 @@
             "state": "translated",
             "value": "帶有編輯器和命令建議的聊天輸入區域。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帶有編輯器和命令建議的聊天輸入區域。"
+          }
         }
       }
     },
@@ -450,6 +468,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat Pending Messages"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Chat Pending Messages"
@@ -512,6 +536,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chat history"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Clear chat history"
@@ -892,6 +922,12 @@
             "state": "translated",
             "value": "Open model selector"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open model selector"
+          }
         }
       }
     },
@@ -950,6 +986,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending chat attachments and sidebar drop handling."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Pending chat attachments and sidebar drop handling."
@@ -1013,6 +1055,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued chat messages above the composer."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Queued chat messages above the composer."
@@ -1491,6 +1539,12 @@
             "state": "translated",
             "value": "Show available commands"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show available commands"
+          }
         }
       }
     },
@@ -1842,38 +1896,74 @@
         }
       }
     },
-    "图片" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image"
+    "图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图片"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
           }
         }
       }
     },
-    "当前模型不支持图片" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The current model does not support images"
+    "当前模型不支持图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current model does not support images"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前模型不支持图片"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前模型不支持图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current model does not support images"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current model does not support images"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current model does not support images"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

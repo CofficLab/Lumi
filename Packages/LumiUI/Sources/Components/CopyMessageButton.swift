@@ -21,7 +21,7 @@ public struct CopyMessageButton: View {
                 Image(systemName: iconName)
                     .font(.system(size: 10, weight: .medium))
                 if showFeedback {
-                    Text("已复制")
+                    Text("Copied")
                         .font(.system(size: 10, weight: .medium))
                 }
             }
@@ -34,7 +34,7 @@ public struct CopyMessageButton: View {
             )
         }
         .buttonStyle(.plain)
-        .help("复制消息内容")
+        .help("Copy message content")
         .onHover { hovering in
             AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering

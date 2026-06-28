@@ -1,12 +1,13 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 
 /// RClickPlugin 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。
 /// 存储位置：AppConfig.getDBFolderURL()/RClickPlugin/settings.plist
-public final class RClickPluginLocalStore: @unchecked Sendable {
+public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick.local-store")
     
     // MARK: - Singleton
@@ -37,7 +38,7 @@ public final class RClickPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create RClick settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create RClick settings directory failed: \(error.localizedDescription)")
         }
     }
     
@@ -108,13 +109,13 @@ public final class RClickPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read RClick settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read RClick settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read RClick settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read RClick settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -127,7 +128,7 @@ public final class RClickPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode RClick settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode RClick settings failed: \(error.localizedDescription)")
             return false
         }
         
@@ -147,7 +148,7 @@ public final class RClickPluginLocalStore: @unchecked Sendable {
             }
             return true
         } catch {
-            Self.logger.error("Persist RClick settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist RClick settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
             return false
         }
@@ -162,7 +163,7 @@ public final class RClickPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt RClick settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt RClick settings failed: \(error.localizedDescription)")
         }
     }
 }

@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import LumiCoreKit
+import WorkspaceFileKit
 
 /// 文件读取工具
 ///
@@ -89,6 +90,17 @@ public struct ReadFileTool: LumiAgentTool {
 
             guard let content = String(data: data, encoding: .utf8) else {
                 return "Error: File content is not valid UTF-8 text."
+            }
+
+            // 记录「已读取」快照：供 edit_file 做乐观并发控制——若文件在读取后被外部修改，
+            // 编辑会被拒绝并提示重新读取，避免基于过期内容覆盖外部改动。
+            let modificationDate = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+            if let modificationDate {
+                ReadFileStateRegistry.shared.recordRead(
+                    conversationID: context.conversationID,
+                    path: url.path,
+                    snapshot: WorkspaceReadFileSnapshot(modificationDate: modificationDate)
+                )
             }
 
             let request = ReadFileLineReader.Request(

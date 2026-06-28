@@ -965,6 +965,12 @@
             "state": "translated",
             "value": "同时处理多个独立任务，互不干扰"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同时处理多个独立任务，互不干扰"
+          }
         }
       }
     },
@@ -1233,6 +1239,12 @@
             "state": "translated",
             "value": "支持本地和云端 LLM，智能处理复杂任务"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持本地和云端 LLM，智能处理复杂任务"
+          }
         }
       }
     },
@@ -1496,6 +1508,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动执行文件操作、命令行、Git 等任务"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "自动执行文件操作、命令行、Git 等任务"

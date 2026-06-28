@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -35,5 +36,31 @@ public enum AppManagerPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(AppManagerAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "square.grid.2x2",
+                            title: PluginAppManagerLocalization.string("Browse apps"),
+                            description: PluginAppManagerLocalization.string("See all installed macOS applications")
+                        ),
+                        .init(
+                            icon: "magnifyingglass",
+                            title: PluginAppManagerLocalization.string("Search"),
+                            description: PluginAppManagerLocalization.string("Find apps by name instantly")
+                        ),
+                    ],
+                    tip: PluginAppManagerLocalization.string("Open App Manager from the sidebar to explore your apps.")
+                )
+            }
+        ]
     }
 }

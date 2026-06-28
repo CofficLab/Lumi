@@ -21,7 +21,7 @@ let package = Package(
                 .product(name: "TreeSitterOCaml", package: "TreeSitterOCaml"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorOCamlPluginTests", dependencies: ["EditorOCamlPlugin"], path: "Tests"),
     ]

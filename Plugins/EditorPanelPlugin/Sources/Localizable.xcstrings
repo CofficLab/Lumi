@@ -60,6 +60,12 @@
             "state": "translated",
             "value": "%lld 個可用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個可用"
+          }
         }
       }
     },
@@ -224,6 +230,12 @@
             "state": "translated",
             "value": "無法預覽圖片"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法預覽圖片"
+          }
         }
       }
     },
@@ -282,6 +294,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代碼操作"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "代碼操作"
@@ -387,142 +405,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "命令面板"
-          }
-        }
-      }
-    },
-    "Current file belongs to multiple targets (%@); semantic results depend on current scheme and configuration.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current file belongs to multiple targets (%1$@); semantic results depend on current scheme and configuration."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前文件属于多个目标（%1$@）；语义结果取决于当前 scheme 和配置。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標（%1$@）；語義結果取決於當前 scheme 和配置。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標（%1$@）；語義結果取決於當前 scheme 和配置。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標（%1$@）；語義結果取決於當前 scheme 和配置。"
-          }
-        }
-      }
-    },
-    "Current file belongs to multiple targets; the editor is currently parsing with '%@' context.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current file belongs to multiple targets; the editor is currently parsing with '%@' context."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前文件属于多个目标；编辑器当前正在使用 '%@' 上下文进行解析。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標；編輯器當前正在使用 '%@' 上下文進行解析。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標；編輯器當前正在使用 '%@' 上下文進行解析。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於多個目標；編輯器當前正在使用 '%@' 上下文進行解析。"
-          }
-        }
-      }
-    },
-    "Current file belongs to target '%@', but current scheme '%@' may not cover it.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current file belongs to target '%1$@', but current scheme '%2$@' may not cover it."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前文件属于目标 '%1$@'，但当前 scheme '%2$@' 可能不包含它。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於目標 '%1$@'，但當前 scheme '%2$@' 可能不包含它。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於目標 '%1$@'，但當前 scheme '%2$@' 可能不包含它。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案屬於目標 '%1$@'，但當前 scheme '%2$@' 可能不包含它。"
-          }
-        }
-      }
-    },
-    "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前文件未綁定到任何編譯 target，跨文件跳轉和診斷可能不可用。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前文件未綁定到任何編譯 target，跨文件跳轉和診斷可能不可用。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前檔案未綁定到任何編譯 target，跨檔案跳轉和診斷可能不可用。"
           }
         }
       }
@@ -1062,6 +944,12 @@
             "state": "translated",
             "value": "Preferred"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred"
+          }
         }
       }
     },
@@ -1129,40 +1017,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "大檔案預覽已截斷"
-          }
-        }
-      }
-    },
-    "Project semantic context is not ready, cross-file semantic capabilities may be unstable.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project semantic context is not ready, cross-file semantic capabilities may be unstable."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目语义上下文未就绪，跨文件语义能力可能不稳定。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目語義上下文未就緒，跨文件語義能力可能不穩定。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目語義上下文未就緒，跨文件語義能力可能不穩定。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目語義上下文未就緒，跨檔案語義能力可能不穩定。"
           }
         }
       }

@@ -1,10 +1,11 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// Agent 规则插件本地存储
 ///
 /// 负责管理插件的配置持久化
-public final class AgentRulesPluginLocalStore: @unchecked Sendable {
+public final class AgentRulesPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-rules.local-store")
 
     public static let shared = AgentRulesPluginLocalStore()
@@ -47,7 +48,7 @@ public final class AgentRulesPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDir, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create Agent Rules settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create Agent Rules settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -91,13 +92,13 @@ public final class AgentRulesPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read Agent Rules settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read Agent Rules settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read Agent Rules settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read Agent Rules settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -109,7 +110,7 @@ public final class AgentRulesPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode Agent Rules settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode Agent Rules settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -124,7 +125,7 @@ public final class AgentRulesPluginLocalStore: @unchecked Sendable {
             }
             return true
         } catch {
-            Self.logger.error("Persist Agent Rules settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist Agent Rules settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -139,7 +140,7 @@ public final class AgentRulesPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt Agent Rules settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt Agent Rules settings failed: \(error.localizedDescription)")
         }
     }
 }

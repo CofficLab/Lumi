@@ -80,7 +80,9 @@ public struct EditFileTool: LumiAgentTool {
                 filePath: filePath,
                 oldString: oldString,
                 newString: newString,
-                replaceAll: replaceAll
+                replaceAll: replaceAll,
+                conversationID: context.conversationID,
+                readState: ReadFileStateRegistry.shared
             )
             switch outcome {
             case .createdNewFile:

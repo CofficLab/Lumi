@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterDart", package: "TreeSitterDart"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorDartPluginTests", dependencies: ["EditorDartPlugin"], path: "Tests"),
     ]

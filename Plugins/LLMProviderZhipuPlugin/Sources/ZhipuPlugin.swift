@@ -7,14 +7,17 @@ public enum ZhipuPlugin: LumiPlugin {
     public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.zhipu",
-        displayName: LumiPluginLocalization.string("智谱", bundle: .module),
+        displayName: LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module),
         description: LumiPluginLocalization.string("Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
         order: 110
     )
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [ZhipuProvider()]
+        [
+            ZhipuProvider(),
+            ZhipuAPIProvider()
+        ]
     }
 
     @MainActor

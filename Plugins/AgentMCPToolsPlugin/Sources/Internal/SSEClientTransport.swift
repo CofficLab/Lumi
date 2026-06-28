@@ -1,9 +1,10 @@
 import Foundation
+import SuperLogKit
 import HttpKit
 import Logging
 import MCP
 
-public actor SSEClientTransport: Transport {
+public actor SSEClientTransport: Transport, SuperLog {
     public let url: URL
     public let headers: [String: String]
 
@@ -39,7 +40,7 @@ public actor SSEClientTransport: Transport {
                 if let endpoint = URL(string: endpointString, relativeTo: self.url) {
                     self.endpointURL = endpoint
                 } else {
-                    self.logger.error("Invalid MCP SSE endpoint URL: \(endpointString)")
+                    self.logger.error("\(Self.t)Invalid MCP SSE endpoint URL: \(endpointString)")
                 }
                 return true
             }

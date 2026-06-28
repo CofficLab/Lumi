@@ -1,5 +1,5 @@
 import Combine
-import OSLog
+import os
 import SwiftUI
 
 /// 日志管理器，用于收集和展示日志
@@ -18,6 +18,9 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
 
     /// 用于同步访问的锁
     private let lock = NSLock()
+
+    /// 统一日志记录器（遵循子系统规范 com.coffic.lumi，禁止使用 os_log）
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "magic-logger")
 
     public init(app: String = "Default") {
         self.app = app
@@ -139,22 +142,19 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
             }
         }
 
-        var level = OSLogType.debug
-
-        switch entry.level {
-        case .info:
-            level = .info
-        case .warning:
-            level = .info
-        case .error:
-            level = .error
-        case .debug:
-            level = .debug
-        }
-
         var title = "\(entry.caller.withContextEmoji):\(entry.line ?? 0)"
         title = title.padding(toLength: 30, withPad: " ", startingAt: 0)
 
-        os_log(level, "\(Thread.currentQosDescription) | \(title) | \(entry.originalMessage.withContextEmoji)")
+        let formatted = "\(Thread.currentQosDescription) | \(title) | \(entry.originalMessage.withContextEmoji)"
+        switch entry.level {
+        case .info:
+            Self.logger.info("\(formatted, privacy: .public)")
+        case .warning:
+            Self.logger.warning("\(formatted, privacy: .public)")
+        case .error:
+            Self.logger.error("\(formatted, privacy: .public)")
+        case .debug:
+            Self.logger.debug("\(formatted, privacy: .public)")
+        }
     }
 }

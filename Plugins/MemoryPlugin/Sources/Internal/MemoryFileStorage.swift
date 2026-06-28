@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// 记忆文件存储服务
 ///
@@ -17,9 +18,9 @@ import os
 ///         ├── MEMORY.md
 ///         └── project-auth.md
 /// ```
-public actor MemoryFileStorage {
+public actor MemoryFileStorage: SuperLog {
     private static let logger = Logger(
-        subsystem: "com.coffic.lumi.memorykit", category: "storage")
+        subsystem: "com.coffic.lumi", category: "plugin.memory.storage")
 
     private let fileManager = FileManager.default
     private let memoryRoot: URL
@@ -48,7 +49,7 @@ public actor MemoryFileStorage {
         try? fileManager.createDirectory(at: projectsDir, withIntermediateDirectories: true)
 
         if verbose {
-            Self.logger.info("记忆存储服务初始化：\(rootURL.path)")
+            Self.logger.info("\(Self.t)记忆存储服务初始化：\(rootURL.path)")
         }
     }
 
@@ -158,7 +159,7 @@ public actor MemoryFileStorage {
         try await rebuildIndex(scope: scope)
 
         if verbose {
-            Self.logger.info("创建记忆：\(id) [\(type.rawValue)] 作用域=\(self.scopeDescription(scope))")
+            Self.logger.info("\(Self.t)创建记忆：\(id) [\(type.rawValue)] 作用域=\(self.scopeDescription(scope))")
         }
 
         return item
@@ -219,7 +220,7 @@ public actor MemoryFileStorage {
         try await rebuildIndex(scope: scope)
 
         if verbose {
-            Self.logger.info("更新记忆：\(id)")
+            Self.logger.info("\(Self.t)更新记忆：\(id)")
         }
 
         return item
@@ -235,7 +236,7 @@ public actor MemoryFileStorage {
         try await rebuildIndex(scope: scope)
 
         if verbose {
-            Self.logger.info("删除记忆：\(id)")
+            Self.logger.info("\(Self.t)删除记忆：\(id)")
         }
     }
 
@@ -259,7 +260,7 @@ public actor MemoryFileStorage {
                 items.append(item)
             } catch {
                 if verbose {
-                    Self.logger.info("解析记忆文件失败：\(filename) - \(error.localizedDescription)")
+                    Self.logger.info("\(Self.t)解析记忆文件失败：\(filename) - \(error.localizedDescription)")
                 }
             }
         }
@@ -346,7 +347,7 @@ public actor MemoryFileStorage {
         try indexContent.write(to: url, atomically: true, encoding: .utf8)
 
         if verbose {
-            Self.logger.info("重建索引：\(memories.count) 条记忆")
+            Self.logger.info("\(Self.t)重建索引：\(memories.count) 条记忆")
         }
     }
 

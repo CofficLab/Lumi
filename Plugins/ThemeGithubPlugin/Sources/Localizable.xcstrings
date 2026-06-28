@@ -94,6 +94,12 @@
             "state": "translated",
             "value": "GitHub Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Theme"
+          }
         }
       }
     }

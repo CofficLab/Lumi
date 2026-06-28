@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 import SuperLogKit
 
-struct DockerImagesView: View {
+struct DockerImagesView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @StateObject private var viewModel = DockerManagerViewModel()
@@ -206,7 +206,7 @@ struct DockerImagesView: View {
                 Task { await viewModel.loadImage(from: url) }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.error("Import failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("\(Self.t)Import failed: \(error.localizedDescription)")
                 }
                 viewModel.reportFilePanelError(LumiPluginLocalization.string("Import failed", bundle: .module), error: error)
             }
@@ -219,7 +219,7 @@ struct DockerImagesView: View {
                 }
             case let .failure(error):
                 if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.error("Export failed: \(error.localizedDescription)")
+                    DockerManagerPlugin.logger.error("\(Self.t)Export failed: \(error.localizedDescription)")
                 }
                 viewModel.reportFilePanelError(LumiPluginLocalization.string("Export failed", bundle: .module), error: error)
             }

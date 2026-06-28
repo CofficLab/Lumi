@@ -12,10 +12,15 @@ let package = Package(
             targets: ["GitBranchMonitorKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../SuperLogKit")
+    ],
     targets: [
         .target(
             name: "GitBranchMonitorKit",
-            dependencies: [],
+            dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit")
+            ],
             path: "Sources"
         ),
         .testTarget(

@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// tsconfig.json 中 Vue 相关配置与路径别名解析
 ///
@@ -7,7 +8,7 @@ import os
 /// 1. 解析 `tsconfig.json`（及 `jsconfig.json`）中的 `compilerOptions.paths`，将 `@/*` 这类别名映射为实际文件路径
 /// 2. 读取 `vueCompilerOptions` 中的 Volar 专用配置
 /// 3. 为组件导入解析、跳转定义、自动导入等功能提供路径解析服务
-struct TSConfigVueExtender: Sendable {
+struct TSConfigVueExtender: Sendable, SuperLog {
     nonisolated static let emoji = "📐"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -98,7 +99,7 @@ struct TSConfigVueExtender: Sendable {
         let jsx = compilerOptions["jsx"] as? String
 
         if EditorVuePlugin.verbose {
-            logger.info("\(emoji) 解析 tsconfig: \(configPath), baseUrl=\(baseUrl ?? "nil"), paths=\(paths.count), vueOptions=\(vueCompilerOptions.count)")
+            logger.info("\(Self.t)\(emoji) 解析 tsconfig: \(configPath), baseUrl=\(baseUrl ?? "nil"), paths=\(paths.count), vueOptions=\(vueCompilerOptions.count)")
         }
 
         return TSConfigInfo(

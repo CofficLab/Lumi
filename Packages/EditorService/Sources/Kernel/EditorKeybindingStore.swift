@@ -1,6 +1,7 @@
 import EditorKernel
 import Foundation
 import os
+import SuperLogKit
 import SwiftUI
 
 private let editorKeybindingsFileName = "editor_keybindings.json"
@@ -26,7 +27,7 @@ private let corruptEditorKeybindingsFileName = "editor_keybindings.corrupt.json"
 ///
 /// 优先级：用户自定义 > 默认绑定
 @MainActor
-public final class EditorKeybindingStore: ObservableObject {
+public final class EditorKeybindingStore: ObservableObject, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.keybinding-store")
 
     public static let shared = EditorKeybindingStore()
@@ -140,7 +141,7 @@ public final class EditorKeybindingStore: ObservableObject {
             }
             customBindings = bindings
         } catch {
-            Self.logger.error("Load editor keybindings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load editor keybindings failed: \(error.localizedDescription)")
             quarantineCorruptBindings(at: url)
         }
     }
@@ -156,7 +157,7 @@ public final class EditorKeybindingStore: ObservableObject {
             try data.write(to: url, options: .atomic)
             return true
         } catch {
-            Self.logger.error("Save editor keybindings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Save editor keybindings failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -175,7 +176,7 @@ public final class EditorKeybindingStore: ObservableObject {
             }
             try FileManager.default.moveItem(at: url, to: corruptURL)
         } catch {
-            Self.logger.error("Quarantine corrupt editor keybindings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt editor keybindings failed: \(error.localizedDescription)")
         }
     }
 }

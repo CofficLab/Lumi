@@ -1,0 +1,178 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Smart Open" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Smart Open" }
+        },
+        "zh-Hans" : {
+          "stringUnit" : { "state" : "translated", "value" : "智能打开" }
+        },
+        "zh-Hant" : {
+          "stringUnit" : { "state" : "translated", "value" : "智能打開" }
+        },
+        "zh-HK" : {
+          "stringUnit" : { "state" : "translated", "value" : "智能打開" }
+        },
+        "zh-TW" : {
+          "stringUnit" : { "state" : "translated", "value" : "智慧開啟" }
+        }
+      }
+    },
+    "Open in Browser" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Browser" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在浏览器中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在瀏覽器中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在瀏覽器中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在瀏覽器中開啟" } }
+      }
+    },
+    "Reveal in Finder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reveal in Finder" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在访达中显示" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在訪客中顯示" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在訪客中顯示" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "於 Finder 顯示" } }
+      }
+    },
+    "Open in Xcode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Xcode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Xcode 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Xcode 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Xcode 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Xcode 中開啟" } }
+      }
+    },
+    "Open in VS Code" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in VS Code" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 VS Code 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 VS Code 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 VS Code 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 VS Code 中開啟" } }
+      }
+    },
+    "Open in Cursor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Cursor" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Cursor 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Cursor 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Cursor 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Cursor 中開啟" } }
+      }
+    },
+    "Open in Trae" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Trae" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Trae 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Trae 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Trae 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Trae 中開啟" } }
+      }
+    },
+    "Open in Antigravity" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Antigravity" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Antigravity 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Antigravity 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Antigravity 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Antigravity 中開啟" } }
+      }
+    },
+    "Open in Chrome" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Chrome" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Chrome 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Chrome 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Chrome 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Chrome 中開啟" } }
+      }
+    },
+    "Open in Safari" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Safari" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Safari 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Safari 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Safari 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Safari 中開啟" } }
+      }
+    },
+    "Open in Arc" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Arc" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Arc 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Arc 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Arc 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Arc 中開啟" } }
+      }
+    },
+    "Open in Firefox" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Firefox" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Firefox 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Firefox 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Firefox 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Firefox 中開啟" } }
+      }
+    },
+    "Open in Edge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Edge" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Edge 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Edge 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Edge 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Edge 中開啟" } }
+      }
+    },
+    "Open in Terminal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Terminal" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在终端中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在終端機中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在終端機中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在終端機中開啟" } }
+      }
+    },
+    "Open in Preview" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Preview" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在预览中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在預覽中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在預覽中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "於預覽程式開啟" } }
+      }
+    },
+    "Open in TextEdit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in TextEdit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在文本编辑器中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在文字編輯器中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在文字編輯器中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "於文字編輯器開啟" } }
+      }
+    },
+    "Open in GitHub Desktop" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in GitHub Desktop" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 GitHub Desktop 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 GitHub Desktop 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 GitHub Desktop 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 GitHub Desktop 中開啟" } }
+      }
+    },
+    "Open in Kiro" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Kiro" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在 Kiro 中打开" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "在 Kiro 中打開" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "在 Kiro 中開啟" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "在 Kiro 中開啟" } }
+      }
+    }
+  },
+  "version" : "1.1"
+}

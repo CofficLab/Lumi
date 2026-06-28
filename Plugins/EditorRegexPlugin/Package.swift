@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterRegex", package: "tree-sitter-regex"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorRegexPluginTests", dependencies: ["EditorRegexPlugin"], path: "Tests"),
     ]

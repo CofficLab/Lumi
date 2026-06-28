@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import os
+import SuperLogKit
 
 /// Vue 语言集成能力
 ///
@@ -13,7 +14,7 @@ import os
 /// 3. `initializationOptions()` 注入 Volar 混合模式配置和 Vue 版本
 /// 4. 内核 LSPService 负责实际的进程启动和 JSON-RPC 通信
 @MainActor
-final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapability {
+final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapability, SuperLog {
     nonisolated static let emoji = "🟢"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -58,19 +59,19 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
             return false
         case .nodeNotFound:
             if EditorVuePlugin.verbose {
-                Self.logger.warning("\(Self.emoji) Node.js 未找到，Volar 不可用")
+                Self.logger.warning("\(Self.t)\(Self.emoji) Node.js 未找到，Volar 不可用")
             }
             // 仍然返回 true，让基础静态补全功能工作
             // LSP 服务启动会失败但不会阻塞编辑器
             return true
         case .volarNotFound:
             if EditorVuePlugin.verbose {
-                Self.logger.warning("\(Self.emoji) Volar 未安装，降级为静态补全")
+                Self.logger.warning("\(Self.t)\(Self.emoji) Volar 未安装，降级为静态补全")
             }
             return true
         case .vueNotFound:
             if EditorVuePlugin.verbose {
-                Self.logger.warning("\(Self.emoji) Vue 依赖未找到，降级为静态补全")
+                Self.logger.warning("\(Self.t)\(Self.emoji) Vue 依赖未找到，降级为静态补全")
             }
             return true
         }
@@ -101,7 +102,7 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
         // 尝试从 VolarServiceManager 获取完整配置
         if let config = VolarServiceManager.serverConfig(projectPath: projectPath) {
             if EditorVuePlugin.verbose {
-                Self.logger.info("\(Self.emoji) 使用 VolarServiceManager 配置: vue=\(config.vueVersion.rawValue), hybrid=\(config.hybridMode)")
+                Self.logger.info("\(Self.t)\(Self.emoji) 使用 VolarServiceManager 配置: vue=\(config.vueVersion.rawValue), hybrid=\(config.hybridMode)")
             }
             return config.initializationOptions
         }
@@ -110,7 +111,7 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
         let version = VueVersionDetector.detect(at: projectPath)
 
         if EditorVuePlugin.verbose {
-            Self.logger.info("\(Self.emoji) 使用降级配置: vue=\(version.rawValue)")
+            Self.logger.info("\(Self.t)\(Self.emoji) 使用降级配置: vue=\(version.rawValue)")
         }
 
         return [

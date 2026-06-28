@@ -83,7 +83,7 @@ public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
             return formatIssueDetail(issue)
         } catch {
             if GitHubPlugin.verbose {
-                            GitHubPlugin.logger.error("获取 Issue 详情失败：\(error.localizedDescription)")
+                            GitHubPlugin.logger.error("\(self.t)获取 Issue 详情失败：\(error.localizedDescription)")
             }
             return "获取 Issue 详情失败：\(error.localizedDescription)"
         }

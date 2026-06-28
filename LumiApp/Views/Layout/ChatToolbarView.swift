@@ -6,7 +6,7 @@ struct ChatToolbarView: View {
     let items: [LumiChatSectionToolbarBarItem]
 
     var body: some View {
-        AppBreadcrumbBarContainer {
+        AppBreadcrumbBarContainer(showsBottomShadow: true) {
             HStack(alignment: .center, spacing: 8) {
                 Spacer(minLength: 0)
 

@@ -199,6 +199,12 @@
             "state" : "translated",
             "value" : "Contributes Aliyun CodingPlan models and Aliyun-specific chat error renderers."
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes Aliyun CodingPlan models and Aliyun-specific chat error renderers."
+          }
         }
       }
     },
@@ -645,6 +651,40 @@
         }
       }
     },
+    "This model is not included in your Coding Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This model is not included in your Coding Plan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在当前 Coding Plan 支持范围内"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Coding Plan 支援範圍內"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Coding Plan 支援範圍內"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此模型不在目前 Coding Plan 支援範圍內"
+          }
+        }
+      }
+    },
     "Toggle raw message" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -711,40 +751,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展開/收起請求與回應詳情"
-          }
-        }
-      }
-    },
-    "This model is not included in your Coding Plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This model is not included in your Coding Plan"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在当前 Coding Plan 支持范围内"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Coding Plan 支援範圍內"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Coding Plan 支援範圍內"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此模型不在目前 Coding Plan 支援範圍內"
           }
         }
       }
@@ -838,6 +844,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里云 DashScope Coding Plan"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "阿里云 DashScope Coding Plan"

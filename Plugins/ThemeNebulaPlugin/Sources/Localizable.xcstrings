@@ -96,6 +96,12 @@
             "state": "translated",
             "value": "星雲粉 Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "星雲粉 Theme"
+          }
         }
       }
     },
@@ -120,6 +126,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浪漫的星雲粉，柔和而溫暖"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "浪漫的星雲粉，柔和而溫暖"

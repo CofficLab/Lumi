@@ -1,8 +1,9 @@
 import Foundation
+import SuperLogKit
 import Logging
 import MCP
 
-public actor SubprocessTransport: Transport {
+public actor SubprocessTransport: Transport, SuperLog {
     private final class LockedDataBuffer: @unchecked Sendable {
         private let lock = NSLock()
         private var data = Data()
@@ -86,7 +87,7 @@ public actor SubprocessTransport: Transport {
         do {
             try process.run()
         } catch {
-            logger.error("Failed to run MCP subprocess \(executablePath): \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to run MCP subprocess \(executablePath): \(error.localizedDescription)")
             throw error
         }
     }
@@ -123,7 +124,7 @@ public actor SubprocessTransport: Transport {
                 }
             }
         } catch {
-            logger.error("Failed to read MCP subprocess stdout: \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to read MCP subprocess stdout: \(error.localizedDescription)")
             messageContinuation.finish(throwing: error)
             return
         }
@@ -135,10 +136,10 @@ public actor SubprocessTransport: Transport {
         let handle = pipe.fileHandleForReading
         do {
             for try await line in handle.bytes.lines {
-                logger.debug("[MCP stderr] \(line)")
+                logger.debug("\(Self.t)[MCP stderr] \(line)")
             }
         } catch {
-            logger.error("Failed to read MCP subprocess stderr: \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to read MCP subprocess stderr: \(error.localizedDescription)")
         }
     }
 

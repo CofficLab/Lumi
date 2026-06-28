@@ -7,6 +7,7 @@ enum RAGPluginService {
         databaseDirectoryProvider: {
             RAGPluginRuntime.databaseDirectoryProvider()
         },
+        logger: OSLogRAGLogger(),
         onProgress: { event in
             NotificationCenter.postRAGIndexProgress(event)
         }
@@ -25,9 +26,6 @@ enum RAGPluginService {
 }
 
 extension RAGPlugin {
-    static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
-    static var verbose: Bool { false }
-
     @MainActor
     static func getService() -> RAGService {
         RAGPluginService.getService()

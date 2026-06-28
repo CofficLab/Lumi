@@ -135,7 +135,7 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
                 try JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
                 return true
             } catch {
-                Self.logger.error("Persist GPU history failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Persist GPU history failed: \(error.localizedDescription)")
                 return false
             }
         }
@@ -154,7 +154,7 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
             let cutoff = Date().timeIntervalSince1970 - GPUTimeRange.month1.duration
             longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {
-            Self.logger.error("Load GPU history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load GPU history failed: \(error.localizedDescription)")
             quarantineCorruptHistory()
         }
     }
@@ -167,7 +167,7 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
             do {
                 try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             } catch {
-                Self.logger.error("Create GPU history directory failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Create GPU history directory failed: \(error.localizedDescription)")
             }
         }
     }
@@ -185,7 +185,7 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
             }
             try fileManager.moveItem(at: sourceURL, to: quarantineURL)
         } catch {
-            Self.logger.error("Quarantine corrupt GPU history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt GPU history failed: \(error.localizedDescription)")
         }
     }
 }

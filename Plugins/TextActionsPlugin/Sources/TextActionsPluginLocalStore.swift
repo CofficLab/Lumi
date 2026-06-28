@@ -1,8 +1,9 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 
-public final class TextActionsPluginLocalStore: @unchecked Sendable {
+public final class TextActionsPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.text-actions.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "TextActionsPluginLocalStore.queue", qos: .userInitiated)
@@ -23,7 +24,7 @@ public final class TextActionsPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create text actions settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create text actions settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -51,13 +52,13 @@ public final class TextActionsPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read text actions settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read text actions settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read text actions settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read text actions settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -69,7 +70,7 @@ public final class TextActionsPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode text actions settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode text actions settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -81,7 +82,7 @@ public final class TextActionsPluginLocalStore: @unchecked Sendable {
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
             return true
         } catch {
-            Self.logger.error("Persist text actions settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist text actions settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -96,7 +97,7 @@ public final class TextActionsPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt text actions settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt text actions settings failed: \(error.localizedDescription)")
         }
     }
 

@@ -4,7 +4,7 @@ import os
 import SuperLogKit
 import XcodeKit
 
-enum EditorXcodeProjectPreloader {
+enum EditorXcodeProjectPreloader: SuperLog {
     private static let logPrefix = "🚀 "
 
     public static func filterXcodeProjects(_ projects: [Project]) async -> [Project] {
@@ -12,7 +12,7 @@ enum EditorXcodeProjectPreloader {
             projects.filter { project in
                 let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(URL(fileURLWithPath: project.path))
                 if SwiftPluginLog.verbose {
-                    SwiftPluginLog.logger.info("\(logPrefix)检查最近项目：\(project.name) -> isXcodeProject=\(isXcodeProject)")
+                    SwiftPluginLog.logger.info("\(Self.t)\(logPrefix)检查最近项目：\(project.name) -> isXcodeProject=\(isXcodeProject)")
                 }
                 return isXcodeProject
             }
@@ -32,7 +32,7 @@ enum EditorXcodeProjectPreloader {
             return false
         }
         if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("\(logPrefix)开始预加载项目：\(project.name)，path=\(project.path)")
+            SwiftPluginLog.logger.info("\(Self.t)\(logPrefix)开始预加载项目：\(project.name)，path=\(project.path)")
         }
         guard let workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: project.path) else {
             return false

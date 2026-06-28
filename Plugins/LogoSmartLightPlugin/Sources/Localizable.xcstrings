@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Smart Light Logo" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Smart Light Logo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "智能光效标志" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "智慧光效標誌" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "智慧光效標誌" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "智慧光效標誌" } }
+      }
+    },
+    "Default animated logo with smart light effect" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Default animated logo with smart light effect" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "带智能光效的默认动画标志" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "帶智慧光效的預設動畫標誌" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "帶智慧光效的預設動畫標誌" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "帶智慧光效的預設動畫標誌" } }
+      }
+    }
+  },
+  "version" : "1.1"
+}

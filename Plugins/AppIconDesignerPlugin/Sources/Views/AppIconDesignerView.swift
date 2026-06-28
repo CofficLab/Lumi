@@ -96,7 +96,7 @@ public struct AppIconDesignerView: View {
             Button {
                 loadDocument()
             } label: {
-                Image(systemName: "doc.badge.arrow.down")
+                Image(systemName: "arrow.down.doc")
             }
             .help(L.string("Load document JSON"))
 
@@ -665,7 +665,7 @@ public struct AppIconDesignerView: View {
             Button {
                 loadDocument()
             } label: {
-                Label(L.string("Load Document"), systemImage: "doc.badge.arrow.down")
+                Label(L.string("Load Document"), systemImage: "arrow.down.doc")
             }
             .disabled(isExportingSVG)
         }

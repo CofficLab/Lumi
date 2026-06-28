@@ -33,7 +33,7 @@ let package = Package(
                 "TreeSitterYAMLScannerFix",
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorYAMLPluginTests", dependencies: ["EditorYAMLPlugin"], path: "Tests"),
     ]

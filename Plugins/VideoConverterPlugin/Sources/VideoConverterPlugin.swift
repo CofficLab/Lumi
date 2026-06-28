@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// Video Converter Plugin
@@ -31,6 +32,32 @@ public enum VideoConverterPlugin: LumiPlugin {
                 systemImage: iconName
             ) {
                 VideoConverterMainView()
+            }
+        ]
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "arrow.triangle.2.circlepath",
+                            title: VideoConverterLocalization.string("Any format"),
+                            description: VideoConverterLocalization.string("Convert clips between common formats")
+                        ),
+                        .init(
+                            icon: "wand.and.stars",
+                            title: VideoConverterLocalization.string("Presets"),
+                            description: VideoConverterLocalization.string("Pick a target format and convert in bulk")
+                        ),
+                    ],
+                    tip: VideoConverterLocalization.string("FFmpeg is required. Open Video Converter from the sidebar to start.")
+                )
             }
         ]
     }

@@ -93,7 +93,7 @@ public struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
             return formatClosedIssue(issue)
         } catch {
             if GitHubPlugin.verbose {
-                            GitHubPlugin.logger.error("关闭 Issue 失败：\(error.localizedDescription)")
+                            GitHubPlugin.logger.error("\(self.t)关闭 Issue 失败：\(error.localizedDescription)")
             }
             return "关闭 Issue 失败：\(error.localizedDescription)"
         }

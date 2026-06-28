@@ -10,7 +10,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "zhipu",
-            displayName: LumiPluginLocalization.string("智谱", bundle: .module),
+            displayName: LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module),
             description: LumiPluginLocalization.string("Zhipu AI GLM", bundle: .module),
             defaultModel: "glm-4.7",
             availableModels: [
@@ -148,7 +148,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     }
 
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await AvailabilityService.checkAvailability(provider: self, model: model)
+        await AvailabilityService.checkAvailability(model: model, check: { await self.checkAvailabilityUsingChatPing(model: $0) })
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {

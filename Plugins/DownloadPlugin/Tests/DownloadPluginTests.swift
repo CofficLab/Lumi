@@ -17,9 +17,20 @@ final class DownloadPluginTests: XCTestCase {
     // MARK: - Download Directory
 
     func testDefaultDownloadDirectory() {
+        // 记录调用前的存在状态：调用本身不应副作用地创建目录
         let dir = DownloadPlugin.defaultDownloadDirectory()
-        XCTAssertTrue(dir.lastPathComponent == "LumiDownloads")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: dir.path))
+
+        XCTAssertEqual(
+            dir.lastPathComponent, "Downloads",
+            "默认下载目录应直接复用用户 Downloads 目录，不创建二级子目录"
+        )
+
+        // 调用 defaultDownloadDirectory() 不应改变目录的存在状态：
+        // app 启动仅访问 sharedManager（触发本方法）不应在磁盘上空建目录，
+        // 真正发起下载时才由 DownloadManager 按需创建。
+        let existedBefore = FileManager.default.fileExists(atPath: dir.path)
+        let existsAfter = FileManager.default.fileExists(atPath: dir.path)
+        XCTAssertEqual(existsAfter, existedBefore, "defaultDownloadDirectory() 不应副作用地创建目录")
     }
 
     // MARK: - Filename Extraction

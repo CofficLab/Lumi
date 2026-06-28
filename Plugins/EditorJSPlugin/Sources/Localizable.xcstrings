@@ -1352,6 +1352,12 @@
             "state": "translated",
             "value": "TypeScript"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeScript"
+          }
         }
       }
     },

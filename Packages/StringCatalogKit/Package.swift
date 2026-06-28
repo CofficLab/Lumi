@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "StringCatalogKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],

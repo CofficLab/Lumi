@@ -162,6 +162,12 @@
             "state": "translated",
             "value": "編輯器標籤欄"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器標籤欄"
+          }
         }
       }
     },
@@ -220,6 +226,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用於編輯器面板的標籤欄。"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "用於編輯器面板的標籤欄。"

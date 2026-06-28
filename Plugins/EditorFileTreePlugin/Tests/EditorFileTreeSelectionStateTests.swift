@@ -10,7 +10,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testPlainClickSelectsSingleItem() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let file = url("/tmp/project/A.swift")
         var opened = false
 
@@ -27,7 +27,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testCommandClickTogglesWithoutOpening() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let fileA = url("/tmp/project/A.swift")
         let fileB = url("/tmp/project/B.swift")
         var openCount = 0
@@ -53,7 +53,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testCommandClickAgainDeselectsItem() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let file = url("/tmp/project/A.swift")
 
         state.handleTap(
@@ -75,7 +75,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testShiftClickSelectsVisibleRange() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let fileA = url("/tmp/project/A.swift")
         let fileB = url("/tmp/project/B.swift")
         let fileC = url("/tmp/project/C.swift")
@@ -105,7 +105,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testShiftClickWithoutAnchorFallsBackToSingleSelection() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let file = url("/tmp/project/A.swift")
 
         state.trackVisible(file)
@@ -121,7 +121,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testSyncFromEditorHighlightCollapsesMultiSelection() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let fileA = url("/tmp/project/A.swift")
         let fileB = url("/tmp/project/B.swift")
 
@@ -147,7 +147,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testActionTargetsReturnsAllSelectedWhenContextIsInSelection() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let fileA = url("/tmp/project/A.swift")
         let fileB = url("/tmp/project/B.swift")
         let fileC = url("/tmp/project/C.swift")
@@ -164,7 +164,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
     }
 
     func testActionTargetsReturnsOnlyContextWhenSingleSelection() {
-        let state = EditorFileTreeSelectionState()
+        let state = SelectionState()
         let fileA = url("/tmp/project/A.swift")
 
         state.handleTap(url: fileA, isDirectory: false, modifiers: [], onOpenFile: {}, onToggleExpand: {})
@@ -178,7 +178,7 @@ final class EditorFileTreeSelectionStateTests: XCTestCase {
         let nested = url("/tmp/project/Sources/A.swift")
         let sibling = url("/tmp/project/README.md")
 
-        let topLevel = EditorFileTreePathFormatter.topLevelURLs(from: [folder, nested, sibling])
+        let topLevel = PathFormatter.topLevelURLs(from: [folder, nested, sibling])
         XCTAssertEqual(Set(topLevel.map(\.path)), Set([folder.path, sibling.path]))
     }
 }

@@ -1,0 +1,33 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Cut" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "剪切" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "剪下" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "剪下" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "剪下" } }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "拷贝" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "複製" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "複製" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "複製" } }
+      }
+    },
+    "Paste" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粘贴" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "貼上" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "貼上" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "貼上" } }
+      }
+    }
+  },
+  "version" : "1.1"
+}

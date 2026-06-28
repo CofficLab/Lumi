@@ -2,7 +2,7 @@ import Foundation
 import SuperLogKit
 import Combine
 
-public struct NetworkDataPoint: Identifiable, Codable, Sendable {
+public struct NetworkDataPoint: Identifiable, Codable, Sendable, SuperLog {
     public var id: TimeInterval { timestamp }
     public let timestamp: TimeInterval
     public let downloadSpeed: Double

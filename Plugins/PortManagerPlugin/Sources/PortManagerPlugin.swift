@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -26,6 +27,32 @@ public enum PortManagerPlugin: LumiPlugin {
                 systemImage: iconName
             ) {
                 PortManagerView()
+            }
+        ]
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "dot.radiowaves.left.and.right",
+                            title: LumiPluginLocalization.string("Listening ports", bundle: .module),
+                            description: LumiPluginLocalization.string("See every process bound to a local port", bundle: .module)
+                        ),
+                        .init(
+                            icon: "magnifyingglass",
+                            title: LumiPluginLocalization.string("Search", bundle: .module),
+                            description: LumiPluginLocalization.string("Filter by port or process name", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Port Manager from the sidebar to audit open ports.", bundle: .module)
+                )
             }
         ]
     }

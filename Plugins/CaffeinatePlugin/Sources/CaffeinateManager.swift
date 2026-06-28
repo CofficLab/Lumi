@@ -55,7 +55,11 @@ final class CaffeinateManager: SuperLog {
 
     /// Activate caffeinate and turn off display immediately
     func activateAndTurnOffDisplay(duration: TimeInterval = 0) {
-        // 1. Activate caffeinate (system only, allow display sleep)
+        // 1. Activate caffeinate (system only, allow display sleep).
+        //    如果已在运行，先停掉再以新模式重启，确保 mode 能更新（屏幕常亮 → 允许关闭）
+        if isActive {
+            deactivate()
+        }
         activate(mode: .systemOnly, duration: duration)
 
         // 2. Turn off display

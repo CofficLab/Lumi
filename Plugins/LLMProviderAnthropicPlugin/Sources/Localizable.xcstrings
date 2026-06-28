@@ -94,6 +94,12 @@
             "state": "translated",
             "value": "Contributes Anthropic Claude models to Lumi Chat."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes Anthropic Claude models to Lumi Chat."
+          }
         }
       }
     }

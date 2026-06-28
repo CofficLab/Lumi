@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LumiPluginRegistry",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -68,6 +69,7 @@ let package = Package(
         .package(path: "../../Plugins/AgentTempStoragePlugin"),
         .package(path: "../../Plugins/RequestLogPlugin"),
         .package(path: "../../Plugins/HistoryDBStatusBarPlugin"),
+        .package(path: "../../Plugins/ActivityHeatmapPlugin"),
         .package(path: "../../Plugins/ConversationTitlePlugin"),
         .package(path: "../../Plugins/ConversationTimelinePlugin"),
         .package(path: "../../Plugins/ConversationLanguagePlugin"),
@@ -250,6 +252,7 @@ let package = Package(
                 .product(name: "AgentTempStoragePlugin", package: "AgentTempStoragePlugin"),
                 .product(name: "RequestLogPlugin", package: "RequestLogPlugin"),
                 .product(name: "HistoryDBStatusBarPlugin", package: "HistoryDBStatusBarPlugin"),
+                .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
                 .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin"),
                 .product(name: "ConversationTimelinePlugin", package: "ConversationTimelinePlugin"),
                 .product(name: "ConversationLanguagePlugin", package: "ConversationLanguagePlugin"),

@@ -182,7 +182,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "GPU", icon: "gpu", color: Color(hex: "BF5AF2")) {
+                        DeviceInfoCard(title: "GPU", icon: "cpu", color: Color(hex: "BF5AF2")) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                                     .font(.caption)

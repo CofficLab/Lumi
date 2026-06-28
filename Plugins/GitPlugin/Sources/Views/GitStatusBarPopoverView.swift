@@ -80,8 +80,8 @@ public struct GitPluginPopoverView: View {
         .onChange(of: selectedFile) { _, file in
             Task { await loadDiff(for: file) }
         }
-        .alert("Create New Branch", isPresented: $showCreateBranchAlert) {
-            TextField("Branch name", text: $createBranchName)
+        .alert(LumiPluginLocalization.string("Create New Branch", bundle: .module), isPresented: $showCreateBranchAlert) {
+            TextField(LumiPluginLocalization.string("Branch name", bundle: .module), text: $createBranchName)
             Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) {}
             Button(LumiPluginLocalization.string("Create", bundle: .module)) {
                 let branchName = createBranchName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -96,7 +96,7 @@ public struct GitPluginPopoverView: View {
             Image(systemName: "magnifyingglass")
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
-            TextField("Search branches...", text: $branchSearch)
+            TextField(LumiPluginLocalization.string("Search branches...", bundle: .module), text: $branchSearch)
                 .font(.appCaption)
                 .textFieldStyle(.plain)
             Spacer()
