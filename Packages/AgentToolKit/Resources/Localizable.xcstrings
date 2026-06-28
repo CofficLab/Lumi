@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "中文"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "英語"

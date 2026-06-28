@@ -59,7 +59,7 @@ struct SettingsView: View {
         case .remoteProvider:
             RemoteProviderSettingsPage(chatService: chatService)
         case .plugins:
-            PluginSettingsPage(pluginService: pluginService)
+            PluginSettingsPage(pluginService: pluginService, chatService: chatService)
         case .about:
             AboutPage()
         }

@@ -210,7 +210,7 @@ public struct AppSettingsPluginToggleRow: View {
             Button {
                 isEnabled.toggle()
             } label: {
-                Text(isEnabled ? "已启用" : "启用")
+                Text(isEnabled ? String(localized: "Enabled", bundle: .module) : String(localized: "Enable", bundle: .module))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(isEnabled ? theme.textSecondary : theme.primary)
                     .frame(minWidth: 58)

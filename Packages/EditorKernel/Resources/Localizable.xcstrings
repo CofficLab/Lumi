@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "Document formatted"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document formatted"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding references..."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Finding references..."
@@ -82,6 +94,12 @@
             "state": "translated",
             "value": "Formatting document..."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formatting document..."
+          }
         }
       }
     },
@@ -106,6 +124,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found references:"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Found references:"
@@ -138,6 +162,12 @@
             "state": "translated",
             "value": "No formatting changes"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No formatting changes"
+          }
         }
       }
     },
@@ -162,6 +192,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No more occurrences found"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "No more occurrences found"
@@ -194,6 +230,12 @@
             "state": "translated",
             "value": "No references found"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No references found"
+          }
         }
       }
     },
@@ -218,6 +260,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select text before adding next occurrence"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Select text before adding next occurrence"
@@ -250,97 +298,353 @@
             "state": "translated",
             "value": "Select text before selecting all occurrences"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select text before selecting all occurrences"
+          }
         }
       }
     },
     "Edit": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Edit" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "编辑" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "編輯" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "編輯" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "編輯" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯"
+          }
+        }
       }
     },
     "Find": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Find" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查找" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "尋找" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "尋找" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "尋找" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查找"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尋找"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尋找"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尋找"
+          }
+        }
       }
     },
     "Navigation": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Navigation" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导航" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "導航" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "導航" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "導航" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navigation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导航"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "導航"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "導航"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "導航"
+          }
+        }
       }
     },
     "Workbench": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Workbench" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "工作台" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "工作台" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "工作台" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "工作台" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workbench"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作台"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作台"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作台"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作台"
+          }
+        }
       }
     },
     "Multi-Cursor": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Multi-Cursor" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "多光标" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "多游標" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "多游標" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "多游標" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Cursor"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多光标"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多游標"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多游標"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多游標"
+          }
+        }
       }
     },
     "Formatting": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Formatting" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "格式化" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "格式化" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "格式化" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "格式化" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formatting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式化"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式化"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式化"
+          }
+        }
       }
     },
     "Language": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Language" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "语言" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "語言" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "語言" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "語言" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言"
+          }
+        }
       }
     },
     "Saving": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Saving" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "保存" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "儲存" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "儲存" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "儲存" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        }
       }
     },
     "Chat": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Chat" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "对话" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "對話" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "對話" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "對話" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "对话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話"
+          }
+        }
       }
     },
     "Other": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Other" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "其他" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "其他" } },
-        "zh-HK": { "stringUnit": { "state": "translated", "value": "其他" } },
-        "zh-TW": { "stringUnit": { "state": "translated", "value": "其他" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        }
       }
     }
   },

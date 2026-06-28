@@ -116,7 +116,7 @@ public struct GlassTextField: View {
     private var copyButton: some View {
         accessoryButton(
             systemImage: didCopy ? "checkmark" : "doc.on.doc",
-            help: didCopy ? "已复制" : "复制 API Key",
+            help: didCopy ? String(localized: "Copied", bundle: .module) : String(localized: "Copy API Key", bundle: .module),
             isEnabled: !text.isEmpty
         ) {
             guard !text.isEmpty else { return }

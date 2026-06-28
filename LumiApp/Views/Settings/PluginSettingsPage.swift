@@ -5,6 +5,7 @@ import SwiftUI
 struct PluginSettingsPage: View {
     @LumiTheme private var theme
     @ObservedObject var pluginService: PluginService
+    @ObservedObject var chatService: ChatService
     @State private var selectedCategory: LumiPluginCategory?
     @State private var selectedPluginID: String?
     @State private var searchText = ""
@@ -205,7 +206,8 @@ struct PluginSettingsPage: View {
         if let selectedRow {
             PluginSettingsDetailView(
                 row: selectedRow,
-                pluginService: pluginService
+                pluginService: pluginService,
+                chatService: chatService
             )
         } else {
             AppEmptyState(icon: "puzzlepiece.extension", title: "选择一个插件")
@@ -218,6 +220,7 @@ private struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
     let row: PluginSettingsRowModel
     @ObservedObject var pluginService: PluginService
+    @ObservedObject var chatService: ChatService
 
     var body: some View {
         ScrollView {
@@ -245,9 +248,12 @@ private struct PluginSettingsDetailView: View {
     }
 
     private var settingsContext: LumiPluginContext {
-        LumiPluginContext(
+        var dependencies = LumiPluginDependencies()
+        dependencies.register((any HistoryQueryService).self, chatService)
+        return LumiPluginContext(
             activeSectionID: "settings.plugins",
-            activeSectionTitle: "插件管理"
+            activeSectionTitle: "插件管理",
+            dependencies: dependencies
         )
     }
 
