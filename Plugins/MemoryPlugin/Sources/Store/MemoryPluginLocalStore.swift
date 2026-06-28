@@ -1,10 +1,11 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// Memory Plugin 本地存储
 ///
 /// 负责管理插件的配置持久化。
-public final class MemoryPluginLocalStore: @unchecked Sendable {
+public final class MemoryPluginLocalStore: SuperLog, @unchecked Sendable {
     public static let shared = MemoryPluginLocalStore()
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.memory.local-store")
@@ -48,7 +49,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create memory settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create memory settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -130,13 +131,13 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read memory settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read memory settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read memory settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read memory settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -148,7 +149,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode memory settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode memory settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -163,7 +164,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
             }
             return true
         } catch {
-            Self.logger.error("Persist memory settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist memory settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -176,7 +177,7 @@ public final class MemoryPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt memory settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt memory settings failed: \(error.localizedDescription)")
         }
     }
 }

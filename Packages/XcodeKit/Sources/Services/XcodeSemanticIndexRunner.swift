@@ -1,7 +1,8 @@
 import Foundation
 import os
+import SuperLogKit
 
-enum XcodeSemanticIndexRunner {
+enum XcodeSemanticIndexRunner: SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index")
     private static let fallbackFailureReason = "Unable to build semantic index"
 
@@ -84,7 +85,7 @@ enum XcodeSemanticIndexRunner {
 
         let buildSucceeded = await runXcodeBuildCapturingLog(request: request, logURL: logURL)
         guard buildSucceeded else {
-            logger.error("Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
+            logger.error("\(Self.t)Semantic index xcodebuild failed for scheme \(request.scheme, privacy: .public)")
             return failureReasonFromBuildLog(logURL) ?? "xcodebuild failed"
         }
 
@@ -125,7 +126,7 @@ enum XcodeSemanticIndexRunner {
             stagingURLToUse = stagingURL
         } else if !compileDatabaseHasEntries(at: stagingURLToUse) {
             // The derived-data parse silently produced an empty database — fall back to the text log.
-            logger.error("Semantic index parse(-s) produced empty compile DB; falling back to log parse")
+            logger.error("\(Self.t)Semantic index parse(-s) produced empty compile DB; falling back to log parse")
             let parseResult = await runCommandCapturingOutput(
                 executablePath: request.xcodeBuildServerPath,
                 arguments: ["parse", "-o", stagingURL.path, logURL.path],
@@ -196,7 +197,7 @@ enum XcodeSemanticIndexRunner {
                 try fileManager.moveItem(at: newURL, to: destinationURL)
                 return true
             } catch {
-                Self.logger.error("Compile DB promote failed: \(error.localizedDescription, privacy: .public)")
+                Self.logger.error("\(Self.t)Compile DB promote failed: \(error.localizedDescription, privacy: .public)")
                 return false
             }
         }
@@ -213,7 +214,7 @@ enum XcodeSemanticIndexRunner {
 
         let combined = Array(merged.values)
         guard let data = try? JSONSerialization.data(withJSONObject: combined, options: [.prettyPrinted]) else {
-            Self.logger.error("Compile DB merge serialization failed")
+            Self.logger.error("\(Self.t)Compile DB merge serialization failed")
             return false
         }
 
@@ -222,7 +223,7 @@ enum XcodeSemanticIndexRunner {
             try? fileManager.removeItem(at: newURL)
             return true
         } catch {
-            Self.logger.error("Compile DB merge write failed: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("\(Self.t)Compile DB merge write failed: \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
@@ -337,7 +338,7 @@ enum XcodeSemanticIndexRunner {
                             withIntermediateDirectories: true
                         )
                     } catch {
-                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        logger.error("\(Self.t)Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                         continuation.resume(returning: false)
                         return
                     }
@@ -388,7 +389,7 @@ enum XcodeSemanticIndexRunner {
                 do {
                     try process.run()
                 } catch {
-                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    logger.error("\(Self.t)Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continuation.resume(returning: false)
                     return
                 }
@@ -421,7 +422,7 @@ enum XcodeSemanticIndexRunner {
                             withIntermediateDirectories: true
                         )
                     } catch {
-                        logger.error("Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        logger.error("\(Self.t)Failed to create working directory \(workingDirectory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                         continuation.resume(returning: (false, ""))
                         return
                     }
@@ -439,7 +440,7 @@ enum XcodeSemanticIndexRunner {
                 do {
                     try process.run()
                 } catch {
-                    logger.error("Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    logger.error("\(Self.t)Failed to launch \(executablePath, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continuation.resume(returning: (false, ""))
                     return
                 }

@@ -33,7 +33,7 @@ public final class StorageService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(Self.emoji) 开始存储卷监控")
+            Self.logger.info("\(Self.t)\(Self.emoji) 开始存储卷监控")
             scanVolumes()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
@@ -47,7 +47,7 @@ public final class StorageService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(Self.emoji) 停止存储卷监控")
+            Self.logger.info("\(Self.t)\(Self.emoji) 停止存储卷监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
         }

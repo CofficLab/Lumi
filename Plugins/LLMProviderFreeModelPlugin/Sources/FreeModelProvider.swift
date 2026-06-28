@@ -1,8 +1,9 @@
 import Foundation
+import SuperLogKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class FreeModelProvider: LumiLLMProvider, @unchecked Sendable {
+public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Sendable {
     enum Endpoints {
         static let openAIPrimary = "https://api.freemodel.dev/v1/chat/completions"
         static let openAIFallback = "https://vip-sg.freemodel.dev/v1/chat/completions"

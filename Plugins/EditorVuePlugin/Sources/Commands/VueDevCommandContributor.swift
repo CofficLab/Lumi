@@ -1,4 +1,5 @@
 import Foundation
+import SuperLogKit
 import EditorService
 import SwiftUI
 import LumiCoreKit
@@ -11,7 +12,7 @@ import LumiCoreKit
 /// - 预览 (Vite Preview)
 /// - 打开开发服务器
 @MainActor
-final class VueDevCommandContributor: SuperEditorCommandContributor {
+final class VueDevCommandContributor: SuperEditorCommandContributor, SuperLog {
     let id = "vue.dev-commands"
 
     /// 已知的运行中开发服务器端口

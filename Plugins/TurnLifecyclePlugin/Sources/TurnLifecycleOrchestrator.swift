@@ -3,7 +3,7 @@ import LumiCoreKit
 import SuperLogKit
 import os
 
-enum TurnLifecycleOrchestrator {
+enum TurnLifecycleOrchestrator: SuperLog {
     @MainActor
     static func handleMessageSaved(conversationId: UUID) {
         let phase = TurnLifecycleRuntimeBridge.loadTurnPhase(conversationId)

@@ -1,5 +1,5 @@
 import Foundation
-import OSLog
+import os
 import SuperLogKit
 
 /// FreeModel 供应商诊断日志（测试阶段开启，便于从 Xcode 控制台或 Console.app 复制）

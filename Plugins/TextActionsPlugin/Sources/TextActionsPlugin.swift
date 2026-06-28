@@ -60,12 +60,12 @@ public actor TextActionsPlugin: SuperPlugin, SuperLog {
                 TextSelectionManager.shared.startMonitoring()
                 _ = TextActionMenuController.shared
                 if verbose {
-                    logger.info("\(t)Text Actions 功能已启用，开始监控")
+                    logger.info("\(self.t)Text Actions 功能已启用，开始监控")
                 }
             } else {
                 TextSelectionManager.shared.stopMonitoring()
                 if verbose {
-                    logger.info("\(t)Text Actions 功能已禁用，停止监控")
+                    logger.info("\(self.t)Text Actions 功能已禁用，停止监控")
                 }
             }
         }

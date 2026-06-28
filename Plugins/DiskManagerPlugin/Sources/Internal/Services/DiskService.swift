@@ -1,10 +1,11 @@
 import AppKit
 import Foundation
 import os
+import SuperLogKit
 
 /// Disk service - performs scanning and cleaning operations in the background.
-public final class DiskService: @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "disk")
+public final class DiskService: SuperLog, @unchecked Sendable {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "disk")
     nonisolated(unsafe) static var verbose: Bool = false
     public static let shared = DiskService()
 
@@ -25,7 +26,7 @@ public final class DiskService: @unchecked Sendable {
                 }
             } catch {
                 if Self.verbose {
-                                    Self.logger.error("Failed to get disk usage: \(error.localizedDescription)")
+                                    Self.logger.error("\(Self.t)Failed to get disk usage: \(error.localizedDescription)")
                 }
             }
             return nil

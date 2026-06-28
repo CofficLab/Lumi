@@ -2,10 +2,11 @@ import AppKit
 import LumiCoreKit
 import LumiUI
 import os
+import SuperLogKit
 import SwiftUI
 
 @available(macOS 14.0, *)
-public struct MLXLocalProviderSettingsView: View {
+public struct MLXLocalProviderSettingsView: View, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "ui.mlx")
 
     @LumiTheme private var theme
@@ -335,23 +336,23 @@ public struct MLXLocalProviderSettingsView: View {
 
     @MainActor
     private func downloadModel(_ modelID: String) async {
-        Self.logger.info("🟢 UI: 开始下载模型 \(modelID)")
+        Self.logger.info("\(Self.t)🟢 UI: 开始下载模型 \(modelID)")
         actionError = nil
         errorModelId = nil
 
         await downloadManager.download(modelId: modelID)
 
-        Self.logger.info("🟢 UI: 下载任务结束，状态：\(String(describing: downloadManager.status))")
+        Self.logger.info("\(Self.t)🟢 UI: 下载任务结束，状态：\(String(describing: downloadManager.status))")
 
         modelManager.refreshCachedModels()
         modelManager.updateCacheSize()
 
         if case .failed(let message) = downloadManager.status {
-            Self.logger.error("❌ UI: 下载失败，错误信息：\(message)")
+            Self.logger.error("\(Self.t)❌ UI: 下载失败，错误信息：\(message)")
             actionError = message
             errorModelId = modelID
         } else if case .completed = downloadManager.status {
-            Self.logger.info("✅ UI: 下载成功完成")
+            Self.logger.info("\(Self.t)✅ UI: 下载成功完成")
             actionError = nil
             errorModelId = nil
         }

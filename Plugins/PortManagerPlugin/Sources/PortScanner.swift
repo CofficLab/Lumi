@@ -4,7 +4,7 @@ import SwiftUI
 import LumiUI
 import ShellKit
 
-public struct PortInfo: Identifiable, Hashable {
+public struct PortInfo: Identifiable, Hashable, SuperLog {
     public let id = UUID()
     public let command: String
     public let pid: String
@@ -50,7 +50,7 @@ public final class PortScanner: Sendable, SuperLog {
         } catch {
             if Self.verbose {
                 if PortManagerPlugin.verbose {
-                    PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
+                    PortManagerPlugin.logger.error("\(Self.t)Failed to scan ports: \(error.localizedDescription)")
                 }
             }
             throw error
@@ -119,7 +119,7 @@ public final class PortScanner: Sendable, SuperLog {
         } catch {
             if Self.verbose {
                 if PortManagerPlugin.verbose {
-                    PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
+                    PortManagerPlugin.logger.error("\(Self.t)Failed to kill process \(pid): \(error.localizedDescription)")
                 }
             }
             throw error

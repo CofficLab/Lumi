@@ -1,7 +1,8 @@
 import Foundation
 import os
+import SuperLogKit
 
-public class AppSettingRepo: ObservableObject, @unchecked Sendable {
+public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = AppSettingRepo()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     
@@ -42,7 +43,7 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
             let decoded = try JSONDecoder().decode([AppSetting].self, from: data)
             self.settings = Self.settingsByAppId(decoded)
         } catch {
-            logger.error("Failed to load Netto settings, preserving corrupt file: \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to load Netto settings, preserving corrupt file: \(error.localizedDescription)")
             preserveCorruptSettingsFile()
             self.settings = [:]
         }
@@ -58,7 +59,7 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
             let data = try JSONEncoder().encode(array)
             try data.write(to: fileURL, options: [.atomic])
         } catch {
-            logger.error("Failed to save Netto settings: \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to save Netto settings: \(error.localizedDescription)")
         }
     }
     
@@ -101,7 +102,7 @@ public class AppSettingRepo: ObservableObject, @unchecked Sendable {
             }
             try fileManager.moveItem(at: fileURL, to: backupURL)
         } catch {
-            logger.error("Failed to move corrupt Netto settings aside: \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to move corrupt Netto settings aside: \(error.localizedDescription)")
         }
     }
 }

@@ -1,6 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 import os
+import SuperLogKit
 
 /// Vue 诊断坐标转换器
 ///
@@ -11,7 +12,7 @@ import os
 /// 1. 诊断位置校正（虚拟行 → 真实行）
 /// 2. 诊断范围裁剪（超出区块范围的诊断过滤）
 /// 3. 诊断消息增强（添加 Vue 上下文信息）
-struct VueDiagnosticTransformer: Sendable {
+struct VueDiagnosticTransformer: Sendable, SuperLog {
     nonisolated static let emoji = "🔧"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -119,7 +120,7 @@ struct VueDiagnosticTransformer: Sendable {
         // 检查诊断范围是否在文件的有效区域内
         guard startLine >= 0, endLine >= startLine else {
             if EditorVuePlugin.verbose {
-                logger.debug("\(emoji) 诊断范围无效，过滤: start=\(startLine), end=\(endLine)")
+                logger.debug("\(Self.t)\(emoji) 诊断范围无效，过滤: start=\(startLine), end=\(endLine)")
             }
             return nil
         }

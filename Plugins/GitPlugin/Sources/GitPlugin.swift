@@ -6,7 +6,7 @@ import SuperLogKit
 import os
 
 /// Git plugin: panel, commit history, status bar, and agent tools.
-public enum GitPlugin: LumiPlugin {
+public enum GitPlugin: LumiPlugin, SuperLog {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development

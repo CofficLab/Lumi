@@ -329,7 +329,7 @@ public final class SwiftBuildRunManager: ObservableObject, SuperLog {
                 _ = try await NSWorkspace.shared.openApplication(at: productURL, configuration: configuration)
                 return
             } catch {
-                Self.logger.warning("NSWorkspace launch failed, falling back to /usr/bin/open: \(error.localizedDescription, privacy: .public)")
+                Self.logger.warning("\(Self.t)NSWorkspace launch failed, falling back to /usr/bin/open: \(error.localizedDescription, privacy: .public)")
             }
 
             let process = Process()

@@ -4,7 +4,7 @@ import LumiCoreKit
 
 /// Xcode clean service - scans and cleans Xcode-related caches.
 public final class XcodeCleanService: @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "xcode-clean")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode-clean")
     public static let shared = XcodeCleanService()
     private let fileManager = FileManager.default
 

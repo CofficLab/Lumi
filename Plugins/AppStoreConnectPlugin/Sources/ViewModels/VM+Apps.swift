@@ -1,4 +1,5 @@
 import Foundation
+import SuperLogKit
 
 extension VM {
     func loadApps(silent: Bool = false) async {
@@ -9,7 +10,7 @@ extension VM {
                 connectionStatus = AppStoreConnectLocalization.string("Connected")
                 applyPersistedOrDefaultSelectedApp()
             } catch {
-                Self.logger.error("loadApps(silent) failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)loadApps(silent) failed: \(error.localizedDescription)")
             }
         } else {
             await runBusy {

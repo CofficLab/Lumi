@@ -1,8 +1,9 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 
-public final class InputPluginLocalStore: @unchecked Sendable {
+public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "InputPluginLocalStore.queue", qos: .userInitiated)
@@ -23,7 +24,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create input plugin settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create input plugin settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -54,13 +55,13 @@ public final class InputPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read input plugin settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read input plugin settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read input plugin settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read input plugin settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -72,7 +73,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode input plugin settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode input plugin settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -84,7 +85,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
             return true
         } catch {
-            Self.logger.error("Persist input plugin settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist input plugin settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -99,7 +100,7 @@ public final class InputPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt input plugin settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt input plugin settings failed: \(error.localizedDescription)")
         }
     }
 

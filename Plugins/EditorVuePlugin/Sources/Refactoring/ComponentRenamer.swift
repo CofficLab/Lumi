@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// 组件重命名联动工具
 ///
@@ -10,7 +11,7 @@ import os
 /// - 其他组件中的引用
 ///
 /// 使用方式：调用 `ComponentRenamer.rename()` 执行完整的重命名流程。
-struct ComponentRenamer: Sendable {
+struct ComponentRenamer: Sendable, SuperLog {
     nonisolated static let emoji = "✏️"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -163,7 +164,7 @@ struct ComponentRenamer: Sendable {
         do {
             try fm.moveItem(atPath: plan.oldPath, toPath: plan.newPath)
             if EditorVuePlugin.verbose {
-                logger.info("\(emoji) 重命名文件: \(plan.oldPath) → \(plan.newPath)")
+                logger.info("\(Self.t)\(emoji) 重命名文件: \(plan.oldPath) → \(plan.newPath)")
             }
         } catch {
             failures.append((plan.oldPath, error.localizedDescription))
@@ -189,7 +190,7 @@ struct ComponentRenamer: Sendable {
                     try VueTextFileIO.write(updated, to: affected.path, encoding: fileText.encoding)
                     filesModified += 1
                     if EditorVuePlugin.verbose {
-                        logger.info("\(emoji) 更新引用: \(affected.path) (\(affected.replacements.count) 处)")
+                        logger.info("\(Self.t)\(emoji) 更新引用: \(affected.path) (\(affected.replacements.count) 处)")
                     }
                 } catch {
                     failures.append((affected.path, error.localizedDescription))

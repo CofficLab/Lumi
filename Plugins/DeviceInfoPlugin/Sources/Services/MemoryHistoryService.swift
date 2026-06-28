@@ -136,7 +136,7 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
                 try JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
                 return true
             } catch {
-                Self.logger.error("Persist memory history failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Persist memory history failed: \(error.localizedDescription)")
                 return false
             }
         }
@@ -155,7 +155,7 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
             let cutoff = Date().timeIntervalSince1970 - MemoryTimeRange.month1.duration
             longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {
-            Self.logger.error("Load memory history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load memory history failed: \(error.localizedDescription)")
             quarantineCorruptHistory()
         }
     }
@@ -168,7 +168,7 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
             do {
                 try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             } catch {
-                Self.logger.error("Create memory history directory failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Create memory history directory failed: \(error.localizedDescription)")
             }
         }
     }
@@ -186,7 +186,7 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
             }
             try fileManager.moveItem(at: sourceURL, to: quarantineURL)
         } catch {
-            Self.logger.error("Quarantine corrupt memory history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt memory history failed: \(error.localizedDescription)")
         }
     }
 }

@@ -1,19 +1,20 @@
 import NetworkExtension
-import OSLog
+import os
+import SuperLogKit
 import NettoPlugin
 
-class FilterDataProvider: NEFilterDataProvider {
+class FilterDataProvider: NEFilterDataProvider, SuperLog {
     static let emoji: String = "🎈"
 
     private var ipc = IPCConnection.shared
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi.extension", category: "FilterDataProvider")
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "netto.filter-data-provider")
     private var verbose: Bool = false
 
     /**
      * Start Filter
      */
     override func startFilter(completionHandler: @escaping (Error?) -> Void) {
-        logger.info("🚀 startFilter")
+        logger.info("\(Self.t)🚀 startFilter")
 
         // Filter all network traffic by default so we can manage permissions
         let filterSettings = NEFilterSettings(rules: [], defaultAction: .filterData)
@@ -21,11 +22,11 @@ class FilterDataProvider: NEFilterDataProvider {
         apply(filterSettings) { error in
             if let applyError = error {
                 if self.verbose {
-                                    self.logger.error("Failed to apply filter settings: \(applyError.localizedDescription)")
+                                    self.logger.error("\(Self.t)Failed to apply filter settings: \(applyError.localizedDescription)")
                 }
             } else {
                 if self.verbose {
-                                    self.logger.info("🎉 Success to apply filter settings")
+                                    self.logger.info("\(Self.t)🎉 Success to apply filter settings")
                 }
             }
 
@@ -37,7 +38,7 @@ class FilterDataProvider: NEFilterDataProvider {
      * Stop Filter
      */
     override func stopFilter(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        logger.info("🤚 stopFilter with reason -> \(reason.rawValue)")
+        logger.info("\(Self.t)🤚 stopFilter with reason -> \(reason.rawValue)")
         completionHandler()
     }
 
@@ -45,7 +46,7 @@ class FilterDataProvider: NEFilterDataProvider {
      * Handle New Flow
      */
     override func handleNewFlow(_ flow: NEFilterFlow) -> NEFilterNewFlowVerdict {
-        logger.info("🍋 handleNewFlow")
+        logger.info("\(Self.t)🍋 handleNewFlow")
         
         // Ask the app to prompt the user
         // This is a blocking call (async wait) if we want to pause.
@@ -58,7 +59,7 @@ class FilterDataProvider: NEFilterDataProvider {
         }
 
         guard prompted else {
-            logger.error("Failed to call promptUser, allowing flow by default")
+            logger.error("\(Self.t)Failed to call promptUser, allowing flow by default")
             return .allow()
         }
 

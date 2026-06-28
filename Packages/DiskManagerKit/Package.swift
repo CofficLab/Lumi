@@ -13,10 +13,15 @@ let package = Package(
             targets: ["DiskManagerKit"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../SuperLogKit")
+    ],
     targets: [
         .target(
             name: "DiskManagerKit",
+            dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit")
+            ],
             path: ".",
             exclude: ["Tests", "README.md"],
             sources: ["Sources"],

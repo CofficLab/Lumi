@@ -2,7 +2,7 @@ import Foundation
 import LumiCoreKit
 import SuperLogKit
 
-public actor IdleTimeService {
+public actor IdleTimeService: SuperLog {
     public static let shared = IdleTimeService()
 
     private let store: IdleActivityStore

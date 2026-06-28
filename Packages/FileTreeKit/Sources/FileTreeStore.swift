@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// 文件树状态持久化存储
 ///
@@ -16,7 +17,7 @@ import os
 /// store.setExpandedPaths(["/src", "/lib"], for: "/path/to/project")
 /// let paths = store.expandedPaths(for: "/path/to/project")
 /// ```
-public final class FileTreeStore: @unchecked Sendable {
+public final class FileTreeStore: SuperLog, @unchecked Sendable {
 
     // MARK: - Properties
 
@@ -59,7 +60,7 @@ public final class FileTreeStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create file tree settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Create file tree settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -237,13 +238,13 @@ public final class FileTreeStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read file tree settings failed: root plist is not a dictionary")
+                Self.logger.error("\(Self.t)Read file tree settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read file tree settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Read file tree settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -260,7 +261,7 @@ public final class FileTreeStore: @unchecked Sendable {
                 options: 0
             )
         } catch {
-            Self.logger.error("Encode file tree settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Encode file tree settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -276,7 +277,7 @@ public final class FileTreeStore: @unchecked Sendable {
             }
             return true
         } catch {
-            Self.logger.error("Persist file tree settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Persist file tree settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmpURL)
             return false
         }
@@ -291,7 +292,7 @@ public final class FileTreeStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt file tree settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt file tree settings failed: \(error.localizedDescription)")
         }
     }
 }

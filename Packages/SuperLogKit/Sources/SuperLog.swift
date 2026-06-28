@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import OSLog
 import SwiftData
 
 /// 提供统一的日志记录和调试信息格式化功能的协议

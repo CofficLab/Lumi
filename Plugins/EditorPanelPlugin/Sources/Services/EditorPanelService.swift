@@ -1,6 +1,7 @@
 import EditorService
 import Foundation
 import os
+import SuperLogKit
 import LumiCoreKit
 
 /// 编辑器面板业务逻辑服务
@@ -17,7 +18,7 @@ import LumiCoreKit
 /// service.openOrActivateSession(for: url, service: service, ...)
 /// ```
 @MainActor
-public final class EditorPanelService: ObservableObject {
+public final class EditorPanelService: ObservableObject, SuperLog {
 
     // MARK: - 属性
 
@@ -45,14 +46,14 @@ public final class EditorPanelService: ObservableObject {
 
         guard let fileURL else {
             if EditorPanelPlugin.verbose {
-                EditorPanelPlugin.logger.info("fileURL 为 nil → loadFile(nil)")
+                EditorPanelPlugin.logger.info("\(Self.t)fileURL 为 nil → loadFile(nil)")
             }
             service.files.loadFile(from: nil)
             return
         }
 
         if EditorPanelPlugin.verbose {
-            EditorPanelPlugin.logger.info("打开文件: \(fileURL.path, privacy: .public)")
+            EditorPanelPlugin.logger.info("\(Self.t)打开文件: \(fileURL.path, privacy: .public)")
         }
         service.sessions.open(at: fileURL)
     }

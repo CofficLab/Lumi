@@ -1,9 +1,10 @@
 import Combine
+import SuperLogKit
 import Foundation
 import Logging
 import MCP
 
-public final class MCPService: @unchecked Sendable {
+public final class MCPService: SuperLog, @unchecked Sendable {
     public let toolsPublisher = PassthroughSubject<[MCPDiscoveredTool], Never>()
 
     public private(set) var configs: [MCPServerConfig]
@@ -38,7 +39,7 @@ public final class MCPService: @unchecked Sendable {
         switch config.transportType ?? .stdio {
         case .sse:
             guard let urlString = config.url, let url = URL(string: urlString) else {
-                logger.error("Invalid MCP SSE URL for server \(config.name)")
+                logger.error("\(Self.t)Invalid MCP SSE URL for server \(config.name)")
                 return
             }
 
@@ -66,7 +67,7 @@ public final class MCPService: @unchecked Sendable {
 
             await updateToolsFromCache()
         } catch {
-            logger.error("Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
+            logger.error("\(Self.t)Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
         }
     }
 

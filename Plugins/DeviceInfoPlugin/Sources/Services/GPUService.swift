@@ -42,7 +42,7 @@ public final class GPUService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(Self.emoji) 开始 GPU 监控")
+            Self.logger.info("\(Self.t)\(Self.emoji) 开始 GPU 监控")
             sampleGPU()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
@@ -56,7 +56,7 @@ public final class GPUService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(Self.emoji) 停止 GPU 监控")
+            Self.logger.info("\(Self.t)\(Self.emoji) 停止 GPU 监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             samplingTask?.cancel()

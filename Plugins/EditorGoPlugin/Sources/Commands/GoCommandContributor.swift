@@ -1,4 +1,5 @@
 import Foundation
+import SuperLogKit
 import EditorService
 
 import SwiftUI
@@ -8,7 +9,7 @@ import LumiCoreKit
 ///
 /// 注册 go build / go test / go fmt / go mod tidy 等编辑器命令。
 @MainActor
-public final class GoCommandContributor: SuperEditorCommandContributor {
+public final class GoCommandContributor: SuperEditorCommandContributor, SuperLog {
     public let id: String = "go.commands"
 
     private let buildManager: GoBuildManager

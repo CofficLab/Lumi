@@ -1,4 +1,5 @@
 import LumiUI
+import SuperLogKit
 import LumiCoreKit
 import SwiftUI
 
@@ -10,7 +11,7 @@ import SwiftUI
 /// 对话项支持两种活跃状态：
 /// - **处理中**：对话正在处理消息，图标会显示脉冲涟漪动画和主题色
 /// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
-public struct ConversationItemView: View {
+public struct ConversationItemView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     /// 会话模型：包含标题、更新时间、项目 ID 等信息

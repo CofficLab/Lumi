@@ -4,9 +4,10 @@ import EditorSource
 import EditorTextView
 import LanguageServerProtocol
 import os
+import SuperLogKit
 
 @MainActor
-final class EditorInputRouter {
+final class EditorInputRouter: SuperLog {
     private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.input-router")
 
     func handleTextDidChange(

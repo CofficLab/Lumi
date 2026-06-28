@@ -4,11 +4,12 @@ import LLMKit
 import LLMProviderKit
 import LumiCoreKit
 import os
+import SuperLogKit
 
 /// LLM 可用性检测服务
 /// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
 @MainActor
-public final class LLMAvailabilityChecker {
+public final class LLMAvailabilityChecker: SuperLog {
     public static let verbose: Bool = false
 
     private let llmService: any LLMAvailabilityLLMServicing

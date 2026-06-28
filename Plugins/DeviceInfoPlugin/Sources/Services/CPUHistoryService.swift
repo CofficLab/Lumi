@@ -139,7 +139,7 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
                 try JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
                 return true
             } catch {
-                Self.logger.error("Persist CPU history failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Persist CPU history failed: \(error.localizedDescription)")
                 return false
             }
         }
@@ -158,7 +158,7 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             let cutoff = Date().timeIntervalSince1970 - CPUTimeRange.month1.duration
             longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {
-            Self.logger.error("Load CPU history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load CPU history failed: \(error.localizedDescription)")
             quarantineCorruptHistory()
         }
     }
@@ -171,7 +171,7 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             do {
                 try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             } catch {
-                Self.logger.error("Create CPU history directory failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Create CPU history directory failed: \(error.localizedDescription)")
             }
         }
     }
@@ -189,7 +189,7 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
             }
             try fileManager.moveItem(at: sourceURL, to: quarantineURL)
         } catch {
-            Self.logger.error("Quarantine corrupt CPU history failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Quarantine corrupt CPU history failed: \(error.localizedDescription)")
         }
     }
 }

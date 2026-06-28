@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// Vue 编译器选项读取
 ///
@@ -9,7 +10,7 @@ import os
 /// 3. `vue.config.js`（Vue CLI 项目，仅 Vue 2）
 ///
 /// 这些选项影响 Volar 的行为和模板编译策略。
-struct VueCompilerOptions: Sendable {
+struct VueCompilerOptions: Sendable, SuperLog {
     nonisolated static let emoji = "⚙️"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -114,7 +115,7 @@ struct VueCompilerOptions: Sendable {
         options = options.with(sourceDescription: sources.isEmpty ? "defaults" : sources.joined(separator: " + "))
 
         if EditorVuePlugin.verbose {
-            logger.info("\(emoji) Vue 编译器选项: target=\(options.target.rawValue), strict=\(options.strictTemplates), jsx=\(options.jsxEnabled), customElements=\(options.isCustomElement.count), source=\(options.sourceDescription)")
+            logger.info("\(Self.t)\(emoji) Vue 编译器选项: target=\(options.target.rawValue), strict=\(options.strictTemplates), jsx=\(options.jsxEnabled), customElements=\(options.isCustomElement.count), source=\(options.sourceDescription)")
         }
 
         return options

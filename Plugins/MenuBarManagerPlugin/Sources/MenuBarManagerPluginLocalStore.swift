@@ -1,8 +1,9 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 
-public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
+public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menu-bar-manager.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "MenuBarManagerPluginLocalStore.queue", qos: .userInitiated)
@@ -23,7 +24,7 @@ public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
         do {
             try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create menu bar settings directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Create menu bar settings directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -54,13 +55,13 @@ public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
             let data = try Data(contentsOf: settingsFileURL)
             let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
             guard let dict = plist as? [String: Any] else {
-                Self.logger.error("Read menu bar settings failed: root plist is not a dictionary")
+                Self.logger.error("\(self.t)Read menu bar settings failed: root plist is not a dictionary")
                 quarantineCorruptSettings()
                 return [:]
             }
             return dict
         } catch {
-            Self.logger.error("Read menu bar settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Read menu bar settings failed: \(error.localizedDescription)")
             quarantineCorruptSettings()
             return [:]
         }
@@ -72,7 +73,7 @@ public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
         do {
             data = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
         } catch {
-            Self.logger.error("Encode menu bar settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Encode menu bar settings failed: \(error.localizedDescription)")
             return false
         }
 
@@ -84,7 +85,7 @@ public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
             return true
         } catch {
-            Self.logger.error("Persist menu bar settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Persist menu bar settings failed: \(error.localizedDescription)")
             try? fileManager.removeItem(at: tmp)
             return false
         }
@@ -99,7 +100,7 @@ public final class MenuBarManagerPluginLocalStore: @unchecked Sendable {
             }
             try fileManager.moveItem(at: settingsFileURL, to: corruptSettingsFileURL)
         } catch {
-            Self.logger.error("Quarantine corrupt menu bar settings failed: \(error.localizedDescription)")
+            Self.logger.error("\(self.t)Quarantine corrupt menu bar settings failed: \(error.localizedDescription)")
         }
     }
 

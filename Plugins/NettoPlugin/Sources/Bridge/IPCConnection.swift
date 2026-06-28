@@ -6,11 +6,12 @@ Adapted for Lumi NettoPlugin
 
 import Foundation
 import os
+import SuperLogKit
 import Network
 import NetworkExtension
 
 /// The IPCConnection class is used by both the app and the system extension to communicate with each other
-public class IPCConnection: NSObject, @unchecked Sendable {
+public class IPCConnection: NSObject, SuperLog, @unchecked Sendable {
     public static let shared = IPCConnection()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     private var verbose: Bool = false
@@ -30,7 +31,7 @@ public class IPCConnection: NSObject, @unchecked Sendable {
                 // Fallback or fatal error depending on context. 
                 // In Plugin context, we might not have this in Info.plist if not configured yet.
                 // But for now we assume correct configuration.
-                logger.error("Mach service name is missing from the Info.plist")
+                logger.error("\(self.t)Mach service name is missing from the Info.plist")
                 return ""
         }
 
@@ -41,7 +42,7 @@ public class IPCConnection: NSObject, @unchecked Sendable {
         let machServiceName = extensionMachServiceName(from: Bundle.main)
         guard !machServiceName.isEmpty else { return }
         
-        logger.info("🚀 Starting XPC listener for mach service \(machServiceName)")
+        logger.info("\(self.t)🚀 Starting XPC listener for mach service \(machServiceName)")
 
         let newListener = NSXPCListener(machServiceName: machServiceName)
         newListener.delegate = self
@@ -54,12 +55,12 @@ public class IPCConnection: NSObject, @unchecked Sendable {
         self.delegate = delegate
 
         guard currentConnection == nil else {
-            logger.warning("⚠️ IPC.register: Already registered with the provider")
+            logger.warning("\(self.t)⚠️ IPC.register: Already registered with the provider")
             completionHandler(true)
             return
         }
         
-        logger.info("🛫 IPC.register")
+        logger.info("\(self.t)🛫 IPC.register")
 
         let machServiceName = extensionMachServiceName(from: bundle)
         guard !machServiceName.isEmpty else {
@@ -81,18 +82,18 @@ public class IPCConnection: NSObject, @unchecked Sendable {
 
         guard let providerProxy = newConnection.remoteObjectProxyWithErrorHandler({ registerError in
             if self.verbose {
-                            self.logger.error("Failed to register with the provider: \(registerError.localizedDescription)")
+                            self.logger.error("\(self.t)Failed to register with the provider: \(registerError.localizedDescription)")
             }
             self.currentConnection?.invalidate()
             self.currentConnection = nil
             completionHandler(false)
         }) as? ProviderCommunication else {
-            logger.critical("Failed to create a remote object proxy for the provider")
+            logger.critical("\(self.t)Failed to create a remote object proxy for the provider")
             completionHandler(false)
             return
         }
 
-        logger.info("🛫 providerProxy.register")
+        logger.info("\(self.t)🛫 providerProxy.register")
         providerProxy.register(completionHandler)
     }
 
@@ -101,21 +102,21 @@ public class IPCConnection: NSObject, @unchecked Sendable {
         for a decision about a connection.
     */
     public func promptUser(flow: NEFilterFlow, responseHandler:@escaping (Bool) -> Void) -> Bool {
-        logger.info("🍋 promptUser")
+        logger.info("\(self.t)🍋 promptUser")
         
         guard let connection = currentConnection else {
-            logger.error("Cannot prompt user because the app isn't registered")
+            logger.error("\(self.t)Cannot prompt user because the app isn't registered")
             return false
         }
 
         guard let appProxy = connection.remoteObjectProxyWithErrorHandler({ promptError in
             if self.verbose {
-                            self.logger.error("Failed to prompt the user: \(promptError.localizedDescription)")
+                            self.logger.error("\(self.t)Failed to prompt the user: \(promptError.localizedDescription)")
             }
             self.currentConnection = nil
             responseHandler(true)
         }) as? AppCommunication else {
-            logger.critical("Failed to create a remote object proxy for the app")
+            logger.critical("\(self.t)Failed to create a remote object proxy for the app")
             return false
         }
 
@@ -137,10 +138,10 @@ public class IPCConnection: NSObject, @unchecked Sendable {
         
         guard let appProxy = connection.remoteObjectProxyWithErrorHandler({ promptError in
             if self.verbose {
-                            self.logger.error("🧩 Failed to prompt the user: \(promptError.localizedDescription)")
+                            self.logger.error("\(self.t)🧩 Failed to prompt the user: \(promptError.localizedDescription)")
             }
         }) as? AppCommunication else {
-            logger.critical("🧩 Failed to create a remote object proxy for the app")
+            logger.critical("\(self.t)🧩 Failed to create a remote object proxy for the app")
             return
         }
         appProxy.extensionLog(message)
@@ -152,7 +153,7 @@ extension IPCConnection: NSXPCListenerDelegate {
     // MARK: NSXPCListenerDelegate
 
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        logger.info("IPCConnection.shouldAcceptNewConnection")
+        logger.info("\(self.t)IPCConnection.shouldAcceptNewConnection")
         // The exported object is this IPCConnection instance.
         newConnection.exportedInterface = NSXPCInterface(with: ProviderCommunication.self)
         newConnection.exportedObject = self
@@ -179,7 +180,7 @@ extension IPCConnection: ProviderCommunication {
     // MARK: ProviderCommunication
 
     public func register(_ completionHandler: @escaping (Bool) -> Void) {
-        logger.info("IPC.App registered")
+        logger.info("\(self.t)IPC.App registered")
         completionHandler(true)
     }
 }

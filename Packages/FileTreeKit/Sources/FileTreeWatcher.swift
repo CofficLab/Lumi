@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// 文件树目录变化监听器
 ///
@@ -10,7 +11,7 @@ import os
 /// - 仅监听指定的目录集合（懒监听，避免不必要的系统开销）
 /// - 文件系统事件立即转发，由上层合并高频刷新
 /// - 所有公开方法通过串行队列保护内部状态，线程安全
-public final class FileTreeWatcher: @unchecked Sendable {
+public final class FileTreeWatcher: SuperLog, @unchecked Sendable {
 
     // MARK: - Types
 
@@ -26,7 +27,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
     // MARK: - Properties
 
     /// 日志记录器
-    private static let logger = Logger(subsystem: "com.coffic.filetreekit", category: "FileTreeWatcher")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "file-tree.watcher")
 
     /// 当前活跃的监控，key 为标准化路径
     private var watches: [String: Watch] = [:]
@@ -67,7 +68,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
             let fd = Darwin.open(key, O_EVTONLY)
             guard fd >= 0 else {
                 if verbose {
-                    Self.logger.warning("⚠️ 无法打开文件描述符监控目录：\(key)")
+                    Self.logger.warning("\(Self.t)⚠️ 无法打开文件描述符监控目录：\(key)")
                 }
                 return
             }
@@ -90,7 +91,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
             watches[key] = Watch(fileDescriptor: fd, source: source)
 
             if verbose {
-                Self.logger.info("👁️ 开始监控目录：\(url.lastPathComponent)")
+                Self.logger.info("\(Self.t)👁️ 开始监控目录：\(url.lastPathComponent)")
             }
         }
     }
@@ -105,7 +106,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
             Darwin.close(watch.fileDescriptor)
 
             if verbose {
-                Self.logger.info("🛑 停止监控目录：\(url.lastPathComponent)")
+                Self.logger.info("\(Self.t)🛑 停止监控目录：\(url.lastPathComponent)")
             }
         }
     }
@@ -120,7 +121,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
             watches.removeAll()
 
             if verbose {
-                Self.logger.info("🛑 已停止所有目录监控")
+                Self.logger.info("\(Self.t)🛑 已停止所有目录监控")
             }
         }
     }

@@ -2,6 +2,7 @@ import Foundation
 @preconcurrency import NetworkExtension
 import SystemExtensions
 import os
+import SuperLogKit
 import AppKit
 import SwiftUI
 import LumiCoreKit
@@ -15,7 +16,7 @@ public enum FilterStatus: String, CaseIterable {
     public var description: String { rawValue }
 }
 
-public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
+public class FirewallService: NSObject, ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = FirewallService()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     private var verbose: Bool = false
@@ -47,7 +48,7 @@ public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
         manager.loadFromPreferences { error in
             if let error = error {
                 if self.verbose {
-                                    self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                                    self.logger.error("\(self.t)Failed to load filter configuration: \(error.localizedDescription)")
                 }
                 DispatchQueue.main.async { self.status = .error }
                 return
@@ -66,12 +67,12 @@ public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
             manager.saveToPreferences { error in
                 if let error = error {
                     if self.verbose {
-                                            self.logger.error("Failed to save filter configuration: \(error.localizedDescription)")
+                                            self.logger.error("\(self.t)Failed to save filter configuration: \(error.localizedDescription)")
                     }
                     DispatchQueue.main.async { self.status = .error }
                 } else {
                     if self.verbose {
-                                            self.logger.info("Filter configuration saved successfully")
+                                            self.logger.info("\(self.t)Filter configuration saved successfully")
                     }
                     DispatchQueue.main.async { self.status = .running }
                 }
@@ -84,7 +85,7 @@ public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
         manager.loadFromPreferences { error in
             if let error = error {
                 if self.verbose {
-                                    self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                                    self.logger.error("\(self.t)Failed to load filter configuration: \(error.localizedDescription)")
                 }
                 return
             }
@@ -93,7 +94,7 @@ public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
             manager.saveToPreferences { error in
                 if let error = error {
                     if self.verbose {
-                                            self.logger.error("Failed to disable filter: \(error.localizedDescription)")
+                                            self.logger.error("\(self.t)Failed to disable filter: \(error.localizedDescription)")
                     }
                 } else {
                     DispatchQueue.main.async { self.status = .stopped }
@@ -108,7 +109,7 @@ public class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
         // This requires the extension bundle to be present in the app bundle
         // and System Extension entitlement.
         guard let extensionIdentifier = Bundle.main.object(forInfoDictionaryKey: "NettoExtensionIdentifier") as? String else {
-            logger.error("NettoExtensionIdentifier not found in Info.plist")
+            logger.error("\(self.t)NettoExtensionIdentifier not found in Info.plist")
             return
         }
         
@@ -124,15 +125,15 @@ extension FirewallService: OSSystemExtensionRequestDelegate {
     }
     
     public func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
-        logger.info("System extension requires user approval")
+        logger.info("\(self.t)System extension requires user approval")
     }
     
     public func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
-        logger.info("System extension installation finished with result: \(result.rawValue)")
+        logger.info("\(self.t)System extension installation finished with result: \(result.rawValue)")
     }
     
     public func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        logger.error("System extension installation failed: \(error.localizedDescription)")
+        logger.error("\(self.t)System extension installation failed: \(error.localizedDescription)")
     }
 }
 
@@ -164,7 +165,7 @@ extension FirewallService: AppCommunication {
     }
     
     public func extensionLog(_ words: String) {
-        logger.debug("Extension: \(words)")
+        logger.debug("\(self.t)Extension: \(words)")
     }
     
     private func logEvent(id: String, hostname: String, port: String, direction: NETrafficDirection, allowed: Bool) {

@@ -27,7 +27,7 @@ public struct MemoryFileRetrievalConfig: Sendable {
 /// 4. **命中密度（20%）**：单条记忆中被命中关键词的比例
 public actor MemoryFileRetrieval {
     private static let logger = Logger(
-        subsystem: "com.coffic.lumi.memorykit", category: "retrieval")
+        subsystem: "com.coffic.lumi", category: "plugin.memory.retrieval")
 
     private let config: MemoryFileRetrievalConfig
     private let verbose: Bool

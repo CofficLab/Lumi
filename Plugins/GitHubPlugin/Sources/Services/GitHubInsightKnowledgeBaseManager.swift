@@ -1,12 +1,13 @@
 import Foundation
 import LumiCoreKit
 import os
+import SuperLogKit
 
 /// 管理本地项目持久化的 GitHub 生态知识库文件。
 ///
 /// 每个项目都会保存为一个 JSON 文件，文件名由项目路径的稳定哈希生成。
 /// 管理器为这些存储提供隔离的读取、写入和刷新检查能力。
-public actor GitHubInsightKnowledgeBaseManager {
+public actor GitHubInsightKnowledgeBaseManager: SuperLog {
     /// 插件使用的共享知识库管理器。
     public static let shared = GitHubInsightKnowledgeBaseManager()
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-insight.knowledge-base")
@@ -35,7 +36,7 @@ public actor GitHubInsightKnowledgeBaseManager {
         do {
             try fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
         } catch {
-            Self.logger.error("Create GitHub insight store directory failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Create GitHub insight store directory failed: \(error.localizedDescription)")
         }
     }
 
@@ -47,7 +48,7 @@ public actor GitHubInsightKnowledgeBaseManager {
             let data = try Data(contentsOf: url)
             return try decoder.decode(GitHubInsightProjectStore.self, from: data)
         } catch {
-            Self.logger.error("Load GitHub insight store failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Load GitHub insight store failed: \(error.localizedDescription)")
             return nil
         }
     }
@@ -66,7 +67,7 @@ public actor GitHubInsightKnowledgeBaseManager {
                 includingPropertiesForKeys: nil
             )
         } catch {
-            Self.logger.error("List GitHub insight stores failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)List GitHub insight stores failed: \(error.localizedDescription)")
             return []
         }
 
@@ -78,7 +79,7 @@ public actor GitHubInsightKnowledgeBaseManager {
                     let store = try decoder.decode(GitHubInsightProjectStore.self, from: data)
                     return store.entries
                 } catch {
-                    Self.logger.error("Load GitHub insight store from list failed: \(error.localizedDescription)")
+                    Self.logger.error("\(Self.t)Load GitHub insight store from list failed: \(error.localizedDescription)")
                     return []
                 }
             }
@@ -105,7 +106,7 @@ public actor GitHubInsightKnowledgeBaseManager {
             }
         } catch {
             try? fileManager.removeItem(at: temp)
-            Self.logger.error("Persist GitHub insight store failed: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Persist GitHub insight store failed: \(error.localizedDescription)")
             throw error
         }
     }

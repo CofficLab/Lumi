@@ -2,8 +2,9 @@ import AppKit
 import Foundation
 import SwiftUI
 import os
+import SuperLogKit
 
-public struct SmartApp: Identifiable, Sendable, Equatable, Hashable {
+public struct SmartApp: Identifiable, Sendable, Equatable, Hashable, SuperLog {
     // MARK: - Properties
     
     public static let emoji = "🐒"
@@ -133,7 +134,7 @@ extension SmartApp {
         }
 
         if verbose {
-            logger.debug("⚠️ App not found: \(id)")
+            logger.debug("\(Self.t)⚠️ App not found: \(id)")
         }
 
         return nil

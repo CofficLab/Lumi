@@ -56,7 +56,7 @@ public class QuickLauncherManager: SuperLog {
             let config = NSWorkspace.OpenConfiguration()
             NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, error in
                 if let error = error {
-                    QuickLauncherPlugin.logger.error("Failed to launch app: \(error.localizedDescription)")
+                    QuickLauncherPlugin.logger.error("\(self.t)Failed to launch app: \(error.localizedDescription)")
                 }
             }
         } else {
@@ -66,7 +66,7 @@ public class QuickLauncherManager: SuperLog {
             do {
                 try task.run()
             } catch {
-                QuickLauncherPlugin.logger.error("Failed to launch app: \(error.localizedDescription)")
+                QuickLauncherPlugin.logger.error("\(self.t)Failed to launch app: \(error.localizedDescription)")
             }
         }
     }

@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import os
 
-private let displayLog = Logger(subsystem: "com.coffic.lumi.plugin.display-control", category: "DisplayService")
+private let displayLog = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control.display")
 
 // MARK: - DisplayServices Bridge (built-in display)
 

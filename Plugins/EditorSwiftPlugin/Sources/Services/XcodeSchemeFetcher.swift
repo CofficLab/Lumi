@@ -2,14 +2,14 @@ import Foundation
 import SuperLogKit
 import XcodeKit
 
-enum XcodeSchemeFetcher {
+enum XcodeSchemeFetcher: SuperLog {
     static func fetchAvailableSchemes(for workspaceURL: URL) async -> [String] {
         let filesystemSchemes = await Task.detached(priority: .userInitiated) {
             XcodeProjectResolver.discoverSchemeNames(at: workspaceURL)
         }.value
         if !filesystemSchemes.isEmpty {
             if SwiftPluginLog.verbose {
-                SwiftPluginLog.logger.info("从 .xcscheme 文件获取 schemes，count=\(filesystemSchemes.count)")
+                SwiftPluginLog.logger.info("\(Self.t)从 .xcscheme 文件获取 schemes，count=\(filesystemSchemes.count)")
             }
             return filesystemSchemes
         }
@@ -23,7 +23,7 @@ enum XcodeSchemeFetcher {
         args += [workspaceArg, workspaceURL.path]
 
         if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("开始获取 schemes：xcodebuild \(args.joined(separator: " "))")
+            SwiftPluginLog.logger.info("\(Self.t)开始获取 schemes：xcodebuild \(args.joined(separator: " "))")
         }
 
         return await withCheckedContinuation { continuation in
@@ -38,7 +38,7 @@ enum XcodeSchemeFetcher {
                 guard process.terminationStatus == 0,
                       let data = try? JSONSerialization.jsonObject(with: pipe.fileHandleForReading.readDataToEndOfFile()) as? [String: Any] else {
                     if SwiftPluginLog.verbose {
-                        SwiftPluginLog.logger.warning("xcodebuild 获取 schemes 失败，terminationStatus=\(process.terminationStatus)")
+                        SwiftPluginLog.logger.warning("\(Self.t)xcodebuild 获取 schemes 失败，terminationStatus=\(process.terminationStatus)")
                     }
                     continuation.resume(returning: [])
                     return
@@ -56,7 +56,7 @@ enum XcodeSchemeFetcher {
 
                 let uniqueSchemes = XcodeProjectResolver.uniquePreservingOrder(schemes)
                 if SwiftPluginLog.verbose {
-                    SwiftPluginLog.logger.info("xcodebuild 获取 schemes 完成，count=\(uniqueSchemes.count)")
+                    SwiftPluginLog.logger.info("\(Self.t)xcodebuild 获取 schemes 完成，count=\(uniqueSchemes.count)")
                 }
                 continuation.resume(returning: uniqueSchemes)
             }
@@ -65,7 +65,7 @@ enum XcodeSchemeFetcher {
                 try process.run()
             } catch {
                 if SwiftPluginLog.verbose {
-                    SwiftPluginLog.logger.error("xcodebuild 启动失败：\(error.localizedDescription)")
+                    SwiftPluginLog.logger.error("\(Self.t)xcodebuild 启动失败：\(error.localizedDescription)")
                 }
                 continuation.resume(returning: [])
             }

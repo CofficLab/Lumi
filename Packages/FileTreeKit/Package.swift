@@ -12,9 +12,15 @@ let package = Package(
             targets: ["FileTreeKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../SuperLogKit")
+    ],
     targets: [
         .target(
             name: "FileTreeKit",
+            dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit")
+            ],
             path: "Sources"
         ),
         .testTarget(

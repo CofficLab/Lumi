@@ -1,4 +1,5 @@
 import LibGit2Swift
+import SuperLogKit
 import SwiftUI
 import LumiCoreKit
 import LumiUI
@@ -8,7 +9,7 @@ import LumiUI
 /// 参考 GitOK 的 CommitList + WorkingStateView 实现，显示当前项目的提交历史。
 /// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
-public struct GitCommitHistorySidebarView: View {
+public struct GitCommitHistorySidebarView: View, SuperLog {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
@@ -286,7 +287,7 @@ public struct GitCommitHistorySidebarView: View {
                 }
 
                 if GitPlugin.verbose {
-                                    GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                                    GitPlugin.logger.error("\(Self.t)刷新提交列表失败: \(error.localizedDescription)")
                 }
             }
 
@@ -367,7 +368,7 @@ public struct GitCommitHistorySidebarView: View {
                     self.loading = false
                 }
                 if GitPlugin.verbose {
-                                    GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                                    GitPlugin.logger.error("\(Self.t)加载更多提交失败: \(error.localizedDescription)")
                 }
             }
         }

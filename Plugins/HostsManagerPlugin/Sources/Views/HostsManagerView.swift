@@ -1,8 +1,9 @@
 import SwiftUI
+import SuperLogKit
 import LumiUI
 import LumiCoreKit
 
-public struct HostsManagerView: View {
+public struct HostsManagerView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @StateObject private var viewModel = HostsManagerViewModel()
@@ -118,7 +119,7 @@ public struct HostsManagerView: View {
                     viewModel.errorMessage = nil
                 } catch {
                     if HostsManagerPlugin.verbose {
-                        HostsManagerPlugin.logger.error("Export failed: \(error)")
+                        HostsManagerPlugin.logger.error("\(Self.t)Export failed: \(error)")
                     }
                     viewModel.errorMessage = String(
                         format: LumiPluginLocalization.string("Export failed: %@", bundle: .module),
@@ -142,7 +143,7 @@ public struct HostsManagerView: View {
                         await viewModel.loadHosts()
                     } catch {
                         if HostsManagerPlugin.verbose {
-                            HostsManagerPlugin.logger.error("Import failed: \(error)")
+                            HostsManagerPlugin.logger.error("\(Self.t)Import failed: \(error)")
                         }
                         await MainActor.run {
                             viewModel.errorMessage = String(

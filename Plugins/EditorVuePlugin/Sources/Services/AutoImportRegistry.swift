@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 
 /// 自动导入注册表
 ///
@@ -8,7 +9,7 @@ import os
 ///
 /// 这些插件会在项目中生成 `components.d.ts` 和 `auto-imports.d.ts` 文件，
 /// 本模块解析这些文件，为编辑器提供准确的组件和 API 补全。
-struct AutoImportRegistry: Sendable {
+struct AutoImportRegistry: Sendable, SuperLog {
     nonisolated static let emoji = "📦"
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -82,7 +83,7 @@ struct AutoImportRegistry: Sendable {
         if let content = try? VueTextFileIO.readContent(path: componentsPath) {
             components = parseComponentsDTS(content)
             if EditorVuePlugin.verbose {
-                logger.info("\(emoji) 解析 components.d.ts: \(components.count) 个组件")
+                logger.info("\(Self.t)\(emoji) 解析 components.d.ts: \(components.count) 个组件")
             }
         }
 
@@ -91,7 +92,7 @@ struct AutoImportRegistry: Sendable {
         if let content = try? VueTextFileIO.readContent(path: autoImportsPath) {
             apis = parseAutoImportsDTS(content)
             if EditorVuePlugin.verbose {
-                logger.info("\(emoji) 解析 auto-imports.d.ts: \(apis.count) 个 API")
+                logger.info("\(Self.t)\(emoji) 解析 auto-imports.d.ts: \(apis.count) 个 API")
             }
         }
 
