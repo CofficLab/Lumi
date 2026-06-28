@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "MarkdownKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -62,6 +63,9 @@ let package = Package(
             sources: [
                 "Mermaid",
                 "Views"
+            ],
+            resources: [
+                .process("Localizable.xcstrings")
             ]
         ),
         .target(

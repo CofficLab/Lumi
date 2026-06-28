@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterJSON", package: "tree-sitter-json"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorJSONPluginTests", dependencies: ["EditorJSONPlugin"], path: "Tests"),
     ]

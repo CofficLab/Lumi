@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "LogoCofficPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
@@ -19,7 +20,10 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
+            ]
         )
     ]
 )

@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterCSharp", package: "tree-sitter-c-sharp"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorCSharpPluginTests", dependencies: ["EditorCSharpPlugin"], path: "Tests"),
     ]

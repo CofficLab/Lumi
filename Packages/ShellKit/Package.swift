@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ShellKit",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "ShellKit", targets: ["ShellKit"]),

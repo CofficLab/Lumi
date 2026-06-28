@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "OpenInKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -15,7 +16,10 @@ let package = Package(
     targets: [
         .target(
             name: "OpenInKit",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "OpenInKitTests",

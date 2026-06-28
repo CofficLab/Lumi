@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterPerl", package: "tree-sitter-perl"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorPerlPluginTests", dependencies: ["EditorPerlPlugin"], path: "Tests"),
     ]

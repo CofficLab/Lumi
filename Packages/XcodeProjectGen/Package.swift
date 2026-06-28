@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "XcodeProjectGen",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],

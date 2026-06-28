@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TerminalCoreKit",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.library(name: "TerminalCoreKit", targets: ["TerminalCoreKit"])],
     dependencies: [

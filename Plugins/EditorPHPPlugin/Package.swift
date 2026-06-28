@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterPHP", package: "tree-sitter-php"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorPHPPluginTests", dependencies: ["EditorPHPPlugin"], path: "Tests"),
     ]

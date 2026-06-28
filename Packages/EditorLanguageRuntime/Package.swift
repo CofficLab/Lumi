@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EditorLanguageRuntime",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         .library(
@@ -19,7 +20,10 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "EditorLanguageRuntimeTests",

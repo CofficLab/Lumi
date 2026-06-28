@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterRust", package: "tree-sitter-rust"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorRustPluginTests", dependencies: ["EditorRustPlugin"], path: "Tests"),
     ]

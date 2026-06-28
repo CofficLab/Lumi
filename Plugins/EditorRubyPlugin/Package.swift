@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterRuby", package: "tree-sitter-ruby"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorRubyPluginTests", dependencies: ["EditorRubyPlugin"], path: "Tests"),
     ]

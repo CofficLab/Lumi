@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterDockerfile", package: "tree-sitter-dockerfile"),
             ],
             path: "Sources",
-            resources: [.copy("Resources")]
+            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorDockerfilePluginTests", dependencies: ["EditorDockerfilePlugin"], path: "Tests"),
     ]
