@@ -148,7 +148,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     }
 
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await AvailabilityService.checkAvailability(provider: self, model: model)
+        await AvailabilityService.checkAvailability(model: model, check: { await self.checkAvailabilityUsingChatPing(model: $0) })
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
