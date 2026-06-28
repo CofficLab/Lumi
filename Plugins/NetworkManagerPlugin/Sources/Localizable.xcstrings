@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active Only"
+            "value": "仅活动"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active Only"
+            "value": "仅活动"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active Only"
+            "value": "仅活动"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active Only"
+            "value": "仅活动"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "App"
+            "value": "应用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "App"
+            "value": "应用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "App"
+            "value": "应用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "App"
+            "value": "应用"
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Collecting..."
+            "value": "收集中..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Collecting..."
+            "value": "收集中..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Collecting..."
+            "value": "收集中..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Collecting..."
+            "value": "收集中..."
           }
         }
       }
@@ -148,25 +148,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Down"
+            "value": "下行"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Down"
+            "value": "下行"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Down"
+            "value": "下行"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Down"
+            "value": "下行"
           }
         }
       }
@@ -182,25 +182,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download"
+            "value": "下载"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download"
+            "value": "下載"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download"
+            "value": "下載"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download"
+            "value": "下載"
           }
         }
       }
@@ -216,25 +216,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetching..."
+            "value": "获取中..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetching..."
+            "value": "获取中..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetching..."
+            "value": "获取中..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetching..."
+            "value": "获取中..."
           }
         }
       }
@@ -250,25 +250,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Trend"
+            "value": "历史趋势"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Trend"
+            "value": "历史趋势"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Trend"
+            "value": "历史趋势"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Trend"
+            "value": "历史趋势"
           }
         }
       }
@@ -284,25 +284,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Interface"
+            "value": "接口"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Interface"
+            "value": "接口"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Interface"
+            "value": "接口"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Interface"
+            "value": "接口"
           }
         }
       }
@@ -318,25 +318,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last 60 seconds"
+            "value": "最近 60 秒"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last 60 seconds"
+            "value": "最近 60 秒"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last 60 seconds"
+            "value": "最近 60 秒"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last 60 seconds"
+            "value": "最近 60 秒"
           }
         }
       }
@@ -352,25 +352,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Latency (Ping)"
+            "value": "延迟 (Ping)"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Latency (Ping)"
+            "value": "延迟 (Ping)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Latency (Ping)"
+            "value": "延迟 (Ping)"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Latency (Ping)"
+            "value": "延迟 (Ping)"
           }
         }
       }
@@ -386,25 +386,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local IP"
+            "value": "本地 IP"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local IP"
+            "value": "本地 IP"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local IP"
+            "value": "本地 IP"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local IP"
+            "value": "本地 IP"
           }
         }
       }
@@ -454,25 +454,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "No active processes"
+            "value": "无活动进程"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "No active processes"
+            "value": "无活动进程"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "No active processes"
+            "value": "无活动进程"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "No active processes"
+            "value": "无活动进程"
           }
         }
       }
@@ -488,25 +488,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not Connected"
+            "value": "未连接"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not Connected"
+            "value": "未连接"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not Connected"
+            "value": "未连接"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not Connected"
+            "value": "未连接"
           }
         }
       }
@@ -556,25 +556,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Process Monitor"
+            "value": "进程监控"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Process Monitor"
+            "value": "进程监控"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Process Monitor"
+            "value": "进程监控"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Process Monitor"
+            "value": "进程监控"
           }
         }
       }
@@ -590,25 +590,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Public IP"
+            "value": "公网 IP"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Public IP"
+            "value": "公网 IP"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Public IP"
+            "value": "公网 IP"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Public IP"
+            "value": "公网 IP"
           }
         }
       }
@@ -760,25 +760,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unknown"
+            "value": "未知"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unknown"
+            "value": "未知"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unknown"
+            "value": "未知"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unknown"
+            "value": "未知"
           }
         }
       }
@@ -794,25 +794,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up"
+            "value": "上行"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up"
+            "value": "上行"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up"
+            "value": "上行"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up"
+            "value": "上行"
           }
         }
       }
@@ -828,25 +828,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Upload"
+            "value": "上传"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Upload"
+            "value": "上傳"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Upload"
+            "value": "上傳"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Upload"
+            "value": "上傳"
           }
         }
       }

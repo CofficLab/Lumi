@@ -1,1233 +1,1231 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "# %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "# %@"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "# %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "# %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "# %@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "# %@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "# %@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "# %@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "# %@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "# %@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "# %@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "# %@"
           }
         }
       }
     },
-    "%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
-    },
-    "Add" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         }
       }
     },
-    "Add Host Entry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Host Entry"
+    "Add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加主机条目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加主機條目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加主機條目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加主機條目"
-          }
-        }
-      }
-    },
-    "All" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增"
           }
         }
       }
     },
-    "Allows adding, editing, and removing entries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allows adding, editing, and removing entries"
+    "Add Host Entry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Host Entry"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持添加、编辑和删除条目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加主机条目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援新增、編輯和刪除條目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加主機條目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援新增、編輯和刪除條目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加主機條目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援新增、編輯和刪除條目"
-          }
-        }
-      }
-    },
-    "Backup your hosts file before making changes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Backup your hosts file before making changes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "修改前请备份 hosts 文件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "修改前請備份 hosts 檔案"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "修改前請備份 hosts 檔案"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "修改前請備份 hosts 檔案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加主機條目"
           }
         }
       }
     },
-    "Cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+    "All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        }
-      }
-    },
-    "Comments start with # and are ignored" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comments start with # and are ignored"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 # 开头的行是注释，会被忽略"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 # 開頭的行是註解，會被忽略"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 # 開頭的行是註解，會被忽略"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 # 開頭的行是註解，會被忽略"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         }
       }
     },
-    "Create and switch between different hosts profiles" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create and switch between different hosts profiles"
+    "Allows adding, editing, and removing entries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allows adding, editing, and removing entries"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建并切换不同的 hosts 配置文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持添加、编辑和删除条目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並切換不同的 hosts 設定檔"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援新增、編輯和刪除條目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並切換不同的 hosts 設定檔"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援新增、編輯和刪除條目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並切換不同的 hosts 設定檔"
-          }
-        }
-      }
-    },
-    "Edit and manage the system hosts file with a user-friendly interface" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit and manage the system hosts file with a user-friendly interface"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过友好界面编辑和管理系统 hosts 文件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過友善介面編輯和管理系統 hosts 檔案"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過友善介面編輯和管理系統 hosts 檔案"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過友善介面編輯和管理系統 hosts 檔案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援新增、編輯和刪除條目"
           }
         }
       }
     },
-    "Enable or disable hosts entries without deleting them" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable or disable hosts entries without deleting them"
+    "Backup your hosts file before making changes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup your hosts file before making changes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无需删除即可启用或禁用 hosts 条目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改前请备份 hosts 文件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無需刪除即可啟用或停用 hosts 條目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改前請備份 hosts 檔案"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無需刪除即可啟用或停用 hosts 條目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改前請備份 hosts 檔案"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無需刪除即可啟用或停用 hosts 條目"
-          }
-        }
-      }
-    },
-    "Export Backup..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export Backup..."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出备份..."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出備份..."
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出備份..."
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出備份..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改前請備份 hosts 檔案"
           }
         }
       }
     },
-    "Export failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export failed: %@"
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出失敗：%@"
-          }
-        }
-      }
-    },
-    "Group" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Group"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Group"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Group"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Group"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Group"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "Hosts File Management" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts File Management"
+    "Comments start with # and are ignored": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comments start with # and are ignored"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 文件管理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 # 开头的行是注释，会被忽略"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 檔案管理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 # 開頭的行是註解，會被忽略"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 檔案管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 # 開頭的行是註解，會被忽略"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 檔案管理"
-          }
-        }
-      }
-    },
-    "Hosts Manager" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts Manager"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 管理器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 管理器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 管理器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hosts 管理器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以 # 開頭的行是註解，會被忽略"
           }
         }
       }
     },
-    "Import Backup..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import Backup..."
+    "Create and switch between different hosts profiles": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and switch between different hosts profiles"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入备份..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建并切换不同的 hosts 配置文件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入備份..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立並切換不同的 hosts 設定檔"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入備份..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立並切換不同的 hosts 設定檔"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入備份..."
-          }
-        }
-      }
-    },
-    "Import failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import failed: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入失败：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入失敗：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入失敗：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立並切換不同的 hosts 設定檔"
           }
         }
       }
     },
-    "Invalid domain format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid domain format"
+    "Edit and manage the system hosts file with a user-friendly interface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit and manage the system hosts file with a user-friendly interface"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid domain format"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过友好界面编辑和管理系统 hosts 文件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid domain format"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過友善介面編輯和管理系統 hosts 檔案"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid domain format"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過友善介面編輯和管理系統 hosts 檔案"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid domain format"
-          }
-        }
-      }
-    },
-    "Invalid IP address format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid IP address format"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid IP address format"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid IP address format"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid IP address format"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid IP address format"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過友善介面編輯和管理系統 hosts 檔案"
           }
         }
       }
     },
-    "Loading Hosts" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Hosts"
+    "Enable or disable hosts entries without deleting them": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable or disable hosts entries without deleting them"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Hosts"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无需删除即可启用或禁用 hosts 条目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Hosts"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無需刪除即可啟用或停用 hosts 條目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Hosts"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無需刪除即可啟用或停用 hosts 條目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Hosts"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無需刪除即可啟用或停用 hosts 條目"
           }
         }
       }
     },
-    "Manage system hosts file configuration" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage system hosts file configuration"
+    "Export Backup...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Backup..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理系统 hosts 文件配置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出备份..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理系統 hosts 檔案配置"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出備份..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理系統 hosts 檔案配置"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出備份..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理系統 hosts 檔案配置"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出備份..."
           }
         }
       }
     },
-    "More" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More"
+    "Export failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出失敗：%@"
           }
         }
       }
     },
-    "Parses and displays entries in an organized list" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Parses and displays entries in an organized list"
+    "Group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解析并以有序列表显示条目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分组"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解析並以有序列表顯示條目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分组"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解析並以有序列表顯示條目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分组"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解析並以有序列表顯示條目"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分组"
           }
         }
       }
     },
-    "Profile Support" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile Support"
+    "Hosts File Management": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts File Management"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置文件支持"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 文件管理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定檔支援"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 檔案管理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定檔支援"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 檔案管理"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定檔支援"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 檔案管理"
           }
         }
       }
     },
-    "Quick Toggle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick Toggle"
+    "Hosts Manager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts Manager"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速开关"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 管理器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速開關"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 管理器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速開關"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 管理器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速開關"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosts 管理器"
           }
         }
       }
     },
-    "Reads the system hosts file with proper permissions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reads the system hosts file with proper permissions"
+    "Import Backup...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Backup..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以适当权限读取系统 hosts 文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入备份..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以適當權限讀取系統 hosts 檔案"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入備份..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以適當權限讀取系統 hosts 檔案"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入備份..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以適當權限讀取系統 hosts 檔案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入備份..."
           }
         }
       }
     },
-    "Refresh" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
+    "Import failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入失敗：%@"
           }
         }
       }
     },
-    "Retry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+    "Invalid domain format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid domain format"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名格式无效"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名格式无效"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名格式无效"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "域名格式无效"
           }
         }
       }
     },
-    "Save" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+    "Invalid IP address format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid IP address format"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP 地址格式无效"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP 地址格式无效"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP 地址格式无效"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP 地址格式无效"
           }
         }
       }
     },
-    "Search Host" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Host"
+    "Loading Hosts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading Hosts"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Host"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载 Hosts"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Host"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载 Hosts"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Host"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载 Hosts"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Host"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载 Hosts"
           }
         }
       }
     },
-    "Syntax Highlighting" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syntax Highlighting"
+    "Manage system hosts file configuration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage system hosts file configuration"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "语法高亮"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理系统 hosts 文件配置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語法醒目提示"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理系統 hosts 檔案配置"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語法醒目提示"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理系統 hosts 檔案配置"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語法醒目提示"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理系統 hosts 檔案配置"
           }
         }
       }
     },
-    "Syntax highlighting and validation for hosts entries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syntax highlighting and validation for hosts entries"
+    "More": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "为 hosts 条目提供语法高亮和校验"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為 hosts 條目提供語法醒目提示和驗證"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為 hosts 條目提供語法醒目提示和驗證"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為 hosts 條目提供語法醒目提示和驗證"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多"
           }
         }
       }
     },
-    "Use profiles to switch between different configurations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use profiles to switch between different configurations"
+    "Parses and displays entries in an organized list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parses and displays entries in an organized list"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用配置文件在不同配置间切换"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解析并以有序列表显示条目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用設定檔在不同配置間切換"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解析並以有序列表顯示條目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用設定檔在不同配置間切換"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解析並以有序列表顯示條目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用設定檔在不同配置間切換"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解析並以有序列表顯示條目"
           }
         }
       }
     },
-    "Writes changes back to the hosts file" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Writes changes back to the hosts file"
+    "Profile Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile Support"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将更改写回 hosts 文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件支持"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將變更寫回 hosts 檔案"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定檔支援"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將變更寫回 hosts 檔案"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定檔支援"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將變更寫回 hosts 檔案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定檔支援"
+          }
+        }
+      }
+    },
+    "Quick Toggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Toggle"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速开关"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速開關"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速開關"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速開關"
+          }
+        }
+      }
+    },
+    "Reads the system hosts file with proper permissions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads the system hosts file with proper permissions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以适当权限读取系统 hosts 文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以適當權限讀取系統 hosts 檔案"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以適當權限讀取系統 hosts 檔案"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以適當權限讀取系統 hosts 檔案"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重試"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重試"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重試"
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存"
+          }
+        }
+      }
+    },
+    "Search Host": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Host"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主机"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主机"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主机"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主机"
+          }
+        }
+      }
+    },
+    "Syntax Highlighting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syntax Highlighting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语法高亮"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語法醒目提示"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語法醒目提示"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語法醒目提示"
+          }
+        }
+      }
+    },
+    "Syntax highlighting and validation for hosts entries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syntax highlighting and validation for hosts entries"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为 hosts 条目提供语法高亮和校验"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 hosts 條目提供語法醒目提示和驗證"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 hosts 條目提供語法醒目提示和驗證"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 hosts 條目提供語法醒目提示和驗證"
+          }
+        }
+      }
+    },
+    "Use profiles to switch between different configurations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use profiles to switch between different configurations"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用配置文件在不同配置间切换"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用設定檔在不同配置間切換"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用設定檔在不同配置間切換"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用設定檔在不同配置間切換"
+          }
+        }
+      }
+    },
+    "Writes changes back to the hosts file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Writes changes back to the hosts file"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将更改写回 hosts 文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將變更寫回 hosts 檔案"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將變更寫回 hosts 檔案"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將變更寫回 hosts 檔案"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "删除"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         }
       }

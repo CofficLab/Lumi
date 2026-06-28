@@ -1,1485 +1,1485 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
-    },
-    "%lld Insights" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Insights"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 条洞察"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 條洞察"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 條洞察"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 條洞察"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         }
       }
     },
-    "5,000 次/小时" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5,000 次/小时"
+    "%lld Insights": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Insights"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5,000 次/小时"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条洞察"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5,000 次/小時"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 條洞察"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5,000 次/小時"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 條洞察"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5,000 次/小時"
-          }
-        }
-      }
-    },
-    "60 次/小时" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "60 次/小时"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "60 次/小时"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "60 次/小時"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "60 次/小時"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "60 次/小時"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 條洞察"
           }
         }
       }
     },
-    "All" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
+    "5,000 次/小时": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小时"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小时"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小時"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小時"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
-          }
-        }
-      }
-    },
-    "Alternative" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alternative"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "替代方案"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "替代方案"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "替代方案"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "替代方案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小時"
           }
         }
       }
     },
-    "API 限制" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 限制"
+    "60 次/小时": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小时"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 限制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小时"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 限制"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小時"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 限制"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小時"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 限制"
-          }
-        }
-      }
-    },
-    "Builds a local cache of GitHub ecosystem references for the current project." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Builds a local cache of GitHub ecosystem references for the current project."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "为当前项目构建本地缓存的 GitHub 生态参考。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為目前專案建置本地快取的 GitHub 生態參考。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為目前專案建置本地快取的 GitHub 生態參考。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為目前專案建置本地快取的 GitHub 生態參考。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小時"
           }
         }
       }
     },
-    "Click Sync Now to discover related GitHub repositories." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Sync Now to discover related GitHub repositories."
+    "All": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击“立即同步”来发现相关的 GitHub 仓库。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即同步」來發現相關的 GitHub 倉庫。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即同步」來發現相關的 GitHub 倉庫。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「立即同步」來發現相關的 GitHub 倉庫。"
-          }
-        }
-      }
-    },
-    "Complementary" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Complementary"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "互补工具"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "互補工具"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "互補工具"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "互補工具"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         }
       }
     },
-    "Enter GitHub Token" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter GitHub Token"
+    "Alternative": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alternative"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter GitHub Token"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "替代方案"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter GitHub Token"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "替代方案"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter GitHub Token"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "替代方案"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter GitHub Token"
-          }
-        }
-      }
-    },
-    "Example" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Example"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "参考示例"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "參考範例"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "參考範例"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "參考範例"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "替代方案"
           }
         }
       }
     },
-    "GitHub" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub"
+    "API 限制": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub"
-          }
-        }
-      }
-    },
-    "GitHub CLI Detect" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub CLI Detect"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub CLI 检测"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub CLI 檢測"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub CLI 檢測"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub CLI 檢測"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
           }
         }
       }
     },
-    "GitHub Ecosystem KB" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Ecosystem KB"
+    "Builds a local cache of GitHub ecosystem references for the current project.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Builds a local cache of GitHub ecosystem references for the current project."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 生态知识库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为当前项目构建本地缓存的 GitHub 生态参考。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 生態知識庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為目前專案建置本地快取的 GitHub 生態參考。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 生態知識庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為目前專案建置本地快取的 GitHub 生態參考。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 生態知識庫"
-          }
-        }
-      }
-    },
-    "GitHub Insight" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Insight"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Insight"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Insight"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Insight"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Insight"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為目前專案建置本地快取的 GitHub 生態參考。"
           }
         }
       }
     },
-    "GitHub KB" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub KB"
+    "Click Sync Now to discover related GitHub repositories.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Sync Now to discover related GitHub repositories."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub KB"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击“立即同步”来发现相关的 GitHub 仓库。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub KB"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即同步」來發現相關的 GitHub 倉庫。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub KB"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即同步」來發現相關的 GitHub 倉庫。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub KB"
-          }
-        }
-      }
-    },
-    "GitHub rate limited" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub rate limited"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 请求受限"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 請求受限"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 請求受限"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 請求受限"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「立即同步」來發現相關的 GitHub 倉庫。"
           }
         }
       }
     },
-    "GitHub Token" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Token"
+    "Complementary": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complementary"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Token"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互补工具"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Token"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互補工具"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Token"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互補工具"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Token"
-          }
-        }
-      }
-    },
-    "GitHub Tools" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Tools"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 工具"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 工具"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 工具"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 工具"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互補工具"
           }
         }
       }
     },
-    "Idle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idle"
+    "Enter GitHub Token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter GitHub Token"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空闲"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter GitHub Token"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter GitHub Token"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter GitHub Token"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
-          }
-        }
-      }
-    },
-    "Insight error" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Insight error"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "洞察错误"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "洞察錯誤"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "洞察錯誤"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "洞察錯誤"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter GitHub Token"
           }
         }
       }
     },
-    "Missing required parameter: query" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Missing required parameter: query"
+    "Example": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Example"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少必填参数：query"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参考示例"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少必填參數：query"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "參考範例"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少必填參數：query"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "參考範例"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少必填參數：query"
-          }
-        }
-      }
-    },
-    "No cached GitHub ecosystem entries matched `%@`." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No cached GitHub ecosystem entries matched `%@`."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有匹配 `%@` 的缓存 GitHub 生态条目。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有匹配 `%@` 的快取 GitHub 生態條目。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有匹配 `%@` 的快取 GitHub 生態條目。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有匹配 `%@` 的快取 GitHub 生態條目。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "參考範例"
           }
         }
       }
     },
-    "No cached GitHub ecosystem references yet." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No cached GitHub ecosystem references yet."
+    "GitHub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无缓存的 GitHub 生态参考。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無快取的 GitHub 生態參考。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無快取的 GitHub 生態參考。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無快取的 GitHub 生態參考。"
-          }
-        }
-      }
-    },
-    "Personal Access Token" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "个人访问令牌"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "個人訪問令牌"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "個人訪問令牌"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "個人訪問令牌"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
           }
         }
       }
     },
-    "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
+    "GitHub CLI Detect": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI Detect"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 检测"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 檢測"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 檢測"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
-          }
-        }
-      }
-    },
-    "Profile: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "画像：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "畫像：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "畫像：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "畫像：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub CLI 檢測"
           }
         }
       }
     },
-    "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools."
+    "GitHub Ecosystem KB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Ecosystem KB"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查询本地缓存的 GitHub 生态知识库，获取相关仓库、替代方案、示例和生态工具。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 生态知识库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 生態知識庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 生態知識庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 生態知識庫"
           }
         }
       }
     },
-    "Rate limited" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rate limited"
+    "GitHub Insight": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Insight"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请求受限"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Insight"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求受限"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Insight"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求受限"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Insight"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求受限"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Insight"
           }
         }
       }
     },
-    "Ready: %lld entries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ready: %lld entries"
+    "GitHub KB": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub KB"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就绪：%lld 条"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub KB"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒：%lld 條"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub KB"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒：%lld 條"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub KB"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "就緒：%lld 條"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub KB"
           }
         }
       }
     },
-    "Sync GitHub ecosystem data for this project." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync GitHub ecosystem data for this project."
+    "GitHub rate limited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub rate limited"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此项目的 GitHub 生态数据。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 请求受限"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此專案的 GitHub 生態資料。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 請求受限"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此專案的 GitHub 生態資料。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 請求受限"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此專案的 GitHub 生態資料。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 請求受限"
           }
         }
       }
     },
-    "Sync Now" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync Now"
+    "GitHub Token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即同步"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即同步"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即同步"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即同步"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token"
           }
         }
       }
     },
-    "Syncing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncing"
+    "GitHub Tools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Tools"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 工具"
           }
         }
       }
     },
-    "Syncing GitHub ecosystem references..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncing GitHub ecosystem references..."
+    "Idle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在同步 GitHub 生态参考..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在同步 GitHub 生態參考..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在同步 GitHub 生態參考..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在同步 GitHub 生態參考..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         }
       }
     },
-    "Syncing..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncing..."
+    "Insight error": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insight error"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "洞察错误"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "洞察錯誤"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "洞察錯誤"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步中..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "洞察錯誤"
           }
         }
       }
     },
-    "如何创建 Personal Access Token？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如何创建 Personal Access Token？"
+    "Missing required parameter: query": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing required parameter: query"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如何创建 Personal Access Token？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少必填参数：query"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如何创建 Personal Access Token？"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少必填參數：query"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如何创建 Personal Access Token？"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少必填參數：query"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如何创建 Personal Access Token？"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少必填參數：query"
           }
         }
       }
     },
-    "已保存" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+    "No cached GitHub ecosystem entries matched `%@`.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cached GitHub ecosystem entries matched `%@`."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配 `%@` 的缓存 GitHub 生态条目。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已儲存"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有匹配 `%@` 的快取 GitHub 生態條目。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已儲存"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有匹配 `%@` 的快取 GitHub 生態條目。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已儲存"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有匹配 `%@` 的快取 GitHub 生態條目。"
           }
         }
       }
     },
-    "已认证用户" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已认证用户"
+    "No cached GitHub ecosystem references yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cached GitHub ecosystem references yet."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已认证用户"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无缓存的 GitHub 生态参考。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已認證使用者"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無快取的 GitHub 生態參考。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已認證使用者"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無快取的 GitHub 生態參考。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已認證使用者"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無快取的 GitHub 生態參考。"
           }
         }
       }
     },
-    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+    "Personal Access Token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "个人访问令牌"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "個人訪問令牌"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "個人訪問令牌"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "個人訪問令牌"
           }
         }
       }
     },
-    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides Agent tools for accessing GitHub API (repos/files/search/issue management)."
+    "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
           }
         }
       }
     },
-    "未认证用户" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未认证用户"
+    "Profile: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未认证用户"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未認證使用者"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "畫像：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未認證使用者"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "畫像：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未認證使用者"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "畫像：%@"
           }
         }
       }
     },
-    "检测系统是否安装了 GitHub CLI (gh) 命令行工具。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detects whether GitHub CLI (gh) command-line tool is installed on the system."
+    "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检测系统是否安装了 GitHub CLI (gh) 命令行工具。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查询本地缓存的 GitHub 生态知识库，获取相关仓库、替代方案、示例和生态工具。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢本地快取的 GitHub 生態知識庫，取得相關倉庫、替代方案、範例和生態工具。"
+          }
+        }
+      }
+    },
+    "Rate limited": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate limited"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求受限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求受限"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求受限"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求受限"
+          }
+        }
+      }
+    },
+    "Ready: %lld entries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready: %lld entries"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就绪：%lld 条"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒：%lld 條"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒：%lld 條"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就緒：%lld 條"
+          }
+        }
+      }
+    },
+    "Sync GitHub ecosystem data for this project.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync GitHub ecosystem data for this project."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步此项目的 GitHub 生态数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步此專案的 GitHub 生態資料。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步此專案的 GitHub 生態資料。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步此專案的 GitHub 生態資料。"
+          }
+        }
+      }
+    },
+    "Sync Now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即同步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即同步"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即同步"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即同步"
+          }
+        }
+      }
+    },
+    "Syncing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中"
+          }
+        }
+      }
+    },
+    "Syncing GitHub ecosystem references...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing GitHub ecosystem references..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步 GitHub 生态参考..."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步 GitHub 生態參考..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步 GitHub 生態參考..."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步 GitHub 生態參考..."
+          }
+        }
+      }
+    },
+    "Syncing...": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中..."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中..."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中..."
+          }
+        }
+      }
+    },
+    "如何创建 Personal Access Token？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何创建 Personal Access Token？"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何创建 Personal Access Token？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何创建 Personal Access Token？"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何创建 Personal Access Token？"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何创建 Personal Access Token？"
+          }
+        }
+      }
+    },
+    "已保存": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
+          }
+        }
+      }
+    },
+    "已认证用户": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已认证用户"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已认证用户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已認證使用者"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已認證使用者"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已認證使用者"
+          }
+        }
+      }
+    },
+    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+          }
+        }
+      }
+    },
+    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides Agent tools for accessing GitHub API (repos/files/search/issue management)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）。"
+          }
+        }
+      }
+    },
+    "未认证用户": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未认证用户"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未认证用户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未認證使用者"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未認證使用者"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未認證使用者"
+          }
+        }
+      }
+    },
+    "检测系统是否安装了 GitHub CLI (gh) 命令行工具。": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detects whether GitHub CLI (gh) command-line tool is installed on the system."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测系统是否安装了 GitHub CLI (gh) 命令行工具。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測系統是否安裝了 GitHub CLI (gh) 命令行工具。"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

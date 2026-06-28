@@ -930,25 +930,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preferred"
+            "value": "首选"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preferred"
+            "value": "首选"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preferred"
+            "value": "首选"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preferred"
+            "value": "首选"
           }
         }
       }

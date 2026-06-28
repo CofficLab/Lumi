@@ -116,25 +116,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active"
+            "value": "活动"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active"
+            "value": "作用中"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active"
+            "value": "作用中"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active"
+            "value": "作用中"
           }
         }
       }
@@ -150,25 +150,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve"
+            "value": "批准"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve"
+            "value": "批准"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve"
+            "value": "批准"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve"
+            "value": "批准"
           }
         }
       }
@@ -184,25 +184,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve high-risk tool?"
+            "value": "批准高风险工具？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve high-risk tool?"
+            "value": "批准高风险工具？"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve high-risk tool?"
+            "value": "批准高风险工具？"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Approve high-risk tool?"
+            "value": "批准高风险工具？"
           }
         }
       }
@@ -219,25 +219,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask a question, paste context, or describe the task you want Lumi to handle."
+            "value": "提出问题、粘贴上下文，或描述您希望 Lumi 处理的任务。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask a question, paste context, or describe the task you want Lumi to handle."
+            "value": "提出问题、粘贴上下文，或描述您希望 Lumi 处理的任务。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask a question, paste context, or describe the task you want Lumi to handle."
+            "value": "提出问题、粘贴上下文，或描述您希望 Lumi 处理的任务。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask a question, paste context, or describe the task you want Lumi to handle."
+            "value": "提出问题、粘贴上下文，或描述您希望 Lumi 处理的任务。"
           }
         }
       }
@@ -254,25 +254,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing."
+            "value": "可用性根据本地聊天历史和提供商注册推断。使用 Current 选项卡手动选择模型，或启用自动路由。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing."
+            "value": "可用性根据本地聊天历史和提供商注册推断。使用 Current 选项卡手动选择模型，或启用自动路由。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing."
+            "value": "可用性根据本地聊天历史和提供商注册推断。使用 Current 选项卡手动选择模型，或启用自动路由。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Availability is inferred from local chat history and provider registration. Use the Current tab to pick a model manually, or enable Auto routing."
+            "value": "可用性根据本地聊天历史和提供商注册推断。使用 Current 选项卡手动选择模型，或启用自动路由。"
           }
         }
       }
@@ -458,25 +458,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "待发送消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "待发送消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "待发送消息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Pending Messages"
+            "value": "待发送消息"
           }
         }
       }
@@ -492,25 +492,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat surface with conversation rail"
+            "value": "带对话轨道的聊天界面"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat surface with conversation rail"
+            "value": "带对话轨道的聊天界面"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat surface with conversation rail"
+            "value": "带对话轨道的聊天界面"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat surface with conversation rail"
+            "value": "带对话轨道的聊天界面"
           }
         }
       }
@@ -526,25 +526,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear chat history"
+            "value": "清除聊天历史"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear chat history"
+            "value": "清除聊天历史"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear chat history"
+            "value": "清除聊天历史"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear chat history"
+            "value": "清除聊天历史"
           }
         }
       }
@@ -596,25 +596,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copy"
+            "value": "复制"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copy"
+            "value": "複製"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copy"
+            "value": "複製"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copy"
+            "value": "複製"
           }
         }
       }
@@ -631,25 +631,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "删除"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete"
+            "value": "刪除"
           }
         }
       }
@@ -700,25 +700,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable automatic routing"
+            "value": "启用自动路由"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable automatic routing"
+            "value": "启用自动路由"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable automatic routing"
+            "value": "启用自动路由"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable automatic routing"
+            "value": "启用自动路由"
           }
         }
       }
@@ -735,25 +735,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide Raw Message"
+            "value": "隐藏原始消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide Raw Message"
+            "value": "隐藏原始消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide Raw Message"
+            "value": "隐藏原始消息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide Raw Message"
+            "value": "隐藏原始消息"
           }
         }
       }
@@ -770,25 +770,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Load earlier messages"
+            "value": "加载更早的消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Load earlier messages"
+            "value": "加载更早的消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Load earlier messages"
+            "value": "加载更早的消息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Load earlier messages"
+            "value": "加载更早的消息"
           }
         }
       }
@@ -805,25 +805,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi will choose a provider and model based on tools, message size, and availability."
+            "value": "Lumi 将根据工具、消息大小和可用性选择提供商和模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi will choose a provider and model based on tools, message size, and availability."
+            "value": "Lumi 将根据工具、消息大小和可用性选择提供商和模型。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi will choose a provider and model based on tools, message size, and availability."
+            "value": "Lumi 将根据工具、消息大小和可用性选择提供商和模型。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lumi will choose a provider and model based on tools, message size, and availability."
+            "value": "Lumi 将根据工具、消息大小和可用性选择提供商和模型。"
           }
         }
       }
@@ -908,25 +908,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open model selector"
+            "value": "打开模型选择器"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open model selector"
+            "value": "打开模型选择器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open model selector"
+            "value": "打开模型选择器"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open model selector"
+            "value": "打开模型选择器"
           }
         }
       }
@@ -1491,25 +1491,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send"
+            "value": "发送"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send"
+            "value": "傳送"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send"
+            "value": "傳送"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send"
+            "value": "傳送"
           }
         }
       }
@@ -1560,25 +1560,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Raw Message"
+            "value": "显示原始消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Raw Message"
+            "value": "显示原始消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Raw Message"
+            "value": "显示原始消息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Raw Message"
+            "value": "显示原始消息"
           }
         }
       }
@@ -1629,25 +1629,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         }
       }
@@ -1664,25 +1664,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thinking"
+            "value": "思考中"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thinking"
+            "value": "思考中"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thinking"
+            "value": "思考中"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thinking"
+            "value": "思考中"
           }
         }
       }
