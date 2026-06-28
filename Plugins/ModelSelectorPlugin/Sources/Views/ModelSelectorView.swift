@@ -123,13 +123,15 @@ struct ModelSelectorView: View {
         } else {
             List {
                 ForEach(visibleProviders) { provider in
-                    // 供应商摘要卡片
                     Section {
-                        ProviderSummaryCard(provider: provider)
-                    }
+                        ProviderSummaryCard(
+                            provider: provider,
+                            isChecking: checkingProviderID == provider.id,
+                            onRefresh: { checkProviderAvailability(provider) },
+                            statusMessage: resolvedProviderStatus(for: provider)?.message,
+                            statusMessageColor: providerStatusColor(for: resolvedProviderStatus(for: provider)?.level ?? .info)
+                        )
 
-                    // 模型列表
-                    Section(header: sectionHeader(for: provider)) {
                         ForEach(filteredModels(for: provider), id: \.self) { model in
                             ModelRow(
                                 provider: provider,

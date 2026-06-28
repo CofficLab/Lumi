@@ -3,12 +3,16 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// 供应商摘要卡片，显示在模型列表顶部，展示模型统计信息
+/// 供应商摘要卡片，显示在模型列表顶部，展示模型统计信息、刷新操作和状态消息
 struct ProviderSummaryCard: View {
     @LumiTheme private var theme
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     let provider: LumiLLMProviderInfo
+    let isChecking: Bool
+    let onRefresh: () -> Void
+    let statusMessage: String?
+    let statusMessageColor: Color?
 
     // MARK: - Derived
 
@@ -32,50 +36,78 @@ struct ProviderSummaryCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Icon with availability indicator
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(iconBackgroundColor)
-                    .frame(width: 36, height: 36)
-                Image(systemName: provider.isLocal ? "cpu" : "cloud")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(iconColor)
-                Circle()
-                    .fill(isProviderAvailable ? .green : .red)
-                    .frame(width: 10, height: 10)
-                    .offset(x: 10, y: 10)
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                // Icon with availability indicator
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(iconBackgroundColor)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: provider.isLocal ? "cpu" : "cloud")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(iconColor)
+                    Circle()
+                        .fill(isProviderAvailable ? .green : .red)
+                        .frame(width: 10, height: 10)
+                        .offset(x: 10, y: 10)
+                }
 
-            // Provider info
-            VStack(alignment: .leading, spacing: 4) {
-                Text(provider.displayName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-                    .lineLimit(1)
+                // Provider info and stats
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(provider.displayName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(theme.textPrimary)
+                        .lineLimit(1)
 
-                // Stats summary
-                HStack(spacing: 12) {
-                    Label("\(totalModelCount)", systemImage: "number")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(theme.textSecondary)
-
-                    Label("\(availableModelCount)", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.green)
-
-                    if unavailableCount > 0 {
-                        Label("\(unavailableCount)", systemImage: "xmark.circle.fill")
+                    HStack(spacing: 12) {
+                        Label("\(totalModelCount)", systemImage: "number")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(theme.textSecondary)
+
+                        Label("\(availableModelCount)", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.green)
+
+                        if unavailableCount > 0 {
+                            Label("\(unavailableCount)", systemImage: "xmark.circle.fill")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(theme.textTertiary)
+                        }
                     }
+                }
+
+                Spacer()
+
+                // Refresh button and status badge
+                HStack(spacing: 12) {
+                    // Refresh Button
+                    if isChecking {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                    } else {
+                        Button {
+                            onRefresh()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(theme.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Re-check availability")
+                    }
+
+                    // Status Badge (e.g., 7/9)
+                    statusBadge
                 }
             }
 
-            Spacer()
-
-            // Status badge
-            statusBadge
+            // Optional status message (e.g., "API Key missing")
+            if let message = statusMessage, let color = statusMessageColor {
+                Text(message)
+                    .font(.system(size: 11))
+                    .foregroundColor(color)
+                    .lineLimit(2)
+            }
         }
         .padding(12)
         .background(cardBackground)
