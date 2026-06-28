@@ -53,6 +53,10 @@ public extension LumiPreviewFacade {
                 kIOSurfaceBytesPerElement: 4,
                 kIOSurfaceBytesPerRow: bytesPerRow,
                 kIOSurfacePixelFormat: Self.bgraPixelFormat,
+                // 跨进程共享：消费端通过 IOSurfaceLookup(surfaceID) 按 ID 取回 surface，
+                // 这要求 surface 必须是 global。kIOSurfaceIsGlobal 被标记为 deprecated
+                //（"Global surfaces are insecure"），但当前架构依赖 ID 跨进程序列化，
+                // 故此处有意保留该用法。迁移到 mach port 传递可彻底消除该警告。
                 kIOSurfaceIsGlobal: true
             ]
 

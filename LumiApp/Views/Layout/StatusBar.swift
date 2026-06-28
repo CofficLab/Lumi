@@ -37,7 +37,7 @@ struct StatusBar: View {
     var body: some View {
         let context = pluginContext.withAdditionalDependencies { dependencies in
             dependencies.register(LumiThemeServicing.self, lumiUIService)
-            dependencies.register(LumiChatServicing.self, chatService)
+            dependencies.register((any LumiChatServicing).self, chatService)
             dependencies.register((any HistoryQueryService).self, chatService)
             dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
             dependencies.register(LumiEditorServicing.self, editorCoreService)

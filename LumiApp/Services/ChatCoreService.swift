@@ -41,7 +41,7 @@ final class ChatCoreService {
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core",
             dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register(LumiChatServicing.self, chatService)
+                dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiToolServicing.self, toolService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)

@@ -283,7 +283,7 @@ struct AppLayoutView: View {
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
             dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register(LumiChatServicing.self, chatService)
+                dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
