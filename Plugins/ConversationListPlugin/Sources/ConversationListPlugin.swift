@@ -34,6 +34,7 @@ public enum ConversationListPlugin: LumiPlugin {
         }
 
         let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
+        let projectStore = context.resolve(LumiProjectStoring.self)
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).conversation-list",
@@ -42,7 +43,8 @@ public enum ConversationListPlugin: LumiPlugin {
             ) {
                 ConversationListPopoverButton(
                     chatService: chatService,
-                    projectPathStore: projectPathStore
+                    projectPathStore: projectPathStore,
+                    projectStore: projectStore
                 )
             }
         ]
@@ -58,6 +60,7 @@ public enum ConversationListPlugin: LumiPlugin {
         }
 
         let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
+        let projectStore = context.resolve(LumiProjectStoring.self)
 
         return [
             LumiPanelRailTabItem(
@@ -68,7 +71,8 @@ public enum ConversationListPlugin: LumiPlugin {
             ) {
                 ConversationRailPanelView(
                     chatService: chatService,
-                    projectPathStore: projectPathStore
+                    projectPathStore: projectPathStore,
+                    projectStore: projectStore
                 )
             }
         ]

@@ -6,11 +6,16 @@ import SwiftUI
 struct ConversationRailPanelView: View {
     @StateObject private var context: ConversationListContext
 
-    init(chatService: ChatService, projectPathStore: LumiCurrentProjectPathStoring?) {
+    init(
+        chatService: ChatService,
+        projectPathStore: LumiCurrentProjectPathStoring?,
+        projectStore: LumiProjectStoring? = nil
+    ) {
         _context = StateObject(
             wrappedValue: ConversationListContext(
                 chatService: chatService,
-                projectPathStore: projectPathStore
+                projectPathStore: projectPathStore,
+                projectStore: projectStore
             )
         )
     }
