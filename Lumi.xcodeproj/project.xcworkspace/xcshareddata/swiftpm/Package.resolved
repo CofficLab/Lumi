@@ -1,5 +1,5 @@
 {
-  "originHash" : "8b801365e33cf28ea74d623b3d5d9383a6e3fdb839bd3fb7feacab0663237c07",
+  "originHash" : "c9b2b4a867a832e64de116ad4a7676b4a10b7e4c6bb88a26b4b4e8c1e49b3eb5",
   "pins" : [
     {
       "identity" : "aexml",
@@ -79,7 +79,7 @@
       "location" : "https://github.com/nookery/Libgit2swift",
       "state" : {
         "branch" : "main",
-        "revision" : "603ef7ee92ecf4b2f60c433614af02f3c83478fe"
+        "revision" : "8a2e134fb5ce65e3e5c5feb16d2a9a3b679875db"
       }
     },
     {
