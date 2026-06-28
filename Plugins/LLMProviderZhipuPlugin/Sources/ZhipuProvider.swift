@@ -10,7 +10,7 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "zhipu",
-            displayName: LumiPluginLocalization.string("智谱", bundle: .module),
+            displayName: LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module),
             description: LumiPluginLocalization.string("Zhipu AI GLM", bundle: .module),
             defaultModel: "glm-4.7",
             availableModels: [
