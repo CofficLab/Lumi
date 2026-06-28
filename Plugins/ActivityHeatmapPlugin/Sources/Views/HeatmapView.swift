@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 struct ActivityHeatmapView: View {
     let data: [ActivityDay]
@@ -20,19 +21,19 @@ struct ActivityHeatmapView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Title and legend
             HStack {
-                Text("活跃热力图")
+                Text(LumiPluginLocalization.string("Activity Heatmap", bundle: .module))
                     .font(.appBody)
                     .bold()
                 Spacer()
                 HStack(spacing: 6) {
-                    Text("较少")
+                    Text(LumiPluginLocalization.string("Less", bundle: .module))
                         .font(.appCaption)
                     ForEach(0..<colors.count, id: \.self) { i in
                         RoundedRectangle(cornerRadius: 2)
                             .fill(colors[i])
                             .frame(width: 14, height: 14)
                     }
-                    Text("较多")
+                    Text(LumiPluginLocalization.string("More", bundle: .module))
                         .font(.appCaption)
                 }
             }

@@ -13,8 +13,8 @@ struct ActivityHeatmapSettingsView: View {
 
     var body: some View {
         PluginSettingsScaffold(
-            title: "Activity Heatmap",
-            subtitle: "Conversation activity over time",
+            title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
             // Heatmap card
@@ -29,9 +29,9 @@ struct ActivityHeatmapSettingsView: View {
 
             // Period selector
             AppCard {
-                AppSettingsSection(title: "Statistics Period") {
+                AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
                     AppSettingsPickerRow(
-                        "Period",
+                        LumiPluginLocalization.string("Period", bundle: .module),
                         selection: $period
                     ) {
                         ForEach(ActivityHeatmapPeriod.allCases) { p in
@@ -55,7 +55,7 @@ struct ActivityHeatmapSettingsView: View {
             Image(systemName: "chart.bar.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(.secondary)
-            Text("No data available yet. Start a conversation to see activity.")
+            Text(LumiPluginLocalization.string("No data available yet. Start a conversation to see activity.", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

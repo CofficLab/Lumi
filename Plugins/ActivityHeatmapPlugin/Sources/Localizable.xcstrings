@@ -35,41 +35,6 @@
         }
       }
     },
-    "Activity Statistics" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activity Statistics"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活跃统计"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍統計"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍統計"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍統計"
-          }
-        }
-      }
-    },
     "Conversation activity over time" : {
       "localizations" : {
         "en" : {
@@ -207,7 +172,6 @@
       }
     },
     "Less" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -242,7 +206,6 @@
       }
     },
     "More" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -411,15 +374,6 @@
           }
         }
       }
-    },
-    "活跃热力图" : {
-
-    },
-    "较多" : {
-
-    },
-    "较少" : {
-
     }
   },
   "version" : "1.1"
