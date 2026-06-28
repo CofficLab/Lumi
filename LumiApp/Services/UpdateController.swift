@@ -18,15 +18,22 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
 
     private var pendingImmediateInstallHandler: (() -> Void)?
 
+    /// 当前生效的 feed URL。初始用主 feed，setupFeedURLIfNeeded 探测后会更新为可达 URL。
+    /// Sparkle 通过 SPUUpdaterDelegate.feedURLString(for:) 在每次检查更新时读取它。
+    private var resolvedFeedURL: URL
+
     /// 主 feed URL（根据架构选择对应的 appcast）
     /// nonisolated：仅返回编译期常量，无实例状态访问，可安全在后台线程读取
-    private nonisolated var primaryFeedURL: URL {
+    private nonisolated var primaryFeedURL: URL { Self.defaultFeedURL }
+
+    /// 主 feed URL 的静态入口，供初始化器在 super.init 之前使用
+    private nonisolated static let defaultFeedURL: URL = {
         #if arch(arm64)
         URL(string: "https://s.kuaiyizhi.cn/lumi/appcast-arm64.xml")!
         #else
         URL(string: "https://s.kuaiyizhi.cn/lumi/appcast-x86_64.xml")!
         #endif
-    }
+    }()
 
     /// 备用 feed URL（GitHub Release，根据架构选择对应的 appcast）
     /// nonisolated：仅返回编译期常量，无实例状态访问，可安全在后台线程读取
@@ -42,6 +49,7 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     private var lastDetectionTime: Date?
 
     override init() {
+        self.resolvedFeedURL = Self.defaultFeedURL
         super.init()
         NotificationCenter.default.addObserver(
             self,
@@ -74,10 +82,13 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
             updaterDelegate: self,
             userDriverDelegate: nil
         )
-        // 使用 primaryFeedURL 作为初始值，后续 setupFeedURLIfNeeded 会更新为可达的 URL
-        controller.updater.setFeedURL(primaryFeedURL)
+        // 不再调用已废弃的 setFeedURL；feed URL 改由
+        // SPUUpdaterDelegate.feedURLString(for:) 在检查更新时动态返回（见下方实现）。
+        // 一次性迁移：清除历史版本通过 setFeedURL 写入 UserDefaults 的旧 feed URL，
+        // 确保 delegate 提供的 URL 生效。
+        _ = controller.updater.clearFeedURLFromUserDefaults()
         if Self.verbose {
-            Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
+            Self.logger.info("\(self.t)Initial feed URL: \(self.resolvedFeedURL.absoluteString, privacy: .public)")
         }
         // 启动 updater
         controller.startUpdater()
@@ -90,8 +101,9 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     /// 该方法也会触发 updaterController 的延迟初始化。
     ///
     /// 线程模型：网络探测（含 5 秒超时的 HEAD 请求）放在 detached 后台 Task
-    /// 中执行，不在主线程上推进；只有 Sparkle 必须在主线程的两步操作
-    /// （初始化 controller、setFeedURL）才 hop 回 MainActor。
+    /// 中执行，不在主线程上推进；只有 Sparkle 必须在主线程的操作
+    /// （初始化 controller）才 hop 回 MainActor。
+    /// 检测结果写入 resolvedFeedURL，由 feedURLString(for:) delegate 返回给 Sparkle。
     func setupFeedURLIfNeeded() {
         // 30 分钟内不重复检测（仅读取本地字段，不阻塞）
         if let lastDetectionTime,
@@ -109,10 +121,10 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
                 fallback: fallbackFeedURL
             )
 
-            // 只有 Sparkle 要求必须在主线程的操作才 hop 回 MainActor
+            // 写回 resolvedFeedURL 必须在 MainActor 上（属性为 @MainActor 隔离）
             await MainActor.run {
                 self.ensureUpdaterInitialized()
-                self.updaterController?.updater.setFeedURL(url)
+                self.resolvedFeedURL = url
                 if UpdateController.verbose {
                     Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
                 }
@@ -175,6 +187,12 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
         pendingImmediateInstallHandler = immediateInstallHandler
         NotificationCenter.postAppUpdateReadyToInstall(version: item.displayVersionString)
         return true
+    }
+
+    /// Sparkle 推荐的动态 feed URL 提供方式（取代已废弃的 setFeedURL）。
+    /// 每次检查更新时 Sparkle 会回调此方法，返回当前探测到的可达 feed URL。
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        resolvedFeedURL.absoluteString
     }
 
     @objc private func handleCheckForUpdatesRequest() {
