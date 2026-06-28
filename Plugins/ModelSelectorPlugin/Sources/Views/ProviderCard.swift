@@ -73,16 +73,7 @@ struct ProviderCard: View {
 
                 Spacer()
 
-                // Model count
-                VStack(spacing: 0) {
-                    Text("\(totalModelCount)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(theme.textPrimary)
-                    Text(verbatim: "total")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(theme.textTertiary)
-                }
-                .frame(minWidth: 36)
+
             }
             .padding(10)
             .background(cardBackground)
