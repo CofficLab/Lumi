@@ -38,6 +38,12 @@ public protocol LumiPlugin {
     static func aboutView(context: LumiPluginContext) -> AnyView?
 
     @MainActor
+    static func addSettingsView(context: LumiPluginContext) -> [AnyView]
+
+    @MainActor
+    static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem]
+
+    @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
 
     @MainActor
@@ -132,6 +138,16 @@ public extension LumiPlugin {
     @MainActor
     static func aboutView(context: LumiPluginContext) -> AnyView? {
         nil
+    }
+
+    @MainActor
+    static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
+        []
+    }
+
+    @MainActor
+    static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+        []
     }
 
     @MainActor
