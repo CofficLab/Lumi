@@ -47,7 +47,12 @@ struct ChatMessageBubble: View {
             Button {
                 showRawMessage.toggle()
             } label: {
-                Label(showRawMessage ? "Hide Raw Message" : "Show Raw Message", systemImage: "eye")
+                Label(
+                    showRawMessage
+                        ? LumiPluginLocalization.string("Hide Raw Message", bundle: .module)
+                        : LumiPluginLocalization.string("Show Raw Message", bundle: .module),
+                    systemImage: "eye"
+                )
             }
         }
     }
@@ -121,17 +126,17 @@ struct ChatMessageBubble: View {
     private func roleTitle(_ role: LumiChatMessageRole) -> String {
         switch role {
         case .system:
-            "System"
+            LumiPluginLocalization.string("System", bundle: .module)
         case .user:
-            "You"
+            LumiPluginLocalization.string("You", bundle: .module)
         case .assistant:
-            "Assistant"
+            LumiPluginLocalization.string("Assistant", bundle: .module)
         case .tool:
-            "Tool"
+            LumiPluginLocalization.string("Tool", bundle: .module)
         case .error:
-            "Error"
+            LumiPluginLocalization.string("Error", bundle: .module)
         case .status:
-            "Status"
+            LumiPluginLocalization.string("Status", bundle: .module)
         }
     }
 
