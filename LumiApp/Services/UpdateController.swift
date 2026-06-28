@@ -7,6 +7,7 @@ import Sparkle
 final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
     nonisolated static let emoji = "⬆️"
+    nonisolated static let verbose = false
 
     static let shared = UpdateController()
 
@@ -18,7 +19,8 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     private var pendingImmediateInstallHandler: (() -> Void)?
 
     /// 主 feed URL（根据架构选择对应的 appcast）
-    private var primaryFeedURL: URL {
+    /// nonisolated：仅返回编译期常量，无实例状态访问，可安全在后台线程读取
+    private nonisolated var primaryFeedURL: URL {
         #if arch(arm64)
         URL(string: "https://s.kuaiyizhi.cn/lumi/appcast-arm64.xml")!
         #else
@@ -27,7 +29,8 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     }
 
     /// 备用 feed URL（GitHub Release，根据架构选择对应的 appcast）
-    private var fallbackFeedURL: URL {
+    /// nonisolated：仅返回编译期常量，无实例状态访问，可安全在后台线程读取
+    private nonisolated var fallbackFeedURL: URL {
         #if arch(arm64)
         URL(string: "https://github.com/CofficLab/Lumi/releases/latest/download/appcast-arm64.xml")!
         #else
@@ -73,7 +76,9 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
         )
         // 使用 primaryFeedURL 作为初始值，后续 setupFeedURLIfNeeded 会更新为可达的 URL
         controller.updater.setFeedURL(primaryFeedURL)
-        Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
+        if Self.verbose {
+            Self.logger.info("\(self.t)Initial feed URL: \(self.primaryFeedURL.absoluteString, privacy: .public)")
+        }
         // 启动 updater
         controller.startUpdater()
         self.updaterController = controller
@@ -83,39 +88,63 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     ///
     /// 在应用启动时调用一次。先尝试自有服务器，不可达则使用 GitHub。
     /// 该方法也会触发 updaterController 的延迟初始化。
-    func setupFeedURLIfNeeded() async {
-        // 30 分钟内不重复检测
+    ///
+    /// 线程模型：网络探测（含 5 秒超时的 HEAD 请求）放在 detached 后台 Task
+    /// 中执行，不在主线程上推进；只有 Sparkle 必须在主线程的两步操作
+    /// （初始化 controller、setFeedURL）才 hop 回 MainActor。
+    func setupFeedURLIfNeeded() {
+        // 30 分钟内不重复检测（仅读取本地字段，不阻塞）
         if let lastDetectionTime,
            Date().timeIntervalSince(lastDetectionTime) < 1800 {
             return
         }
 
-        let url = await detectFeedURL()
+        // 标记检测时间，避免短时间内重复发起网络请求
         lastDetectionTime = Date()
 
-        // setFeedURL 必须在主线程调用
-        await MainActor.run {
-            ensureUpdaterInitialized()
-            updaterController?.updater.setFeedURL(url)
-            Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
+        // 脱离主 actor 在后台线程执行网络探测
+        Task.detached(priority: .utility) { [primaryFeedURL, fallbackFeedURL] in
+            let url = await Self.detectFeedURL(
+                primary: primaryFeedURL,
+                fallback: fallbackFeedURL
+            )
+
+            // 只有 Sparkle 要求必须在主线程的操作才 hop 回 MainActor
+            await MainActor.run {
+                self.ensureUpdaterInitialized()
+                self.updaterController?.updater.setFeedURL(url)
+                if UpdateController.verbose {
+                    Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
+                }
+            }
         }
     }
 
     /// 检测哪个 feed URL 可用
-    private func detectFeedURL() async -> URL {
+    /// nonisolated + async：纯网络探测，不访问任何实例状态，
+    /// 由调用方传入待探测的 URL，可在任意后台线程执行。
+    private nonisolated static func detectFeedURL(
+        primary: URL,
+        fallback: URL
+    ) async -> URL {
         // 先尝试主 URL（自有服务器）
-        if await isURLReachable(primaryFeedURL) {
-            Self.logger.info("\(self.t)Primary feed reachable")
-            return primaryFeedURL
+        if await isURLReachable(primary) {
+            if verbose {
+                logger.info("\(t)Primary feed reachable")
+            }
+            return primary
         }
 
         // fallback 到 GitHub
-        Self.logger.info("\(self.t)Primary unreachable, using GitHub fallback")
-        return fallbackFeedURL
+        if verbose {
+            logger.info("\(t)Primary unreachable, using GitHub fallback")
+        }
+        return fallback
     }
 
-    /// 快速检测 URL 是否可达（HEAD 请求， 5 秒超时）
-    private func isURLReachable(_ url: URL) async -> Bool {
+    /// 快速检测 URL 是否可达（HEAD 请求，5 秒超时）
+    /// nonisolated + async：可在任意后台线程执行，不占用主线程。
+    private nonisolated static func isURLReachable(_ url: URL) async -> Bool {
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
         request.timeoutInterval = 5
@@ -127,6 +156,7 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
             }
             return false
         } catch {
+            logger.warning("\(t)URL reachability check failed: \(error.localizedDescription)")
             return false
         }
     }

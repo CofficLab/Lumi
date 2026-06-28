@@ -49,10 +49,10 @@ final class RootContainer: ObservableObject {
         LumiUIThemeRegistry.shared.onSystemAppearanceDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()
         }
-        Task {
-            // 异步触发 UpdateController 单例初始化，不阻塞主线程
-            await UpdateController.shared.setupFeedURLIfNeeded()
-        }
+        // 异步触发 UpdateController 的网络探测与延迟初始化，不阻塞主线程。
+        // setupFeedURLIfNeeded 内部用 Task.detached 把网络请求放到后台线程，
+        // 只有 Sparkle 必须在主线程的两步操作才会 hop 回 MainActor。
+        UpdateController.shared.setupFeedURLIfNeeded()
         LayoutPlugin.restorePersistedStateIfNeeded()
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }
