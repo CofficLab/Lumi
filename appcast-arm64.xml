@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.9.1</title>
-            <pubDate>Fri, 26 Jun 2026 12:44:39 +0000</pubDate>
-            <sparkle:version>236</sparkle:version>
-            <sparkle:shortVersionString>4.9.1</sparkle:shortVersionString>
+            <title>4.10.0</title>
+            <pubDate>Sun, 28 Jun 2026 14:57:13 +0000</pubDate>
+            <sparkle:version>237</sparkle:version>
+            <sparkle:shortVersionString>4.10.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.9.1</h2>
-<h3>Changes since v4.9.0</h3>
+            <description><![CDATA[<h2>Release v4.10.0</h2>
+<h3>Changes since v4.9.1</h3>
 <ul>
-<li>feat(agent-tools): enable image passthrough from tool results to LLM</li>
-<li>feat(aliyun): add 5-minute disk cache for availability checks</li>
-<li>feat(aliyun): map unsupported Coding Plan models to structured availability</li>
-<li>feat(availability): HTTP response UI and provider check improvements</li>
-<li>feat(chat): gate image upload on vision support and refine model row layout</li>
-<li>feat(download-kit): add bandwidth rate limiting via token bucket algorithm</li>
-<li>feat(llm-provider-mlx): add Coder/DeepSeek/Microsoft series and fix series selector</li>
-<li>feat(llm-provider-mlx): auto-unload idle model + delete cached models</li>
-<li>feat(llm-provider-mlx): record streaming metrics so TPS shows in toolbar</li>
-<li>feat(llm-provider-mlx): show download speed in model download UI</li>
-<li>feat(llm-provider): add 5-minute disk cache to all remote LLM providers</li>
-<li>feat(llm): require explicit providerStatus on each LLM provider</li>
-<li>feat(lumi-ui): show copied feedback on HTTP response copy button</li>
-<li>feat(message-renderer): hide message header in brief verbosity mode</li>
-<li>feat(mlx): support configurable download speed limit for MLX models</li>
-<li>feat(model-selector): add hover highlight effect to model provider picker</li>
-<li>feat(model-selector): display friendly model names instead of raw IDs</li>
-<li>feat(model-selector): distinguish unsupported models in availability UI</li>
-<li>feat(model-selector): show provider status, availability errors, and usage charts</li>
-<li>feat(xiaomi): split into TokenPlan + Xiaomi API and show inline API key setup on missing key</li>
+<li>deps: upgrade libgit2swift to latest main</li>
+<li>docs: reconcile TODO against current codebase, remove completed items</li>
+<li>docs(todo): add EditorFileTreePlugin UI fluency optimization plan</li>
+<li>docs(todo): remove completed tasks</li>
+<li>docs(todo): update LumiUI migration status based on actual progress</li>
+<li>feat: add verbose flag to control FreeModel diagnostic logging</li>
+<li>feat(chat): only show assistant tool calls in detailed verbosity</li>
+<li>feat(core): add addSettingsTabs and addSettingsView to LumiPlugin protocol</li>
+<li>feat(file-tree): watch .git metadata and add git status provider tests</li>
+<li>feat(mlx): render inline download UI when selected model is not downloaded</li>
+<li>feat(model-selector): add provider summary card with model stats in right list</li>
+<li>feat(plugin): ActivityHeatmapPlugin registers settings tab and settings view</li>
+<li>feat(plugins): add onboarding pages with localizations</li>
+<li>feat(ui): support plugin-registered settings tabs in SettingsView sidebar</li>
+<li>feat(zhipu): register ZhipuAPIProvider alongside ZhipuProvider</li>
+<li>feat(zhipu): rename provider display name to "智谱 Coding Plan"</li>
+<li>fix: avoid creating LumiDownloads in ~/Downloads on startup</li>
+<li>fix: defer <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/published/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/published">@published</a> changes to next runloop to avoid view update warnings</li>
+<li>fix: replace invalid SF Symbols</li>
+<li>fix: resolve avoidable compiler warnings</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.9.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.10.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.9.1/Lumi_4.9.1_arm64.dmg" length="48552600" type="application/octet-stream" sparkle:edSignature="uajhA6rQ7R5wk/9vfBduh0i+BRW2dpeUwEJdHndq618bD2uw5JHBOaXz9lyJHSdqhVJMU/QFn7wDdP8RnuW2DQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.10.0/Lumi_4.10.0_arm64.dmg" length="50342499" type="application/octet-stream" sparkle:edSignature="9epmxcOROr/lS/93CXW3u5h255wAdLt7vqcLa5FaG7rDdxYLH1Ct4VlPOUcovlCddkFKot385JtNuk25/69OAg=="/>
         </item>
     </channel>
 </rss>
