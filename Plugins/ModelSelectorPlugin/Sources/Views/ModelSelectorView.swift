@@ -123,6 +123,12 @@ struct ModelSelectorView: View {
         } else {
             List {
                 ForEach(visibleProviders) { provider in
+                    // 供应商摘要卡片
+                    Section {
+                        ProviderSummaryCard(provider: provider)
+                    }
+
+                    // 模型列表
                     Section(header: sectionHeader(for: provider)) {
                         ForEach(filteredModels(for: provider), id: \.self) { model in
                             ModelRow(
