@@ -465,7 +465,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     ) async -> [CodeSearchResult] {
         // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
         if RAGService.isAnyIndexing() {
-            if Self.verbose {
+            if RAGPlugin.verbose {
                 RAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
             }
             return []
@@ -491,9 +491,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
                 )
             }
         } catch {
-            if Self.verbose, RAGPlugin.verbose {
-                RAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
-            }
+            RAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
             return []
         }
     }

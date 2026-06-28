@@ -8,6 +8,7 @@ import ProjectsPlugin
 /// 在应用启动和项目切换时，自动在后台确保 RAG 索引存在。
 public struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     public nonisolated static var emoji: String { "🦞" }
+    // 泛型类型不支持 static stored property，这里用计算属性
     public nonisolated static var verbose: Bool { false }
     @State private var autoEnsureTask: Task<Void, Never>?
     @State private var lastAutoEnsureKey = ""
@@ -65,10 +66,8 @@ extension RAGAutoIndexOverlay {
                 guard !Task.isCancelled else { return }
                 await service.ensureIndexedBackground(projectPath: path)
             }
-            if Self.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
-                }
+            if RAGPlugin.verbose {
+                RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
             }
         }
     }

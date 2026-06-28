@@ -170,9 +170,7 @@ public struct RAGStatusBarView: View, SuperLog {
         let now = Date()
         guard now.timeIntervalSince(lastUpdateAttempt) > 1.0 else {
             if RAGPlugin.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
-                }
+                RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
             }
             return
         }
@@ -181,9 +179,7 @@ public struct RAGStatusBarView: View, SuperLog {
         // 如果正在索引，不更新状态（避免冲突）
         if isIndexing {
             if RAGPlugin.verbose {
-                if RAGPlugin.verbose {
-                                    RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
-                }
+                RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
             }
             return
         }
@@ -202,13 +198,9 @@ public struct RAGStatusBarView: View, SuperLog {
                 isNotInitialized = false
 
                 if RAGPlugin.verbose, let status = indexStatus {
-                    if Self.verbose {
-                        if RAGPlugin.verbose {
-                                                    RAGPlugin.logger.info(
-                                                        "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
-                                                    )
-                        }
-                    }
+                    RAGPlugin.logger.info(
+                        "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
+                    )
                 }
             }
         } catch {
@@ -216,10 +208,8 @@ public struct RAGStatusBarView: View, SuperLog {
             if let ragError = error as? RAGError, case .notInitialized = ragError {
                 isNotInitialized = true
                 errorMessage = nil
-                if Self.verbose {
-                    if RAGPlugin.verbose {
-                                            RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
-                    }
+                if RAGPlugin.verbose {
+                    RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
                 }
                 return
             }
@@ -228,7 +218,7 @@ public struct RAGStatusBarView: View, SuperLog {
             if indexStatus == nil && !isIndexing && !isNotInitialized {
                 errorMessage = LumiPluginLocalization.string("Failed to get status", bundle: .module)
                 if RAGPlugin.verbose {
-                                    RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
+                    RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
                 }
             } else {
                 // 如果已经有状态或正在索引，清除错误（保留现有状态）

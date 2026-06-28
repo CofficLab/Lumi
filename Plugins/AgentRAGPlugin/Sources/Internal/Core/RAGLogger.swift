@@ -27,8 +27,18 @@ public struct NullRAGLogger: RAGLogger, Sendable {
 /// 由 Plugin 层提供此具体实现：所有输出统一走 `RAGPlugin.logger`，
 /// 并按 [日志规范](../../../../../../.agent/rules/swift-log.md) 自带 `RAGPlugin.t` 前缀。
 /// 这样 RAGKit 内部各调用点无需各自加前缀。
+///
+/// 同时在这里集中做 verbose 控制：`info` 级别的常规流程/性能日志
+/// 受 `RAGPlugin.verbose` 控制（默认关闭），`warning`/`error` 始终输出。
 struct OSLogRAGLogger: RAGLogger {
-    func info(_ message: String) { RAGPlugin.logger.info("\(RAGPlugin.t)\(message)") }
-    func warning(_ message: String) { RAGPlugin.logger.warning("\(RAGPlugin.t)\(message)") }
-    func error(_ message: String) { RAGPlugin.logger.error("\(RAGPlugin.t)\(message)") }
+    func info(_ message: String) {
+        guard RAGPlugin.verbose else { return }
+        RAGPlugin.logger.info("\(RAGPlugin.t)\(message)")
+    }
+    func warning(_ message: String) {
+        RAGPlugin.logger.warning("\(RAGPlugin.t)\(message)")
+    }
+    func error(_ message: String) {
+        RAGPlugin.logger.error("\(RAGPlugin.t)\(message)")
+    }
 }
