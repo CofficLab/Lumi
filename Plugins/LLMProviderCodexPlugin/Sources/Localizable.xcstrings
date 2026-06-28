@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "CLI 已就緒"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CLI 已就緒"
+          }
         }
       }
     },
@@ -102,7 +108,7 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
             "value": "GPT-5.4 Mini，轻量快速模型"
           }
         },
@@ -137,7 +143,7 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
             "value": "GPT-5.5，Codex 当前旗舰模型"
           }
         },
@@ -260,6 +266,12 @@
             "state": "translated",
             "value": "可執行文件"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可執行文件"
+          }
         }
       }
     },
@@ -288,6 +300,12 @@
             "state": "translated",
             "value": "未找到 Codex CLI，請先安裝並加入 PATH"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到 Codex CLI，請先安裝並加入 PATH"
+          }
         }
       }
     },
@@ -296,7 +314,7 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
             "value": "通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）"
           }
         },

@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
     "(%@)" : {
       "localizations" : {
         "en" : {
@@ -195,6 +192,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
@@ -1218,6 +1221,12 @@
             "state" : "translated",
             "value" : "Zhipu AI GLM"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhipu AI GLM"
+          }
         }
       }
     },
@@ -1446,6 +1455,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智谱"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "智谱"

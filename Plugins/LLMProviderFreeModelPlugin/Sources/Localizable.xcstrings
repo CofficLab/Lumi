@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "為 Lumi Chat 貢獻 FreeModel 模型。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 Lumi Chat 貢獻 FreeModel 模型。"
+          }
         }
       }
     },

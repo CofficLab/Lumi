@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -33,6 +34,32 @@ public enum DockerManagerPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(DockerManagerAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "shippingbox",
+                            title: PluginDockerManagerLocalization.string("Images"),
+                            description: PluginDockerManagerLocalization.string("Browse and remove local Docker images")
+                        ),
+                        .init(
+                            icon: "chart.bar.fill",
+                            title: PluginDockerManagerLocalization.string("Monitoring"),
+                            description: PluginDockerManagerLocalization.string("Keep an eye on disk usage and status")
+                        ),
+                    ],
+                    tip: PluginDockerManagerLocalization.string("Make sure Docker is running, then open Docker from the sidebar.")
+                )
+            }
+        ]
     }
 }
 

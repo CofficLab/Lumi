@@ -2,6 +2,7 @@ import AgentToolKit
 import EditorService
 import EditorTabStripPlugin
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -60,6 +61,32 @@ public enum EditorPanelPlugin: LumiPlugin {
             description: info.description,
             kind: .editor
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "folder",
+                            title: LumiPluginLocalization.string("Workspace", bundle: .module),
+                            description: LumiPluginLocalization.string("File tree, tabs, and panels for your project", bundle: .module)
+                        ),
+                        .init(
+                            icon: "text.magnifyingglass",
+                            title: LumiPluginLocalization.string("LSP", bundle: .module),
+                            description: LumiPluginLocalization.string("Diagnostics and language features built in", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open a project, then pick Code Editor from the sidebar.", bundle: .module)
+                )
+            }
+        ]
     }
 
 }

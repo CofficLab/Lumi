@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -38,6 +39,32 @@ public enum DiskManagerPlugin: LumiPlugin {
             description: info.description,
             kind: .manager
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "internaldrive",
+                            title: LumiPluginLocalization.string("Capacity", bundle: .module),
+                            description: LumiPluginLocalization.string("See total and available space per volume", bundle: .module)
+                        ),
+                        .init(
+                            icon: "chart.bar.fill",
+                            title: LumiPluginLocalization.string("Usage", bundle: .module),
+                            description: LumiPluginLocalization.string("Track how disk space is consumed", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Disk Manager from the sidebar to inspect your volumes.", bundle: .module)
+                )
+            }
+        ]
     }
 
 }

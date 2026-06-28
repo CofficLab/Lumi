@@ -1,0 +1,249 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Syntax Only" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Syntax Only" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "仅语法" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "僅語法" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "僅語法" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "僅語法" } }
+      }
+    },
+    "Single-File Inference" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Single-File Inference" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "单文件推断" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "單檔推斷" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "單檔推斷" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "單檔推斷" } }
+      }
+    },
+    "Partial Index" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Partial Index" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "部分索引" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "部分索引" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "部分索引" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "部分索引" } }
+      }
+    },
+    "Full Index" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Full Index" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "完整索引" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "完整索引" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "完整索引" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "完整索引" } }
+      }
+    },
+    "LSP server not started, unable to process request" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "LSP server not started, unable to process request" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "LSP 服务器未启动，无法处理请求" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器未啟動，無法處理請求" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器未啟動，無法處理請求" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器未啟動，無法處理請求" } }
+      }
+    },
+    "LSP server connection lost, attempting to reconnect..." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "LSP server connection lost, attempting to reconnect..." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "LSP 服务器连接断开，正在尝试重新连接..." } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器連線中斷，正在嘗試重新連線..." } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器連線中斷，正在嘗試重新連線..." } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "LSP 伺服器連線中斷，正在嘗試重新連線..." } }
+      }
+    },
+    "Current file is not bound to a valid Xcode project context" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current file is not bound to a valid Xcode project context" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "当前文件未绑定到有效的 Xcode 项目上下文" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "目前檔案未繫結到有效的 Xcode 專案上下文" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "目前檔案未繫結到有效的 Xcode 專案上下文" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "目前檔案未繫結到有效的 Xcode 專案上下文" } }
+      }
+    },
+    "Build context unavailable: %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Build context unavailable: %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "构建上下文不可用：%@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "建置上下文不可用：%@" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "建置上下文不可用：%@" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "建置上下文不可用：%@" } }
+      }
+    },
+    "Unable to resolve symbol%@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to resolve symbol%@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法解析符号%@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "無法解析符號%@" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "無法解析符號%@" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "無法解析符號%@" } }
+      }
+    },
+    "No matching symbol found" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No matching symbol found" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未找到匹配的符号" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "未找到匹配的符號" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "未找到匹配的符號" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "未找到匹配的符號" } }
+      }
+    },
+    "Project is being indexed, semantic navigation may be incomplete" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Project is being indexed, semantic navigation may be incomplete" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "项目正在索引，语义导航可能不完整" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "專案正在索引，語意導覽可能不完整" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "專案正在索引，語意導覽可能不完整" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "專案正在索引，語意導覽可能不完整" } }
+      }
+    },
+    "'%@' does not belong to any compilation target, please check if the file is in the project" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "'%@' does not belong to any compilation target, please check if the file is in the project" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 不属于任何编译目标，请检查该文件是否在项目中" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 不屬於任何編譯目標，請檢查該檔案是否在專案中" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 不屬於任何編譯目標，請檢查該檔案是否在專案中" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 不屬於任何編譯目標，請檢查該檔案是否在專案中" } }
+      }
+    },
+    "'%1$@' belongs to multiple targets (%2$@), current scheme '%3$@' cannot uniquely determine semantic context" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' belongs to multiple targets (%2$@), current scheme '%3$@' cannot uniquely determine semantic context" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 属于多个目标（%2$@），当前 scheme '%3$@' 无法唯一确定语义上下文" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），目前 scheme '%3$@' 無法唯一確定語意上下文" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），目前 scheme '%3$@' 無法唯一確定語意上下文" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），目前 scheme '%3$@' 無法唯一確定語意上下文" } }
+      }
+    },
+    "'%1$@' belongs to multiple targets (%2$@), cannot uniquely determine semantic context" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' belongs to multiple targets (%2$@), cannot uniquely determine semantic context" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 属于多个目标（%2$@），无法唯一确定语义上下文" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），無法唯一確定語意上下文" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），無法唯一確定語意上下文" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於多個目標（%2$@），無法唯一確定語意上下文" } }
+      }
+    },
+    "'%1$@' belongs to target (%2$@), but current scheme '%3$@' does not include these targets" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' belongs to target (%2$@), but current scheme '%3$@' does not include these targets" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 属于目标（%2$@），但当前 scheme '%3$@' 不包含这些目标" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於目標（%2$@），但目前 scheme '%3$@' 不包含這些目標" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於目標（%2$@），但目前 scheme '%3$@' 不包含這些目標" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "'%1$@' 屬於目標（%2$@），但目前 scheme '%3$@' 不包含這些目標" } }
+      }
+    },
+    "'%@' belongs to target (%@), but current active scheme does not include these targets" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "'%@' belongs to target (%@), but current active scheme does not include these targets" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 属于目标（%@），但当前活动 scheme 不包含这些目标" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 屬於目標（%@），但目前活動 scheme 不包含這些目標" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 屬於目標（%@），但目前活動 scheme 不包含這些目標" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "'%@' 屬於目標（%@），但目前活動 scheme 不包含這些目標" } }
+      }
+    },
+    "LSP request timed out, please try again later" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "LSP request timed out, please try again later" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "LSP 请求超时，请稍后重试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "LSP 請求逾時，請稍後重試" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "LSP 請求逾時，請稍後重試" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "LSP 請求逾時，請稍後重試" } }
+      }
+    },
+    "Try reopening the file or restarting Lumi" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try reopening the file or restarting Lumi" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "尝试重新打开文件或重启 Lumi" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "嘗試重新開啟檔案或重啟 Lumi" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "嘗試重新開啟檔案或重啟 Lumi" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "嘗試重新開啟檔案或重啟 Lumi" } }
+      }
+    },
+    "Wait for auto-reconnect, or manually switch files to trigger rebuild" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wait for auto-reconnect, or manually switch files to trigger rebuild" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "等待自动重连，或手动切换文件以触发重新构建" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "等待自動重連，或手動切換檔案以觸發重新建置" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "等待自動重連，或手動切換檔案以觸發重新建置" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "等待自動重連，或手動切換檔案以觸發重新建置" } }
+      }
+    },
+    "Ensure .xcodeproj/.xcworkspace is in the project root directory" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ensure .xcodeproj/.xcworkspace is in the project root directory" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "确保 .xcodeproj/.xcworkspace 位于项目根目录" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "確保 .xcodeproj/.xcworkspace 位於專案根目錄" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "確保 .xcodeproj/.xcworkspace 位於專案根目錄" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "確保 .xcodeproj/.xcworkspace 位於專案根目錄" } }
+      }
+    },
+    "Run brew install xcode-build-server and reopen the project" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Run brew install xcode-build-server and reopen the project" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "运行 brew install xcode-build-server 并重新打开项目" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "執行 brew install xcode-build-server 並重新開啟專案" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "執行 brew install xcode-build-server 並重新開啟專案" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "執行 brew install xcode-build-server 並重新開啟專案" } }
+      }
+    },
+    "Wait for indexing to complete and retry, or check sourcekit-lsp logs" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wait for indexing to complete and retry, or check sourcekit-lsp logs" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成后重试，或查看 sourcekit-lsp 日志" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後重試，或檢視 sourcekit-lsp 日誌" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後重試，或檢視 sourcekit-lsp 日誌" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後重試，或檢視 sourcekit-lsp 日誌" } }
+      }
+    },
+    "Wait for indexing to complete and try again" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wait for indexing to complete and try again" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成后再试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後再試" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後再試" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "等待索引完成後再試" } }
+      }
+    },
+    "Add the file to a target" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add the file to a target" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "将文件添加到某个目标" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "將檔案加入某個目標" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "將檔案加入某個目標" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "將檔案加入某個目標" } }
+      }
+    },
+    "Switch to a more specific scheme, or keep only one target membership and retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Switch to a more specific scheme, or keep only one target membership and retry" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到更具体的 scheme，或只保留一个 target 成员后重试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "切換到更具體的 scheme，或只保留一個 target 成員後重試" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "切換到更具體的 scheme，或只保留一個 target 成員後重試" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "切換到更具體的 scheme，或只保留一個 target 成員後重試" } }
+      }
+    },
+    "Switch to a scheme that includes the file's target and retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Switch to a scheme that includes the file's target and retry" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "切换到包含该文件目标 的 scheme 后重试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "切換到包含該檔案目標的 scheme 後重試" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "切換到包含該檔案目標的 scheme 後重試" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "切換到包含該檔案目標的 scheme 後重試" } }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try again" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重試" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "重試" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "重試" } }
+      }
+    }
+  },
+  "version" : "1.1"
+}

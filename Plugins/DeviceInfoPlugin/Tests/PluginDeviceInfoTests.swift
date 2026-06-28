@@ -40,6 +40,20 @@ struct PluginDeviceInfoTests {
     }
 
     @Test
+    func onboardingPageIsProvided() {
+        let pages = DeviceInfoPlugin.onboardingPages(
+            context: LumiPluginContext(
+                activeSectionID: "workspace",
+                activeSectionTitle: "Workspace"
+            )
+        )
+
+        #expect(pages.count == 1)
+        #expect(pages.first?.id == "\(DeviceInfoPlugin.info.id).onboarding")
+        #expect(pages.first?.order == DeviceInfoPlugin.info.order)
+    }
+
+    @Test
     func menuBarContentItemsProvided() {
         let items = DeviceInfoPlugin.menuBarContentItems(
             context: LumiPluginContext(

@@ -14,6 +14,24 @@
             "state": "translated",
             "value": "Agent 临时存储"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Temp Storage"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Temp Storage"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Temp Storage"
+          }
         }
       }
     },
@@ -29,6 +47,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "为 Agent 提供隔离的临时文件目录，超过 7 天自动清理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
           }
         }
       }
@@ -46,6 +82,24 @@
             "state": "translated",
             "value": "写入临时文件"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write Temp File"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write Temp File"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write Temp File"
+          }
         }
       }
     },
@@ -61,6 +115,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "将 UTF-8 文本写入 Agent 临时存储目录。超过保留期限（默认 7 天）后自动删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days)."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days)."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days)."
           }
         }
       }
@@ -78,6 +150,24 @@
             "state": "translated",
             "value": "读取临时文件"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read Temp File"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read Temp File"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read Temp File"
+          }
         }
       }
     },
@@ -93,6 +183,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "从 Agent 临时存储目录读取 UTF-8 文本文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read UTF-8 text from a file in the agent temp storage directory."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read UTF-8 text from a file in the agent temp storage directory."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read UTF-8 text from a file in the agent temp storage directory."
           }
         }
       }
@@ -110,6 +218,24 @@
             "state": "translated",
             "value": "列举临时文件"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Temp Files"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Temp Files"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Temp Files"
+          }
         }
       }
     },
@@ -125,6 +251,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "列举 Agent 临时存储目录中的文件及其路径与修改时间。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List files in the agent temp storage directory with paths and modification times."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List files in the agent temp storage directory with paths and modification times."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List files in the agent temp storage directory with paths and modification times."
           }
         }
       }

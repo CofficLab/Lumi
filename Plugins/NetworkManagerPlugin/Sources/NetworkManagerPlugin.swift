@@ -37,6 +37,32 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "gauge.with.dots.needle.bottom.50percent",
+                            title: LumiPluginLocalization.string("Live speed", bundle: .module),
+                            description: LumiPluginLocalization.string("Real-time upload and download rates", bundle: .module)
+                        ),
+                        .init(
+                            icon: "menubar.rectangle",
+                            title: LumiPluginLocalization.string("Menu bar", bundle: .module),
+                            description: LumiPluginLocalization.string("Keep an eye on traffic from the menu bar", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Network Monitor from the sidebar or the menu bar.", bundle: .module)
+                )
+            }
+        ]
+    }
+
+    @MainActor
     public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
         [
             LumiMenuBarContentItem(id: "\(info.id).speed", order: info.order) {

@@ -17,8 +17,8 @@ public enum DownloadPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.download-agent",
-        displayName: "Download Agent",
-        description: "文件下载 Agent 工具集：支持 HTTP/HTTPS 下载、断点续传、批量下载、进度查询与任务管理",
+        displayName: LumiPluginLocalization.string("Download Agent", bundle: .module),
+        description: LumiPluginLocalization.string("File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management.", bundle: .module),
         order: 92
     )
 

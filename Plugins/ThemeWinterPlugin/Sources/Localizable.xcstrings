@@ -95,6 +95,12 @@
             "state": "translated",
             "value": "冬日 Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "冬日 Theme"
+          }
         }
       }
     }

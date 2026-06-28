@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "Edit File"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit File"
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Execute a shell command in the terminal."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Execute a shell command in the terminal."
@@ -82,6 +94,12 @@
             "state": "translated",
             "value": "List Directory"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Directory"
+          }
         }
       }
     },
@@ -106,6 +124,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List files and directories at a given path. Useful for exploring the project structure."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "List files and directories at a given path. Useful for exploring the project structure."
@@ -138,6 +162,12 @@
             "state": "translated",
             "value": "Perform exact string replacements in a file."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perform exact string replacements in a file."
+          }
         }
       }
     },
@@ -162,6 +192,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read File"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Read File"
@@ -194,6 +230,12 @@
             "state": "translated",
             "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+          }
         }
       }
     },
@@ -218,6 +260,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Command"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Run Command"
@@ -284,6 +332,12 @@
             "state": "translated",
             "value": "Write File"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write File"
+          }
         }
       }
     },
@@ -308,6 +362,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write UTF-8 text content to a file."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Write UTF-8 text content to a file."

@@ -59,5 +59,31 @@ public enum ChatPanelPlugin: LumiPlugin {
             }
         ]
     }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "bubble.left.and.bubble.right",
+                            title: LumiPluginLocalization.string("Conversations", bundle: .module),
+                            description: LumiPluginLocalization.string("Chat with local and cloud LLMs", bundle: .module)
+                        ),
+                        .init(
+                            icon: "rectangle.3.group",
+                            title: LumiPluginLocalization.string("Parallel sessions", bundle: .module),
+                            description: LumiPluginLocalization.string("Run multiple independent tasks side by side", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Pick Chat from the sidebar to start a new conversation.", bundle: .module)
+                )
+            }
+        ]
+    }
 }
 

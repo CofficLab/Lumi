@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum AppStoreConnectPlugin: LumiPlugin {
@@ -82,6 +83,32 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(AboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "square.grid.2x2",
+                            title: AppStoreConnectLocalization.string("Apps & versions"),
+                            description: AppStoreConnectLocalization.string("Browse apps, versions, and localizations")
+                        ),
+                        .init(
+                            icon: "hammer.fill",
+                            title: AppStoreConnectLocalization.string("CI"),
+                            description: AppStoreConnectLocalization.string("Trigger and watch Xcode Cloud workflows")
+                        ),
+                    ],
+                    tip: AppStoreConnectLocalization.string("Open App Store from the sidebar and pick an app to begin.")
+                )
+            }
+        ]
     }
 }
 

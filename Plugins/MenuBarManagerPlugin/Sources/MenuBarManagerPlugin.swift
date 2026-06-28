@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -38,6 +39,32 @@ public enum MenuBarManagerPlugin: LumiPlugin {
             description: info.description,
             kind: .manager
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "menubar.rectangle",
+                            title: LumiPluginLocalization.string("Menu bar items", bundle: .module),
+                            description: LumiPluginLocalization.string("See and organize items contributed by plugins", bundle: .module)
+                        ),
+                        .init(
+                            icon: "slider.horizontal.3",
+                            title: LumiPluginLocalization.string("Reorder", bundle: .module),
+                            description: LumiPluginLocalization.string("Arrange menu bar items to your liking", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Menu Bar Manager from the sidebar to manage items.", bundle: .module)
+                )
+            }
+        ]
     }
 
 }

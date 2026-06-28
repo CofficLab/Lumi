@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Download Agent" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download Agent" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载助手" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "下載助手" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "下載助手" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "下載助手" } }
+      }
+    },
+    "File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文件下载助手工具集：支持 HTTP/HTTPS 下载、断点续传、批量下载、进度查询与任务管理" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "檔案下載助手工具集：支援 HTTP/HTTPS 下載、斷點續傳、批次下載、進度查詢與任務管理" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "檔案下載助手工具集：支援 HTTP/HTTPS 下載、斷點續傳、批次下載、進度查詢與任務管理" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "檔案下載助手工具集：支援 HTTP/HTTPS 下載、斷點續傳、批次下載、進度查詢與任務管理" } }
+      }
+    }
+  },
+  "version" : "1.1"
+}

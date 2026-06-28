@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum AppIconDesignerPlugin: LumiPlugin {
@@ -56,6 +57,32 @@ public enum AppIconDesignerPlugin: LumiPlugin {
             description: info.description,
             kind: .general
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "scribble.variable",
+                            title: AppIconDesignerLocalization.string("Vector drawing"),
+                            description: AppIconDesignerLocalization.string("Build icons with shapes, layers, and presets")
+                        ),
+                        .init(
+                            icon: "square.and.arrow.up",
+                            title: AppIconDesignerLocalization.string("Xcode export"),
+                            description: AppIconDesignerLocalization.string("Generate a ready-to-use AppIcon.appiconset")
+                        ),
+                    ],
+                    tip: AppIconDesignerLocalization.string("Open App Icon Designer from the sidebar to start a new icon.")
+                )
+            }
+        ]
     }
 
 }

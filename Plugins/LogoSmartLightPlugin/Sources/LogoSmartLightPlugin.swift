@@ -3,8 +3,8 @@ import LumiCoreKit
 public enum LogoSmartLightPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.lumi.plugin.logo-smart-light",
-        displayName: "Smart Light Logo",
-        description: "Default animated logo with smart light effect",
+        displayName: LumiPluginLocalization.string("Smart Light Logo", bundle: .module),
+        description: LumiPluginLocalization.string("Default animated logo with smart light effect", bundle: .module),
         order: 200
     )
 

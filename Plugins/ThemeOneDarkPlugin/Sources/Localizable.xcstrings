@@ -94,6 +94,12 @@
             "state": "translated",
             "value": "One Dark 深色 Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One Dark 深色 Theme"
+          }
         }
       }
     }

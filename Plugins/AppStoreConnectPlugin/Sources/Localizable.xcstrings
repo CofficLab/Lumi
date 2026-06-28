@@ -1,34 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ""
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ""
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ""
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ""
-          }
-        }
-      }
-    },
     "—": {
       "localizations": {
         "en": {
@@ -50,6 +22,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "—"
@@ -82,6 +60,12 @@
             "state": "translated",
             "value": "%lld"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
         }
       }
     },
@@ -106,6 +90,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld x %2$lld · %3$@"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld x %2$lld · %3$@"
@@ -138,6 +128,12 @@
             "state": "translated",
             "value": "%1$lld/%2$lld"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld/%2$lld"
+          }
         }
       }
     },
@@ -145,7 +141,31 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
+            "value": "%1$lld×%2$lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×%2$lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×%2$lld"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×%2$lld"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
             "value": "%1$lld×%2$lld"
           }
         }
@@ -176,6 +196,12 @@
             "state": "translated",
             "value": "私鑰已儲存在鑰匙圈中。儲存會取代它。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A private key is stored in Keychain. Saving replaces it."
+          }
         }
       }
     },
@@ -203,6 +229,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 已有進行中的版本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A version is already in progress for %@."
           }
         }
       }
@@ -232,6 +264,12 @@
             "state": "translated",
             "value": "帳戶"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
         }
       }
     },
@@ -259,6 +297,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加截图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Screenshots"
           }
         }
       }
@@ -288,6 +332,12 @@
             "state": "translated",
             "value": "審核通過後自動發佈"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After Approval"
+          }
         }
       }
     },
@@ -315,6 +365,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "允許編輯和上傳截圖"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow editing and screenshot upload"
           }
         }
       }
@@ -344,6 +400,12 @@
             "state": "translated",
             "value": "應用程式管理"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Management"
+          }
         }
       }
     },
@@ -372,6 +434,12 @@
             "state": "translated",
             "value": "App 預覽與截圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Previews and Screenshots"
+          }
         }
       }
     },
@@ -396,6 +464,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "App Store"
@@ -428,6 +502,12 @@
             "state": "translated",
             "value": "App Store Connect API 密鑰設定"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store Connect API Key Setup"
+          }
         }
       }
     },
@@ -455,6 +535,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "App Store Connect 應用程式識別碼。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store Connect app identifier."
           }
         }
       }
@@ -484,6 +570,12 @@
             "state": "translated",
             "value": "App Store Connect 憑證不完整。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store Connect credentials are incomplete."
+          }
         }
       }
     },
@@ -511,6 +603,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "App Store Connect 請求失敗，HTTP %d。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store Connect request failed with HTTP %d."
           }
         }
       }
@@ -540,6 +638,12 @@
             "state": "translated",
             "value": "App Store Connect 傳回了無效回應。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store Connect returned an invalid response."
+          }
         }
       }
     },
@@ -568,6 +672,12 @@
             "state": "translated",
             "value": "App 版本"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Versions"
+          }
         }
       }
     },
@@ -595,6 +705,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "App 清單"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apps"
           }
         }
       }
@@ -625,6 +741,12 @@
             "state": "translated",
             "value": "背景顏色"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Color"
+          }
         }
       }
     },
@@ -652,6 +774,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "分支或标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Branch or Tag"
           }
         }
       }
@@ -681,6 +809,12 @@
             "state": "translated",
             "value": "瀏覽並選擇 App Store Connect 中的應用"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse and select an App Store Connect app"
+          }
         }
       }
     },
@@ -708,6 +842,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "构建运行"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build Runs"
           }
         }
       }
@@ -737,6 +877,12 @@
             "state": "translated",
             "value": "取消"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
         }
       }
     },
@@ -764,6 +910,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "變更直接提交到 App Store Connect"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes are submitted directly to App Store Connect"
           }
         }
       }
@@ -793,6 +945,12 @@
             "state": "translated",
             "value": "從側邊欄選擇版本以管理分發內容。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a version from the sidebar to manage distribution."
+          }
         }
       }
     },
@@ -820,6 +978,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择工作流以查看详细信息和最近的构建运行。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a workflow to inspect details and recent build runs."
           }
         }
       }
@@ -850,6 +1014,12 @@
             "state": "translated",
             "value": "選擇一個 App Store Connect App"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an App Store Connect app"
+          }
         }
       }
     },
@@ -878,6 +1048,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "選擇背景"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Background"
           }
         }
       }
@@ -908,6 +1084,12 @@
             "state": "translated",
             "value": "選擇圖示"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Icon"
+          }
         }
       }
     },
@@ -935,6 +1117,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "清理构建"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Build"
           }
         }
       }
@@ -964,6 +1152,12 @@
             "state": "translated",
             "value": "按一下儲存憑證，然後測試連線。Lumi 會把這些值存入鑰匙圈，並用它們產生短期 JWT 權杖。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Save Credentials, then Test Connection. Lumi stores the values in Keychain and uses them to generate short-lived JWT tokens."
+          }
         }
       }
     },
@@ -991,6 +1185,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "請先在帳戶頁配置 API 憑據。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure API credentials on the Account page first."
           }
         }
       }
@@ -1020,6 +1220,12 @@
             "state": "translated",
             "value": "在外掛設定中設定 API 金鑰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure API key in plugin settings"
+          }
         }
       }
     },
@@ -1047,6 +1253,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "連接 App Store Connect API"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to App Store Connect API"
           }
         }
       }
@@ -1076,6 +1288,12 @@
             "state": "translated",
             "value": "已連線"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
         }
       }
     },
@@ -1103,6 +1321,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "容器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Container"
           }
         }
       }
@@ -1132,6 +1356,12 @@
             "state": "translated",
             "value": "複製"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
         }
       }
     },
@@ -1159,6 +1389,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "复制配置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Config"
           }
         }
       }
@@ -1188,6 +1424,12 @@
             "state": "translated",
             "value": "複製 Issuer ID 和 Key ID"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Issuer ID and Key ID"
+          }
         }
       }
     },
@@ -1215,6 +1457,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "封面圖"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover Art"
           }
         }
       }
@@ -1244,6 +1492,12 @@
             "state": "translated",
             "value": "封面圖已存在於 %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover art already exists at %@"
+          }
         }
       }
     },
@@ -1271,6 +1525,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "封面圖製作"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover Art Maker"
           }
         }
       }
@@ -1300,6 +1560,12 @@
             "state": "translated",
             "value": "在 %@ 未找到封面圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover art not found at %@"
+          }
         }
       }
     },
@@ -1327,6 +1593,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "建立"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
           }
         }
       }
@@ -1356,6 +1628,12 @@
             "state": "translated",
             "value": "建立封面圖文件，然後透過 Agent 迭代調整 HTML。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a cover art document, then refine its HTML with the agent."
+          }
         }
       }
     },
@@ -1383,6 +1661,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "為所選應用程式建立新的 App Store 版本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a new App Store version for the selected app."
           }
         }
       }
@@ -1412,6 +1696,12 @@
             "state": "translated",
             "value": "從預設範本建立新的 HTML 封面圖文件。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a new HTML cover art document from the default template."
+          }
         }
       }
     },
@@ -1439,6 +1729,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "为选定的显示类型创建截图集，或切换到其他设备尺寸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a screenshot set for the selected display type, or switch to another device size."
           }
         }
       }
@@ -1468,6 +1764,12 @@
             "state": "translated",
             "value": "建立 API 密鑰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an API key"
+          }
         }
       }
     },
@@ -1495,6 +1797,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "建立和管理用於提交的應用程式版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and manage app versions for submission"
           }
         }
       }
@@ -1524,6 +1832,12 @@
             "state": "translated",
             "value": "建立封面圖文件"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create cover art document"
+          }
         }
       }
     },
@@ -1551,6 +1865,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "建立一個使用者級 API 密鑰，然後把這些值貼到帳戶頁面。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create one user-level API key, then paste the values into the Account page."
           }
         }
       }
@@ -1580,6 +1900,12 @@
             "state": "translated",
             "value": "已创建"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created"
+          }
         }
       }
     },
@@ -1607,6 +1933,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "憑證已設定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials configured"
           }
         }
       }
@@ -1636,6 +1968,12 @@
             "state": "translated",
             "value": "憑證不完整"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials incomplete"
+          }
         }
       }
     },
@@ -1663,6 +2001,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "描述"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
           }
         }
       }
@@ -1693,6 +2037,12 @@
             "state": "translated",
             "value": "設計"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design"
+          }
         }
       }
     },
@@ -1722,6 +2072,12 @@
             "state": "translated",
             "value": "為 %@ 設計 App Store 封面圖。此功能正在建設中。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design App Store cover images for %@. This workspace is under construction."
+          }
         }
       }
     },
@@ -1750,6 +2106,12 @@
             "state": "translated",
             "value": "開發者已拒絕"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer Rejected"
+          }
         }
       }
     },
@@ -1777,6 +2139,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "裝置類型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Family"
           }
         }
       }
@@ -1807,6 +2175,12 @@
             "state": "translated",
             "value": "裝置尺寸"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Size"
+          }
         }
       }
     },
@@ -1834,6 +2208,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "禁用工作流"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disable Workflow"
           }
         }
       }
@@ -1863,6 +2243,12 @@
             "state": "translated",
             "value": "已禁用"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
+          }
         }
       }
     },
@@ -1890,6 +2276,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "中斷連線"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect"
           }
         }
       }
@@ -1919,6 +2311,12 @@
             "state": "translated",
             "value": "分發"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distribution"
+          }
         }
       }
     },
@@ -1946,6 +2344,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "不要把 .p8 密鑰提交到版本控制，也不要貼到專案檔案中。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not commit the .p8 key to source control or paste it into project files."
           }
         }
       }
@@ -1975,6 +2379,12 @@
             "state": "translated",
             "value": "下載 .p8 私鑰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the .p8 private key"
+          }
         }
       }
     },
@@ -2003,6 +2413,12 @@
             "state": "translated",
             "value": "立即下載私鑰。Apple 只允許下載一次。開啟 .p8 檔案，並把完整內容貼到私鑰欄位。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the private key immediately. Apple only lets you download it once. Open the .p8 file and paste the full contents into the Private Key field."
+          }
         }
       }
     },
@@ -2030,6 +2446,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "編輯應用程式資訊、描述和關鍵字"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit app information, descriptions, and keywords"
           }
         }
       }
@@ -2060,6 +2482,12 @@
             "state": "translated",
             "value": "編輯 App Store 版本本地化欄位"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit App Store version localization fields"
+          }
         }
       }
     },
@@ -2087,6 +2515,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "启用工作流"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Workflow"
           }
         }
       }
@@ -2116,6 +2550,12 @@
             "state": "translated",
             "value": "已启用"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled"
+          }
         }
       }
     },
@@ -2143,6 +2583,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "确保截图集存在"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ensure Screenshot Set"
           }
         }
       }
@@ -2172,6 +2618,12 @@
             "state": "translated",
             "value": "匯出封面圖 PNG"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export cover art PNG"
+          }
         }
       }
     },
@@ -2199,6 +2651,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "導出 PNG"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export PNG"
           }
         }
       }
@@ -2228,6 +2686,12 @@
             "state": "translated",
             "value": "匯出圖片尺寸 %dx%d 與預期 %dx%d 不符。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exported image size %dx%d does not match expected %dx%d."
+          }
         }
       }
     },
@@ -2255,6 +2719,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "PNG 編碼失敗。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to encode PNG."
           }
         }
       }
@@ -2284,6 +2754,12 @@
             "state": "translated",
             "value": "加载截图集失败"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to Load Screenshot Sets"
+          }
         }
       }
     },
@@ -2312,6 +2788,12 @@
             "state": "translated",
             "value": "取得應用程式資訊和中繼資料"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch app information and metadata"
+          }
         }
       }
     },
@@ -2339,6 +2821,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "一般"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
           }
         }
       }
@@ -2369,6 +2857,12 @@
             "state": "translated",
             "value": "為 %@ 生成封面圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate a cover image for %@"
+          }
         }
       }
     },
@@ -2397,6 +2891,12 @@
             "state": "translated",
             "value": "全域 API 密鑰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global API Key"
+          }
         }
       }
     },
@@ -2424,6 +2924,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "前往 Keys 分頁，建立新密鑰，選擇管理 App 中繼資料和截圖所需的最低角色，然後儲存。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to the Keys tab, create a new key, choose the minimum role needed for app metadata and screenshot management, then save it."
           }
         }
       }
@@ -2454,6 +2960,12 @@
             "state": "translated",
             "value": "%@ 的 HTML 封面圖，儲存於 .lumi"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML cover art for %@ in .lumi"
+          }
         }
       }
     },
@@ -2481,6 +2993,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果密鑰外洩，請在 App Store Connect 中撤銷它並建立替換密鑰。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If a key is exposed, revoke it in App Store Connect and create a replacement."
           }
         }
       }
@@ -2510,6 +3028,12 @@
             "state": "translated",
             "value": "圖片沒有像素尺寸"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image has no pixel size"
+          }
         }
       }
     },
@@ -2537,6 +3061,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "圖片太小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image is too small"
           }
         }
       }
@@ -2566,6 +3096,12 @@
             "state": "translated",
             "value": "審核中"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Review"
+          }
         }
       }
     },
@@ -2593,6 +3129,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "無效的封面圖 slug：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid cover art slug: %@"
           }
         }
       }
@@ -2622,6 +3164,12 @@
             "state": "translated",
             "value": "版本號格式無效。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid version number format."
+          }
         }
       }
     },
@@ -2646,6 +3194,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "iOS"
@@ -2678,6 +3232,12 @@
             "state": "translated",
             "value": "iPad"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad"
+          }
         }
       }
     },
@@ -2702,6 +3262,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "iPhone"
@@ -2734,6 +3300,12 @@
             "state": "translated",
             "value": "Issuer ID"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issuer ID"
+          }
         }
       }
     },
@@ -2762,6 +3334,12 @@
             "state": "translated",
             "value": "Issuer ID 顯示在 Keys 頁面。Key ID 顯示在你建立的密鑰旁邊。把兩者都貼到 Lumi。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issuer ID is shown on the Keys page. Key ID is shown next to the key you created. Paste both into Lumi."
+          }
         }
       }
     },
@@ -2786,6 +3364,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key ID"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Key ID"
@@ -2818,6 +3402,12 @@
             "state": "translated",
             "value": "關鍵字"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keywords"
+          }
         }
       }
     },
@@ -2845,6 +3435,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "列出 App Store 应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List App Store apps"
           }
         }
       }
@@ -2874,6 +3470,12 @@
             "state": "translated",
             "value": "列出给定应用 ID 的 App Store Connect 版本。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List App Store Connect versions for a given app ID."
+          }
         }
       }
     },
@@ -2901,6 +3503,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "列出 App Store 版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List App Store versions"
           }
         }
       }
@@ -2930,6 +3538,12 @@
             "state": "translated",
             "value": "使用配置的 API 密钥从 App Store Connect 列出应用。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List apps from App Store Connect using the configured API key."
+          }
         }
       }
     },
@@ -2957,6 +3571,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "列出封面圖文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List cover art documents"
           }
         }
       }
@@ -2986,6 +3606,12 @@
             "state": "translated",
             "value": "列出 App Store Connect 應用程式在 .lumi 下儲存的 HTML 封面圖文件。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List HTML cover art documents stored under .lumi for an App Store Connect app."
+          }
         }
       }
     },
@@ -3013,6 +3639,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "載入 App"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load Apps"
           }
         }
       }
@@ -3042,6 +3674,12 @@
             "state": "translated",
             "value": "從 App Store Connect 載入 App，或調整搜尋條件。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load apps from App Store Connect or adjust your search."
+          }
         }
       }
     },
@@ -3069,6 +3707,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "載入此版本的本地化內容以管理截圖。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load localizations for this version to manage screenshots."
           }
         }
       }
@@ -3098,6 +3742,12 @@
             "state": "translated",
             "value": "加载产品"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load Products"
+          }
         }
       }
     },
@@ -3125,6 +3775,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "从 App Store Connect 加载产品以检查工作流并启动构建。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load products from App Store Connect to inspect workflows and start builds."
           }
         }
       }
@@ -3154,6 +3810,12 @@
             "state": "translated",
             "value": "从 App Store Connect 加载截图集，或确保为选定的显示类型存在截图集。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type."
+          }
         }
       }
     },
@@ -3182,6 +3844,12 @@
             "state": "translated",
             "value": "語言地區"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locale"
+          }
         }
       }
     },
@@ -3206,6 +3874,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Mac"
@@ -3238,6 +3912,12 @@
             "state": "translated",
             "value": "macOS"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS"
+          }
         }
       }
     },
@@ -3265,6 +3945,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "管理 App Store Connect App、中繼資料和截圖"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage App Store Connect apps, metadata, and screenshots"
           }
         }
       }
@@ -3295,6 +3981,12 @@
             "state": "translated",
             "value": "管理所選語言和裝置尺寸的截圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage screenshots for the selected locale and device size"
+          }
         }
       }
     },
@@ -3322,6 +4014,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "管理 App Store Connect 應用程式、中繼資料和截圖"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage your App Store Connect apps, metadata, and screenshots"
           }
         }
       }
@@ -3351,6 +4049,12 @@
             "state": "translated",
             "value": "手動發佈"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual Release"
+          }
         }
       }
     },
@@ -3378,6 +4082,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "行銷 URL"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marketing URL"
           }
         }
       }
@@ -3407,6 +4117,12 @@
             "state": "translated",
             "value": "返回的最大应用数（默认 20，最大 100）。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum number of apps to return (default 20, max 100)."
+          }
         }
       }
     },
@@ -3434,6 +4150,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "中繼資料"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metadata"
           }
         }
       }
@@ -3463,6 +4185,12 @@
             "state": "translated",
             "value": "中繼資料編輯"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metadata Editing"
+          }
         }
       }
     },
@@ -3490,6 +4218,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "需要 App Store Connect API 密鑰？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Need an App Store Connect API key?"
           }
         }
       }
@@ -3519,6 +4253,12 @@
             "state": "translated",
             "value": "新增封面圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Cover Art"
+          }
         }
       }
     },
@@ -3546,6 +4286,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "新增版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Version"
           }
         }
       }
@@ -3575,6 +4321,12 @@
             "state": "translated",
             "value": "否"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
+          }
         }
       }
     },
@@ -3602,6 +4354,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未選擇 App"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No App Selected"
           }
         }
       }
@@ -3631,6 +4389,12 @@
             "state": "translated",
             "value": "沒有 App"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Apps"
+          }
         }
       }
     },
@@ -3658,6 +4422,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无构建运行"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Build Runs"
           }
         }
       }
@@ -3687,6 +4457,12 @@
             "state": "translated",
             "value": "尚無封面圖"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Cover Art Yet"
+          }
         }
       }
     },
@@ -3715,6 +4491,12 @@
             "state": "translated",
             "value": "未选择本地化"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Localization Selected"
+          }
         }
       }
     },
@@ -3742,6 +4524,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "沒有本地化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Localizations"
           }
         }
       }
@@ -3772,6 +4560,12 @@
             "state": "translated",
             "value": "暫無預覽"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Preview"
+          }
         }
       }
     },
@@ -3799,6 +4593,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无产品"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Products"
           }
         }
       }
@@ -3828,6 +4628,12 @@
             "state": "translated",
             "value": "未開啟專案"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Project Open"
+          }
         }
       }
     },
@@ -3855,6 +4661,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无此显示类型的截图集"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Screenshot Set for Display Type"
           }
         }
       }
@@ -3884,6 +4696,12 @@
             "state": "translated",
             "value": "无截图集"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Screenshot Sets"
+          }
         }
       }
     },
@@ -3911,6 +4729,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未加载截图集"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No screenshot sets loaded"
           }
         }
       }
@@ -3940,6 +4764,12 @@
             "state": "translated",
             "value": "无截图"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Screenshots"
+          }
         }
       }
     },
@@ -3967,6 +4797,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未選擇版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Version Selected"
           }
         }
       }
@@ -3996,6 +4832,12 @@
             "state": "translated",
             "value": "尚未載入版本"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No versions loaded"
+          }
         }
       }
     },
@@ -4023,6 +4865,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未选择工作流"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Workflow Selected"
           }
         }
       }
@@ -4052,6 +4900,12 @@
             "state": "translated",
             "value": "未加载 Xcode Cloud 产品"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Xcode Cloud Products Loaded"
+          }
         }
       }
     },
@@ -4079,6 +4933,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "不是可讀取的圖片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not a readable image"
           }
         }
       }
@@ -4108,6 +4968,12 @@
             "state": "translated",
             "value": "未連線"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected"
+          }
         }
       }
     },
@@ -4135,6 +5001,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 App Store Connect 上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On App Store Connect"
           }
         }
       }
@@ -4164,6 +5036,12 @@
             "state": "translated",
             "value": "請先開啟專案，以便將封面圖 HTML 儲存在 .lumi 目錄下。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a project first so cover art HTML can be stored under .lumi."
+          }
         }
       }
     },
@@ -4191,6 +5069,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "開啟 App Store Connect API 密鑰"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open App Store Connect API Keys"
           }
         }
       }
@@ -4220,6 +5104,12 @@
             "state": "translated",
             "value": "開啟設定指南，查看 Issuer ID、Key ID 和 .p8 私鑰的位置。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the setup guide for where to find Issuer ID, Key ID, and the .p8 private key."
+          }
         }
       }
     },
@@ -4247,6 +5137,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "開啟使用者和存取"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Users and Access"
           }
         }
       }
@@ -4276,6 +5172,12 @@
             "state": "translated",
             "value": "可选的不区分大小写的搜索查询，按名称筛选应用。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional case-insensitive search query to filter apps by name."
+          }
         }
       }
     },
@@ -4303,6 +5205,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "可選專案路徑，預設為目前專案。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional project path. Defaults to the current project."
           }
         }
       }
@@ -4332,6 +5240,12 @@
             "state": "translated",
             "value": "不允許的路徑：%@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Path is not allowed: %@"
+          }
         }
       }
     },
@@ -4360,6 +5274,12 @@
             "state": "translated",
             "value": "等待 Apple 發佈"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending Apple Release"
+          }
         }
       }
     },
@@ -4387,6 +5307,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待開發者發佈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending Developer Release"
           }
         }
       }
@@ -4417,6 +5343,12 @@
             "state": "translated",
             "value": "選擇背景和圖示以生成預覽。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a background and icon to generate a preview."
+          }
         }
       }
     },
@@ -4444,6 +5376,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "平台"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platform"
           }
         }
       }
@@ -4473,6 +5411,12 @@
             "state": "translated",
             "value": "準備提交"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare"
+          }
         }
       }
     },
@@ -4500,6 +5444,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "準備提交"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare for Submission"
           }
         }
       }
@@ -4529,6 +5479,12 @@
             "state": "translated",
             "value": "私鑰（.p8）"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private Key (.p8)"
+          }
         }
       }
     },
@@ -4556,6 +5512,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在分發"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing for Distribution"
           }
         }
       }
@@ -4585,6 +5547,12 @@
             "state": "translated",
             "value": "产品"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Product"
+          }
         }
       }
     },
@@ -4612,6 +5580,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "專案路徑缺失或無效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project path is missing or invalid."
           }
         }
       }
@@ -4641,6 +5615,12 @@
             "state": "translated",
             "value": "宣傳文字"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promotional Text"
+          }
         }
       }
     },
@@ -4668,6 +5648,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "讀取封面圖 manifest 和完整 index.html 以供編輯。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read a cover art manifest and full index.html for editing."
           }
         }
       }
@@ -4697,6 +5683,12 @@
             "state": "translated",
             "value": "讀取封面圖文件"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read cover art document"
+          }
         }
       }
     },
@@ -4724,6 +5716,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "就绪"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
           }
         }
       }
@@ -4753,6 +5751,12 @@
             "state": "translated",
             "value": "已上架"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready for Sale"
+          }
         }
       }
     },
@@ -4780,6 +5784,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近的构建运行"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent Build Runs"
           }
         }
       }
@@ -4809,6 +5819,12 @@
             "state": "translated",
             "value": "重新整理"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
         }
       }
     },
@@ -4836,6 +5852,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "刷新构建运行或为此工作流启动构建。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh build runs or start a build for this workflow."
           }
         }
       }
@@ -4865,6 +5887,12 @@
             "state": "translated",
             "value": "已拒絕"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected"
+          }
         }
       }
     },
@@ -4892,6 +5920,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "發佈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release"
           }
         }
       }
@@ -4921,6 +5955,12 @@
             "state": "translated",
             "value": "將 %@ 發佈到 App Store？此操作無法透過 API 撤銷。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release %@ to the App Store? This action cannot be undone via the API."
+          }
         }
       }
     },
@@ -4948,6 +5988,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "發佈到 App Store"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to App Store"
           }
         }
       }
@@ -4977,6 +6023,12 @@
             "state": "translated",
             "value": "發佈類型"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Type"
+          }
         }
       }
     },
@@ -5004,6 +6056,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "發佈版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Version"
           }
         }
       }
@@ -5033,6 +6091,12 @@
             "state": "translated",
             "value": "重新載入"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload"
+          }
         }
       }
     },
@@ -5060,6 +6124,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已從銷售中移除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from Sale"
           }
         }
       }
@@ -5089,6 +6159,12 @@
             "state": "translated",
             "value": "將封面圖 HTML 渲染為 PNG，並儲存到專案 .lumi/exports 目錄。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Render a cover art HTML document to PNG and save it under the project .lumi exports folder."
+          }
         }
       }
     },
@@ -5116,6 +6192,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "整文件替換封面圖文件的 index.html 內容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace the full index.html content for a cover art document."
           }
         }
       }
@@ -5145,6 +6227,12 @@
             "state": "translated",
             "value": "已取代"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replaced"
+          }
         }
       }
     },
@@ -5172,6 +6260,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "儲存並測試"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save and test"
           }
         }
       }
@@ -5201,6 +6295,12 @@
             "state": "translated",
             "value": "儲存憑證"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Credentials"
+          }
         }
       }
     },
@@ -5228,6 +6328,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "儲存中繼資料"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Metadata"
           }
         }
       }
@@ -5257,6 +6363,12 @@
             "state": "translated",
             "value": "截圖管理"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot Management"
+          }
         }
       }
     },
@@ -5284,6 +6396,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜尋 App"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search apps"
           }
         }
       }
@@ -5313,6 +6431,12 @@
             "state": "translated",
             "value": "按名稱、Bundle ID 或 SKU 搜尋"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search by name, bundle ID, or SKU"
+          }
         }
       }
     },
@@ -5340,6 +6464,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "安全性說明"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security notes"
           }
         }
       }
@@ -5369,6 +6499,12 @@
             "state": "translated",
             "value": "選擇版本並重新整理以載入本地化內容。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a version and refresh to load localizations."
+          }
         }
       }
     },
@@ -5396,6 +6532,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "請先選擇 App"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an app first"
           }
         }
       }
@@ -5425,6 +6567,12 @@
             "state": "translated",
             "value": "從 App 列表頁或工具列選擇器中選擇應用程式。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an app from the Apps page or toolbar picker."
+          }
         }
       }
     },
@@ -5452,6 +6600,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "從工具列選擇應用程式進行管理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an app from the toolbar to manage"
           }
         }
       }
@@ -5481,6 +6635,12 @@
             "state": "translated",
             "value": "選擇 App"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select App"
+          }
         }
       }
     },
@@ -5508,6 +6668,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定指南"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setup Guide"
           }
         }
       }
@@ -5537,6 +6703,12 @@
             "state": "translated",
             "value": "使用可管理 API 密鑰的帳號登入 App Store Connect，然後開啟使用者和存取。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to App Store Connect with an account that can manage API keys, then open Users and Access."
+          }
         }
       }
     },
@@ -5561,6 +6733,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slug"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Slug"
@@ -5593,6 +6771,12 @@
             "state": "translated",
             "value": "开始构建"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Build"
+          }
         }
       }
     },
@@ -5620,6 +6804,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "將變更提交到 App Store Connect"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submit changes to App Store Connect"
           }
         }
       }
@@ -5649,6 +6839,12 @@
             "state": "translated",
             "value": "支援 URL"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support URL"
+          }
         }
       }
     },
@@ -5676,6 +6872,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "測試連線"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Connection"
           }
         }
       }
@@ -5705,6 +6907,12 @@
             "state": "translated",
             "value": "App Store Connect 应用标识符（参见 list-apps 的 id 字段）。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store Connect app identifier (see id field from list-apps)."
+          }
         }
       }
     },
@@ -5732,6 +6940,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "App Store Connect URL 無效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store Connect URL is invalid."
           }
         }
       }
@@ -5761,6 +6975,12 @@
             "state": "translated",
             "value": "新版本將處於「準備提交」狀態。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new version will start in Prepare for Submission."
+          }
         }
       }
     },
@@ -5788,6 +7008,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法解析私鑰。請使用從 App Store Connect 下載的 .p8 密鑰。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The private key could not be parsed. Use the .p8 key downloaded from App Store Connect."
           }
         }
       }
@@ -5817,6 +7043,12 @@
             "state": "translated",
             "value": "此截图集在 App Store Connect 上为空。在此处添加截图或在 App Store Connect 中上传。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect."
+          }
         }
       }
     },
@@ -5844,6 +7076,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "載入封面圖 HTML 逾時。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timed out while loading cover art HTML."
           }
         }
       }
@@ -5873,6 +7111,12 @@
             "state": "translated",
             "value": "標題"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
         }
       }
     },
@@ -5897,6 +7141,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tvOS"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "tvOS"
@@ -5929,6 +7179,12 @@
             "state": "translated",
             "value": "有未儲存的變更"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsaved changes"
+          }
         }
       }
     },
@@ -5956,6 +7212,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未命名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled"
           }
         }
       }
@@ -5985,6 +7247,12 @@
             "state": "translated",
             "value": "更新封面圖 HTML"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update cover art HTML"
+          }
         }
       }
     },
@@ -6012,6 +7280,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "上傳、預覽和整理應用程式截圖"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload, preview, and organize app screenshots"
           }
         }
       }
@@ -6041,6 +7315,12 @@
             "state": "translated",
             "value": "已上传"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploaded"
+          }
         }
       }
     },
@@ -6068,6 +7348,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在上传"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading"
           }
         }
       }
@@ -6098,6 +7384,12 @@
             "state": "translated",
             "value": "使用類似 #F5F5F7 的十六進制顏色"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a hex color like #F5F5F7"
+          }
         }
       }
     },
@@ -6125,6 +7417,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用能滿足工作流程需求的最低權限 App Store Connect 角色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the least privileged App Store Connect role that still allows the workflow you need."
           }
         }
       }
@@ -6154,6 +7452,12 @@
             "state": "translated",
             "value": "版本 %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
         }
       }
     },
@@ -6181,6 +7485,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%2$@ 已存在版本 %1$@。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %1$@ already exists for %2$@."
           }
         }
       }
@@ -6210,6 +7520,12 @@
             "state": "translated",
             "value": "版本管理"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version Management"
+          }
         }
       }
     },
@@ -6237,6 +7553,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "版本號"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version Number"
           }
         }
       }
@@ -6266,6 +7588,12 @@
             "state": "translated",
             "value": "請輸入版本號。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version number is required."
+          }
         }
       }
     },
@@ -6290,6 +7618,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "visionOS"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "visionOS"
@@ -6322,6 +7656,12 @@
             "state": "translated",
             "value": "等待出口合規"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Export Compliance"
+          }
         }
       }
     },
@@ -6349,6 +7689,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待審核"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Review"
           }
         }
       }
@@ -6378,6 +7724,12 @@
             "state": "translated",
             "value": "等待審核員操作"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Reviewer Action"
+          }
         }
       }
     },
@@ -6405,6 +7757,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "新版說明"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's New"
           }
         }
       }
@@ -6434,6 +7792,12 @@
             "state": "translated",
             "value": "工作流配置"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow Config"
+          }
         }
       }
     },
@@ -6462,6 +7826,12 @@
             "state": "translated",
             "value": "工作流"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflows"
+          }
         }
       }
     },
@@ -6486,6 +7856,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode Cloud"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Xcode Cloud"
@@ -6518,6 +7894,12 @@
             "state": "translated",
             "value": "是"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
+          }
         }
       }
     },
@@ -6545,6 +7927,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "加入對話"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Chat"
           }
         }
       }
@@ -6574,6 +7962,12 @@
             "state": "translated",
             "value": "加入對話並分析"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Chat and Analyze"
+          }
         }
       }
     },
@@ -6602,6 +7996,12 @@
             "state": "translated",
             "value": "加入開發上下文到對話"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Dev Context to Chat"
+          }
         }
       }
     },
@@ -6629,6 +8029,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "加入開發上下文並分析"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Dev Context and Analyze"
           }
         }
       }

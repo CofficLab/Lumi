@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
     "%@ API Key required" : {
       "localizations" : {
         "en" : {
@@ -25,6 +22,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要設定 %@ 的 API Key"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要設定 %@ 的 API Key"
@@ -57,6 +60,12 @@
             "state" : "translated",
             "value" : "API"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API"
+          }
         }
       }
     },
@@ -81,6 +90,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方設定小米 API Key，然後重新發送訊息。"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "請在下方設定小米 API Key，然後重新發送訊息。"
@@ -113,6 +128,12 @@
             "state" : "translated",
             "value" : "為 Lumi Chat 貢獻小米 TokenPlan 與小米 API（OpenAI 相容）模型。"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻小米 TokenPlan 與小米 API（OpenAI 相容）模型。"
+          }
         }
       }
     },
@@ -137,6 +158,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "複製"
@@ -169,6 +196,12 @@
             "state" : "translated",
             "value" : "輸入 API Key"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 API Key"
+          }
         }
       }
     },
@@ -193,6 +226,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "錯誤"
@@ -225,6 +264,12 @@
             "state" : "translated",
             "value" : "在小米 MIMO 平台取得 API Key"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在小米 MIMO 平台取得 API Key"
+          }
         }
       }
     },
@@ -249,6 +294,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API Key"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "隱藏 API Key"
@@ -417,6 +468,12 @@
             "state" : "translated",
             "value" : "原始錯誤詳情"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始錯誤詳情"
+          }
         }
       }
     },
@@ -441,6 +498,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收資料"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "接收資料"
@@ -473,6 +536,12 @@
             "state" : "translated",
             "value" : "請求 / 回應詳情"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求 / 回應詳情"
+          }
         }
       }
     },
@@ -497,6 +566,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送資料"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "傳送資料"
@@ -529,6 +604,12 @@
             "state" : "translated",
             "value" : "顯示 API Key"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API Key"
+          }
         }
       }
     },
@@ -553,6 +634,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示原始錯誤詳情"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示原始錯誤詳情"
@@ -585,6 +672,12 @@
             "state" : "translated",
             "value" : "顯示請求和回應詳情"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示請求和回應詳情"
+          }
         }
       }
     },
@@ -609,6 +702,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TokenPlan"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "TokenPlan"
@@ -743,6 +842,12 @@
             "state" : "translated",
             "value" : "小米API（OpenAI 相容）"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米API（OpenAI 相容）"
+          }
         }
       }
     },
@@ -771,6 +876,12 @@
             "state" : "translated",
             "value" : "小米 HTTP %lld"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 HTTP %lld"
+          }
         }
       }
     },
@@ -795,6 +906,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米請求失敗"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "小米請求失敗"
@@ -857,6 +974,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小米 TokenPlan AI 模型"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "小米 TokenPlan AI 模型"

@@ -131,6 +131,12 @@
             "state": "translated",
             "value": "右側 ChatSection 中的 Agent 聊天消息時間線。"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右側 ChatSection 中的 Agent 聊天消息時間線。"
+          }
         }
       }
     },
@@ -469,6 +475,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天消息"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天消息"
@@ -1370,6 +1382,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏原始消息"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "隱藏原始消息"
@@ -3601,6 +3619,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Raw Message"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Show Raw Message"

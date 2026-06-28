@@ -5,7 +5,31 @@
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
+            "state": "translated",
+            "value": "%1$@/%2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/%2$@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/%2$@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/%2$@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
             "value": "%1$@/%2$@"
           }
         }
@@ -446,6 +470,12 @@
             "state": "translated",
             "value": "Create New Conversation"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create New Conversation"
+          }
         }
       }
     },
@@ -542,6 +572,12 @@
             "state": "translated",
             "value": "Get Conversation Count"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Conversation Count"
+          }
         }
       }
     },
@@ -570,6 +606,12 @@
             "state": "translated",
             "value": "Get Recent Conversations"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Recent Conversations"
+          }
         }
       }
     },
@@ -594,6 +636,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get the total number of conversation histories. Returns the total count of conversations."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Get the total number of conversation histories. Returns the total count of conversations."
@@ -829,6 +877,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set Conversation Project"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Set Conversation Project"

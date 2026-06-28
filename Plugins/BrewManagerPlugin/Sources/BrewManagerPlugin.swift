@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -38,6 +39,32 @@ public enum BrewManagerPlugin: LumiPlugin {
             description: info.description,
             kind: .manager
         )
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "shippingbox",
+                            title: PluginBrewManagerLocalization.string("Packages & casks"),
+                            description: PluginBrewManagerLocalization.string("Install, upgrade, and remove Homebrew formulae")
+                        ),
+                        .init(
+                            icon: "arrow.clockwise",
+                            title: PluginBrewManagerLocalization.string("Stay up to date"),
+                            description: PluginBrewManagerLocalization.string("Refresh and upgrade everything in one place")
+                        ),
+                    ],
+                    tip: PluginBrewManagerLocalization.string("Open Package Management from the sidebar to manage brew.")
+                )
+            }
+        ]
     }
 
 }

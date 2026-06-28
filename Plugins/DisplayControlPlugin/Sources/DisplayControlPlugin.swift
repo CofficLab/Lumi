@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum DisplayControlPlugin: LumiPlugin {
@@ -33,6 +34,32 @@ public enum DisplayControlPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(DisplayControlAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "sun.max",
+                            title: LumiPluginLocalization.string("Brightness & contrast", bundle: .module),
+                            description: LumiPluginLocalization.string("Adjust external displays via DDC/CI", bundle: .module)
+                        ),
+                        .init(
+                            icon: "speaker.wave.2",
+                            title: LumiPluginLocalization.string("Volume", bundle: .module),
+                            description: LumiPluginLocalization.string("Control built-in speakers", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Display Control from the sidebar to tune your screens.", bundle: .module)
+                )
+            }
+        ]
     }
 
     @MainActor

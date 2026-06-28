@@ -5,8 +5,8 @@ public actor EditorBashPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .optIn
     public static let shared = EditorBashPlugin()
     public static let id = "bashHighlight"
-    public static let displayName = "Bash Highlight"
-    public static let description = "Syntax highlighting and language detection for Bash."
+    public static let displayName = LumiPluginLocalization.string("Bash Highlight", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for Bash.", bundle: .module)
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static let order = 200
     public static var category: PluginCategory { .editor }

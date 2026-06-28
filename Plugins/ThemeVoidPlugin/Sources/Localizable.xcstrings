@@ -96,6 +96,12 @@
             "state": "translated",
             "value": "純粹的虛空黑，深邃而神秘"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "純粹的虛空黑，深邃而神秘"
+          }
         }
       }
     },
@@ -120,6 +126,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "虛空深黑 Theme"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "虛空深黑 Theme"

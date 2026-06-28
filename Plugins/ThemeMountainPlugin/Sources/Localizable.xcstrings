@@ -95,6 +95,12 @@
             "state": "translated",
             "value": "山巒 Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "山巒 Theme"
+          }
         }
       }
     }

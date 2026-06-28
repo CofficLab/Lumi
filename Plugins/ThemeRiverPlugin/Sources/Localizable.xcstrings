@@ -95,6 +95,12 @@
             "state": "translated",
             "value": "River Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "River Theme"
+          }
         }
       }
     }

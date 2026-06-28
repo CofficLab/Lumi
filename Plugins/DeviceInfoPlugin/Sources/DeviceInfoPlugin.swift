@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import Foundation
 
 public enum DeviceInfoPlugin: LumiPlugin {
@@ -23,6 +24,32 @@ public enum DeviceInfoPlugin: LumiPlugin {
                 systemImage: iconName
             ) {
                 DeviceInfoView()
+            }
+        ]
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "cpu",
+                            title: LumiPluginLocalization.string("System metrics", bundle: .module),
+                            description: LumiPluginLocalization.string("CPU, memory, and uptime at a glance", bundle: .module)
+                        ),
+                        .init(
+                            icon: "menubar.rectangle",
+                            title: LumiPluginLocalization.string("Menu bar", bundle: .module),
+                            description: LumiPluginLocalization.string("Live metrics in the menu bar", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Device Info from the sidebar to see full details.", bundle: .module)
+                )
             }
         ]
     }

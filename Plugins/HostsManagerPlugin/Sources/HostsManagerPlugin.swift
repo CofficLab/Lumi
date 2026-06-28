@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -33,5 +34,31 @@ public enum HostsManagerPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(HostsManagerAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "list.bullet.rectangle",
+                            title: LumiPluginLocalization.string("Edit hosts", bundle: .module),
+                            description: LumiPluginLocalization.string("Add or remove entries with a live preview", bundle: .module)
+                        ),
+                        .init(
+                            icon: "arrow.uturn.backward",
+                            title: LumiPluginLocalization.string("Toggle entries", bundle: .module),
+                            description: LumiPluginLocalization.string("Enable or disable mappings without deleting them", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Editing the hosts file requires administrator privileges.", bundle: .module)
+                )
+            }
+        ]
     }
 }

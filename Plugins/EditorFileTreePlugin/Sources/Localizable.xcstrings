@@ -367,6 +367,12 @@
             "state" : "translated",
             "value" : "編輯器檔案樹側邊欄"
           }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Rail File Tree"
+          }
         }
       }
     },
@@ -564,6 +570,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯器側欄中的資源管理器標籤。"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explorer tab in the editor rail."
           }
         }
       }

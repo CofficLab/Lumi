@@ -5,8 +5,8 @@ public actor EditorKotlinPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .optIn
     public static let shared = EditorKotlinPlugin()
     public static let id = "kotlinHighlight"
-    public static let displayName = "Kotlin Highlight"
-    public static let description = "Syntax highlighting and language detection for Kotlin."
+    public static let displayName = LumiPluginLocalization.string("Kotlin Highlight", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for Kotlin.", bundle: .module)
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static let order = 200
     public static var category: PluginCategory { .editor }

@@ -60,6 +60,12 @@
             "state": "translated",
             "value": "%lld 個可用"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個可用"
+          }
         }
       }
     },
@@ -224,6 +230,12 @@
             "state": "translated",
             "value": "無法預覽圖片"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法預覽圖片"
+          }
         }
       }
     },
@@ -282,6 +294,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代碼操作"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "代碼操作"
@@ -922,6 +940,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Preferred"

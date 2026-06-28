@@ -1672,6 +1672,12 @@
             "state": "translated",
             "value": "Git"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git"
+          }
         }
       }
     },

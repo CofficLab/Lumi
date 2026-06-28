@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "Delete a memory from the persistent memory system."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete a memory from the persistent memory system."
+          }
         }
       }
     },
@@ -50,6 +56,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Memory"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Delete Memory"
@@ -82,6 +94,12 @@
             "state": "translated",
             "value": "List all saved memories."
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List all saved memories."
+          }
         }
       }
     },
@@ -106,6 +124,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Memories"
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "List Memories"
@@ -206,6 +230,12 @@
             "state": "translated",
             "value": "Recall Memory"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recall Memory"
+          }
         }
       }
     },
@@ -230,6 +260,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save a memory to the persistent memory system."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Save a memory to the persistent memory system."
@@ -262,6 +298,12 @@
             "state": "translated",
             "value": "Save Memory"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Memory"
+          }
         }
       }
     },
@@ -286,6 +328,12 @@
           }
         },
         "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for memories related to a query."
+          }
+        },
+        "zh-TW": {
           "stringUnit": {
             "state": "translated",
             "value": "Search for memories related to a query."

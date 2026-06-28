@@ -95,6 +95,12 @@
             "state": "translated",
             "value": "果園 Theme"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "果園 Theme"
+          }
         }
       }
     }

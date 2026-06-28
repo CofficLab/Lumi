@@ -5,8 +5,8 @@ public actor EditorCPlugin: SuperPlugin {
     public nonisolated static let policy: PluginPolicy = .optIn
     public static let shared = EditorCPlugin()
     public static let id = "cHighlight"
-    public static let displayName = "C Highlight"
-    public static let description = "Syntax highlighting and language detection for C."
+    public static let displayName = LumiPluginLocalization.string("C Highlight", bundle: .module)
+    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for C.", bundle: .module)
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static let order = 200
     public static var category: PluginCategory { .editor }

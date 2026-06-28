@@ -1,5 +1,6 @@
 import AgentToolKit
 import LumiCoreKit
+import LumiUI
 import os
 import SwiftUI
 
@@ -45,5 +46,31 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(DatabaseManagerAboutView())
+    }
+
+    @MainActor
+    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+        [
+            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+                PluginOnboardingPageView(
+                    icon: iconName,
+                    displayName: info.displayName,
+                    description: info.description,
+                    features: [
+                        .init(
+                            icon: "server.rack",
+                            title: LumiPluginLocalization.string("Multiple engines", bundle: .module),
+                            description: LumiPluginLocalization.string("SQLite, MySQL, PostgreSQL, and Redis", bundle: .module)
+                        ),
+                        .init(
+                            icon: "tablecells",
+                            title: LumiPluginLocalization.string("Browse data", bundle: .module),
+                            description: LumiPluginLocalization.string("Inspect schemas and run read-only queries", bundle: .module)
+                        ),
+                    ],
+                    tip: LumiPluginLocalization.string("Open Database from the sidebar to connect to a server.", bundle: .module)
+                )
+            }
+        ]
     }
 }
