@@ -5,9 +5,6 @@ import SwiftUI
 struct RailView: View {
     @LumiTheme private var theme
 
-    /// Set to `false` to hide the rail edge border.
-    static let showsBorder = true
-
     let tabs: [LumiPanelRailTabItem]
     @ObservedObject var layoutState: PanelLayoutState
 
@@ -39,11 +36,6 @@ struct RailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
-        .overlay(alignment: .trailing) {
-            if Self.showsBorder {
-                AppDivider(.vertical)
-            }
-        }
         .onAppear {
             ensureValidSelection()
         }
