@@ -11,7 +11,7 @@ struct CacheCleanerFooter: View {
                 Text("\(PluginDiskManagerLocalization.string("已选择："))\(viewModel.formatBytes(viewModel.totalSelectedSize))")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text("\(viewModel.selection.count) \(PluginDiskManagerLocalization.string("个项目"))")
+                Text("\(viewModel.selection.count) \(PluginDiskManagerLocalization.string("items"))")
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }

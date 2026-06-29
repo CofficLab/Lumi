@@ -106,7 +106,7 @@
         }
       }
     },
-    "Agent 能力": {
+    "Agent Capabilities": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -456,7 +456,6 @@
       }
     },
     "Get Started": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -526,7 +525,6 @@
       }
     },
     "Next": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -595,7 +593,6 @@
       }
     },
     "Previous": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -699,7 +696,6 @@
       }
     },
     "Skip": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -769,7 +765,6 @@
       }
     },
     "Welcome to Lumi": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -803,75 +798,7 @@
         }
       }
     },
-    "上一步": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        }
-      }
-    },
-    "下一步": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        }
-      }
-    },
-    "你的 AI 驱动个人桌面助手": {
+    "Your AI-powered personal desktop assistant": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -905,7 +832,7 @@
         }
       }
     },
-    "先启用常用扩展，之后也可以在设置中调整": {
+    "Enable the extensions you use most, then adjust them later in settings": {
       "extractionState": "stale",
       "localizations": {
         "en": {
@@ -940,12 +867,12 @@
         }
       }
     },
-    "同时处理多个独立任务，互不干扰": {
+    "Process multiple independent tasks in parallel without interference": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "同时处理多个独立任务，互不干扰"
+            "value": "Process multiple independent tasks in parallel without interference"
           }
         },
         "zh-Hans": {
@@ -974,7 +901,7 @@
         }
       }
     },
-    "在设置中随时开启或关闭插件，按需定制你的工作台": {
+    "Enable or disable plugins anytime in Settings to customize your workspace": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1008,7 +935,7 @@
         }
       }
     },
-    "多会话并行": {
+    "Parallel Sessions": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1042,12 +969,12 @@
         }
       }
     },
-    "好": {
+    "OK": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "好"
+            "value": "OK"
           }
         },
         "zh-Hans": {
@@ -1076,47 +1003,13 @@
         }
       }
     },
-    "开始使用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Get Started"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始使用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用"
-          }
-        }
-      }
-    },
-    "打开设置": {
+    "Open Settings": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开设置"
+            "value": "Open Settings"
           }
         },
         "zh-Hans": {
@@ -1145,7 +1038,7 @@
         }
       }
     },
-    "插件可自由开关": {
+    "Plugins On Your Terms": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1179,7 +1072,7 @@
         }
       }
     },
-    "插件选择会在完成引导后立即生效": {
+    "Plugin choices take effect as soon as onboarding is complete": {
       "extractionState": "stale",
       "localizations": {
         "en": {
@@ -1214,12 +1107,12 @@
         }
       }
     },
-    "支持本地和云端 LLM，智能处理复杂任务": {
+    "Support for local and cloud LLMs, intelligently handling complex tasks": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "支持本地和云端 LLM，智能处理复杂任务"
+            "value": "Support for local and cloud LLMs, intelligently handling complex tasks"
           }
         },
         "zh-Hans": {
@@ -1248,13 +1141,13 @@
         }
       }
     },
-    "新建会话": {
+    "New Conversation": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "新建会话"
+            "value": "New Conversation"
           }
         },
         "zh-Hans": {
@@ -1283,12 +1176,12 @@
         }
       }
     },
-    "新手引导": {
+    "Onboarding Guide": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "新手引导"
+            "value": "Onboarding Guide"
           }
         },
         "zh-Hans": {
@@ -1317,12 +1210,12 @@
         }
       }
     },
-    "无法保存新手引导状态": {
+    "Failed to save onboarding state": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法保存新手引导状态"
+            "value": "Failed to save onboarding state"
           }
         },
         "zh-Hans": {
@@ -1351,12 +1244,12 @@
         }
       }
     },
-    "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。": {
+    "Failed to save onboarding state. Please check if Lumi data directory is writable.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。"
+            "value": "Failed to save onboarding state. Please check if Lumi data directory is writable."
           }
         },
         "zh-Hans": {
@@ -1385,12 +1278,12 @@
         }
       }
     },
-    "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。": {
+    "Failed to reset onboarding state. Please check if Lumi data directory is writable.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。"
+            "value": "Failed to reset onboarding state. Please check if Lumi data directory is writable."
           }
         },
         "zh-Hans": {
@@ -1419,7 +1312,7 @@
         }
       }
     },
-    "智能对话": {
+    "Smart Conversations": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1453,46 +1346,12 @@
         }
       }
     },
-    "欢迎使用 Lumi": {
+    "Automatically execute file operations, command line, Git and other tasks": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome to Lumi"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "欢迎使用 Lumi"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歡迎使用 Lumi"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歡迎使用 Lumi"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歡迎使用 Lumi"
-          }
-        }
-      }
-    },
-    "自动执行文件操作、命令行、Git 等任务": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动执行文件操作、命令行、Git 等任务"
+            "value": "Automatically execute file operations, command line, Git and other tasks"
           }
         },
         "zh-Hans": {
@@ -1521,7 +1380,7 @@
         }
       }
     },
-    "设置 → 插件，或按 ⌘, 打开设置": {
+    "Settings → Plugins, or press ⌘, to open Settings": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1555,41 +1414,7 @@
         }
       }
     },
-    "跳过": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳过"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳过"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳過"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳過"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳過"
-          }
-        }
-      }
-    },
-    "选择你的插件": {
+    "Choose Your Plugins": {
       "extractionState": "stale",
       "localizations": {
         "en": {

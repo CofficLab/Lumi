@@ -101,7 +101,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                 }
             }
             .contextMenu {
-                Button(AppStoreConnectLocalization.string("添加到对话")) {
+                Button(AppStoreConnectLocalization.string("Add to Chat")) {
                     AddToChat.post(
                         entityType: entityType,
                         entityID: entityID,
@@ -111,7 +111,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                         mode: .reference
                     )
                 }
-                Button(AppStoreConnectLocalization.string("添加到对话并分析")) {
+                Button(AppStoreConnectLocalization.string("Add to Chat and Analyze")) {
                     AddToChat.post(
                         entityType: entityType,
                         entityID: entityID,
@@ -132,7 +132,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                 }
                 if isLumiProjectCached {
                     Divider()
-                    Button(AppStoreConnectLocalization.string("添加开发上下文到对话")) {
+                    Button(AppStoreConnectLocalization.string("Add Dev Context to Chat")) {
                         AddToChat.post(
                             entityType: entityType,
                             entityID: entityID,
@@ -142,7 +142,7 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                             mode: .devReference
                         )
                     }
-                    Button(AppStoreConnectLocalization.string("添加开发上下文并分析")) {
+                    Button(AppStoreConnectLocalization.string("Add Dev Context and Analyze")) {
                         AddToChat.post(
                             entityType: entityType,
                             entityID: entityID,

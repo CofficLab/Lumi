@@ -885,12 +885,12 @@
         }
       }
     },
-    "收集数据中...": {
+    "Collecting data...": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "收集数据中..."
+            "value": "Collecting data..."
           }
         },
         "zh-Hans": {

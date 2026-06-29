@@ -375,12 +375,12 @@
         }
       }
     },
-    "暂无输入源切换规则": {
+    "No input source switching rules": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "暂无输入源切换规则"
+            "value": "No input source switching rules"
           }
         },
         "zh-Hans": {
@@ -409,12 +409,12 @@
         }
       }
     },
-    "添加应用和对应的输入源，切换应用时自动切换输入法": {
+    "Add apps and corresponding input sources to automatically switch input methods when switching apps": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+            "value": "Add apps and corresponding input sources to automatically switch input methods when switching apps"
           }
         },
         "zh-Hans": {

@@ -7904,7 +7904,7 @@
         }
       }
     },
-    "添加到对话": {
+    "Add to Chat": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7938,7 +7938,7 @@
         }
       }
     },
-    "添加到对话并分析": {
+    "Add to Chat and Analyze": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7972,7 +7972,7 @@
         }
       }
     },
-    "添加开发上下文到对话": {
+    "Add Dev Context to Chat": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8006,7 +8006,7 @@
         }
       }
     },
-    "添加开发上下文并分析": {
+    "Add Dev Context and Analyze": {
       "localizations": {
         "en": {
           "stringUnit": {

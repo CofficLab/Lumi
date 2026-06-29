@@ -1791,13 +1791,13 @@
         }
       }
     },
-    "自动化程度": {
+    "Verbosity Level": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "自动化程度"
+            "value": "Verbosity Level"
           }
         },
         "zh-Hans": {
@@ -1826,13 +1826,13 @@
         }
       }
     },
-    "详细级别": {
+    "Detail Level": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "详细级别"
+            "value": "Detail Level"
           }
         },
         "zh-Hans": {
@@ -1861,13 +1861,13 @@
         }
       }
     },
-    "语言": {
+    "Language": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "语言"
+            "value": "Language"
           }
         },
         "zh-Hans": {
@@ -1896,7 +1896,7 @@
         }
       }
     },
-    "图片": {
+    "Image": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1930,7 +1930,7 @@
         }
       }
     },
-    "当前模型不支持图片": {
+    "The current model does not support images": {
       "localizations": {
         "en": {
           "stringUnit": {

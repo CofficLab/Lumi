@@ -58,8 +58,8 @@ struct ComposerView: View {
                 ToolbarButton(
                     systemImage: "photo",
                     help: canAttachImages
-                        ? LumiPluginLocalization.string("图片", bundle: .module)
-                        : LumiPluginLocalization.string("当前模型不支持图片", bundle: .module),
+                        ? LumiPluginLocalization.string("Image", bundle: .module)
+                        : LumiPluginLocalization.string("The current model does not support images", bundle: .module),
                     isEnabled: canAttachImages,
                     action: onAttachImage,
                     onDisabledTap: onAttachImageBlocked

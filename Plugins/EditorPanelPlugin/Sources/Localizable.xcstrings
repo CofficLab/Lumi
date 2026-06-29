@@ -1327,12 +1327,12 @@
         }
       }
     },
-    "工作区符号当前不可用": {
+    "Workspace symbols currently unavailable": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "工作区符号当前不可用"
+            "value": "Workspace symbols currently unavailable"
           }
         },
         "zh-Hans": {
@@ -1361,12 +1361,12 @@
         }
       }
     },
-    "搜索符号...": {
+    "Search symbols...": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜索符号..."
+            "value": "Search symbols..."
           }
         },
         "zh-Hans": {
@@ -1395,12 +1395,12 @@
         }
       }
     },
-    "未找到匹配的符号": {
+    "No matching symbols found": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "未找到匹配的符号"
+            "value": "No matching symbols found"
           }
         },
         "zh-Hans": {

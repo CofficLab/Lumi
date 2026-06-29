@@ -108,7 +108,7 @@ struct ChatComposerSectionView: View {
             coordinator.appendToDraft(text)
         }
         .alert(
-            LumiPluginLocalization.string("当前模型不支持图片", bundle: .module),
+            LumiPluginLocalization.string("The current model does not support images", bundle: .module),
             isPresented: $coordinator.showImageUnsupportedAlert
         ) {
             Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
