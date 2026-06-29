@@ -1,4 +1,6 @@
 import LumiCoreKit
+import LumiUI
+import SwiftUI
 
 @available(macOS 14.0, *)
 public enum MLXLumiPlugin: LumiPlugin {
@@ -21,5 +23,14 @@ public enum MLXLumiPlugin: LumiPlugin {
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
         [ModelNotDownloadedRenderer.item]
+    }
+
+    @MainActor
+    public static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+        [
+            LumiLLMProviderSettingsViewItem(providerID: "mlx") { _ in
+                MLXLocalProviderSettingsView()
+            },
+        ]
     }
 }

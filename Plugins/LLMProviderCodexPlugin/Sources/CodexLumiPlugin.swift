@@ -16,4 +16,13 @@ public enum CodexLumiPlugin: LumiPlugin {
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         [CodexLumiProvider()]
     }
+
+    @MainActor
+    public static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+        [
+            LumiLLMProviderSettingsViewItem(providerID: "codex") { provider in
+                CodexLocalProviderSettingsView(provider: provider)
+            },
+        ]
+    }
 }
