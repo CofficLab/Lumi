@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 2 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 1 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -20,7 +20,6 @@
 | 优先级 | 项目 | 影响范围 | 触发频率 | 收益 |
 |---|---|---|---|---|
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
-| 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
 
 ---
 
@@ -95,37 +94,6 @@ private func startContentTimer() {
 
 ---
 
-### 1.2 LSP 诊断 `.compile` 读取加缓存
-
-**位置**：`Packages/EditorService/Sources/LSP/LSPDiagnosticBuildContextPolicy.swift:49-60`，调用方 `LSPService.swift:1245-1263`
-
-**现状问题**
-
-```swift
-// handlePublishDiagnostics 跑在 Task { @MainActor } 里（LSPService.swift:203-207）
-let knownModuleNames = readyBuildServerPath.map {
-    LSPDiagnosticBuildContextPolicy.knownModuleNames(inCompileDatabaseForBuildServerPath: $0)
-} ?? []
-
-// 内部：每次都同步读盘 + 全量 JSON 反序列化
-guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)),
-      let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { ... }
-```
-
-- LSP 服务器在**用户键入时频繁重发诊断**，每次都触发主线程同步磁盘读取 + JSON 解析。
-- 结果每次完全相同（`.compile` 不会因键入而变），属于纯重复计算。
-- 直接拖慢 Swift 项目的代码编辑流畅度。
-
-**优化方案**
-
-- [ ] 按 `buildServerPath` + `.compile` 文件 `mtime` 做内存缓存（mtime 未变即命中缓存）。
-- [ ] 或把读取/解析移到后台 `Task`，回主线程后再执行 `filteredDiagnostics`。
-- [ ] 缓存需在项目切换 / `buildServerPath` 变化时失效。
-
-**预期效果**：编辑 Swift 代码时打字流畅度显著提升，重复的磁盘 I/O 与 JSON 解析归零。
-
----
-
 ## Phase 4（P3）：低频主线程 I/O 清理
 
 ## Phase 4（P3）：低频主线程 I/O 清理
@@ -145,7 +113,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 改造完成后建议按下列场景用 Time Profiler / Main Thread Checker 复测：
 
 - [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
-- [ ] **编辑 Swift 代码**：持续键入，观察主线程是否被 `.compile` 读取占用（验证 1.2）。
 
 ---
 
