@@ -1,584 +1,754 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld%%" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        }
-      }
-    },
-    "Cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
     },
-    "Clear" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear"
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "Convert" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Convert"
+    "Clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "转换"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         }
       }
     },
-    "Convert video formats using FFmpeg" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Convert video formats using FFmpeg"
+    "Convert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 FFmpeg 转换视频格式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转换"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 FFmpeg 轉換影片格式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 FFmpeg 轉換影片格式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 FFmpeg 轉換影片格式"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換"
           }
         }
       }
     },
-    "Conversion cancelled." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversion cancelled."
+    "Convert video formats using FFmpeg": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert video formats using FFmpeg"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "转换已取消。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 FFmpeg 转换视频格式"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換已取消。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 FFmpeg 轉換影片格式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換已取消。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 FFmpeg 轉換影片格式"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換已取消。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 FFmpeg 轉換影片格式"
           }
         }
       }
     },
-    "Conversion completed!" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversion completed!"
+    "Conversion cancelled.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversion cancelled."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "转换完成！"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转换已取消。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換完成！"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換已取消。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換完成！"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換已取消。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉換完成！"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換已取消。"
           }
         }
       }
     },
-    "Converting %@ → %@..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Converting %1$@ → %2$@..."
+    "Conversion completed!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversion completed!"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在转换 %1$@ → %2$@..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转换完成！"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在轉換 %1$@ → %2$@..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換完成！"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在轉換 %1$@ → %2$@..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換完成！"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在轉換 %1$@ → %2$@..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉換完成！"
           }
         }
       }
     },
-    "Drag & drop a video file here" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drag & drop a video file here"
+    "Converting %@ → %@...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Converting %1$@ → %2$@..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将视频文件拖放到此处"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在转换 %1$@ → %2$@..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將影片檔案拖放到此處"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在轉換 %1$@ → %2$@..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將影片檔案拖放到此處"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在轉換 %1$@ → %2$@..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將影片檔案拖放到此處"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在轉換 %1$@ → %2$@..."
           }
         }
       }
     },
-    "Error: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error: %@"
+    "Drag & drop a video file here": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag & drop a video file here"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将视频文件拖放到此处"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將影片檔案拖放到此處"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將影片檔案拖放到此處"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將影片檔案拖放到此處"
           }
         }
       }
     },
-    "FFmpeg exited with error code %lld." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg exited with error code %lld."
+    "Error: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg 退出，错误代码 %lld。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg 退出，錯誤代碼 %lld。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg 退出，錯誤代碼 %lld。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg 退出，錯誤代碼 %lld。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤：%@"
           }
         }
       }
     },
-    "FFmpeg not found. Please install it via `brew install ffmpeg`." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FFmpeg not found. Please install it via `brew install ffmpeg`."
+    "FFmpeg exited with error code %lld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg exited with error code %lld."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到 FFmpeg。请通过 `brew install ffmpeg` 安装。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg 退出，错误代码 %lld。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg 退出，錯誤代碼 %lld。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg 退出，錯誤代碼 %lld。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg 退出，錯誤代碼 %lld。"
           }
         }
       }
     },
-    "Format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Format"
+    "FFmpeg not found. Please install it via `brew install ffmpeg`.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg not found. Please install it via `brew install ffmpeg`."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "格式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到 FFmpeg。请通过 `brew install ffmpeg` 安装。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "格式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "格式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "格式"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到 FFmpeg。請透過 `brew install ffmpeg` 安裝。"
           }
         }
       }
     },
-    "Log" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log"
+    "Format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日志"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日誌"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日誌"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日誌"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式"
           }
         }
       }
     },
-    "or click to browse" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "or click to browse"
+    "Log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或点击浏览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日志"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或點擊瀏覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日誌"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或點擊瀏覽"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日誌"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或點擊瀏覽"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日誌"
           }
         }
       }
     },
-    "Output Format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Output Format"
+    "or click to browse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or click to browse"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输出格式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或点击浏览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸出格式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或點擊瀏覽"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸出格式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或點擊瀏覽"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸出格式"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或點擊瀏覽"
           }
         }
       }
     },
-    "Video Converter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Video Converter"
+    "Output Format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output Format"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "视频转换器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输出格式"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "影片轉換器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出格式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "影片轉換器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出格式"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "影片轉換器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出格式"
+          }
+        }
+      }
+    },
+    "Video Converter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video Converter"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频转换器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片轉換器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片轉換器"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片轉換器"
+          }
+        }
+      }
+    },
+    "Any format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any format"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意格式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意格式"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意格式"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意格式"
+          }
+        }
+      }
+    },
+    "Convert clips between common formats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert clips between common formats"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在常见格式之间转换片段"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在常見格式之間轉換片段"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在常見格式之間轉換片段"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在常見格式之間轉換片段"
+          }
+        }
+      }
+    },
+    "Presets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presets"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設"
+          }
+        }
+      }
+    },
+    "Pick a target format and convert in bulk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a target format and convert in bulk"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择目标格式并批量转换"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇目標格式並批量轉換"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇目標格式並批量轉換"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇目標格式並批量轉換"
+          }
+        }
+      }
+    },
+    "FFmpeg is required. Open Video Converter from the sidebar to start.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FFmpeg is required. Open Video Converter from the sidebar to start."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 FFmpeg。从侧边栏打开视频转换器开始使用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
