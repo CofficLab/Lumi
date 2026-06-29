@@ -256,7 +256,6 @@ return lines[lineNumber - 1]...                                               //
 | 位置 | 问题 | 处理 |
 |---|---|---|
 | `Packages/EditorService/Sources/LSP/LSPService.swift:401` | 每次文档变更都 `Timer.scheduledTimer` 重建（主 run loop） | 改为 `Task.sleep` debounce（与 `ScrollCoordinator.swift:111`、`EditorRuntimeModeController.swift:164` 一致） |
-| `Packages/EditorService/Sources/Kernel/EditorKeybindingStore.swift:150` | 改快捷键时同步 `data.write`（主线程） | 写盘进后台 `Task` |
 | `Packages/EditorService/Sources/Kernel/EditorDocumentController.swift:167` | 打开文档同步 `String(contentsOf:)` | 大文件读取移后台（小文件保留） |
 | `Plugins/NetworkManagerPlugin/Sources/Services/NetworkHistoryService.swift:203-217` | 启动时同步读 + 解析最多 43200 个数据点 | 解码移后台，UI 先展示空态再回填 |
 | `LumiApp/Services/PluginSettingsStore.swift:23` / `LumiUIService.swift:86` | 切换插件/主题时同步 plist 读写 | 写盘进后台 `Task` |

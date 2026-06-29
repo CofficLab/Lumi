@@ -8,6 +8,7 @@ private let editorKeybindingsFileName = "editor_keybindings.json"
 private let corruptEditorKeybindingsFileName = "editor_keybindings.corrupt.json"
 
 // MARK: - Editor Keybinding Store
+
 //
 // 后续方向：键位可配置化。
 //
@@ -146,7 +147,6 @@ public final class EditorKeybindingStore: ObservableObject, SuperLog {
         }
     }
 
-
     @discardableResult
     private func save() -> Bool {
         let entries = Array(customBindings.values)
@@ -160,13 +160,14 @@ public final class EditorKeybindingStore: ObservableObject, SuperLog {
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
                 try data.write(to: url, options: .atomic)
             } catch {
-                Self.logger.error("\(Self.t)Save editor keybindings failed: \(error.localizedDescription)")
+                await Self.logger.error("\(Self.t)Save editor keybindings failed: \(error.localizedDescription)")
             }
         }
 
         // 立即返回 true，因为写入是异步的
         return true
     }
+
     private var storageURL: URL {
         customBindingsFileURL ?? bindingsFileURL
     }
