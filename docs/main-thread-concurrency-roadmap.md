@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 10 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 9 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -26,7 +26,6 @@
 | 🟠 P1 | Find References 行读取缓存 | 查找引用 | 每个结果位置 | N 个结果不再 N 次全量读 |
 | 🟡 P2 | 进程网络图标预取移后台 | 进程网络列表 | 每 0.2s 突发 | 列表滚动更顺 |
 | 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
-| 🟢 P3 | 文档变更 debounce 改 Task.sleep | 全局编辑 | 每次键入 | 降低主 run loop 开销 |
 | 🟢 P3 | 快捷键保存写盘移后台 | 改快捷键 | 用户改键时 | 清理主线程 I/O |
 | 🟢 P3 | 文档打开/历史加载移后台 | 开文件/启动 | 开文件、插件加载 | 观感更顺滑 |
 
@@ -239,7 +238,6 @@ return lines[lineNumber - 1]...                                               //
 
 | 位置 | 问题 | 处理 |
 |---|---|---|
-| `Packages/EditorService/Sources/LSP/LSPService.swift:401` | 每次文档变更都 `Timer.scheduledTimer` 重建（主 run loop） | 改为 `Task.sleep` debounce（与 `ScrollCoordinator.swift:111`、`EditorRuntimeModeController.swift:164` 一致） |
 | `Packages/EditorService/Sources/Kernel/EditorDocumentController.swift:167` | 打开文档同步 `String(contentsOf:)` | 大文件读取移后台（小文件保留） |
 | `Plugins/NetworkManagerPlugin/Sources/Services/NetworkHistoryService.swift:203-217` | 启动时同步读 + 解析最多 43200 个数据点 | 解码移后台，UI 先展示空态再回填 |
 | `LumiApp/Services/PluginSettingsStore.swift:23` / `LumiUIService.swift:86` | 切换插件/主题时同步 plist 读写 | 写盘进后台 `Task` |
