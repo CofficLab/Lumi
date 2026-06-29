@@ -34,8 +34,7 @@ struct PanelColumnView: View {
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    layoutState: layoutState,
-                    viewContainerID: viewContainerID
+                    viewContainerID: viewContainerID, layoutState: layoutState
                 )
             }
         }
@@ -66,8 +65,7 @@ struct PanelColumnView: View {
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    layoutState: layoutState,
-                    viewContainerID: viewContainerID
+                    viewContainerID: viewContainerID, layoutState: layoutState
                 )
             }
             .id(viewContainerID)

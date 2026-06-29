@@ -11,8 +11,8 @@ struct ChatToolbarView: View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.breadcrumbBarHeight,
             showsBottomBorder: true,
-            bottomShadowLevel: .none,
-            backgroundStyle: .custom(theme.textTertiary.opacity(0.035)),
+            bottomShadowLevel: .md,
+            backgroundStyle: .panel,
             padding: EdgeInsets(
                 top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
                 leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
@@ -30,6 +30,5 @@ struct ChatToolbarView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
         }
-        .frame(height: AppPanelChromeMetrics.breadcrumbBarHeight)
     }
 }

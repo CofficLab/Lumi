@@ -9,10 +9,10 @@ struct PanelWorkspaceView: View {
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
     let showsPanelChrome: Bool
-    @ObservedObject var layoutState: PanelLayoutState
     let viewContainerID: String
 
     @ObservedObject private var globalLayoutState = LumiLayoutStateStore.shared
+    @ObservedObject var layoutState: PanelLayoutState
 
     private var showBottomPanel: Bool {
         showsPanelChrome && !bottomTabs.isEmpty && globalLayoutState.bottomPanelVisible
