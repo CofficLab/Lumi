@@ -81,7 +81,11 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
 
     init(storageURL: URL?, autoStartRecording: Bool) {
         self.storageURL = storageURL
-        loadHistory()
+        // 历史数据加载移到后台，UI 先展示空态再回填
+        let url = storageURL
+        Task.detached(priority: .utility) { [weak self] in
+            await self?.loadHistoryInBackground(url: url)
+        }
         if autoStartRecording {
             startRecording()
         }
@@ -210,9 +214,34 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
             self.longTermHistory = loaded.filter { $0.timestamp >= cutoff }
         } catch {
             if NetworkManagerPlugin.verbose {
-                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to load network history: \(error.localizedDescription)")
+                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to load network history: \(error)")
             }
             quarantineCorruptHistory(at: url)
+        }
+    }
+
+    /// 后台加载历史数据
+    @MainActor
+    private func loadHistoryInBackground(url: URL?) async {
+        guard let url, FileManager.default.fileExists(atPath: url.path) else { return }
+
+        // 在后台线程读取和解析
+        let result: [NetworkDataPoint]? = await Task.detached(priority: .utility) {
+            do {
+                let data = try Data(contentsOf: url)
+                let loaded = try JSONDecoder().decode([NetworkDataPoint].self, from: data)
+                let cutoff = Date().timeIntervalSince1970 - 2592000 // 30 days
+                return loaded.filter { $0.timestamp >= cutoff }
+            } catch {
+                return nil
+            }
+        }.value
+
+        // 回到主线程更新数据
+        if let result {
+            self.longTermHistory = result
+        } else if NetworkManagerPlugin.verbose {
+            NetworkManagerPlugin.logger.error("\(Self.t)Failed to load network history")
         }
     }
 
