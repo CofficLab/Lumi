@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 1 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 0 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -19,7 +19,6 @@
 
 | 优先级 | 项目 | 影响范围 | 触发频率 | 收益 |
 |---|---|---|---|---|
-| 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 
 ---
 
@@ -56,44 +55,6 @@ private func updateCPUUsage() {
 
 ---
 
-## Phase 1（P0）：最高收益项
-
-### 1.1 菜单栏 1 秒轮询改为事件驱动
-
-**位置**：`LumiApp/Services/MenuBarService.swift:184-193`
-
-**现状问题**
-
-```swift
-private let contentRefreshInterval: TimeInterval = 1.0   // 每秒
-
-private func startContentTimer() {
-    let timer = DispatchSource.makeTimerSource(queue: .main)   // 主线程
-    timer.schedule(deadline: .now() + contentRefreshInterval, repeating: contentRefreshInterval)
-    timer.setEventHandler { [weak self] in
-        self?.replaceMenuBarContent()   // ← 每秒重建整个 SwiftUI 视图树
-    }
-    timer.activate()
-    contentTimer = timer
-}
-```
-
-- `contentTimer` 在 `RootContainer`（应用启动即创建的单例）初始化时启动，**永不停止**（无任何 `invalidate` 逻辑）。
-- 每秒 `replaceMenuBarContent()`：重新调用所有插件 `menuBarContentItems(context:)`、重建 `MenuBarIconView`、`hostingView.layoutSubtreeIfNeeded()` + `fittingSize`（强制同步布局）、更新 `statusItem.length`。
-- 反复触发 `AppUpdateStatusBarStore.shared.start()` 等 side effect。
-- **这是所有用户、整个运行期间都在付出的主线程成本，是本次最大收益项。**
-
-**优化方案**
-
-- [ ] 方案 A（首选）：改为**事件驱动**。各插件内容已是 `ObservableObject` + `@Published`，用 Combine 订阅数据变化，变化时才刷新；取消 1 秒定时器。
-- [ ] 方案 B（过渡）：保留轮询但降损——把"采集数据"放 `Task.detached`，主线程只 apply；用 `Equatable` diff 判断内容是否真变化，无变化跳过重建。
-- [ ] `layoutSubtreeIfNeeded()` + `fittingSize` 降频（3-5 秒一次，或仅在内容变化时）。
-- [ ] 移除 `makeView` 闭包内的 side effect（如 `store.start()` 应在插件激活时调用一次）。
-
-**预期效果**：持续性的每秒主线程负担基本消除，空闲时主线程接近零负担。
-
----
-
 ## Phase 4（P3）：低频主线程 I/O 清理
 
 ## Phase 4（P3）：低频主线程 I/O 清理
@@ -112,7 +73,7 @@ private func startContentTimer() {
 
 改造完成后建议按下列场景用 Time Profiler / Main Thread Checker 复测：
 
-- [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
+（所有优化点已完成）
 
 ---
 
