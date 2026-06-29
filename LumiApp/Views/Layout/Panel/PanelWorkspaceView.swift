@@ -3,6 +3,8 @@ import LumiUI
 import SwiftUI
 
 struct PanelWorkspaceView: View {
+    @LumiTheme private var theme
+    
     let container: LumiViewContainerItem?
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
@@ -33,7 +35,6 @@ struct PanelWorkspaceView: View {
             }
         }
         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     @ViewBuilder

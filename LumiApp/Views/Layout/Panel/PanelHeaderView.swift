@@ -3,6 +3,8 @@ import LumiUI
 import SwiftUI
 
 struct PanelHeaderView: View {
+    @LumiTheme private var theme
+    
     let items: [LumiPanelHeaderItem]
 
     var body: some View {
