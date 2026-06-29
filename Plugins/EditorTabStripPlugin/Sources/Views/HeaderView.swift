@@ -33,7 +33,6 @@ public struct HeaderView: View {
     public var body: some View {
         AppToolbarContainer(
             height: 40,
-            showsBottomBorder: true,
             backgroundStyle: .panel,
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
@@ -44,6 +43,7 @@ public struct HeaderView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+        .borderBottom()
         .onAppear {
             coordinator.startObserving(
                 sessionStore: sessionStore,

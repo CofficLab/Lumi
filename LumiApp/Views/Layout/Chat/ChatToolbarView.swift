@@ -10,7 +10,6 @@ struct ChatToolbarView: View {
     var body: some View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.breadcrumbBarHeight,
-            showsBottomBorder: true,
             backgroundStyle: .panel,
             padding: EdgeInsets(
                 top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
@@ -29,6 +28,7 @@ struct ChatToolbarView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
         }
+        .borderBottom()
         .shadowMd()
     }
 }
