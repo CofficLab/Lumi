@@ -56,38 +56,6 @@ public enum AppShadowLevel: Equatable {
     }
 }
 
-/// 用于「承接」上方工具栏底部阴影的视图扩展。
-///
-/// `AppToolbarContainer` 通过 `.shadow()` 把阴影绘制在自身边界之外。
-/// 当正下方是一个背景完全不透明的视图时（例如编辑器面板），
-/// 这些阴影像素会落在不透明背景的绘制区域内，从而被整片覆盖、完全不可见。
-///
-/// 在这类不透明接收视图上调用 `.appToolbarUndershadow(.xxxl)`，
-/// 用一条从 `level.color` 衰减到透明的渐变盖在顶部，模拟出等价的阴影外观。
-/// 渐变是真正带 alpha 的内容，且画在 overlay 最上层，不会被下方背景覆盖。
-public extension View {
-    func appToolbarUndershadow(_ level: AppShadowLevel) -> some View {
-        modifier(AppToolbarUndershadowModifier(level: level))
-    }
-}
-
-private struct AppToolbarUndershadowModifier: ViewModifier {
-    let level: AppShadowLevel
-
-    func body(content: Content) -> some View {
-        content.overlay(alignment: .top) {
-            // 自上而下：阴影色 → 透明，模拟顶部工具栏投下的阴影衰减。
-            LinearGradient(
-                colors: [level.color, .clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: level.undershadowHeight)
-            .allowsHitTesting(false)
-        }
-    }
-}
-
 /// 统一的工具栏容器组件
 ///
 /// 提供标准化的水平工具栏样式，包含统一的高度、背景、底部 border 和可选的底部 shadow。

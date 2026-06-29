@@ -46,10 +46,6 @@ public struct EditorPanelView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
-        // 承接上方 Tab Strip 工具栏的底部阴影。
-        // 编辑器面板背景完全不透明，会覆盖 header 向外溢出的阴影像素，
-        // 这里以 overlay 形式在自身图层之上重绘等价阴影，保证 shadow 可见。
-        .appToolbarUndershadow(.xxxl)
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
