@@ -10,21 +10,21 @@ struct SystemMonitorView: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
             // CPU Card
-            MonitorCard(title: "CPU", 
+            MonitorCard(title: LumiPluginLocalization.string("CPU", bundle: .module), 
                         value: viewModel.metrics.cpuUsage.description,
                         color: viewModel.cpuColor) {
                 WaveformView(data: viewModel.metrics.cpuUsage.history, color: viewModel.cpuColor)
             }
             
             // Memory Card
-            MonitorCard(title: "Memory", 
+            MonitorCard(title: LumiPluginLocalization.string("Memory", bundle: .module), 
                         value: viewModel.metrics.memoryUsage.description,
                         color: viewModel.memoryColor) {
                 WaveformView(data: viewModel.metrics.memoryUsage.history, color: viewModel.memoryColor)
             }
             
             // GPU Card
-            MonitorCard(title: "GPU", 
+            MonitorCard(title: LumiPluginLocalization.string("GPU", bundle: .module), 
                         value: String(format: "%.0f%%", gpuService.utilization),
                         color: gpuColor) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -60,7 +60,7 @@ struct SystemMonitorView: View {
             }
             
             // Network Card
-            MonitorCard(title: "Network", 
+            MonitorCard(title: LumiPluginLocalization.string("Network", bundle: .module), 
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
                         color: Color(hex: "0A84FF")) {
                 ZStack {
@@ -72,7 +72,7 @@ struct SystemMonitorView: View {
             }
             
             // Disk Card
-            MonitorCard(title: "Disk I/O", 
+            MonitorCard(title: LumiPluginLocalization.string("Disk I/O", bundle: .module), 
                         value: String(format: LumiPluginLocalization.string("R: %@ W: %@", bundle: .module), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
                         color: Color(hex: "FF9F0A")) {
                 ZStack {
@@ -85,7 +85,7 @@ struct SystemMonitorView: View {
             
             // Battery Card
             if batteryService.hasBattery {
-                MonitorCard(title: "Battery",
+                MonitorCard(title: LumiPluginLocalization.string("Battery", bundle: .module),
                             value: batteryMonitorValue,
                             color: batteryLevelColor) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -202,7 +202,7 @@ struct SystemMonitorView: View {
 }
 
 struct MonitorCard<Content: View>: View {
-    let title: LocalizedStringKey
+    let title: String
     let value: String
     let color: Color
     let content: () -> Content

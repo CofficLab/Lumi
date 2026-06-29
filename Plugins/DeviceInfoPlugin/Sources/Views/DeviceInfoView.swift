@@ -41,7 +41,7 @@ struct DeviceInfoView: View {
                     }
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        DeviceInfoCard(title: "CPU", icon: "cpu", color: theme.info) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("CPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(data.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), data.coreCount) : data.processorName)
                                     .font(.caption)
@@ -98,7 +98,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "Memory", icon: "memorychip", color: theme.success) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("Memory", bundle: .module), icon: "memorychip", color: theme.success) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("\(memoryUsedText) / \(memoryTotalText)")
                                     .font(.caption)
@@ -109,7 +109,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "Disk", icon: "internaldrive", color: theme.warning) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("Disk", bundle: .module), icon: "internaldrive", color: theme.warning) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("\(diskUsedText) \(LumiPluginLocalization.string("used", bundle: .module))")
                                     .font(.caption)
@@ -123,7 +123,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "Battery", icon: batteryIcon, color: batteryLevelColor) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("Battery", bundle: .module), icon: batteryIcon, color: batteryLevelColor) {
                             VStack(alignment: .leading, spacing: 8) {
                                 if batteryService.hasBattery {
                                     HStack {
@@ -182,7 +182,7 @@ struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: "GPU", icon: "cpu", color: Color(hex: "BF5AF2")) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: Color(hex: "BF5AF2")) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                                     .font(.caption)
@@ -349,12 +349,12 @@ struct DeviceInfoView: View {
 private struct DeviceInfoCard<Content: View>: View {
     @LumiTheme private var theme
 
-    let title: LocalizedStringKey
+    let title: String
     let icon: String
     let color: Color
     let content: Content
 
-    init(title: LocalizedStringKey, icon: String, color: Color, @ViewBuilder content: () -> Content) {
+    init(title: String, icon: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.color = color

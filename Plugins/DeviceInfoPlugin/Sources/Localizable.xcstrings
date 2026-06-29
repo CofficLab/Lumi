@@ -817,76 +817,6 @@
         }
       }
     },
-    "Battery %lld%%": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Battery %lld%%"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "电池 %lld%%"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%%"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%%"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%%"
-          }
-        }
-      }
-    },
-    "Battery %lld%% ⚡": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Battery %lld%% ⚡"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "电池 %lld%% ⚡"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%% ⚡"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%% ⚡"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "電池 %lld%% ⚡"
-          }
-        }
-      }
-    },
     "Collecting...": {
       "localizations": {
         "en": {
@@ -932,25 +862,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU"
+            "value": "处理器"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU"
+            "value": "處理器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU"
+            "value": "處理器"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU"
+            "value": "處理器"
           }
         }
       }
@@ -966,25 +896,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU %.0f%%"
+            "value": "处理器 %.0f%%"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU %.0f%%"
+            "value": "處理器 %.0f%%"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU %.0f%%"
+            "value": "處理器 %.0f%%"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU %.0f%%"
+            "value": "處理器 %.0f%%"
           }
         }
       }
@@ -1238,25 +1168,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "GPU"
+            "value": "显卡"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "GPU"
+            "value": "顯示卡"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "GPU"
+            "value": "顯示卡"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "GPU"
+            "value": "顯示卡"
           }
         }
       }
@@ -1703,41 +1633,6 @@
         }
       }
     },
-    "Show system status like CPU, Memory, Disk, Battery, etc.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show system status like CPU, Memory, Disk, Battery, etc."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示 CPU、内存、磁盘、电池等系统状态"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 CPU、記憶體、磁碟、電池等系統狀態"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 CPU、記憶體、磁碟、電池等系統狀態"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 CPU、記憶體、磁碟、電池等系統狀態"
-          }
-        }
-      }
-    },
     "Shows basic device and system information.": {
       "localizations": {
         "en": {
@@ -2108,6 +2003,176 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用率"
+          }
+        }
+      }
+    },
+    "System metrics": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System metrics"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统指标"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統指標"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統指標"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統指標"
+          }
+        }
+      }
+    },
+    "CPU, memory, and uptime at a glance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU, memory, and uptime at a glance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览 CPU、内存和运行时间"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概覽 CPU、記憶體和運行時間"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概覽 CPU、記憶體和運行時間"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概覽 CPU、記憶體和運行時間"
+          }
+        }
+      }
+    },
+    "Menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu bar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列"
+          }
+        }
+      }
+    },
+    "Live metrics in the menu bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live metrics in the menu bar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单栏实时指标"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列即時指標"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列即時指標"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選單列即時指標"
+          }
+        }
+      }
+    },
+    "Open Device Info from the sidebar to see full details.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Device Info from the sidebar to see full details."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从侧边栏打开设备信息查看完整详情。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄打開設備資訊查看完整詳情。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄打開設備資訊查看完整詳情。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄打開設備資訊查看完整詳情。"
           }
         }
       }

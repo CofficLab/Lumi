@@ -15,7 +15,7 @@ struct MemoryHistoryDetailView: View {
 
                 Spacer()
 
-                Picker("Time Range", selection: $selectedRange) {
+                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
                     ForEach(MemoryTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }
