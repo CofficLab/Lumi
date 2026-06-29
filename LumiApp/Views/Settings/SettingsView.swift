@@ -76,7 +76,7 @@ struct SettingsView: View {
         }
     }
 
-    private func settingsPluginContext() -> LumiPluginContext {
+    private var settingsPluginContext: LumiPluginContext {
         LumiPluginContext(
             activeSectionID: "settings",
             activeSectionTitle: "设置",
@@ -84,7 +84,7 @@ struct SettingsView: View {
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register((any LumiLLMProviderSettingsContributing).self, pluginService)
-            }()
+            }
         )
     }
 

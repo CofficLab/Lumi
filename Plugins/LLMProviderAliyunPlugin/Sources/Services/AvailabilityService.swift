@@ -9,7 +9,7 @@ enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderAliyun")
 
     static func checkAvailability(
-        provider: AliyunProvider,
+        provider: AnthropicCompatibleLumiProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
         // 优先读磁盘缓存
