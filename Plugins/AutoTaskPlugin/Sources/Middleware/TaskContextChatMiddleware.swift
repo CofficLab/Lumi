@@ -4,13 +4,19 @@ import os
 
 /// AutoTask 进度注入中间件：在每轮对话中注入当前任务进度。
 struct TaskContextChatMiddleware: LumiSendMiddleware {
+    private let manager: TaskStateManager
+
+    init(manager: TaskStateManager = .shared) {
+        self.manager = manager
+    }
+
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
         var updated = context
         let conversationId = context.conversationID.uuidString
-        let manager = TaskStateManager.shared
 
         let tasks = await manager.fetchTasks(conversationId: conversationId)
         let summary = await manager.getProgressSummary(conversationId: conversationId)
+        let isContinuation = await manager.consumeContinuation(conversationId: conversationId)
 
         guard !summary.isEmpty else {
             return updated
@@ -23,6 +29,21 @@ struct TaskContextChatMiddleware: LumiSendMiddleware {
                 language: context.conversationLanguage
             )
         )
+
+        // 若本轮是一次无感自动续聊（任务尚未完成但上一轮已结束），
+        // 追加更强的"立即继续推进"指令。该提示只进 system prompt，
+        // 不会作为用户消息出现在消息列表或持久化历史中。
+        if isContinuation {
+            let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }
+            if !activeTasks.isEmpty {
+                updated.systemPromptFragments.append(
+                    buildContinuationPrompt(
+                        tasks: activeTasks,
+                        language: context.conversationLanguage
+                    )
+                )
+            }
+        }
         return updated
     }
 
@@ -37,6 +58,76 @@ struct TaskContextChatMiddleware: LumiSendMiddleware {
         case .chinese:
             return buildChineseProgressPrompt(tasks: tasks, summary: summary)
         }
+    }
+
+    private func buildContinuationPrompt(
+        tasks: [TaskItem],
+        language: LumiConversationLanguage
+    ) -> String {
+        switch language {
+        case .english:
+            return buildEnglishContinuationPrompt(tasks: tasks)
+        case .chinese:
+            return buildChineseContinuationPrompt(tasks: tasks)
+        }
+    }
+
+    private func buildEnglishContinuationPrompt(tasks: [TaskItem]) -> String {
+        var prompt = "## ⏭️ Continue Pending Tasks\n"
+        prompt += "The previous turn ended, but these tasks are still incomplete. Continue working on them now.\n\n"
+
+        let inProgressTasks = tasks.filter { $0.status == .inProgress }
+        let pendingTasks = tasks.filter { $0.status == .pending }
+
+        if !inProgressTasks.isEmpty {
+            prompt += "**In progress (verify and complete):**\n"
+            for task in inProgressTasks {
+                prompt += "- [\(task.id)] \(task.title)\n"
+            }
+            prompt += "\n"
+        }
+        if !pendingTasks.isEmpty {
+            prompt += "**Not started:**\n"
+            for task in pendingTasks {
+                prompt += "- [\(task.id)] \(task.title)\n"
+            }
+            prompt += "\n"
+        }
+
+        prompt += "---\n"
+        prompt += "- If a task is done, call `update_task(task_id: \"...\", status: \"completed\")` immediately.\n"
+        prompt += "- If a task needs to begin, call `update_task(task_id: \"...\", status: \"in_progress\")`.\n"
+        prompt += "- Otherwise, keep working on the current task — do not stop until progress is made.\n"
+        return prompt
+    }
+
+    private func buildChineseContinuationPrompt(tasks: [TaskItem]) -> String {
+        var prompt = "## ⏭️ 继续推进未完成任务\n"
+        prompt += "上一轮已结束，但以下任务尚未完成，请立即继续处理。\n\n"
+
+        let inProgressTasks = tasks.filter { $0.status == .inProgress }
+        let pendingTasks = tasks.filter { $0.status == .pending }
+
+        if !inProgressTasks.isEmpty {
+            prompt += "**进行中（请检查并完成）：**\n"
+            for task in inProgressTasks {
+                prompt += "- [\(task.id)] \(task.title)\n"
+            }
+            prompt += "\n"
+        }
+        if !pendingTasks.isEmpty {
+            prompt += "**尚未开始：**\n"
+            for task in pendingTasks {
+                prompt += "- [\(task.id)] \(task.title)\n"
+            }
+            prompt += "\n"
+        }
+
+        prompt += "---\n"
+        prompt += "- 若任务已完成，请立即调用 `update_task(task_id: \"...\", status: \"completed\")`。\n"
+        prompt += "- 若任务需要开始，请调用 `update_task(task_id: \"...\", status: \"in_progress\")`。\n"
+        prompt += "- 否则继续处理当前任务，在取得进展前不要停下。\n"
+        return prompt
     }
 
     private func buildEnglishProgressPrompt(tasks: [TaskItem], summary: TaskProgressSummary) -> String {

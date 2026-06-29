@@ -50,6 +50,8 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool
     func enqueueText(_ text: String, in conversationID: UUID?)
     func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?)
+    /// 在不写入任何用户消息的前提下，为该会话重启一轮 agent turn（用于无感自动续聊）。
+    func continueTurn(in conversationID: UUID)
     func cancelSending(for conversationID: UUID?)
     func approvePendingTool()
     func rejectPendingTool()
