@@ -13,6 +13,7 @@ struct ProviderSummaryCard: View {
     let onRefresh: () -> Void
     let statusMessage: String?
     let statusMessageColor: Color?
+    var dailyUsage: [String: ModelDailyTokenSeries] = [:]
 
     // MARK: - Derived
 
@@ -35,6 +36,15 @@ struct ProviderSummaryCard: View {
         totalModelCount - availableModelCount
     }
 
+    /// 该供应商下所有模型在该供应商维度聚合的 dailyUsage
+    private var providerDailyUsage: [String: ModelDailyTokenSeries] {
+        dailyUsage.filter { $0.value.providerID == provider.id }
+    }
+
+    private var hasDailyUsage: Bool {
+        !providerDailyUsage.isEmpty && providerDailyUsage.values.contains { $0.hasData }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
@@ -52,28 +62,12 @@ struct ProviderSummaryCard: View {
                         .offset(x: 10, y: 10)
                 }
 
-                // Provider info and stats
+                // Provider info
                 VStack(alignment: .leading, spacing: 4) {
                     Text(provider.displayName)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
-
-                    HStack(spacing: 12) {
-                        Label("\(totalModelCount)", systemImage: "number")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(theme.textSecondary)
-
-                        Label("\(availableModelCount)", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.green)
-
-                        if unavailableCount > 0 {
-                            Label("\(unavailableCount)", systemImage: "xmark.circle.fill")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(theme.textTertiary)
-                        }
-                    }
                 }
 
                 Spacer()
@@ -107,6 +101,28 @@ struct ProviderSummaryCard: View {
                     .font(.system(size: 11))
                     .foregroundColor(color)
                     .lineLimit(2)
+            }
+
+            // 14-day usage statistics chart
+            if hasDailyUsage {
+                Divider()
+                    .background(theme.divider)
+                    .padding(.vertical, 4)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    AppBarChart(
+                        data: ModelDailyTokenBarChartMapper.chartData(from: providerDailyUsage)
+                    )
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(theme.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(theme.divider, lineWidth: 0.5)
+                )
             }
         }
         .padding(12)

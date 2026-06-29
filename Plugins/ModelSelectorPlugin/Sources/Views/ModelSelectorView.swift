@@ -130,11 +130,12 @@ struct ModelSelectorView: View {
                             isChecking: checkingProviderID == provider.id,
                             onRefresh: { checkProviderAvailability(provider) },
                             statusMessage: resolvedProviderStatus(for: provider)?.message,
-                            statusMessageColor: providerStatusColor(for: resolvedProviderStatus(for: provider)?.level ?? .info)
+                            statusMessageColor: providerStatusColor(for: resolvedProviderStatus(for: provider)?.level ?? .info),
+                            dailyUsage: dailyUsage
                         )
 
                         ForEach(filteredModels(for: provider), id: \.self) { model in
-                            ModelRow(
+                            ModelCard(
                                 provider: provider,
                                 model: model,
                                 isSelected: chatService.providerID(for: conversationID) == provider.id
@@ -228,7 +229,7 @@ struct ModelSelectorView: View {
                 Section(LumiPluginLocalization.string(title, bundle: .module)) {
                     ForEach(ranked.indices, id: \.self) { index in
                         let entry = ranked[index]
-                        ModelRow(
+                        ModelCard(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id
@@ -264,7 +265,7 @@ struct ModelSelectorView: View {
                 Section(LumiPluginLocalization.string("Fast Models", bundle: .module)) {
                     ForEach(fastModels.indices, id: \.self) { index in
                         let entry = fastModels[index]
-                        ModelRow(
+                        ModelCard(
                             provider: entry.provider,
                             model: entry.model,
                             isSelected: chatService.providerID(for: conversationID) == entry.provider.id

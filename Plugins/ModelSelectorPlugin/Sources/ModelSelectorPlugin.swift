@@ -67,8 +67,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
             LumiSettingsTabItem(
                 id: "\(info.id).local",
                 title: "本地供应商",
-                systemImage: "cpu",
-                sidebarPlacement: .inlineAfterCore("appearance")
+                systemImage: "cpu"
             ) {
                 LocalProviderSettingsPage(
                     chatService: chatService,
@@ -78,8 +77,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
             LumiSettingsTabItem(
                 id: "\(info.id).remote",
                 title: "云端供应商",
-                systemImage: "network",
-                sidebarPlacement: .inlineAfterCore("appearance")
+                systemImage: "network"
             ) {
                 RemoteProviderSettingsPage(
                     chatService: chatService,

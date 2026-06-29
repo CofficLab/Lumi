@@ -208,11 +208,9 @@ struct LocalProviderSettingsPage: View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
                 ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                    ModelSettingsRow(
+                    ModelCard(
+                        provider: provider,
                         model: model,
-                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS,
                         stat: stat(for: provider.id, modelName: model),
                         dailyUsage: dailyUsage(for: provider.id, modelName: model)
                     )
