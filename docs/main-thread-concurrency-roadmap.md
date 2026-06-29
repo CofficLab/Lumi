@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 7 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 6 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -22,7 +22,6 @@
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 | 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
 | 🟠 P1 | `SystemMonitorService` 采样移后台 | 设备/系统监视页面 | 每秒 | 打开页面不再卡 |
-| 🟡 P2 | 进程网络图标预取移后台 | 进程网络列表 | 每 0.2s 突发 | 列表滚动更顺 |
 | 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
 | 🟢 P3 | 快捷键保存写盘移后台 | 改快捷键 | 用户改键时 | 清理主线程 I/O |
 | 🟢 P3 | 文档打开/历史加载移后台 | 开文件/启动 | 开文件、插件加载 | 观感更顺滑 |
@@ -153,18 +152,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 ## Phase 3（P2）：中频热点
 
-### 3.1 进程网络图标预取移后台
-
-**位置**：`Plugins/NetworkManagerPlugin/Sources/ProcessNetworkMonitor/ProcessMonitorService.swift:214-218`
-
-**现状问题**：nettop 每批数据汇总时，对每个新 PID 在主线程调 `NSRunningApplication(processIdentifier:)?.icon`，0.2s 一次突发。
-
-**优化方案**
-
-- [ ] 图标预取移到后台队列，主线程只读 `processDetails` 缓存。
-
-**预期效果**：进程网络列表滚动更顺滑。
-
 ---
 
 ### 3.2 Cmd+Click 正则编译缓存
@@ -203,7 +190,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 - [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
 - [ ] **编辑 Swift 代码**：持续键入，观察主线程是否被 `.compile` 读取占用（验证 1.2）。
 - [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1）。
-- [ ] **进程网络列表**：观察偶发卡顿是否消除（验证 3.1）。
 
 ---
 
