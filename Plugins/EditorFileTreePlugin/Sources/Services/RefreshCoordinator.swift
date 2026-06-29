@@ -63,6 +63,9 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// Git 状态防抖任务
     private var gitStatusDebounceTask: Task<Void, Never>?
+    
+    /// Git 刷新请求计数器（用于日志去重）
+    private var gitRefreshRequestCount: Int = 0
 
     /// 防抖任务
     private var debounceTask: Task<Void, Never>?
@@ -78,7 +81,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     private let debounceInterval: UInt64 = 300_000_000 // 0.3 秒
 
     /// Git 状态防抖间隔（纳秒）
-    private let gitStatusDebounceInterval: UInt64 = 200_000_000 // 0.2 秒
+    private let gitStatusDebounceInterval: UInt64 = 500_000_000 // 0.5 秒
 
     /// 是否为 Git 仓库（缓存，避免每次都调用 LibGit2）
     private var isGitRepo: Bool = false
@@ -237,8 +240,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 需要监听的 `.git` 内部目录集合。
     ///
-    /// - `.git`：捕获 index、HEAD、MERGE_HEAD、rebase-merge/ 等顶层元数据写入
     /// - `.git/refs`：捕获 refs/heads（分支切换）、refs/tags 等引用变更
+    /// 
+    /// 不监听整个 `.git` 目录，避免 `.git/objects/` 频繁写入导致无效刷新。
+    /// 只监听真正影响 Git 状态的关键位置。
     /// 仅返回实际存在的目录，避免对非 Git 仓库空跑。
     static func gitMetadataWatchURLs(projectRootURL: URL) -> [URL] {
         let gitURL = projectRootURL.appendingPathComponent(".git").standardizedFileURL
@@ -246,30 +251,40 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         guard FileManager.default.fileExists(atPath: gitURL.path, isDirectory: &isDir), isDir.boolValue else {
             return []
         }
-        var urls: [URL] = [gitURL]
+        
+        var urls: [URL] = []
+        
+        // 只监听 refs 目录（分支切换、tag 变更）
         let refsURL = gitURL.appendingPathComponent("refs").standardizedFileURL
         var refsIsDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: refsURL.path, isDirectory: &refsIsDir), refsIsDir.boolValue {
             urls.append(refsURL)
         }
+        
+        // 可选：监听 logs/refs 目录（reflog 变更）
+        let logsRefsURL = gitURL.appendingPathComponent("logs/refs").standardizedFileURL
+        var logsIsDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: logsRefsURL.path, isDirectory: &logsIsDir), logsIsDir.boolValue {
+            urls.append(logsRefsURL)
+        }
+        
         return urls
     }
 
     /// 处理目录变化事件
     private func handleDirectoryChanged(url: URL) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
-        }
-
         // .git 内部变化只影响 Git 状态标记，不应触发文件树内容重载（否则会把 .git
         // 当成普通变更目录下发，导致节点无谓地重新加载子项）。
         let normalizedPath = PathFormatter.normalizedFilePath(url)
         let isGitMetadataChange = normalizedPath.contains("/.git")
 
         if isGitMetadataChange {
-            // 仅刷新 Git 状态
+            // 仅刷新 Git 状态（日志由 scheduleGitStatusRefresh 统一管理）
             scheduleGitStatusRefresh()
         } else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
+            }
             // 收集变化目录的标准化路径，随精准刷新下发，避免全树重载
             pendingChangedPaths.insert(normalizedPath)
             triggerTargetedRefresh()
@@ -376,11 +391,29 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     private func scheduleGitStatusRefresh() {
         guard isGitRepo else { return }
 
+        gitRefreshRequestCount += 1
+        let currentCount = gitRefreshRequestCount
+        
+        // 首次请求时记录日志
+        if currentCount == 1 {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🔄 检测到 .git 变化，准备刷新状态")
+            }
+        }
+
         gitStatusDebounceTask?.cancel()
         let interval = self.gitStatusDebounceInterval
         gitStatusDebounceTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: interval)
             guard let self else { return }
+            
+            // 防抖结束时，如果有多次请求，记录合并信息
+            if currentCount < self.gitRefreshRequestCount, Self.verbose {
+                Self.logger.info("\(Self.t)🔀 合并了 \(self.gitRefreshRequestCount - currentCount + 1) 次 Git 变化")
+            }
+            
+            // 重置计数器
+            self.gitRefreshRequestCount = 0
             self.refreshGitStatus()
         }
     }
