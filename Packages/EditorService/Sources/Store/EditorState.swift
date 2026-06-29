@@ -1835,14 +1835,14 @@ public final class EditorState: ObservableObject, SuperLog {
             logger.info("\(self.t)loadFile: 开始加载 url=\(loadingURL.path), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
         }
         
-        Task {
+        Task.detached(priority: .userInitiated) { [documentController, loadingURL, fullLoadOverrides] in
             do {
                 let loadedDocument = try documentController.loadDocument(
                     from: url,
                     truncationReadBytes: Self.truncationReadBytes,
                     forceFullLoad: fullLoadOverrides.contains(loadingURL.standardizedFileURL)
                 )
-                
+
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     guard self.fileLoadRequestGeneration.isCurrent(loadGeneration) else { return }
