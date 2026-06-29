@@ -678,7 +678,12 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     }
     
     // MARK: - 正则回退查找
-    
+
+    /// 正则表达式缓存，按 escapedWord 缓存编译后的正则数组
+    private static var regexCache: [String: [NSRegularExpression]] = [:]
+    private static let regexCacheLock = NSLock()
+    private static let maxCacheSize = 50
+
     /// 通过正则回退查找定义（支持多语言）
     private func findDefinitionViaRegex(
         word: String,
@@ -686,33 +691,51 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
         content: String
     ) -> NSRange? {
         let escapedWord = NSRegularExpression.escapedPattern(for: word)
-        
-        // 多语言定义模式
-        let patterns: [String] = [
-            // 函数/方法/变量定义 (Swift/Kotlin/Java/C#/JS/TS/Python/Rust/Go)
-            #"(?:func|fun|def|fn|function|void|int|string|let|var|const|class|struct|enum|interface|type)\s+\#(escapedWord)\b"#,
-            // Rust pub fn
-            #"pub\s+fn\s+\#(escapedWord)\b"#,
-            // Go func with receiver
-            #"func\s+\([^)]*\)\s+\#(escapedWord)\b"#,
-            // C/C++ 函数
-            #"(?:void|int|char|float|double|struct|class|enum)\s+\#(escapedWord)\s*\("#,
-            // self.xxx / this.xxx 属性访问
-            #"(?:self|this)\.\#(escapedWord)\b"#
-        ]
-        
+
+        // 获取或编译正则表达式
+        let regexes: [NSRegularExpression]
+        if let cached = Self.regexCache[escapedWord] {
+            regexes = cached
+        } else {
+            // 多语言定义模式
+            let patterns: [String] = [
+                // 函数/方法/变量定义 (Swift/Kotlin/Java/C#/JS/TS/Python/Rust/Go)
+                #"(?:func|fun|def|fn|function|void|int|string|let|var|const|class|struct|enum|interface|type)\s+\#(escapedWord)\b"#,
+                // Rust pub fn
+                #"pub\s+fn\s+\#(escapedWord)\b"#,
+                // Go func with receiver
+                #"func\s+\([^)]*\)\s+\#(escapedWord)\b"#,
+                // C/C++ 函数
+                #"(?:void|int|char|float|double|struct|class|enum)\s+\#(escapedWord)\s*\("#,
+                // self.xxx / this.xxx 属性访问
+                #"(?:self|this)\.\#(escapedWord)\b"#
+            ]
+
+            regexes = patterns.compactMap { try? NSRegularExpression(pattern: $0, options: []) }
+
+            // 缓存编译结果
+            Self.regexCacheLock.lock()
+            if Self.regexCache.count >= Self.maxCacheSize {
+                // 简单清理：移除一半缓存
+                let keysToRemove = Array(Self.regexCache.keys.prefix(Self.maxCacheSize / 2))
+                for key in keysToRemove {
+                    Self.regexCache.removeValue(forKey: key)
+                }
+            }
+            Self.regexCache[escapedWord] = regexes
+            Self.regexCacheLock.unlock()
+        }
+
         let nsContent = content as NSString
         let searchRange = NSRange(location: 0, length: max(0, min(cursorRange.location, nsContent.length)))
-        
-        for pattern in patterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { continue }
-            
+
+        for regex in regexes {
             if let match = regex.firstMatch(in: content, options: [], range: searchRange),
                match.range.length > 0 {
                 return match.range
             }
         }
-        
+
         return nil
     }
     

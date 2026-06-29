@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 3 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 2 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -21,7 +21,6 @@
 |---|---|---|---|---|
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 | 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
-| 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
 
 ---
 
@@ -127,24 +126,7 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 ---
 
-## Phase 3（P2）：中频热点
-
----
-
-### 3.2 Cmd+Click 正则编译缓存
-
-**位置**：`Packages/EditorService/Sources/Editor/JumpToDefinitionDelegate.swift:683-717`
-
-**现状问题**：跳转定义回退路径每次重新编译 5 个 `NSRegularExpression`；其中 3 个与用户输入无关，可静态化。
-
-**优化方案**
-
-- [ ] 与用户输入无关的 3 个 pattern 提为 `static let` 编译一次；含 `escapedWord` 的 2 个保留即时编译。
-- [ ] 可对 `escapedWord` 维护小规模 LRU 缓存。
-
-**预期效果**：跳转定义响应更快，减少正则编译开销。
-
----
+## Phase 4（P3）：低频主线程 I/O 清理
 
 ## Phase 4（P3）：低频主线程 I/O 清理
 
