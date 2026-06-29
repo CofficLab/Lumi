@@ -34,7 +34,6 @@ public struct HeaderView: View {
         AppToolbarContainer(
             height: 40,
             showsBottomBorder: true,
-            bottomShadowLevel: .none,
             backgroundStyle: .panel,
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {

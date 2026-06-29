@@ -20,7 +20,6 @@ public struct NavHeaderView: View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.breadcrumbBarHeight,
             showsBottomBorder: true,
-            bottomShadowLevel: .md,
             backgroundStyle: .panel,
             padding: EdgeInsets(
                 top: AppPanelChromeMetrics.breadcrumbVerticalPadding,

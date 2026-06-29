@@ -8,7 +8,6 @@ struct ChatHeaderView: View {
     var body: some View {
         AppToolbarContainer(
             height: 40,
-            bottomShadowLevel: .md,
             backgroundStyle: .panel,
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
