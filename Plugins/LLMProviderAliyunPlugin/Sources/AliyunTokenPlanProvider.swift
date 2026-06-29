@@ -57,7 +57,7 @@ public final class AliyunTokenPlanProvider: AnthropicCompatibleLumiProvider, @un
                 "qwen3.6-flash": .init(supportsVision: true, supportsTools: true),
                 "qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
                 "qwen3.7-plus": .init(supportsVision: true, supportsTools: true),
-                "qwen3.7-max": .init(supportsVision: true, supportsTools: true),
+                "qwen3.7-max": .init(supportsVision: false, supportsTools: true),
                 "qwen-image-2.0": .init(supportsVision: true, supportsTools: false),
                 "qwen-image-2.0-pro": .init(supportsVision: true, supportsTools: false),
                 "wan2.7-image": .init(supportsVision: false, supportsTools: false),
