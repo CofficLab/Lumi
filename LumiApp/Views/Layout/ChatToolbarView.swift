@@ -3,10 +3,23 @@ import LumiUI
 import SwiftUI
 
 struct ChatToolbarView: View {
+    @LumiTheme private var theme
+
     let items: [LumiChatSectionToolbarBarItem]
 
     var body: some View {
-        AppBreadcrumbBarContainer(showsBottomShadow: true) {
+        AppToolbarContainer(
+            height: AppPanelChromeMetrics.breadcrumbBarHeight,
+            showsBottomBorder: true,
+            showsBottomShadow: true,
+            backgroundStyle: .custom(theme.textTertiary.opacity(0.035)),
+            padding: EdgeInsets(
+                top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
+                bottom: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
+            )
+        ) {
             HStack(alignment: .center, spacing: 8) {
                 Spacer(minLength: 0)
 
@@ -14,6 +27,8 @@ struct ChatToolbarView: View {
                     item.makeView()
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
         }
         .frame(height: AppPanelChromeMetrics.breadcrumbBarHeight)
     }

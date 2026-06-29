@@ -10,17 +10,31 @@ import SwiftUI
 public struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @ObservedObject private var service: EditorService
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public init(service: EditorService) {
         self.service = service
     }
 
     public var body: some View {
-        AppBreadcrumbBarContainer(showsBottomShadow: true) {
+        AppToolbarContainer(
+            height: AppPanelChromeMetrics.breadcrumbBarHeight,
+            showsBottomBorder: true,
+            showsBottomShadow: true,
+            backgroundStyle: .custom(theme.textTertiary.opacity(0.035)),
+            padding: EdgeInsets(
+                top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
+                bottom: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
+            )
+        ) {
             if let fileURL = service.files.currentFileURL,
                projectVM.isProjectSelected,
                isFileInCurrentProject(fileURL) {
                 breadcrumbPath(fileURL: fileURL)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
             } else {
                 Color.clear
             }
