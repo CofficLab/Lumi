@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 8 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 7 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -22,7 +22,6 @@
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 | 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
 | 🟠 P1 | `SystemMonitorService` 采样移后台 | 设备/系统监视页面 | 每秒 | 打开页面不再卡 |
-| 🟠 P1 | Find References 行读取缓存 | 查找引用 | 每个结果位置 | N 个结果不再 N 次全量读 |
 | 🟡 P2 | 进程网络图标预取移后台 | 进程网络列表 | 每 0.2s 突发 | 列表滚动更顺 |
 | 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
 | 🟢 P3 | 快捷键保存写盘移后台 | 改快捷键 | 用户改键时 | 清理主线程 I/O |
@@ -152,29 +151,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 ---
 
-### 2.4 Find References 行读取缓存
-
-**位置**：`Packages/EditorService/Sources/Kernel/EditorLSPActionController.swift:51-57`、`Sources/Editor/JumpToDefinitionDelegate.swift:803-810`
-
-**现状问题**
-
-```swift
-guard let content = try? EditorTextFileReader.read(url) else { return nil }  // String(contentsOf:) 整个文件
-let lines = content.components(separatedBy: .newlines)                        // 整个文件 split
-return lines[lineNumber - 1]...                                               // 只为取一行
-```
-
-- Find References 有 N 个结果就 N 次全量同步读 + 全文 split，全部在主线程。
-
-**优化方案**
-
-- [ ] 按 URL + mtime 缓存"已解析的行数组"；或按字节范围只读所需行。
-- [ ] 读取与解析移到后台 `Task`，主线程只展示。
-
-**预期效果**：查找引用结果较多时不再阻塞主线程。
-
----
-
 ## Phase 3（P2）：中频热点
 
 ### 3.1 进程网络图标预取移后台
@@ -227,7 +203,6 @@ return lines[lineNumber - 1]...                                               //
 - [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
 - [ ] **编辑 Swift 代码**：持续键入，观察主线程是否被 `.compile` 读取占用（验证 1.2）。
 - [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1）。
-- [ ] **查找引用**：多结果场景观察主线程（验证 2.4）。
 - [ ] **进程网络列表**：观察偶发卡顿是否消除（验证 3.1）。
 
 ---
