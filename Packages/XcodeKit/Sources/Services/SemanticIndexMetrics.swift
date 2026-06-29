@@ -16,20 +16,25 @@ public enum SemanticIndexMetrics: SuperLog {
     private nonisolated(unsafe) static var cacheMisses = 0
     private nonisolated(unsafe) static var lastIndexDuration: TimeInterval?
     private nonisolated(unsafe) static var lastEntryCount: Int?
+    public nonisolated static let verbose = false
 
     public static func recordCacheHit(workspacePath: String, entryCount: Int?) {
         lock.lock()
         cacheHits += 1
         lastEntryCount = entryCount
         lock.unlock()
-        logger.info("\(Self.t)semantic_index_cache_hit workspace=\(workspacePath, privacy: .public) entries=\(entryCount ?? 0)")
+        if Self.verbose {
+            logger.info("\(Self.t)semantic_index_cache_hit workspace=\(workspacePath, privacy: .public) entries=\(entryCount ?? 0)")
+        }
     }
 
     public static func recordCacheMiss(workspacePath: String, reason: String) {
         lock.lock()
         cacheMisses += 1
         lock.unlock()
-        logger.info("\(Self.t)semantic_index_cache_miss workspace=\(workspacePath, privacy: .public) reason=\(reason, privacy: .public)")
+        if Self.verbose {
+            logger.info("\(Self.t)semantic_index_cache_miss workspace=\(workspacePath, privacy: .public) reason=\(reason, privacy: .public)")
+        }
     }
 
     public static func recordIndexCompleted(workspacePath: String, duration: TimeInterval, entryCount: Int) {
@@ -37,7 +42,9 @@ public enum SemanticIndexMetrics: SuperLog {
         lastIndexDuration = duration
         lastEntryCount = entryCount
         lock.unlock()
-        logger.info("\(Self.t)semantic_index_complete workspace=\(workspacePath, privacy: .public) duration=\(duration, privacy: .public)s entries=\(entryCount)")
+        if Self.verbose {
+            logger.info("\(Self.t)semantic_index_complete workspace=\(workspacePath, privacy: .public) duration=\(duration, privacy: .public)s entries=\(entryCount)")
+        }
     }
 
     public static func snapshot() -> SemanticIndexMetricsSnapshot {

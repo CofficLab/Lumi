@@ -214,10 +214,14 @@ public final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Senda
                 editorContextMenuLog.warning("\(Self.t)controllerDidAppear: textView=\(controller.textView != nil), state=\(self.state != nil), 跳过注册")
                 return
             }
-            editorContextMenuLog.info("\(Self.t)controllerDidAppear: 开始注册 textView=\(String(describing: textView)), canPreview=\(state.canPreview), commandContributors=\(state.editorExtensions.commandContributorsCount)")
+            if Self.verbose {
+                editorContextMenuLog.info("\(Self.t)controllerDidAppear: 开始注册 textView=\(String(describing: textView)), canPreview=\(state.canPreview), commandContributors=\(state.editorExtensions.commandContributorsCount)")
+            }
             EditorSettingsLifecycle.registerMultiCursorTextView?(textView, state)
             ContextMenuManager.shared.register(textView: textView, state: state)
-            editorContextMenuLog.info("\(Self.t)controllerDidAppear: 注册完成")
+            if Self.verbose {
+                editorContextMenuLog.info("\(Self.t)controllerDidAppear: 注册完成")
+            }
         }
     }
 

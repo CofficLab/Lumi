@@ -85,7 +85,9 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
         // 首次绑定通知（仅一次）
         if !notificationObserverHolder.hasObserver {
-            Self.logger.info("\(Self.t)Registering autoTaskDidChange observer")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Registering autoTaskDidChange observer")
+            }
             let observer = NotificationCenter.default.addObserver(
                 forName: .autoTaskDidChange,
                 object: nil,
