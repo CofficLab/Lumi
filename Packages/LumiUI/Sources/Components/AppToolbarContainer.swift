@@ -49,21 +49,49 @@ public enum AppShadowLevel: Equatable {
         case .xxxl: return 10
         }
     }
+
+    /// 承接阴影的高度：与 `radius` 成正比，覆盖阴影自然衰减的范围。
+    var undershadowHeight: CGFloat {
+        ceil(radius * 2.5) + y
+    }
+}
+
+/// 用于「承接」上方工具栏底部阴影的视图扩展。
+///
+/// `AppToolbarContainer` 通过 `.shadow()` 把阴影绘制在自身边界之外。
+/// 当正下方是一个背景完全不透明的视图时（例如编辑器面板），
+/// 这些阴影像素会落在不透明背景的绘制区域内，从而被整片覆盖、完全不可见。
+///
+/// 在这类不透明接收视图上调用 `.appToolbarUndershadow(.xxxl)`，
+/// 用一条从 `level.color` 衰减到透明的渐变盖在顶部，模拟出等价的阴影外观。
+/// 渐变是真正带 alpha 的内容，且画在 overlay 最上层，不会被下方背景覆盖。
+public extension View {
+    func appToolbarUndershadow(_ level: AppShadowLevel) -> some View {
+        modifier(AppToolbarUndershadowModifier(level: level))
+    }
+}
+
+private struct AppToolbarUndershadowModifier: ViewModifier {
+    let level: AppShadowLevel
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .top) {
+            // 自上而下：阴影色 → 透明，模拟顶部工具栏投下的阴影衰减。
+            LinearGradient(
+                colors: [level.color, .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: level.undershadowHeight)
+            .allowsHitTesting(false)
+        }
+    }
 }
 
 /// 统一的工具栏容器组件
 ///
 /// 提供标准化的水平工具栏样式，包含统一的高度、背景、底部 border 和可选的底部 shadow。
 /// 用于 AppTitleToolbar、HeaderView、RailView、Breadcrumb 等场景。
-///
-/// ## 示例
-/// ```swift
-/// AppToolbarContainer {
-///     HStack(spacing: 8) {
-///         // 工具栏内容
-///     }
-/// }
-/// ```
 public struct AppToolbarContainer<Content: View>: View {
     @LumiTheme private var theme
 
@@ -74,14 +102,6 @@ public struct AppToolbarContainer<Content: View>: View {
     let padding: EdgeInsets
     let content: () -> Content
 
-    /// 创建工具栏容器
-    /// - Parameters:
-    ///   - height: 工具栏高度，默认 40
-    ///   - showsBottomBorder: 是否显示底部 border，默认 true
-    ///   - bottomShadowLevel: 底部阴影级别，默认 .none
-    ///   - backgroundStyle: 背景样式，默认 .toolbar
-    ///   - padding: 内边距，默认 horizontal: 8, vertical: 4
-    ///   - content: 工具栏内容
     public init(
         height: CGFloat = 40,
         showsBottomBorder: Bool = true,
@@ -109,96 +129,20 @@ public struct AppToolbarContainer<Content: View>: View {
                     AppDivider()
                 }
             }
+            .compositingGroup()
             .shadow(color: bottomShadowLevel.color, radius: bottomShadowLevel.radius, y: bottomShadowLevel.y)
     }
 }
 
-#Preview("基础样式") {
-    VStack(spacing: 0) {
-        AppToolbarContainer {
-            HStack {
-                Image(systemName: "folder")
-                Text("文件浏览器")
-                Spacer()
-                Image(systemName: "plus")
-            }
-        }
-
-        Color.gray.opacity(0.1)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-#Preview("无底部 border") {
-    VStack(spacing: 0) {
-        AppToolbarContainer(showsBottomBorder: false) {
-            HStack {
-                Image(systemName: "gear")
-                Text("设置")
-                Spacer()
-            }
-        }
-
-        Color.gray.opacity(0.1)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-#Preview("不同背景样式") {
-    VStack(spacing: 12) {
-        AppToolbarContainer(backgroundStyle: .toolbar) {
-            HStack {
-                Image(systemName: "hammer")
-                Text("工具栏样式")
-            }
-        }
-
-        AppToolbarContainer(backgroundStyle: .panel) {
-            HStack {
-                Image(systemName: "square.stack")
-                Text("面板样式")
-            }
-        }
-
-        AppToolbarContainer(backgroundStyle: .subtle) {
-            HStack {
-                Image(systemName: "circle")
-                Text("柔和样式")
-            }
-        }
-    }
-    .padding()
-}
-
 #Preview("不同阴影级别") {
     VStack(spacing: 16) {
-        AppToolbarContainer(bottomShadowLevel: .xs) {
-            Text("xs")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .sm) {
-            Text("sm")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .md) {
-            Text("md")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .lg) {
-            Text("lg")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .xl) {
-            Text("xl")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .xxl) {
-            Text("xxl")
-        }
-
-        AppToolbarContainer(bottomShadowLevel: .xxxl) {
-            Text("xxxl")
-        }
+        AppToolbarContainer(bottomShadowLevel: .xs) { Text("xs") }
+        AppToolbarContainer(bottomShadowLevel: .sm) { Text("sm") }
+        AppToolbarContainer(bottomShadowLevel: .md) { Text("md") }
+        AppToolbarContainer(bottomShadowLevel: .lg) { Text("lg") }
+        AppToolbarContainer(bottomShadowLevel: .xl) { Text("xl") }
+        AppToolbarContainer(bottomShadowLevel: .xxl) { Text("xxl") }
+        AppToolbarContainer(bottomShadowLevel: .xxxl) { Text("xxxl") }
     }
     .padding()
     .background(Color.gray.opacity(0.2))

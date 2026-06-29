@@ -20,8 +20,8 @@ public struct BreadcrumbNavHeaderView: View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.breadcrumbBarHeight,
             showsBottomBorder: true,
-            bottomShadowLevel: .xxxl,
-            backgroundStyle: .custom(theme.textTertiary.opacity(0.035)),
+            bottomShadowLevel: .md,
+            backgroundStyle: .panel,
             padding: EdgeInsets(
                 top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
                 leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
