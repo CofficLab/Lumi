@@ -146,22 +146,27 @@ public final class EditorKeybindingStore: ObservableObject, SuperLog {
         }
     }
 
+
     @discardableResult
     private func save() -> Bool {
         let entries = Array(customBindings.values)
         let url = storageURL
-        do {
-            let data = try JSONEncoder().encode(entries)
-            let dir = url.deletingLastPathComponent()
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try data.write(to: url, options: .atomic)
-            return true
-        } catch {
-            Self.logger.error("\(Self.t)Save editor keybindings failed: \(error.localizedDescription)")
-            return false
-        }
-    }
 
+        // 异步写盘，避免阻塞主线程
+        Task.detached(priority: .utility) {
+            do {
+                let data = try JSONEncoder().encode(entries)
+                let dir = url.deletingLastPathComponent()
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                Self.logger.error("\(Self.t)Save editor keybindings failed: \(error.localizedDescription)")
+            }
+        }
+
+        // 立即返回 true，因为写入是异步的
+        return true
+    }
     private var storageURL: URL {
         customBindingsFileURL ?? bindingsFileURL
     }
