@@ -103,28 +103,28 @@ struct EditorQuickOpenController {
         symbols: [EditorDocumentSymbolItem],
         onOpenSymbol: @escaping (EditorDocumentSymbolItem) -> Void
     ) -> [EditorQuickOpenItemSuggestion] {
-        let flattenedSymbols = flatten(symbols: symbols)
+        let normalizedSymbols = flattenNormalized(symbols: symbols)
         let normalizedSearch = query.searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let filteredSymbols = flattenedSymbols.filter { item in
+        let filteredSymbols = normalizedSymbols.filter { item in
             guard !normalizedSearch.isEmpty else { return true }
-            return item.name.lowercased().contains(normalizedSearch)
-                || item.id.lowercased().contains(normalizedSearch)
-                || (item.detail?.lowercased().contains(normalizedSearch) ?? false)
+            return item.normalizedName.contains(normalizedSearch)
+                || item.normalizedId.contains(normalizedSearch)
+                || (item.normalizedDetail?.contains(normalizedSearch) ?? false)
         }
 
         return filteredSymbols.prefix(24).enumerated().map { index, item in
             EditorQuickOpenItemSuggestion(
-                id: "document-symbol:\(item.id)",
+                id: "document-symbol:\(item.original.id)",
                 sectionTitle: "Document Symbols",
-                title: item.name,
-                subtitle: "L\(item.line)" + (item.detail.map { " · \($0)" } ?? ""),
-                systemImage: item.iconSymbol,
-                badge: item.kind.shortDisplayName,
+                title: item.original.name,
+                subtitle: "L\(item.original.line)" + (item.original.detail.map { " · \($0)" } ?? ""),
+                systemImage: item.original.iconSymbol,
+                badge: item.original.kind.shortDisplayName,
                 order: index,
                 isEnabled: true,
-                metadata: .init(priority: 120 - index, dedupeKey: item.id),
+                metadata: .init(priority: 120 - index, dedupeKey: item.original.id),
                 action: {
-                    onOpenSymbol(item)
+                    onOpenSymbol(item.original)
                 }
             )
         }
@@ -164,9 +164,10 @@ struct EditorQuickOpenController {
         ]
     }
 
-    private func flatten(symbols: [EditorDocumentSymbolItem]) -> [EditorDocumentSymbolItem] {
-        symbols.flatMap { symbol in
-            [symbol] + flatten(symbols: symbol.children)
+    private func flattenNormalized(symbols: [EditorDocumentSymbolItem]) -> [NormalizedEditorDocumentSymbolItem] {
+        symbols.flatMap { symbol -> [NormalizedEditorDocumentSymbolItem] in
+            let normalized = NormalizedEditorDocumentSymbolItem(original: symbol)
+            return [normalized] + flattenNormalized(symbols: symbol.children)
         }
     }
 
@@ -239,5 +240,20 @@ private extension SymbolKind {
         case .constructor: return "Init"
         default: return "Symbol"
         }
+    }
+}
+
+/// 预归一化的符号项，避免每次按键重复调用 lowercased()
+private struct NormalizedEditorDocumentSymbolItem {
+    let original: EditorDocumentSymbolItem
+    let normalizedName: String
+    let normalizedId: String
+    let normalizedDetail: String?
+
+    init(original: EditorDocumentSymbolItem) {
+        self.original = original
+        self.normalizedName = original.name.lowercased()
+        self.normalizedId = original.id.lowercased()
+        self.normalizedDetail = original.detail?.lowercased()
     }
 }
