@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 11 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 10 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -22,7 +22,6 @@
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 | 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
 | 🟠 P1 | `SystemMonitorService` 采样移后台 | 设备/系统监视页面 | 每秒 | 打开页面不再卡 |
-| 🟠 P1 | `DeviceData` 采样移后台 | 设备信息页面 | 每 2 秒 | 同上 |
 | 🟠 P1 | QuickOpen 候选项预归一化 | 文件/符号搜索 | 每次按键 | 大项目搜索更顺 |
 | 🟠 P1 | Find References 行读取缓存 | 查找引用 | 每个结果位置 | N 个结果不再 N 次全量读 |
 | 🟡 P2 | 进程网络图标预取移后台 | 进程网络列表 | 每 0.2s 突发 | 列表滚动更顺 |
@@ -155,21 +154,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 ---
 
-### 2.2 `DeviceData` 采样移后台
-
-**位置**：`Plugins/DeviceInfoPlugin/Sources/DeviceData.swift:110-116, 147-197`，实例化于 `DeviceInfoView.swift:8`（`@StateObject`）
-
-**现状问题**：`updateDynamicData()` 同步执行 `getCPUUsage()`、`updateMemoryUsage()`（`host_statistics64`）、`updateDiskUsage()`（`URL(fileURLWithPath: "/").resourceValues`，磁盘 I/O）、`updateBatteryStatus()`（`IOPSCopyPowerSourcesInfo`），每 2 秒在主线程。
-
-**优化方案**
-
-- [ ] 与 2.1 相同模式：采集进 `Task.detached`，主线程只赋值 `@Published`。
-- [ ] 评估能否直接复用 `CPUService.shared`（CPU 部分已委托给它），避免重复实现。
-
-**预期效果**：打开设备信息页面不再每 2 秒卡顿。
-
----
-
 ### 2.3 QuickOpen 候选项预归一化
 
 **位置**：`Packages/EditorService/Sources/Kernel/EditorQuickOpenController.swift:108-112`
@@ -270,7 +254,7 @@ return lines[lineNumber - 1]...                                               //
 
 - [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
 - [ ] **编辑 Swift 代码**：持续键入，观察主线程是否被 `.compile` 读取占用（验证 1.2）。
-- [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1、2.2）。
+- [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1）。
 - [ ] **文件/符号搜索**：大项目下连续输入，观察按键延迟（验证 2.3）。
 - [ ] **查找引用**：多结果场景观察主线程（验证 2.4）。
 - [ ] **进程网络列表**：观察偶发卡顿是否消除（验证 3.1）。
@@ -280,6 +264,6 @@ return lines[lineNumber - 1]...                                               //
 ## 实施建议
 
 1. **P0 两项可并行、独立交付**：菜单栏轮询改造（LumiApp 层）与 LSP 诊断缓存（EditorService 层）互不影响，建议优先做，收益最大、风险可控。
-2. **P1 一组对照样板改**：`SystemMonitorService` / `DeviceData` 直接照搬同插件 `CPUService` 的 `Task.detached` 模式，改动小、模式成熟。
+2. **P1 一组对照样板改**：`SystemMonitorService` 直接照搬同插件 `CPUService` 的 `Task.detached` 模式，改动小、模式成熟。
 3. **每项配回归测试**：尤其采样类，需断言"采样值正确"与"采样在后台线程执行"两点，避免后续回归。
 4. **后台 Task 生命周期**：所有新增后台 Task 必须在对应服务/视图停止时取消，纳入 `stopMonitoring` / `deinit` 流程，避免泄漏。
