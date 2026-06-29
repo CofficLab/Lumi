@@ -7,6 +7,7 @@ public final class LumiLayoutStateStore: ObservableObject {
 
     @Published public var activeViewContainerID: String?
     @Published public var chatSectionVisible: Bool = true
+    @Published public var bottomPanelVisible: Bool = true
 
     public func activateViewContainer(id: String) {
         activeViewContainerID = id
