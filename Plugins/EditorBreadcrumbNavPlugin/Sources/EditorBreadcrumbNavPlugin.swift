@@ -26,7 +26,7 @@ public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
 
         return [
             LumiPanelHeaderItem(id: info.id, order: info.order) {
-                BreadcrumbNavHeaderView(service: service)
+                NavHeaderView(service: service)
             }
         ]
     }
