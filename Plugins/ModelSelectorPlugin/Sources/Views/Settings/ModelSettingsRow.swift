@@ -2,7 +2,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// Selectable model row for LLM provider settings in LumiApp.
+/// Selectable model row for LLM provider settings.
 struct ModelSettingsRow: View {
     @LumiTheme private var theme
 
@@ -38,7 +38,7 @@ struct ModelSettingsRow: View {
         self.onTap = onTap
     }
 
-    /// 只读展示，不可点击设为默认。
+    /// Read-only display without default-model selection.
     init(
         model: String,
         supportsVision: Bool? = nil,

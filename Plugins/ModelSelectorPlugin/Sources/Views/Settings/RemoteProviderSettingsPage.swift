@@ -5,7 +5,9 @@ import SwiftUI
 
 struct RemoteProviderSettingsPage: View {
     @LumiTheme private var theme
-    @ObservedObject var chatService: ChatService
+    @ObservedObject private var chatService: ChatService
+
+    let providerSettingsViews: [LumiLLMProviderSettingsViewItem]
 
     @State private var selectedProviderID = ""
     @State private var apiKey = ""
@@ -14,6 +16,14 @@ struct RemoteProviderSettingsPage: View {
     @State private var stats: ModelUsageStatsSnapshot?
 
     private let settingsStore = ProviderSettingsStore.shared
+
+    init(
+        chatService: ChatService,
+        providerSettingsViews: [LumiLLMProviderSettingsViewItem]
+    ) {
+        _chatService = ObservedObject(wrappedValue: chatService)
+        self.providerSettingsViews = providerSettingsViews
+    }
 
     private var remoteProviders: [LumiLLMProviderInfo] {
         chatService.providerInfos.filter { !$0.isLocal }
@@ -144,9 +154,9 @@ struct RemoteProviderSettingsPage: View {
 
     @ViewBuilder
     private var providerDetailPane: some View {
-        if selectedProvider != nil {
+        if let selectedProvider {
             ScrollView {
-                configurationCard
+                configurationCard(for: selectedProvider)
                     .padding(22)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
@@ -159,17 +169,25 @@ struct RemoteProviderSettingsPage: View {
         }
     }
 
-    private var configurationCard: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            providerHeader
+    @ViewBuilder
+    private func configurationCard(for provider: LumiLLMProviderInfo) -> some View {
+        if let customView = providerSettingsViews.first(where: { $0.providerID == provider.id }) {
             VStack(alignment: .leading, spacing: 32) {
-                apiKeySection
-                modelSection
+                providerHeader(for: provider)
+                customView.makeContent(for: provider)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 32) {
+                providerHeader(for: provider)
+                VStack(alignment: .leading, spacing: 32) {
+                    apiKeySection
+                    modelSection(for: provider)
+                }
             }
         }
     }
 
-    private var providerHeader: some View {
+    private func providerHeader(for provider: LumiLLMProviderInfo) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: "cloud.fill")
                 .font(.system(size: 38, weight: .semibold))
@@ -181,11 +199,11 @@ struct RemoteProviderSettingsPage: View {
                 )
 
             VStack(alignment: .leading, spacing: 7) {
-                Text(selectedProvider?.displayName ?? "Cloud Provider")
+                Text(provider.displayName)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(theme.textPrimary)
 
-                Text(selectedProvider?.description.isEmpty == false ? selectedProvider?.description ?? "" : selectedProviderID)
+                Text(provider.description.isEmpty ? provider.id : provider.description)
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -193,17 +211,15 @@ struct RemoteProviderSettingsPage: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .overlay(alignment: .topTrailing) {
-            if let url = selectedProvider?.websiteURL {
-                Link(destination: url) {
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.appBodyEmphasized)
-                        .foregroundStyle(theme.textSecondary)
-                        .padding(6)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("打开供应商页面")
+            Link(destination: provider.websiteURL) {
+                Image(systemName: "arrow.up.right.square")
+                    .font(.appBodyEmphasized)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(6)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .help("打开供应商页面")
         }
     }
 
@@ -230,21 +246,20 @@ struct RemoteProviderSettingsPage: View {
         }
     }
 
-    private var modelSection: some View {
+    private func modelSection(for provider: LumiLLMProviderInfo) -> some View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
-                let models = selectedProvider?.availableModels ?? []
-                ForEach(Array(models.enumerated()), id: \.element) { index, model in
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
                     ModelSettingsRow(
                         model: model,
-                        supportsVision: selectedProvider?.modelCapabilities[model]?.supportsVision,
-                        supportsTools: selectedProvider?.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: selectedProvider?.modelCapabilities[model]?.supportsTTS,
-                        stat: stat(for: selectedProviderID, modelName: model),
-                        dailyUsage: dailyUsage(for: selectedProviderID, modelName: model)
+                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
+                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
+                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS,
+                        stat: stat(for: provider.id, modelName: model),
+                        dailyUsage: dailyUsage(for: provider.id, modelName: model)
                     )
 
-                    if index < models.count - 1 {
+                    if index < provider.availableModels.count - 1 {
                         AppSettingsDivider()
                             .padding(.horizontal, 8)
                     }

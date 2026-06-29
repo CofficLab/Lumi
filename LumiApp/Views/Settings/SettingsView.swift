@@ -57,37 +57,63 @@ struct SettingsView: View {
     /// All plugin-registered settings tabs, aggregated from every loaded plugin.
     private var pluginTabs: [LumiSettingsTabItem] {
         var tabs: [LumiSettingsTabItem] = []
-        let context = LumiPluginContext(
-            activeSectionID: "settings",
-            activeSectionTitle: "设置",
-            dependencies: {
-                var deps = LumiPluginDependencies()
-                deps.register((any HistoryQueryService).self, chatService)
-                return deps
-            }()
-        )
         for plugin in pluginService.plugins {
-            tabs.append(contentsOf: plugin.addSettingsTabs(context: context))
+            tabs.append(contentsOf: plugin.addSettingsTabs(context: settingsPluginContext))
         }
         return tabs
     }
 
+    private var trailingPluginTabs: [LumiSettingsTabItem] {
+        pluginTabs.filter { $0.sidebarPlacement == .pluginSection }
+    }
+
+    private func inlinePluginTabs(after coreTab: SettingsTab) -> [LumiSettingsTabItem] {
+        pluginTabs.filter { tab in
+            if case .inlineAfterCore(let tabID) = tab.sidebarPlacement {
+                return tabID == coreTab.rawValue
+            }
+            return false
+        }
+    }
+
+    private func settingsPluginContext() -> LumiPluginContext {
+        LumiPluginContext(
+            activeSectionID: "settings",
+            activeSectionTitle: "设置",
+            dependencies: LumiPluginDependencies { dependencies in
+                dependencies.register((any HistoryQueryService).self, chatService)
+                dependencies.register(LumiChatServicing.self, chatService)
+                dependencies.register((any LumiLLMProviderSettingsContributing).self, pluginService)
+            }()
+        )
+    }
+
     /// Combined list of sidebar items: core tabs followed by plugin tabs with a separator.
     private var sidebarItems: [SettingsSidebarItem] {
-        var items: [SettingsSidebarItem] = SettingsTab.allCases.map { .selectable(.core($0)) }
-        if !pluginTabs.isEmpty {
+        var items: [SettingsSidebarItem] = []
+        for tab in SettingsTab.allCases {
+            items.append(.selectable(.core(tab)))
+            for pluginTab in inlinePluginTabs(after: tab) {
+                items.append(.selectable(pluginSelection(for: pluginTab)))
+            }
+        }
+        if !trailingPluginTabs.isEmpty {
             items.append(.separator)
-            for tab in pluginTabs {
-                let content = tab.makeContent()
-                items.append(.selectable(.plugin(
-                    id: tab.id,
-                    title: tab.title,
-                    systemImage: tab.systemImage,
-                    content: { content }
-                )))
+            for pluginTab in trailingPluginTabs {
+                items.append(.selectable(pluginSelection(for: pluginTab)))
             }
         }
         return items
+    }
+
+    private func pluginSelection(for tab: LumiSettingsTabItem) -> SettingsTabSelection {
+        let content = tab.makeContent()
+        return .plugin(
+            id: tab.id,
+            title: tab.title,
+            systemImage: tab.systemImage,
+            content: { content }
+        )
     }
 
     var body: some View {
@@ -160,10 +186,6 @@ struct SettingsView: View {
             GeneralSettingsPage()
         case .core(.appearance):
             AppearanceSettingsPage(lumiUIService: lumiUIService)
-        case .core(.localProvider):
-            LocalProviderSettingsPage(chatService: chatService)
-        case .core(.remoteProvider):
-            RemoteProviderSettingsPage(chatService: chatService)
         case .core(.plugins):
             PluginSettingsPage(pluginService: pluginService, chatService: chatService)
         case .core(.about):
