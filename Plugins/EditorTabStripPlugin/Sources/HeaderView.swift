@@ -34,7 +34,7 @@ public struct HeaderView: View {
         AppToolbarContainer(
             height: AppPanelChromeMetrics.tabBarHeight,
             showsBottomBorder: true,
-            showsBottomShadow: true,
+            bottomShadowLevel: .md,
             backgroundStyle: .custom(theme.workspaceBackgroundColor()),
             padding: AppPanelChromeMetrics.tabBarPadding
         ) {

@@ -43,7 +43,7 @@ struct RailView: View {
     private var railTabBar: some View {
         AppToolbarContainer(
             height: 40,
-            showsBottomShadow: true,
+            bottomShadowLevel: .md,
             backgroundStyle: .panel,
             padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
