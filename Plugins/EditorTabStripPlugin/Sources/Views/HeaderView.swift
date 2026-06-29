@@ -32,11 +32,11 @@ public struct HeaderView: View {
 
     public var body: some View {
         AppToolbarContainer(
-            height: AppPanelChromeMetrics.tabBarHeight,
+            height: 40,
             showsBottomBorder: true,
-            bottomShadowLevel: .md,
-            backgroundStyle: .custom(theme.workspaceBackgroundColor()),
-            padding: AppPanelChromeMetrics.tabBarPadding
+            bottomShadowLevel: .none,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
             if !visibleTabs.isEmpty {
                 tabListContent
