@@ -9,7 +9,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public static let shared = CPUService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.cpu")
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated(unsafe) static var verbose: Bool = false
 
     // MARK: - Published Properties
 
@@ -50,11 +50,13 @@ public final class CPUService: ObservableObject, SuperLog {
             if Self.verbose { Self.logger.info("\(self.t)开始 CPU 监控") }
             updateCPUUsage()
 
-            monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.updateCPUUsage()
                 }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            monitoringTimer = timer
         }
     }
 
