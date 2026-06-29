@@ -302,16 +302,18 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     ///
     /// 优势：首帧立即响应，用户感知延迟从 300ms 降到 0ms；后续事件仍然合并，避免频繁刷新
     private func triggerTargetedRefresh() {
-        if !isDebouncePending {
-            // 首帧即时：立即发布当前变更
-            isDebouncePending = true
-            publishTargetedRefresh()
-            // 启动 trailing debounce 窗口
-            startTrailingDebounce()
-        } else {
-            // 后续事件：继续累积到 pendingChangedPaths，等待 debounce 窗口结束
-            if Self.verbose {
-                Self.logger.info("\(Self.t)⏳ 精准刷新防抖中，累积变更路径：\(self.pendingChangedPaths.count) 个")
+        Task { @MainActor in
+            if !self.isDebouncePending {
+                // 首帧即时：立即发布当前变更
+                self.isDebouncePending = true
+                self.publishTargetedRefresh()
+                // 启动 trailing debounce 窗口
+                self.startTrailingDebounce()
+            } else {
+                // 后续事件：继续累积到 pendingChangedPaths，等待 debounce 窗口结束
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)⏳ 精准刷新防抖中，累积变更路径：\(self.pendingChangedPaths.count) 个")
+                }
             }
         }
     }

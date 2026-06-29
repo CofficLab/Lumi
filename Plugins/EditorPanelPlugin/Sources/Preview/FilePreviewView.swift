@@ -96,6 +96,7 @@ private final class _QuickLookPreviewHostView: NSView {
     }()
 
     private var layoutPassToken = UUID()
+    private var isExpandScheduled = false
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -110,7 +111,15 @@ private final class _QuickLookPreviewHostView: NSView {
     override func layout() {
         super.layout()
         previewView.frame = bounds
-        _QuickLookPreviewLayoutExpander.expand(in: previewView)
+        // 延迟 expand 避免在 layout 过程中触发子视图布局
+        if !isExpandScheduled {
+            isExpandScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isExpandScheduled = false
+                _QuickLookPreviewLayoutExpander.expand(in: self.previewView)
+            }
+        }
     }
 
     /// QuickLook 异步生成预览后会重新居中内容，补几次 layout 覆盖初始加载阶段。

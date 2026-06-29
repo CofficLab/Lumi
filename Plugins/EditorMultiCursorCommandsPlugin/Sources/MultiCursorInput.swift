@@ -428,11 +428,10 @@ public final class MultiCursorInputHelper: NSObject {
 
         DispatchQueue.main.async {
             textView.needsLayout = true
-            textView.layoutSubtreeIfNeeded()
             state.logMultiCursorInput(
                 action: "\(selectorName).afterAsyncRefresh",
                 textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                note: "forcedLayoutRefresh=true"
+                note: "scheduledLayoutRefresh=true"
             )
         }
 

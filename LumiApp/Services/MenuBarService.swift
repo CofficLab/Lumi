@@ -99,7 +99,12 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
 
         restoreMenuBarSystemAppearance()
         observeMenuBarAppearance(button: button)
-        updateStatusItemLength()
+        
+        // 延迟更新以确保布局完成
+        DispatchQueue.main.async { [weak self] in
+            self?.updateStatusItemLength()
+        }
+        
         startContentTimer()
     }
 
@@ -119,7 +124,11 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
 
         NotificationCenter.default.post(name: .lumiMenuBarAppearanceDidChange, object: button)
         hostingView?.needsDisplay = true
-        updateStatusItemLength()
+        
+        // 延迟更新以避免在 SwiftUI 布局过程中触发递归布局
+        DispatchQueue.main.async { [weak self] in
+            self?.updateStatusItemLength()
+        }
     }
 
     /// 清除 Lumi 主题同步对菜单栏系统窗口的 `appearance` 污染。
