@@ -19,5 +19,6 @@ struct ChatHeaderView: View {
                 Spacer(minLength: 0)
             }
         }
+        .borderBottom()
     }
 }

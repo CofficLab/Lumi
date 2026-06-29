@@ -27,6 +27,7 @@ struct RailTabBarView: View {
                 showText: false
             )
         }
+        .borderBottom()
         .shadowMd()
     }
 }
