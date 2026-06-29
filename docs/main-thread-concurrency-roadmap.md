@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 12 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 11 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -25,7 +25,6 @@
 | 🟠 P1 | `DeviceData` 采样移后台 | 设备信息页面 | 每 2 秒 | 同上 |
 | 🟠 P1 | QuickOpen 候选项预归一化 | 文件/符号搜索 | 每次按键 | 大项目搜索更顺 |
 | 🟠 P1 | Find References 行读取缓存 | 查找引用 | 每个结果位置 | N 个结果不再 N 次全量读 |
-| 🟡 P2 | 剪贴板 PNG 编码/写盘移后台 | 复制图片 | 每次复制图片 | 消除偶发卡顿 |
 | 🟡 P2 | 进程网络图标预取移后台 | 进程网络列表 | 每 0.2s 突发 | 列表滚动更顺 |
 | 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
 | 🟢 P3 | 文档变更 debounce 改 Task.sleep | 全局编辑 | 每次键入 | 降低主 run loop 开销 |
@@ -221,21 +220,7 @@ return lines[lineNumber - 1]...                                               //
 
 ## Phase 3（P2）：中频热点
 
-### 3.1 剪贴板图片 PNG 编码/写盘移后台
-
-**位置**：`Plugins/ClipboardManagerPlugin/Sources/Services/ClipboardMonitor.swift:143-161`
-
-**现状问题**：复制图片时 `image.tiffRepresentation` → `NSBitmapImageRep` → PNG 编码 → `pngData.write(to:)` 全在主线程（DB 写入已正确异步）。
-
-**优化方案**
-
-- [ ] PNG 编码与写盘进 `Task.detached`，主线程只发起任务。
-
-**预期效果**：每次复制图片不再卡一下。
-
----
-
-### 3.2 进程网络图标预取移后台
+### 3.1 进程网络图标预取移后台
 
 **位置**：`Plugins/NetworkManagerPlugin/Sources/ProcessNetworkMonitor/ProcessMonitorService.swift:214-218`
 
@@ -249,7 +234,7 @@ return lines[lineNumber - 1]...                                               //
 
 ---
 
-### 3.3 Cmd+Click 正则编译缓存
+### 3.2 Cmd+Click 正则编译缓存
 
 **位置**：`Packages/EditorService/Sources/Editor/JumpToDefinitionDelegate.swift:683-717`
 
@@ -289,7 +274,7 @@ return lines[lineNumber - 1]...                                               //
 - [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1、2.2）。
 - [ ] **文件/符号搜索**：大项目下连续输入，观察按键延迟（验证 2.3）。
 - [ ] **查找引用**：多结果场景观察主线程（验证 2.4）。
-- [ ] **复制图片 / 进程网络列表**：观察偶发卡顿是否消除（验证 3.1、3.2）。
+- [ ] **进程网络列表**：观察偶发卡顿是否消除（验证 3.1）。
 
 ---
 
