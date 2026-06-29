@@ -680,7 +680,7 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     // MARK: - 正则回退查找
 
     /// 正则表达式缓存，按 escapedWord 缓存编译后的正则数组
-    private static var regexCache: [String: [NSRegularExpression]] = [:]
+    nonisolated(unsafe) private static var regexCache: [String: [NSRegularExpression]] = [:]
     private static let regexCacheLock = NSLock()
     private static let maxCacheSize = 50
 
