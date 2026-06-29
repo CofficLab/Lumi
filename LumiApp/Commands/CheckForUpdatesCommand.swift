@@ -27,8 +27,10 @@ private final class CheckForUpdatesViewModel: ObservableObject {
     private var cancellable: AnyCancellable?
 
     init() {
-        // 使用可选绑定：如果 updater 尚未初始化（冷启动场景），
-        // canCheckForUpdates 默认为 false，按钮禁用，直到 setupFeedURLIfNeeded 完成
+        // 确保 updater 已初始化，再订阅 canCheckForUpdates。
+        // 之前此处仅做可选绑定，若 updater 尚未就绪（setupFeedURLIfNeeded 的
+        // detached Task 还没回来），KVO 订阅永远不会创建，菜单项会一直灰色。
+        UpdateController.shared.ensureUpdaterInitialized()
         if let updater = UpdateController.shared.updater {
             cancellable = updater.publisher(for: \.canCheckForUpdates)
                 .receive(on: RunLoop.main)
