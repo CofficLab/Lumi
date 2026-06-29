@@ -1,381 +1,381 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Displays a button in the header to open the current project's remote repository in browser" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Displays a button in the header to open the current project's remote repository in browser"
+  "sourceLanguage": "en",
+  "strings": {
+    "Displays a button in the header to open the current project's remote repository in browser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Displays a button in the header to open the current project's remote repository in browser"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 header 中显示一个按钮，用于在浏览器中打开当前项目的远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中显示一个按钮，用于在浏览器中打开当前项目的远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 header 中顯示一個按鈕，用於在瀏覽器中打開當前項目的遠程倉庫"
           }
         }
       }
     },
-    "Open current project's remote repository in browser" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open current project's remote repository in browser"
+    "Open current project's remote repository in browser": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open current project's remote repository in browser"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在浏览器中打开当前项目的远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在浏览器中打开当前项目的远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開當前項目的遠程倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開當前項目的遠程倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開當前項目的遠程倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開當前項目的遠程倉庫"
           }
         }
       }
     },
-    "Open Remote Repository" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Remote Repository"
+    "Open Remote Repository": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Remote Repository"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開遠程倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開遠程倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開遠程倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開遠程倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開遠程倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開遠程倉庫"
           }
         }
       }
     },
-    "URL" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL"
+    "URL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
           }
         }
       }
     },
-    "加载中..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载中..."
+    "加载中...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载中..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入中..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入中..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入中..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中..."
           }
         }
       }
     },
-    "在浏览器中打开远程仓库" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open remote repository in browser"
+    "在浏览器中打开远程仓库": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open remote repository in browser"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在浏览器中打开远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在浏览器中打开远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開遠程倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開遠程倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開遠程倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開遠程倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在瀏覽器中打開遠程倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中打開遠程倉庫"
           }
         }
       }
     },
-    "复制 URL" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制 URL"
+    "复制 URL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制 URL"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制 URL"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制 URL"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製 URL"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製 URL"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製 URL"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製 URL"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製 URL"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製 URL"
           }
         }
       }
     },
-    "当前项目没有远程仓库" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前项目没有远程仓库"
+    "当前项目没有远程仓库": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前项目没有远程仓库"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前项目没有远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前项目没有远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前項目沒有遠端倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前項目沒有遠端倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前項目沒有遠端倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前項目沒有遠端倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前項目沒有遠端倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前項目沒有遠端倉庫"
           }
         }
       }
     },
-    "打开" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开"
+    "打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
           }
         }
       }
     },
-    "无远程仓库" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无远程仓库"
+    "无远程仓库": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无远程仓库"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無遠端倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無遠端倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無遠端倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無遠端倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無遠端倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無遠端倉庫"
           }
         }
       }
     },
-    "远程仓库" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "远程仓库"
+    "远程仓库": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程仓库"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "远程仓库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程仓库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "遠端倉庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遠端倉庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "遠端倉庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遠端倉庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "遠端倉庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遠端倉庫"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -24,6 +24,9 @@ public enum LayoutPlugin: LumiPlugin {
         if let savedVisible = LayoutPluginLocalStore.shared.loadRightSidebarVisible() {
             layoutState.chatSectionVisible = savedVisible
         }
+        if let savedBottomVisible = LayoutPluginLocalStore.shared.loadBottomPanelVisible() {
+            layoutState.bottomPanelVisible = savedBottomVisible
+        }
     }
 
     public static let info = LumiPluginInfo(
@@ -55,6 +58,10 @@ public enum LayoutPlugin: LumiPlugin {
                         chatSectionVisible: Binding(
                             get: { LumiLayoutStateStore.shared.chatSectionVisible },
                             set: { LumiLayoutStateStore.shared.chatSectionVisible = $0 }
+                        ),
+                        bottomPanelVisible: Binding(
+                            get: { LumiLayoutStateStore.shared.bottomPanelVisible },
+                            set: { LumiLayoutStateStore.shared.bottomPanelVisible = $0 }
                         )
                     )
                 )
@@ -74,6 +81,9 @@ private struct LayoutPersistenceAnchor: View {
             }
             .onChange(of: layoutState.chatSectionVisible) { _, newValue in
                 LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
+            }
+            .onChange(of: layoutState.bottomPanelVisible) { _, newValue in
+                LayoutPluginLocalStore.shared.saveBottomPanelVisible(newValue)
             }
     }
 }

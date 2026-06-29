@@ -84,7 +84,7 @@ struct BrewManagerView: View {
                         AppCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                             HStack {
                                 GlassTextField(
-                                    title: LocalizedStringKey("搜索"),
+                                    title: LocalizedStringKey("Search"),
                                     text: $viewModel.searchText,
                                     placeholder: LocalizedStringKey("Search Homebrew packages...")
                                 )

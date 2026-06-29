@@ -6,7 +6,7 @@ import SuperLogKit
 final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
     public static let emoji = "🔍"
-    public static let verbose = false
+    public static let verbose = true
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
 

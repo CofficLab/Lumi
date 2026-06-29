@@ -9,7 +9,7 @@ import LumiCoreKit
 /// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
 public struct CreateTaskTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public let name = "create_task"
 

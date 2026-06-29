@@ -3,7 +3,10 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct ModelRow: View {
+/// 统一的模型卡片视图，用于模型选择界面和设置界面。
+///
+/// 展示模型名称、可用性状态、能力标签、性能统计和使用数据。
+struct ModelCard: View {
     @LumiTheme private var theme
     @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
     @State private var presentedTransportFailure: LumiLLMFailureDetail?
@@ -13,15 +16,15 @@ struct ModelRow: View {
     let isSelected: Bool
     let stat: ModelPerformanceStats?
     let dailyUsage: ModelDailyTokenSeries?
-    let onSelect: () -> Void
+    let onSelect: (() -> Void)?
 
     init(
         provider: LumiLLMProviderInfo,
         model: String,
-        isSelected: Bool,
+        isSelected: Bool = false,
         stat: ModelPerformanceStats? = nil,
         dailyUsage: ModelDailyTokenSeries? = nil,
-        onSelect: @escaping () -> Void
+        onSelect: (() -> Void)? = nil
     ) {
         self.provider = provider
         self.model = model
@@ -56,44 +59,19 @@ struct ModelRow: View {
         return nil
     }
 
+    // MARK: - Body
+
     var body: some View {
-        AppListRow(isSelected: isSelected, action: onSelect) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    availabilityStatusIcon(availabilityStatus)
-
-                    Text(modelDisplayName)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(theme.textPrimary)
-                        .lineLimit(1)
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(theme.primary)
-                    }
-
-                    Spacer(minLength: 0)
+        Group {
+            if let onSelect {
+                AppListRow(isSelected: isSelected, action: onSelect) {
+                    cardContent
                 }
-
-                if let availabilityFailure {
-                    availabilityErrorBlock(availabilityFailure) {
-                        presentedTransportFailure = availabilityFailure
-                    }
-                }
-
-                capabilityBadges
-
-                if hasMetricBadges {
-                    metricBadges
-                }
-
-                if let dailyUsage, dailyUsage.hasData {
-                    AppBarChart(data: ModelDailyTokenBarChartMapper.chartData(from: dailyUsage))
+            } else {
+                AppListRow {
+                    cardContent
                 }
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
         }
         .popover(isPresented: transportDetailsPopoverBinding, arrowEdge: .bottom) {
             if let failure = presentedTransportFailure {
@@ -102,15 +80,64 @@ struct ModelRow: View {
         }
     }
 
-    private var transportDetailsPopoverBinding: Binding<Bool> {
-        Binding(
-            get: { presentedTransportFailure != nil },
-            set: { isPresented in
-                if !isPresented {
-                    presentedTransportFailure = nil
+    // MARK: - Card Content
+
+    @ViewBuilder
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            headerRow
+
+            if let availabilityFailure {
+                availabilityErrorBlock(availabilityFailure) {
+                    presentedTransportFailure = availabilityFailure
                 }
             }
-        )
+
+            capabilityBadges
+
+            if hasMetricBadges {
+                metricBadges
+            }
+
+            if let dailyUsage, dailyUsage.hasData {
+                VStack(alignment: .leading, spacing: 6) {
+                    AppBarChart(data: ModelDailyTokenBarChartMapper.chartData(from: dailyUsage))
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(theme.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(theme.divider, lineWidth: 0.5)
+                )
+            }
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+    }
+
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private var headerRow: some View {
+        HStack(spacing: 8) {
+            availabilityStatusIcon(availabilityStatus)
+
+            Text(modelDisplayName)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(theme.textPrimary)
+                .lineLimit(1)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(theme.primary)
+            }
+
+            Spacer(minLength: 0)
+        }
     }
 
     @ViewBuilder
@@ -153,7 +180,18 @@ struct ModelRow: View {
         }
     }
 
-    // MARK: - Helper
+    // MARK: - Helpers
+
+    private var transportDetailsPopoverBinding: Binding<Bool> {
+        Binding(
+            get: { presentedTransportFailure != nil },
+            set: { isPresented in
+                if !isPresented {
+                    presentedTransportFailure = nil
+                }
+            }
+        )
+    }
 
     @ViewBuilder
     private func capabilityBadge(title: String, systemImage: String) -> some View {
@@ -216,4 +254,45 @@ struct ModelRow: View {
                 .foregroundColor(.secondary)
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    VStack(spacing: 8) {
+        ModelCard(
+            provider: LumiLLMProviderInfo(
+                id: "openai",
+                displayName: "OpenAI",
+                description: "",
+                defaultModel: "gpt-4",
+                availableModels: ["gpt-4", "gpt-3.5-turbo"],
+                isLocal: false,
+                websiteURL: URL(string: "https://openai.com")!
+            ),
+            model: "gpt-4",
+            isSelected: true,
+            stat: nil,
+            dailyUsage: nil,
+            onSelect: {}
+        )
+
+        ModelCard(
+            provider: LumiLLMProviderInfo(
+                id: "ollama",
+                displayName: "Ollama",
+                description: "",
+                defaultModel: "llama2",
+                availableModels: ["llama2", "mistral"],
+                isLocal: true,
+                websiteURL: URL(string: "https://ollama.com")!
+            ),
+            model: "llama2",
+            isSelected: false,
+            stat: ModelPerformanceStats(providerID: "ollama", modelName: "llama2"),
+            dailyUsage: nil,
+            onSelect: {}
+        )
+    }
+    .padding()
 }

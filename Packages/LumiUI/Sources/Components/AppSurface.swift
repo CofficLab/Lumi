@@ -29,7 +29,6 @@ private struct AppSurfaceModifier: ViewModifier {
                     .fill(backgroundFillStyle)
             )
             .overlay(borderOverlay)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
     private var backgroundFillStyle: AnyShapeStyle {

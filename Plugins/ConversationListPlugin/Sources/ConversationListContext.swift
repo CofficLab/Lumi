@@ -10,15 +10,18 @@ public final class ConversationListContext: ObservableObject {
 
     private let chatService: ChatService
     private let projectPathStore: LumiCurrentProjectPathStoring?
+    private let projectStore: LumiProjectStoring?
     private var conversationSnapshots: [UUID: Date] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     public init(
         chatService: ChatService,
-        projectPathStore: LumiCurrentProjectPathStoring? = nil
+        projectPathStore: LumiCurrentProjectPathStoring? = nil,
+        projectStore: LumiProjectStoring? = nil
     ) {
         self.chatService = chatService
         self.projectPathStore = projectPathStore
+        self.projectStore = projectStore
         conversationSnapshots = Dictionary(
             uniqueKeysWithValues: chatService.conversations.map { ($0.id, $0.updatedAt) }
         )
@@ -74,6 +77,15 @@ public final class ConversationListContext: ObservableObject {
     }
 
     public func switchProject(projectPath: String, reason: String) {
+        // 优先走 LumiProjectStoring（Layer B）：它会让 ProjectsStore.currentProject、
+        // 持久化 current-project.json、以及内核 Layer A 三者一致，
+        // 这样标题栏 ProjectControlView 才会同步刷新，且重启后状态保留。
+        if let projectStore {
+            projectStore.setCurrentProjectPath(projectPath)
+            return
+        }
+
+        // 降级：没有 projectStore 时只更新内核路径（与旧行为一致）。
         projectPathStore?.setCurrentProjectPath(projectPath)
     }
 

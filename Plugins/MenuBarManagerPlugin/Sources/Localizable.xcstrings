@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage your menu bar items"
+            "value": "管理您的菜单栏项目"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage your menu bar items"
+            "value": "管理您的菜单栏项目"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage your menu bar items"
+            "value": "管理您的菜单栏项目"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage your menu bar items"
+            "value": "管理您的菜单栏项目"
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Menu Bar Items"
+            "value": "菜单栏项目"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Menu Bar Items"
+            "value": "選單列項目"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Menu Bar Items"
+            "value": "選單列項目"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Menu Bar Items"
+            "value": "選單列項目"
           }
         }
       }
@@ -182,25 +182,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permission Required"
+            "value": "需要权限"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permission Required"
+            "value": "需要权限"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permission Required"
+            "value": "需要权限"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permission Required"
+            "value": "需要权限"
           }
         }
       }

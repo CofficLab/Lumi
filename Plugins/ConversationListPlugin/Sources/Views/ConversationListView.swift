@@ -278,18 +278,17 @@ extension ConversationListView {
     }
 
     private func switchToProjectIfNeeded(for conversation: ConversationListItem) {
-        guard let projectPath = conversation.projectPath else {
-            if Self.verbose, ConversationListPlugin.verbose {
-                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.displayTitle)」未关联项目")
-            }
-            return
-        }
+        // 规则 1：未绑定项目 → 切到"无项目"态（传空串）。
+        // 规则 2：绑定的项目目录即便已不存在，也照常切到该项目；
+        //         真正使用该路径的消费者会在使用时报错给用户。
+        let projectPath = conversation.projectPath ?? ""
 
-        guard FileManager.default.fileExists(atPath: projectPath) else {
-            if Self.verbose, ConversationListPlugin.verbose {
-                ConversationListPlugin.logger.warning("\(self.t)⚠️ 会话关联的项目不存在：\(projectPath)")
+        if Self.verbose, ConversationListPlugin.verbose {
+            if projectPath.isEmpty {
+                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.displayTitle)」未关联项目，切到无项目态")
+            } else {
+                ConversationListPlugin.logger.info("\(self.t)📁 会话「\(conversation.displayTitle)」关联项目：\(projectPath)")
             }
-            return
         }
 
         context.switchProject(projectPath: projectPath, reason: "conversationListSelect")

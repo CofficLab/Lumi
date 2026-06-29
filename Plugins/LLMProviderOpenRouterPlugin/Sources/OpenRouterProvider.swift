@@ -41,7 +41,7 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "google/gemini-pro-2.5": 1_000_000,
                 "meta-llama/llama-3.3-70b-instruct": 131_072,
                 "minimax/minimax-m2.1": 1_000_000,
-                "minimax/minimax-m2.5:free": 1_000_000,
+                "minimax/minimax-m2.5:free": 204_800,
                 "nvidia/nemotron-3-super-120b-a12b:free": 131_072,
                 "openai/gpt-4o": 128_000,
                 "openai/gpt-5": 400_000,

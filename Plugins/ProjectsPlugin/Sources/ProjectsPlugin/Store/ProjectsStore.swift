@@ -91,7 +91,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     
     public func remove(_ project: LumiProjectEntry) {
         projects.removeAll { $0.path == project.path }
-        
+
         if currentProject?.path == project.path {
             currentProject = projects.first
             if let currentProject {
@@ -100,8 +100,35 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
                 syncProjectPath("")
             }
         }
-        
+
         save()
+    }
+
+    public func setCurrentProjectPath(_ path: String) {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // 空/空白路径 → "无项目"态（与 remove 落空时的约定一致）
+        guard !trimmed.isEmpty else {
+            currentProject = nil
+            save()
+            syncProjectPath("")
+            return
+        }
+
+        // 标准化路径（展开 ~、解析符号链接），尽量与列表中既有条目的路径对齐
+        let normalized = Self.normalizedPath(trimmed)
+
+        if let existing = projects.first(where: { $0.path == normalized }) ?? projects.first(where: { $0.path == trimmed }) {
+            select(existing)
+            return
+        }
+
+        // 项目不在列表中：构造条目并选中。复用 select(_) 顺便完成
+        // save() + syncProjectPath()（持久化 current-project.json + 同步内核 Layer A）。
+        // 注意：这里不做目录存在性校验——目录即便已被移走/删除，
+        // 也应让当前项目指向它，由真正使用该路径的消费者在使用时报错。
+        let entry = LumiProjectEntry(name: Self.directoryName(for: normalized), path: normalized)
+        select(entry)
     }
     
     /// 便捷方法：通过路径添加项目
@@ -119,6 +146,22 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     
     private func syncProjectPath(_ path: String) {
         projectPathStore?.setCurrentProjectPath(path)
+    }
+
+    /// 标准化路径：展开 `~`、解析符号链接、标准化。
+    /// 与 `add(path:)` 的处理保持一致，确保 `setCurrentProjectPath` 能匹配到列表中既有条目。
+    private static func normalizedPath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        let url = URL(fileURLWithPath: expanded)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+        return url.path
+    }
+
+    /// 取路径末段作为项目名（与 `add(path:)` 用 `url.lastPathComponent` 一致）。
+    private static func directoryName(for path: String) -> String {
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        return name.isEmpty ? path : name
     }
     
     private func add(_ project: LumiProjectEntry) {

@@ -243,6 +243,15 @@
         }
       }
     },
+    "%lld 个云端供应商" : {
+
+    },
+    "%lld 个本地供应商" : {
+
+    },
+    "%lld 个模型" : {
+
+    },
     "%lld/%lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1656,6 +1665,17 @@
         }
       }
     },
+    "No Usage Data" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "暂无使用数据"
+          }
+        }
+      }
+    },
     "No Usage History" : {
       "localizations" : {
         "en" : {
@@ -2176,6 +2196,9 @@
           }
         }
       }
+    },
+    "Saved" : {
+
     },
     "Search Models" : {
       "extractionState" : "stale",
@@ -2908,6 +2931,12 @@
           }
         }
       }
+    },
+    "打开供应商页面" : {
+
+    },
+    "搜索供应商" : {
+
     },
     "根据消息内容、工具需求、模型能力和可用性自动选择模型。" : {
       "extractionState" : "stale",

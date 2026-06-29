@@ -52,7 +52,7 @@ public final class OnboardingPluginViewModel: ObservableObject, SuperLog {
     public func show(forceReset: Bool) {
         if forceReset {
             guard store.setCompleted(false) else {
-                persistenceErrorMessage = LumiPluginLocalization.string("无法重置新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
+                persistenceErrorMessage = LumiPluginLocalization.string("Failed to reset onboarding state. Please check if Lumi data directory is writable.", bundle: .module)
                 return
             }
         }
@@ -65,7 +65,7 @@ public final class OnboardingPluginViewModel: ObservableObject, SuperLog {
 
     public func complete() {
         guard store.setCompleted(true) else {
-            persistenceErrorMessage = LumiPluginLocalization.string("无法保存新手引导状态，请检查 Lumi 的数据目录是否可写。", bundle: .module)
+            persistenceErrorMessage = LumiPluginLocalization.string("Failed to save onboarding state. Please check if Lumi data directory is writable.", bundle: .module)
             return
         }
         isPresentingOnboarding = false
@@ -344,7 +344,7 @@ private struct OnboardingSheetView: View {
         )
         .interactiveDismissDisabled()
         .alert(
-            LumiPluginLocalization.string("无法保存新手引导状态", bundle: .module),
+            LumiPluginLocalization.string("Failed to save onboarding state", bundle: .module),
             isPresented: Binding(
                 get: { viewModel.persistenceErrorMessage != nil },
                 set: { isPresented in
@@ -354,7 +354,7 @@ private struct OnboardingSheetView: View {
                 }
             )
         ) {
-            Button(LumiPluginLocalization.string("好", bundle: .module), role: .cancel) {}
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
         } message: {
             Text(viewModel.persistenceErrorMessage ?? "")
         }
@@ -380,7 +380,7 @@ private struct OnboardingSheetView: View {
     /// 顶部导航栏
     private var topBar: some View {
         HStack {
-            Label(LumiPluginLocalization.string("新手引导", bundle: .module), systemImage: "graduationcap.fill")
+            Label(LumiPluginLocalization.string("Onboarding Guide", bundle: .module), systemImage: "graduationcap.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -392,7 +392,7 @@ private struct OnboardingSheetView: View {
             Spacer()
 
             // 跳过按钮
-            Button(LumiPluginLocalization.string("跳过", bundle: .module)) {
+            Button(LumiPluginLocalization.string("Skip", bundle: .module)) {
                 viewModel.skip()
             }
             .font(.system(size: 13, weight: .medium))
@@ -440,7 +440,7 @@ private struct OnboardingSheetView: View {
                 Button {
                     viewModel.previousStep()
                 } label: {
-                    Label(LumiPluginLocalization.string("上一步", bundle: .module), systemImage: "chevron.left")
+                    Label(LumiPluginLocalization.string("Previous", bundle: .module), systemImage: "chevron.left")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.plain)
@@ -463,8 +463,8 @@ private struct OnboardingSheetView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(isLastPage
-                        ? LumiPluginLocalization.string("开始使用", bundle: .module)
-                        : LumiPluginLocalization.string("下一步", bundle: .module))
+                        ? LumiPluginLocalization.string("Get Started", bundle: .module)
+                        : LumiPluginLocalization.string("Next", bundle: .module))
                         .font(.system(size: 13, weight: .semibold))
 
                     if !isLastPage {

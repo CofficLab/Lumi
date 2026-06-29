@@ -13,12 +13,14 @@ public struct ConversationListPopoverButton: View {
 
     public init(
         chatService: ChatService,
-        projectPathStore: (any LumiCurrentProjectPathStoring)? = nil
+        projectPathStore: (any LumiCurrentProjectPathStoring)? = nil,
+        projectStore: (any LumiProjectStoring)? = nil
     ) {
         _context = StateObject(
             wrappedValue: ConversationListContext(
                 chatService: chatService,
-                projectPathStore: projectPathStore
+                projectPathStore: projectPathStore,
+                projectStore: projectStore
             )
         )
     }

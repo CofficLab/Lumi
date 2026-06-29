@@ -161,5 +161,5 @@ public final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
 
 public enum LLMAvailabilityLog: SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 }

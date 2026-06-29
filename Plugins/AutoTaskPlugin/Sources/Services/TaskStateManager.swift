@@ -9,7 +9,7 @@ import os
 /// 使用 Actor 模式确保线程安全，参考 `CacheManager` 模板。
 public actor TaskStateManager: SuperLog {
     nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose: Bool = false
+    nonisolated public static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.state-manager")
 
     // MARK: - Singleton
@@ -22,6 +22,22 @@ public actor TaskStateManager: SuperLog {
 
     /// 单个会话最大任务数
     nonisolated static let maxTasksPerConversation = 50
+
+    /// 单个会话连续无感自动续聊的最大次数，防止 LLM 卡住时空转。
+    nonisolated static let maxAutomaticContinuations = 5
+
+    /// 内存态（非持久化）：标记某会话即将进入一次无感自动续聊轮次。
+    ///
+    /// 由 `AutoTaskTurnCheckRuntime` 在触发续聊前置位，由
+    /// `TaskContextChatMiddleware` 在注入该轮 system prompt 时消费，
+    /// 消费即清除，避免后续普通轮次误判。
+    private var pendingContinuationConversationIDs: Set<String> = []
+
+    /// 内存态（非持久化）：记录每个会话连续自动续聊的次数。
+    ///
+    /// 当 LLM 在该会话中调用 `update_task` 主动推进任务时计数归零；
+    /// 超过 `maxAutomaticContinuations` 后不再自动续聊。
+    private var continuationCountsByConversationID: [String: Int] = [:]
 
     // MARK: - Initialization
 
@@ -377,6 +393,39 @@ public actor TaskStateManager: SuperLog {
         guard save(context, operation: "更新任务内容") else { return false }
 
         return true
+    }
+
+    // MARK: - Automatic Continuation
+
+    /// 标记某会话即将进入一次无感自动续聊轮次（在触发续聊前调用）。
+    func markContinuation(conversationId: String) {
+        pendingContinuationConversationIDs.insert(conversationId)
+    }
+
+    /// 若该会话当前被标记为自动续聊轮次，则消费该标记并返回 `true`。
+    ///
+    /// 由 `TaskContextChatMiddleware` 在每轮注入 system prompt 时调用，
+    /// 一次性消费，确保只在续聊那轮生效。
+    func consumeContinuation(conversationId: String) -> Bool {
+        pendingContinuationConversationIDs.remove(conversationId) != nil
+    }
+
+    /// 递增并返回该会话连续自动续聊的次数。
+    ///
+    /// 返回 `nil` 表示已达到上限，调用方应停止自动续聊。
+    func incrementContinuationCount(conversationId: String) -> Int? {
+        let next = (continuationCountsByConversationID[conversationId] ?? 0) + 1
+        guard next <= Self.maxAutomaticContinuations else { return nil }
+        continuationCountsByConversationID[conversationId] = next
+        return next
+    }
+
+    /// 将该会话的连续自动续聊计数归零。
+    ///
+    /// 当 LLM 在轮次中主动调用了 `update_task` 推进任务，说明它正在正常工作，
+    /// 应解除"连续空转"的戒备，重新给足续聊预算。
+    func resetContinuationCount(conversationId: String) {
+        continuationCountsByConversationID[conversationId] = 0
     }
 
     // MARK: - Delete

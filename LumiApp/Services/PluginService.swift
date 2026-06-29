@@ -292,3 +292,11 @@ final class PluginService: ObservableObject {
         LogoRegistry.shared.register(allItems)
     }
 }
+
+extension PluginService: LumiLLMProviderSettingsContributing {
+    func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+        enabledPlugins.flatMap { plugin in
+            plugin.llmProviderSettingsViews(context: context)
+        }
+    }
+}

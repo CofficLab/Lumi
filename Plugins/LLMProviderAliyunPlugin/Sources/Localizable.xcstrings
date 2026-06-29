@@ -175,6 +175,7 @@
       }
     },
     "Contributes Aliyun CodingPlan models and Aliyun-specific chat error renderers." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -888,6 +889,108 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "阿里雲 DashScope Coding Plan（兼容 Anthropic API）"
+          }
+        }
+      }
+    },
+    "阿里云 TokenPlan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aliyun TokenPlan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里云 TokenPlan"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 TokenPlan"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 TokenPlan"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 TokenPlan"
+          }
+        }
+      }
+    },
+    "阿里云 DashScope Token Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aliyun DashScope Token Plan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里云 DashScope Token Plan"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 DashScope Token Plan"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 DashScope Token Plan"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阿里雲 DashScope Token Plan"
+          }
+        }
+      }
+    },
+    "Contributes Aliyun CodingPlan and Aliyun TokenPlan models and Aliyun-specific chat error renderers." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes Aliyun CodingPlan and Aliyun TokenPlan models and Aliyun-specific chat error renderers."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供阿里云 CodingPlan 和 TokenPlan 模型以及阿里云专用聊天错误渲染器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供阿里雲 CodingPlan 和 TokenPlan 模型以及阿里雲專用聊天錯誤渲染器。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供阿里雲 CodingPlan 和 TokenPlan 模型以及阿里雲專用聊天錯誤渲染器。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供阿里雲 CodingPlan 和 TokenPlan 模型以及阿里雲專用聊天錯誤渲染器。"
           }
         }
       }

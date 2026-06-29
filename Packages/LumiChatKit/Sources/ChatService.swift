@@ -661,6 +661,19 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         activeTasksByConversationID[conversationID] = task
     }
 
+    /// 在不写入任何用户消息的前提下，为该会话重启一轮 agent turn。
+    ///
+    /// 供插件（如 AutoTask 自动续聊）在「任务尚未完成但上一轮已结束」时
+    /// 无感地继续推进——既不向消息列表写入提示词，也不污染持久化历史。
+    public func continueTurn(in conversationID: UUID) {
+        guard activeTasksByConversationID[conversationID] == nil else { return }
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.sendPipeline.continueAgentTurn(conversationID: conversationID)
+        }
+        activeTasksByConversationID[conversationID] = task
+    }
+
     static func assistantMessage(
         containingToolCallID toolCallID: String,
         in messages: [LumiChatMessage]

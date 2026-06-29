@@ -1,5 +1,3 @@
-import LLMProviderCodexPlugin
-import LLMProviderMLXPlugin
 import LumiChatKit
 import LumiCoreKit
 import LumiUI
@@ -7,13 +5,23 @@ import SwiftUI
 
 struct LocalProviderSettingsPage: View {
     @LumiTheme private var theme
-    @ObservedObject var chatService: ChatService
+    @ObservedObject private var chatService: ChatService
+
+    let providerSettingsViews: [LumiLLMProviderSettingsViewItem]
 
     @State private var selectedProviderID = ""
     @State private var searchText = ""
     @State private var stats: ModelUsageStatsSnapshot?
 
     private let settingsStore = ProviderSettingsStore.shared
+
+    init(
+        chatService: ChatService,
+        providerSettingsViews: [LumiLLMProviderSettingsViewItem]
+    ) {
+        _chatService = ObservedObject(wrappedValue: chatService)
+        self.providerSettingsViews = providerSettingsViews
+    }
 
     private var localProviders: [LumiLLMProviderInfo] {
         chatService.providerInfos.filter(\.isLocal)
@@ -189,16 +197,9 @@ struct LocalProviderSettingsPage: View {
 
     @ViewBuilder
     private func providerDetail(for provider: LumiLLMProviderInfo) -> some View {
-        switch provider.id {
-        case "mlx":
-            if #available(macOS 14.0, *) {
-                MLXLocalProviderSettingsView()
-            } else {
-                unsupportedPlatformMessage
-            }
-        case "codex":
-            CodexLocalProviderSettingsView(provider: provider)
-        default:
+        if let customView = providerSettingsViews.first(where: { $0.providerID == provider.id }) {
+            customView.makeContent(for: provider)
+        } else {
             defaultLocalProviderDetail(for: provider)
         }
     }
@@ -207,11 +208,9 @@ struct LocalProviderSettingsPage: View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
                 ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
-                    ModelSettingsRow(
+                    ModelCard(
+                        provider: provider,
                         model: model,
-                        supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                        supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                        supportsTTS: provider.modelCapabilities[model]?.supportsTTS,
                         stat: stat(for: provider.id, modelName: model),
                         dailyUsage: dailyUsage(for: provider.id, modelName: model)
                     )
@@ -221,16 +220,6 @@ struct LocalProviderSettingsPage: View {
                             .padding(.horizontal, 8)
                     }
                 }
-            }
-        }
-    }
-
-    private var unsupportedPlatformMessage: some View {
-        AppCard {
-            AppSettingsSection(title: "MLX", spacing: 8) {
-                Text(String(localized: "MLX local models require macOS 14 or later."))
-                    .font(.appCaption)
-                    .foregroundColor(.secondary)
             }
         }
     }

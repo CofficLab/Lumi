@@ -1,28 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%1$@ · %2$@ tokens (in %3$@ / out %4$@)" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@ tokens（输入 %3$@ / 输出 %4$@）"
-          }
-        }
-      }
-    },
-    "%1$@, total %2$@ tokens, peak %3$@" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@，共 %2$@ tokens，峰值 %3$@"
-          }
-        }
-      }
-    },
     "%lld enabled" : {
       "localizations" : {
         "en" : {
@@ -54,16 +32,7 @@
     "%lld 个主题" : {
 
     },
-    "%lld 个云端供应商" : {
-
-    },
     "%lld 个插件" : {
-
-    },
-    "%lld 个本地供应商" : {
-
-    },
-    "%lld 个模型" : {
 
     },
     "Check for Updates..." : {
@@ -97,18 +66,8 @@
     "Focus Chat Input" : {
 
     },
-    "last %lld days" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "最近 %lld 天"
-          }
-        }
-      }
-    },
     "MLX local models require macOS 14 or later." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -165,17 +124,6 @@
         }
       }
     },
-    "peak %@" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "峰值 %@"
-          }
-        }
-      }
-    },
     "Plugin Description" : {
       "localizations" : {
         "en" : {
@@ -205,6 +153,7 @@
       }
     },
     "Saved" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -256,9 +205,6 @@
     "打开 Lumi" : {
 
     },
-    "打开供应商页面" : {
-
-    },
     "打开容器目录" : {
 
     },
@@ -269,9 +215,6 @@
 
     },
     "搜索主题" : {
-
-    },
-    "搜索供应商" : {
 
     },
     "搜索插件" : {

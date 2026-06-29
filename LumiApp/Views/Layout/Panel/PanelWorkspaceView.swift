@@ -3,15 +3,19 @@ import LumiUI
 import SwiftUI
 
 struct PanelWorkspaceView: View {
+    @LumiTheme private var theme
+    
     let container: LumiViewContainerItem?
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
     let showsPanelChrome: Bool
-    @ObservedObject var layoutState: PanelLayoutState
     let viewContainerID: String
 
+    @ObservedObject private var globalLayoutState = LumiLayoutStateStore.shared
+    @ObservedObject var layoutState: PanelLayoutState
+
     private var showBottomPanel: Bool {
-        showsPanelChrome && !bottomTabs.isEmpty
+        showsPanelChrome && !bottomTabs.isEmpty && globalLayoutState.bottomPanelVisible
     }
 
     var body: some View {
@@ -31,7 +35,6 @@ struct PanelWorkspaceView: View {
             }
         }
         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     @ViewBuilder
@@ -43,7 +46,6 @@ struct PanelWorkspaceView: View {
                 }
                 PanelBodyView(container: container)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             PanelBodyView(container: nil)
         }

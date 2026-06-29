@@ -14,8 +14,8 @@ public struct OnboardingWelcomePage: View {
             headerSection(
                 icon: "sparkles",
                 gradient: welcomeGradient,
-                title: LumiPluginLocalization.string("欢迎使用 Lumi", bundle: .module),
-                subtitle: LumiPluginLocalization.string("你的 AI 驱动个人桌面助手", bundle: .module)
+                title: LumiPluginLocalization.string("Welcome to Lumi", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Your AI-powered personal desktop assistant", bundle: .module)
             )
 
             featuresSection(welcomeFeatures)
@@ -33,18 +33,18 @@ public struct OnboardingWelcomePage: View {
         [
             OnboardingFeature(
                 icon: "brain",
-                title: LumiPluginLocalization.string("智能对话", bundle: .module),
-                description: LumiPluginLocalization.string("支持本地和云端 LLM，智能处理复杂任务", bundle: .module)
+                title: LumiPluginLocalization.string("Smart Conversations", bundle: .module),
+                description: LumiPluginLocalization.string("Support for local and cloud LLMs, intelligently handling complex tasks", bundle: .module)
             ),
             OnboardingFeature(
                 icon: "hammer.circle",
-                title: LumiPluginLocalization.string("Agent 能力", bundle: .module),
-                description: LumiPluginLocalization.string("自动执行文件操作、命令行、Git 等任务", bundle: .module)
+                title: LumiPluginLocalization.string("Agent Capabilities", bundle: .module),
+                description: LumiPluginLocalization.string("Automatically execute file operations, command line, Git and other tasks", bundle: .module)
             ),
             OnboardingFeature(
                 icon: "rectangle.3.group",
-                title: LumiPluginLocalization.string("多会话并行", bundle: .module),
-                description: LumiPluginLocalization.string("同时处理多个独立任务，互不干扰", bundle: .module)
+                title: LumiPluginLocalization.string("Parallel Sessions", bundle: .module),
+                description: LumiPluginLocalization.string("Process multiple independent tasks in parallel without interference", bundle: .module)
             ),
         ]
     }
@@ -63,13 +63,13 @@ public struct OnboardingPluginsPage: View {
             headerSection(
                 icon: "puzzlepiece.extension",
                 gradient: pluginsGradient,
-                title: LumiPluginLocalization.string("插件可自由开关", bundle: .module),
-                subtitle: LumiPluginLocalization.string("在设置中随时开启或关闭插件，按需定制你的工作台", bundle: .module)
+                title: LumiPluginLocalization.string("Plugins On Your Terms", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Enable or disable plugins anytime in Settings to customize your workspace", bundle: .module)
             )
 
             Spacer(minLength: 0)
 
-            tipCard(LumiPluginLocalization.string("设置 → 插件，或按 ⌘, 打开设置", bundle: .module))
+            tipCard(LumiPluginLocalization.string("Settings → Plugins, or press ⌘, to open Settings", bundle: .module))
                 .padding(.top, 24)
         }
     }

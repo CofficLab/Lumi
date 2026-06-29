@@ -318,25 +318,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clipboard Manager"
+            "value": "剪贴板管理器"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clipboard Manager"
+            "value": "剪貼簿管理器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clipboard Manager"
+            "value": "剪貼簿管理器"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clipboard Manager"
+            "value": "剪貼簿管理器"
           }
         }
       }
@@ -386,25 +386,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Data"
+            "value": "数据"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Data"
+            "value": "資料"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Data"
+            "value": "資料"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Data"
+            "value": "資料"
           }
         }
       }
@@ -454,25 +454,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Clipboard Monitoring"
+            "value": "启用剪贴板监控"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Clipboard Monitoring"
+            "value": "启用剪贴板监控"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Clipboard Monitoring"
+            "value": "启用剪贴板监控"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Clipboard Monitoring"
+            "value": "启用剪贴板监控"
           }
         }
       }
@@ -488,25 +488,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "General"
+            "value": "通用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "General"
+            "value": "一般"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "General"
+            "value": "一般"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "General"
+            "value": "一般"
           }
         }
       }
@@ -522,25 +522,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Size"
+            "value": "历史大小"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Size"
+            "value": "历史大小"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Size"
+            "value": "历史大小"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "History Size"
+            "value": "历史大小"
           }
         }
       }
@@ -590,25 +590,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Monitor clipboard history locally on this device."
+            "value": "在此设备上本地监控剪贴板历史。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Monitor clipboard history locally on this device."
+            "value": "在此设备上本地监控剪贴板历史。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Monitor clipboard history locally on this device."
+            "value": "在此设备上本地监控剪贴板历史。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Monitor clipboard history locally on this device."
+            "value": "在此设备上本地监控剪贴板历史。"
           }
         }
       }
@@ -658,25 +658,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pin"
+            "value": "固定"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pin"
+            "value": "固定"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pin"
+            "value": "固定"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pin"
+            "value": "固定"
           }
         }
       }
@@ -726,25 +726,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unpin"
+            "value": "取消固定"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unpin"
+            "value": "取消固定"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unpin"
+            "value": "取消固定"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unpin"
+            "value": "取消固定"
           }
         }
       }

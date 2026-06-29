@@ -10,6 +10,7 @@ struct ModelSelectorSidebar: View {
     let providers: [LumiLLMProviderInfo]
     let selectedProviderID: String?
     @Binding var selectedTab: ModelSelectorTab
+    let dailyUsage: [String: ModelDailyTokenSeries]
 
     var body: some View {
         VStack(spacing: 4) {
@@ -36,7 +37,8 @@ struct ModelSelectorSidebar: View {
                             provider: provider,
                             isSelected: selectedTab == .provider(provider.id),
                             isActive: selectedProviderID == provider.id,
-                            onSelect: { selectedTab = .provider(provider.id) }
+                            onSelect: { selectedTab = .provider(provider.id) },
+                            dailyUsage: dailyUsage
                         )
                     }
                 }

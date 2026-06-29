@@ -30,7 +30,7 @@ public struct WorkspaceSymbolItemSearchView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(theme.textSecondary)
-                TextField("搜索符号...", text: $query)
+                TextField("Search symbols...", text: $query)
                     .textFieldStyle(PlainTextFieldStyle())
                     .onSubmit {
                         guard !filteredSymbols.isEmpty else { return }
@@ -63,7 +63,7 @@ public struct WorkspaceSymbolItemSearchView: View {
                     Image(systemName: provider.searchError == nil ? "magnifyingglass" : "exclamationmark.triangle")
                         .font(.appLargeTitle)
                         .foregroundColor(theme.textSecondary)
-                    Text(provider.searchError == nil ? "未找到匹配的符号" : "工作区符号当前不可用")
+                    Text(provider.searchError == nil ? "No matching symbols found" : "Workspace symbols currently unavailable")
                         .font(.appBody)
                         .foregroundColor(theme.textSecondary)
                     if let searchError = provider.searchError {

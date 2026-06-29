@@ -14,7 +14,7 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
     public static let iconName = "doc.text.magnifyingglass"
     public nonisolated static let emoji = "🔎"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.rag",

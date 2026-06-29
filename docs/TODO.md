@@ -23,6 +23,43 @@
 
 ---
 
+## 24. 主线程并发优化
+
+> 目标：所有可后台的操作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）移出主线程，让 App 更流畅。
+> 详细分析与分阶段方案见 `docs/main-thread-concurrency-roadmap.md`。
+> 原则：主线程只负责应用结果，重活一律 `Task.detached` / `Task`。
+
+### Phase 1（P0，最高收益）
+
+- [ ] 菜单栏 1 秒轮询改为事件驱动（`MenuBarService.contentTimer`，全局常驻、永不停止）。
+- [ ] LSP 诊断 `.compile` 读取按 `buildServerPath` + mtime 加缓存（`LSPDiagnosticBuildContextPolicy`，键入时高频）。
+
+### Phase 2（P1，按需页面卡顿）
+
+- [ ] `SystemMonitorService` 的 CPU/内存/网络采样移后台（照搬同插件 `CPUService` 模式）。
+- [ ] `DeviceData` 的内存/磁盘/电池采样移后台。
+- [ ] QuickOpen 候选项预归一化（缓存小写形式）。
+- [ ] Find References 行读取按 URL + mtime 缓存，避免每个结果全量读 + split。
+
+### Phase 3（P2，中频热点）
+
+- [ ] 剪贴板图片 PNG 编码/写盘移后台（`ClipboardMonitor.saveImage`）。
+- [ ] 进程网络图标预取移后台（`ProcessMonitorService.aggregateAndPublish`）。
+- [ ] Cmd+Click 回退路径正则静态化缓存（`JumpToDefinitionDelegate`）。
+
+### Phase 4（P3，低频主线程 I/O 清理）
+
+- [ ] 文档变更 debounce 改 `Task.sleep`（`LSPService`）。
+- [ ] 快捷键保存写盘移后台（`EditorKeybindingStore`）。
+- [ ] 文档打开/历史加载移后台（`EditorDocumentController`、`NetworkHistoryService`）。
+- [ ] 插件设置/主题 plist 写盘移后台（`PluginSettingsStore`、`LumiUIService`）。
+
+### 验证
+
+- [ ] 👤 Instruments Time Profiler 复测：空闲态、编辑 Swift、设备/监视页、搜索、查找引用、复制图片等场景，主线程占比显著下降。
+
+---
+
 ## 23. 编辑器架构简化与优化
 
 > 目标：收束编辑器模块依赖关系，消除 God Object。

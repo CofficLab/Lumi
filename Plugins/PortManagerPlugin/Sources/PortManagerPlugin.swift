@@ -5,7 +5,7 @@ import SwiftUI
 
 public enum PortManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.port-manager")
-    public static let verbose = false
+    public static let verbose = true
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system

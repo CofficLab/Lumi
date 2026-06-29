@@ -24,7 +24,6 @@ struct ChatSectionView: View {
             idealWidth: layout.idealWidth,
             maxWidth: layout.maximumWidth
         )
-        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     static func makeRootContent(

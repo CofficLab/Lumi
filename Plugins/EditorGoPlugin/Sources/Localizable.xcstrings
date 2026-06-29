@@ -284,25 +284,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         }
       }
@@ -930,25 +930,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         }
       }

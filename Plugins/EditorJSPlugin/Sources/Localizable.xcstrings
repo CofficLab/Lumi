@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browser"
+            "value": "浏览器"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browser"
+            "value": "瀏覽器"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browser"
+            "value": "瀏覽器"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Browser"
+            "value": "瀏覽器"
           }
         }
       }
@@ -216,25 +216,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelled"
+            "value": "已取消"
           }
         }
       }
@@ -250,25 +250,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Debug"
+            "value": "调试"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Debug"
+            "value": "除錯"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Debug"
+            "value": "除錯"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Debug"
+            "value": "除錯"
           }
         }
       }
@@ -1168,25 +1168,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stop"
+            "value": "停止"
           }
         }
       }

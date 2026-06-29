@@ -44,6 +44,9 @@ public protocol LumiPlugin {
     static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem]
 
     @MainActor
+    static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem]
+
+    @MainActor
     static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
 
     @MainActor
@@ -147,6 +150,11 @@ public extension LumiPlugin {
 
     @MainActor
     static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+        []
+    }
+
+    @MainActor
+    static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
         []
     }
 

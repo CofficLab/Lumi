@@ -7,7 +7,7 @@ import SwiftUI
 
 private enum SkillStatusBarLogging {
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.skill")
-    static let verbose = false
+    static let verbose = true
 }
 
 /// Skill 状态栏视图

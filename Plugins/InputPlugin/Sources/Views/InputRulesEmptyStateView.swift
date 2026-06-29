@@ -18,12 +18,12 @@ public struct InputRulesEmptyStateView: View {
                 .foregroundColor(theme.textSecondary)
 
             // 标题
-            Text(LumiPluginLocalization.string("暂无输入源切换规则", bundle: .module))
+            Text(LumiPluginLocalization.string("No input source switching rules", bundle: .module))
                 .font(.appSectionTitle)
                 .foregroundColor(theme.textPrimary)
 
             // 描述文字
-            Text(LumiPluginLocalization.string("添加应用和对应的输入源，切换应用时自动切换输入法", bundle: .module))
+            Text(LumiPluginLocalization.string("Add apps and corresponding input sources to automatically switch input methods when switching apps", bundle: .module))
                 .font(.appBody)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)

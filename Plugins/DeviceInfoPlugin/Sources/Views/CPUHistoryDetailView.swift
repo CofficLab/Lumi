@@ -16,7 +16,7 @@ struct CPUHistoryDetailView: View {
 
                 Spacer()
 
-                Picker("Time Range", selection: $selectedRange) {
+                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
                     ForEach(CPUTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }

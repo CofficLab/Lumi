@@ -9,6 +9,7 @@ public struct LayoutMenuButton: View {
 
     @LumiTheme private var theme
     @State private var isPopoverPresented = false
+    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
     let layoutContext: LayoutControlContext
 
     public init(layoutContext: LayoutControlContext) {
@@ -27,7 +28,29 @@ public struct LayoutMenuButton: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            LayoutSidebarPopover(isOn: layoutContext.chatSectionVisible)
+            VStack(alignment: .leading, spacing: 0) {
+                LayoutPopoverToggle(
+                    isOn: layoutContext.chatSectionVisible,
+                    icon: "rectangle.rightthird.inset.filled",
+                    title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)
+                )
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                LayoutPopoverToggle(
+                    isOn: layoutContext.bottomPanelVisible,
+                    icon: "rectangle.inset.filled",
+                    title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
+                )
+            }
+            .padding(12)
+            .frame(minWidth: 180, alignment: .leading)
+            .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
+            .appThemedAppearance()
+            .background {
+                ThemeWindowAppearanceBridge()
+            }
         }
         .frame(width: 22, height: 22)
         .fixedSize()
@@ -39,30 +62,25 @@ public struct LayoutMenuButton: View {
     }
 }
 
-private struct LayoutSidebarPopover: View {
+private struct LayoutPopoverToggle: View {
     @LumiTheme private var theme
     @Binding var isOn: Bool
+    let icon: String
+    let title: String
 
     var body: some View {
         Toggle(isOn: $isOn) {
             HStack(spacing: 8) {
-                Image(systemName: "rectangle.rightthird.inset.filled")
+                Image(systemName: icon)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(LayoutMenuButton.popoverLabelForegroundColor(theme: theme))
 
-                Text(LumiPluginLocalization.string("Right Sidebar", bundle: .module))
+                Text(title)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(LayoutMenuButton.popoverLabelForegroundColor(theme: theme))
             }
         }
         .toggleStyle(.checkbox)
-        .padding(12)
-        .frame(minWidth: 180, alignment: .leading)
-        .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
-        .appThemedAppearance()
-        .background {
-            ThemeWindowAppearanceBridge()
-        }
     }
 }
 

@@ -5,7 +5,7 @@ import SwiftUI
 
 public enum DiskManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
-    public static let verbose = false
+    public static let verbose = true
     public static let policy: LumiPluginPolicy = .optIn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system

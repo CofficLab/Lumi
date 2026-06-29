@@ -234,6 +234,7 @@ import Testing
         func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool { false }
         func enqueueText(_ text: String, in conversationID: UUID?) {}
         func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?) {}
+        func continueTurn(in conversationID: UUID) {}
         func cancelSending(for conversationID: UUID?) {}
         func approvePendingTool() {}
         func rejectPendingTool() {}

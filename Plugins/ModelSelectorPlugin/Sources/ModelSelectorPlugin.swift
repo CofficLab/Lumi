@@ -1,3 +1,4 @@
+import LumiChatKit
 import LumiCoreKit
 import SwiftUI
 
@@ -50,5 +51,39 @@ public enum ModelSelectorPlugin: LumiPlugin {
             return []
         }
         return [SwitchModelTool(chatService: chatService)]
+    }
+
+    @MainActor
+    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+        guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
+            return []
+        }
+
+        let providerSettingsViews = context
+            .resolve((any LumiLLMProviderSettingsContributing).self)?
+            .llmProviderSettingsViews(context: context) ?? []
+
+        return [
+            LumiSettingsTabItem(
+                id: "\(info.id).local",
+                title: "本地供应商",
+                systemImage: "cpu"
+            ) {
+                LocalProviderSettingsPage(
+                    chatService: chatService,
+                    providerSettingsViews: providerSettingsViews
+                )
+            },
+            LumiSettingsTabItem(
+                id: "\(info.id).remote",
+                title: "云端供应商",
+                systemImage: "network"
+            ) {
+                RemoteProviderSettingsPage(
+                    chatService: chatService,
+                    providerSettingsViews: providerSettingsViews
+                )
+            },
+        ]
     }
 }

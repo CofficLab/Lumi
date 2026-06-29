@@ -556,25 +556,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "刷新"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         }
       }
@@ -692,25 +692,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search Homebrew packages..."
+            "value": "搜索 Homebrew 包..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search Homebrew packages..."
+            "value": "搜索 Homebrew 包..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search Homebrew packages..."
+            "value": "搜索 Homebrew 包..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search Homebrew packages..."
+            "value": "搜索 Homebrew 包..."
           }
         }
       }
@@ -828,25 +828,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Update All"
+            "value": "更新全部"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Update All"
+            "value": "更新全部"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Update All"
+            "value": "更新全部"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Update All"
+            "value": "更新全部"
           }
         }
       }
@@ -964,59 +964,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "View"
+            "value": "视图"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "View"
+            "value": "檢視"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "View"
+            "value": "檢視"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "View"
-          }
-        }
-      }
-    },
-    "搜索": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋"
+            "value": "檢視"
           }
         }
       }

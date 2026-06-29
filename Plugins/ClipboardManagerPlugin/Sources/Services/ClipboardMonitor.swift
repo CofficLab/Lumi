@@ -50,32 +50,36 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
     
     private func processPasteboardContent() {
-        let items = Self.items(
-            from: pasteboard,
-            appName: NSWorkspace.shared.frontmostApplication?.localizedName
-        )
+        Task {
+            let items = await Self.itemsAsync(
+                from: pasteboard,
+                appName: NSWorkspace.shared.frontmostApplication?.localizedName
+            )
 
-        for item in items {
-            Task {
+            for item in items {
                 await storage.add(item: item)
                 await MainActor.run {
                     NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
                 }
-            }
-            
-            if Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)\(Self.logMessage(for: item))")
+
+                if Self.verbose {
+                    if ClipboardManagerPlugin.verbose {
+                        ClipboardManagerPlugin.logger.info("\(Self.t)\(Self.logMessage(for: item))")
+                    }
                 }
             }
         }
     }
 
-    static func items(
+    // MARK: - Items Extraction (Async for Image Processing)
+
+    /// Extracts clipboard items asynchronously by moving image encoding/writing to background
+    static func itemsAsync(
         from pasteboard: NSPasteboard,
         appName: String?,
         imageDirectory: URL = FileManager.default.temporaryDirectory
-    ) -> [ClipboardItem] {
+    ) async -> [ClipboardItem] {
+        // Handle file URLs first (sync, no I/O)
         if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
             let fileItems = fileUrls
                 .filter(\.isFileURL)
@@ -85,11 +89,15 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             }
         }
 
-        if let image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage,
-           let imagePath = saveImage(image, to: imageDirectory) {
-            return [ClipboardItem(type: .image, content: imagePath, appName: appName)]
+        // Handle image in background Task
+        if let image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage {
+            let imagePath = await saveImageAsync(image, to: imageDirectory)
+            if let path = imagePath {
+                return [ClipboardItem(type: .image, content: path, appName: appName)]
+            }
         }
 
+        // Handle text (sync)
         if let str = pasteboard.string(forType: .string), !str.isEmpty {
             if let fileItems = fileItems(fromString: str, appName: appName), !fileItems.isEmpty {
                 return fileItems
@@ -98,6 +106,16 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         }
 
         return []
+    }
+
+    /// Saves image to disk in background Task, returns path on success
+    private static func saveImageAsync(_ image: NSImage, to directory: URL) async -> String? {
+        await withCheckedContinuation { continuation in
+            Task.detached(priority: .utility) {
+                let result = Self.saveImage(image, to: directory)
+                continuation.resume(returning: result)
+            }
+        }
     }
 
     private static func fileItems(fromString string: String, appName: String?) -> [ClipboardItem]? {
@@ -140,7 +158,7 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         return nil
     }
 
-    private static func saveImage(_ image: NSImage, to directory: URL) -> String? {
+    private nonisolated static func saveImage(_ image: NSImage, to directory: URL) -> String? {
         let imageURL = directory.appendingPathComponent("clipboard_\(UUID().uuidString).png")
 
         guard let tiffData = image.tiffRepresentation,

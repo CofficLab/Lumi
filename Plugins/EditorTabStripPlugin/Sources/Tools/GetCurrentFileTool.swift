@@ -8,7 +8,7 @@ import os
 /// 基于 StripStore 的 activeTabPath 获取当前活跃文件。
 public struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public let name = "get_current_file"
     public func description(for language: LanguagePreference) -> String {
         switch language {

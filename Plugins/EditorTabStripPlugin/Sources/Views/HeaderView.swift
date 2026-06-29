@@ -32,9 +32,9 @@ public struct HeaderView: View {
 
     public var body: some View {
         AppToolbarContainer(
-            height: AppPanelChromeMetrics.tabBarHeight,
-            backgroundStyle: .custom(theme.workspaceBackgroundColor()),
-            padding: AppPanelChromeMetrics.tabBarPadding
+            height: 40,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
             if !visibleTabs.isEmpty {
                 tabListContent
@@ -43,6 +43,7 @@ public struct HeaderView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+        .borderBottom()
         .onAppear {
             coordinator.startObserving(
                 sessionStore: sessionStore,

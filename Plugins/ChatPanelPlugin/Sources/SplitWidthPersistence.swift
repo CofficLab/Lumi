@@ -155,7 +155,12 @@ final class SplitWidthPersistenceView: NSView {
 
         guard let currentIndex = containingColumnIndex(in: splitView) else { return }
         setColumn(currentIndex, width: targetWidth, in: splitView)
-        splitView.layoutSubtreeIfNeeded()
+        
+        // 延迟布局避免在视图层次结构构建过程中触发递归布局
+        DispatchQueue.main.async {
+            splitView.layoutSubtreeIfNeeded()
+        }
+        
         didApplyWidth = true
     }
 

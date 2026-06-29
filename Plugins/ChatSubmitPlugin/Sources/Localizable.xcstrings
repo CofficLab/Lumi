@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send Message"
+            "value": "发送消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send Message"
+            "value": "傳送訊息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send Message"
+            "value": "傳送訊息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send Message"
+            "value": "傳送訊息"
           }
         }
       }

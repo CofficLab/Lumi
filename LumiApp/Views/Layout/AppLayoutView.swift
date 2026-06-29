@@ -80,13 +80,16 @@ struct AppLayoutView: View {
                             containers: containers
                         )
 
-                        panelColumn(
+                        PanelColumnView(
                             container: selectedContainer,
                             headerItems: headerItems,
                             bottomTabs: bottomTabs,
                             showsPanelChrome: showsPanelChrome,
                             showRail: showRail,
-                            railTabs: railTabs
+                            railTabs: railTabs,
+                            layoutState: panelLayoutState,
+                            projectPathStore: projectPathStore,
+                            editor: editorCoreService
                         )
                         .layoutPriority(isRailOnlyPanel ? 0 : 1)
                         .frame(
@@ -134,13 +137,16 @@ struct AppLayoutView: View {
 
                         AppDivider(.vertical)
 
-                        panelColumn(
+                        PanelColumnView(
                             container: selectedContainer,
                             headerItems: headerItems,
                             bottomTabs: bottomTabs,
                             showsPanelChrome: showsPanelChrome,
                             showRail: showRail,
-                            railTabs: railTabs
+                            railTabs: railTabs,
+                            layoutState: panelLayoutState,
+                            projectPathStore: projectPathStore,
+                            editor: editorCoreService
                         )
                     }
                 }
@@ -173,80 +179,6 @@ struct AppLayoutView: View {
             )
         }
         .ignoresSafeArea()
-    }
-
-    @ViewBuilder
-    private func panelColumn(
-        container: LumiViewContainerItem?,
-        headerItems: [LumiPanelHeaderItem],
-        bottomTabs: [LumiPanelBottomTabItem],
-        showsPanelChrome: Bool,
-        showRail: Bool,
-        railTabs: [LumiPanelRailTabItem]
-    ) -> some View {
-        let viewContainerID = container?.id ?? "main"
-        let workspace = PanelWorkspaceView(
-            container: container,
-            headerItems: headerItems,
-            bottomTabs: bottomTabs,
-            showsPanelChrome: showsPanelChrome,
-            layoutState: panelLayoutState,
-            viewContainerID: viewContainerID
-        )
-
-        let railStorageKey = LayoutStorageKey.railWidth(viewContainerID: viewContainerID)
-        let column = Group {
-            if showRail {
-                if showsPanelChrome {
-                    HSplitView {
-                        RailView(tabs: railTabs, layoutState: panelLayoutState)
-                            .background(
-                                SplitViewWidthPersistence(storageKey: railStorageKey)
-                            )
-                        workspace
-                    }
-                    .id(viewContainerID)
-                } else {
-                    RailView(tabs: railTabs, layoutState: panelLayoutState)
-                        .background(
-                            SplitViewWidthPersistence(storageKey: railStorageKey)
-                        )
-                        .id(viewContainerID)
-                }
-            } else {
-                workspace
-            }
-        }
-
-        if showsPanelChrome {
-            EditorScopeView(
-                projectPathStore: projectPathStore,
-                editor: editorCoreService
-            ) {
-                column
-            }
-            .modifier(PanelChromeCommandHandler(layoutState: panelLayoutState))
-        } else {
-            column
-        }
-    }
-
-    private struct PanelChromeCommandHandler: ViewModifier {
-        @ObservedObject var layoutState: PanelLayoutState
-
-        private var notifications: EditorHostEnvironment.Notifications {
-            EditorHostEnvironment.current.notifications
-        }
-
-        func body(content: Content) -> some View {
-            content
-                .onReceive(NotificationCenter.default.publisher(for: notifications.toggleOutlinePanel)) { _ in
-                    layoutState.presentRailTab(id: "outline")
-                }
-                .onReceive(NotificationCenter.default.publisher(for: notifications.toggleOpenEditorsPanel)) { _ in
-                    layoutState.presentRailTab(id: "explorer")
-                }
-        }
     }
 
     private func layoutAutosaveName(
@@ -321,22 +253,5 @@ struct AppLayoutView: View {
 
     private func isViewContainerExpected(_ containerID: String) -> Bool {
         pluginService.enabledPlugins.contains { $0.info.id == containerID }
-    }
-}
-
-private struct ChatSectionToolbarSync: View {
-    let items: [LumiChatSectionToolbarItem]
-    @ObservedObject var coordinator: ChatSectionCoordinator
-
-    private var syncKey: String {
-        items.map(\.id).joined(separator: "|")
-    }
-
-    var body: some View {
-        Color.clear
-            .frame(width: 0, height: 0)
-            .onChange(of: syncKey, initial: true) { _, _ in
-                coordinator.setChatSectionToolbarItems(items)
-            }
     }
 }

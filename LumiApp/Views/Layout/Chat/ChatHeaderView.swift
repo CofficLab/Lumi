@@ -7,9 +7,9 @@ struct ChatHeaderView: View {
 
     var body: some View {
         AppToolbarContainer(
-            height: AppPanelChromeMetrics.tabBarHeight,
-            showsBottomShadow: true,
-            padding: AppPanelChromeMetrics.tabBarPadding
+            height: 40,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
         ) {
             HStack(spacing: 8) {
                 ForEach(items) { item in
@@ -19,6 +19,6 @@ struct ChatHeaderView: View {
                 Spacer(minLength: 0)
             }
         }
-        .frame(height: AppPanelChromeMetrics.tabBarHeight)
+        .borderBottom()
     }
 }

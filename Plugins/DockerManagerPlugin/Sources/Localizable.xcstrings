@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
+            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
           }
         }
       }
@@ -182,25 +182,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "确认"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "確認"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "確認"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm"
+            "value": "確認"
           }
         }
       }
@@ -318,25 +318,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "降序"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "降序"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "降序"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descending"
+            "value": "降序"
           }
         }
       }
@@ -590,25 +590,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "导入"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "导入"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "导入"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import"
+            "value": "导入"
           }
         }
       }
@@ -862,25 +862,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "刷新"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refresh"
+            "value": "重新整理"
           }
         }
       }
@@ -930,25 +930,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "搜索镜像..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "搜索镜像..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "搜索镜像..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search images..."
+            "value": "搜索镜像..."
           }
         }
       }

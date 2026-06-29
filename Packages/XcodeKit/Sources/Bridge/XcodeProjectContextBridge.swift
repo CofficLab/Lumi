@@ -11,7 +11,7 @@ import SuperLogKit
 final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     nonisolated public static let emoji = "🔗"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
     public static let shared = XcodeProjectContextBridge()
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.bridge")
