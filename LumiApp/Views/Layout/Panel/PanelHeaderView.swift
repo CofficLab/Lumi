@@ -9,9 +9,10 @@ struct PanelHeaderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(items) { item in
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 item.makeView()
                     .id(item.id)
+                    .zIndex(Double(items.count - index)) // 上面的 item 有更高的 zIndex，shadow 能显示在下面的 item 上
             }
         }
     }

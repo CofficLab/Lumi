@@ -46,7 +46,6 @@ struct PanelWorkspaceView: View {
                 }
                 PanelBodyView(container: container)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             PanelBodyView(container: nil)
         }
