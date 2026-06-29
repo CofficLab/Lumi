@@ -108,11 +108,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     // MARK: - Private Methods
 
     private func startTimer() {
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.scheduleMetricsUpdate()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
         state.timer = timer
         updateMetrics(diskCounters: nil)
         scheduleMetricsUpdate()
@@ -248,6 +249,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
                         let diff = current - prev
 
                         total += diff
+
                         if j != Int(CPU_STATE_IDLE) {
                             inUse += diff
                         }
@@ -414,11 +416,9 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             else {
                 continue
             }
-
             totalRead += uint64Value(statistics["Bytes (Read)"])
             totalWrite += uint64Value(statistics["Bytes (Write)"])
         }
-
         return (totalRead, totalWrite)
     }
 
@@ -441,19 +441,19 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     // MARK: - Static Sampling Methods (for background thread)
 
     /// 后台采样 CPU 使用率（无状态，每次独立采样）
+
     private nonisolated static func sampleCPUUsage() -> Double {
         var numCPUsU: natural_t = 0
         var cpuInfoU: processor_info_array_t?
         var numCpuInfoU: mach_msg_type_number_t = 0
-
         let result = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUsU, &cpuInfoU, &numCpuInfoU)
 
         guard result == KERN_SUCCESS, let cpuInfoU else { return 0 }
 
         // 简单采样：计算总体使用率（不依赖历史状态）
+
         var totalIdle: Int32 = 0
         var totalUsed: Int32 = 0
-
         for i in 0..<Int(numCPUsU) {
             let baseIndex = i * Int(CPU_STATE_MAX)
             for j in 0..<Int(CPU_STATE_MAX) {
@@ -467,6 +467,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         }
 
         // 释放内存
+
         let size = Int(numCpuInfoU) * MemoryLayout<integer_t>.size
         let ptr = UnsafeMutableRawPointer(cpuInfoU)
         vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
@@ -476,10 +477,10 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     }
 
     /// 后台采样内存使用情况
+
     private nonisolated static func sampleMemoryUsage() -> (used: UInt64, total: UInt64) {
         var size = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
         var hostInfo = vm_statistics64_data_t()
-
         let result = withUnsafeMutablePointer(to: &hostInfo) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(size)) {
                 host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &size)
@@ -494,11 +495,11 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             let used = (UInt64(hostInfo.active_count) + UInt64(hostInfo.wire_count)) * UInt64(pageSize)
             return (used, total)
         }
-
         return (0, total)
     }
 
     /// 后台采样网络使用情况
+
     private nonisolated static func sampleNetworkUsage() -> (inBytes: Double, outBytes: Double) {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifaddr) == 0 else { return (0, 0) }
