@@ -1,9 +1,8 @@
 import Foundation
-import LumiCoreKit
 
 @MainActor
-final class ProviderSettingsStore {
-    static let shared = ProviderSettingsStore()
+public final class ProviderSettingsStore {
+    public static let shared = ProviderSettingsStore()
 
     private let settingsURL: URL
 
@@ -19,27 +18,27 @@ final class ProviderSettingsStore {
         self.settingsURL = directory.appendingPathComponent("settings.plist")
     }
 
-    func loadSelectedRemoteProviderID() -> String? {
+    public func loadSelectedRemoteProviderID() -> String? {
         string(forKey: Keys.selectedRemoteProviderID)
     }
 
-    func saveSelectedRemoteProviderID(_ id: String?) {
+    public func saveSelectedRemoteProviderID(_ id: String?) {
         set(id, forKey: Keys.selectedRemoteProviderID)
     }
 
-    func loadSelectedLocalProviderID() -> String? {
+    public func loadSelectedLocalProviderID() -> String? {
         string(forKey: Keys.selectedLocalProviderID)
     }
 
-    func saveSelectedLocalProviderID(_ id: String?) {
+    public func saveSelectedLocalProviderID(_ id: String?) {
         set(id, forKey: Keys.selectedLocalProviderID)
     }
 
-    func loadRemoteProviderModel(providerID: String) -> String? {
+    public func loadRemoteProviderModel(providerID: String) -> String? {
         dictionary(forKey: Keys.remoteProviderModels)[providerID]
     }
 
-    func saveRemoteProviderModel(providerID: String, modelID: String?) {
+    public func saveRemoteProviderModel(providerID: String, modelID: String?) {
         var models = dictionary(forKey: Keys.remoteProviderModels)
         if let modelID {
             models[providerID] = modelID
@@ -49,11 +48,11 @@ final class ProviderSettingsStore {
         set(models, forKey: Keys.remoteProviderModels)
     }
 
-    func loadLocalProviderModel(providerID: String) -> String? {
+    public func loadLocalProviderModel(providerID: String) -> String? {
         dictionary(forKey: Keys.localProviderModels)[providerID]
     }
 
-    func saveLocalProviderModel(providerID: String, modelID: String?) {
+    public func saveLocalProviderModel(providerID: String, modelID: String?) {
         var models = dictionary(forKey: Keys.localProviderModels)
         if let modelID {
             models[providerID] = modelID
