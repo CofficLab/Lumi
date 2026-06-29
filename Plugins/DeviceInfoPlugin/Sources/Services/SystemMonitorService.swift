@@ -131,8 +131,25 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             return
         }
 
-        updateMetrics(diskCounters: nil)
-        scheduleDiskCountersUpdateIfNeeded()
+        // Move CPU, memory, network sampling to background
+        guard samplingTask == nil else { return }
+        let state = self.state
+        let prevNetworkIn = self.prevNetworkIn
+        let prevNetworkOut = self.prevNetworkOut
+        let lastCheckTime = self.lastCheckTime
+
+        samplingTask = Task.detached(priority: .utility) { [weak self] in
+            let cpu = self?.getCPUUsage() ?? 0
+            let (memUsed, memTotal) = self?.getMemoryUsage() ?? (0, 0)
+            let (netIn, netOut) = self?.getNetworkUsage() ?? (0, 0)
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.refCount > 0 else { return }
+                self.updateMetrics(cpu: cpu, memUsed: memUsed, memTotal: memTotal, netIn: netIn, netOut: netOut, diskCounters: nil)
+            }
+        }
     }
 
     private func scheduleDiskCountersUpdateIfNeeded() {
@@ -157,6 +174,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         let cpu = getCPUUsage()
         let (memUsed, memTotal) = getMemoryUsage()
         let (netIn, netOut) = getNetworkUsage()
+        let (diskRead, diskWrite) = getDiskUsage(counters: diskCounters)
+
+        updateMetrics(cpu: cpu, memUsed: memUsed, memTotal: memTotal, netIn: netIn, netOut: netOut, diskCounters: diskCounters)
+    }
+
+    private func updateMetrics(cpu: Double, memUsed: UInt64, memTotal: UInt64, netIn: Double, netOut: Double, diskCounters: (readBytes: UInt64, writeBytes: UInt64)?) {
         let (diskRead, diskWrite) = getDiskUsage(counters: diskCounters)
 
         cpuHistory = (cpuHistory.dropFirst() + [cpu]).suffix(60)

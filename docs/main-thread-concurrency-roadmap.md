@@ -2,7 +2,7 @@
 
 ## 执行摘要
 
-本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 4 个具体优化点**。
+本 Roadmap 围绕"让整个 App 更流畅、所有可后台的操作移出主线程"这一目标，对 Lumi（3267 个真实源文件）做了主线程性能扫描，识别出 **5 个层级、共 3 个具体优化点**。
 
 核心原则：**凡是不需要立即更新 UI 的工作（磁盘 I/O、JSON 解析、内核采样、网络、PNG 编码、正则编译）一律放到后台 `Task.detached` / `Task`；主线程只负责应用结果。**
 
@@ -21,7 +21,6 @@
 |---|---|---|---|---|
 | 🔴 P0 | 菜单栏 1 秒轮询 → 事件驱动 | 全局常驻、所有用户 | 每秒 | 消除持续性主线程负担 |
 | 🔴 P0 | LSP 诊断 `.compile` 读取加缓存 | 编辑 Swift 代码 | 每次诊断发布（键入时高频） | 打字流畅度显著提升 |
-| 🟠 P1 | `SystemMonitorService` 采样移后台 | 设备/系统监视页面 | 每秒 | 打开页面不再卡 |
 | 🟡 P2 | Cmd+Click 正则编译缓存 | 跳转定义回退路径 | 每次跳转 | 减少正则编译开销 |
 
 ---
@@ -128,26 +127,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 ---
 
-## Phase 2（P1）：按需页面的卡顿
-
-> 这些是 `@StateObject`，打开对应页面才激活，但一旦打开就持续卡顿。修复样板就是同插件的 `CPUService`（已正确异步）。
-
-### 2.1 `SystemMonitorService` 采样移后台
-
-**位置**：`Plugins/DeviceInfoPlugin/Sources/Services/SystemMonitorService.swift:156-160, 208-325`
-
-**现状问题**：`updateMetrics()` 在 MainActor 上直接调用 `getCPUUsage()`（`host_processor_info` + 遍历所有核 + `vm_deallocate`）、`getMemoryUsage()`（`host_statistics64`）、`getNetworkUsage()`（`getifaddrs` 遍历所有网卡）。只有磁盘采样被放到了后台（`scheduleDiskCountersUpdateIfNeeded`），其余三个内核调用留在主线程。
-
-**优化方案**
-
-- [ ] 把 `getCPUUsage` / `getMemoryUsage` / `getNetworkUsage` 的**采集**移入 `Task.detached(priority: .utility)`，主线程只更新 `@Published` 的历史缓冲与 `currentMetrics`。
-- [ ] 注意 `state.prevCpuInfo`、`prevNetworkIn/Out` 等跨采样状态需正确跨后台 Task 传递（参考 `CPUService` 用 `previousTicks` 闭包捕获的方式）。
-- [ ] `startMonitoring` / `stopMonitoring` 的引用计数与 `samplingTask` 取消逻辑保持不变。
-
-**预期效果**：打开系统监视页面时主线程不再每秒被内核采样阻塞。
-
----
-
 ## Phase 3（P2）：中频热点
 
 ---
@@ -185,7 +164,6 @@ guard let data = try? Data(contentsOf: URL(fileURLWithPath: compileDatabasePath)
 
 - [ ] **空闲态**：App 启动后不操作，观察主线程是否接近空闲（验证 1.1）。
 - [ ] **编辑 Swift 代码**：持续键入，观察主线程是否被 `.compile` 读取占用（验证 1.2）。
-- [ ] **设备信息页 / 系统监视页**：打开后观察主线程是否被内核采样占用（验证 2.1）。
 
 ---
 
