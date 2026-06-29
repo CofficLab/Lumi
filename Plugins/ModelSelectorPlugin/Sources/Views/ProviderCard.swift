@@ -14,6 +14,7 @@ struct ProviderCard: View {
     let isSelected: Bool
     let isActive: Bool
     let onSelect: () -> Void
+    var dailyUsage: [String: ModelDailyTokenSeries] = [:]
 
     // MARK: - Derived
 
@@ -30,6 +31,15 @@ struct ProviderCard: View {
 
     private var isProviderAvailable: Bool {
         availableModelCount > 0
+    }
+
+    /// 该供应商下所有模型在该供应商维度聚合的 dailyUsage。
+    private var providerDailyUsage: [String: ModelDailyTokenSeries] {
+        dailyUsage.filter { $0.value.providerID == provider.id }
+    }
+
+    private var hasDailyUsage: Bool {
+        !providerDailyUsage.isEmpty && providerDailyUsage.values.contains { $0.hasData }
     }
 
     private var cardBackground: some View {

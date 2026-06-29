@@ -37,7 +37,8 @@ struct ModelSelectorView: View {
             ModelSelectorSidebar(
                 providers: chatService.providerInfos,
                 selectedProviderID: chatService.providerID(for: conversationID),
-                selectedTab: $selectedTab
+                selectedTab: $selectedTab,
+                dailyUsage: dailyUsage
             )
             .frame(width: 380)
             .background(theme.surface)
