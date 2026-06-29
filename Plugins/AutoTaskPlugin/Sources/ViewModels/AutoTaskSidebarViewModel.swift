@@ -42,7 +42,7 @@ extension TaskStateManager: AutoTaskSidebarServicing {}
 @MainActor
 final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.sidebar.vm")
 
     @Published public var tasks: [TaskDisplayItem] = []

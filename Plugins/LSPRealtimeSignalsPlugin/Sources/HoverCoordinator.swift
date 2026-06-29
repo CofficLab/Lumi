@@ -12,7 +12,7 @@ import os
 @MainActor
 public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     public nonisolated static let emoji = "🖱️"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp.realtime.hover")
     private static let defaultHoverDelayNs: UInt64 = 350_000_000
     private static let fastHoverDelayNs: UInt64 = 120_000_000

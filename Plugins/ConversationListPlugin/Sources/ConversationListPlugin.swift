@@ -9,7 +9,7 @@ public enum ConversationListPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "message.fill"
-    public static let verbose = false
+    public static let verbose = true
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
     public static let t = "💬"
 

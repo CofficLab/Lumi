@@ -9,7 +9,7 @@ import LumiCoreKit
 /// 用于 Agent 需要查看完整任务列表以做决策的场景（如判断是否需要追加任务）。
 public struct ListTasksTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public let name = "list_tasks"
 

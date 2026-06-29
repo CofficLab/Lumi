@@ -12,7 +12,7 @@ fileprivate let editorContextMenuLog = Logger(subsystem: EditorHostEnvironment.c
 /// 监听 EditorSource 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
 public final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
     /// 弱引用状态管理器
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private weak var state: EditorState?
     private weak var textViewController: TextViewController?
@@ -198,7 +198,7 @@ public final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 public final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
 
     public nonisolated static let emoji = "🖱️"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 
     private weak var state: EditorState?
 
@@ -314,7 +314,7 @@ final class ContextMenuManager: SuperLog {
 final class ContextMenuHelper: NSObject, SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private weak var textView: TextView?
     private weak var state: EditorState?

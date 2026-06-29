@@ -122,7 +122,6 @@ private final class _QuickLookPreviewHostView: NSView {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard let self, self.layoutPassToken == token else { return }
                 self.needsLayout = true
-                self.layoutSubtreeIfNeeded()
             }
         }
     }

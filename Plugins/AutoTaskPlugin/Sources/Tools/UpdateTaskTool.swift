@@ -9,7 +9,7 @@ import LumiCoreKit
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
 public struct UpdateTaskTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "✅"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public let name = "update_task"
 
