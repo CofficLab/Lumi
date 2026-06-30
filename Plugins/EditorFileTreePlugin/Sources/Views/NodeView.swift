@@ -51,6 +51,9 @@ public struct NodeView: View, Equatable, SuperLog {
     /// 节点仅当自身 url 命中此集合时才 reloadChildren。
     public let changedDirectoryPaths: Set<String>
 
+    /// Git 状态令牌：每次 Git 状态更新时递增，用于驱动 Git 状态标记颜色更新
+    public let gitStatusToken: Int
+
     /// 展开状态（从 store 恢复，用于 Equatable 比较）
     private let expandedFromStore: Bool
 
@@ -71,6 +74,12 @@ public struct NodeView: View, Equatable, SuperLog {
 
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
+    
+    /// 拖拽目标高亮状态
+    @State private var isDropTargeted: Bool = false
+
+    /// 闪烁高亮的不透明度（用于定位到文件时的视觉反馈）
+    @State private var flashOpacity: Double = 0
 
     /// 删除确认对话框
     @State private var showDeleteConfirmation: Bool = false
@@ -114,6 +123,7 @@ public struct NodeView: View, Equatable, SuperLog {
             && lhs.targetedRefreshToken == rhs.targetedRefreshToken
             && lhs.changedDirectoryPaths == rhs.changedDirectoryPaths
             && lhs.gitStatusSnapshot == rhs.gitStatusSnapshot
+            && lhs.gitStatusToken == rhs.gitStatusToken
             && lhs.windowId == rhs.windowId
             && lhs.projectRootPath == rhs.projectRootPath
             && lhs.expandedFromStore == rhs.expandedFromStore
@@ -132,7 +142,8 @@ public struct NodeView: View, Equatable, SuperLog {
         onTreeMutation: (() -> Void)? = nil,
         gitStatusSnapshot: GitStatusSnapshot = .empty,
         targetedRefreshToken: Int = 0,
-        changedDirectoryPaths: Set<String> = []
+        changedDirectoryPaths: Set<String> = [],
+        gitStatusToken: Int = 0
     ) {
         self.url = url
         self.depth = depth
@@ -145,6 +156,7 @@ public struct NodeView: View, Equatable, SuperLog {
         self.gitStatusSnapshot = gitStatusSnapshot
         self.targetedRefreshToken = targetedRefreshToken
         self.changedDirectoryPaths = changedDirectoryPaths
+        self.gitStatusToken = gitStatusToken
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = FileTreeFacade.isDirectory(url)
@@ -226,6 +238,9 @@ public struct NodeView: View, Equatable, SuperLog {
                 .onChange(of: targetedRefreshToken) { _, _ in
                     handleTargetedRefresh()
                 }
+                .onChange(of: selectionState.flashPath) { _, newPath in
+                    handleFlashChange(newPath: newPath)
+                }
                 .onDisappear {
                     selectionState.untrackVisible(url)
                     loadChildrenTask?.cancel()
@@ -241,10 +256,12 @@ public struct NodeView: View, Equatable, SuperLog {
     private func rowContent(isSelected: Bool, icon: LumiFileIcon, gitStatus: GitStatus?, chrome: any LumiAppChromeTheme) -> some View {
         HStack(spacing: 4) {
             if isDirectory {
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundColor(uiTheme.textTertiary)
                     .frame(width: 12)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(.easeInOut(duration: 0.15), value: isExpanded)
             } else {
                 Color.clear.frame(width: 12)
             }
@@ -273,15 +290,57 @@ public struct NodeView: View, Equatable, SuperLog {
         .padding(.horizontal, 6)
         .padding(.leading, CGFloat(depth) * 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(rowBackground(isSelected: isSelected, chrome: chrome))
+        .background(
+            ZStack(alignment: .leading) {
+                rowBackground(isSelected: isSelected, chrome: chrome)
+                // 缩进参考线
+                HStack(spacing: 0) {
+                    ForEach(0..<depth, id: \.self) { _ in
+                        Rectangle()
+                            .fill(uiTheme.textTertiary.opacity(0.2))
+                            .frame(width: 0.5)
+                            .frame(width: 16, alignment: .leading)
+                    }
+                    Spacer()
+                }
+                .padding(.leading, 6) // 与 .padding(.horizontal, 6) 对齐
+                // 定位到文件时的闪烁高亮覆盖层
+                Rectangle()
+                    .fill(Color.accentColor)
+                    .opacity(flashOpacity)
+            }
+        )
         .contentShape(Rectangle())
         .onDrag {
             NSItemProvider(object: url.path as NSString)
         } preview: {
             FileTreeDragPreview(fileURL: url, isDirectory: isDirectory)
         }
-        .contextMenu { contextMenuContent }
+        .dropDestination(for: URL.self) { urls, _ in
+            guard isDirectory, let targetURL = urls.first else { return false }
+            // 执行移动/复制操作
+            let sourcePath = targetURL.path
+            let destPath = url.path
+            return FileTreeFacade.moveItem(from: sourcePath, to: destPath) != nil
+        } isTargeted: { isTargeted in
+            // 只有文件夹才显示高亮
+            if isDirectory {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isDropTargeted = isTargeted
+                }
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(Color.accentColor.opacity(isDropTargeted ? 0.6 : 0), lineWidth: 1.5)
+                .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+                .allowsHitTesting(false)
+        )
+        .contextMenu {
+            LazyView(contextMenuContent)
+        }
         .onTapGesture { handleTap() }
+        .onMiddleClick { handleMiddleClick() }
         .onHover { hovering in isHovering = hovering }
         .confirmationDialog(
             deleteConfirmationTitle,
@@ -377,20 +436,35 @@ public struct NodeView: View, Equatable, SuperLog {
         )
     }
 
+    /// 处理鼠标中键点击事件，以预览模式打开文件
+    private func handleMiddleClick() {
+        guard !isDirectory else { return }
+        onSelect(url)
+    }
+
+    /// 处理闪烁高亮变化
+    private func handleFlashChange(newPath: String?) {
+        let ownPath = PathFormatter.normalizedFilePath(url)
+
+        if newPath == ownPath {
+            // 触发闪烁动画
+            flashOpacity = 0.2
+            withAnimation(.easeOut(duration: 0.4)) {
+                flashOpacity = 0
+            }
+        } else {
+            // 清除闪烁状态
+            flashOpacity = 0
+        }
+    }
+
     private func handleRefreshTokenChange(_ newValue: Int) {
         if Self.verbose { Self.logger.info("\(Self.t)handleRefreshTokenChange: token=\(newValue), url=\(self.url.lastPathComponent)") }
         guard newValue != lastRefreshToken else { return }
         lastRefreshToken = newValue
         
-        // 全局刷新令牌变化时，检查自身是否在精准刷新范围内
-        // 如果 changedDirectoryPaths 非空且命中，则 reload；否则跳过，让 Equatable 优化跳过未变化节点
+        // 全量刷新：所有展开的目录都需要重新加载
         guard isDirectory, isExpanded else { return }
-        
-        if !changedDirectoryPaths.isEmpty {
-            let ownPath = PathFormatter.normalizedFilePath(url)
-            guard changedDirectoryPaths.contains(ownPath) else { return }
-        }
-        
         reloadChildren()
     }
 
@@ -667,6 +741,21 @@ extension NodeView {
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
     private func addToConversation() {
         editorContext.addToConversation(fileURLs: batchActionURLs, windowId: windowId)
+    }
+}
+
+// MARK: - Lazy View Helper
+
+/// 延迟构建视图的包装器，用于优化右键菜单性能
+private struct LazyView<Content: View>: View {
+    let build: () -> Content
+    
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    
+    var body: some View {
+        build()
     }
 }
 

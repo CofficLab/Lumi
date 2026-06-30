@@ -12,10 +12,16 @@ final class SelectionState: ObservableObject {
     @Published private(set) var selectedPaths: Set<String> = []
     @Published private(set) var anchorPath: String?
 
+    /// 闪烁高亮路径：定位到文件时触发，触发后自动清除
+    @Published var flashPath: String?
+
     /// 可见路径的有序数组（保持插入顺序）
     private var visibleOrder: [String] = []
     /// 路径到索引的映射（用于 O(1) 查找）
     private var visibleOrderIndex: [String: Int] = [:]
+
+    /// 闪烁任务，新触发时取消旧的
+    private var flashTask: Task<Void, Never>?
 
     func isSelected(_ url: URL) -> Bool {
         selectedPaths.contains(normalizedPath(url))
@@ -140,6 +146,31 @@ final class SelectionState: ObservableObject {
 
     private func normalizedPath(_ url: URL) -> String {
         PathFormatter.normalizedFilePath(url)
+    }
+
+    /// 触发闪烁高亮效果
+    /// - Parameters:
+    ///   - url: 要闪烁的文件路径
+    ///   - duration: 闪烁持续时间（毫秒）
+    func triggerFlash(for url: URL, duration: TimeInterval = 0.8) {
+        let path = normalizedPath(url)
+
+        // 取消之前的闪烁任务
+        flashTask?.cancel()
+
+        // 设置闪烁路径
+        flashPath = path
+
+        // 启动闪烁任务，在指定时间后清除
+        flashTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                if self?.flashPath == path {
+                    self?.flashPath = nil
+                }
+            }
+        }
     }
 }
 

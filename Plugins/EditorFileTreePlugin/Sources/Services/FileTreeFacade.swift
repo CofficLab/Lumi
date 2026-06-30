@@ -116,6 +116,35 @@ public enum FileTreeFacade {
         return successCount
     }
 
+    /// 移动文件或文件夹到目标目录
+    /// - Parameters:
+    ///   - sourcePath: 源文件路径
+    ///   - destPath: 目标目录路径
+    /// - Returns: 成功返回新 URL，失败返回 nil
+    @discardableResult
+    public static func moveItem(from sourcePath: String, to destPath: String) -> URL? {
+        let sourceURL = URL(fileURLWithPath: sourcePath)
+        let destURL = URL(fileURLWithPath: destPath)
+
+        // 如果目标是文件，则移动到该文件所在目录
+        let targetDir: URL
+        if isDirectory(destURL) {
+            targetDir = destURL
+        } else {
+            targetDir = destURL.deletingLastPathComponent()
+        }
+
+        let fileName = sourceURL.lastPathComponent
+        let finalURL = targetDir.appendingPathComponent(fileName)
+
+        do {
+            try FileManager.default.moveItem(at: sourceURL, to: finalURL)
+            return finalURL
+        } catch {
+            return nil
+        }
+    }
+
     // MARK: - 外部应用（插件特有，依赖 AppKit）
 
     /// 在终端中打开指定路径

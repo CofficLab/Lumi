@@ -11,12 +11,8 @@ public struct TreeView: View, SuperLog {
     @EnvironmentObject var editorContext: EditorContext
     @EnvironmentObject var conversationVM: WindowConversationVM
 
-    // MARK: - Logging Configuration
-
-    /// 日志详细程度控制
     public nonisolated static let emoji = "🌳"
     public nonisolated static var verbose: Bool { EditorFileTreePanelPlugin.verbose }
-    /// 使用插件的 logger
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
@@ -30,6 +26,9 @@ public struct TreeView: View, SuperLog {
 
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
+
+    /// 闪烁高亮触发器：当此值变化时，匹配路径的节点会闪烁
+    @State private var flashTrigger: (path: String, id: UUID)?
 
     public init() {}
 
@@ -67,7 +66,8 @@ public struct TreeView: View, SuperLog {
                             },
                             gitStatusSnapshot: coordinator.gitStatusSnapshot,
                             targetedRefreshToken: coordinator.targetedRefreshToken,
-                            changedDirectoryPaths: coordinator.changedDirectoryPaths
+                            changedDirectoryPaths: coordinator.changedDirectoryPaths,
+                            gitStatusToken: coordinator.gitStatusToken
                         )
 
                         if showPackageDependencies {
@@ -91,6 +91,8 @@ public struct TreeView: View, SuperLog {
         .onChange(of: editorContext.fileTreeHighlightedFileURL) { _, url in
             if let url {
                 selectionState.syncFromEditorHighlight(url)
+                // 触发闪烁效果，帮助用户定位文件
+                selectionState.triggerFlash(for: url)
             } else {
                 selectionState.clearSelection()
             }

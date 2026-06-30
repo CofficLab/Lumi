@@ -46,6 +46,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// Git 状态快照，视图通过只读映射查询
     @Published var gitStatusSnapshot: GitStatusSnapshot = .empty
 
+    /// Git 状态令牌：每次 Git 状态更新时递增，用于驱动 Git 状态标记颜色更新，
+    /// 但不触发文件列表重建。与文件系统的 targetedRefreshToken 分离。
+    @Published var gitStatusToken: Int = 0
+
     /// 当前项目根路径
     private var projectRootPath: String = ""
 
@@ -384,6 +388,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             guard self.projectRootPath == path else { return }
 
             self.gitStatusSnapshot = snapshot
+            // 递增 gitStatusToken 驱动 Git 状态标记颜色更新，但不触发文件列表重建
+            self.gitStatusToken += 1
         }
     }
 
