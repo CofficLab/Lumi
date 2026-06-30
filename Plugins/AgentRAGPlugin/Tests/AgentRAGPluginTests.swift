@@ -1,5 +1,5 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 import Testing
 @testable import AgentRAGPlugin
 
@@ -31,15 +31,53 @@ import Testing
 }
 
 @Test func searchCodeSchemaDeclaresBoundedControls() throws {
-    let schema = RAGCodeSearchTool().inputSchema(for: .english)
-    let properties = try #require(schema["properties"] as? [String: [String: Any]])
+    let schema = RAGCodeSearchTool().inputSchema
 
-    #expect(properties["topK"]?["type"] as? String == "integer")
-    #expect(properties["topK"]?["minimum"] as? Int == RAGCodeSearchTool.minTopK)
-    #expect(properties["topK"]?["maximum"] as? Int == RAGCodeSearchTool.maxTopK)
-    #expect(properties["timeout"]?["type"] as? String == "integer")
-    #expect(properties["timeout"]?["minimum"] as? Int == Int(RAGCodeSearchTool.minTimeoutSeconds))
-    #expect(properties["timeout"]?["maximum"] as? Int == Int(RAGCodeSearchTool.maxTimeoutSeconds))
+    guard case .object(let keys) = schema,
+          case .object(let properties) = keys["properties"] else {
+        Issue.record("schema should declare properties object")
+        return
+    }
+
+    if case .object(let topK) = properties["topK"] {
+        if case .string(let type) = topK["type"] {
+            #expect(type == "integer")
+        } else {
+            Issue.record("topK type missing")
+        }
+        if case .int(let minimum) = topK["minimum"] {
+            #expect(minimum == RAGCodeSearchTool.minTopK)
+        } else {
+            Issue.record("topK minimum missing")
+        }
+        if case .int(let maximum) = topK["maximum"] {
+            #expect(maximum == RAGCodeSearchTool.maxTopK)
+        } else {
+            Issue.record("topK maximum missing")
+        }
+    } else {
+        Issue.record("topK property missing")
+    }
+
+    if case .object(let timeout) = properties["timeout"] {
+        if case .string(let type) = timeout["type"] {
+            #expect(type == "integer")
+        } else {
+            Issue.record("timeout type missing")
+        }
+        if case .int(let minimum) = timeout["minimum"] {
+            #expect(minimum == Int(RAGCodeSearchTool.minTimeoutSeconds))
+        } else {
+            Issue.record("timeout minimum missing")
+        }
+        if case .int(let maximum) = timeout["maximum"] {
+            #expect(maximum == Int(RAGCodeSearchTool.maxTimeoutSeconds))
+        } else {
+            Issue.record("timeout maximum missing")
+        }
+    } else {
+        Issue.record("timeout property missing")
+    }
 }
 
 @Test func searchCodeNormalizesUserControlledBounds() {
@@ -70,18 +108,18 @@ import Testing
     }
     """.write(to: fileURL, atomically: true, encoding: .utf16)
 
-    let context = ToolExecutionContext(
-        conversationId: UUID(),
-        toolCallId: "test-search-code",
+    let context = LumiToolExecutionContext(
+        conversationID: UUID(),
+        toolCallID: "test-search-code",
         toolName: "search_code",
         currentProjectPath: projectURL.path,
         allowedDirectories: [projectURL.path]
     )
     let output = try await RAGCodeSearchTool().execute(
         arguments: [
-            "query": ToolArgument("needle utf16 keyword target"),
-            "mode": ToolArgument("keyword"),
-            "projectPath": ToolArgument(projectURL.path),
+            "query": .string("needle utf16 keyword target"),
+            "mode": .string("keyword"),
+            "projectPath": .string(projectURL.path),
         ],
         context: context
     )
@@ -107,19 +145,19 @@ import Testing
         """.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 
-    let context = ToolExecutionContext(
-        conversationId: UUID(),
-        toolCallId: "test-search-code-topk",
+    let context = LumiToolExecutionContext(
+        conversationID: UUID(),
+        toolCallID: "test-search-code-topk",
         toolName: "search_code",
         currentProjectPath: projectURL.path,
         allowedDirectories: [projectURL.path]
     )
     let output = try await RAGCodeSearchTool().execute(
         arguments: [
-            "query": ToolArgument("bounded topk target"),
-            "mode": ToolArgument("keyword"),
-            "projectPath": ToolArgument(projectURL.path),
-            "topK": ToolArgument(999),
+            "query": .string("bounded topk target"),
+            "mode": .string("keyword"),
+            "projectPath": .string(projectURL.path),
+            "topK": .int(999),
         ],
         context: context
     )
