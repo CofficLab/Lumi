@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import Testing
 @testable import CaffeinatePlugin
@@ -36,21 +35,27 @@ struct PluginCaffeinateTests {
     }
 
     @Test
-    func toolSchemasAndRiskLevelsAreStable() throws {
+    func toolSchemasAndRiskLevelsAreStable() {
         let activate = CaffeinateActivateTool()
-        let activateSchema = activate.inputSchema(for: .english)
-        let activateProperties = try #require(activateSchema["properties"] as? [String: Any])
-        #expect(activateProperties["mode"] != nil)
-        #expect(activateProperties["duration"] != nil)
-        #expect(activate.permissionRiskLevel(arguments: [:]) == .low)
+        let activateProperties = Self.extractProperties(activate.inputSchema)
+        #expect(activateProperties?["mode"] != nil)
+        #expect(activateProperties?["duration"] != nil)
+        #expect(activate.riskLevel(arguments: [:], context: nil) == .low)
 
-        let turnOffDisplaySchema = CaffeinateTurnOffDisplayTool().inputSchema(for: .english)
-        let turnOffDisplayProperties = try #require(turnOffDisplaySchema["properties"] as? [String: Any])
-        #expect(turnOffDisplayProperties["duration"] != nil)
+        let turnOffDisplayProperties = Self.extractProperties(CaffeinateTurnOffDisplayTool().inputSchema)
+        #expect(turnOffDisplayProperties?["duration"] != nil)
 
-        #expect(CaffeinateDeactivateTool().permissionRiskLevel(arguments: [:]) == .low)
-        #expect(CaffeinateStatusTool().permissionRiskLevel(arguments: [:]) == .low)
-        #expect(CaffeinateTurnOffDisplayTool().permissionRiskLevel(arguments: [:]) == .low)
+        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], context: nil) == .low)
+    }
+
+    /// 从 LumiJSONValue schema 中提取 properties 对象。
+    private static func extractProperties(_ schema: LumiJSONValue) -> [String: LumiJSONValue]? {
+        guard case .object(let keys) = schema, case .object(let properties) = keys["properties"] else {
+            return nil
+        }
+        return properties
     }
 
     @Test
