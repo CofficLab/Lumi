@@ -1,5 +1,4 @@
 import Foundation
-import AgentToolKit
 import LumiCoreKit
 import SuperLogKit
 import os
@@ -73,7 +72,7 @@ enum ToolCallLoopDetectionOrchestrator: SuperLog {
         repeatedCount: Int,
         windowCount: Int
     ) -> String {
-        switch LanguagePreference.current {
+        switch LumiLanguagePreference.current {
         case .chinese:
             return "检测到工具调用可能进入循环：工具 `\(toolName)` 在最近 \(windowCount) 次窗口中重复调用 \(repeatedCount) 次。本轮已停止以避免继续重复执行。"
         case .english:
