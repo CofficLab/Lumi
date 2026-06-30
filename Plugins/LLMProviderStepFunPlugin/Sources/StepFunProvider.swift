@@ -3,8 +3,9 @@ import os
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.stepfun")
+public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
+    nonisolated static let emoji = "🌟"
+    nonisolated static let verbose = false
     public static let shortName = "StepFun"
 
     public override class var info: LumiLLMProviderInfo {
@@ -66,7 +67,7 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
             acceptsFunctionScopedToolCallID: false,
             includesReasoningContentInMessages: true
         )
-        Self.logger.info("📝[init] ⚙️ baseURL=\(config.baseURL), acceptHeader=text/event-stream")
+        StepFunPlugin.logger.info("\(Self.t)初始化配置完成 baseURL=\(config.baseURL)")
         super.init(configuration: config)
     }
 
@@ -74,28 +75,21 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        Self.logger.info("[sendStreaming] 🟢 start request model=\(request.model), messagesCount=\(request.messages.count)")
-        
+        StepFunPlugin.logger.info("\(Self.t)开始流式请求 model=\(request.model), messagesCount=\(request.messages.count)")
+
         let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
-            if chunk.isDone {
-                Self.logger.info("📝[sendStreaming] 🔵 chunk isDone")
-            } else {
-                let text = chunk.content ?? ""
-                if !text.isEmpty {
-                    Self.logger.info("📝[sendStreaming] 🟡 chunk contentLength=\(text.count), eventTitle=\(chunk.eventTitle ?? "-")")
-                } else {
-                    Self.logger.info("📝[sendStreaming] ⚪️ chunk EMPTY content, isThinking=\(chunk.isThinking), eventTitle=\(chunk.eventTitle ?? "-")")
-                }
+            if Self.verbose, chunk.isDone {
+                StepFunPlugin.logger.info("\(Self.t)chunk 完成 contentLength=\(chunk.content?.count ?? 0)")
             }
             await onChunk(chunk)
         }
-        
+
         do {
             let result = try await super.sendStreaming(request, onChunk: wrappedChunk)
-            Self.logger.info("📝[sendStreaming] ✅ success finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
+            StepFunPlugin.logger.info("\(self.t)流式请求成功 finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
             return result
         } catch {
-            Self.logger.error("📝[sendStreaming] ❌ error=\(error.localizedDescription)")
+            StepFunPlugin.logger.error("\(self.t)流式请求失败：\(error.localizedDescription)")
             throw error
         }
     }
