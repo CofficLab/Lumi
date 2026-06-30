@@ -37,12 +37,20 @@ public struct TreeView: View, SuperLog {
 
     private var showPackageDependencies: Bool {
         guard !projectVM.currentProjectPath.isEmpty else { return false }
+        guard EditorFileTreePanelPlugin.packageDependenciesEnabled else { return false }
         return PackageDependencyResolver.shouldShowPackageDependencies(
             projectRootURL: URL(fileURLWithPath: projectVM.currentProjectPath)
         )
     }
 
     public var body: some View {
+        let showsPackageDependencies = showPackageDependencies
+        let _ = FileTreePerformanceLog.recordTreeBody(
+            projectPath: projectVM.currentProjectPath,
+            rootRefreshToken: rootRefreshToken,
+            showsPackageDependencies: showsPackageDependencies
+        )
+
         VStack(spacing: 0) {
             if projectVM.currentProjectPath.isEmpty {
                 NoProjectView()
@@ -92,7 +100,9 @@ public struct TreeView: View, SuperLog {
             if let url {
                 selectionState.syncFromEditorHighlight(url)
                 // 触发闪烁效果，帮助用户定位文件
-                selectionState.triggerFlash(for: url)
+                if EditorFileTreePanelPlugin.flashHighlightEnabled {
+                    selectionState.triggerFlash(for: url)
+                }
             } else {
                 selectionState.clearSelection()
             }

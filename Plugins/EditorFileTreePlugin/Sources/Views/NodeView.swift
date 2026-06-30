@@ -293,17 +293,19 @@ public struct NodeView: View, Equatable, SuperLog {
         .background(
             ZStack(alignment: .leading) {
                 rowBackground(isSelected: isSelected, chrome: chrome)
-                // 缩进参考线
-                HStack(spacing: 0) {
-                    ForEach(0..<depth, id: \.self) { _ in
-                        Rectangle()
-                            .fill(uiTheme.textTertiary.opacity(0.2))
-                            .frame(width: 0.5)
-                            .frame(width: 16, alignment: .leading)
+                // 缩进参考线（性能开关控制）
+                if EditorFileTreePanelPlugin.indentGuidesEnabled {
+                    HStack(spacing: 0) {
+                        ForEach(0..<depth, id: \.self) { _ in
+                            Rectangle()
+                                .fill(uiTheme.textTertiary.opacity(0.2))
+                                .frame(width: 0.5)
+                                .frame(width: 16, alignment: .leading)
+                        }
+                        Spacer()
                     }
-                    Spacer()
+                    .padding(.leading, 6) // 与 .padding(.horizontal, 6) 对齐
                 }
-                .padding(.leading, 6) // 与 .padding(.horizontal, 6) 对齐
                 // 定位到文件时的闪烁高亮覆盖层
                 Rectangle()
                     .fill(Color.accentColor)
@@ -311,37 +313,48 @@ public struct NodeView: View, Equatable, SuperLog {
             }
         )
         .contentShape(Rectangle())
-        .onDrag {
-            NSItemProvider(object: url.path as NSString)
-        } preview: {
-            FileTreeDragPreview(fileURL: url, isDirectory: isDirectory)
-        }
-        .dropDestination(for: URL.self) { urls, _ in
-            guard isDirectory, let targetURL = urls.first else { return false }
-            // 执行移动/复制操作
-            let sourcePath = targetURL.path
-            let destPath = url.path
-            return FileTreeFacade.moveItem(from: sourcePath, to: destPath) != nil
-        } isTargeted: { isTargeted in
-            // 只有文件夹才显示高亮
-            if isDirectory {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isDropTargeted = isTargeted
+        // 性能开关：禁用拖拽
+        .if(EditorFileTreePanelPlugin.dragAndDropEnabled) { view in
+            view
+                .onDrag {
+                    NSItemProvider(object: url.path as NSString)
+                } preview: {
+                    FileTreeDragPreview(fileURL: url, isDirectory: isDirectory)
                 }
-            }
+                .dropDestination(for: URL.self) { urls, _ in
+                    guard isDirectory, let targetURL = urls.first else { return false }
+                    // 执行移动/复制操作
+                    let sourcePath = targetURL.path
+                    let destPath = url.path
+                    return FileTreeFacade.moveItem(from: sourcePath, to: destPath) != nil
+                } isTargeted: { isTargeted in
+                    // 只有文件夹才显示高亮
+                    if isDirectory {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isDropTargeted = isTargeted
+                        }
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(Color.accentColor.opacity(isDropTargeted ? 0.6 : 0), lineWidth: 1.5)
+                        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+                        .allowsHitTesting(false)
+                )
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .strokeBorder(Color.accentColor.opacity(isDropTargeted ? 0.6 : 0), lineWidth: 1.5)
-                .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
-                .allowsHitTesting(false)
-        )
-        .contextMenu {
-            LazyView(contextMenuContent)
+        // 性能开关：禁用右键菜单
+        .if(EditorFileTreePanelPlugin.contextMenuEnabled) { view in
+            view.contextMenu {
+                LazyView(contextMenuContent)
+            }
         }
         .onTapGesture { handleTap() }
         .onMiddleClick { handleMiddleClick() }
-        .onHover { hovering in isHovering = hovering }
+        .onHover { hovering in
+            // 性能开关：禁用 hover 高亮
+            guard EditorFileTreePanelPlugin.hoverHighlightEnabled else { return }
+            isHovering = hovering
+        }
         .confirmationDialog(
             deleteConfirmationTitle,
             isPresented: $showDeleteConfirmation,
@@ -438,12 +451,19 @@ public struct NodeView: View, Equatable, SuperLog {
 
     /// 处理鼠标中键点击事件，以预览模式打开文件
     private func handleMiddleClick() {
+        // 性能开关：禁用中键预览
+        guard EditorFileTreePanelPlugin.middleClickPreviewEnabled else { return }
         guard !isDirectory else { return }
         onSelect(url)
     }
 
     /// 处理闪烁高亮变化
     private func handleFlashChange(newPath: String?) {
+        // 性能开关：禁用闪烁高亮
+        guard EditorFileTreePanelPlugin.flashHighlightEnabled else {
+            flashOpacity = 0
+            return
+        }
         let ownPath = PathFormatter.normalizedFilePath(url)
 
         if newPath == ownPath {
@@ -525,7 +545,10 @@ public struct NodeView: View, Equatable, SuperLog {
             isSwiftPackageDirectory: iconMetadata.isSwiftPackageDirectory,
             projectRootPath: projectRootPath
         )
-        let activeContributor = editorContext.activeFileIconTheme
+        // 性能开关：禁用 active file icon theme
+        let activeContributor = EditorFileTreePanelPlugin.activeFileIconThemeEnabled
+            ? editorContext.activeFileIconTheme
+            : nil
         if let icon = activeContributor?.icon(for: context) {
             return icon
         }
@@ -770,4 +793,17 @@ private struct LazyView<Content: View>: View {
     )
     .environmentObject(SelectionState())
     .frame(width: 250, height: 400)
+}
+
+// MARK: - Conditional View Helper
+
+private extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
 }
