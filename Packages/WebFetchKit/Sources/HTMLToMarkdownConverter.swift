@@ -529,7 +529,12 @@ public struct HTMLToMarkdownConverter {
                         var cells: [String] = []
                         for cellMatch in cellMatches {
                             // td 或 th 的内容
-                            let content = cellMatch[1].isEmpty ? cellMatch[2] : cellMatch[1]
+                            var content = ""
+                            if cellMatch.count > 2 {
+                                content = cellMatch[1].isEmpty ? cellMatch[2] : cellMatch[1]
+                            } else if cellMatch.count > 1 {
+                                content = cellMatch[1]
+                            }
                             cells.append(escapeMarkdownTableCell(stripHTMLTags(content).trimmed))
                         }
                         if !cells.isEmpty {
