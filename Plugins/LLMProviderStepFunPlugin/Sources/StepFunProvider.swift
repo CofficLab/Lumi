@@ -3,6 +3,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public static let shortName = "StepFun"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "stepfun",
@@ -50,6 +52,9 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
         "DevAssistant_ApiKey_StepFun"
     }
 
+    /// 获取 API Key 的帮助链接
+    public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
+
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(
@@ -84,5 +89,15 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
             return StepFunRenderKind.http(statusCode)
         }
         return StepFunRenderKind.requestFailed
+    }
+
+    // MARK: - API Key
+
+    public static func getApiKey() -> String {
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+    }
+
+    public static func setApiKey(_ apiKey: String) {
+        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 }

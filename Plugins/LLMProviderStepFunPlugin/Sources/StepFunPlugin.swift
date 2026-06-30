@@ -16,4 +16,15 @@ public enum StepFunPlugin: LumiPlugin {
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         [StepFunProvider()]
     }
+
+    @MainActor
+    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+        [
+            ApiKeyMissingRenderer.item,
+            Http401Renderer.item,
+            Http403Renderer.item,
+            HttpErrorRenderer.item,
+            RequestFailedRenderer.item,
+        ]
+    }
 }
