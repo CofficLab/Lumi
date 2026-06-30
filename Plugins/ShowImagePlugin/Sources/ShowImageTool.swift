@@ -1,6 +1,6 @@
-import AgentToolKit
 import AppKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import os
 import SwiftUI
@@ -65,7 +65,7 @@ public final class ShowImageState: ObservableObject {
 /// 支持两种图片源：
 /// 1. **本地文件路径**：以 `/` 开头的绝对路径
 /// 2. **远程 URL**：有效的 HTTP/HTTPS URL
-public struct ShowImageTool: SuperAgentTool, SuperLog {
+public struct ShowImageTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🖼️"
     public nonisolated static let verbose: Bool = false
     static let defaultMaxWidth = 400
@@ -73,56 +73,51 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
     static let maxMaxWidth = 800
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")
 
-    public let name = "show_image"
+    public static let info = LumiAgentToolInfo(
+        id: "show_image",
+        displayName: "Show Image",
+        description: "Display an image in the chat UI. Accepts a local file path or a remote URL. Supports PNG, JPEG, GIF, and other common image formats. The image will be shown inline in the conversation with an optional title and caption."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "在聊天 UI 中显示图片。接受本地文件路径或远程 URL。支持 PNG、JPEG、GIF 等常见图片格式。图片将内联显示在对话中，可附带可选的标题和说明。"
-        case .english:
-            return "Display an image in the chat UI. Accepts a local file path or a remote URL. Supports PNG, JPEG, GIF, and other common image formats. The image will be shown inline in the conversation with an optional title and caption."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "source": .object([
+                    "type": .string("string"),
+                    "description": .string("The image source. Can be either a local file path (e.g., /Users/name/photo.png) or a remote URL (e.g., https://example.com/image.png)"),
+                ]),
+                "title": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional title for the image, displayed above the image"),
+                ]),
+                "caption": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional caption/description for the image, displayed below the image"),
+                ]),
+                "maxWidth": .object([
+                    "type": .string("integer"),
+                    "description": .string("Optional maximum width of the displayed image in pixels (default: 400, range: 100-800)"),
+                    "minimum": .int(Self.minMaxWidth),
+                    "maximum": .int(Self.maxMaxWidth),
+                ]),
+            ]),
+            "required": .array([.string("source")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "source": [
-                    "type": "string",
-                    "description": "The image source. Can be either a local file path (e.g., /Users/name/photo.png) or a remote URL (e.g., https://example.com/image.png)",
-                ],
-                "title": [
-                    "type": "string",
-                    "description": "Optional title for the image, displayed above the image",
-                ],
-                "caption": [
-                    "type": "string",
-                    "description": "Optional caption/description for the image, displayed below the image",
-                ],
-                "maxWidth": [
-                    "type": "integer",
-                    "description": "Optional maximum width of the displayed image in pixels (default: 400, range: 100-800)",
-                    "minimum": Self.minMaxWidth,
-                    "maximum": Self.maxMaxWidth,
-                ],
-            ],
-            "required": ["source"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "显示图片"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let rawSource = arguments["source"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let rawSource = arguments.string("source") else {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }
         let source = rawSource.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -130,9 +125,9 @@ public struct ShowImageTool: SuperAgentTool, SuperLog {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }
 
-        let title = (arguments["title"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let caption = (arguments["caption"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let maxWidth = Self.normalizedMaxWidth(arguments["maxWidth"]?.value)
+        let title = (arguments.string("title") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let caption = (arguments.string("caption") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let maxWidth = Self.normalizedMaxWidth(arguments["maxWidth"]?.anyValue)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🖼️ 显示图片：\(source)")
