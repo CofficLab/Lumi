@@ -1,10 +1,15 @@
 import Foundation
+import SuperLogKit
+import os
 
-public struct RAGIndexer {
+public struct RAGIndexer: SuperLog {
+    public nonisolated static let emoji = "📇"
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.indexer")
+
     private let store: any RAGStore
     private let chunker: RAGChunker
     private let embeddingProvider: RAGEmbeddingProvider
-    private let logger: RAGLogger
     private let onProgress: ((RAGIndexProgressEvent) -> Void)?
 
     private static let progressLogInterval = 50
@@ -12,20 +17,20 @@ public struct RAGIndexer {
     init(
         store: any RAGStore,
         embeddingProvider: RAGEmbeddingProvider,
-        logger: RAGLogger = NullRAGLogger(),
         onProgress: ((RAGIndexProgressEvent) -> Void)? = nil
     ) {
         self.store = store
         self.chunker = RAGChunker()
         self.embeddingProvider = embeddingProvider
-        self.logger = logger
         self.onProgress = onProgress
     }
 
     public func rebuildProjectIndex(at projectPath: String) throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
-        logger.info("全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
+        }
 
         for state in indexedStates.values {
             try store.deleteChunks(projectPath: projectPath, filePath: state.filePath)
@@ -43,15 +48,19 @@ public struct RAGIndexer {
             embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
-        logger.info(
-            "全量重建结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)全量重建结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+            )
+        }
         return stats
     }
 
     public func indexProjectIncrementally(at projectPath: String) throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
-        logger.info("增量索引开始 files=\(files.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)增量索引开始 files=\(files.count)")
+        }
         var stats = try indexFiles(files, projectPath: projectPath)
 
         // 删除已被移除的文件索引
@@ -72,9 +81,11 @@ public struct RAGIndexer {
             embeddingDimension: embeddingProvider.dimension
         )
         stats.chunkCount = chunkCount
-        logger.info(
-            "增量索引结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)增量索引结束 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) fileCount=\(fileCount) chunkCount=\(chunkCount)"
+            )
+        }
         return stats
     }
 
@@ -142,9 +153,11 @@ public struct RAGIndexer {
 
     private func logProgressIfNeeded(stats: RAGIndexStats, total: Int, currentFilePath: String, projectPath: String) {
         guard stats.scannedFiles % Self.progressLogInterval == 0 || stats.scannedFiles == total else { return }
-        logger.info(
-            "进度 \(stats.scannedFiles)/\(total) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount) file=\(currentFilePath)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)进度 \(stats.scannedFiles)/\(total) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount) file=\(currentFilePath)"
+            )
+        }
         let event = RAGIndexProgressEvent(
             projectPath: projectPath,
             scannedFiles: stats.scannedFiles,

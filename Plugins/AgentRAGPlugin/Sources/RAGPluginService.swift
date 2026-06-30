@@ -7,7 +7,6 @@ enum RAGPluginService {
         databaseDirectoryProvider: {
             RAGPluginRuntime.databaseDirectoryProvider()
         },
-        logger: OSLogRAGLogger(),
         onProgress: { event in
             NotificationCenter.postRAGIndexProgress(event)
         }

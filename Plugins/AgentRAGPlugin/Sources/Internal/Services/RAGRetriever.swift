@@ -1,14 +1,18 @@
 import Foundation
+import SuperLogKit
+import os
 
-public struct RAGRetriever {
+public struct RAGRetriever: SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.retriever")
+
     private let store: any RAGStore
     private let cache: RAGCache
-    private let logger: RAGLogger
 
-    init(store: any RAGStore, cache: RAGCache = RAGCache(), logger: RAGLogger = NullRAGLogger()) {
+    init(store: any RAGStore, cache: RAGCache = RAGCache()) {
         self.store = store
         self.cache = cache
-        self.logger = logger
     }
 
     public func retrieve(
@@ -20,7 +24,9 @@ public struct RAGRetriever {
         // 检查缓存
         let cacheKey = cache.buildKey(query: query, projectPath: projectPath, topK: topK)
         if let cached = cache.get(key: cacheKey) {
-            logger.info("[RAGRetriever] 缓存命中: \(query.prefix(40))")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)缓存命中: \(query.prefix(40))")
+            }
             return cached
         }
         let start = CFAbsoluteTimeGetCurrent()
@@ -50,18 +56,24 @@ public struct RAGRetriever {
             let lexicalDuration = (CFAbsoluteTimeGetCurrent() - lexicalStart) * 1000
             usedFallback = true
 
-            logger.info("[RAGRetriever] 词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count), 向量后端: \(usingSwiftCosine ? "swiftCosine(fallback=\(fallbackLimit))" : "sqliteVec")")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count), 向量后端: \(usingSwiftCosine ? "swiftCosine(fallback=\(fallbackLimit))" : "sqliteVec")")
+            }
         } else {
             candidates = annCandidates
             usedFallback = false
         }
 
         if candidates.isEmpty {
-            logger.info("[RAGRetriever] 未找到候选文档")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)未找到候选文档")
+            }
             return []
         }
 
-        logger.info("[RAGRetriever] ANN 检索耗时：\(String(format: "%.2f", annDuration))ms, 结果数：\(annCandidates.count), 使用fallback: \(usedFallback)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)ANN 检索耗时：\(String(format: "%.2f", annDuration))ms, 结果数：\(annCandidates.count), 使用fallback: \(usedFallback)")
+        }
 
         // 相似度计算
         let scoringStart = CFAbsoluteTimeGetCurrent()
@@ -83,15 +95,17 @@ public struct RAGRetriever {
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
 
-        logger.info("[RAGRetriever] 相似度计算耗时：\(String(format: "%.2f", scoringDuration))ms, 候选数：\(candidates.count), 返回：\(top.count)")
-        logger.info("[RAGRetriever] retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)相似度计算耗时：\(String(format: "%.2f", scoringDuration))ms, 候选数：\(candidates.count), 返回：\(top.count)")
+            Self.logger.info("\(Self.t)retrieve 总耗时：\(String(format: "%.2f", totalDuration))ms")
+        }
 
         // 性能预警阈值：>3s 升级为 error 级（语义检索明显异常，可能 sqlite-vec 未启用或候选过多），
         // 200ms-3s 维持 warning（轻度偏慢），便于在日志里区分严重程度。
         if totalDuration > 3000 {
-            logger.error("[RAGRetriever]🚨 retrieve 耗时严重过长：\(String(format: "%.2f", totalDuration))ms (>3000ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            Self.logger.error("\(Self.t)🚨 retrieve 耗时严重过长：\(String(format: "%.2f", totalDuration))ms (>3000ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
         } else if totalDuration > 200 {
-            logger.warning("[RAGRetriever]⚠️ retrieve 耗时偏长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            Self.logger.warning("\(Self.t)⚠️ retrieve 耗时偏长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
         }
 
         let results = top.map {

@@ -169,7 +169,7 @@ public struct RAGStatusBarView: View, SuperLog {
         // 避免频繁更新（节流：最小间隔 1 秒）
         let now = Date()
         guard now.timeIntervalSince(lastUpdateAttempt) > 1.0 else {
-            if RAGPlugin.verbose {
+            if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
             }
             return
@@ -178,7 +178,7 @@ public struct RAGStatusBarView: View, SuperLog {
 
         // 如果正在索引，不更新状态（避免冲突）
         if isIndexing {
-            if RAGPlugin.verbose {
+            if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
             }
             return
@@ -197,7 +197,7 @@ public struct RAGStatusBarView: View, SuperLog {
                 errorMessage = nil
                 isNotInitialized = false
 
-                if RAGPlugin.verbose, let status = indexStatus {
+                if Self.verbose, let status = indexStatus {
                     RAGPlugin.logger.info(
                         "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
                     )
@@ -208,7 +208,7 @@ public struct RAGStatusBarView: View, SuperLog {
             if let ragError = error as? RAGError, case .notInitialized = ragError {
                 isNotInitialized = true
                 errorMessage = nil
-                if RAGPlugin.verbose {
+                if Self.verbose {
                     RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
                 }
                 return
@@ -217,7 +217,7 @@ public struct RAGStatusBarView: View, SuperLog {
             // 只在没有状态且不在索引中时才显示错误
             if indexStatus == nil && !isIndexing && !isNotInitialized {
                 errorMessage = LumiPluginLocalization.string("Failed to get status", bundle: .module)
-                if RAGPlugin.verbose {
+                if Self.verbose {
                     RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
                 }
             } else {
