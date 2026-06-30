@@ -130,10 +130,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName
-        )
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 
     private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {

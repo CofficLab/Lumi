@@ -90,19 +90,17 @@ private struct LumiProviderTypeAdapter: LLMAvailabilityProviderType {
     let provider: any LumiLLMProvider
 
     var hasApiKey: Bool {
-        // 本地供应商始终视为有凭证
         let info = type(of: provider).info
         if info.isLocal { return true }
 
-        // 远程供应商检查 Keychain 中是否有 API Key
-        let storageKey = LumiLLMProviderKeys.apiKeyStorageKey(forProviderID: info.id) ?? "DevAssistant_ApiKey_\(info.id)"
+        guard let storageKey = info.apiKeyStorageKey else { return false }
         let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey)
         return key != nil && !(key?.isEmpty ?? true)
     }
 
     func getApiKey() -> String {
         let info = type(of: provider).info
-        let storageKey = LumiLLMProviderKeys.apiKeyStorageKey(forProviderID: info.id) ?? "DevAssistant_ApiKey_\(info.id)"
+        let storageKey = info.apiKeyStorageKey ?? ""
         return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
     }
 }

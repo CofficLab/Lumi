@@ -65,7 +65,12 @@ public final class ProviderRenderKindManager: ProviderRenderKindManaging, @unche
     public func registerProviderPrefix(_ prefix: String, for providerId: String) {
         lock.lock()
         defer { lock.unlock() }
-        
+
+        // 移除该 provider 的旧前缀，避免遗留
+        if let oldPrefix = prefixByProvider[providerId] {
+            providerByPrefix.removeValue(forKey: oldPrefix)
+        }
+
         prefixByProvider[providerId] = prefix
         providerByPrefix[prefix] = providerId
     }

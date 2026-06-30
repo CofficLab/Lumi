@@ -26,20 +26,18 @@ public enum LumiLLMProviderStatusSupport {
 
     /// Default status for remote providers that require an API key.
     public static func statusForRemoteAPIKeyProvider(
-        providerID: String,
-        displayName: String,
-        isLocal: Bool = false
+        providerInfo: LumiLLMProviderInfo
     ) -> LumiLLMProviderStatus? {
-        guard !isLocal else { return nil }
-        guard hasConfiguredAPIKey(providerID: providerID) else {
-            return missingAPIKeyStatus(providerName: displayName)
+        guard !providerInfo.isLocal else { return nil }
+        guard hasConfiguredAPIKey(providerInfo: providerInfo) else {
+            return missingAPIKeyStatus(providerName: providerInfo.displayName)
         }
         return nil
     }
 
-    public static func hasConfiguredAPIKey(providerID: String) -> Bool {
-        guard !LumiLLMProviderKeys.isLocalProvider(id: providerID),
-              let storageKey = LumiLLMProviderKeys.apiKeyStorageKey(forProviderID: providerID)
+    public static func hasConfiguredAPIKey(providerInfo: LumiLLMProviderInfo) -> Bool {
+        guard !providerInfo.isLocal,
+              let storageKey = providerInfo.apiKeyStorageKey
         else {
             return true
         }

@@ -42,6 +42,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let modelDisplayNames: [String: String]
     /// 供应商官网/控制台页面（用于设置页跳转）
     public let websiteURL: URL
+    /// API Key 在 Keychain/UserDefaults 中的存储键；本地供应商为 nil
+    public let apiKeyStorageKey: String?
 
     public init(
         id: String,
@@ -53,7 +55,8 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         contextWindowSizes: [String: Int] = [:],
         modelCapabilities: [String: LumiModelCapabilities] = [:],
         modelDisplayNames: [String: String] = [:],
-        websiteURL: URL
+        websiteURL: URL,
+        apiKeyStorageKey: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -65,6 +68,12 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.modelCapabilities = modelCapabilities
         self.modelDisplayNames = modelDisplayNames
         self.websiteURL = websiteURL
+        // 本地供应商无需 API Key；远程供应商使用传入值或按 id 生成默认键
+        if isLocal {
+            self.apiKeyStorageKey = nil
+        } else {
+            self.apiKeyStorageKey = apiKeyStorageKey ?? "DevAssistant_ApiKey_\(id)"
+        }
     }
 }
 

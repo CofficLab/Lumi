@@ -23,11 +23,20 @@ import LumiCoreKit
         ),
     ]
 
+    let anthropicProvider = LumiLLMProviderInfo(
+        id: "anthropic",
+        displayName: "Anthropic",
+        defaultModel: "claude-sonnet-4-20250514",
+        availableModels: ["claude-sonnet-4-20250514"],
+        contextWindowSizes: ["claude-sonnet-4-20250514": 200_000],
+        websiteURL: URL(string: "https://example.com")!
+    )
+
     let usage = LumiConversationContextCalculator.usage(
         messages: messages,
         providerID: "anthropic",
         modelName: "claude-sonnet-4-20250514",
-        providerInfos: []
+        providerInfos: [anthropicProvider]
     )
 
     #expect(usage.currentTokens == 12_100)

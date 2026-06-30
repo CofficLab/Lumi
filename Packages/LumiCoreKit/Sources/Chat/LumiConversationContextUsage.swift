@@ -62,49 +62,16 @@ public enum LumiConversationContextCalculator {
         modelName: String?,
         providerInfos: [LumiLLMProviderInfo]
     ) -> Int {
-        if let providerID,
-           let modelName,
-           let providerLimit = providerInfos.first(where: { $0.id == providerID })?.contextWindowSizes[modelName],
-           providerLimit > 0 {
-            return providerLimit
+        guard let providerID,
+              let modelName,
+              let providerLimit = providerInfos.first(where: { $0.id == providerID })?.contextWindowSizes[modelName],
+              providerLimit > 0 else {
+            return 0
         }
-        return KnownModelContextLimits.lookup(modelName)
+        return providerLimit
     }
 
     private static func estimatedTokenCount(for content: String) -> Int {
         content.count / 4
-    }
-}
-
-enum KnownModelContextLimits {
-    static func lookup(_ modelName: String?) -> Int {
-        guard let modelName = modelName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-              !modelName.isEmpty
-        else {
-            return 0
-        }
-
-        if modelName.hasPrefix("gpt-5") {
-            return 1_000_000
-        }
-        if modelName.contains("claude") {
-            return 200_000
-        }
-        if modelName.contains("gpt-4o") || modelName.contains("gpt-4-turbo") || modelName == "gpt-4" {
-            return 128_000
-        }
-        if modelName.contains("deepseek") {
-            return 128_000
-        }
-        if modelName.contains("gpt-3.5") {
-            return 16_385
-        }
-        if modelName.contains("gemini") {
-            return 1_000_000
-        }
-        if modelName.contains("qwen") {
-            return 128_000
-        }
-        return 0
     }
 }
