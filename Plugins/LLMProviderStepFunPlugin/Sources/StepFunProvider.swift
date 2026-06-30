@@ -9,6 +9,11 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
     nonisolated static let verbose = true
     public static let shortName = "StepFun StepPlan"
 
+    public override func logRawStreamChunk(_ data: Data) {
+        guard Self.verbose, let text = String(data: data, encoding: .utf8), !text.isEmpty else { return }
+        StepFunPlugin.logger.info("\(Self.t)raw chunk: \(text)")
+    }
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "stepfun",

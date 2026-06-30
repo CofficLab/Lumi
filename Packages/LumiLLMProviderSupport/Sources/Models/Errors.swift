@@ -81,6 +81,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         fatalError("\(Self.self) must override providerStatus()")
     }
 
+    open func logRawStreamChunk(_ data: Data) {
+        // 子类可覆写以记录原始流式 chunk
+    }
+
     open func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -162,12 +166,14 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                     )
                 },
                 onChunk: { [self] chunkData in
+                    logRawStreamChunk(chunkData)
                     await Self.processStreamChunk(
                         chunkData: chunkData,
                         parse: { try self.adapter.parseStreamChunk(data: $0) },
                         state: state,
                         onChunk: chunkHandler
                     )
+                    return true
                 }
             )
         } catch is CancellationError {
