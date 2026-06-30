@@ -63,6 +63,6 @@ struct ProjectControlView: View {
     }
 
     private func syncProjectPath(_ path: String?) {
-        projectPathStore?.setCurrentProjectPath(path ?? "")
+        projectPathStore?.setCurrentProjectPath(path ?? "", reason: "ProjectControlView同步")
     }
 }

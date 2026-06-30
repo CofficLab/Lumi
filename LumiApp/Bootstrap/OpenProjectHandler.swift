@@ -15,7 +15,7 @@ final class OpenProjectHandler {
             return
         }
 
-        RootContainer.shared.projectPathStore.setCurrentProjectPath(normalized)
+        RootContainer.shared.projectPathStore.setCurrentProjectPath(normalized, reason: "外部打开项目")
         NotificationCenter.default.post(
             name: .lumiOpenExternalProject,
             object: nil,
