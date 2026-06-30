@@ -398,6 +398,7 @@ public struct NodeView: View, Equatable {
 
     /// 当前节点的 Git 状态（从 snapshot 查询，文件查文件状态，目录查聚合状态）
     private var currentGitStatus: GitStatus? {
+        guard EditorFileTreePanelPlugin.gitStatusEnabled else { return nil }
         guard !gitStatusSnapshot.isEmpty else { return nil }
         let path = gitRelativePath
         if isDirectory {
