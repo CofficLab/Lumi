@@ -1,80 +1,67 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
 /// 检索记忆工具。
 ///
 /// 根据查询文本检索相关记忆。
-public struct RecallMemoryTool: SuperAgentTool {
-    public let name = "recall_memory"
+public struct RecallMemoryTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "recall_memory",
+        displayName: "Recall Memory",
+        description: "Search for memories related to a query. Use when you need to recall content discussed in previous conversations."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "检索与查询相关的记忆。当你需要回忆过往对话中讨论的内容时使用。"
-        case .english:
-            return "Search for memories related to a query. Use when you need to recall content discussed in previous conversations."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "query": .object([
+                    "type": .string("string"),
+                    "description": .string("The search query to find relevant memories"),
+                ]),
+                "scope": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("global"), .string("project")]),
+                    "description": .string("Search scope: global (global memories) or project (current project memories). Defaults to global"),
+                ]),
+                "project_path": .object([
+                    "type": .string("string"),
+                    "description": .string("Required when scope=project. The absolute path to the current project."),
+                ]),
+                "max_results": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum number of results to return (default: 5, max: 20)"),
+                    "minimum": .int(MemoryToolInput.minMaxResults),
+                    "maximum": .int(MemoryToolInput.maxMaxResults),
+                ]),
+            ]),
+            "required": .array([.string("query")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let scopeDesc: String
-        switch language {
-        case .chinese:
-            scopeDesc = "搜索范围：global（全局记忆）或 project（当前项目记忆）。默认为 global"
-        case .english:
-            scopeDesc = "Search scope: global (global memories) or project (current project memories). Defaults to global"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "query": [
-                    "type": "string",
-                    "description": "The search query to find relevant memories",
-                ],
-                "scope": [
-                    "type": "string",
-                    "enum": ["global", "project"],
-                    "description": scopeDesc,
-                ],
-                "project_path": [
-                    "type": "string",
-                    "description": "Required when scope=project. The absolute path to the current project.",
-                ],
-                "max_results": [
-                    "type": "integer",
-                    "description": "Maximum number of results to return (default: 5, max: 20)",
-                    "minimum": MemoryToolInput.minMaxResults,
-                    "maximum": MemoryToolInput.maxMaxResults,
-                ],
-            ],
-            "required": ["query"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "检索记忆"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let query = MemoryToolInput.string(arguments["query"]?.value) else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let query = MemoryToolInput.string(arguments["query"]?.anyValue) else {
             throw MemoryToolError.missingArgument("query")
         }
 
         let scopeRaw = try MemoryToolInput.scope(
-            arguments["scope"]?.value,
+            arguments["scope"]?.anyValue,
             default: "global",
             allowed: ["global", "project"]
         )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)
@@ -82,7 +69,7 @@ public struct RecallMemoryTool: SuperAgentTool {
             scope = .global
         }
 
-        let cappedMax = MemoryToolInput.maxResults(arguments["max_results"]?.value)
+        let cappedMax = MemoryToolInput.maxResults(arguments["max_results"]?.anyValue)
 
         let memories = await MemoryRetrievalService.shared.findRelevant(
             query: query,
