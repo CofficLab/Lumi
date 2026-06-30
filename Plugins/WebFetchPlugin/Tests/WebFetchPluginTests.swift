@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import Testing
 @testable import WebFetchPlugin
@@ -29,20 +28,36 @@ struct PluginWebFetchTests {
     @Test("tool schema requires url")
     func toolSchemaRequiresURL() throws {
         let tool = WebFetchTool()
-        let schema = tool.inputSchema(for: .english)
+        let schema = tool.inputSchema
 
-        let required = try #require(schema["required"] as? [String])
+        guard case .object(let keys) = schema else {
+            Issue.record("schema should be an object")
+            return
+        }
+        guard case .array(let requiredValues) = keys["required"] else {
+            Issue.record("schema should declare required array")
+            return
+        }
+        let required = requiredValues.compactMap { value -> String? in
+            if case .string(let s) = value { return s }
+            return nil
+        }
         #expect(required == ["url"])
 
-        let properties = try #require(schema["properties"] as? [String: [String: String]])
-        #expect(properties["url"]?["type"] == "string")
+        guard case .object(let properties) = keys["properties"],
+              case .object(let urlProps) = properties["url"],
+              case .string(let urlType) = urlProps["type"] else {
+            Issue.record("schema should declare url property type")
+            return
+        }
+        #expect(urlType == "string")
     }
 
     @Test("tool risk level is medium")
     func toolRiskLevel() {
         let tool = WebFetchTool()
 
-        #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
+        #expect(tool.riskLevel(arguments: [:], context: nil) == .medium)
     }
 
     @Test("localization catalog is packaged")
