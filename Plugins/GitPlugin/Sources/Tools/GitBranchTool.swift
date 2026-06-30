@@ -1,67 +1,47 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 分支管理工具
-public struct GitBranchTool: SuperAgentTool, SuperLog {
+public struct GitBranchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔀"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_branch"
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出、创建或切换 Git 分支。不传 action 时默认列出本地分支。"
-        case .english:
-            return "List, create, or switch Git branches. Defaults to listing local branches when no action is specified."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "git_branch",
+        displayName: "Git Branch",
+        description: "List, create, or switch Git branches. Defaults to listing local branches when no action is specified."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+                "action": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("list"), .string("create"), .string("checkout")]),
+                    "description": .string("Action: list (default), create, or checkout"),
+                ]),
+                "name": .object([
+                    "type": .string("string"),
+                    "description": .string("Branch name (required for create/checkout)"),
+                ]),
+                "remote": .object([
+                    "type": .string("boolean"),
+                    "description": .string("Whether to include remote branches (list only), default false"),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        let actionDesc: String
-        let nameDesc: String
-        let remoteDesc: String
-
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-            actionDesc = "操作类型：list（列出分支，默认）、create（创建分支）、checkout（切换分支）"
-            nameDesc = "分支名称（create/checkout 时必填）"
-            remoteDesc = "是否包含远程分支（仅 list 有效），默认 false"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-            actionDesc = "Action: list (default), create, or checkout"
-            nameDesc = "Branch name (required for create/checkout)"
-            remoteDesc = "Whether to include remote branches (list only), default false"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc,
-                ],
-                "action": [
-                    "type": "string",
-                    "enum": ["list", "create", "checkout"],
-                    "description": actionDesc,
-                ],
-                "name": [
-                    "type": "string",
-                    "description": nameDesc,
-                ],
-                "remote": [
-                    "type": "boolean",
-                    "description": remoteDesc,
-                ],
-            ],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        let action = arguments["action"]?.value as? String ?? "list"
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        let action = arguments.string("action") ?? "list"
         switch action {
         case "create": return "创建分支"
         case "checkout": return "切换分支"
@@ -69,8 +49,8 @@ public struct GitBranchTool: SuperAgentTool, SuperLog {
         }
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        guard let action = arguments["action"]?.value as? String else { return .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+        guard let action = arguments.string("action") else { return .low }
         switch action {
         case "list": return .low
         case "create", "checkout": return .medium
@@ -78,11 +58,11 @@ public struct GitBranchTool: SuperAgentTool, SuperLog {
         }
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
-        let action = arguments["action"]?.value as? String ?? "list"
-        let name = arguments["name"]?.value as? String
-        let remote = arguments["remote"]?.value as? Bool ?? false
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
+        let action = arguments.string("action") ?? "list"
+        let name = arguments.string("name")
+        let remote = arguments.bool("remote") ?? false
 
         if Self.verbose {
             GitPlugin.logger.info("\(Self.t)分支操作：\(action) name=\(name ?? "nil")")

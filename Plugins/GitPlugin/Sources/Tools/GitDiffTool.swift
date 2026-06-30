@@ -1,66 +1,52 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 差异工具
-public struct GitDiffTool: SuperAgentTool, SuperLog {
+public struct GitDiffTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_diff"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查看 Git 仓库的代码变更。支持查看工作区变更或暂存区变更。"
-        case .english:
-            return "View code changes in a Git repository. Supports working tree changes and staged changes."
-        }
+
+    public static let info = LumiAgentToolInfo(
+        id: "git_diff",
+        displayName: "Git Diff",
+        description: "View code changes in a Git repository. Supports working tree changes and staged changes."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+                "staged": .object([
+                    "type": .string("boolean"),
+                    "description": .string("Whether to view staged changes. false means viewing working tree changes"),
+                ]),
+                "file": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional, only view changes for the specified file"),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        let stagedDesc: String
-        let fileDesc: String
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-            stagedDesc = "是否查看暂存区的差异，false 表示查看工作区的差异"
-            fileDesc = "可选，只查看指定文件的差异"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-            stagedDesc = "Whether to view staged changes. false means viewing working tree changes"
-            fileDesc = "Optional, only view changes for the specified file"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc
-                ],
-                "staged": [
-                    "type": "boolean",
-                    "description": stagedDesc
-                ],
-                "file": [
-                    "type": "string",
-                    "description": fileDesc
-                ]
-            ]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看代码变更"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
-        let staged = arguments["staged"]?.value as? Bool ?? false
-        let file = arguments["file"]?.value as? String
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
+        let staged = arguments.bool("staged") ?? false
+        let file = arguments.string("file")
 
         if Self.verbose {
             GitPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
@@ -69,7 +55,7 @@ public struct GitDiffTool: SuperAgentTool, SuperLog {
         do {
             // 验证路径是否在允许的范围内
             let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
-            
+
             let diff = try await GitService.shared.getDiff(
                 path: validatedPath,
                 staged: staged,

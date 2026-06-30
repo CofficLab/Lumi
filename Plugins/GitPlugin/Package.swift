@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LLMKit"),
         .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
         .package(path: "../../Packages/LumiCoreKit"),
@@ -27,7 +26,6 @@ let package = Package(
         .target(
             name: "GitPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
