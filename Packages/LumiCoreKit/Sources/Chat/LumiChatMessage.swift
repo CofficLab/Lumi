@@ -14,6 +14,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var metadata: [String: String]
     public var toolCalls: [LumiToolCall]?
     public var toolCallID: String?
+    public var reasoningContent: String?
 
     public init(
         id: UUID = UUID(),
@@ -28,7 +29,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         renderKind: String? = nil,
         metadata: [String: String] = [:],
         toolCalls: [LumiToolCall]? = nil,
-        toolCallID: String? = nil
+        toolCallID: String? = nil,
+        reasoningContent: String? = nil
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -43,5 +45,6 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.metadata = metadata
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
+        self.reasoningContent = reasoningContent
     }
 }

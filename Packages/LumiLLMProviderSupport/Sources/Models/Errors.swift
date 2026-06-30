@@ -214,7 +214,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             metadata: await Self.messageMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            }
+            },
+            reasoningContent: await state.getFinalThinking()
         )
         return .success(message)
     }
@@ -293,7 +294,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             lines.append("Response Body:")
             lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(responseBody))
         }
-
         return lines.joined(separator: "\n")
     }
 
@@ -600,6 +600,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         }
 
         await state.saveCurrentToolCall()
+
         if let error = await state.streamError {
             let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
                 summary: error,

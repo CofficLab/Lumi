@@ -88,10 +88,17 @@ struct ChatMessageBubble: View {
                     .foregroundColor(theme.textTertiary)
             }
 
-            Text(message.content)
-                .font(.appBody)
-                .foregroundColor(theme.textPrimary)
-                .textSelection(.enabled)
+            if let reasoning = message.reasoningContent, !reasoning.isEmpty {
+                ThinkingBlockView(text: reasoning)
+                    .padding(.top, 4)
+            }
+
+            if !message.content.isEmpty {
+                Text(message.content)
+                    .font(.appBody)
+                    .foregroundColor(theme.textPrimary)
+                    .textSelection(.enabled)
+            }
 
             if showRawMessage {
                 Text(rawDescription)

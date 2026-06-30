@@ -50,9 +50,10 @@ final class ConversationStatusState {
                 from: thinkingTextBufferByConversationID[conversationID] ?? ""
             )
             let accumulated = thinkingTextBufferByConversationID[conversationID] ?? ""
+            let title = chunk.eventTitle.isEmpty ? "思考中" : chunk.eventTitle
             setStatus(
                 conversationID: conversationID,
-                content: Self.statusLineWithTailPreview(accumulated: accumulated, title: chunk.eventTitle)
+                content: Self.statusLineWithTailPreview(accumulated: accumulated, title: title)
             )
             return
         }
