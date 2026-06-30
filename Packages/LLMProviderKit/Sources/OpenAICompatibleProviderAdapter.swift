@@ -249,27 +249,50 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             return StreamChunk(error: errorMessage)
         }
 
+        // MARK: - Parse content/reasoning/toolCalls first
+        if let choices = json["choices"] as? [[String: Any]],
+           let firstChoice = choices.first,
+           let delta = firstChoice["delta"] as? [String: Any] {
+            let usage = json["usage"] as? [String: Any]
+            let inputTokens = usage?["prompt_tokens"] as? Int
+            let outputTokens = usage?["completion_tokens"] as? Int
+
+            // 优先解析 reasoning_content（思考过程）
+            // 注意：即使同时包含 content，也要先处理 reasoning_content
+            if let reasoningContent = delta["reasoning_content"] as? String,
+               !reasoningContent.isEmpty {
+                return StreamChunk(
+                    content: reasoningContent,
+                    eventType: .thinkingDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens
+                )
+            }
+
+            // 解析正文内容（跳过空字符串）
+            if let content = delta["content"] as? String, !content.isEmpty {
+                return StreamChunk(
+                    content: content,
+                    eventType: .textDelta,
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens
+                )
+            }
+
+            // 解析工具调用
+            if let toolCalls = delta["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
+                return parseToolCallDelta(toolCalls)
+            }
+        }
+
+        // MARK: - Usage-only chunk (no content delta)
+        // 只有当没有 content/reasoning/toolCalls 时，才单独返回 usage
+        // 某些供应商（如 StepFun）每个 chunk 都带 usage，但不能因此跳过内容
         if let usage = json["usage"] as? [String: Any] {
             return StreamChunk(
                 inputTokens: usage["prompt_tokens"] as? Int,
                 outputTokens: usage["completion_tokens"] as? Int
             )
-        }
-
-        if let choices = json["choices"] as? [[String: Any]],
-           let firstChoice = choices.first,
-           let delta = firstChoice["delta"] as? [String: Any] {
-            if let reasoningContent = delta["reasoning_content"] as? String {
-                return StreamChunk(content: reasoningContent, eventType: .thinkingDelta)
-            }
-
-            if let content = delta["content"] as? String {
-                return StreamChunk(content: content, eventType: .textDelta)
-            }
-
-            if let toolCalls = delta["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
-                return parseToolCallDelta(toolCalls)
-            }
         }
 
         if configuration.returnsEmptyChunkWhenNoDelta {
