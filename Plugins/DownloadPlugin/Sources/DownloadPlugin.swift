@@ -1,4 +1,3 @@
-import AgentToolKit
 import DownloadKit
 import Foundation
 import LumiCoreKit
@@ -40,12 +39,12 @@ public enum DownloadPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         let manager = sharedManager
         return [
-            DownloadFileTool(manager: manager).asLumiAgentTool(),
-            DownloadBatchTool(manager: manager).asLumiAgentTool(),
-            ListDownloadsTool(manager: manager).asLumiAgentTool(),
-            DownloadProgressTool(manager: manager).asLumiAgentTool(),
-            CancelDownloadTool(manager: manager).asLumiAgentTool(),
-            RetryDownloadTool(manager: manager).asLumiAgentTool(),
+            DownloadFileTool(manager: manager),
+            DownloadBatchTool(manager: manager),
+            ListDownloadsTool(manager: manager),
+            DownloadProgressTool(manager: manager),
+            CancelDownloadTool(manager: manager),
+            RetryDownloadTool(manager: manager),
         ]
     }
 }

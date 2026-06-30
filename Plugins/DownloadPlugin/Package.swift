@@ -15,7 +15,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/DownloadKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -24,7 +23,6 @@ let package = Package(
             name: "DownloadPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

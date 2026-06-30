@@ -1,14 +1,23 @@
-import AgentToolKit
 import DownloadKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
 /// 列出下载任务工具
 ///
-/// 返回当前所有下载任务的简要状态列表。
-public struct ListDownloadsTool: SuperAgentTool, SuperLog {
+/// 列出所有当前下载任务及其状态。
+public struct ListDownloadsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "list_downloads",
+        displayName: LumiPluginLocalization.string("List Downloads", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "List all current download tasks and their status, including pending, downloading, completed, failed, and cancelled tasks.",
+            bundle: .module
+        )
+    )
 
     private let manager: DownloadManager
 
@@ -16,75 +25,53 @@ public struct ListDownloadsTool: SuperAgentTool, SuperLog {
         self.manager = manager
     }
 
-    public let name = "list_downloads"
-
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出所有当前活动的下载任务及其状态。包括等待中、下载中、已完成、失败和已取消的任务。"
-        case .english:
-            return "List all current download tasks and their status, including pending, downloading, completed, failed, and cancelled tasks."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:]),
+            "required": .array([])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [:],
-            "required": [] as [String],
-        ]
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        "列出所有下载任务"
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "列出下载任务"
-    }
-
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         let states = await manager.allTaskStates()
 
         if states.isEmpty {
             return "📋 当前没有下载任务"
         }
 
-        var lines: [String] = []
-        var pendingCount = 0
-        var downloadingCount = 0
-        var completedCount = 0
-        var failedCount = 0
-        var cancelledCount = 0
-
+        var lines: [String] = ["📋 当前下载任务:", ""]
+        
         for (taskId, state) in states {
-            let statusLabel: String
+            let status: String
             switch state {
             case .pending:
-                statusLabel = "⏳ 等待中"
-                pendingCount += 1
+                status = "⏳ 等待中"
             case .downloading(let progress):
                 let percent = progress.fractionCompleted * 100
                 let speedMB = (progress.bytesPerSecond ?? 0) / 1_048_576
-                statusLabel = String(format: "⬇️ 下载中 %.1f%% (%.1f MB/s)", percent, speedMB)
-                downloadingCount += 1
+                status = String(format: "⬇️ 下载中 %.1f%% (%.1f MB/s)", percent, speedMB)
             case .completed:
-                statusLabel = "✅ 完成"
-                completedCount += 1
+                status = "✅ 完成"
             case .failed(let error):
-                statusLabel = "❌ 失败: \(error.localizedDescription)"
-                failedCount += 1
+                status = "❌ 失败: \(error.localizedDescription)"
             case .cancelled:
-                statusLabel = "⛔ 已取消"
-                cancelledCount += 1
+                status = "⛔ 已取消"
             }
 
-            lines.append("• \(taskId.prefix(8))... — \(statusLabel)")
+            lines.append("\(status) ")
+            lines.append("   ID: \(taskId)")
+            lines.append("")
         }
 
-        var header = "📋 下载任务 (共 \(states.count) 个)\n"
-        header += "下载中: \(downloadingCount) | 等待: \(pendingCount) | 完成: \(completedCount) | 失败: \(failedCount) | 取消: \(cancelledCount)\n\n"
-
-        return header + lines.joined(separator: "\n")
+        return lines.joined(separator: "\n")
     }
 }
