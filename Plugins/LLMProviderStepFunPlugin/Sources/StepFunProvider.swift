@@ -6,7 +6,7 @@ import SuperLogKit
 
 public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
     nonisolated public static let emoji = "🌟"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     public static let shortName = "StepFun StepPlan"
 
     public override class var info: LumiLLMProviderInfo {
@@ -81,9 +81,18 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
             StepFunPlugin.logger.info("\(Self.t)开始流式请求 model=\(request.model), messagesCount=\(request.messages.count)")
         }
 
+        final class AccumulatedState: @unchecked Sendable {
+            var value = ""
+        }
+        let accumulated = AccumulatedState()
         let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
-            if Self.verbose, chunk.isDone {
-                StepFunPlugin.logger.info("\(Self.t)chunk 完成 contentLength=\(chunk.content?.count ?? 0)")
+            if let content = chunk.content, !content.isEmpty {
+                accumulated.value += content
+            }
+
+            if chunk.isDone {
+                StepFunPlugin.logger.info("\(Self.t)流式输出完成：\n\(accumulated.value)")
+                StepFunPlugin.logger.info("\(Self.t)chunk 完成 contentLength=\(accumulated.value.count)")
             }
             await onChunk(chunk)
         }
@@ -95,6 +104,9 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
             }
             return result
         } catch {
+            if !accumulated.value.isEmpty {
+                StepFunPlugin.logger.info("\(self.t)流式输出已产生内容：\n\(accumulated.value)")
+            }
             if Self.verbose {
                 StepFunPlugin.logger.error("\(self.t)流式请求失败：\(error.localizedDescription)")
             }
