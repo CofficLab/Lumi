@@ -5,6 +5,71 @@ import LumiLLMProviderSupport
 import SuperLogKit
 import os
 
+// MARK: - SublyxToolNameMapper
+
+/// Sublyx 工具名称映射器
+///
+/// Sublyx API 对工具名称有额外限制：仅允许 `^[a-zA-Z0-9_-]+$`，不允许 `.` 字符。
+/// 本映射器负责将 `.` 替换为 `_`，并在响应时通过映射表还原。
+private enum SublyxToolNameMapper {
+    /// 将原始工具名称转换为 Sublyx API 兼容的名称
+    static func toAPIName(_ name: String) -> String {
+        name.replacingOccurrences(of: ".", with: "_")
+    }
+
+    /// 构建反向映射表（API 名称 -> 原始名称）
+    static func buildReverseMapping(from tools: [any LumiAgentTool]) -> [String: String] {
+        Dictionary(uniqueKeysWithValues: tools.map {
+            (toAPIName($0.name), $0.name)
+        })
+    }
+
+    /// 将 Sublyx API 返回的工具名称还原为原始名称
+    static func fromAPIName(_ apiName: String, reverseMapping: [String: String]) -> String {
+        reverseMapping[apiName] ?? apiName
+    }
+}
+
+// MARK: - SublyxMappedTool
+
+/// 工具名称映射包装器
+///
+/// 将 `LumiAgentTool` 包装后仅替换 `name` 属性，其余全部代理给原始工具。
+/// 用于在发送给 Sublyx API 前将工具名称中的 `.` 替换为 `_`。
+private struct SublyxMappedTool: LumiAgentTool {
+    static let info = LumiAgentToolInfo(
+        id: "sublyx-mapped",
+        displayName: "Mapped Tool",
+        description: "Internal wrapper for Sublyx API name mapping"
+    )
+
+    private let wrapped: any LumiAgentTool
+    private let mappedName: String
+
+    init(wrapped: any LumiAgentTool, apiName: String) {
+        self.wrapped = wrapped
+        self.mappedName = apiName
+    }
+
+    var name: String { mappedName }
+    var toolDescription: String { wrapped.toolDescription }
+    var inputSchema: LumiJSONValue { wrapped.inputSchema }
+
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        try await wrapped.execute(arguments: arguments, context: context)
+    }
+
+    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+        wrapped.riskLevel(arguments: arguments, context: context)
+    }
+
+    func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        wrapped.displayDescription(arguments: arguments)
+    }
+}
+
+// MARK: - SublyxProvider
+
 public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "📡"
     public nonisolated static let verbose: Bool = true
@@ -93,36 +158,77 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
         )
     }
 
-    // MARK: - SuperLog
+    // MARK: - Streaming
 
     public override func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        // 输出请求使用的工具名称列表，用于调试 API 错误
+        // 构建反向映射表并包装工具
+        let reverseMapping = SublyxToolNameMapper.buildReverseMapping(from: request.tools)
+
+        let mappedTools: [any LumiAgentTool] = request.tools.map { tool in
+            SublyxMappedTool(wrapped: tool, apiName: SublyxToolNameMapper.toAPIName(tool.name))
+        }
+
+        let adaptedRequest = LumiLLMRequest(
+            messages: request.messages,
+            model: request.model,
+            tools: mappedTools,
+            imageAttachments: request.imageAttachments
+        )
+
+        // 日志：输出原始和适配后的工具名称
         if !request.tools.isEmpty {
-            let toolNames = request.tools.map { $0.name }
-            Self.logger.info("\(Self.t)请求使用的工具名称列表: \(toolNames)")
-            // 检查每个工具名称是否符合 OpenAI API 规范 (^[a-zA-Z0-9_-]+$)
-            for tool in request.tools {
-                let isValid = tool.name.range(of: "^[a-zA-Z0-9_-]+$", options: .regularExpression) != nil
-                if !isValid {
-                    Self.logger.error("\(Self.t)⚠️ 工具名称 '\(tool.name)' 不符合 OpenAI API 命名规范（仅允许字母、数字、下划线、连字符）")
-                }
-            }
+            let originalNames = request.tools.map(\.name)
+            let adaptedNames = mappedTools.map(\.name)
+            Self.logger.info("\(Self.t)原始工具名称: \(originalNames)")
+            Self.logger.info("\(Self.t)适配后工具名称: \(adaptedNames)")
         }
 
         do {
-            let message = try await super.sendStreaming(request, onChunk: onChunk)
-            return message
+            let message = try await super.sendStreaming(adaptedRequest, onChunk: onChunk)
+            return Self.restoreToolCallNames(in: message, reverseMapping: reverseMapping)
         } catch {
-            // 捕获错误，检查是否为 HTTP 错误
             if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error),
-               !(200..<300).contains(statusCode) {
-                // 输出非 2xx 状态码时的响应内容
+               !(200..<300).contains(statusCode)
+            {
                 Self.logger.error("\(Self.t)HTTP \(statusCode) 错误响应: \(error.localizedDescription)")
             }
             throw error
         }
+    }
+
+    // MARK: - Tool Name Restoration
+
+    /// 还原响应消息中工具调用的名称
+    ///
+    /// Sublyx API 返回的 `toolCall.name` 使用的是映射后的名称（`_` 替换了 `.`），
+    /// 需要通过反向映射表还原为原始名称，以便 `ToolService.tool(named:)` 能正确查找工具。
+    private static func restoreToolCallNames(
+        in message: LumiChatMessage,
+        reverseMapping: [String: String]
+    ) -> LumiChatMessage {
+        guard let toolCalls = message.toolCalls, !toolCalls.isEmpty else {
+            return message
+        }
+
+        let restoredToolCalls = toolCalls.map { toolCall -> LumiToolCall in
+            let originalName = SublyxToolNameMapper.fromAPIName(toolCall.name, reverseMapping: reverseMapping)
+            if originalName != toolCall.name {
+                Self.logger.info("\(Self.t)还原工具调用名称: '\(toolCall.name)' -> '\(originalName)'")
+            }
+            return LumiToolCall(
+                id: toolCall.id,
+                name: originalName,
+                arguments: toolCall.arguments,
+                result: toolCall.result,
+                displayName: toolCall.displayName
+            )
+        }
+
+        var restored = message
+        restored.toolCalls = restoredToolCalls
+        return restored
     }
 }
