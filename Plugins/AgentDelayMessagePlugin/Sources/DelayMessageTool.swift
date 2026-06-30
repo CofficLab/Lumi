@@ -1,6 +1,6 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// 延时消息工具
 ///
@@ -20,64 +20,61 @@ import AgentToolKit
 /// - `DelayMessageState`：@MainActor 单例，存储从 Environment 同步来的 VM 引用
 /// - `WindowMessageQueueVM`：消息入队，触发已有的发送闭环
 /// - 不依赖 `RootViewContainer.shared`
-public struct DelayMessageTool: SuperAgentTool, SuperLog {
+public struct DelayMessageTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "⏳"
     public nonisolated static let verbose: Bool = false
     static let defaultDelaySeconds: TimeInterval = 5
     static let minDelaySeconds: TimeInterval = 1
     static let maxDelaySeconds: TimeInterval = 3600
-    public let name = "delay_message"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "在指定秒数后向当前对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。"
-        case .english:
-            return "Send a delayed user message to the current conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives."
-        }
-    }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "message": [
-                    "type": "string",
-                    "description": "The message content to send after the delay. This will appear as a user message in the conversation."
-                ],
-                "seconds": [
-                    "type": "number",
-                    "description": "Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour).",
-                    "minimum": Self.minDelaySeconds,
-                    "maximum": Self.maxDelaySeconds
-                ]
-            ],
-            "required": ["message", "seconds"]
-        ]
-    }
+    public static let info = LumiAgentToolInfo(
+        id: "delay_message",
+        displayName: "Delay Message",
+        description: "Send a delayed user message to the current conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives."
+    )
 
     public init() {}
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "message": .object([
+                    "type": .string("string"),
+                    "description": .string("The message content to send after the delay. This will appear as a user message in the conversation."),
+                ]),
+                "seconds": .object([
+                    "type": .string("number"),
+                    "description": .string("Number of seconds to wait before sending the message. Minimum 1, maximum 3600 (1 hour)."),
+                    "minimum": .double(Self.minDelaySeconds),
+                    "maximum": .double(Self.maxDelaySeconds),
+                ]),
+            ]),
+            "required": .array([.string("message"), .string("seconds")]),
+        ])
+    }
+
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "延迟发送消息"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
-        let conversationId = context.conversationId
+        let conversationId = context.conversationID
 
         // 解析 message
-        let message = (arguments["message"]?.value as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let message = (arguments.string("message") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !message.isEmpty else {
             return "Error: message cannot be empty."
         }
 
         // 解析 seconds
-        let seconds = Self.normalizedDelaySeconds(arguments["seconds"]?.value)
+        let seconds = Self.normalizedDelaySeconds(arguments["seconds"]?.anyValue)
 
         if Self.verbose {
             DelayMessagePlugin.logger.info("\(Self.t) 延时 \(Int(seconds))s 后发送消息到会话 \(conversationId.uuidString.prefix(8))")

@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import SwiftUI
 import os
@@ -20,7 +19,7 @@ public enum DelayMessagePlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [DelayMessageTool().asLumiAgentTool()]
+        [DelayMessageTool()]
     }
 
         @MainActor
