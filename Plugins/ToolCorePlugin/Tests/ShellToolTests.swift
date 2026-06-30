@@ -173,11 +173,11 @@ import Testing
     let tool = ShellTool()
 
     let short = tool.displayDescription(arguments: ["command": .string("echo hello")])
-    #expect(short == "Run echo hello")
+    #expect(short == "运行 echo hello")
 
     let long = tool.displayDescription(arguments: ["command": .string(String(repeating: "a", count: 50))])
     #expect(long.hasSuffix("…"))
 
     let fallback = tool.displayDescription(arguments: [:])
-    #expect(fallback == "Run command")
+    #expect(fallback == "运行命令")
 }

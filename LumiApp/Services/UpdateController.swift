@@ -73,8 +73,10 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
 
     /// 延迟初始化 Sparkle updater，避免在应用启动时阻塞主线程。
     /// 该方法保证返回有效的 updaterController 实例。
+    /// 外部调用方（如 CheckForUpdatesViewModel）需要在订阅 updater 属性前
+    /// 先调用此方法确保 updater 已就绪。
     @MainActor
-    private func ensureUpdaterInitialized() {
+    func ensureUpdaterInitialized() {
         guard updaterController == nil else { return }
 
         let controller = SPUStandardUpdaterController(

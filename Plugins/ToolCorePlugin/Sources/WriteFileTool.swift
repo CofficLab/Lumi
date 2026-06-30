@@ -33,9 +33,9 @@ public struct WriteFileTool: LumiAgentTool {
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         guard let path = arguments["path"]?.stringValue else {
-            return "Write file"
+            return "写入文件"
         }
-        return "Write \(URL(fileURLWithPath: path).lastPathComponent)"
+        return "写入 \(URL(fileURLWithPath: path).lastPathComponent)"
     }
 
     public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {

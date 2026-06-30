@@ -29,14 +29,17 @@ final class PluginSettingsStore {
             return
         }
 
-        do {
-            try FileManager.default.createDirectory(
-                at: settingsURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try data.write(to: settingsURL, options: .atomic)
-        } catch {
-            assertionFailure("Failed to save plugin settings: \(error)")
+        let settingsURL = self.settingsURL
+        Task.detached(priority: .utility) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: settingsURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try data.write(to: settingsURL, options: .atomic)
+            } catch {
+                assertionFailure("Failed to save plugin settings: \(error)")
+            }
         }
     }
 }

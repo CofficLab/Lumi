@@ -64,6 +64,12 @@ public final class WorkspaceReadFileState: @unchecked Sendable {
     }
 }
 
+/// 匹配结果：包含匹配的字符串和在原文件中的位置
+private struct StringMatch {
+    let matched: String
+    let range: Range<String.Index>
+}
+
 public struct WorkspaceFileEditor: Sendable {
     /// 单个编辑文件的大小上限（1GB），防止把超大文件整体读入内存导致 OOM。
     public static let maxFileSizeBytes: Int64 = 1_000_000_000
@@ -155,26 +161,27 @@ public struct WorkspaceFileEditor: Sendable {
             return .wroteEmptyFile(path: filePath)
         }
 
-        guard let matched = findActualString(in: originalContent, searchFor: oldString) else {
+        // 修复：使用 findActualMatch 返回匹配结果（包括位置），确保后续替换使用相同的位置
+        guard let match = findActualMatch(in: originalContent, searchFor: oldString) else {
             let snippet = oldString.count > 200 ? String(oldString.prefix(200)) + "..." : oldString
             throw WorkspaceFileError("String to replace not found in file.\nString: \(snippet)")
         }
 
-        let matchCount = countOccurrences(of: matched, in: originalContent)
+        let matchCount = countOccurrences(of: match.matched, in: originalContent)
         if matchCount > 1 && !replaceAll {
             throw WorkspaceFileError("Found \(matchCount) matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.")
         }
 
         // 先按文件既有换行风格适配，再按文件既有引号风格适配，保持文件风格一致。
-        var replacement = adaptReplacementLineEndings(newString, toMatch: matched)
-        replacement = preserveQuoteStyle(replacement, matching: matched)
+        var replacement = adaptReplacementLineEndings(newString, toMatch: match.matched)
+        replacement = preserveQuoteStyle(replacement, matching: match.matched)
+        
         let updatedContent: String
         if replaceAll {
-            updatedContent = originalContent.replacingOccurrences(of: matched, with: replacement)
-        } else if let range = originalContent.range(of: matched) {
-            updatedContent = originalContent.replacingCharacters(in: range, with: replacement)
+            updatedContent = originalContent.replacingOccurrences(of: match.matched, with: replacement)
         } else {
-            throw WorkspaceFileError("Failed to apply replacement.")
+            // 修复：使用 findActualMatch 返回的 range，确保位置一致
+            updatedContent = originalContent.replacingCharacters(in: match.range, with: replacement)
         }
 
         guard updatedContent != originalContent else {
@@ -187,13 +194,18 @@ public struct WorkspaceFileEditor: Sendable {
         return .updated(path: filePath, matchCount: matchCount, replaceAll: replaceAll, diff: diff)
     }
 
-    private func findActualString(in content: String, searchFor: String) -> String? {
+    /// 修复：返回匹配结果（包括字符串和位置），确保后续替换使用相同的位置
+    private func findActualMatch(in content: String, searchFor: String) -> StringMatch? {
         let candidates = searchCandidates(for: searchFor, in: content)
 
-        for candidate in candidates where content.contains(candidate) {
-            return candidate
+        // 阶段1：精确匹配，优先使用
+        for candidate in candidates {
+            if let range = content.range(of: candidate) {
+                return StringMatch(matched: candidate, range: range)
+            }
         }
 
+        // 阶段2：归一化引号后匹配
         let normalizedContent = normalizeQuotes(content)
 
         for candidate in candidates {
@@ -207,8 +219,9 @@ public struct WorkspaceFileEditor: Sendable {
                 let originalChars = Array(content)
                 guard lowerOffset + length <= originalChars.count else { continue }
                 let matched = String(originalChars[lowerOffset..<(lowerOffset + length)])
-                if content.contains(matched) {
-                    return matched
+                // 验证找到的字符串确实在原文中
+                if let verifiedRange = content.range(of: matched) {
+                    return StringMatch(matched: matched, range: verifiedRange)
                 }
             }
         }

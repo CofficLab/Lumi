@@ -191,14 +191,23 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     }
 
     private func startContentTimer() {
-        guard contentTimer == nil else { return }
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now() + contentRefreshInterval, repeating: contentRefreshInterval)
-        timer.setEventHandler { [weak self] in
-            self?.replaceMenuBarContent()
-        }
-        timer.activate()
-        contentTimer = timer
+        // 移除 1 秒轮询定时器
+        // 菜单栏内容现在通过事件驱动更新：
+        // - 系统外观变化
+        // - 主题同步
+        // - 按钮外观变化
+        // - 窗口外观变化
+        // - 插件列表变化（通过 refresh() 方法）
+        //
+        // 如果需要定期更新，可以将间隔改为 5 秒：
+        // guard contentTimer == nil else { return }
+        // let timer = DispatchSource.makeTimerSource(queue: .main)
+        // timer.schedule(deadline: .now() + 5.0, repeating: 5.0)
+        // timer.setEventHandler { [weak self] in
+        //     self?.replaceMenuBarContent()
+        // }
+        // timer.activate()
+        // contentTimer = timer
     }
 
     private func updateStatusItemLength() {

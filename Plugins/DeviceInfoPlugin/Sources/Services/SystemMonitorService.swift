@@ -108,11 +108,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
     // MARK: - Private Methods
 
     private func startTimer() {
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.scheduleMetricsUpdate()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
         state.timer = timer
         updateMetrics(diskCounters: nil)
         scheduleMetricsUpdate()
@@ -131,8 +132,22 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             return
         }
 
-        updateMetrics(diskCounters: nil)
-        scheduleDiskCountersUpdateIfNeeded()
+        // Move CPU, memory, network sampling to background
+        guard samplingTask == nil else { return }
+
+        samplingTask = Task.detached(priority: .utility) { [weak self] in
+            // 采集数据在后台线程
+            let cpu = Self.sampleCPUUsage()
+            let (memUsed, memTotal) = Self.sampleMemoryUsage()
+            let (netIn, netOut) = Self.sampleNetworkUsage()
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.refCount > 0 else { return }
+                self.updateMetrics(cpu: cpu, memUsed: memUsed, memTotal: memTotal, netIn: netIn, netOut: netOut, diskCounters: nil)
+            }
+        }
     }
 
     private func scheduleDiskCountersUpdateIfNeeded() {
@@ -157,6 +172,12 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         let cpu = getCPUUsage()
         let (memUsed, memTotal) = getMemoryUsage()
         let (netIn, netOut) = getNetworkUsage()
+        let (diskRead, diskWrite) = getDiskUsage(counters: diskCounters)
+
+        updateMetrics(cpu: cpu, memUsed: memUsed, memTotal: memTotal, netIn: netIn, netOut: netOut, diskCounters: diskCounters)
+    }
+
+    private func updateMetrics(cpu: Double, memUsed: UInt64, memTotal: UInt64, netIn: Double, netOut: Double, diskCounters: (readBytes: UInt64, writeBytes: UInt64)?) {
         let (diskRead, diskWrite) = getDiskUsage(counters: diskCounters)
 
         cpuHistory = (cpuHistory.dropFirst() + [cpu]).suffix(60)
@@ -228,6 +249,7 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
                         let diff = current - prev
 
                         total += diff
+
                         if j != Int(CPU_STATE_IDLE) {
                             inUse += diff
                         }
@@ -394,11 +416,9 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             else {
                 continue
             }
-
             totalRead += uint64Value(statistics["Bytes (Read)"])
             totalWrite += uint64Value(statistics["Bytes (Write)"])
         }
-
         return (totalRead, totalWrite)
     }
 
@@ -416,5 +436,92 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
             return UInt64(max(value, 0))
         }
         return 0
+    }
+
+    // MARK: - Static Sampling Methods (for background thread)
+
+    /// 后台采样 CPU 使用率（无状态，每次独立采样）
+
+    private nonisolated static func sampleCPUUsage() -> Double {
+        var numCPUsU: natural_t = 0
+        var cpuInfoU: processor_info_array_t?
+        var numCpuInfoU: mach_msg_type_number_t = 0
+        let result = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUsU, &cpuInfoU, &numCpuInfoU)
+
+        guard result == KERN_SUCCESS, let cpuInfoU else { return 0 }
+
+        // 简单采样：计算总体使用率（不依赖历史状态）
+
+        var totalIdle: Int32 = 0
+        var totalUsed: Int32 = 0
+        for i in 0..<Int(numCPUsU) {
+            let baseIndex = i * Int(CPU_STATE_MAX)
+            for j in 0..<Int(CPU_STATE_MAX) {
+                let value = cpuInfoU[baseIndex + j]
+                if j == Int(CPU_STATE_IDLE) {
+                    totalIdle += value
+                } else {
+                    totalUsed += value
+                }
+            }
+        }
+
+        // 释放内存
+
+        let size = Int(numCpuInfoU) * MemoryLayout<integer_t>.size
+        let ptr = UnsafeMutableRawPointer(cpuInfoU)
+        vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
+
+        let total = totalIdle + totalUsed
+        return total > 0 ? Double(totalUsed) / Double(total) : 0
+    }
+
+    /// 后台采样内存使用情况
+
+    private nonisolated static func sampleMemoryUsage() -> (used: UInt64, total: UInt64) {
+        var size = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
+        var hostInfo = vm_statistics64_data_t()
+        let result = withUnsafeMutablePointer(to: &hostInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(size)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &size)
+            }
+        }
+
+        let total = ProcessInfo.processInfo.physicalMemory
+
+        if result == KERN_SUCCESS {
+            var pageSize: vm_size_t = 0
+            host_page_size(mach_host_self(), &pageSize)
+            let used = (UInt64(hostInfo.active_count) + UInt64(hostInfo.wire_count)) * UInt64(pageSize)
+            return (used, total)
+        }
+        return (0, total)
+    }
+
+    /// 后台采样网络使用情况
+
+    private nonisolated static func sampleNetworkUsage() -> (inBytes: Double, outBytes: Double) {
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0 else { return (0, 0) }
+        defer { freeifaddrs(ifaddr) }
+
+        var totalIn: UInt64 = 0
+        var totalOut: UInt64 = 0
+
+        var ptr = ifaddr
+        while ptr != nil {
+            let interface = ptr!.pointee
+            let addressFamily = interface.ifa_addr?.pointee.sa_family
+            if shouldReadNetworkCounters(flags: interface.ifa_flags, addressFamily: addressFamily) {
+                if let data = interface.ifa_data {
+                    let stats = data.assumingMemoryBound(to: if_data.self).pointee
+                    totalIn += UInt64(stats.ifi_ibytes)
+                    totalOut += UInt64(stats.ifi_obytes)
+                }
+            }
+            ptr = interface.ifa_next
+        }
+
+        return (Double(totalIn), Double(totalOut))
     }
 }

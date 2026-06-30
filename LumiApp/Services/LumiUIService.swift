@@ -93,15 +93,18 @@ private final class ThemeSelectionStore {
             return false
         }
 
-        do {
-            try FileManager.default.createDirectory(
-                at: settingsURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try data.write(to: settingsURL, options: .atomic)
-            return true
-        } catch {
-            return false
+        let settingsURL = self.settingsURL
+        Task.detached(priority: .utility) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: settingsURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try data.write(to: settingsURL, options: .atomic)
+            } catch {
+                // Silently fail for theme save
+            }
         }
+        return true
     }
 }

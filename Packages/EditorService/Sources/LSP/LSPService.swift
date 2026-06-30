@@ -38,7 +38,7 @@ public final class LSPService: ObservableObject, SuperLog {
     private var activeBuildServerPath: String?
     private var activeBuildServerKind: String?
     
-    private var changeDebounceTimer: Timer?
+    private var changeDebounceTask: Task<Void, Never>?
     private var pendingChanges: [LanguageServer.DocumentChange] = []
     private var latestDocumentSnapshot: String?
     private var diagnosticsStabilizationDeadline: Date?
@@ -397,12 +397,12 @@ public final class LSPService: ObservableObject, SuperLog {
         guard uri == currentURI else { return }
         currentVersion = version
         pendingChanges.append(.init(range: range, text: text))
-        
-        changeDebounceTimer?.invalidate()
-        changeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.flushChange(uri: uri)
-            }
+
+        changeDebounceTask?.cancel()
+        changeDebounceTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒
+            guard !Task.isCancelled else { return }
+            await self?.flushChange(uri: uri)
         }
     }
     
@@ -422,8 +422,8 @@ public final class LSPService: ObservableObject, SuperLog {
 
     private func flushPendingChangesIfNeeded(uri: String, operation: String) async {
         guard uri == currentURI, !pendingChanges.isEmpty else { return }
-        changeDebounceTimer?.invalidate()
-        changeDebounceTimer = nil
+        changeDebounceTask?.cancel()
+        changeDebounceTask = nil
         if Self.verbose {
             if Self.verbose {
                             Self.logger.debug("\(Self.t)\(operation) 前同步待发送变更: \(self.pendingChanges.count) 条")
@@ -437,8 +437,8 @@ public final class LSPService: ObservableObject, SuperLog {
         currentVersion = version
         latestDocumentSnapshot = text
         pendingChanges.removeAll()
-        changeDebounceTimer?.invalidate()
-        changeDebounceTimer = nil
+        changeDebounceTask?.cancel()
+        changeDebounceTask = nil
         guard let server else { return }
         Task {
             do {
@@ -474,8 +474,8 @@ public final class LSPService: ObservableObject, SuperLog {
     public func requestCompletion(uri: String, line: Int, character: Int) async -> [CompletionItem] {
         guard let server else { return [] }
         if uri == currentURI, !self.pendingChanges.isEmpty {
-            self.changeDebounceTimer?.invalidate()
-            self.changeDebounceTimer = nil
+            self.changeDebounceTask?.cancel()
+            self.changeDebounceTask = nil
             if Self.verbose {
                 if Self.verbose {
                                     Self.logger.debug("\(Self.t)补全前同步待发送变更: \(self.pendingChanges.count) 条")
@@ -1106,8 +1106,8 @@ public final class LSPService: ObservableObject, SuperLog {
     
     public func stopAll() {
         lifecycleGeneration &+= 1
-        changeDebounceTimer?.invalidate()
-        changeDebounceTimer = nil
+        changeDebounceTask?.cancel()
+        changeDebounceTask = nil
         serverStartTask?.cancel()
         serverStartTask = nil
         serverStartSignature = nil
@@ -1133,8 +1133,8 @@ public final class LSPService: ObservableObject, SuperLog {
 
     private func clearLocalDocumentState(matching uri: String) {
         guard currentURI == uri else { return }
-        changeDebounceTimer?.invalidate()
-        changeDebounceTimer = nil
+        changeDebounceTask?.cancel()
+        changeDebounceTask = nil
         currentURI = nil
         currentVersion = 0
         currentDiagnostics = []

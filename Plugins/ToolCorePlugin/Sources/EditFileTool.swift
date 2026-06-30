@@ -48,9 +48,9 @@ public struct EditFileTool: LumiAgentTool {
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         guard let filePath = arguments["file_path"]?.stringValue else {
-            return "Edit file"
+            return "编辑文件"
         }
-        return "Edit \(URL(fileURLWithPath: filePath).lastPathComponent)"
+        return "编辑 \(URL(fileURLWithPath: filePath).lastPathComponent)"
     }
 
     public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {

@@ -5,7 +5,6 @@ enum ModelSelectorTab: Equatable {
     case frequent
     case fast
     case auto
-    case availability
     case all
     case provider(String)
 }

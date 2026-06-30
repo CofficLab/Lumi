@@ -18,7 +18,6 @@ struct ModelSelectorSidebar: View {
             quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: "Frequent")
             quickTabButton(tab: .fast, icon: "bolt.fill", title: "Fast")
             quickTabButton(tab: .auto, icon: "wand.and.sparkles", title: "Auto")
-            quickTabButton(tab: .availability, icon: "network", title: "Availability")
 
             ModelSelectorDivider(axis: .horizontal)
                 .padding(.vertical, 4)

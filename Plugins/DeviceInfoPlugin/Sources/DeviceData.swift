@@ -40,6 +40,7 @@ class DeviceData: ObservableObject {
 
     private nonisolated let timerHolder = TimerHolder()
     private var isMonitoring = false
+    private var samplingTask: Task<Void, Never>?
     private let cpuUsageProvider: @MainActor () -> Double
     private let cpuMonitoringStarter: @MainActor () -> Void
     private let cpuMonitoringStopper: @MainActor () -> Void
@@ -76,6 +77,7 @@ class DeviceData: ObservableObject {
 
     deinit {
         timerHolder.invalidate()
+        samplingTask?.cancel()
         if isMonitoring {
             Task { @MainActor [cpuMonitoringStopper] in
                 cpuMonitoringStopper()
@@ -102,17 +104,41 @@ class DeviceData: ObservableObject {
         guard isMonitoring else { return }
         isMonitoring = false
         timerHolder.invalidate()
+        samplingTask?.cancel()
+        samplingTask = nil
         cpuMonitoringStopper()
     }
 
     // MARK: - Data Fetching
 
     private func updateDynamicData() {
-        self.cpuUsage = getCPUUsage()
-        self.updateMemoryUsage()
-        self.updateDiskUsage()
-        self.updateBatteryStatus()
-        self.uptime = ProcessInfo.processInfo.systemUptime
+        guard samplingTask == nil else { return }
+
+        // CPU 使用率已在主线程由 CPUService 维护，直接读取
+        let cpuUsage = self.cpuUsageProvider()
+
+        samplingTask = Task.detached(priority: .utility) { [weak self] in
+            // 采集其他数据在后台线程
+            let memoryData = self?.getMemoryData() ?? (used: 0, total: 0)
+            let diskData = self?.getDiskData() ?? (total: 0, used: 0)
+            let batteryData = self?.getBatteryData() ?? (level: 0.0, isCharging: false)
+            let uptime = ProcessInfo.processInfo.systemUptime
+
+            // 回到主线程更新 @Published 属性
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                self.cpuUsage = cpuUsage
+                self.memoryUsed = memoryData.used
+                self.memoryTotal = memoryData.total
+                self.memoryUsage = Double(memoryData.used) / Double(memoryData.total)
+                self.diskTotal = diskData.total
+                self.diskUsed = diskData.used
+                self.batteryLevel = batteryData.level
+                self.isCharging = batteryData.isCharging
+                self.uptime = uptime
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -144,7 +170,7 @@ class DeviceData: ObservableObject {
         cpuUsageProvider()
     }
 
-    private func updateMemoryUsage() {
+    private nonisolated func getMemoryData() -> (used: UInt64, total: UInt64) {
         var pageSize: vm_size_t = 0
         host_page_size(mach_host_self(), &pageSize)
 
@@ -157,42 +183,51 @@ class DeviceData: ObservableObject {
             }
         }
 
+        let total = ProcessInfo.processInfo.physicalMemory
+
         if result == KERN_SUCCESS {
             let active = UInt64(stats.active_count) * UInt64(pageSize)
             let wired = UInt64(stats.wire_count) * UInt64(pageSize)
             let compressed = UInt64(stats.compressor_page_count) * UInt64(pageSize)
             // Approximate "Used" memory as App Memory (Active) + Wired + Compressed
-            self.memoryUsed = active + wired + compressed
-            self.memoryUsage = Double(self.memoryUsed) / Double(self.memoryTotal)
+            let used = active + wired + compressed
+            return (used, total)
         }
+
+        return (0, total)
     }
 
-    private func updateDiskUsage() {
+    private nonisolated func getDiskData() -> (total: Int64, used: Int64) {
         let fileURL = URL(fileURLWithPath: "/")
         do {
             let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
             if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
-                self.diskTotal = Int64(total)
-                self.diskUsed = Int64(total - available)
+                return (Int64(total), Int64(total - available))
             }
         } catch {}
+        return (0, 0)
     }
 
-    private func updateBatteryStatus() {
+    private nonisolated func getBatteryData() -> (level: Double, isCharging: Bool) {
         let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue()
         let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef]
+
+        var level: Double = 0.0
+        var isCharging: Bool = false
 
         if let sources = sources, let source = sources.first {
             let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any]
 
             if let current = description?[kIOPSCurrentCapacityKey] as? Int,
                let max = description?[kIOPSMaxCapacityKey] as? Int {
-                self.batteryLevel = Double(current) / Double(max)
+                level = Double(current) / Double(max)
             }
 
-            if let isCharging = description?[kIOPSIsChargingKey] as? Bool {
-                self.isCharging = isCharging
+            if let charging = description?[kIOPSIsChargingKey] as? Bool {
+                isCharging = charging
             }
         }
+
+        return (level, isCharging)
     }
 }

@@ -2052,25 +2052,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "概览 CPU、内存和运行时间"
+            "value": "一览 CPU、内存和运行时间"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "概覽 CPU、記憶體和運行時間"
+            "value": "一覽 CPU、記憶體和運行時間"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "概覽 CPU、記憶體和運行時間"
+            "value": "一覽 CPU、記憶體和運行時間"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "概覽 CPU、記憶體和運行時間"
+            "value": "一覽 CPU、記憶體和運行時間"
           }
         }
       }
@@ -2120,25 +2120,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "菜单栏实时指标"
+            "value": "菜单栏中的实时指标"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "選單列即時指標"
+            "value": "選單列中的即時指標"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "選單列即時指標"
+            "value": "選單列中的即時指標"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "選單列即時指標"
+            "value": "選單列中的即時指標"
           }
         }
       }
@@ -2154,25 +2154,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从侧边栏打开设备信息查看完整详情。"
+            "value": "从侧边栏打开设备信息来查看完整详情。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "從側邊欄打開設備資訊查看完整詳情。"
+            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "從側邊欄打開設備資訊查看完整詳情。"
+            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "從側邊欄打開設備資訊查看完整詳情。"
+            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
           }
         }
       }

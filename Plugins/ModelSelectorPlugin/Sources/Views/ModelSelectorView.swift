@@ -96,8 +96,6 @@ struct ModelSelectorView: View {
             fastModelList
         case .auto:
             autoRoutingView
-        case .availability:
-            ModelAvailabilityView(chatService: chatService)
         case .all:
             providerList(filteredProviders(chatService.providerInfos), emptyTitle: "No Providers")
         case .provider(let providerID):

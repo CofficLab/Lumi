@@ -9,7 +9,11 @@ final class PluginService: ObservableObject {
     let registeredPlugins: [any LumiPlugin.Type]
     @Published private(set) var enabledOverrides: [String: Bool]
     var onEnabledPluginsChanged: (() -> Void)?
+    var onPluginLifecycleChange: ((any LumiPlugin.Type, Bool) -> Void)?
     private let settingsStore: PluginSettingsStore
+
+    /// 跟踪插件的启用状态
+    private var pluginEnabledStates: [String: Bool] = [:]
 
     init(settingsStore: PluginSettingsStore = PluginSettingsStore()) {
         self.settingsStore = settingsStore
@@ -264,10 +268,33 @@ final class PluginService: ObservableObject {
             return
         }
 
-        enabledOverrides[plugin.info.id] = enabled
+        let pluginId = plugin.info.id
+        let previousState = pluginEnabledStates[pluginId] ?? isPluginEnabled(plugin)
+
+        enabledOverrides[pluginId] = enabled
         settingsStore.saveEnabledOverrides(enabledOverrides)
+        pluginEnabledStates[pluginId] = enabled
+
         onEnabledPluginsChanged?()
+
+        // 如果状态实际发生变化，触发生命周期回调
+        if previousState != enabled {
+            onPluginLifecycleChange?(plugin, enabled)
+        }
+
         objectWillChange.send()
+    }
+
+    /// 获取插件的当前启用状态
+    func getPluginEnabledState(_ plugin: any LumiPlugin.Type) -> Bool {
+        pluginEnabledStates[plugin.info.id] ?? isPluginEnabled(plugin)
+    }
+
+    /// 初始化时记录所有插件的初始状态
+    func initializePluginStates() {
+        for plugin in registeredPlugins {
+            pluginEnabledStates[plugin.info.id] = isPluginEnabled(plugin)
+        }
     }
 
     private func userEnabledValue(for plugin: any LumiPlugin.Type) -> Bool {

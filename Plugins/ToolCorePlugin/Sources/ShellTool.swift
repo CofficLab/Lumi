@@ -46,10 +46,10 @@ public struct ShellTool: LumiAgentTool {
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         guard let command = arguments["command"]?.stringValue else {
-            return "Run command"
+            return "运行命令"
         }
         let preview = command.count > 40 ? String(command.prefix(40)) + "…" : command
-        return "Run \(preview)"
+        return "运行 \(preview)"
     }
 
     public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {

@@ -1,893 +1,1061 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         }
       }
     },
-    "Add Connection" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Connection"
+    "Add Connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Connection"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加连接"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加连接"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加連接"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加連接"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加連接"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加連接"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加連線"
-          }
-        }
-      }
-    },
-    "Browse and inspect database tables and records" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse and inspect database tables and records"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览和检查数据库表及记录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽和檢查資料庫表及記錄"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽和檢查資料庫表及記錄"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽和檢查資料庫表及記錄"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加連線"
           }
         }
       }
     },
-    "Browse available databases and tables" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse available databases and tables"
+    "Browse and inspect database tables and records": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse and inspect database tables and records"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览可用数据库和表"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览和检查数据库表及记录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽可用資料庫和表"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽和檢查資料庫表及記錄"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽可用資料庫和表"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽和檢查資料庫表及記錄"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽可用資料庫和表"
-          }
-        }
-      }
-    },
-    "Configure database connections in settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure database connections in settings"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在设置中配置数据库连接"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中設定資料庫連線"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中設定資料庫連線"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中設定資料庫連線"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽和檢查資料庫表及記錄"
           }
         }
       }
     },
-    "Connect to SQLite, MySQL, PostgreSQL, and Redis databases" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connect to SQLite, MySQL, PostgreSQL, and Redis databases"
+    "Browse available databases and tables": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse available databases and tables"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接 SQLite、MySQL、PostgreSQL 和 Redis 数据库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览可用数据库和表"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽可用資料庫和表"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽可用資料庫和表"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
-          }
-        }
-      }
-    },
-    "Connections" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connections"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連線"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽可用資料庫和表"
           }
         }
       }
     },
-    "Copy" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy"
+    "Configure database connections in settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure database connections in settings"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中配置数据库连接"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在設定中設定資料庫連線"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在設定中設定資料庫連線"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        }
-      }
-    },
-    "Data Browser" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data Browser"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据浏览器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在設定中設定資料庫連線"
           }
         }
       }
     },
-    "Database" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Database"
+    "Connect to SQLite, MySQL, PostgreSQL, and Redis databases": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to SQLite, MySQL, PostgreSQL, and Redis databases"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接 SQLite、MySQL、PostgreSQL 和 Redis 数据库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫"
-          }
-        }
-      }
-    },
-    "Database Type" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Database Type"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据库类型"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接 SQLite、MySQL、PostgreSQL 和 Redis 資料庫"
           }
         }
       }
     },
-    "Enable connection pooling for better performance" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable connection pooling for better performance"
+    "Connections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connections"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用连接池以提升性能"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用連線池以提升效能"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用連線池以提升效能"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用連線池以提升效能"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線"
           }
         }
       }
     },
-    "Execute queries and view results" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Execute queries and view results"
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "执行查询并查看结果"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "執行查詢並查看結果"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "執行查詢並查看結果"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "執行查詢並查看結果"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         }
       }
     },
-    "Export data in various formats" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export data in various formats"
+    "Data Browser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data Browser"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多种格式导出数据"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据浏览器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種格式匯出資料"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料瀏覽器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種格式匯出資料"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料瀏覽器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種格式匯出資料"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料瀏覽器"
           }
         }
       }
     },
-    "Keys" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keys"
+    "Database": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "键"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫"
           }
         }
       }
     },
-    "Manage SQLite, MySQL, PostgreSQL, and Redis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage SQLite, MySQL, PostgreSQL, and Redis"
+    "Database Type": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database Type"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 SQLite、MySQL、PostgreSQL 和 Redis"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库类型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 SQLite、MySQL、PostgreSQL 及 Redis"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫類型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 SQLite、MySQL、PostgreSQL 及 Redis"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫類型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 SQLite、MySQL、PostgreSQL 及 Redis"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫類型"
           }
         }
       }
     },
-    "Multi-Database Support" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Multi-Database Support"
+    "Enable connection pooling for better performance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable connection pooling for better performance"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多数据库支持"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用连接池以提升性能"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多資料庫支援"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用連線池以提升效能"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多資料庫支援"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用連線池以提升效能"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多資料庫支援"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用連線池以提升效能"
           }
         }
       }
     },
-    "No results" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No results"
+    "Execute queries and view results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Execute queries and view results"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无结果"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行查询并查看结果"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無結果"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "執行查詢並查看結果"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無結果"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "執行查詢並查看結果"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無結果"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "執行查詢並查看結果"
           }
         }
       }
     },
-    "Query Editor" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Query Editor"
+    "Export data in various formats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export data in various formats"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查询编辑器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以多种格式导出数据"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢編輯器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以多種格式匯出資料"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢編輯器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以多種格式匯出資料"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查詢編輯器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以多種格式匯出資料"
           }
         }
       }
     },
-    "Save frequently used queries as snippets" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save frequently used queries as snippets"
+    "Keys": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keys"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将常用查询保存为片段"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將常用查詢儲存為片段"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將常用查詢儲存為片段"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將常用查詢儲存為片段"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵"
           }
         }
       }
     },
-    "Schema Inspector" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schema Inspector"
+    "Manage SQLite, MySQL, PostgreSQL, and Redis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage SQLite, MySQL, PostgreSQL, and Redis"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "结构检查器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL、PostgreSQL 和 Redis"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結構檢查器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結構檢查器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結構檢查器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 SQLite、MySQL、PostgreSQL 及 Redis"
           }
         }
       }
     },
-    "Select a database to connect" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a database to connect"
+    "Multi-Database Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Database Support"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个数据库进行连接"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多数据库支持"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連接"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多資料庫支援"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連接"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多資料庫支援"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連線"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多資料庫支援"
           }
         }
       }
     },
-    "Tables" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tables"
+    "No results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No results"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无结果"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無結果"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無結果"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無結果"
           }
         }
       }
     },
-    "Use read-only mode for production databases" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use read-only mode for production databases"
+    "Query Editor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Query Editor"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对生产数据库使用只读模式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查询编辑器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對生產資料庫使用唯讀模式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢編輯器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對生產資料庫使用唯讀模式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢編輯器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對生產資料庫使用唯讀模式"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢編輯器"
           }
         }
       }
     },
-    "View database schema, indexes, and relationships" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View database schema, indexes, and relationships"
+    "Save frequently used queries as snippets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save frequently used queries as snippets"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看数据库结构、索引和关系"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将常用查询保存为片段"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看資料庫結構、索引和關聯"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將常用查詢儲存為片段"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看資料庫結構、索引和關聯"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將常用查詢儲存為片段"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看資料庫結構、索引和關聯"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將常用查詢儲存為片段"
           }
         }
       }
     },
-    "Write and execute SQL queries with syntax highlighting" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Write and execute SQL queries with syntax highlighting"
+    "Schema Inspector": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schema Inspector"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编写并执行带语法高亮的 SQL 查询"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结构检查器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編寫並執行帶語法醒目提示的 SQL 查詢"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結構檢查器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編寫並執行帶語法醒目提示的 SQL 查詢"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結構檢查器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編寫並執行帶語法醒目提示的 SQL 查詢"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結構檢查器"
+          }
+        }
+      }
+    },
+    "Select a database to connect": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a database to connect"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个数据库进行连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個資料庫進行連接"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個資料庫進行連接"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個資料庫進行連線"
+          }
+        }
+      }
+    },
+    "Tables": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tables"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表"
+          }
+        }
+      }
+    },
+    "Use read-only mode for production databases": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use read-only mode for production databases"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "对生产数据库使用只读模式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對生產資料庫使用唯讀模式"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對生產資料庫使用唯讀模式"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對生產資料庫使用唯讀模式"
+          }
+        }
+      }
+    },
+    "View database schema, indexes, and relationships": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View database schema, indexes, and relationships"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看数据库结构、索引和关系"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看資料庫結構、索引和關聯"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看資料庫結構、索引和關聯"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看資料庫結構、索引和關聯"
+          }
+        }
+      }
+    },
+    "Write and execute SQL queries with syntax highlighting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write and execute SQL queries with syntax highlighting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编写并执行带语法高亮的 SQL 查询"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編寫並執行帶語法醒目提示的 SQL 查詢"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編寫並執行帶語法醒目提示的 SQL 查詢"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編寫並執行帶語法醒目提示的 SQL 查詢"
+          }
+        }
+      }
+    },
+    "Multiple engines": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple engines"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多种数据库引擎"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多種資料庫引擎"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多種資料庫引擎"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多種資料庫引擎"
+          }
+        }
+      }
+    },
+    "SQLite, MySQL, PostgreSQL, and Redis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SQLite, MySQL, PostgreSQL, and Redis"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SQLite、MySQL、PostgreSQL 和 Redis"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SQLite、MySQL、PostgreSQL 和 Redis"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SQLite、MySQL、PostgreSQL 和 Redis"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SQLite、MySQL、PostgreSQL 和 Redis"
+          }
+        }
+      }
+    },
+    "Browse data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse data"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽資料"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽資料"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽資料"
+          }
+        }
+      }
+    },
+    "Inspect schemas and run read-only queries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect schemas and run read-only queries"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查架构并运行只读查询"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視結構描述並執行唯讀查詢"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視結構描述並執行唯讀查詢"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視結構描述並執行唯讀查詢"
+          }
+        }
+      }
+    },
+    "Open Database from the sidebar to connect to a server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Database from the sidebar to connect to a server."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从侧边栏打开数据库来连接到服务器。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄開啟資料庫來連線到伺服器。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄開啟資料庫來連線到伺服器。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從側邊欄開啟資料庫來連線到伺服器。"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

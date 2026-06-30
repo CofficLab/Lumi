@@ -59,7 +59,14 @@ final class ActivityHeatmapViewModel {
         }
 
         let allMessages = await paginateMessages(service, total: totalCount)
-        heatmapData = aggregateByDay(allMessages, days: period.rawValue)
+
+        // 聚合操作移到后台线程
+        let days = period.rawValue
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.aggregateByDay(allMessages, days: days)
+        }.value
+
+        heatmapData = result
     }
 
     // MARK: - Pagination
@@ -81,7 +88,8 @@ final class ActivityHeatmapViewModel {
 
     // MARK: - Aggregation
 
-    private func aggregateByDay(
+    /// 在后台线程执行的聚合方法
+    nonisolated private static func aggregateByDay(
         _ messages: [HistoryMessageRow],
         days: Int
     ) -> [ActivityDay] {

@@ -46,11 +46,13 @@ public final class MemoryService: ObservableObject, SuperLog {
 
             updateMemoryUsage()
 
-            monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.updateMemoryUsage()
                 }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            monitoringTimer = timer
         }
     }
 

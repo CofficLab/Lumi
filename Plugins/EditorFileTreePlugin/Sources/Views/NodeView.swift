@@ -2,9 +2,16 @@ import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import SuperLogKit
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
-public struct NodeView: View, Equatable {
+public struct NodeView: View, Equatable, SuperLog {
+
+    // MARK: - SuperLog Configuration
+
+    public nonisolated static let emoji = "🌲"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.node")
     /// 默认图标主题贡献器（无状态，可复用）
     private static let defaultIconContributor = LumiDefaultFileIconThemeContributor()
     
@@ -43,8 +50,11 @@ public struct NodeView: View, Equatable {
     /// 节点仅当自身 url 命中此集合时才 reloadChildren。
     public let changedDirectoryPaths: Set<String>
 
-    /// 本地展开状态
-    @State private var isExpanded: Bool = false
+    /// 展开状态（从 store 恢复，用于 Equatable 比较）
+    private let expandedFromStore: Bool
+
+    /// 本地展开状态（响应用户交互）
+    @State private var isExpanded: Bool
 
     /// 本地子节点缓存
     @State private var children: [URL] = []
@@ -96,7 +106,7 @@ public struct NodeView: View, Equatable {
     // MARK: - Equatable
 
     public nonisolated static func == (lhs: NodeView, rhs: NodeView) -> Bool {
-        // 只比较影响视图渲染的外部属性，闭包属性不参与比较
+        // 比较影响视图渲染的所有外部属性，包括从 store 恢复的展开状态
         return lhs.url == rhs.url
             && lhs.depth == rhs.depth
             && lhs.refreshToken == rhs.refreshToken
@@ -105,6 +115,7 @@ public struct NodeView: View, Equatable {
             && lhs.gitStatusSnapshot == rhs.gitStatusSnapshot
             && lhs.windowId == rhs.windowId
             && lhs.projectRootPath == rhs.projectRootPath
+            && lhs.expandedFromStore == rhs.expandedFromStore
     }
 
     // MARK: - Init
@@ -149,11 +160,14 @@ public struct NodeView: View, Equatable {
         self.gitRelativePath = PathFormatter.gitPath(for: url, projectRootPath: projectRootPath)
 
         // 从 store 恢复展开状态
+        var storedExpanded = false
         if !projectRootPath.isEmpty {
             let relativePath = PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
             let store = FileTreeSettings.shared
-            _isExpanded = State(initialValue: store.expandedPaths(for: projectRootPath).contains(relativePath))
+            storedExpanded = store.expandedPaths(for: projectRootPath).contains(relativePath)
         }
+        self.expandedFromStore = storedExpanded
+        self._isExpanded = State(initialValue: storedExpanded)
     }
 
     // MARK: - Body
@@ -391,6 +405,7 @@ public struct NodeView: View, Equatable {
 
     /// 当前节点的 Git 状态（从 snapshot 查询，文件查文件状态，目录查聚合状态）
     private var currentGitStatus: GitStatus? {
+        guard EditorFileTreePanelPlugin.gitStatusEnabled else { return nil }
         guard !gitStatusSnapshot.isEmpty else { return nil }
         let path = gitRelativePath
         if isDirectory {
@@ -473,7 +488,6 @@ public struct NodeView: View, Equatable {
     private var batchActionURLs: [URL] {
         let targets = selectionState.actionTargets(for: url)
         guard !projectRootPath.isEmpty else { return targets }
-
         let rootPath = PathFormatter.normalizedFilePath(
             URL(fileURLWithPath: projectRootPath)
         )
@@ -544,6 +558,7 @@ private struct FileTreeIconMetadata {
 // MARK: - Actions
 
 extension NodeView {
+
     // MARK: - Expansion Persistence
 
     /// 当前节点相对于项目根目录的路径，保留开头的 "/" 以兼容已持久化的展开状态。
@@ -569,6 +584,7 @@ extension NodeView {
     }
 
     // MARK: - Data Loading
+
     private func loadChildren() {
         let currentURL = url
         loadChildrenTask?.cancel()
@@ -652,7 +668,6 @@ extension NodeView {
 
 #Preview {
     let testURL = URL(fileURLWithPath: NSHomeDirectory())
-
     return NodeView(
         url: testURL,
         depth: 0,

@@ -18,6 +18,9 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     
     // Process info cache
     private var processDetails: [Int: (name: String, icon: NSImage?)] = [:]
+
+    // Background queue for icon fetching
+    private let iconQueue = DispatchQueue(label: "com.coffic.lumi.process-icons", qos: .utility)
     
     // Runtime status
     private var isRunning = false
@@ -203,18 +206,39 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         
         var aggregated: [String: (pid: Int, bytesIn: Double, bytesOut: Double)] = [:]
         
+        // Collect new PIDs that need icon fetching
+        var newPIDs: [(pid: Int, name: String)] = []
+
         for item in rawData {
             if let existing = aggregated[item.name] {
                 aggregated[item.name] = (existing.pid, existing.bytesIn + item.bytesIn, existing.bytesOut + item.bytesOut)
             } else {
                 aggregated[item.name] = (item.pid, item.bytesIn, item.bytesOut)
             }
-            
-            // Cache icon
+
+            // Collect new PIDs for background icon fetching
             if processDetails[item.pid] == nil {
-                let icon = NSRunningApplication(processIdentifier: pid_t(item.pid))?.icon 
-                    ?? NSWorkspace.shared.icon(forFile: "/bin/bash") // Fallback
-                processDetails[item.pid] = (item.name, icon)
+                newPIDs.append((item.pid, item.name))
+            }
+        }
+
+        // Fetch icons in background
+        if !newPIDs.isEmpty {
+            iconQueue.async { [weak self] in
+                var fetchedIcons: [(pid: Int, name: String, icon: NSImage?)] = []
+                for item in newPIDs {
+                    let icon = NSRunningApplication(processIdentifier: pid_t(item.pid))?.icon
+                        ?? NSWorkspace.shared.icon(forFile: "/bin/bash") // Fallback
+                    fetchedIcons.append((item.pid, item.name, icon))
+                }
+
+                // Update cache on main thread
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    for item in fetchedIcons {
+                        self.processDetails[item.pid] = (item.name, item.icon)
+                    }
+                }
             }
         }
         

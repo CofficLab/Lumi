@@ -4,6 +4,9 @@ import LanguageServerProtocol
 
 @MainActor
 final class EditorLSPActionController: EditorLSPActionProviding {
+    /// 文件行缓存，按 URL + mtime 缓存已解析的行数组
+    private var lineCache: [URL: (lines: [String], mtime: Date)] = [:]
+
     func languageID(for ext: String) -> String? {
         EditorLSPActionPolicy.languageID(forFileExtension: ext)
     }
@@ -50,8 +53,21 @@ final class EditorLSPActionController: EditorLSPActionProviding {
 
     func previewLine(from url: URL, at lineNumber: Int) -> String? {
         guard lineNumber > 0 else { return nil }
+
+        // 检查缓存是否有效
+        let currentMtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        if let cached = lineCache[url], cached.mtime == currentMtime {
+            guard lineNumber - 1 < cached.lines.count else { return nil }
+            return cached.lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // 缓存未命中，读取文件并解析
         guard let content = try? EditorTextFileReader.read(url) else { return nil }
         let lines = content.components(separatedBy: .newlines)
+
+        // 更新缓存
+        lineCache[url] = (lines: lines, mtime: currentMtime ?? Date())
+
         guard lineNumber - 1 < lines.count else { return nil }
         return lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)
     }

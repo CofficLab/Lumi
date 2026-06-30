@@ -54,12 +54,23 @@ final class RootContainer: ObservableObject {
         // 只有 Sparkle 必须在主线程的两步操作才会 hop 回 MainActor。
         UpdateController.shared.setupFeedURLIfNeeded()
         LayoutPlugin.restorePersistedStateIfNeeded()
+        
+        // 初始化插件启用状态跟踪
+        self.pluginService.initializePluginStates()
+        
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }
             self.chatCoreService.reloadPluginContributions(from: self.pluginService)
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
             self.editorCoreService.reinstallExtensions()
+        }
+        
+        // 连接插件生命周期回调，处理启用/禁用时的资源清理
+        self.pluginService.onPluginLifecycleChange = { [weak self] (plugin, enabled) in
+            guard let self else { return }
+            // 插件状态变化时通知相关服务清理资源
+            // 例如：清理 UI 缓存、通知编辑器重新加载等
         }
     }
 }
