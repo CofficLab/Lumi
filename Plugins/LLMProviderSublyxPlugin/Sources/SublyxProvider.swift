@@ -1,8 +1,11 @@
 import Foundation
+import HttpKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class SublyxProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    public static let apiKeyHelpURL: String? = "https://api.sublyx.org/"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "sublyx",
@@ -48,6 +51,28 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, @unchecked Send
                 acceptsFunctionScopedToolCallID: false
             )
         )
+    }
+
+    public override func errorRenderKind(for error: Error) -> String? {
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            return SublyxRenderKind.apiKeyMissing
+        }
+
+        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+            return SublyxRenderKind.http(statusCode)
+        }
+
+        return SublyxRenderKind.requestFailed
+    }
+
+    // MARK: - API Key
+
+    public static func getApiKey() -> String {
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+    }
+
+    public static func setApiKey(_ apiKey: String) {
+        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {

@@ -14,15 +14,19 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "LLMProviderSublyxPlugin",
             dependencies: [
+                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
             resources: [
@@ -31,7 +35,12 @@ let package = Package(
         ),
         .testTarget(
             name: "LLMProviderSublyxPluginTests",
-            dependencies: ["LLMProviderSublyxPlugin"],
+            dependencies: [
+                "LLMProviderSublyxPlugin",
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+            ],
             path: "Tests"
         )
     ]
