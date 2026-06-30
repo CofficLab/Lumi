@@ -2,54 +2,11 @@
 
 ## 执行摘要
 
-本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 8 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
+本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 7 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
 
 ---
 
-## 1. TreeSitter 解析性能问题 (高风险)
-
-### 问题描述
-
-TreeSitter 是编辑器的语法解析引擎，当前配置存在以下问题：
-
-```swift
-// TreeSitterClient.swift
-public static var parserTimeout: TimeInterval = 0.05  // 50ms - 太短
-public static var maxSyncContentLength: Int = 1_000_000  // 1MB - 太大
-public static var maxSyncEditLength: Int = 1024
-```
-
-### 根本原因
-
-1. **超时过短**：50ms 的超时导致频繁的超时和重新解析
-2. **同步阈值过高**：1MB 的同步处理阈值可能导致主线程阻塞
-3. **任务优先级过高**：使用 `Task(priority: .userInitiated)` 会与主线程争用资源
-4. **缺少增量解析**：每次编辑都可能触发全量重新解析
-
-### 影响范围
-
-- 大文件（>500KB）编辑时明显卡顿
-- 快速连续输入时响应延迟
-- 滚动时语法高亮更新滞后
-
-### 优化方案
-
-```swift
-// 调整前
-public static var parserTimeout: TimeInterval = 0.05
-public static var maxSyncContentLength: Int = 1_000_000
-
-// 调整后
-public static var parserTimeout: TimeInterval = 0.1  // 增加到 100ms
-public static var maxSyncContentLength: Int = 500_000  // 降低到 500KB
-public static var maxSyncEditLength: Int = 512  // 降低到 512 字符
-```
-
-**预期效果**：减少 20-30% 的解析相关卡顿
-
----
-
-## 2. Highlighting 频繁触发 (高风险)
+## 1. Highlighting 频繁触发 (高风险)
 
 ### 问题描述
 
@@ -128,7 +85,7 @@ func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NST
 
 ---
 
-## 3. LineOffsetTable 全量重建 (中风险)
+## 2. LineOffsetTable 全量重建 (中风险)
 
 ### 问题描述
 
@@ -202,7 +159,7 @@ public init(content: String) {
 
 ---
 
-## 4. TextLayoutManager 布局开销 (中风险)
+## 3. TextLayoutManager 布局开销 (中风险)
 
 ### 问题描述
 
@@ -257,7 +214,7 @@ for linePosition in linesStartingAt(minY, until: maxY).lazy {
 
 ---
 
-## 5. LSP 请求堆积 (中风险)
+## 4. LSP 请求堆积 (中风险)
 
 ### 问题描述
 
