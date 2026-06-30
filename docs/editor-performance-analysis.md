@@ -2,135 +2,11 @@
 
 ## 执行摘要
 
-本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 5 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
+本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 3 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
 
 ---
 
-## 1. TextLayoutManager 布局开销 (中风险)
-
-### 问题描述
-
-TextLayoutManager 的布局循环存在性能问题：
-
-```swift
-for linePosition in linesStartingAt(minY, until: maxY).lazy {
-    if forceLayout || linePositionNeedsLayout || wasNotVisible || lineNotEntirelyLaidOut {
-        fullLineLayout()  // 每行都可能触发布局
-    }
-}
-```
-
-### 根本原因
-
-1. **预布局过多**：`verticalLayoutPadding = 350` 导致预布局过多行
-2. **视图复用不足**：视图复用池大小可能不够
-3. **锁争用**：`layoutLock` 可能导致锁争用
-4. **重复布局**：相同可见区域可能重复布局
-
-### 影响范围
-
-- 滚动时明显卡顿
-- 大文件滚动时帧率下降
-
-### 优化方案
-
-```swift
-// 调整预布局范围
-public var verticalLayoutPadding: CGFloat = 200  // 从 350 降低到 200
-
-// 增加视图复用池
-public var maxReusableViews: Int = 200  // 从默认值增加到 200
-
-// 优化布局循环
-for linePosition in linesStartingAt(minY, until: maxY).lazy {
-    // 跳过不需要重新布局的行
-    if !forceLayout && !linePositionNeedsLayout && !wasNotVisible && !lineNotEntirelyLaidOut {
-        // 只更新位置，不重新布局
-        if didLayoutChange || yContentAdjustment > 0 {
-            updateLineViewPositions(linePosition)
-        }
-        usedFragmentIDs.formUnion(linePosition.data.lineFragments.map(\.data.id))
-        continue
-    }
-    
-    fullLineLayout()
-}
-```
-
-**预期效果**：减少 15-20% 的布局开销
-
----
-
-## 2. LSP 请求堆积 (中风险)
-
-### 问题描述
-
-LSP 请求调度器的配置：
-
-```swift
-public static let inlayHintsDebounceMs: Int64 = 500
-public static let diagnosticsDebounceMs: Int64 = 300
-public static let codeActionsDebounceMs: Int64 = 400
-```
-
-### 根本原因
-
-1. **debounce 不同步**：不同类型的请求有不同的 debounce，可能导致请求堆积
-2. **无优先级队列**：所有请求同等优先级，补全请求可能被诊断请求阻塞
-3. **取消不彻底**：取消的请求仍可能执行回调
-4. **缓存缺失**：相同位置的重复请求没有缓存
-
-### 影响范围
-
-- 代码补全响应延迟
-- 诊断信息更新滞后
-- 悬停提示响应慢
-
-### 优化方案
-
-```swift
-// 实现优先级队列
-public enum LSPRequestPriority: Comparable {
-    case high    // 补全、签名帮助
-    case medium  // 悬停、代码动作
-    case low     // 诊断、inlay hints
-}
-
-// 优化 debounce 策略
-public func scheduleWithPriority(
-    _ type: Kind,
-    priority: LSPRequestPriority = .medium,
-    debounceMs: Int64? = nil,
-    operation: @escaping () async -> Void
-) {
-    let effectiveDebounce = debounceMs ?? defaultDebounce(for: type, priority: priority)
-    
-    // 取消低优先级请求
-    if priority == .high {
-        cancel(.inlayHints)
-        cancel(.diagnostics)
-    }
-    
-    // 实现细节...
-}
-
-// 添加结果缓存
-private var lspResultCache: [String: LSPCacheEntry] = [:]
-
-public func cachedResult(for key: String) -> LSPCacheEntry? {
-    guard let entry = lspResultCache[key],
-          Date().timeIntervalSince(entry.timestamp) < cacheExpiration else {
-        return nil
-    }
-    return entry
-}
-```
-
-**预期效果**：减少 10-20% 的 LSP 相关延迟
-
----
-
-## 3. 内存泄漏 (高风险)
+## 1. 内存泄漏 (高风险)
 
 ### 问题描述
 
@@ -215,7 +91,7 @@ public class MemoryMonitor {
 
 ---
 
-## 4. EditorUndoManager 无限制增长 (低风险)
+## 3. EditorUndoManager 无限制增长 (低风险)
 
 ### 问题描述
 
@@ -283,7 +159,7 @@ public final class EditorUndoManager {
 
 ---
 
-## 5. ContextMenuManager Swizzle 开销 (低风险)
+## 4. ContextMenuManager Swizzle 开销 (低风险)
 
 ### 问题描述
 
@@ -351,8 +227,6 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
     // 现有事件...
     
     // 新增监控点
-    case layoutCalculation = "layout.calculation"
-    case layoutReusableView = "layout.reuse"
     case lspRequestQueue = "lsp.request.queue"
     case lspRequestCache = "lsp.request.cache"
     case memoryPressure = "memory.pressure"
@@ -366,17 +240,16 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
 
 ### 立即实施 (第 1-2 周)
 
-1. **TextLayoutManager 优化**：调整布局参数和复用策略
+1. **LSP 请求优化**：实现优先级队列和缓存
 
 ### 中期实施 (第 3-4 周)
 
-2. **LSP 请求优化**：实现优先级队列和缓存
-3. **内存泄漏修复**：实现生命周期管理
+2. **内存泄漏修复**：实现生命周期管理
 
 ### 长期实施 (第 5-8 周)
 
-4. **EditorUndoManager 优化**：添加大小限制和压缩
-5. **ContextMenuManager 优化**：优化运行时使用
+3. **EditorUndoManager 优化**：添加大小限制和压缩
+4. **ContextMenuManager 优化**：优化运行时使用
 
 ---
 
@@ -384,7 +257,6 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
 
 | 优化项 | 预期卡顿减少 | 实现难度 | 优先级 |
 |--------|-------------|----------|--------|
-| TextLayoutManager 优化 | 15-20% | 中 | 中 |
 | LSP 请求优化 | 10-20% | 中 | 中 |
 | 内存泄漏修复 | 30-50% (长时间) | 高 | 高 |
 | EditorUndoManager 优化 | 5-10% | 低 | 低 |
@@ -450,10 +322,9 @@ public func adjustParametersBasedOnLoad() {
     
     if memoryPressure > 0.8 || cpuUsage > 0.7 {
         // 降低性能参数
-        verticalLayoutPadding = 150
+        // 调整相关参数
     } else {
         // 恢复默认参数
-        verticalLayoutPadding = 200
     }
 }
 ```
