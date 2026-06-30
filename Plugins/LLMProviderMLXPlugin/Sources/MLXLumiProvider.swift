@@ -3,6 +3,20 @@ import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
+// MARK: - Platform Detection
+
+/// 检查当前是否运行在 Apple Silicon Mac 上
+/// MLX 仅支持 Apple Silicon，不支持 Intel Mac
+private var isAppleSiliconMac: Bool {
+    #if arch(arm64)
+    return true
+    #else
+    return false
+    #endif
+}
+
+// MARK: - MLXLumiProvider
+
 @available(macOS 14.0, *)
 public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
@@ -33,6 +47,11 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        // 检查平台是否支持
+        guard isAppleSiliconMac else {
+            return .unavailable(.message("MLX 仅支持 Apple Silicon Mac，不支持 Intel Mac"))
+        }
+
         if Self.info.availableModels.contains(model) {
             return .available
         }
@@ -40,7 +59,14 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
-        nil
+        // Intel Mac 返回不可用状态
+        guard isAppleSiliconMac else {
+            return LumiLLMProviderStatus(
+                message: "MLX 仅支持 Apple Silicon Mac",
+                level: .error
+            )
+        }
+        return nil
     }
 
     public func errorRenderKind(for error: Error) -> String? {
@@ -72,6 +98,11 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
+        // 检查平台是否支持
+        guard isAppleSiliconMac else {
+            throw MLXLumiError.unsupportedPlatform
+        }
+
         guard let conversationID = request.messages.first?.conversationID else {
             throw MLXLumiError.missingConversation
         }
@@ -236,6 +267,7 @@ enum MLXLumiError: LocalizedError {
     case missingConversation
     case emptyPrompt
     case generationFailed(String)
+    case unsupportedPlatform
 
     var errorDescription: String? {
         switch self {
@@ -245,6 +277,8 @@ enum MLXLumiError: LocalizedError {
             return "Prompt is empty"
         case .generationFailed(let message):
             return message
+        case .unsupportedPlatform:
+            return "MLX 仅支持 Apple Silicon Mac，不支持 Intel Mac"
         }
     }
 }
