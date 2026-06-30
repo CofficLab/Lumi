@@ -88,6 +88,7 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
             if let content = chunk.content, !content.isEmpty {
                 accumulated.value += content
+                StepFunPlugin.logger.info("\(Self.t)chunk: \(content)")
             }
 
             if chunk.isDone {
