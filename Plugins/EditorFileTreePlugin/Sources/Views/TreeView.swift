@@ -15,9 +15,9 @@ public struct TreeView: View, SuperLog {
 
     /// 日志详细程度控制
     public nonisolated static let emoji = "🌳"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static var verbose: Bool { EditorFileTreePanelPlugin.verbose }
     /// 使用插件的 logger
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
+    public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = RefreshCoordinator()

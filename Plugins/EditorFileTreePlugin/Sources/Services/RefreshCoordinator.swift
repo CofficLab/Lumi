@@ -86,7 +86,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 是否为 Git 仓库（缓存，避免每次都调用 LibGit2）
     private var isGitRepo: Bool = false
 
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.coordinator")
+    public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     // MARK: - Init
 

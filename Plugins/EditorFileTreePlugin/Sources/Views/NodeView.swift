@@ -1,6 +1,7 @@
 import EditorService
 import LumiCoreKit
 import LumiUI
+import os
 import SwiftUI
 import SuperLogKit
 
@@ -10,8 +11,8 @@ public struct NodeView: View, Equatable, SuperLog {
     // MARK: - SuperLog Configuration
 
     public nonisolated static let emoji = "🌲"
-    public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.node")
+    public nonisolated static var verbose: Bool { EditorFileTreePanelPlugin.verbose }
+    public nonisolated static let logger = EditorFileTreePanelPlugin.logger
     /// 默认图标主题贡献器（无状态，可复用）
     private static let defaultIconContributor = LumiDefaultFileIconThemeContributor()
     

@@ -6,7 +6,7 @@ import os
 public final class PackageDependencyStore: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📦"
     public nonisolated static let verbose: Bool = true
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.packages")
+    public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     @Published private(set) var dependencies: [PackageDependency] = []
     @Published private(set) var isLoading: Bool = false
