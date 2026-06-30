@@ -31,6 +31,7 @@ public enum LumiLLMProviderKeys {
         case "xiaomi": return "DevAssistant_ApiKey_Xiaomi"
         case "xiaomi-api": return "DevAssistant_ApiKey_XiaomiAPI"
         case "xybbz": return "DevAssistant_ApiKey_Xybbz"
+        case "sublyx": return "DevAssistant_ApiKey_Sublyx"
         default: return "DevAssistant_ApiKey_\(id)"
         }
     }

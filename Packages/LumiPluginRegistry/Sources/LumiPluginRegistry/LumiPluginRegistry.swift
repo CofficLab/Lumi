@@ -20,6 +20,7 @@ import LLMProviderMegaLLMPlugin
 import LLMProviderOpenRouterPlugin
 import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
+import LLMProviderSublyxPlugin
 import LLMProviderCodexPlugin
 import LLMProviderMLXPlugin
 import AgentRAGPlugin
@@ -179,6 +180,7 @@ public enum LumiPluginRegistry {
         OpenRouterPlugin.self,
         XiaomiPlugin.self,
         XybbzPlugin.self,
+        SublyxPlugin.self,
         CodexLumiPlugin.self,
         MLXLumiPlugin.self,
         PortManagerPlugin.self,
