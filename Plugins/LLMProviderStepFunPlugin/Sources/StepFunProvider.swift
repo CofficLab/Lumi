@@ -73,4 +73,16 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
             isLocal: Self.info.isLocal
         )
     }
+
+    // MARK: - Error Rendering
+
+    public override func errorRenderKind(for error: Error) -> String? {
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            return StepFunRenderKind.apiKeyMissing
+        }
+        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+            return StepFunRenderKind.http(statusCode)
+        }
+        return StepFunRenderKind.requestFailed
+    }
 }
