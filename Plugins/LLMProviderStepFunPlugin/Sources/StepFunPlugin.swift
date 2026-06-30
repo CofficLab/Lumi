@@ -9,8 +9,8 @@ public enum StepFunPlugin: LumiPlugin {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.stepfun")
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.stepfun",
-        displayName: LumiPluginLocalization.string("StepFun", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes StepFun models to Lumi Chat.", bundle: .module),
+        displayName: LumiPluginLocalization.string("StepFun StepPlan", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes StepFun StepPlan models to Lumi Chat.", bundle: .module),
         order: 93
     )
 

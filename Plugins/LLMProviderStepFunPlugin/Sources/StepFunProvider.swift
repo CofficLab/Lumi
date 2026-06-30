@@ -7,13 +7,13 @@ import SuperLogKit
 public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
     nonisolated public static let emoji = "🌟"
     nonisolated static let verbose = false
-    public static let shortName = "StepFun"
+    public static let shortName = "StepFun StepPlan"
 
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "stepfun",
-            displayName: LumiPluginLocalization.string("StepFun", bundle: .module),
-            description: LumiPluginLocalization.string("StepFun AI", bundle: .module),
+            displayName: LumiPluginLocalization.string("StepFun StepPlan", bundle: .module),
+            description: LumiPluginLocalization.string("StepFun StepPlan AI", bundle: .module),
             defaultModel: "step-3.5-flash",
             availableModels: [
                 "step-3.7-flash",
