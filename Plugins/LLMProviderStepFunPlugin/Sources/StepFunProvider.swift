@@ -25,15 +25,15 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "step-3.5-flash"
             ],
             contextWindowSizes: [
-                "step-3.7-flash": 1_000_000,
-                "step-router-v1": 1_000_000,
+                "step-3.7-flash": 262_144,
+                "step-router-v1": 262_144,
                 "stepaudio-2.5-chat": 1_000_000,
                 "stepaudio-2.5-tts": 1_000_000,
                 "stepaudio-2.5-asr": 1_000_000,
                 "stepaudio-2.5-realtime": 1_000_000,
                 "step-image-edit-2": 1_000_000,
-                "step-3.5-flash-2603": 1_000_000,
-                "step-3.5-flash": 1_000_000
+                "step-3.5-flash-2603": 262_144,
+                "step-3.5-flash": 262_144
             ],
             modelCapabilities: [
                 "step-3.7-flash": .init(supportsVision: true, supportsTools: true),
