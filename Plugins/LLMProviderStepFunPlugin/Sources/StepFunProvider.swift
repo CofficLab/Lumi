@@ -2,9 +2,10 @@ import Foundation
 import os
 import LumiCoreKit
 import LumiLLMProviderSupport
+import SuperLogKit
 
 public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
-    nonisolated static let emoji = "🌟"
+    nonisolated public static let emoji = "🌟"
     nonisolated static let verbose = false
     public static let shortName = "StepFun"
 
@@ -55,7 +56,6 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         "DevAssistant_ApiKey_StepFun"
     }
 
-    /// 获取 API Key 的帮助链接
     public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
 
     public init() {
@@ -67,7 +67,9 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
             acceptsFunctionScopedToolCallID: false,
             includesReasoningContentInMessages: true
         )
-        StepFunPlugin.logger.info("\(Self.t)初始化配置完成 baseURL=\(config.baseURL)")
+        if Self.verbose {
+            StepFunPlugin.logger.info("\(Self.t)初始化配置完成 baseURL=\(config.baseURL)")
+        }
         super.init(configuration: config)
     }
 
@@ -75,7 +77,9 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        StepFunPlugin.logger.info("\(Self.t)开始流式请求 model=\(request.model), messagesCount=\(request.messages.count)")
+        if Self.verbose {
+            StepFunPlugin.logger.info("\(Self.t)开始流式请求 model=\(request.model), messagesCount=\(request.messages.count)")
+        }
 
         let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
             if Self.verbose, chunk.isDone {
@@ -86,10 +90,14 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
 
         do {
             let result = try await super.sendStreaming(request, onChunk: wrappedChunk)
-            StepFunPlugin.logger.info("\(self.t)流式请求成功 finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
+            if Self.verbose {
+                StepFunPlugin.logger.info("\(self.t)流式请求成功 finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
+            }
             return result
         } catch {
-            StepFunPlugin.logger.error("\(self.t)流式请求失败：\(error.localizedDescription)")
+            if Self.verbose {
+                StepFunPlugin.logger.error("\(self.t)流式请求失败：\(error.localizedDescription)")
+            }
             throw error
         }
     }
