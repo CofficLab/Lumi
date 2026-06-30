@@ -377,6 +377,7 @@ public struct NodeView: View, Equatable, SuperLog {
     }
 
     private func handleRefreshTokenChange(_ newValue: Int) {
+        if Self.verbose { Self.logger.info("\(Self.t)handleRefreshTokenChange: token=\(newValue), url=\(self.url.lastPathComponent)") }
         guard newValue != lastRefreshToken else { return }
         lastRefreshToken = newValue
         
@@ -568,6 +569,7 @@ extension NodeView {
 
     /// 将当前展开/折叠状态持久化到 store
     private func persistExpansionState() {
+        if Self.verbose { Self.logger.info("\(Self.t)持久化展开状态: \(self.isExpanded ? "展开" : "折叠") - \(self.url.lastPathComponent)") }
         guard !projectRootPath.isEmpty else { return }
         let store = FileTreeSettings.shared
         if isExpanded {
@@ -579,6 +581,7 @@ extension NodeView {
 
     /// 通知协调器展开状态变化（用于更新文件系统监听列表）
     private func notifyExpansionChanged(isExpanded: Bool) {
+        if Self.verbose { Self.logger.info("\(Self.t)通知展开变化: \(isExpanded ? "展开" : "折叠") - \(self.url.lastPathComponent)") }
         guard !projectRootPath.isEmpty, isDirectory else { return }
         onExpansionChange?(relativePath, isExpanded)
     }
@@ -586,6 +589,7 @@ extension NodeView {
     // MARK: - Data Loading
 
     private func loadChildren() {
+        if Self.verbose { Self.logger.info("\(Self.t)开始加载子节点: \(self.url.lastPathComponent)") }
         let currentURL = url
         loadChildrenTask?.cancel()
         isLoadingChildren = true
@@ -596,6 +600,7 @@ extension NodeView {
                 }.value
                 guard !Task.isCancelled else { return }
                 children = sorted
+                if Self.verbose { Self.logger.info("\(Self.t)加载完成: \(self.url.lastPathComponent), 子项数量: \(sorted.count)") }
                 hasLoadedChildren = true
                 isLoadingChildren = false
             } catch {
