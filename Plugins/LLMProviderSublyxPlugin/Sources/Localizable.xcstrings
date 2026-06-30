@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "Configure your Sublyx API Key below, then resend your message." : {
       "localizations" : {
         "en" : {

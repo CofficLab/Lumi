@@ -46,7 +46,8 @@ public enum MessageRendererPlugin: LumiPlugin {
                        renderKind.hasPrefix("zhipu-")
                            || renderKind.hasPrefix("aliyun-")
                            || renderKind.hasPrefix("xiaomi-")
-                           || renderKind.hasPrefix("mlx-") {
+                           || renderKind.hasPrefix("mlx-")
+                           || renderKind.hasPrefix("sublyx-") {
                         return false
                     }
                     return true
