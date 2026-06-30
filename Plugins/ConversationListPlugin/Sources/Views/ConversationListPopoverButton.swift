@@ -30,16 +30,43 @@ public struct ConversationListPopoverButton: View {
     }
 
     private var conversationListButton: some View {
-        AppIconButton(
-            systemImage: "message.fill",
-            label: LumiPluginLocalization.string("会话列表", bundle: .module)
-        ) {
-            isPresented.toggle()
+        ZStack(alignment: .topTrailing) {
+            AppIconButton(
+                systemImage: "message.fill",
+                label: LumiPluginLocalization.string("会话列表", bundle: .module)
+            ) {
+                isPresented.toggle()
+            }
+            .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+                ConversationListView(context: context)
+                    .frame(width: 300, height: 480)
+            }
+
+            if context.unreadCount > 0 {
+                unreadBadge
+                    .offset(x: 4, y: -4)
+            }
         }
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            ConversationListView(context: context)
-                .frame(width: 300, height: 480)
-        }
+    }
+
+    @ViewBuilder
+    private var unreadBadge: some View {
+        let count = min(context.unreadCount, 99)
+        let text = count > 99 ? "99+" : "\(count)"
+
+        Text(text)
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .foregroundColor(Color.white)
+            .frame(minWidth: 18, minHeight: 18)
+            .padding(.horizontal, count >= 10 ? 5 : 4)
+            .background(
+                Capsule()
+                    .fill(Color.red)
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    )
+            )
     }
 }
 

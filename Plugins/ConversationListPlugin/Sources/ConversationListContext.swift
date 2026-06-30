@@ -7,6 +7,7 @@ import LumiCoreKit
 public final class ConversationListContext: ObservableObject {
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
+    @Published public private(set) var unreadCount: Int = 0
 
     private let chatService: ChatService
     private let projectPathStore: LumiCurrentProjectPathStoring?
@@ -30,6 +31,21 @@ public final class ConversationListContext: ObservableObject {
 
     public var selectedConversationId: UUID? {
         chatService.selectedConversationID
+    }
+
+    private var selectedConversationUpdatedAt: Date? {
+        guard let selectedConversationId else { return nil }
+        return chatService.conversations.first(where: { $0.id == selectedConversationId })?.updatedAt
+    }
+
+    private func recalculateUnreadCount() {
+        let selectedUpdatedAt = selectedConversationUpdatedAt
+        guard let selectedUpdatedAt else {
+            unreadCount = 0
+            return
+        }
+
+        unreadCount = chatService.conversations.filter { $0.updatedAt > selectedUpdatedAt }.count
     }
 
     public func databaseDirectory() -> URL {
@@ -108,6 +124,7 @@ public final class ConversationListContext: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
+                self?.recalculateUnreadCount()
             }
             .store(in: &cancellables)
     }
@@ -129,5 +146,6 @@ public final class ConversationListContext: ObservableObject {
 
         conversationSnapshots = nextSnapshots
         statusVersion += 1
+        recalculateUnreadCount()
     }
 }
