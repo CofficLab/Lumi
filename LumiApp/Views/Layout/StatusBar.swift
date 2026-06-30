@@ -40,6 +40,7 @@ struct StatusBar: View {
             dependencies.register((any LumiChatServicing).self, chatService)
             dependencies.register((any HistoryQueryService).self, chatService)
             dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+            dependencies.register(LumiCurrentProjectPathProviding.self, projectPathStore)
             dependencies.register(LumiEditorServicing.self, editorCoreService)
             dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
         }

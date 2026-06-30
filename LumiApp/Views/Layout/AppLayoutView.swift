@@ -217,6 +217,7 @@ struct AppLayoutView: View {
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
+                dependencies.register(LumiCurrentProjectPathProviding.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
                 dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
