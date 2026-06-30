@@ -106,6 +106,34 @@ final class MessageManager {
         service.persistMessage(messages[messageIndex])
     }
 
+    /// 回填工具调用的用户友好描述（displayName）。
+    ///
+    /// 在执行工具之前调用，使界面在「加载中」与「已完成」两种状态下都能展示
+    /// 由工具自身生成的、带参数语义的描述（如「读取 Foo.swift」），而非原始工具名。
+    /// 跳过已经设置过 displayName 的调用，避免重复持久化。
+    func updateToolCallDisplayName(
+        _ displayName: String,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        conversationID: UUID
+    ) {
+        guard let service,
+              var messages = service.messagesByConversationID[conversationID],
+              let messageIndex = messages.firstIndex(where: { $0.id == assistantMessageID }),
+              var toolCalls = messages[messageIndex].toolCalls,
+              let toolCallIndex = toolCalls.firstIndex(where: { $0.id == toolCallID }),
+              toolCalls[toolCallIndex].displayName != displayName
+        else {
+            return
+        }
+
+        toolCalls[toolCallIndex].displayName = displayName
+        messages[messageIndex].toolCalls = toolCalls
+        service.messagesByConversationID[conversationID] = messages
+        // 增量持久化：只更新这条消息
+        service.persistMessage(messages[messageIndex])
+    }
+
     // MARK: - Notifications
 
     func postMessageSavedNotification(for message: LumiChatMessage) {

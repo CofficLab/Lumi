@@ -139,7 +139,7 @@ final class EditFileToolTests {
     @Test func displayDescriptionFallbackWhenNoPath() {
         let tool = EditFileTool()
         let desc = tool.displayDescription(arguments: [:])
-        #expect(desc.contains("Edit file"))
+        #expect(desc.contains("编辑文件"))
     }
 
     @Test func riskLevelIsHigh() {

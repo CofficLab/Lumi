@@ -69,6 +69,16 @@ private struct ToolCallRowView: View {
         toolCall.result == nil
     }
 
+    /// 动作行展示文案：优先用工具生成的语义化描述，并根据执行状态加上
+    /// 「正在…/已完成」前缀，读起来更接近自然语言。
+    /// 仅当存在语义化描述时加前缀，避免给原始工具名（如 run_command）生硬拼接。
+    private var actionTitle: String {
+        if let displayName = toolCall.displayName {
+            return isLoadingResult ? "正在\(displayName)…" : displayName
+        }
+        return toolCall.name
+    }
+
     private var visualState: ToolCallResultVisualState {
         ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
     }
@@ -96,7 +106,7 @@ private struct ToolCallRowView: View {
                     .font(.appCaptionEmphasized)
                     .foregroundColor(visualState.isFailure ? theme.error : theme.textSecondary)
 
-                Text(toolCall.displayName ?? toolCall.name)
+                Text(actionTitle)
                     .font(.appCaption)
                     .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
                     .lineLimit(1)

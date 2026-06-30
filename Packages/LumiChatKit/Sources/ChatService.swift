@@ -361,6 +361,21 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         )
     }
 
+    /// 回填工具调用的用户友好描述，供 UI 在执行前后展示。
+    func updateToolCallDisplayName(
+        _ displayName: String,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        conversationID: UUID
+    ) {
+        messageManager.updateToolCallDisplayName(
+            displayName,
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            conversationID: conversationID
+        )
+    }
+
     func incrementRevision() {
         revision += 1
     }
@@ -556,6 +571,19 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
             for toolCall in toolCalls {
                 try Task.checkCancellation()
+
+                // 回填用户友好的操作描述（由工具根据参数生成，如「读取 Foo.swift」），
+                // 使界面在执行前后的所有状态下都显示语义化文案，而非原始工具名。
+                // 在审批/执行之前完成，因此「加载中」与「已完成」都能受益。
+                if let tool = toolService.tool(named: toolCall.name),
+                   let arguments = try? Self.decodeToolArguments(toolCall.arguments) {
+                    updateToolCallDisplayName(
+                        tool.displayDescription(arguments: arguments),
+                        toolCallID: toolCall.id,
+                        assistantMessageID: assistantMessage.id,
+                        conversationID: conversationID
+                    )
+                }
 
                 if automationLevel(for: conversationID) == .build,
                    let tool = toolService.tool(named: toolCall.name),

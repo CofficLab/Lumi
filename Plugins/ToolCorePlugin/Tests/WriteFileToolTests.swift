@@ -103,7 +103,7 @@ final class WriteFileToolTests {
     @Test func displayDescriptionFallbackWhenNoPath() {
         let tool = WriteFileTool()
         let desc = tool.displayDescription(arguments: [:])
-        #expect(desc.contains("Write file"))
+        #expect(desc.contains("写入文件"))
     }
 
     @Test func riskLevelIsMedium() {
