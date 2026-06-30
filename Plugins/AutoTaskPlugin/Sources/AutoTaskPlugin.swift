@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiChatKit
 import LumiCoreKit
 import LumiUI
@@ -32,11 +31,11 @@ public enum AutoTaskPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         bootstrapFromLumiCoreIfNeeded()
         return [
-            CreateTaskTool().asLumiAgentTool(),
-            AppendTaskTool().asLumiAgentTool(),
-            UpdateTaskTool().asLumiAgentTool(),
-            ListTasksTool().asLumiAgentTool(),
-            CheckProgressTool().asLumiAgentTool(),
+            CreateTaskTool(),
+            AppendTaskTool(),
+            UpdateTaskTool(),
+            ListTasksTool(),
+            CheckProgressTool(),
         ]
     }
 
