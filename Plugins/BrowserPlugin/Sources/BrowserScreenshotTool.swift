@@ -1,6 +1,6 @@
-import AgentToolKit
 import AppKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import WebKit
 import os
@@ -9,77 +9,63 @@ import os
 ///
 /// 使用 WKWebView 渲染指定 URL 的网页，等待页面加载完成后截取完整截图。
 /// 截图保存到系统临时目录，返回文件路径。
-public struct BrowserScreenshotTool: SuperAgentTool, SuperLog {
+public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📸"
     public nonisolated static let verbose: Bool = false
 
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser.tool")
 
-    public let name = "browser_screenshot"
+    public static let info = LumiAgentToolInfo(
+        id: "browser_screenshot",
+        displayName: LumiPluginLocalization.string("Browser Screenshot", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file. Use this tool when you need to visually inspect a web page or when text-based fetching (web_fetch) is insufficient (e.g., JavaScript-heavy pages, SPAs, pages that require login cookies). Returns the file path of the saved screenshot image (PNG format).",
+            bundle: .module
+        )
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return """
-截取渲染后网页的截图。使用 WKWebView 加载并渲染页面，然后截取整页截图并保存到临时文件。
-
-当需要视觉检查网页，或基于文本的抓取工具（web_fetch）不足以处理时使用此工具，例如 JavaScript 较重的页面、SPA、需要登录 Cookie 的页面。
-
-返回保存后的 PNG 截图文件路径。
-"""
-        case .english:
-            return """
-Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file.
-
-Use this tool when you need to visually inspect a web page or when text-based fetching (web_fetch) is insufficient (e.g., JavaScript-heavy pages, SPAs, pages that require login cookies).
-
-Returns the file path of the saved screenshot image (PNG format).
-"""
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "url": .object([
+                    "type": .string("string"),
+                    "description": .string("The URL of the web page to screenshot (must be a valid HTTP/HTTPS URL)")
+                ]),
+                "width": .object([
+                    "type": .string("integer"),
+                    "description": .string("Viewport width in pixels (default: 1280, max: 4096)"),
+                    "minimum": .int(1),
+                    "maximum": .int(4096)
+                ]),
+                "wait": .object([
+                    "type": .string("number"),
+                    "description": .string("Additional wait time in seconds after page load before taking the screenshot, useful for JavaScript-heavy pages (default: 1.0, max: 10.0)"),
+                    "minimum": .double(0),
+                    "maximum": .double(10)
+                ])
+            ]),
+            "required": .array([.string("url")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "url": [
-                    "type": "string",
-                    "description": "The URL of the web page to screenshot (must be a valid HTTP/HTTPS URL)",
-                ],
-                "width": [
-                    "type": "integer",
-                    "description": "Viewport width in pixels (default: 1280, max: 4096)",
-                    "minimum": 1,
-                    "maximum": 4096,
-                ],
-                "wait": [
-                    "type": "number",
-                    "description": "Additional wait time in seconds after page load before taking the screenshot, useful for JavaScript-heavy pages (default: 1.0, max: 10.0)",
-                    "minimum": 0,
-                    "maximum": 10,
-                ],
-            ],
-            "required": ["url"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "网页截图"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         return try await executeScreenshot(arguments: arguments, context: context)
     }
 
-    private func executeScreenshot(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let rawURLString = arguments["url"]?.value as? String else {
+    private func executeScreenshot(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let rawURLString = arguments["url"]?.stringValue else {
             return "Error: Missing required 'url' parameter"
         }
         guard let url = Self.normalizedURL(from: rawURLString) else {
@@ -90,8 +76,8 @@ Returns the file path of the saved screenshot image (PNG format).
             return "Error: Only HTTP/HTTPS URLs are supported"
         }
 
-        let width = Self.normalizedViewportWidth(from: arguments["width"]?.value)
-        let waitSeconds = Self.normalizedWaitSeconds(from: arguments["wait"]?.value)
+        let width = Self.normalizedViewportWidth(from: arguments["width"]?.anyValue)
+        let waitSeconds = Self.normalizedWaitSeconds(from: arguments["wait"]?.anyValue)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)📸 Taking screenshot of: \(url.absoluteString)")
@@ -195,7 +181,7 @@ Returns the file path of the saved screenshot image (PNG format).
         url: URL,
         width: Int,
         waitSeconds: Double,
-        context: ToolExecutionContext
+        context: LumiToolExecutionContext
     ) async throws -> String {
         try context.checkCancellation()
         let config = WKWebViewConfiguration()
@@ -257,7 +243,7 @@ Returns the file path of the saved screenshot image (PNG format).
 
 extension WKWebView {
     /// 加载请求并等待页面加载完成
-    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, context: ToolExecutionContext) async throws {
+    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, context: LumiToolExecutionContext) async throws {
         try context.checkCancellation()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

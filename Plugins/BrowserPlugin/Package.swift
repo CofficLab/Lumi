@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -23,7 +22,6 @@ let package = Package(
         .target(
             name: "BrowserPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

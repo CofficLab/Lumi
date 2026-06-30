@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 
@@ -27,8 +26,8 @@ public enum BrowserPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            BrowserScreenshotTool().asLumiAgentTool(),
-            BrowserAgentTool().asLumiAgentTool(),
+            BrowserScreenshotTool(),
+            BrowserAgentTool(),
         ]
     }
 }
