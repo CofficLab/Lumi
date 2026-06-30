@@ -1,8 +1,8 @@
-import AgentToolKit
 import LumiCoreKit
 import LumiUI
 import os
 import SwiftUI
+import SuperLogKit
 
 public enum DatabaseManagerPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
@@ -36,10 +36,10 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            DatabaseListConnectionsTool().asLumiAgentTool(),
-            DatabaseDescribeSchemaTool().asLumiAgentTool(),
-            DatabaseReadonlyQueryTool().asLumiAgentTool(),
-            DatabaseSampleTableTool().asLumiAgentTool(),
+            DatabaseListConnectionsTool(),
+            DatabaseDescribeSchemaTool(),
+            DatabaseReadonlyQueryTool(),
+            DatabaseSampleTableTool(),
         ]
     }
 
