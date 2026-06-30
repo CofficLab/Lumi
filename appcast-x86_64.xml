@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.11.0</title>
-            <pubDate>Mon, 29 Jun 2026 11:52:12 +0000</pubDate>
-            <sparkle:version>238</sparkle:version>
-            <sparkle:shortVersionString>4.11.0</sparkle:shortVersionString>
+            <title>4.12.0</title>
+            <pubDate>Tue, 30 Jun 2026 13:39:02 +0000</pubDate>
+            <sparkle:version>239</sparkle:version>
+            <sparkle:shortVersionString>4.12.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.11.0</h2>
-<h3>Changes since v4.10.0</h3>
+            <description><![CDATA[<h2>Release v4.12.0</h2>
+<h3>Changes since v4.11.0</h3>
 <ul>
-<li>docs: move API docs to plugin &amp; add concurrency roadmap</li>
-<li>feat: add Aliyun TokenPlan provider</li>
-<li>feat: unify toolbar containers and add bottom shadow</li>
-<li>feat: update Aliyun Coding Plan model list to match official docs</li>
-<li>feat(aliyun): add new models to CodingPlan</li>
-<li>feat(autotask): silent auto-continuation without user-visible nudge</li>
-<li>feat(conversation-list): switch app's current project when selecting a conversation</li>
-<li>feat(layout): add bottom panel visibility state</li>
-<li>feat(LumiUI): add AppShadowLevel for toolbar container shadow control</li>
-<li>feat(model-selector): display 14-day usage bar chart on provider cards</li>
-<li>feat(plugins): add provider settings views for Codex and MLX</li>
-<li>fix: add localization to DeviceInfoPlugin views</li>
-<li>fix: add verbose guards for debug logs to comply with logging spec</li>
-<li>fix: fix layout recursion crashes across multiple files</li>
-<li>fix: resolve compilation errors for Aliyun TokenPlan Provider</li>
-<li>fix(i18n): standardize onboarding localization keys to English</li>
-<li>fix(ui): adjust PanelHeaderView zIndex for proper shadow layering</li>
-<li>fix(ui): improve toolbar shadow and background styling</li>
-<li>fix(ui): improve toolbar shadow visibility on opaque backgrounds</li>
-<li>fix(ui): remove appToolbarUndershadow modifier</li>
+<li>bugfix:  fix a bug</li>
+<li>docs: remove completed LSP cache task from roadmap</li>
+<li>docs: remove completed main-thread-concurrency-roadmap</li>
+<li>docs: remove completed TreeSitter optimization from performance analysis</li>
+<li>docs: update performance analysis by removing completed optimizations</li>
+<li>feat: add performance test switches for file tree scrolling optimization</li>
+<li>feat: add StepFun LLM provider plugin</li>
+<li>feat: add Sublyx API key missing error rendering</li>
+<li>feat: add Sublyx LLM provider plugin</li>
+<li>feat: allow LLM to customize timeout for run_command tool</li>
+<li>feat: remove Availability tab from ModelSelectorPlugin popover</li>
+<li>feat: update AgentRulesPlugin localization strings</li>
+<li>feat(file-tree): add key logging points to NodeView (verbose mode)</li>
+<li>feat(file-tree): add SuperLog configuration to NodeView</li>
+<li>feat(file-tree): optimize performance and enhance UX for VS Code-like experience</li>
+<li>feat(LLMProviderMLX): add Intel Mac platform detection</li>
+<li>feat(MessageRenderer): show friendly tool descriptions instead of raw names</li>
+<li>feat(SublyxProvider): add superlog to log HTTP error responses</li>
+<li>fix: add missing LLMProviderStepFunPlugin dependency to LumiPluginRegistry</li>
+<li>fix: add missing view components and API key methods for StepFun plugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.11.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.11.0/Lumi_4.11.0_x86_64.dmg" length="55243164" type="application/octet-stream" sparkle:edSignature="ZTPmrFsDkmULIbPUq0rByjJ1qKPuOpcg6M0fOFE71K8dMNdZOuY8Lj114k9tJVFejuknWtc/WLVAyIIyEcaqDg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.12.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.12.0/Lumi_4.12.0_x86_64.dmg" length="54651666" type="application/octet-stream" sparkle:edSignature="VSP92oDoygcxbAv1nnwcXZyUibxe/mcDMLgHULn6M/bTbLFa0Ef5pkejSXlEUUAkMKVvFVeUgMM8bmAAqLVVDg=="/>
         </item>
     </channel>
 </rss>
