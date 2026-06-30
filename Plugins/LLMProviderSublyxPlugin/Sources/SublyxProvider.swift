@@ -2,8 +2,14 @@ import Foundation
 import HttpKit
 import LumiCoreKit
 import LumiLLMProviderSupport
+import SuperLogKit
+import os
 
-public final class SublyxProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
+    public nonisolated static let emoji = "📡"
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.sublyx")
+
     public static let apiKeyHelpURL: String? = "https://api.sublyx.org/"
 
     public override class var info: LumiLLMProviderInfo {
@@ -85,5 +91,25 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, @unchecked Send
             displayName: Self.info.displayName,
             isLocal: Self.info.isLocal
         )
+    }
+
+    // MARK: - SuperLog
+
+    public override func sendStreaming(
+        _ request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async throws -> LumiChatMessage {
+        do {
+            let message = try await super.sendStreaming(request, onChunk: onChunk)
+            return message
+        } catch {
+            // 捕获错误，检查是否为 HTTP 错误
+            if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error),
+               !(200..<300).contains(statusCode) {
+                // 输出非 2xx 状态码时的响应内容
+                Self.logger.error("\(Self.t)HTTP \(statusCode) 错误响应: \(error.localizedDescription)")
+            }
+            throw error
+        }
     }
 }
