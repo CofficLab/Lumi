@@ -99,6 +99,19 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
+        // 输出请求使用的工具名称列表，用于调试 API 错误
+        if !request.tools.isEmpty {
+            let toolNames = request.tools.map { $0.name }
+            Self.logger.info("\(Self.t)请求使用的工具名称列表: \(toolNames)")
+            // 检查每个工具名称是否符合 OpenAI API 规范 (^[a-zA-Z0-9_-]+$)
+            for tool in request.tools {
+                let isValid = tool.name.range(of: "^[a-zA-Z0-9_-]+$", options: .regularExpression) != nil
+                if !isValid {
+                    Self.logger.error("\(Self.t)⚠️ 工具名称 '\(tool.name)' 不符合 OpenAI API 命名规范（仅允许字母、数字、下划线、连字符）")
+                }
+            }
+        }
+
         do {
             let message = try await super.sendStreaming(request, onChunk: onChunk)
             return message
