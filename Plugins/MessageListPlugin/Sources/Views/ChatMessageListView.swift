@@ -44,9 +44,6 @@ struct ChatMessageListView: View {
         if message.role == .tool {
             return false
         }
-        if verbosity == .brief, message.isToolExecutionOnly {
-            return false
-        }
         return true
     }
 
