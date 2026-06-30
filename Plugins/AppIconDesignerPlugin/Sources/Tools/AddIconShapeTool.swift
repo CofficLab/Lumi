@@ -1,70 +1,65 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct AddIconShapeTool: SuperAgentTool {
-    public let name = "add_icon_shape"
+public struct AddIconShapeTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "add_icon_shape",
+        displayName: "Add Icon Shape",
+        description: "Add a vector layer to the current icon document. Supports rectangle, circle, capsule, triangle, line, symbol, and text."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "向当前图标文档添加矢量图层。支持 rectangle、circle、capsule、triangle、line、symbol、text。"
-        case .english:
-            return "Add a vector layer to the current icon document. Supports rectangle, circle, capsule, triangle, line, symbol, and text."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
                 "shape": [
                     "type": "string",
                     "enum": ["rectangle", "circle", "capsule", "triangle", "line", "symbol", "text"],
-                    "description": IconToolSupport.description(language, en: "Shape type.", zh: "形状类型。")
+                    "description": "Shape type."
                 ],
-                "name": ["type": "string", "description": IconToolSupport.description(language, en: "Layer name.", zh: "图层名称。")],
-                "fill": ["type": "string", "description": IconToolSupport.description(language, en: "Fill color, for example #38bdf8.", zh: "填充颜色，例如 #38bdf8。")],
-                "x": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle x position.", zh: "矩形/胶囊/三角形的 x 位置。")],
-                "y": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle y position.", zh: "矩形/胶囊/三角形的 y 位置。")],
-                "width": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle width.", zh: "矩形/胶囊/三角形宽度。")],
-                "height": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle height.", zh: "矩形/胶囊/三角形高度。")],
-                "cornerRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle corner radius.", zh: "矩形圆角半径。")],
-                "cx": ["type": "number", "description": IconToolSupport.description(language, en: "Circle center x.", zh: "圆心 x 坐标。")],
-                "cy": ["type": "number", "description": IconToolSupport.description(language, en: "Circle center y.", zh: "圆心 y 坐标。")],
-                "radius": ["type": "number", "description": IconToolSupport.description(language, en: "Circle radius.", zh: "圆形半径。")],
-                "x1": ["type": "number", "description": IconToolSupport.description(language, en: "Line start x.", zh: "线条起点 x。")],
-                "y1": ["type": "number", "description": IconToolSupport.description(language, en: "Line start y.", zh: "线条起点 y。")],
-                "x2": ["type": "number", "description": IconToolSupport.description(language, en: "Line end x.", zh: "线条终点 x。")],
-                "y2": ["type": "number", "description": IconToolSupport.description(language, en: "Line end y.", zh: "线条终点 y。")],
-                "stroke": ["type": "string", "description": IconToolSupport.description(language, en: "Optional stroke color.", zh: "可选描边颜色。")],
-                "strokeWidth": ["type": "number", "description": IconToolSupport.description(language, en: "Optional stroke width.", zh: "可选描边宽度。")],
-                "opacity": ["type": "number", "description": IconToolSupport.description(language, en: "Layer opacity from 0 to 1.", zh: "图层不透明度，范围 0 到 1。")],
-                "symbolName": ["type": "string", "description": IconToolSupport.description(language, en: "SF Symbol name for symbol layers.", zh: "符号图层使用的 SF Symbol 名称。")],
-                "text": ["type": "string", "description": IconToolSupport.description(language, en: "Text value for text layers.", zh: "文字图层内容。")],
-                "size": ["type": "number", "description": IconToolSupport.description(language, en: "Symbol or text size.", zh: "符号或文字尺寸。")],
-                "weight": ["type": "string", "description": IconToolSupport.description(language, en: "Font/SF Symbol weight.", zh: "字体或 SF Symbol 字重。")],
-                "shadowColor": ["type": "string", "description": IconToolSupport.description(language, en: "Optional shadow color.", zh: "可选阴影颜色。")],
-                "shadowRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Optional shadow radius.", zh: "可选阴影半径。")],
-                "shadowX": ["type": "number", "description": IconToolSupport.description(language, en: "Optional shadow x offset.", zh: "可选阴影 x 偏移。")],
-                "shadowY": ["type": "number", "description": IconToolSupport.description(language, en: "Optional shadow y offset.", zh: "可选阴影 y 偏移。")],
-                "blurRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Optional layer blur radius.", zh: "可选图层模糊半径。")],
+                "name": ["type": "string", "description": "Layer name."],
+                "fill": ["type": "string", "description": "Fill color, for example #38bdf8."],
+                "x": ["type": "number", "description": "Rectangle/capsule/triangle x position."],
+                "y": ["type": "number", "description": "Rectangle/capsule/triangle y position."],
+                "width": ["type": "number", "description": "Rectangle/capsule/triangle width."],
+                "height": ["type": "number", "description": "Rectangle/capsule/triangle height."],
+                "cornerRadius": ["type": "number", "description": "Rectangle corner radius."],
+                "cx": ["type": "number", "description": "Circle center x."],
+                "cy": ["type": "number", "description": "Circle center y."],
+                "radius": ["type": "number", "description": "Circle radius."],
+                "x1": ["type": "number", "description": "Line start x."],
+                "y1": ["type": "number", "description": "Line start y."],
+                "x2": ["type": "number", "description": "Line end x."],
+                "y2": ["type": "number", "description": "Line end y."],
+                "stroke": ["type": "string", "description": "Optional stroke color."],
+                "strokeWidth": ["type": "number", "description": "Optional stroke width."],
+                "opacity": ["type": "number", "description": "Layer opacity from 0 to 1."],
+                "symbolName": ["type": "string", "description": "SF Symbol name for symbol layers."],
+                "text": ["type": "string", "description": "Text value for text layers."],
+                "size": ["type": "number", "description": "Symbol or text size."],
+                "weight": ["type": "string", "description": "Font/SF Symbol weight."],
+                "shadowColor": ["type": "string", "description": "Optional shadow color."],
+                "shadowRadius": ["type": "number", "description": "Optional shadow radius."],
+                "shadowX": ["type": "number", "description": "Optional shadow x offset."],
+                "shadowY": ["type": "number", "description": "Optional shadow y offset."],
+                "blurRadius": ["type": "number", "description": "Optional layer blur radius."],
             ],
             "required": ["shape"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Add icon shape"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         guard let shapeName = IconToolSupport.string(arguments, "shape") else {
             return IconToolSupport.missingParameter("shape", language: language)
         }
@@ -98,7 +93,7 @@ public struct AddIconShapeTool: SuperAgentTool {
         }
     }
 
-    private func makeLayer(shapeName: String, arguments: [String: ToolArgument]) throws -> IconLayer {
+    private func makeLayer(shapeName: String, arguments: [String: LumiJSONValue]) throws -> IconLayer {
         let normalizedShape = shapeName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let fill = IconToolSupport.color(arguments, "fill", default: normalizedShape == "line" ? "#111827" : "#38bdf8")
         let name = IconToolSupport.string(arguments, "name") ?? normalizedShape.capitalized
@@ -220,12 +215,12 @@ public struct AddIconShapeTool: SuperAgentTool {
         }
     }
 
-    private func makeStroke(arguments: [String: ToolArgument]) -> IconStroke? {
+    private func makeStroke(arguments: [String: LumiJSONValue]) -> IconStroke? {
         guard let strokeColor = IconToolSupport.string(arguments, "stroke") else { return nil }
         return IconStroke(color: strokeColor, width: IconToolSupport.double(arguments, "strokeWidth", default: 1))
     }
 
-    private func makeShadow(arguments: [String: ToolArgument]) -> IconShadow? {
+    private func makeShadow(arguments: [String: LumiJSONValue]) -> IconShadow? {
         guard let shadowColor = IconToolSupport.string(arguments, "shadowColor") else { return nil }
         return IconShadow(
             color: shadowColor,

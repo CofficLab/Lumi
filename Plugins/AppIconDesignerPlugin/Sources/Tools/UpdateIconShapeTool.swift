@@ -1,56 +1,51 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct UpdateIconShapeTool: SuperAgentTool {
-    public let name = "update_icon_shape"
+public struct UpdateIconShapeTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "update_icon_shape",
+        displayName: "Update Icon Shape",
+        description: "Update geometry for a layer in the current icon document, including size, position, corner radius, text, or SF Symbol."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "更新当前图标文档里某个图层的几何参数，例如尺寸、位置、圆角、文字或 SF Symbol。"
-        case .english:
-            return "Update geometry for a layer in the current icon document, including size, position, corner radius, text, or SF Symbol."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
-                "layerId": ["type": "string", "description": IconToolSupport.description(language, en: "Layer id to update.", zh: "要更新的图层 ID。")],
-                "x": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle/symbol/text x position.", zh: "矩形/胶囊/三角形/符号/文字的 x 位置。")],
-                "y": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle/symbol/text y position.", zh: "矩形/胶囊/三角形/符号/文字的 y 位置。")],
-                "width": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle width.", zh: "矩形/胶囊/三角形宽度。")],
-                "height": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle/capsule/triangle height.", zh: "矩形/胶囊/三角形高度。")],
-                "cornerRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Rectangle corner radius.", zh: "矩形圆角半径。")],
-                "cx": ["type": "number", "description": IconToolSupport.description(language, en: "Circle center x.", zh: "圆心 x 坐标。")],
-                "cy": ["type": "number", "description": IconToolSupport.description(language, en: "Circle center y.", zh: "圆心 y 坐标。")],
-                "radius": ["type": "number", "description": IconToolSupport.description(language, en: "Circle radius.", zh: "圆形半径。")],
-                "x1": ["type": "number", "description": IconToolSupport.description(language, en: "Line start x.", zh: "线条起点 x。")],
-                "y1": ["type": "number", "description": IconToolSupport.description(language, en: "Line start y.", zh: "线条起点 y。")],
-                "x2": ["type": "number", "description": IconToolSupport.description(language, en: "Line end x.", zh: "线条终点 x。")],
-                "y2": ["type": "number", "description": IconToolSupport.description(language, en: "Line end y.", zh: "线条终点 y。")],
-                "size": ["type": "number", "description": IconToolSupport.description(language, en: "Symbol or text size.", zh: "符号或文字尺寸。")],
-                "weight": ["type": "string", "description": IconToolSupport.description(language, en: "Symbol or text weight.", zh: "符号或文字字重。")],
-                "symbolName": ["type": "string", "description": IconToolSupport.description(language, en: "SF Symbol name.", zh: "SF Symbol 名称。")],
-                "text": ["type": "string", "description": IconToolSupport.description(language, en: "Text layer value.", zh: "文字图层内容。")],
+                "layerId": ["type": "string", "description": "Layer id to update."],
+                "x": ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text x position."],
+                "y": ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text y position."],
+                "width": ["type": "number", "description": "Rectangle/capsule/triangle width."],
+                "height": ["type": "number", "description": "Rectangle/capsule/triangle height."],
+                "cornerRadius": ["type": "number", "description": "Rectangle corner radius."],
+                "cx": ["type": "number", "description": "Circle center x."],
+                "cy": ["type": "number", "description": "Circle center y."],
+                "radius": ["type": "number", "description": "Circle radius."],
+                "x1": ["type": "number", "description": "Line start x."],
+                "y1": ["type": "number", "description": "Line start y."],
+                "x2": ["type": "number", "description": "Line end x."],
+                "y2": ["type": "number", "description": "Line end y."],
+                "size": ["type": "number", "description": "Symbol or text size."],
+                "weight": ["type": "string", "description": "Symbol or text weight."],
+                "symbolName": ["type": "string", "description": "SF Symbol name."],
+                "text": ["type": "string", "description": "Text layer value."],
             ],
             "required": ["layerId"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Update icon shape"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         guard let layerId = IconToolSupport.string(arguments, "layerId"), !layerId.isEmpty else {
             return IconToolSupport.missingParameter("layerId", language: language)
         }
@@ -82,7 +77,7 @@ public struct UpdateIconShapeTool: SuperAgentTool {
         }
     }
 
-    private func updatedShape(_ shape: IconShape, arguments: [String: ToolArgument]) -> IconShape {
+    private func updatedShape(_ shape: IconShape, arguments: [String: LumiJSONValue]) -> IconShape {
         switch shape {
         case .rectangle(let x, let y, let width, let height, let cornerRadius):
             return .rectangle(

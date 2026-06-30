@@ -1,13 +1,12 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
 enum IconToolSupport {
-    static func language(_ arguments: [String: ToolArgument]) -> LanguagePreference {
-        guard let rawValue = arguments["__lumi_language"]?.value as? String else { return .english }
-        return LanguagePreference(rawValue: rawValue) ?? .english
+    static func language(_ context: LumiToolExecutionContext) -> LumiLanguagePreference {
+        context.language
     }
 
-    static func localized(_ language: LanguagePreference, en: String, zh: String) -> String {
+    static func localized(_ language: LumiLanguagePreference, en: String, zh: String) -> String {
         switch language {
         case .chinese:
             zh
@@ -16,11 +15,11 @@ enum IconToolSupport {
         }
     }
 
-    static func error(_ error: Error, language: LanguagePreference) -> String {
+    static func error(_ error: Error, language: LumiLanguagePreference) -> String {
         localized(language, en: "Error: \(error.localizedDescription)", zh: "错误：\(localizedErrorDescription(error.localizedDescription))")
     }
 
-    static func missingParameter(_ name: String, language: LanguagePreference) -> String {
+    static func missingParameter(_ name: String, language: LumiLanguagePreference) -> String {
         localized(
             language,
             en: "Error: Missing required '\(name)' parameter.",
@@ -28,7 +27,7 @@ enum IconToolSupport {
         )
     }
 
-    static func description(_ language: LanguagePreference, en: String, zh: String) -> String {
+    static func description(_ language: LumiLanguagePreference, en: String, zh: String) -> String {
         localized(language, en: en, zh: zh)
     }
 
@@ -68,48 +67,27 @@ enum IconToolSupport {
         return description
     }
 
-    static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? {
-        arguments[key]?.value as? String
+    static func string(_ arguments: [String: LumiJSONValue], _ key: String) -> String? {
+        arguments.string(key)
     }
 
-    static func double(_ arguments: [String: ToolArgument], _ key: String, default defaultValue: Double) -> Double {
-        guard let value = arguments[key]?.value else { return defaultValue }
-        if let double = value as? Double { return double }
-        if let int = value as? Int { return Double(int) }
-        if let string = value as? String, let double = Double(string) { return double }
-        return defaultValue
+    static func double(_ arguments: [String: LumiJSONValue], _ key: String, default defaultValue: Double) -> Double {
+        arguments.double(key) ?? defaultValue
     }
 
-    static func optionalDouble(_ arguments: [String: ToolArgument], _ key: String) -> Double? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let double = value as? Double { return double }
-        if let int = value as? Int { return Double(int) }
-        if let string = value as? String { return Double(string) }
-        return nil
+    static func optionalDouble(_ arguments: [String: LumiJSONValue], _ key: String) -> Double? {
+        arguments.double(key)
     }
 
-    static func bool(_ arguments: [String: ToolArgument], _ key: String, default defaultValue: Bool) -> Bool {
-        guard let value = arguments[key]?.value else { return defaultValue }
-        if let bool = value as? Bool { return bool }
-        if let int = value as? Int { return int != 0 }
-        if let string = value as? String {
-            switch string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-            case "true", "yes", "1":
-                return true
-            case "false", "no", "0":
-                return false
-            default:
-                return defaultValue
-            }
-        }
-        return defaultValue
+    static func bool(_ arguments: [String: LumiJSONValue], _ key: String, default defaultValue: Bool) -> Bool {
+        arguments.bool(key) ?? defaultValue
     }
 
-    static func color(_ arguments: [String: ToolArgument], _ key: String, default defaultValue: String) -> IconPaint {
+    static func color(_ arguments: [String: LumiJSONValue], _ key: String, default defaultValue: String) -> IconPaint {
         .color(string(arguments, key) ?? defaultValue)
     }
 
-    static func layerSummary(_ layer: IconLayer, language: LanguagePreference) -> String {
+    static func layerSummary(_ layer: IconLayer, language: LumiLanguagePreference) -> String {
         switch language {
         case .chinese:
             """

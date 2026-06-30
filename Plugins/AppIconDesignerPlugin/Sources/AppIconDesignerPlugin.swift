@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -34,18 +33,18 @@ public enum AppIconDesignerPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            ApplyIconPresetTool().asLumiAgentTool(),
-            CreateIconDocumentTool().asLumiAgentTool(),
-            SetIconBackgroundTool().asLumiAgentTool(),
-            AddIconShapeTool().asLumiAgentTool(),
-            UpdateIconLayerTool().asLumiAgentTool(),
-            UpdateIconShapeTool().asLumiAgentTool(),
-            LintIconDocumentTool().asLumiAgentTool(),
-            SaveIconDocumentTool().asLumiAgentTool(),
-            LoadIconDocumentTool().asLumiAgentTool(),
-            ExportIconSVGTool().asLumiAgentTool(),
-            RegisterAppIconArtifactTool().asLumiAgentTool(),
-            ExportAppIconTool().asLumiAgentTool(),
+            ApplyIconPresetTool(),
+            CreateIconDocumentTool(),
+            SetIconBackgroundTool(),
+            AddIconShapeTool(),
+            UpdateIconLayerTool(),
+            UpdateIconShapeTool(),
+            LintIconDocumentTool(),
+            SaveIconDocumentTool(),
+            LoadIconDocumentTool(),
+            ExportIconSVGTool(),
+            RegisterAppIconArtifactTool(),
+            ExportAppIconTool(),
         ]
     }
 

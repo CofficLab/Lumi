@@ -1,41 +1,36 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct LoadIconDocumentTool: SuperAgentTool {
-    public let name = "load_icon_document"
+public struct LoadIconDocumentTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "load_icon_document",
+        displayName: "Load Icon Document",
+        description: "Load an icon document from a JSON file and import it into App Icon Designer."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "从 JSON 文件加载一个图标文档，并导入到 App Icon Designer。"
-        case .english:
-            return "Load an icon document from a JSON file and import it into App Icon Designer."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
-                "inputPath": ["type": "string", "description": IconToolSupport.description(language, en: "Absolute JSON file path to load.", zh: "要加载的 JSON 文件绝对路径。")],
-                "replaceSelected": ["type": "boolean", "description": IconToolSupport.description(language, en: "Replace the selected document instead of importing a new copy.", zh: "替换当前选中文档，而不是导入为新副本。")],
+                "inputPath": ["type": "string", "description": "Absolute JSON file path to load."],
+                "replaceSelected": ["type": "boolean", "description": "Replace the selected document instead of importing a new copy."],
             ],
             "required": ["inputPath"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Load icon document"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         guard let inputPath = IconToolSupport.string(arguments, "inputPath"), !inputPath.isEmpty else {
             return IconToolSupport.missingParameter("inputPath", language: language)
         }

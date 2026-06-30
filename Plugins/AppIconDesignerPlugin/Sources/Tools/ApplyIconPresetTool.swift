@@ -1,48 +1,43 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct ApplyIconPresetTool: SuperAgentTool {
-    public let name = "apply_icon_preset"
+public struct ApplyIconPresetTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "apply_icon_preset",
+        displayName: "Apply Icon Preset",
+        description: "Create a new App Icon Designer document from a built-in preset."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "从内置模板创建一个新的 App Icon Designer 图标文档。"
-        case .english:
-            return "Create a new App Icon Designer document from a built-in preset."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
                 "presetId": [
                     "type": "string",
-                    "enum": IconPresetLibrary.all.map(\.id),
-                    "description": IconToolSupport.description(language, en: "Preset id.", zh: "预设 ID。")
+                    "enum": .array(IconPresetLibrary.all.map { .string($0.id) }),
+                    "description": "Preset id."
                 ],
                 "title": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Optional document title.", zh: "可选文档标题。")
+                    "description": "Optional document title."
                 ],
             ],
             "required": ["presetId"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Apply icon preset"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         guard let presetId = IconToolSupport.string(arguments, "presetId"), !presetId.isEmpty else {
             return IconToolSupport.missingParameter("presetId", language: language)
         }
