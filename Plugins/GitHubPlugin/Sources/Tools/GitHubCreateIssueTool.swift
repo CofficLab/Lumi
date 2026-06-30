@@ -1,123 +1,45 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import GitHubKit
+import LumiCoreKit
+import SuperLogKit
 
 /// GitHub 创建 Issue 工具
-public struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
+public struct GitHubCreateIssueTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "✍️"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_create_issue"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
-        case .english:
-            return "Create a new issue in a GitHub repository. Supports title, body, labels, assignees, and milestone."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "github_create_issue",
+        displayName: "GitHubCreateIssue",
+        description: "GitHub tool: github_create_issue"
+    )
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        switch language {
-        case .chinese:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "仓库所有者"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "仓库名称"
-                    ],
-                    "title": [
-                        "type": "string",
-                        "description": "Issue 标题"
-                    ],
-                    "body": [
-                        "type": "string",
-                        "description": "Issue 描述（支持 Markdown 格式）"
-                    ],
-                    "labels": [
-                        "type": "array",
-                        "items": ["type": "string"],
-                        "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
-                    ],
-                    "assignees": [
-                        "type": "array",
-                        "items": ["type": "string"],
-                        "description": "指派的用户名数组"
-                    ],
-                    "milestone": [
-                        "type": "integer",
-                        "description": "里程碑编号",
-                        "minimum": 1
-                    ]
-                ],
-                "required": ["owner", "repo", "title"]
-            ]
-        case .english:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "Repository owner"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "Repository name"
-                    ],
-                    "title": [
-                        "type": "string",
-                        "description": "Issue title"
-                    ],
-                    "body": [
-                        "type": "string",
-                        "description": "Issue description (Markdown supported)"
-                    ],
-                    "labels": [
-                        "type": "array",
-                        "items": ["type": "string"],
-                        "description": "Array of label names, e.g. [\"bug\", \"help wanted\"]"
-                    ],
-                    "assignees": [
-                        "type": "array",
-                        "items": ["type": "string"],
-                        "description": "Array of usernames to assign"
-                    ],
-                    "milestone": [
-                        "type": "integer",
-                        "description": "Milestone number",
-                        "minimum": 1
-                    ]
-                ],
-                "required": ["owner", "repo", "title"]
-            ]
-        }
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "创建 Issue"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "创建 Issue"    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let owner = arguments["owner"]?.value as? String,
-              let repo = arguments["repo"]?.value as? String,
-              let title = arguments["title"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let owner = arguments["owner"]?.anyValue as? String,
+              let repo = arguments["repo"]?.anyValue as? String,
+              let title = arguments["title"]?.anyValue as? String else {
             throw NSError(
-                domain: name,
+                domain: Self.info.id,
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, title"]
             )
         }
 
-        let body = arguments["body"]?.value as? String
-        let labels = arguments["labels"]?.value as? [String]
-        let assignees = arguments["assignees"]?.value as? [String]
-        let milestone = GitHubToolArgumentNormalizer.issueNumber(arguments["milestone"]?.value)
+        let body = arguments["body"]?.anyValue as? String
+        let labels = arguments["labels"]?.anyValue as? [String]
+        let assignees = arguments["assignees"]?.anyValue as? [String]
+        let milestone = GitHubToolArgumentNormalizer.issueNumber(arguments["milestone"]?.anyValue)
 
         if Self.verbose {
             if GitHubPlugin.verbose {

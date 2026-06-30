@@ -1,4 +1,3 @@
-import AgentToolKit
 import GitHubKit
 import LumiCoreKit
 import LumiUI
@@ -39,21 +38,21 @@ public enum GitHubPlugin: LumiPlugin {
         bootstrapIfNeeded()
         return [
             // Insight tools
-            QueryEcoKBTool().asLumiAgentTool(),
-            GitHubCLICheckTool().asLumiAgentTool(),
+            QueryEcoKBTool(),
+            GitHubCLICheckTool(),
             // GitHub API tools
-            GitHubRepoInfoTool().asLumiAgentTool(),
-            GitHubSearchTool().asLumiAgentTool(),
-            GitHubFileContentTool().asLumiAgentTool(),
-            GitHubTrendingTool().asLumiAgentTool(),
-            GitHubIssueListTool().asLumiAgentTool(),
-            GitHubIssueDetailTool().asLumiAgentTool(),
-            GitHubCreateIssueTool().asLumiAgentTool(),
-            GitHubUpdateIssueTool().asLumiAgentTool(),
-            GitHubCloseIssueTool().asLumiAgentTool(),
-            GitHubReopenIssueTool().asLumiAgentTool(),
-            GitHubIssueCommentsTool().asLumiAgentTool(),
-            GitHubAddIssueCommentTool().asLumiAgentTool(),
+            GitHubRepoInfoTool(),
+            GitHubSearchTool(),
+            GitHubFileContentTool(),
+            GitHubTrendingTool(),
+            GitHubIssueListTool(),
+            GitHubIssueDetailTool(),
+            GitHubCreateIssueTool(),
+            GitHubUpdateIssueTool(),
+            GitHubCloseIssueTool(),
+            GitHubReopenIssueTool(),
+            GitHubIssueCommentsTool(),
+            GitHubAddIssueCommentTool(),
         ]
     }
 

@@ -1,86 +1,45 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import GitHubKit
+import LumiCoreKit
+import SuperLogKit
 
 /// GitHub 搜索工具
-public struct GitHubSearchTool: SuperAgentTool, SuperLog {
+public struct GitHubSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
     static let minLimit = 1
     static let defaultLimit = 5
     static let maxLimit = 100
-    public let name = "github_search"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
-        case .english:
-            return "Search repositories and code on GitHub. Supports filters such as keywords, language, and stars."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "github_search",
+        displayName: "GitHubSearch",
+        description: "GitHub tool: github_search"
+    )
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let queryDesc: String
-        let languageDesc: String
-        let minStarsDesc: String
-        let limitDesc: String
-        switch language {
-        case .chinese:
-            queryDesc = "搜索关键词"
-            languageDesc = "编程语言过滤（可选）"
-            minStarsDesc = "最小 star 数（可选）"
-            limitDesc = "返回结果数量限制，默认 5"
-        case .english:
-            queryDesc = "Search query keyword"
-            languageDesc = "Programming language filter (optional)"
-            minStarsDesc = "Minimum number of stars (optional)"
-            limitDesc = "Maximum number of results, default 5"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "query": [
-                    "type": "string",
-                    "description": queryDesc
-                ],
-                "language": [
-                    "type": "string",
-                    "description": languageDesc
-                ],
-                "minStars": [
-                    "type": "integer",
-                    "description": minStarsDesc,
-                    "minimum": 0
-                ],
-                "limit": [
-                    "type": "integer",
-                    "description": limitDesc,
-                    "minimum": Self.minLimit,
-                    "maximum": Self.maxLimit
-                ]
-            ],
-            "required": ["query"]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "搜索 GitHub"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "搜索 GitHub"    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let query = arguments["query"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let query = arguments["query"]?.anyValue as? String else {
             throw NSError(
-                domain: name,
+                domain: Self.info.id,
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：query"]
             )
         }
 
-        let language = arguments["language"]?.value as? String
-        let minStars = GitHubToolArgumentNormalizer.nonNegativeInteger(arguments["minStars"]?.value)
-        let limit = Self.normalizedLimit(arguments["limit"]?.value)
+        let language = arguments["language"]?.anyValue as? String
+        let minStars = GitHubToolArgumentNormalizer.nonNegativeInteger(arguments["minStars"]?.anyValue)
+        let limit = Self.normalizedLimit(arguments["limit"]?.anyValue)
 
         // 构建搜索查询
         var searchQuery = query

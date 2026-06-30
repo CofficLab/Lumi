@@ -1,68 +1,36 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import GitHubKit
+import LumiCoreKit
+import SuperLogKit
 
 /// GitHub Issue 详情工具
-public struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
+public struct GitHubIssueDetailTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_issue_detail"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
-        case .english:
-            return "Get detailed information for a GitHub issue, including title, body, state, labels, comment count, and more."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "github_issue_detail",
+        displayName: "GitHubIssueDetail",
+        description: "GitHub tool: github_issue_detail"
+    )
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let ownerDesc: String
-        let repoDesc: String
-        let issueNumberDesc: String
-        switch language {
-        case .chinese:
-            ownerDesc = "仓库所有者"
-            repoDesc = "仓库名称"
-            issueNumberDesc = "Issue 编号（如 123）"
-        case .english:
-            ownerDesc = "Repository owner"
-            repoDesc = "Repository name"
-            issueNumberDesc = "Issue number (e.g., 123)"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": ownerDesc
-                ],
-                "repo": [
-                    "type": "string",
-                    "description": repoDesc
-                ],
-                "issueNumber": [
-                    "type": "integer",
-                    "description": issueNumberDesc,
-                    "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber"]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查看 Issue 详情"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "查看 Issue 详情"    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let owner = arguments["owner"]?.value as? String,
-              let repo = arguments["repo"]?.value as? String,
-              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let owner = arguments["owner"]?.anyValue as? String,
+              let repo = arguments["repo"]?.anyValue as? String,
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.anyValue) else {
             throw NSError(
-                domain: name,
+                domain: Self.info.id,
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, issueNumber"]
             )
