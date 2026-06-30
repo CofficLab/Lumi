@@ -19,6 +19,10 @@ public enum SublyxPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [SublyxApiKeyMissingRenderer.item]
+        [
+            SublyxApiKeyMissingRenderer.item,
+            SublyxHttpErrorRenderer.item,
+            SublyxRequestFailedRenderer.item,
+        ]
     }
 }
