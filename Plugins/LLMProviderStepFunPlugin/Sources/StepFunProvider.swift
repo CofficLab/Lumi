@@ -1,8 +1,10 @@
 import Foundation
+import os
 import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.stepfun")
     public static let shortName = "StepFun"
 
     public override class var info: LumiLLMProviderInfo {
@@ -56,15 +58,46 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
     public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
 
     public init() {
-        super.init(
-            configuration: LumiOpenAICompatibleProviderConfiguration(
-                baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
-                additionalHeaders: [:],
-                includeUsageInStreamOptions: false,
-                returnsEmptyChunkWhenNoDelta: false,
-                acceptsFunctionScopedToolCallID: false
-            )
+        let config = LumiOpenAICompatibleProviderConfiguration(
+            baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
+            additionalHeaders: ["Accept": "text/event-stream"],
+            includeUsageInStreamOptions: false,
+            returnsEmptyChunkWhenNoDelta: false,
+            acceptsFunctionScopedToolCallID: false,
+            includesReasoningContentInMessages: true
         )
+        Self.logger.info("📝[init] ⚙️ baseURL=\(config.baseURL), acceptHeader=text/event-stream")
+        super.init(configuration: config)
+    }
+
+    public override func sendStreaming(
+        _ request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async throws -> LumiChatMessage {
+        Self.logger.info("[sendStreaming] 🟢 start request model=\(request.model), messagesCount=\(request.messages.count)")
+        
+        let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
+            if chunk.isDone {
+                Self.logger.info("📝[sendStreaming] 🔵 chunk isDone")
+            } else {
+                let text = chunk.content ?? ""
+                if !text.isEmpty {
+                    Self.logger.info("📝[sendStreaming] 🟡 chunk contentLength=\(text.count), eventTitle=\(chunk.eventTitle ?? "-")")
+                } else {
+                    Self.logger.info("📝[sendStreaming] ⚪️ chunk EMPTY content, isThinking=\(chunk.isThinking), eventTitle=\(chunk.eventTitle ?? "-")")
+                }
+            }
+            await onChunk(chunk)
+        }
+        
+        do {
+            let result = try await super.sendStreaming(request, onChunk: wrappedChunk)
+            Self.logger.info("📝[sendStreaming] ✅ success finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
+            return result
+        } catch {
+            Self.logger.error("📝[sendStreaming] ❌ error=\(error.localizedDescription)")
+            throw error
+        }
     }
 
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
