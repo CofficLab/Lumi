@@ -31,16 +31,23 @@ public enum FileTreeService {
             includingPropertiesForKeys: [.isDirectoryKey],
             options: .skipsSubdirectoryDescendants
         )
-        return filterAndSortContents(contents, hiddenNames: hiddenNames)
+        // 预取目录属性，避免在排序时重复 I/O（O(n) -> O(1) 查询）
+        var directoryInfo: [URL: Bool] = [:]
+        for item in contents {
+            directoryInfo[item] = (try? item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        }
+        return filterAndSortContents(contents, directoryInfo: directoryInfo, hiddenNames: hiddenNames)
     }
 
-    /// 过滤并排序目录内容
+    /// 过滤并排序目录内容（使用预取的目录信息，避免重复 I/O）
     /// - Parameters:
     ///   - urls: 目录下的 URL 列表
+    ///   - directoryInfo: 预取的目录属性映射
     ///   - hiddenNames: 需要过滤掉的文件名集合
     /// - Returns: 过滤并排序后的 URL 列表（文件夹在前）
     public static func filterAndSortContents(
         _ urls: [URL],
+        directoryInfo: [URL: Bool],
         hiddenNames: Set<String> = defaultHiddenNames
     ) -> [URL] {
         let filtered = urls.filter { url in
@@ -49,8 +56,8 @@ public enum FileTreeService {
         }
 
         let sorted = filtered.sorted { a, b in
-            let aIsDir = (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            let bIsDir = (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            let aIsDir = directoryInfo[a] ?? false
+            let bIsDir = directoryInfo[b] ?? false
             if aIsDir == bIsDir {
                 return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent) == .orderedAscending
             }
@@ -58,6 +65,23 @@ public enum FileTreeService {
         }
 
         return sorted
+    }
+
+    /// 过滤并排序目录内容（无预取版本，内部会单独查询）
+    /// - Parameters:
+    ///   - urls: 目录下的 URL 列表
+    ///   - hiddenNames: 需要过滤掉的文件名集合
+    /// - Returns: 过滤并排序后的 URL 列表（文件夹在前）
+    public static func filterAndSortContents(
+        _ urls: [URL],
+        hiddenNames: Set<String> = defaultHiddenNames
+    ) -> [URL] {
+        // 内部预取一次，避免排序时重复 I/O
+        var directoryInfo: [URL: Bool] = [:]
+        for item in urls {
+            directoryInfo[item] = (try? item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        }
+        return filterAndSortContents(urls, directoryInfo: directoryInfo, hiddenNames: hiddenNames)
     }
 
     // MARK: - 文件信息查询

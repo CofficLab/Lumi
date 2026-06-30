@@ -49,7 +49,7 @@ public struct TreeView: View, SuperLog {
                 NoProjectView()
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
+                    LazyVStack(alignment: .leading, spacing: 6) {
                         NodeView(
                             url: URL(fileURLWithPath: projectVM.currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
