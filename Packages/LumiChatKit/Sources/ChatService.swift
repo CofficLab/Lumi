@@ -88,7 +88,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     }
 
     /// Built-in tools that are always available, regardless of loaded plugins.
-    private static let builtInTools: [any LumiAgentTool] = [
+    public static let builtInTools: [any LumiAgentTool] = [
         NoOpTool(),
         ConversationInfoTool(),
     ]
