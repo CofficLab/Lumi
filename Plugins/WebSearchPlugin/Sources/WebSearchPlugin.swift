@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SwiftUI
@@ -27,7 +26,7 @@ public enum WebSearchPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [WebSearchTool().asLumiAgentTool()]
+        [WebSearchTool()]
     }
 
         @MainActor
