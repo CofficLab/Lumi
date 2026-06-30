@@ -1,9 +1,9 @@
-import Foundation
-import EditorService
-import SuperLogKit
 import AppKit
+import EditorService
+import Foundation
 import LanguageServerProtocol
 import os
+import SuperLogKit
 
 /// LSP 悬停协调器
 /// 监听鼠标位置，通过 `TextLayoutManager.textOffsetAtPoint` 获取鼠标下的文字偏移，
@@ -14,12 +14,12 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     public nonisolated static let emoji = "🖱️"
     public nonisolated static let verbose = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp.realtime.hover")
-    private static let defaultHoverDelayNs: UInt64 = 350_000_000
-    private static let fastHoverDelayNs: UInt64 = 120_000_000
-    private static let fastHoverWindowNs: UInt64 = 1_200_000_000
-    private static let mouseEventMinIntervalNs: UInt64 = 16_000_000
+    private static let defaultHoverDelayNs: UInt64 = 350000000
+    private static let fastHoverDelayNs: UInt64 = 120000000
+    private static let fastHoverWindowNs: UInt64 = 1200000000
+    private static let mouseEventMinIntervalNs: UInt64 = 16000000
     private static let hoverCacheMaxEntries = 64
-    private static let hoverCacheTTLNs: UInt64 = 15_000_000_000
+    private static let hoverCacheTTLNs: UInt64 = 15000000000
     private static let hoverRectUpdateEpsilon: CGFloat = 0.75
 
     private struct HoverCacheKey: Hashable {
@@ -127,7 +127,7 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                !cached.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 if Self.verbose {
                     if Self.verbose {
-                                            Self.logger.debug("\(HoverEditorCoordinator.t)✅ 缓存命中: 行=\(line) 字符=\(character)")
+                        Self.logger.debug("\(HoverEditorCoordinator.t)✅ 缓存命中: 行=\(line) 字符=\(character)")
                     }
                 }
                 if let cachedRange = cached.range {
@@ -210,9 +210,7 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         guard hasActiveHoverState || hasPendingWork else { return }
         hoverRequestGeneration.invalidate()
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
-            }
+            Self.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
         }
         hoverTask?.cancel()
         hoverTask = nil
@@ -342,20 +340,20 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     private func extractMarkdown(from hover: Hover) -> String? {
         switch hover.contents {
-        case .optionC(let markup):
+        case let .optionC(markup):
             return markup.value
-        case .optionA(let marked):
+        case let .optionA(marked):
             return parseMarkedString(marked)
-        case .optionB(let array):
+        case let .optionB(array):
             return array.compactMap { parseMarkedString($0) }.joined(separator: "\n\n---\n\n")
         }
     }
 
     private func parseMarkedString(_ marked: MarkedString) -> String? {
         switch marked {
-        case .optionA(let str):
+        case let .optionA(str):
             return str
-        case .optionB(let lsp):
+        case let .optionB(lsp):
             return "```\(lsp.language)\n\(lsp.value)\n```"
         }
     }
@@ -378,7 +376,7 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         while end + 1 < chars.count, let s = chars[end + 1].unicodeScalars.first, allowed.contains(s) {
             end += 1
         }
-        return String(chars[start...end])
+        return String(chars[start ... end])
     }
 
     // MARK: - Mouse Hover
@@ -459,7 +457,7 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             if event.keyCode == 53 {
                 if Self.verbose {
                     if Self.verbose {
-                                            Self.logger.debug("\(HoverEditorCoordinator.t)⌨️ 检测到 Esc 键，取消悬停")
+                        Self.logger.debug("\(HoverEditorCoordinator.t)⌨️ 检测到 Esc 键，取消悬停")
                     }
                 }
                 self.cancelHover()
@@ -561,15 +559,15 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     /// 上次取消悬停的时间戳，用于防止边界抖动导致的反复取消
     private var lastCancelHoverAtNs: UInt64 = 0
     /// 取消防抖间隔（纳秒），低于此间隔的取消请求会被忽略
-    private static let cancelDebounceIntervalNs: UInt64 = 100_000_000  // 100ms
+    private static let cancelDebounceIntervalNs: UInt64 = 100000000 // 100ms
     /// 滚动后暂缓 hover 的时间窗口（纳秒）
-    private static let hoverSuspendAfterScrollNs: UInt64 = 180_000_000
+    private static let hoverSuspendAfterScrollNs: UInt64 = 180000000
     /// 滚动停止判定延迟（纳秒）
-    private static let scrollSettleDelayNs: UInt64 = 220_000_000
+    private static let scrollSettleDelayNs: UInt64 = 220000000
     /// 全局鼠标事件最小处理间隔（纳秒）
-    private static let globalMouseEventMinIntervalNs: UInt64 = 33_000_000
+    private static let globalMouseEventMinIntervalNs: UInt64 = 33000000
     /// 鼠标越界日志节流间隔（纳秒）
-    private static let outsideVisibleLogIntervalNs: UInt64 = 600_000_000
+    private static let outsideVisibleLogIntervalNs: UInt64 = 600000000
     /// Popover 最大宽度（与 SourceEditorView 中一致）
     private static let hoverPopoverMaxWidth: CGFloat = 440
     /// Popover 默认高度估算值
@@ -677,7 +675,7 @@ public final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                 if now &- lastOutsideVisibleLogAtNs >= Self.outsideVisibleLogIntervalNs {
                     lastOutsideVisibleLogAtNs = now
                     if Self.verbose {
-                                            Self.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 鼠标坐标=\(String(describing: localPoint)) 在扩展矩形=\(String(describing: expandedRect)) 之外 可见矩形=\(String(describing: visibleRect))")
+                        Self.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 鼠标坐标=\(String(describing: localPoint)) 在扩展矩形=\(String(describing: expandedRect)) 之外 可见矩形=\(String(describing: visibleRect))")
                     }
                 }
             }
