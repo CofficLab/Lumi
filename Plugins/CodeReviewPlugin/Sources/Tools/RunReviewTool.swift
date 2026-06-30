@@ -1,64 +1,63 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
-public struct RunReviewTool: SuperAgentTool, SuperLog {
+public struct RunReviewTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔎"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "run_review"
+    public static let info = LumiAgentToolInfo(
+        id: "run_review",
+        displayName: "Run Review",
+        description: "Review current Git changes using the active Lumi model. Supports staged, unstaged, or all uncommitted changes. Read-only."
+    )
+
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "使用当前激活的 Lumi 模型审查 Git 变更。支持暂存区、未暂存或全部未提交变更。只读操作。"
-        case .english:
-            return "Review current Git changes using the active Lumi model. Supports staged, unstaged, or all uncommitted changes. Read-only."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path. Defaults to current working directory."),
+                ]),
+                "scope": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("staged"), .string("unstaged"), .string("allUncommitted")]),
+                    "description": .string("Review scope. Defaults to allUncommitted."),
+                ]),
+                "file": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional relative file path to review."),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": "Git repository path. Defaults to current working directory."
-                ],
-                "scope": [
-                    "type": "string",
-                    "enum": ["staged", "unstaged", "allUncommitted"],
-                    "description": "Review scope. Defaults to allUncommitted."
-                ],
-                "file": [
-                    "type": "string",
-                    "description": "Optional relative file path to review."
-                ]
-            ]
-        ]
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        "代码审查"
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "代码审查"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         guard let sendMessage = CodeReviewRuntime.sendMessage,
               let config = CodeReviewRuntime.currentConfigProvider() else {
             return "Code review failed: LLM service is unavailable."
         }
 
-        let path = arguments["path"]?.value as? String ?? FileManager.default.currentDirectoryPath
-        let scopeValue = arguments["scope"]?.value as? String ?? ReviewScope.allUncommitted.rawValue
+        let path = arguments.string("path") ?? FileManager.default.currentDirectoryPath
+        let scopeValue = arguments.string("scope") ?? ReviewScope.allUncommitted.rawValue
         let scope = ReviewScope(rawValue: scopeValue) ?? .allUncommitted
-        let file = arguments["file"]?.value as? String
+        let file = arguments.string("file")
 
         do {
             await ReviewReportStore.shared.setState(.reviewing)
-            let context = try await ReviewAnalyzer().buildContext(repositoryPath: path, scope: scope, file: file)
-            let report = try await ReviewEngine(config: config, sendMessage: sendMessage).review(context: context)
+            let reviewContext = try await ReviewAnalyzer().buildContext(repositoryPath: path, scope: scope, file: file)
+            let report = try await ReviewEngine(config: config, sendMessage: sendMessage).review(context: reviewContext)
             try await ReviewReportStore.shared.save(report)
             return format(report: report)
         } catch {
