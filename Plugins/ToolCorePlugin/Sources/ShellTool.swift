@@ -25,6 +25,10 @@ public struct ShellTool: LumiAgentTool {
                 "command": .object([
                     "type": .string("string"),
                     "description": .string("The shell command to execute")
+                ]),
+                "timeout": .object([
+                    "type": .string("integer"),
+                    "description": .string("Optional timeout in seconds (default: 120)")
                 ])
             ]),
             "required": .array([.string("command")])
@@ -59,9 +63,17 @@ public struct ShellTool: LumiAgentTool {
             throw NSError(domain: "ShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing command"])
         }
 
+        // 支持从参数中传入 timeout，默认 120 秒
+        let timeout: TimeInterval
+        if case .int(let value) = arguments["timeout"] {
+            timeout = TimeInterval(value)
+        } else {
+            timeout = commandTimeout
+        }
+
         let options = ShellOptions(
             workingDirectory: context.currentProjectPath,
-            timeout: commandTimeout,
+            timeout: timeout,
             throwsOnError: false
         )
         let result = try await ShellExecutor.execute(
