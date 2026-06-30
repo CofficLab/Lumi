@@ -1,91 +1,67 @@
 import Foundation
 import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// 创建子智能体工具。
-public struct SpawnAgentTool: SuperAgentTool, SuperLog {
+public struct SpawnAgentTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "spawn_agent"
+    public static let info = LumiAgentToolInfo(
+        id: "spawn_agent",
+        displayName: LumiPluginLocalization.string("Spawn Agent", bundle: .module),
+        description: LumiPluginLocalization.string("Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return LumiPluginLocalization.string("Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
-        case .english:
-            return LumiPluginLocalization.string("Spawn a new sub-agent that runs in the background. Returns an agent_id to collect results later.", bundle: .module)
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "task": .object([
+                    "type": .string("string"),
+                    "description": .string("The task description for the sub-agent to perform")
+                ]),
+                "provider_id": .object([
+                    "type": .string("string"),
+                    "description": .string("LLM provider ID (e.g., openai, anthropic, deepseek, zhipu, aliyun)")
+                ]),
+                "model_id": .object([
+                    "type": .string("string"),
+                    "description": .string("Model ID (e.g., gpt-4o, claude-sonnet-4-20250514, deepseek-chat)")
+                ]),
+                "description": .object([
+                    "type": .string("string"),
+                    "description": .string("A short 3-5 word description of what this agent will do")
+                ])
+            ]),
+            "required": .array([.string("task"), .string("provider_id"), .string("model_id"), .string("description")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let taskDesc: String
-        let providerIdDesc: String
-        let modelIdDesc: String
-        let descriptionDesc: String
-
-        switch language {
-        case .chinese:
-            taskDesc = "子智能体需要执行的任务描述"
-            providerIdDesc = "LLM 供应商 ID（如 openai、anthropic、deepseek、zhipu、aliyun）"
-            modelIdDesc = "模型 ID（如 gpt-4o、claude-sonnet-4-20250514、deepseek-chat）"
-            descriptionDesc = "关于此智能体任务的简短描述（3-5 个词）"
-        case .english:
-            taskDesc = "The task description for the sub-agent to perform"
-            providerIdDesc = "LLM provider ID (e.g., openai, anthropic, deepseek, zhipu, aliyun)"
-            modelIdDesc = "Model ID (e.g., gpt-4o, claude-sonnet-4-20250514, deepseek-chat)"
-            descriptionDesc = "A short 3-5 word description of what this agent will do"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "task": [
-                    "type": "string",
-                    "description": taskDesc,
-                ],
-                "provider_id": [
-                    "type": "string",
-                    "description": providerIdDesc,
-                ],
-                "model_id": [
-                    "type": "string",
-                    "description": modelIdDesc,
-                ],
-                "description": [
-                    "type": "string",
-                    "description": descriptionDesc,
-                ],
-            ],
-            "required": ["task", "provider_id", "model_id", "description"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "启动子智能体" }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "启动子智能体" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
 
-        guard let task = arguments["task"]?.value as? String, !task.isEmpty else {
+        guard let task = arguments["task"]?.stringValue, !task.isEmpty else {
             throw SubAgentError.missingArgument("task")
         }
 
-        guard let providerId = (arguments["provider_id"]?.value as? String), !providerId.isEmpty else {
+        guard let providerId = arguments["provider_id"]?.stringValue, !providerId.isEmpty else {
             throw SubAgentError.missingArgument("provider_id")
         }
 
-        guard let modelId = (arguments["model_id"]?.value as? String), !modelId.isEmpty else {
+        guard let modelId = arguments["model_id"]?.stringValue, !modelId.isEmpty else {
             throw SubAgentError.missingArgument("model_id")
         }
 
-        guard let description = (arguments["description"]?.value as? String), !description.isEmpty else {
+        guard let description = arguments["description"]?.stringValue, !description.isEmpty else {
             throw SubAgentError.missingArgument("description")
         }
 
