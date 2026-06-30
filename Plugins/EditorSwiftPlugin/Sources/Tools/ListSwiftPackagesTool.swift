@@ -1,66 +1,48 @@
 import Foundation
-import AgentToolKit
+import LumiCoreKit
+import SuperLogKit
 import XcodeKit
 
 /// 列出 Xcode 项目中 Swift Package 依赖的 Agent 工具。
-public struct ListSwiftPackagesTool: SuperAgentTool {
-    /// 暴露给 Agent 的工具名称。
-    public let name = "list_xcode_packages"
+public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "list_xcode_packages",
+        displayName: LumiPluginLocalization.string("List Swift Packages", bundle: .module),
+        description: LumiPluginLocalization.string("List existing Swift Package dependencies in an Xcode project.", bundle: .module)
+    )
 
     public init() {}
 
-    /// Package Service 实例
     private let packageService = XcodePackageService()
 
-    /// 返回展示给 Agent 的本地化工具描述。
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出 Xcode 项目中已有的 Swift Package 依赖。"
-        case .english:
-            return "List existing Swift Package dependencies in an Xcode project."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "project_path": .object([
+                    "type": .string("string"),
+                    "description": .string("Xcode project file path (full path to .xcodeproj file)")
+                ])
+            ]),
+            "required": .array([.string("project_path")])
+        ])
     }
 
-    /// 定义工具接受的 JSON schema。
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let projectPathDesc: String
-
-        switch language {
-        case .chinese:
-            projectPathDesc = "Xcode 项目文件路径（.xcodeproj 文件的完整路径）"
-        case .english:
-            projectPathDesc = "Xcode project file path (full path to .xcodeproj file)"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "project_path": [
-                    "type": "string",
-                    "description": projectPathDesc
-                ]
-            ],
-            "required": ["project_path"]
-        ]
-    }
-
-    /// 声明该工具为低风险，因为它只读取项目文件。
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    /// 显示描述
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "列出 Swift Package 依赖"
     }
 
-    /// 执行列出 Package 操作。
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
 
-        // 验证必填参数
-        guard let projectPath = arguments["project_path"]?.value as? String, !projectPath.isEmpty else {
+        guard let projectPath = arguments["project_path"]?.stringValue, !projectPath.isEmpty else {
             throw XcodePackageToolError.missingArgument("project_path")
         }
 

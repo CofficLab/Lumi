@@ -1,8 +1,8 @@
-import AgentToolKit
 import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import SuperLogKit
 
 /// Swift / Xcode 集成插件：scheme 工具栏与 Agent 工具。
 public enum EditorSwiftPlugin: LumiPlugin {
@@ -70,9 +70,9 @@ public enum EditorSwiftPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            AddSwiftPackageTool().asLumiAgentTool(),
-            ListSwiftPackagesTool().asLumiAgentTool(),
-            GenerateXcodeProjectTool().asLumiAgentTool(),
+            AddSwiftPackageTool(),
+            ListSwiftPackagesTool(),
+            GenerateXcodeProjectTool(),
         ]
     }
 

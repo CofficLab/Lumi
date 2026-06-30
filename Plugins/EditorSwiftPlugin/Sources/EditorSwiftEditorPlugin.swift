@@ -1,4 +1,3 @@
-import AgentToolKit
 import EditorService
 import Foundation
 import LumiCoreKit
@@ -80,9 +79,6 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    @MainActor public func agentTools(context: ToolContext) -> [SuperAgentTool] {
-        [AddSwiftPackageTool(), ListSwiftPackagesTool(), GenerateXcodeProjectTool()]
-    }
 
     @MainActor public func addRootView<Content: View>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(EditorSwiftPluginRootView(content: content()))
