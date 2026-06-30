@@ -193,7 +193,8 @@ let package = Package(
         .package(path: "../../Plugins/LogoSmartLightPlugin"),
         .package(path: "../../Plugins/LogoCofficPlugin"),
         .package(path: "../../Plugins/VideoConverterPlugin"),
-        .package(path: "../../Plugins/DownloadPlugin")
+        .package(path: "../../Plugins/DownloadPlugin"),
+        .package(path: "../../Plugins/DocxReadPlugin")
     ],
     targets: [
         .target(
@@ -377,7 +378,8 @@ let package = Package(
                 .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin"),
                 .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
-                .product(name: "DownloadPlugin", package: "DownloadPlugin")
+                .product(name: "DownloadPlugin", package: "DownloadPlugin"),
+                .product(name: "DocxReadPlugin", package: "DocxReadPlugin")
             ]
         )
     ]

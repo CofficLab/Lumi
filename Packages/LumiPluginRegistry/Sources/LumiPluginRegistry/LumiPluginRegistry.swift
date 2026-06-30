@@ -127,6 +127,7 @@ import LogoSmartLightPlugin
 import LogoCofficPlugin
 import VideoConverterPlugin
 import DownloadPlugin
+import DocxReadPlugin
 
 @MainActor
 public enum LumiPluginRegistry {
@@ -262,5 +263,6 @@ public enum LumiPluginRegistry {
         LogoCofficPlugin.self,
         VideoConverterPlugin.self,
         DownloadPlugin.self,
+        DocxReadPlugin.self,
     ]
 }
