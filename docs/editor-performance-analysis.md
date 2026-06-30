@@ -2,164 +2,11 @@
 
 ## 执行摘要
 
-本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 7 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
+本报告分析了 Lumi Editor 相关功能的卡顿问题，识别了 5 个主要性能瓶颈，并提供了具体的优化方案。预计通过实施这些优化，可以减少 40-60% 的卡顿，特别是长时间运行场景。
 
 ---
 
-## 1. Highlighting 频繁触发 (高风险)
-
-### 问题描述
-
-Highlighter 的 `textStorage(_:didProcessEditing:)` 方法在每次文本编辑时都会触发多个操作：
-
-```swift
-func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, ...) {
-    guard editedMask.contains(.editedCharacters) else { return }
-    
-    // 操作 1: 更新样式容器
-    styleContainer.storageUpdated(editedRange: editedRange, changeInLength: delta)
-    
-    // 操作 2: 更新可见集合
-    if delta > 0 {
-        visibleRangeProvider.visibleSet.insert(range: editedRange)
-    }
-    
-    // 操作 3: 触发可见文本变化
-    visibleRangeProvider.visibleTextChanged()
-    
-    // 操作 4: 通知所有 provider
-    highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
-}
-```
-
-### 根本原因
-
-1. **无防抖机制**：每次编辑都会立即触发完整的更新流程
-2. **串行处理**：多个 highlightProvider 串行执行，无法利用并行性
-3. **过度触发**：`visibleTextChanged()` 可能在可见区域未真正变化时也触发
-4. **缓存缺失**：`StyledRangeContainer.runsIn(range:)` 没有缓存机制
-
-### 影响范围
-
-- 快速输入时明显卡顿
-- 大文件编辑时高亮更新滞后
-- 滚动时高亮闪烁
-
-### 优化方案
-
-```swift
-// 添加防抖机制
-private var highlightDebounceTask: Task<Void, Never>?
-private let highlightDebounceDuration: Duration = .milliseconds(16)  // 60fps
-
-func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, ...) {
-    guard editedMask.contains(.editedCharacters) else { return }
-    
-    // 立即更新样式容器（保持响应性）
-    styleContainer.storageUpdated(editedRange: editedRange, changeInLength: delta)
-    
-    // 防抖高亮更新
-    highlightDebounceTask?.cancel()
-    highlightDebounceTask = Task { @MainActor in
-        try? await Task.sleep(for: highlightDebounceDuration)
-        guard !Task.isCancelled else { return }
-        
-        // 优化：只在可见区域真正变化时触发
-        if visibleRangeProvider.visibleSetDidChange {
-            visibleRangeProvider.visibleTextChanged()
-        }
-        
-        // 并行处理 providers
-        await withTaskGroup(of: Void.self) { group in
-            for provider in highlightProviders {
-                group.addTask {
-                    await provider.storageDidUpdate(range: providerRange, delta: delta)
-                }
-            }
-        }
-    }
-}
-```
-
-**预期效果**：减少 15-25% 的高亮相关卡顿
-
----
-
-## 2. LineOffsetTable 全量重建 (中风险)
-
-### 问题描述
-
-LineOffsetTable 在初始化时执行 O(n) 遍历：
-
-```swift
-public init(content: String) {
-    var starts = [Int]()
-    starts.reserveCapacity(content.filter { $0 == "\n" }.count + 1)  // O(n) 遍历
-    for scalar in content.unicodeScalars { ... }
-}
-```
-
-### 根本原因
-
-1. **初始化开销大**：`content.filter { $0 == "\n" }` 是 O(n) 操作
-2. **无增量更新**：每次编辑都可能触发全量重建
-3. **内存分配频繁**：频繁创建新的数组
-
-### 影响范围
-
-- 大文件（>10万行）打开时明显延迟
-- 频繁编辑时内存压力增大
-
-### 优化方案
-
-```swift
-// 实现增量更新
-public func update(editRange: NSRange, changeInLength: Int) -> LineOffsetTable {
-    // 1. 找到受影响的行
-    guard let startLine = lineContaining(utf16Offset: editRange.location),
-          let endLine = lineContaining(utf16Offset: editRange.location + editRange.length) else {
-        return self
-    }
-    
-    // 2. 只更新受影响的行
-    var newLineStarts = lineStarts
-    let delta = changeInLength
-    
-    // 更新后续行的偏移
-    for i in (endLine + 1)..<lineStarts.count {
-        newLineStarts[i] += delta
-    }
-    
-    // 3. 处理新增/删除的行
-    // ... 实现细节
-    
-    return LineOffsetTable(lineStarts: newLineStarts, totalUTF16Length: totalUTF16Length + changeInLength)
-}
-
-// 优化初始化
-public init(content: String) {
-    var starts = [Int]()
-    starts.append(0)
-    var offset = 0
-    
-    // 单次遍历，避免 filter
-    for scalar in content.unicodeScalars {
-        offset += scalar.utf16.count
-        if scalar == "\n" {
-            starts.append(offset)
-        }
-    }
-    
-    self.lineStarts = starts
-    self.totalUTF16Length = offset
-}
-```
-
-**预期效果**：减少 10-15% 的行偏移计算开销
-
----
-
-## 3. TextLayoutManager 布局开销 (中风险)
+## 1. TextLayoutManager 布局开销 (中风险)
 
 ### 问题描述
 
@@ -214,7 +61,7 @@ for linePosition in linesStartingAt(minY, until: maxY).lazy {
 
 ---
 
-## 4. LSP 请求堆积 (中风险)
+## 2. LSP 请求堆积 (中风险)
 
 ### 问题描述
 
@@ -283,7 +130,7 @@ public func cachedResult(for key: String) -> LSPCacheEntry? {
 
 ---
 
-## 6. 内存泄漏 (高风险)
+## 3. 内存泄漏 (高风险)
 
 ### 问题描述
 
@@ -368,7 +215,7 @@ public class MemoryMonitor {
 
 ---
 
-## 7. EditorUndoManager 无限制增长 (低风险)
+## 4. EditorUndoManager 无限制增长 (低风险)
 
 ### 问题描述
 
@@ -436,7 +283,7 @@ public final class EditorUndoManager {
 
 ---
 
-## 8. ContextMenuManager Swizzle 开销 (低风险)
+## 5. ContextMenuManager Swizzle 开销 (低风险)
 
 ### 问题描述
 
@@ -504,10 +351,6 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
     // 现有事件...
     
     // 新增监控点
-    case treeSitterParse = "treesitter.parse"
-    case treeSitterIncremental = "treesitter.incremental"
-    case highlightUpdate = "highlight.update"
-    case highlightDebounce = "highlight.debounce"
     case layoutCalculation = "layout.calculation"
     case layoutReusableView = "layout.reuse"
     case lspRequestQueue = "lsp.request.queue"
@@ -523,20 +366,17 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
 
 ### 立即实施 (第 1-2 周)
 
-1. **TreeSitter 超时调整**：简单配置修改，效果显著
-2. **Highlighting 防抖**：添加防抖机制，减少高频触发
-3. **LineOffsetTable 优化**：实现增量更新
+1. **TextLayoutManager 优化**：调整布局参数和复用策略
 
 ### 中期实施 (第 3-4 周)
 
-4. **TextLayoutManager 优化**：调整布局参数和复用策略
-5. **LSP 请求优化**：实现优先级队列和缓存
-6. **内存泄漏修复**：实现生命周期管理
+2. **LSP 请求优化**：实现优先级队列和缓存
+3. **内存泄漏修复**：实现生命周期管理
 
 ### 长期实施 (第 5-8 周)
 
-7. **EditorUndoManager 优化**：添加大小限制和压缩
-8. **ContextMenuManager 优化**：优化运行时使用
+4. **EditorUndoManager 优化**：添加大小限制和压缩
+5. **ContextMenuManager 优化**：优化运行时使用
 
 ---
 
@@ -544,9 +384,6 @@ public enum EditorPerfEvent: String, Sendable, CaseIterable {
 
 | 优化项 | 预期卡顿减少 | 实现难度 | 优先级 |
 |--------|-------------|----------|--------|
-| TreeSitter 超时调整 | 20-30% | 低 | 高 |
-| Highlighting 防抖 | 15-25% | 中 | 高 |
-| LineOffsetTable 增量更新 | 10-15% | 中 | 中 |
 | TextLayoutManager 优化 | 15-20% | 中 | 中 |
 | LSP 请求优化 | 10-20% | 中 | 中 |
 | 内存泄漏修复 | 30-50% (长时间) | 高 | 高 |
@@ -613,13 +450,9 @@ public func adjustParametersBasedOnLoad() {
     
     if memoryPressure > 0.8 || cpuUsage > 0.7 {
         // 降低性能参数
-        TreeSitterClient.Constants.parserTimeout = 0.15
-        highlightDebounceDuration = .milliseconds(32)
         verticalLayoutPadding = 150
     } else {
         // 恢复默认参数
-        TreeSitterClient.Constants.parserTimeout = 0.1
-        highlightDebounceDuration = .milliseconds(16)
         verticalLayoutPadding = 200
     }
 }
