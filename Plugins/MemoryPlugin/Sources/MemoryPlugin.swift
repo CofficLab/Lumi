@@ -1,6 +1,5 @@
 import Foundation
 import LumiCoreKit
-import AgentToolKit
 
 /// Memory Plugin：持久化记忆系统。
 public enum MemoryPlugin: LumiPlugin {
@@ -29,10 +28,10 @@ public enum MemoryPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         Self.bootstrapFromLumiCoreIfNeeded()
         return [
-            SaveMemoryLumiTool(),
-            RecallMemoryLumiTool(),
-            ListMemoriesLumiTool(),
-            DeleteMemoryLumiTool()
+            SaveMemoryTool(),
+            RecallMemoryTool(),
+            ListMemoriesTool(),
+            DeleteMemoryTool()
         ]
     }
 }

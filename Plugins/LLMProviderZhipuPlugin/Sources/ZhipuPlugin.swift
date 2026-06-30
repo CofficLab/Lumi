@@ -43,7 +43,8 @@ public enum ZhipuPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [
+        ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: ZhipuProvider.info.id)
+        return [
             ApiKeyMissingRenderer.item,
             Http401Renderer.item,
             Http403Renderer.item,

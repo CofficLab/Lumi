@@ -1,51 +1,47 @@
 import Foundation
-import AgentToolKit
+import LumiCoreKit
 import SuperLogKit
 
 /// 激活防休眠工具
 ///
 /// 通过 IOKit 电源断言阻止系统进入休眠状态，
 /// 可选择是否同时阻止屏幕休眠，以及设置持续时间。
-struct CaffeinateActivateTool: SuperAgentTool, SuperLog {
+struct CaffeinateActivateTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "☕️"
     nonisolated static let verbose: Bool = false
 
-    let name = "caffeinate_activate"
-    func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "激活 caffeinate 以防止系统睡眠。支持两种模式：'systemAndDisplay'（同时防止系统和显示器睡眠，保持屏幕亮起）和 'systemOnly'（防止系统睡眠但允许显示器关闭）。支持指定时长或无限期激活。"
-        case .english:
-            return "Activate caffeinate to prevent the system from sleeping. Supports two modes: 'systemAndDisplay' (prevent both system and display sleep, keep screen on) and 'systemOnly' (prevent system sleep but allow display to turn off). Supports timed duration or indefinite activation."
-        }
+    static let info = LumiAgentToolInfo(
+        id: "caffeinate_activate",
+        displayName: "Activate Caffeinate",
+        description: "Activate caffeinate to prevent the system from sleeping. Supports two modes: 'systemAndDisplay' (prevent both system and display sleep, keep screen on) and 'systemOnly' (prevent system sleep but allow display to turn off). Supports timed duration or indefinite activation."
+    )
+
+    var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "mode": .object([
+                    "type": .string("string"),
+                    "description": .string("Sleep prevention mode: 'systemAndDisplay' (default, prevents system sleep and keeps screen on) or 'systemOnly' (prevents system sleep but allows screen to turn off)"),
+                    "enum": .array([.string("systemOnly"), .string("systemAndDisplay")]),
+                ]),
+                "duration": .object([
+                    "type": .string("number"),
+                    "description": .string("Duration in seconds. 0 means indefinite (default: 0). Common values: 600 (10 min), 3600 (1 hour), 7200 (2 hours), 18000 (5 hours)."),
+                ]),
+            ]),
+        ])
     }
 
-    func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "mode": [
-                    "type": "string",
-                    "description": "Sleep prevention mode: 'systemAndDisplay' (default, prevents system sleep and keeps screen on) or 'systemOnly' (prevents system sleep but allows screen to turn off)",
-                    "enum": ["systemOnly", "systemAndDisplay"],
-                ],
-                "duration": [
-                    "type": "number",
-                    "description": "Duration in seconds. 0 means indefinite (default: 0). Common values: 600 (10 min), 3600 (1 hour), 7200 (2 hours), 18000 (5 hours).",
-                ],
-            ],
-        ]
-    }
-
-    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "阻止系统睡眠"    }
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    func displayDescription(arguments: [String: LumiJSONValue]) -> String { "阻止系统睡眠" }
+    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let modeString = arguments["mode"]?.value as? String ?? "systemAndDisplay"
-        let duration = arguments["duration"]?.value as? TimeInterval ?? 0
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let modeString = arguments.string("mode") ?? "systemAndDisplay"
+        let duration = arguments.double("duration") ?? 0
 
         let mode: CaffeinateManager.SleepMode
         switch modeString {

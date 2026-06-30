@@ -23,8 +23,11 @@ struct BorderedUtilityContent<Content: View>: View {
     }
 }
 
+// MARK: - ToolCallRowsView
+
 struct ToolCallRowsView: View {
     let message: LumiChatMessage
+    let verbosity: LumiResponseVerbosity
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
@@ -39,6 +42,7 @@ struct ToolCallRowsView: View {
                 ToolCallRowView(
                     message: message,
                     toolCall: toolCall,
+                    verbosity: verbosity,
                     parameterPopoverToolCallID: $parameterPopoverToolCallID,
                     resultPopoverToolCallID: $resultPopoverToolCallID
                 )
@@ -47,15 +51,23 @@ struct ToolCallRowsView: View {
     }
 }
 
+// MARK: - ToolCallRowView
+
 private struct ToolCallRowView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
     let toolCall: LumiToolCall
+    let verbosity: LumiResponseVerbosity
     @Binding var parameterPopoverToolCallID: String?
     @Binding var resultPopoverToolCallID: String?
 
     @State private var isHovering = false
+
+    /// V1 (brief) 只显示描述，V2/V3 显示更多详情
+    private var showsDetails: Bool {
+        verbosity != .brief
+    }
 
     private var isParametersPresented: Bool {
         parameterPopoverToolCallID == toolCall.id
@@ -114,53 +126,18 @@ private struct ToolCallRowView: View {
 
             Spacer(minLength: 12)
 
-            if let duration = toolCall.result?.duration {
+            // V2/V3 显示执行时长
+            if showsDetails, let duration = toolCall.result?.duration {
                 Text(MessageViewHelpers.formatDuration(duration))
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
             }
 
-            AppIconButton(
-                systemImage: "slider.horizontal.3",
-                tint: isParametersPresented ? theme.textPrimary : theme.textSecondary,
-                size: .regular,
-                isActive: isParametersPresented
-            ) {
-                toggleParameterPopover()
-            }
-            .help(LumiPluginLocalization.string("调用参数", bundle: .module))
-            .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
-                ToolDetailPopoverView(
-                    title: "\(toolCall.name) · 调用参数",
-                    systemImage: "slider.horizontal.3"
-                ) {
-                    ToolCallArgumentsView(toolCall: toolCall)
-                }
-            }
+            // V2/V3 显示参数和结果按钮
+            if showsDetails {
+                parameterButton
 
-            AppIconButton(
-                systemImage: visualState.systemImage,
-                tint: isResultsPresented
-                    ? theme.textPrimary
-                    : visualState.isFailure ? theme.error : theme.textSecondary,
-                size: .regular,
-                isActive: isResultsPresented
-            ) {
-                toggleResultPopover()
-            }
-            .help(LumiPluginLocalization.string("调用结果", bundle: .module))
-            .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
-                ToolDetailPopoverView(
-                    title: "调用结果",
-                    systemImage: visualState.systemImage,
-                    isError: visualState.isFailure
-                ) {
-                    ToolCallResultView(
-                        result: toolCall.result,
-                        isLoading: isLoadingResult,
-                        visualState: visualState
-                    )
-                }
+                resultButton
             }
         }
         .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
@@ -171,6 +148,55 @@ private struct ToolCallRowView: View {
         .animation(.easeOut(duration: 0.12), value: isHovering)
         .onHover { hovering in
             isHovering = hovering
+        }
+    }
+
+    @ViewBuilder
+    private var parameterButton: some View {
+        AppIconButton(
+            systemImage: "slider.horizontal.3",
+            tint: isParametersPresented ? theme.textPrimary : theme.textSecondary,
+            size: .regular,
+            isActive: isParametersPresented
+        ) {
+            toggleParameterPopover()
+        }
+        .help(LumiPluginLocalization.string("调用参数", bundle: .module))
+        .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
+            ToolDetailPopoverView(
+                title: "\(toolCall.name) · 调用参数",
+                systemImage: "slider.horizontal.3"
+            ) {
+                ToolCallArgumentsView(toolCall: toolCall)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var resultButton: some View {
+        AppIconButton(
+            systemImage: visualState.systemImage,
+            tint: isResultsPresented
+                ? theme.textPrimary
+                : visualState.isFailure ? theme.error : theme.textSecondary,
+            size: .regular,
+            isActive: isResultsPresented
+        ) {
+            toggleResultPopover()
+        }
+        .help(LumiPluginLocalization.string("调用结果", bundle: .module))
+        .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
+            ToolDetailPopoverView(
+                title: "调用结果",
+                systemImage: visualState.systemImage,
+                isError: visualState.isFailure
+            ) {
+                ToolCallResultView(
+                    result: toolCall.result,
+                    isLoading: isLoadingResult,
+                    visualState: visualState
+                )
+            }
         }
     }
 
@@ -213,6 +239,8 @@ private struct ToolCallRowView: View {
     }
 }
 
+// MARK: - ToolDetailPopoverView
+
 private struct ToolDetailPopoverView<Content: View>: View {
     @LumiTheme private var theme
 
@@ -241,6 +269,8 @@ private struct ToolDetailPopoverView<Content: View>: View {
     }
 }
 
+// MARK: - ToolCallArgumentsView
+
 private struct ToolCallArgumentsView: View {
     let toolCall: LumiToolCall
 
@@ -256,6 +286,8 @@ private struct ToolCallArgumentsView: View {
         MessageViewHelpers.formatToolCallArguments(toolCall.arguments)
     }
 }
+
+// MARK: - ToolCallResultView
 
 private struct ToolCallResultView: View {
     let result: LumiToolResult?
@@ -286,6 +318,8 @@ private struct ToolCallResultView: View {
     }
 }
 
+// MARK: - LoadingToolSectionView
+
 private struct LoadingToolSectionView: View {
     @LumiTheme private var theme
 
@@ -303,6 +337,8 @@ private struct LoadingToolSectionView: View {
     }
 }
 
+// MARK: - ToolFailureNoticeView
+
 private struct ToolFailureNoticeView: View {
     @LumiTheme private var theme
 
@@ -319,6 +355,8 @@ private struct ToolFailureNoticeView: View {
         .toolSubtleCard()
     }
 }
+
+// MARK: - ToolTextSectionView
 
 private struct ToolTextSectionView: View {
     @LumiTheme private var theme
@@ -343,6 +381,8 @@ private struct ToolTextSectionView: View {
     }
 }
 
+// MARK: - EmptyToolSectionView
+
 private struct EmptyToolSectionView: View {
     @LumiTheme private var theme
 
@@ -363,6 +403,8 @@ private struct EmptyToolSectionView: View {
     }
 }
 
+// MARK: - ToolSubtleCardModifier
+
 private struct ToolSubtleCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         AppCard(
@@ -379,6 +421,8 @@ private extension View {
         modifier(ToolSubtleCardModifier())
     }
 }
+
+// MARK: - ToolCallResultVisualState
 
 enum ToolCallResultVisualState: Equatable {
     case loading

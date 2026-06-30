@@ -1,70 +1,64 @@
-import AgentToolKit
 import Foundation
-import SuperLogKit
 import LumiCoreKit
+import SuperLogKit
 
 /// 追加任务工具
 ///
 /// 在已有任务列表末尾追加新任务，不影响已有任务的状态和顺序。
 /// 适用于 Agent 在执行过程中发现需要额外步骤的场景。
-public struct AppendTaskTool: SuperAgentTool, SuperLog {
+public struct AppendTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "append_task"
+    public static let info = LumiAgentToolInfo(
+        id: "append_task",
+        displayName: LumiPluginLocalization.string("Append Task", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Append new tasks to the end of the existing task list. Use this when you discover additional steps are needed during execution. Existing tasks and their statuses are not affected.",
+            bundle: .module
+        )
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "追加新任务到已有任务列表末尾。当执行过程中发现需要额外步骤时，使用此工具添加新任务。不会影响已有任务的状态。"
-        case .english:
-            return """
-    Append new tasks to the end of the existing task list. Use this when you discover \
-    additional steps are needed during execution. Existing tasks and their statuses are not affected.
-    """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "tasks": .object([
+                    "type": .string("array"),
+                    "description": .string("Array of tasks to append. Each task has a title and optional detail."),
+                    "minItems": .int(1),
+                    "maxItems": .int(TaskStateManager.maxTasksPerConversation),
+                    "items": .object([
+                        "type": .string("object"),
+                        "properties": .object([
+                            "title": .object([
+                                "type": .string("string"),
+                                "description": .string("Short, actionable task title"),
+                                "minLength": .int(1)
+                            ]),
+                            "detail": .object([
+                                "type": .string("string"),
+                                "description": .string("Optional detailed description of what this task involves")
+                            ])
+                        ]),
+                        "required": .array([.string("title")])
+                    ])
+                ])
+            ]),
+            "required": .array([.string("tasks")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "tasks": [
-                    "type": "array",
-                    "description": "Array of tasks to append. Each task has a title and optional detail.",
-                    "minItems": 1,
-                    "maxItems": TaskStateManager.maxTasksPerConversation,
-                    "items": [
-                        "type": "object",
-                        "properties": [
-                            "title": [
-                                "type": "string",
-                                "description": "Short, actionable task title",
-                                "minLength": 1,
-                            ],
-                            "detail": [
-                                "type": "string",
-                                "description": "Optional detailed description of what this task involves",
-                            ],
-                        ],
-                        "required": ["title"],
-                    ],
-                ],
-            ],
-            "required": ["tasks"],
-        ]
-    }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "追加任务" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "追加任务" }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
-        let conversationId = context.conversationId.uuidString
+        let conversationId = context.conversationID.uuidString
 
-        guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
+        guard let tasksArray = arguments["tasks"]?.anyValue as? [[String: Any]] else {
             return LumiPluginLocalization.string("Error: tasks array is required", bundle: .module)
         }
 

@@ -47,7 +47,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         
         // 同步内核的 LumiCurrentProjectPathStore
         if let currentProject {
-            projectPathStore?.setCurrentProjectPath(currentProject.path)
+            projectPathStore?.setCurrentProjectPath(currentProject.path, reason: "初始化恢复")
         }
     }
     
@@ -60,7 +60,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         projects = Array(projects.prefix(Self.maxProjectsCount))
         currentProject = updatedProject
         save()
-        syncProjectPath(updatedProject.path)
+        syncProjectPath(updatedProject.path, reason: "用户选择项目")
     }
     
     @discardableResult
@@ -95,23 +95,23 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         if currentProject?.path == project.path {
             currentProject = projects.first
             if let currentProject {
-                syncProjectPath(currentProject.path)
+                syncProjectPath(currentProject.path, reason: "移除项目，切换至上一个")
             } else {
-                syncProjectPath("")
+                syncProjectPath("", reason: "移除最后一个项目")
             }
         }
 
         save()
     }
 
-    public func setCurrentProjectPath(_ path: String) {
+    public func setCurrentProjectPath(_ path: String, reason: String = "") {
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // 空/空白路径 → "无项目"态（与 remove 落空时的约定一致）
         guard !trimmed.isEmpty else {
             currentProject = nil
             save()
-            syncProjectPath("")
+            syncProjectPath("", reason: reason)
             return
         }
 
@@ -144,8 +144,8 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     
     // MARK: - Private
     
-    private func syncProjectPath(_ path: String) {
-        projectPathStore?.setCurrentProjectPath(path)
+    private func syncProjectPath(_ path: String, reason: String = "") {
+        projectPathStore?.setCurrentProjectPath(path, reason: reason)
     }
 
     /// 标准化路径：展开 `~`、解析符号链接、标准化。
@@ -172,7 +172,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         if currentProject == nil {
             currentProject = projects.first
             if let currentProject {
-                syncProjectPath(currentProject.path)
+                syncProjectPath(currentProject.path, reason: "添加项目时自动选中")
             }
         }
         

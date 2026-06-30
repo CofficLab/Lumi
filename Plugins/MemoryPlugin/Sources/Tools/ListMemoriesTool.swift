@@ -1,60 +1,47 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
 /// 列出记忆工具。
 ///
 /// 列出指定作用域下的所有记忆。
-public struct ListMemoriesTool: SuperAgentTool {
-    public let name = "list_memories"
+public struct ListMemoriesTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "list_memories",
+        displayName: "List Memories",
+        description: "List all saved memories. Can filter by scope."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出所有已保存的记忆。可以按作用域过滤。"
-        case .english:
-            return "List all saved memories. Can filter by scope."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "scope": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("global"), .string("project"), .string("all")]),
+                    "description": .string("Filter scope: global (global memories), project (current project memories), or all (both). Defaults to all"),
+                ]),
+                "project_path": .object([
+                    "type": .string("string"),
+                    "description": .string("Required when scope=project. The absolute path to the current project."),
+                ]),
+            ]),
+            "required": .array([]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let scopeDesc: String
-        switch language {
-        case .chinese:
-            scopeDesc = "过滤范围：global（全局记忆）、project（当前项目记忆）或 all（全部）。默认为 all"
-        case .english:
-            scopeDesc = "Filter scope: global (global memories), project (current project memories), or all (both). Defaults to all"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "scope": [
-                    "type": "string",
-                    "enum": ["global", "project", "all"],
-                    "description": scopeDesc,
-                ],
-                "project_path": [
-                    "type": "string",
-                    "description": "Required when scope=project. The absolute path to the current project.",
-                ],
-            ],
-            "required": [],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "列出记忆"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         let scopeRaw = try MemoryToolInput.scope(
-            arguments["scope"]?.value,
+            arguments["scope"]?.anyValue,
             default: "all",
             allowed: ["global", "project", "all"]
         )
@@ -66,13 +53,13 @@ public struct ListMemoriesTool: SuperAgentTool {
         case "global":
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
         case "project":
-            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
         default: // "all"
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
-            if let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) {
+            if let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) {
                 projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
             }
         }

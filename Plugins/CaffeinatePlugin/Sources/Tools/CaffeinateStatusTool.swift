@@ -1,39 +1,34 @@
 import Foundation
-import AgentToolKit
+import LumiCoreKit
 import SuperLogKit
 
 /// 查询防休眠状态工具
 ///
 /// 返回当前防休眠的激活状态、模式、持续时间、已激活时长等信息。
-struct CaffeinateStatusTool: SuperAgentTool, SuperLog {
+struct CaffeinateStatusTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = false
 
-    let name = "caffeinate_status"
+    static let info = LumiAgentToolInfo(
+        id: "caffeinate_status",
+        displayName: "Caffeinate Status",
+        description: "Query the current caffeinate status. Returns whether caffeinate is active, the current mode, duration, elapsed time, and remaining time."
+    )
 
-    func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查询当前 caffeinate 状态。返回是否激活、当前模式、持续时间、已用时间和剩余时间。"
-        case .english:
-            return "Query the current caffeinate status. Returns whether caffeinate is active, the current mode, duration, elapsed time, and remaining time."
-        }
+    var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:]),
+        ])
     }
 
-    func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [:],
-        ]
-    }
-
-    func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查看睡眠状态"    }
-    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看睡眠状态" }
+    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         let manager = CaffeinateManager.shared
 
         if Self.verbose {

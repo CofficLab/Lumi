@@ -1,5 +1,4 @@
 import Foundation
-import AgentToolKit
 import LumiCoreKit
 import Testing
 @testable import ProjectOverviewPlugin
@@ -31,27 +30,26 @@ struct PluginProjectOverviewTests {
     func toolMetadata() {
         let tool = ProjectOverviewTool()
         #expect(tool.name == "project_overview")
-
-        let enDesc = tool.description(for: .english)
-        #expect(enDesc.contains("project overview"))
-
-        let zhDesc = tool.description(for: .chinese)
-        #expect(zhDesc.contains("项目概览"))
+        #expect(tool.toolDescription.contains("project overview"))
     }
 
     @Test("tool input schema")
-    func toolInputSchema() throws {
+    func toolInputSchema() {
         let tool = ProjectOverviewTool()
-        let schema = tool.inputSchema(for: .english)
+        let schema = tool.inputSchema
 
-        let properties = try #require(schema["properties"] as? [String: Any])
+        guard case .object(let keys) = schema,
+              case .object(let properties) = keys["properties"] else {
+            Issue.record("schema should declare properties object")
+            return
+        }
         #expect(properties["path"] != nil)
     }
 
     @Test("tool risk level is low")
     func toolRiskLevel() {
         let tool = ProjectOverviewTool()
-        #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
+        #expect(tool.riskLevel(arguments: [:], context: nil) == .low)
     }
 
     @Test("ProjectTypeSection detects Swift project")

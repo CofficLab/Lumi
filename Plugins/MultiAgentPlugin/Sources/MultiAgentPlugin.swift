@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import SwiftUI
 import os
@@ -22,8 +21,8 @@ public enum MultiAgentPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            SpawnAgentTool().asLumiAgentTool(),
-            CollectAgentsTool().asLumiAgentTool(),
+            SpawnAgentTool(),
+            CollectAgentsTool(),
         ]
     }
 

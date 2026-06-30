@@ -1,57 +1,52 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct ExportAppIconTool: SuperAgentTool {
-    public let name = "export_app_icon"
+public struct ExportAppIconTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "export_app_icon",
+        displayName: "Export App Icon",
+        description: "Export the current App Icon Designer document or candidate image as an Xcode-ready AppIcon.appiconset."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "把 App Icon Designer 中的当前图标文档或候选图片导出为 Xcode 可用的 AppIcon.appiconset。"
-        case .english:
-            return "Export the current App Icon Designer document or candidate image as an Xcode-ready AppIcon.appiconset."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
                 "artifactId": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Optional artifact id. If omitted, the currently selected candidate is exported.", zh: "可选候选项 ID。省略时导出当前选中的候选项。")
+                    "description": "Optional artifact id. If omitted, the currently selected candidate is exported."
                 ],
                 "outputDirectory": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Absolute directory path where AppIcon.appiconset should be created. For Xcode assets, use the .xcassets directory.", zh: "创建 AppIcon.appiconset 的绝对目录路径。用于 Xcode 资源时请传入 .xcassets 目录。")
+                    "description": "Absolute directory path where AppIcon.appiconset should be created. For Xcode assets, use the .xcassets directory."
                 ],
                 "setName": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Optional icon set name. Defaults to AppIcon.", zh: "可选图标集名称，默认 AppIcon。")
+                    "description": "Optional icon set name. Defaults to AppIcon."
                 ],
             ],
             "required": ["outputDirectory"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Export app icon set"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
-        guard let outputDirectory = arguments["outputDirectory"]?.value as? String, !outputDirectory.isEmpty else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
+        guard let outputDirectory = arguments["outputDirectory"]?.anyValue as? String, !outputDirectory.isEmpty else {
             return IconToolSupport.missingParameter("outputDirectory", language: language)
         }
 
-        let requestedArtifactId = arguments["artifactId"]?.value as? String
-        let setName = (arguments["setName"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let requestedArtifactId = arguments["artifactId"]?.anyValue as? String
+        let setName = (arguments["setName"]?.anyValue as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let outputURL = URL(fileURLWithPath: outputDirectory, isDirectory: true)
 
         do {

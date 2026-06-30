@@ -1,8 +1,8 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
-public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
+public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "RAG"
     public nonisolated static let verbose: Bool = false
 
@@ -24,108 +24,75 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     /// 最大容忍超时时间（秒）
     static let maxTimeoutSeconds: TimeInterval = 60
 
-    public let name = "search_code"
+    public static let info = LumiAgentToolInfo(
+        id: "search_code",
+        displayName: LumiPluginLocalization.string("Search Code", bundle: .module),
+        description: """
+        Search code snippets in the current project. Use this to find symbols, error strings, file paths, implementation locations, or code related to a natural-language query.
+
+        The default hybrid mode combines exact keyword search with RAG semantic retrieval. Keyword mode does not require an index; semantic mode uses the RAG index.
+
+        Use the `timeout` parameter to set a maximum tolerable wait time (default 15s, max 60s). Partial results collected so far are returned on timeout.
+        """
+    )
 
     struct CapturedProcessOutput: Sendable, Equatable {
         let terminationStatus: Int32
         let stdout: Data
     }
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return """
-            在当前项目中搜索代码片段。适合查找符号、错误字符串、文件路径、实现位置，或按自然语言描述检索相关代码。
+    public init() {}
 
-            默认使用 hybrid 模式：结合精确关键字搜索和 RAG 语义检索。keyword 模式不依赖索引；semantic 模式依赖 RAG 索引。
-
-            可通过 `timeout` 参数设置最大容忍等待时间（默认 15 秒，最大 60 秒），超时后返回已收集到的部分结果。
-            """
-        case .english:
-            return """
-            Search code snippets in the current project. Use this to find symbols, error strings, file paths, implementation locations, or code related to a natural-language query.
-
-            The default hybrid mode combines exact keyword search with RAG semantic retrieval. Keyword mode does not require an index; semantic mode uses the RAG index.
-
-            Use the `timeout` parameter to set a maximum tolerable wait time (default 15s, max 60s). Partial results collected so far are returned on timeout.
-            """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "query": .object([
+                    "type": .string("string"),
+                    "description": .string("Keyword, symbol name, error text, or natural-language question to search for."),
+                ]),
+                "mode": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("hybrid"), .string("keyword"), .string("semantic")]),
+                    "description": .string("Search mode. keyword performs exact text search, semantic uses RAG retrieval, and hybrid merges both. Defaults to hybrid."),
+                ]),
+                "topK": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum number of results to return. Defaults to 8, range 1-20."),
+                    "minimum": .int(Self.minTopK),
+                    "maximum": .int(Self.maxTopK),
+                ]),
+                "pathFilter": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional path substring filter."),
+                ]),
+                "projectPath": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional project root path. Defaults to the current session project path."),
+                ]),
+                "timeout": .object([
+                    "type": .string("integer"),
+                    "description": .string("Optional max tolerable wait time in seconds. Default 15, range 1-60. Returns partial results on timeout."),
+                    "minimum": .int(Int(Self.minTimeoutSeconds)),
+                    "maximum": .int(Int(Self.maxTimeoutSeconds)),
+                ]),
+            ]),
+            "required": .array([.string("query")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let queryDescription: String
-        let modeDescription: String
-        let topKDescription: String
-        let pathFilterDescription: String
-        let projectPathDescription: String
-        let timeoutDescription: String
-
-        switch language {
-        case .chinese:
-            queryDescription = "要搜索的关键字、符号名、错误文本或自然语言问题。"
-            modeDescription = "搜索模式。keyword 为精确文本搜索，semantic 为 RAG 语义检索，hybrid 会合并两者。默认 hybrid。"
-            topKDescription = "最多返回多少条结果，默认 8，范围 1-20。"
-            pathFilterDescription = "可选，仅返回路径中包含该字符串的文件。"
-            projectPathDescription = "可选，项目根路径。默认使用当前会话的项目路径。"
-            timeoutDescription = "可选，最大容忍等待时间（秒）。默认 15，范围 1-60。超时后返回已收集到的部分结果。"
-        case .english:
-            queryDescription = "Keyword, symbol name, error text, or natural-language question to search for."
-            modeDescription = "Search mode. keyword performs exact text search, semantic uses RAG retrieval, and hybrid merges both. Defaults to hybrid."
-            topKDescription = "Maximum number of results to return. Defaults to 8, range 1-20."
-            pathFilterDescription = "Optional path substring filter."
-            projectPathDescription = "Optional project root path. Defaults to the current session project path."
-            timeoutDescription = "Optional max tolerable wait time in seconds. Default 15, range 1-60. Returns partial results on timeout."
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "query": [
-                    "type": "string",
-                    "description": queryDescription,
-                ],
-                "mode": [
-                    "type": "string",
-                    "enum": ["hybrid", "keyword", "semantic"],
-                    "description": modeDescription,
-                ],
-                "topK": [
-                    "type": "integer",
-                    "description": topKDescription,
-                    "minimum": Self.minTopK,
-                    "maximum": Self.maxTopK,
-                ],
-                "pathFilter": [
-                    "type": "string",
-                    "description": pathFilterDescription,
-                ],
-                "projectPath": [
-                    "type": "string",
-                    "description": projectPathDescription,
-                ],
-                "timeout": [
-                    "type": "integer",
-                    "description": timeoutDescription,
-                    "minimum": Int(Self.minTimeoutSeconds),
-                    "maximum": Int(Self.maxTimeoutSeconds),
-                ],
-            ],
-            "required": ["query"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        let query = (arguments["query"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        let query = (arguments.string("query") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let preview = query.isEmpty ? "code" : String(query.prefix(40))
         return "Search code: \(preview)"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let rawQuery = arguments["query"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let rawQuery = arguments.string("query") else {
             return "## Code Search\n\nMissing required `query` parameter."
         }
 
@@ -134,10 +101,10 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
             return "## Code Search\n\n`query` must not be empty."
         }
 
-        let mode = SearchMode(rawValue: (arguments["mode"]?.value as? String)?.lowercased() ?? "") ?? .hybrid
-        let topK = Self.normalizedTopK(arguments["topK"]?.value)
-        let pathFilter = trimmedNonEmpty(arguments["pathFilter"]?.value as? String)
-        let timeoutSeconds = Self.normalizedTimeout(arguments["timeout"]?.value)
+        let mode = SearchMode(rawValue: (arguments.string("mode") ?? "").lowercased()) ?? .hybrid
+        let topK = Self.normalizedTopK(arguments["topK"]?.anyValue)
+        let pathFilter = trimmedNonEmpty(arguments.string("pathFilter"))
+        let timeoutSeconds = Self.normalizedTimeout(arguments["timeout"]?.anyValue)
 
         guard let projectPath = resolveProjectPath(arguments: arguments, context: context) else {
             return """
@@ -230,7 +197,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        context: ToolExecutionContext
+        context: LumiToolExecutionContext
     ) async -> [CodeSearchResult] {
         let keywordStart = CFAbsoluteTimeGetCurrent()
         // 优先使用 grep，失败时回退到 Swift 逐文件搜索
@@ -423,7 +390,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        context: ToolExecutionContext
+        context: LumiToolExecutionContext
     ) -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
         let files = RAGFileScanner.discoverFilesCached(in: projectPath)
@@ -465,7 +432,7 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
     ) async -> [CodeSearchResult] {
         // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
         if RAGService.isAnyIndexing() {
-            if RAGPlugin.verbose {
+            if Self.verbose {
                 RAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
             }
             return []
@@ -498,8 +465,8 @@ public struct RAGCodeSearchTool: SuperAgentTool, SuperLog {
 
     // MARK: - Helpers
 
-    private func resolveProjectPath(arguments: [String: ToolArgument], context: ToolExecutionContext) -> String? {
-        let explicit = trimmedNonEmpty(arguments["projectPath"]?.value as? String)
+    private func resolveProjectPath(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) -> String? {
+        let explicit = trimmedNonEmpty(arguments.string("projectPath"))
         let current = trimmedNonEmpty(context.currentProjectPath)
 
         guard let path = explicit ?? current else { return nil }

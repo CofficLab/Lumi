@@ -5,7 +5,6 @@ enum RAGRetrievalRuntime {
     static func performRetrieval(projectPath: String, userMessage: String) async -> String? {
         let service = RAGService(
             databaseDirectoryProvider: RAGPluginRuntime.databaseDirectoryProvider,
-            logger: OSLogRAGLogger(),
             onProgress: { _ in }
         )
 

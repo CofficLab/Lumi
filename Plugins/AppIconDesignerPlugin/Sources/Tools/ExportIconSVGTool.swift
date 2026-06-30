@@ -1,39 +1,34 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct ExportIconSVGTool: SuperAgentTool {
-    public let name = "export_icon_svg"
+public struct ExportIconSVGTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "export_icon_svg",
+        displayName: "Export Icon Svg",
+        description: "Export the current editable icon document as an SVG file."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "把当前可编辑图标文档导出为 SVG 文件。"
-        case .english:
-            return "Export the current editable icon document as an SVG file."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
-                "outputPath": ["type": "string", "description": IconToolSupport.description(language, en: "Absolute SVG output path. If omitted, a file is written to the temporary directory.", zh: "SVG 输出绝对路径。省略时会写入临时目录。")],
+                "outputPath": ["type": "string", "description": "Absolute SVG output path. If omitted, a file is written to the temporary directory."],
             ],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Export icon SVG"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         do {
             let document = try await MainActor.run {
                 guard let document = IconDocumentStore.shared.selectedDocument else {
@@ -76,7 +71,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
         }
     }
 
-    private func outputURL(arguments: [String: ToolArgument], document: IconDocument) -> URL {
+    private func outputURL(arguments: [String: LumiJSONValue], document: IconDocument) -> URL {
         if let outputPath = IconToolSupport.string(arguments, "outputPath"), !outputPath.isEmpty {
             return URL(fileURLWithPath: outputPath)
         }

@@ -130,21 +130,3 @@ enum GenerateXcodeProjectToolParser {
     }
 }
 
-// MARK: - Tool Errors
-
-enum GenerateXcodeProjectToolError: LocalizedError {
-    case missingArgument(String)
-    case invalidTargetKind(String)
-    case invalidDependency([String: Any])
-
-    var errorDescription: String? {
-        switch self {
-        case .missingArgument(let name):
-            return "Missing required argument: \(name)"
-        case .invalidTargetKind(let kind):
-            return "Invalid target kind: \(kind). Must be one of: app, framework, unitTestBundle, uiTestBundle, appExtension, staticLibrary"
-        case .invalidDependency(let dict):
-            return "Invalid dependency specification: \(dict). Must contain 'target', 'local_path', 'remote_url', or 'framework'"
-        }
-    }
-}

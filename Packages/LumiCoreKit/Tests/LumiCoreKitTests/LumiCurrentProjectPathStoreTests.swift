@@ -10,7 +10,7 @@ struct LumiCurrentProjectPathStoreTests {
 
         #expect(vm.currentProjectPath.isEmpty)
 
-        store.setCurrentProjectPath("/tmp/GitOK")
+        store.setCurrentProjectPath("/tmp/GitOK", reason: "测试用例")
         await Task.yield()
 
         #expect(vm.currentProjectPath == "/tmp/GitOK")

@@ -1,182 +1,165 @@
 import Foundation
-import AgentToolKit
+import LumiCoreKit
+import SuperLogKit
 
-private enum DatabaseToolArguments {
-    public static func string(_ name: String, from arguments: [String: ToolArgument]) throws -> String {
-        guard let value = arguments[name]?.value as? String, !value.isEmpty else {
-            throw DatabaseAgentToolError.missingArgument(name)
-        }
-        return value
+public struct DatabaseListConnectionsTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "🔌"
+    public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "database_list_connections",
+        displayName: LumiPluginLocalization.string("List Database Connections", bundle: .module),
+        description: LumiPluginLocalization.string("List database connections that are available to Agent database tools. Passwords and secrets are never returned.", bundle: .module)
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:]),
+            "required": .array([])
+        ])
     }
 
-    public static func limit(from arguments: [String: ToolArgument]) throws -> Int {
-        try DatabaseAgentToolService.normalizedLimit(arguments["limit"]?.value)
-    }
-}
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "列出数据库连接" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-public struct DatabaseListConnectionsTool: SuperAgentTool {
-    public let name = "database_list_connections"
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "列出数据库连接" }
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出 Agent 数据库工具可用的数据库连接。不会返回密码或密钥。"
-        case .english:
-            return "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [:],
-        ]
-    }
-
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        .low
-    }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try await DatabaseAgentToolService.shared.listConnections()
     }
 }
 
-public struct DatabaseDescribeSchemaTool: SuperAgentTool {
-    public let name = "database_describe_schema"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "描述 Agent 可访问数据库连接中的表、列或关键样本。编写只读查询前应先使用此工具。"
-        case .english:
-            return "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
-        }
+public struct DatabaseDescribeSchemaTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "database_describe_schema",
+        displayName: LumiPluginLocalization.string("Describe Schema", bundle: .module),
+        description: LumiPluginLocalization.string("Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query.", bundle: .module)
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "connection_id": .object([
+                    "type": .string("string"),
+                    "description": .string("Connection UUID returned by database_list_connections")
+                ]),
+                "limit": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum rows or schema entries to return. Default 100, maximum 1000.")
+                ])
+            ]),
+            "required": .array([.string("connection_id")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "connection_id": [
-                    "type": "string",
-                    "description": "Connection UUID returned by database_list_connections"
-                ],
-                "limit": [
-                    "type": "integer",
-                    "description": "Maximum rows or schema entries to return. Default 100, maximum 1000."
-                ],
-            ],
-            "required": ["connection_id"],
-        ]
-    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        .low
-    }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看数据库结构" }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "查看数据库结构"
-    }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
-        let limit = try DatabaseToolArguments.limit(from: arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
+        let limit = try DatabaseAgentToolService.normalizedLimit(arguments["limit"]?.anyValue)
         return try await DatabaseAgentToolService.shared.describeSchema(connectionId: id, limit: limit)
     }
 }
 
-public struct DatabaseReadonlyQueryTool: SuperAgentTool {
-    public let name = "database_query_readonly"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "对 Agent 可访问的 SQL 数据库执行只读 SQL 查询。仅接受 SELECT、结构检查和 EXPLAIN 类语句。结果会限制数量并截断。"
-        case .english:
-            return "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
+public struct DatabaseReadonlyQueryTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "database_query_readonly",
+        displayName: LumiPluginLocalization.string("Query Readonly", bundle: .module),
+        description: LumiPluginLocalization.string("Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated.", bundle: .module)
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "connection_id": .object([
+                    "type": .string("string"),
+                    "description": .string("Connection UUID returned by database_list_connections")
+                ]),
+                "sql": .object([
+                    "type": .string("string"),
+                    "description": .string("Read-only SQL. Mutating or administrative statements are rejected.")
+                ]),
+                "limit": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum result rows. Default 100, maximum 1000.")
+                ])
+            ]),
+            "required": .array([.string("connection_id"), .string("sql")])
+        ])
+    }
+
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "执行只读数据库查询" }
+
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
+        guard let sql = arguments["sql"]?.stringValue, !sql.isEmpty else {
+            throw DatabaseAgentToolError.missingArgument("sql")
         }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "connection_id": [
-                    "type": "string",
-                    "description": "Connection UUID returned by database_list_connections"
-                ],
-                "sql": [
-                    "type": "string",
-                    "description": "Read-only SQL. Mutating or administrative statements are rejected."
-                ],
-                "limit": [
-                    "type": "integer",
-                    "description": "Maximum result rows. Default 100, maximum 1000."
-                ],
-            ],
-            "required": ["connection_id", "sql"],
-        ]
-    }
-
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        .low
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "执行只读数据库查询"
-    }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
-        let sql = try DatabaseToolArguments.string("sql", from: arguments)
-        let limit = try DatabaseToolArguments.limit(from: arguments)
+        let limit = try DatabaseAgentToolService.normalizedLimit(arguments["limit"]?.anyValue)
         return try await DatabaseAgentToolService.shared.queryReadonly(connectionId: id, sql: sql, limit: limit)
     }
 }
 
-public struct DatabaseSampleTableTool: SuperAgentTool {
-    public let name = "database_sample_table"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "使用安全的标识符引用从表中返回少量样本。优先使用此工具，而不是手写 SELECT *。"
-        case .english:
-            return "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
+public struct DatabaseSampleTableTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "📊"
+    public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "database_sample_table",
+        displayName: LumiPluginLocalization.string("Sample Table", bundle: .module),
+        description: LumiPluginLocalization.string("Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand.", bundle: .module)
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "connection_id": .object([
+                    "type": .string("string"),
+                    "description": .string("Connection UUID returned by database_list_connections")
+                ]),
+                "table": .object([
+                    "type": .string("string"),
+                    "description": .string("Table name, optionally schema-qualified")
+                ]),
+                "limit": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum result rows. Default 100, maximum 1000.")
+                ])
+            ]),
+            "required": .array([.string("connection_id"), .string("table")])
+        ])
+    }
+
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看数据库表样本" }
+
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
+        guard let table = arguments["table"]?.stringValue, !table.isEmpty else {
+            throw DatabaseAgentToolError.missingArgument("table")
         }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "connection_id": [
-                    "type": "string",
-                    "description": "Connection UUID returned by database_list_connections"
-                ],
-                "table": [
-                    "type": "string",
-                    "description": "Table name, optionally schema-qualified"
-                ],
-                "limit": [
-                    "type": "integer",
-                    "description": "Maximum result rows. Default 100, maximum 1000."
-                ],
-            ],
-            "required": ["connection_id", "table"],
-        ]
-    }
-
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        .low
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "查看数据库表样本"
-    }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.value)
-        let table = try DatabaseToolArguments.string("table", from: arguments)
-        let limit = try DatabaseToolArguments.limit(from: arguments)
+        let limit = try DatabaseAgentToolService.normalizedLimit(arguments["limit"]?.anyValue)
         return try await DatabaseAgentToolService.shared.sampleTable(connectionId: id, table: table, limit: limit)
     }
 }

@@ -1,50 +1,42 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 未推送 Commit 查询工具
-public struct GitUnpushedTool: SuperAgentTool, SuperLog {
+public struct GitUnpushedTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📤"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_unpushed"
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查看本地有多少 commit 尚未推送到远程仓库。"
-        case .english:
-            return "Check how many local commits have not been pushed to the remote repository."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "git_unpushed",
+        displayName: "Git Unpushed",
+        description: "Check how many local commits have not been pushed to the remote repository."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc,
-                ],
-            ],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看未推送提交"
     }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
 
         if Self.verbose {
             GitPlugin.logger.info("\(Self.t)检查未推送 commit：\(path ?? "当前目录")")

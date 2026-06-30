@@ -1,51 +1,46 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct UpdateIconLayerTool: SuperAgentTool {
-    public let name = "update_icon_layer"
+public struct UpdateIconLayerTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "update_icon_layer",
+        displayName: "Update Icon Layer",
+        description: "Update a layer in the current icon document, including color, position, scale, rotation, and opacity."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "更新当前图标文档中的图层样式和变换，例如改颜色、移动、缩放、旋转、透明度。"
-        case .english:
-            return "Update a layer in the current icon document, including color, position, scale, rotation, and opacity."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
-                "layerId": ["type": "string", "description": IconToolSupport.description(language, en: "Layer id returned by add_icon_shape.", zh: "add_icon_shape 返回的图层 ID。")],
-                "fill": ["type": "string", "description": IconToolSupport.description(language, en: "New fill color.", zh: "新的填充颜色。")],
-                "opacity": ["type": "number", "description": IconToolSupport.description(language, en: "New opacity from 0 to 1.", zh: "新的不透明度，范围 0 到 1。")],
-                "translateX": ["type": "number", "description": IconToolSupport.description(language, en: "Layer x translation.", zh: "图层 x 平移。")],
-                "translateY": ["type": "number", "description": IconToolSupport.description(language, en: "Layer y translation.", zh: "图层 y 平移。")],
-                "scale": ["type": "number", "description": IconToolSupport.description(language, en: "Layer scale.", zh: "图层缩放。")],
-                "rotationDegrees": ["type": "number", "description": IconToolSupport.description(language, en: "Layer rotation in degrees around the canvas center.", zh: "围绕画布中心旋转的角度。")],
-                "shadowColor": ["type": "string", "description": IconToolSupport.description(language, en: "Set or update layer shadow color.", zh: "设置或更新图层阴影颜色。")],
-                "shadowRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Set or update layer shadow radius.", zh: "设置或更新图层阴影半径。")],
-                "shadowX": ["type": "number", "description": IconToolSupport.description(language, en: "Set or update layer shadow x offset.", zh: "设置或更新图层阴影 x 偏移。")],
-                "shadowY": ["type": "number", "description": IconToolSupport.description(language, en: "Set or update layer shadow y offset.", zh: "设置或更新图层阴影 y 偏移。")],
-                "blurRadius": ["type": "number", "description": IconToolSupport.description(language, en: "Set layer blur radius.", zh: "设置图层模糊半径。")],
+                "layerId": ["type": "string", "description": "Layer id returned by add_icon_shape."],
+                "fill": ["type": "string", "description": "New fill color."],
+                "opacity": ["type": "number", "description": "New opacity from 0 to 1."],
+                "translateX": ["type": "number", "description": "Layer x translation."],
+                "translateY": ["type": "number", "description": "Layer y translation."],
+                "scale": ["type": "number", "description": "Layer scale."],
+                "rotationDegrees": ["type": "number", "description": "Layer rotation in degrees around the canvas center."],
+                "shadowColor": ["type": "string", "description": "Set or update layer shadow color."],
+                "shadowRadius": ["type": "number", "description": "Set or update layer shadow radius."],
+                "shadowX": ["type": "number", "description": "Set or update layer shadow x offset."],
+                "shadowY": ["type": "number", "description": "Set or update layer shadow y offset."],
+                "blurRadius": ["type": "number", "description": "Set layer blur radius."],
             ],
             "required": ["layerId"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Update icon layer"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         guard let layerId = IconToolSupport.string(arguments, "layerId"), !layerId.isEmpty else {
             return IconToolSupport.missingParameter("layerId", language: language)
         }

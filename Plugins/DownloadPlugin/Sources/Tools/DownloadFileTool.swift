@@ -1,15 +1,24 @@
-import AgentToolKit
 import DownloadKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
 /// 下载单个文件工具
 ///
 /// Agent 调用此工具从 URL 下载单个文件到本地。
 /// 支持 HTTP/HTTPS 协议，自动断点续传。
-public struct DownloadFileTool: SuperAgentTool, SuperLog {
+public struct DownloadFileTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📥"
     public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "download_file",
+        displayName: LumiPluginLocalization.string("Download File", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Download a single file from URL to local disk. Supports HTTP/HTTPS with automatic resume. Filename and destination directory are optional (auto-detected from URL).",
+            bundle: .module
+        )
+    )
 
     private let manager: DownloadManager
 
@@ -17,40 +26,29 @@ public struct DownloadFileTool: SuperAgentTool, SuperLog {
         self.manager = manager
     }
 
-    public let name = "download_file"
-
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "从 URL 下载单个文件到本地。支持 HTTP/HTTPS 链接，自动断点续传。可以指定文件名和保存目录，不提供则自动从 URL 推断。"
-        case .english:
-            return "Download a single file from URL to local disk. Supports HTTP/HTTPS with automatic resume. Filename and destination directory are optional (auto-detected from URL)."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "url": .object([
+                    "type": .string("string"),
+                    "description": .string("文件下载链接 (HTTP/HTTPS)")
+                ]),
+                "filename": .object([
+                    "type": .string("string"),
+                    "description": .string("可选，保存的文件名。不提供则从 URL 自动推断")
+                ]),
+                "directory": .object([
+                    "type": .string("string"),
+                    "description": .string("可选，保存目录的绝对路径。不提供则使用默认下载目录")
+                ])
+            ]),
+            "required": .array([.string("url")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "url": [
-                    "type": "string",
-                    "description": "文件下载链接 (HTTP/HTTPS)",
-                ],
-                "filename": [
-                    "type": "string",
-                    "description": "可选，保存的文件名。不提供则从 URL 自动推断",
-                ],
-                "directory": [
-                    "type": "string",
-                    "description": "可选，保存目录的绝对路径。不提供则使用默认下载目录",
-                ],
-            ],
-            "required": ["url"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        if let urlString = arguments["url"]?.value as? String,
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        if let urlString = arguments["url"]?.stringValue,
            let url = URL(string: urlString) {
             let name = url.lastPathComponent
             if !name.isEmpty && name != "/" {
@@ -60,19 +58,19 @@ public struct DownloadFileTool: SuperAgentTool, SuperLog {
         return "下载文件"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let urlString = arguments["url"]?.value as? String,
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let urlString = arguments["url"]?.stringValue,
               let url = URL(string: urlString) else {
             return "❌ 错误：无效的 URL"
         }
 
         // 确定文件名
         let filename: String
-        if let customName = arguments["filename"]?.value as? String, !customName.isEmpty {
+        if let customName = arguments["filename"]?.stringValue, !customName.isEmpty {
             filename = customName
         } else {
             filename = DownloadPlugin.extractFilename(from: url)
@@ -80,7 +78,7 @@ public struct DownloadFileTool: SuperAgentTool, SuperLog {
 
         // 确定保存目录
         let directory: URL
-        if let dirPath = arguments["directory"]?.value as? String {
+        if let dirPath = arguments["directory"]?.stringValue {
             directory = URL(fileURLWithPath: dirPath, isDirectory: true)
         } else {
             directory = DownloadPlugin.defaultDownloadDirectory()

@@ -1,46 +1,40 @@
-import AgentToolKit
 import Foundation
-import SuperLogKit
 import LumiCoreKit
+import SuperLogKit
 
 /// 查询任务进度工具
 ///
 /// 用于查看当前会话的任务列表和完成进度。
 /// Agent 可以在需要时主动查询进度，以确认下一步应该做什么。
-public struct CheckProgressTool: SuperAgentTool, SuperLog {
+public struct CheckProgressTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "check_progress"
+    public static let info = LumiAgentToolInfo(
+        id: "check_progress",
+        displayName: LumiPluginLocalization.string("Check Progress", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Check the current task progress for the conversation. Returns a list of all tasks with their statuses and overall completion percentage. Use this to review what's been done and what's next.",
+            bundle: .module
+        )
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "检查当前对话的任务进度。返回所有任务及其状态和总体完成百分比。用于回顾已完成内容和下一步事项。"
-        case .english:
-            return """
-    Check the current task progress for the conversation. Returns a list of all tasks with their \
-    statuses and overall completion percentage. Use this to review what's been done and what's next.
-    """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:]),
+            "required": .array([])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [:] as [String: Any],
-            "required": [] as [String],
-        ]
-    }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看任务进度" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看任务进度" }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
-        let conversationId = context.conversationId.uuidString
+        let conversationId = context.conversationID.uuidString
         let manager = TaskStateManager.shared
         let tasks = await manager.fetchTasks(conversationId: conversationId)
         let summary = await manager.getProgressSummary(conversationId: conversationId)

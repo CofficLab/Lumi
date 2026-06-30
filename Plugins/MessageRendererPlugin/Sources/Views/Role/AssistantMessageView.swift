@@ -44,10 +44,10 @@ private struct AssistantMessageBody: View {
                 .font(.appBody)
             }
 
-            if verbosity == .detailed,
+            if verbosity != .brief,
                let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
-                ToolCallRowsView(message: message)
+                ToolCallRowsView(message: message, verbosity: verbosity)
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }

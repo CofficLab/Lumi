@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/GitHubKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -25,7 +24,6 @@ let package = Package(
         .target(
             name: "GitHubPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "GitHubKit", package: "GitHubKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

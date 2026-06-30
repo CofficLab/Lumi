@@ -1,78 +1,36 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import GitHubKit
+import LumiCoreKit
+import SuperLogKit
 
 /// GitHub 关闭 Issue 工具
-public struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
+public struct GitHubCloseIssueTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔒"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_close_issue"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "关闭指定的 GitHub Issue。"
-        case .english:
-            return "Close the specified GitHub issue."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "github_close_issue",
+        displayName: "GitHubCloseIssue",
+        description: "GitHub tool: github_close_issue"
+    )
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        switch language {
-        case .chinese:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "仓库所有者"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "仓库名称"
-                    ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue 编号",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ]
-                ],
-                "required": ["owner", "repo", "issueNumber"]
-            ]
-        case .english:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "Repository owner"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "Repository name"
-                    ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue number",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ]
-                ],
-                "required": ["owner", "repo", "issueNumber"]
-            ]
-        }
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "关闭 Issue"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "关闭 Issue"    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let owner = arguments["owner"]?.value as? String,
-              let repo = arguments["repo"]?.value as? String,
-              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let owner = arguments["owner"]?.anyValue as? String,
+              let repo = arguments["repo"]?.anyValue as? String,
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.anyValue) else {
             throw NSError(
-                domain: name,
+                domain: Self.info.id,
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, issueNumber"]
             )

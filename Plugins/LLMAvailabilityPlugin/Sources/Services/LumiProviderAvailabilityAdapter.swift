@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LLMKit
 import LLMProviderKit
@@ -48,8 +47,7 @@ public struct LumiProviderAvailabilityAdapter: LLMAvailabilityLLMServicing {
 
     public func sendMessage(
         messages: [ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?
+        config: LLMConfig
     ) async throws -> ChatMessage {
         guard let provider = provider(forId: config.providerId) else {
             throw LLMServiceError.providerNotFound(providerId: config.providerId)

@@ -1,46 +1,42 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// 设置当前文件工具
 ///
 /// 基于 StripStore 的 activeTabPath 设置当前活跃文件。
-public struct SetCurrentFileTool: SuperAgentTool, SuperLog {
+public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = true
-    public let name = "set_current_file"
+
+    public static let info = LumiAgentToolInfo(
+        id: "set_current_file",
+        displayName: LumiPluginLocalization.string("Set Current File", bundle: .module),
+        description: LumiPluginLocalization.string("Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user.", bundle: .module)
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "设置当前选中的文件。需要提供文件路径。此操作会在编辑器标签栏中打开文件并切换界面显示，使其成为用户可见的活动标签页。"
-        case .english:
-            return "Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Absolute path to the file")
+                ])
+            ]),
+            "required": .array([.string("path")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": "Absolute path to the file",
-                ],
-            ],
-            "required": ["path"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "设置当前文件"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "设置当前文件" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let path = arguments["path"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let path = arguments["path"]?.stringValue else {
             return "❌ Error: Missing required parameter 'path'"
         }
 
@@ -64,11 +60,9 @@ public struct SetCurrentFileTool: SuperAgentTool, SuperLog {
 
         let fileName = URL(fileURLWithPath: path).lastPathComponent
 
-        // 通过 StripStore 设置当前活跃文件
         let store = StripStore.shared
         store.setCurrentFilePath(path: path, forProject: projectPath)
 
-        // 发送通知，告知 UI 同步
         NotificationCenter.postCurrentFileDidChange(path: path)
 
         return """

@@ -1,11 +1,17 @@
 import Foundation
+import SuperLogKit
+import os
 
 /// RAG 核心服务
 ///
 /// - 负责初始化本地数据库
 /// - 负责项目索引（全量/增量）
 /// - 负责查询检索并返回相关片段
-public actor RAGService {
+public actor RAGService: SuperLog {
+    public nonisolated static let emoji = "🔎"
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.service")
+
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20
     private static let staleAfterSeconds: TimeInterval = 300
@@ -23,7 +29,6 @@ public actor RAGService {
     }
 
     private let initializationState = InitializationState()
-    private let logger: RAGLogger
     private let databaseDirectoryProvider: @Sendable () -> URL
     private let cache = RAGCache()
     private var store: RAGSQLiteStore?
@@ -45,20 +50,22 @@ public actor RAGService {
 
     public init(
         databaseDirectoryProvider: @escaping @Sendable () -> URL,
-        logger: RAGLogger = NullRAGLogger(),
         onProgress: ((RAGIndexProgressEvent) -> Void)? = nil
     ) {
         self.databaseDirectoryProvider = databaseDirectoryProvider
-        self.logger = logger
         self.onProgress = onProgress
-        logger.info("RAG 服务已创建")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)RAG 服务已创建")
+        }
     }
 
     // MARK: - Lifecycle
 
     public func initialize() async throws {
         guard !isInitialized else {
-            logger.info("♻️ initialize: 已初始化，跳过")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)♻️ initialize: 已初始化，跳过")
+            }
             return
         }
 
@@ -67,8 +74,10 @@ public actor RAGService {
         let dbDir = databaseDirectoryProvider()
         let dbURL = dbDir.appendingPathComponent("rag.sqlite")
 
-        logger.info("📦 initialize: 开始初始化")
-        logger.info("   DB 路径：\(dbURL.path)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)📦 initialize: 开始初始化")
+            Self.logger.info("\(Self.t)   DB 路径：\(dbURL.path)")
+        }
 
         let store = try RAGSQLiteStore(dbURL: dbURL)
         try store.migrate()
@@ -79,15 +88,16 @@ public actor RAGService {
         self.indexer = RAGIndexer(
             store: store,
             embeddingProvider: embeddingProvider,
-            logger: logger,
             onProgress: onProgress
         )
-        self.retriever = RAGRetriever(store: store, cache: cache, logger: logger)
+        self.retriever = RAGRetriever(store: store, cache: cache)
         self.embeddingProvider = embeddingProvider
         initializationState.isInitialized = true
 
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
-        logger.info("⏱️ initialize 耗时：\(RAGUtils.formatDuration(duration))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⏱️ initialize 耗时：\(RAGUtils.formatDuration(duration))")
+        }
     }
 
     // MARK: - Indexing
@@ -107,7 +117,9 @@ public actor RAGService {
             cache.clear() // 索引完成后清除检索缓存
         }
 
-        logger.info("🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🧱 ensureIndexed 开始 force=\(force) project=\(normalized)")
+        }
 
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
         let modelMismatch = indexState.map {
@@ -115,22 +127,32 @@ public actor RAGService {
                 || $0.embeddingDimension != embeddingProvider.dimension
         } ?? false
         if let indexState {
-            logger.info(
-                "📌 当前索引状态 embedding=\(indexState.embeddingModel) dim=\(indexState.embeddingDimension) chunks=\(indexState.chunkCount)"
-            )
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t)📌 当前索引状态 embedding=\(indexState.embeddingModel) dim=\(indexState.embeddingDimension) chunks=\(indexState.chunkCount)"
+                )
+            }
         } else {
-            logger.info("📌 当前项目无索引状态")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📌 当前项目无索引状态")
+            }
         }
-        logger.info(
-            "🧠 目标 embedding=\(embeddingProvider.modelIdentifierWithVersion) dim=\(embeddingProvider.dimension) modelMismatch=\(modelMismatch)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)🧠 目标 embedding=\(embeddingProvider.modelIdentifierWithVersion) dim=\(embeddingProvider.dimension) modelMismatch=\(modelMismatch)"
+            )
+        }
 
         if force || modelMismatch {
-            logger.info("♻️ 执行全量重建索引")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)♻️ 执行全量重建索引")
+            }
             let stats = try indexer.rebuildProjectIndex(at: normalized)
-            logger.info(
-                "✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
-            )
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+                )
+            }
             return
         }
 
@@ -138,23 +160,31 @@ public actor RAGService {
             let now = Date()
             if let lastAttempt = lastEnsureAttemptByProject[normalized],
                now.timeIntervalSince(lastAttempt) < Self.ensureThrottleSeconds {
-                logger.info("⏱️ 跳过：节流窗口内")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)⏱️ 跳过：节流窗口内")
+                }
                 return
             }
             if let state = indexState,
                !isIndexStateStale(state, now: now) {
                 lastEnsureAttemptByProject[normalized] = now
-                logger.info("🟢 跳过：索引未过期")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)🟢 跳过：索引未过期")
+                }
                 return
             }
             lastEnsureAttemptByProject[normalized] = now
         }
 
-        logger.info("🔁 执行增量索引")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔁 执行增量索引")
+        }
         let stats = try indexer.indexProjectIncrementally(at: normalized)
-        logger.info(
-            "✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
+            )
+        }
     }
 
     /// 检查项目是否需要索引（快速检查，不执行实际索引）
@@ -171,11 +201,15 @@ public actor RAGService {
         let indexState = try store.fetchProjectIndexState(projectPath: normalized)
 
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
-        logger.info("⏱️ checkNeedsIndex 耗时：\(RAGUtils.formatDuration(duration))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⏱️ checkNeedsIndex 耗时：\(RAGUtils.formatDuration(duration))")
+        }
 
         // 无索引状态，需要索引
         guard let state = indexState else {
-            logger.info("📊 checkNeedsIndex: 无索引状态，需要索引")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📊 checkNeedsIndex: 无索引状态，需要索引")
+            }
             return true
         }
 
@@ -183,7 +217,9 @@ public actor RAGService {
         let modelMismatch = state.embeddingModel != embeddingProvider.modelIdentifierWithVersion
             || state.embeddingDimension != embeddingProvider.dimension
         if modelMismatch {
-            logger.info("📊 checkNeedsIndex: 模型不匹配，需要索引")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📊 checkNeedsIndex: 模型不匹配，需要索引")
+            }
             return true
         }
 
@@ -191,11 +227,15 @@ public actor RAGService {
         let now = Date()
         let isStale = isIndexStateStale(state, now: now)
         if isStale {
-            logger.info("📊 checkNeedsIndex: 索引已过期，需要索引")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📊 checkNeedsIndex: 索引已过期，需要索引")
+            }
             return true
         }
 
-        logger.info("📊 checkNeedsIndex: 索引是最新的，无需索引")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)📊 checkNeedsIndex: 索引是最新的，无需索引")
+        }
         return false
     }
 
@@ -206,16 +246,22 @@ public actor RAGService {
 
         // 防止重复启动后台索引
         guard !indexingProjects.contains(normalized) else {
-            logger.info("🔄 后台索引已在进行中，跳过: \(normalized)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
+            }
             return
         }
         guard !Self.indexingRegistry.contains(projectPath: normalized) else {
-            logger.info("🔄 索引已在进行中（全局标记），跳过: \(normalized)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🔄 索引已在进行中（全局标记），跳过: \(normalized)")
+            }
             return
         }
 
         indexingProjects.insert(normalized)
-        logger.info("🚀 启动后台索引任务: \(normalized)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🚀 启动后台索引任务: \(normalized)")
+        }
 
         // 在后台 Task 中执行索引
         Task.detached { [weak self] in
@@ -223,9 +269,11 @@ public actor RAGService {
 
             do {
                 try await self.ensureIndexed(projectPath: projectPath, force: force)
-                self.logger.info("✅ 后台索引任务完成: \(normalized)")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
+                }
             } catch {
-                self.logger.error("❌ 后台索引任务失败: \(normalized) - \(error)")
+                Self.logger.error("\(Self.t)❌ 后台索引任务失败: \(normalized) - \(error)")
             }
 
             // 移除索引标记
@@ -243,11 +291,15 @@ public actor RAGService {
         guard let indexer else { throw RAGError.internalStateCorrupted }
 
         let normalized = RAGPathUtils.normalizeProjectPath(path)
-        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
 
-        logger.info("🔁 执行全量重建索引")
+        guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔁 执行全量重建索引")
+        }
         _ = try indexer.rebuildProjectIndex(at: normalized)
-        logger.info("✅ 全量重建完成")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 全量重建完成")
+        }
     }
 
     // MARK: - Retrieval
@@ -263,6 +315,7 @@ public actor RAGService {
 
         guard isInitialized else { throw RAGError.notInitialized }
         guard let retriever else { throw RAGError.internalStateCorrupted }
+
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
 
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -274,7 +327,9 @@ public actor RAGService {
         let embedStart = CFAbsoluteTimeGetCurrent()
         let queryEmbedding = try embeddingProvider.embed(trimmed)
         let embedDuration = (CFAbsoluteTimeGetCurrent() - embedStart) * 1000
-        logger.info("⏱️ embed 耗时：\(RAGUtils.formatDuration(embedDuration))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⏱️ embed 耗时：\(RAGUtils.formatDuration(embedDuration))")
+        }
 
         // 检索耗时
         let retrieveStart = CFAbsoluteTimeGetCurrent()
@@ -285,13 +340,17 @@ public actor RAGService {
             topK: max(topK, 1)
         )
         let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
-        logger.info("⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")
+        }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
-        logger.info("⏱️ retrieve 总耗时：\(RAGUtils.formatDuration(totalDuration))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⏱️ retrieve 总耗时：\(RAGUtils.formatDuration(totalDuration))")
+        }
 
         if totalDuration > 300 {
-            logger.warning("⚠️ retrieve 总耗时过长：\(RAGUtils.formatDuration(totalDuration)) (>300ms) [embed=\(RAGUtils.formatDuration(embedDuration)), retriever=\(RAGUtils.formatDuration(retrieveDuration))]")
+            Self.logger.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(RAGUtils.formatDuration(totalDuration)) (>300ms) [embed=\(RAGUtils.formatDuration(embedDuration)), retriever=\(RAGUtils.formatDuration(retrieveDuration))]")
         }
 
         return RAGResponse(query: query, results: results)
@@ -303,6 +362,7 @@ public actor RAGService {
 
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
+
         guard let state = try store.fetchProjectIndexState(projectPath: normalized) else { return nil }
 
         let lastIndexed = Date(timeIntervalSince1970: state.lastIndexedAt)
@@ -329,6 +389,7 @@ public actor RAGService {
     public nonisolated static func isIndexing(projectPath: String) -> Bool {
         let trimmed = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
+
         let normalized = URL(fileURLWithPath: trimmed).standardizedFileURL.path
         return indexingRegistry.contains(projectPath: normalized)
     }

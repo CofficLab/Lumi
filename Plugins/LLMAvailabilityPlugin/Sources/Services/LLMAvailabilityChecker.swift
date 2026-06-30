@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LLMKit
 import LLMProviderKit
@@ -68,10 +67,6 @@ public final class LLMAvailabilityChecker: SuperLog {
     /// 检测指定供应商+模型的可用性
     ///
     /// 自动查找 API Key，执行 ping 请求并更新 Store 状态。
-    /// - Parameters:
-    ///   - providerId: 供应商 ID
-    ///   - modelId: 模型 ID
-    /// - Returns: 检测结果
     @discardableResult
     public func checkModel(providerId: String, modelId: String) async -> ModelCheckResult {
         guard let providerType = llmService.providerType(forId: providerId) else {
@@ -89,7 +84,6 @@ public final class LLMAvailabilityChecker: SuperLog {
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: false, failure: failure)
         }
 
-        // 委托给内部实现
         return await performCheck(providerId: providerId, modelId: modelId)
     }
 
@@ -137,7 +131,6 @@ public final class LLMAvailabilityChecker: SuperLog {
             return
         }
 
-        // 逐个检测模型
         for modelId in info.availableModels {
             await performCheck(providerId: providerId, modelId: modelId)
         }
@@ -151,12 +144,9 @@ public final class LLMAvailabilityChecker: SuperLog {
     }
 
     /// 检测单个模型的可用性（内部实现）
-    ///
-    /// 通过供应商提供的检测策略决定检测方式（新架构供应商委托 `checkAvailability`）。
     private func performCheck(providerId: String, modelId: String) async -> ModelCheckResult {
         store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
 
-        // 从供应商获取检测策略
         guard let provider = llmService.createProvider(id: providerId) else {
             let failure = Self.messageFailure("供应商 `\(providerId)` 未注册")
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
@@ -167,7 +157,6 @@ public final class LLMAvailabilityChecker: SuperLog {
 
         switch strategy {
         case .apiKeyOnly:
-            // 仅验证 API Key，不发网络请求
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
@@ -177,11 +166,7 @@ public final class LLMAvailabilityChecker: SuperLog {
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
 
         case .chatPing(let maxTokens):
-            return await performChatPing(
-                providerId: providerId,
-                modelId: modelId,
-                maxTokens: maxTokens
-            )
+            return await performChatPing(providerId: providerId, modelId: modelId, maxTokens: maxTokens)
 
         case .custom(let check):
             let credential = llmService.providerType(forId: providerId)?.getApiKey() ?? ""
@@ -198,49 +183,30 @@ public final class LLMAvailabilityChecker: SuperLog {
                     }
                 }
             }
-            return ModelCheckResult(
-                providerId: providerId,
-                modelId: modelId,
-                isAvailable: result.isAvailable,
-                failure: result.isAvailable ? nil : failure
-            )
+            return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: result.isAvailable, failure: result.isAvailable ? nil : failure)
         }
     }
 
     /// 执行标准聊天 ping 检测
-    private func performChatPing(
-        providerId: String,
-        modelId: String,
-        maxTokens: Int?
-    ) async -> ModelCheckResult {
-        var config = LLMConfig(
-            model: modelId,
-            providerId: providerId
-        )
+    private func performChatPing(providerId: String, modelId: String, maxTokens: Int?) async -> ModelCheckResult {
+        var config = LLMConfig(model: modelId, providerId: providerId)
         config.maxTokens = maxTokens ?? 1
 
-        // 构建最小测试请求（单条简短消息）
-        let testMessages: [ChatMessage] = [
-            ChatMessage(role: .user, content: "Hi")
-        ]
+        let testMessages: [ChatMessage] = [ChatMessage(role: .user, content: "Hi")]
 
         do {
-            _ = try await llmService.sendMessage(messages: testMessages, config: config, tools: nil)
+            _ = try await llmService.sendMessage(messages: testMessages, config: config)
 
-            // 请求成功 → 模型可用
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
-
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
                     LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
                 }
             }
-
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
         } catch let error as LLMServiceError {
             switch error {
             case .cancelled:
-                // 取消意味着请求已开始执行 → 视为可用
                 if Self.verbose {
                     if LLMAvailabilityPlugin.verbose {
                         LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")

@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 import os
 
@@ -22,8 +21,8 @@ public enum LLMAvailabilityPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         let llmService = LLMAvailabilityRuntime.llmService
         return [
-            ListAvailableModelsTool().asLumiAgentTool(),
-            CheckModelAvailabilityTool(llmService: llmService).asLumiAgentTool(),
+            ListAvailableModelsTool(),
+            CheckModelAvailabilityTool(llmService: llmService),
         ]
     }
 

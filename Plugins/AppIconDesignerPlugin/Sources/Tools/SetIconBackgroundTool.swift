@@ -1,41 +1,36 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct SetIconBackgroundTool: SuperAgentTool {
-    public let name = "set_icon_background"
+public struct SetIconBackgroundTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "set_icon_background",
+        displayName: "Set Icon Background",
+        description: "Set the background paint of the current icon document."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "设置当前图标文档的背景颜色。"
-        case .english:
-            return "Set the background paint of the current icon document."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
-                "color": ["type": "string", "description": IconToolSupport.description(language, en: "Background color, for example #111827 or #00000000.", zh: "背景颜色，例如 #111827 或 #00000000。")],
-                "type": ["type": "string", "enum": ["color", "linearGradient", "radialGradient"], "description": IconToolSupport.description(language, en: "Background paint type.", zh: "背景填充类型。")],
-                "colors": ["type": "array", "items": ["type": "string"], "description": IconToolSupport.description(language, en: "Gradient colors.", zh: "渐变颜色列表。")],
+                "color": ["type": "string", "description": "Background color, for example #111827 or #00000000."],
+                "type": ["type": "string", "enum": ["color", "linearGradient", "radialGradient"], "description": "Background paint type."],
+                "colors": ["type": "array", "items": ["type": "string"], "description": "Gradient colors."],
             ],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Set icon background"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         let paint = makePaint(arguments: arguments)
 
         do {
@@ -63,9 +58,9 @@ public struct SetIconBackgroundTool: SuperAgentTool {
         }
     }
 
-    private func makePaint(arguments: [String: ToolArgument]) -> IconPaint {
+    private func makePaint(arguments: [String: LumiJSONValue]) -> IconPaint {
         let type = IconToolSupport.string(arguments, "type") ?? "color"
-        let colors = (arguments["colors"]?.value as? [String]) ?? []
+        let colors = (arguments["colors"]?.anyValue as? [String]) ?? []
         switch type {
         case "linearGradient":
             return .linearGradient(

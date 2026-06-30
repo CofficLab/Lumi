@@ -1,14 +1,23 @@
-import AgentToolKit
 import DownloadKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
 /// 取消下载工具
 ///
 /// 取消正在进行的下载任务。
-public struct CancelDownloadTool: SuperAgentTool, SuperLog {
+public struct CancelDownloadTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "⛔"
     public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "cancel_download",
+        displayName: LumiPluginLocalization.string("Cancel Download", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Cancel an ongoing download task. Task ID is returned by download_file or download_batch.",
+            bundle: .module
+        )
+    )
 
     private let manager: DownloadManager
 
@@ -16,43 +25,32 @@ public struct CancelDownloadTool: SuperAgentTool, SuperLog {
         self.manager = manager
     }
 
-    public let name = "cancel_download"
-
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "取消正在进行的下载任务。任务 ID 由 download_file 或 download_batch 返回。"
-        case .english:
-            return "Cancel an ongoing download task. Task ID is returned by download_file or download_batch."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "task_id": .object([
+                    "type": .string("string"),
+                    "description": .string("要取消的任务 ID")
+                ])
+            ]),
+            "required": .array([.string("task_id")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "task_id": [
-                    "type": "string",
-                    "description": "要取消的任务 ID",
-                ],
-            ],
-            "required": ["task_id"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        if let taskId = arguments["task_id"]?.value as? String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        if let taskId = arguments["task_id"]?.stringValue {
             return "取消下载: \(taskId.prefix(8))..."
         }
         return "取消下载"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let taskId = arguments["task_id"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let taskId = arguments["task_id"]?.stringValue else {
             return "❌ 错误：task_id 参数必需"
         }
 

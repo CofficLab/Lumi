@@ -1,15 +1,15 @@
-import AgentToolKit
+import LumiCoreKit
 
 @MainActor
 public enum AgentRulesRuntime {
     public static var currentProjectPathProvider: () -> String = { "" }
-    public static var languagePreferenceProvider: () -> LanguagePreference = { .current }
+    public static var languagePreferenceProvider: () -> LumiLanguagePreference = { .english }
 
     public static var currentProjectPath: String {
         currentProjectPathProvider()
     }
 
-    public static var languagePreference: LanguagePreference {
+    public static var languagePreference: LumiLanguagePreference {
         languagePreferenceProvider()
     }
 }

@@ -1,4 +1,3 @@
-import AgentToolKit
 import AppKit
 import Combine
 import Foundation
@@ -43,10 +42,10 @@ public enum CaffeinatePlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            CaffeinateActivateTool().asLumiAgentTool(),
-            CaffeinateDeactivateTool().asLumiAgentTool(),
-            CaffeinateStatusTool().asLumiAgentTool(),
-            CaffeinateTurnOffDisplayTool().asLumiAgentTool(),
+            CaffeinateActivateTool(),
+            CaffeinateDeactivateTool(),
+            CaffeinateStatusTool(),
+            CaffeinateTurnOffDisplayTool(),
         ]
     }
 

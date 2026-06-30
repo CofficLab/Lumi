@@ -1,4 +1,3 @@
-import AgentToolKit
 import LibGit2Swift
 import LumiCoreKit
 import SwiftUI
@@ -39,13 +38,13 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            GitStatusTool().asLumiAgentTool(),
-            GitDiffTool().asLumiAgentTool(),
-            GitLogTool().asLumiAgentTool(),
-            GitCommitTool().asLumiAgentTool(),
-            GitShowTool().asLumiAgentTool(),
-            GitBranchTool().asLumiAgentTool(),
-            GitUnpushedTool().asLumiAgentTool(),
+            GitStatusTool(),
+            GitDiffTool(),
+            GitLogTool(),
+            GitCommitTool(),
+            GitShowTool(),
+            GitBranchTool(),
+            GitUnpushedTool(),
         ]
     }
 

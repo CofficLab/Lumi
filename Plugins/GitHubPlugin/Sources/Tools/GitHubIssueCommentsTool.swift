@@ -1,107 +1,43 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import GitHubKit
+import LumiCoreKit
+import SuperLogKit
 
 /// GitHub Issue 评论列表工具
-public struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
+public struct GitHubIssueCommentsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_issue_comments"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "获取 GitHub Issue 的评论列表。"
-        case .english:
-            return "Get the comment list for a GitHub issue."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "github_issue_comments",
+        displayName: "GitHubIssueComments",
+        description: "GitHub tool: github_issue_comments"
+    )
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        switch language {
-        case .chinese:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "仓库所有者"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "仓库名称"
-                    ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue 编号",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ],
-                    "page": [
-                        "type": "integer",
-                        "description": "页码，默认 1",
-                        "minimum": 1
-                    ],
-                    "perPage": [
-                        "type": "integer",
-                        "description": "每页数量，默认 10，范围 1-100",
-                        "minimum": 1,
-                        "maximum": 100
-                    ]
-                ],
-                "required": ["owner", "repo", "issueNumber"]
-            ]
-        case .english:
-            return [
-                "type": "object",
-                "properties": [
-                    "owner": [
-                        "type": "string",
-                        "description": "Repository owner"
-                    ],
-                    "repo": [
-                        "type": "string",
-                        "description": "Repository name"
-                    ],
-                    "issueNumber": [
-                        "type": "integer",
-                        "description": "Issue number",
-                        "minimum": GitHubToolArgumentNormalizer.minIssueNumber
-                    ],
-                    "page": [
-                        "type": "integer",
-                        "description": "Page number, default 1",
-                        "minimum": 1
-                    ],
-                    "perPage": [
-                        "type": "integer",
-                        "description": "Results per page, default 10, range 1-100",
-                        "minimum": 1,
-                        "maximum": 100
-                    ]
-                ],
-                "required": ["owner", "repo", "issueNumber"]
-            ]
-        }
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "查看 Issue 评论"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "查看 Issue 评论"    }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let owner = arguments["owner"]?.value as? String,
-              let repo = arguments["repo"]?.value as? String,
-              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.value) else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let owner = arguments["owner"]?.anyValue as? String,
+              let repo = arguments["repo"]?.anyValue as? String,
+              let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.anyValue) else {
             throw NSError(
-                domain: name,
+                domain: Self.info.id,
                 code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "缺少必需参数：owner, repo, issueNumber"]
             )
         }
 
-        let page = Self.normalizedPage(arguments["page"]?.value)
-        let perPage = Self.normalizedPerPage(arguments["perPage"]?.value)
+        let page = Self.normalizedPage(arguments["page"]?.anyValue)
+        let perPage = Self.normalizedPerPage(arguments["perPage"]?.anyValue)
 
         if Self.verbose {
             if GitHubPlugin.verbose {

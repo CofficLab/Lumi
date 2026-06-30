@@ -1,4 +1,3 @@
-import AgentToolKit
 import SwiftUI
 import LumiChatKit
 import LumiCoreKit
@@ -63,6 +62,6 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         RAGPluginService.initializeIfNeeded()
-        return [RAGCodeSearchLumiTool()]
+        return [RAGCodeSearchTool()]
     }
 }

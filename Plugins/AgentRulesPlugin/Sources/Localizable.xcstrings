@@ -104,6 +104,7 @@
       }
     },
     "Create a new rule document in the .agent/rules directory." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -240,6 +241,7 @@
       }
     },
     "List rule documents in the .agent/rules directory." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

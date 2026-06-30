@@ -1,15 +1,22 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 import os
 
-public struct WebSearchTool: SuperAgentTool, SuperLog {
+public struct WebSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.web-search")
     private let searchClient: @Sendable (String) async throws -> [WebSearchResult]
 
-    public let name = "web_search"
+    public static let info = LumiAgentToolInfo(
+        id: "web_search",
+        displayName: LumiPluginLocalization.string("Web Search", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Search the web for real-time information. Use this tool to find current information, news, or specific data from the internet. Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).",
+            bundle: .module
+        )
+    )
 
     public init(
         searchClient: (@Sendable (String) async throws -> [WebSearchResult])? = nil
@@ -17,48 +24,29 @@ public struct WebSearchTool: SuperAgentTool, SuperLog {
         self.searchClient = searchClient ?? WebSearchTool.fetchDuckDuckGoResults
     }
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return """
-搜索网页以获取实时信息。
-使用此工具从互联网查找最新信息、新闻或特定数据。
-
-注意：某些 AI 模型（例如 Qwen）通常要求此工具与 web_fetch 或 web_extractor 配合使用。
-"""
-        case .english:
-            return """
-Search the web for real-time information.
-Use this tool to find current information, news, or specific data from the internet.
-
-Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).
-"""
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "query": .object([
+                    "type": .string("string"),
+                    "description": .string("The search query to find information on the web")
+                ])
+            ]),
+            "required": .array([.string("query")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "query": [
-                    "type": "string",
-                    "description": "The search query to find information on the web",
-                ],
-            ],
-            "required": ["query"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "搜索网页"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let rawQuery = arguments["query"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let rawQuery = arguments["query"]?.stringValue else {
             return "Error: Missing required 'query' parameter"
         }
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -248,19 +236,23 @@ extension WebSearchTool {
             .replacingOccurrences(of: "&apos;", with: "'")
             .replacingOccurrences(of: "&lt;", with: "<")
             .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&#x2F;", with: "/")
+            .replacingOccurrences(of: "&#x60;", with: "`")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
     }
 }
 
-enum WebSearchError: LocalizedError {
+public enum WebSearchError: Error, LocalizedError {
     case badStatus(Int)
     case invalidResponse
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
-        case .badStatus(let statusCode):
-            "Search request failed with HTTP \(statusCode)."
+        case .badStatus(let code):
+            return "HTTP \(code)"
         case .invalidResponse:
-            "Search response could not be decoded."
+            return "Invalid response"
         }
     }
 }

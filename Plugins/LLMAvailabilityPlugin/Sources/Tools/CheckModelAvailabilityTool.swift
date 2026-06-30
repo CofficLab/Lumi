@@ -1,67 +1,55 @@
 import Foundation
 import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 import os
 
 /// 检测指定供应商+模型可用性的工具
 ///
 /// 向目标模型发送一条轻量 ping 消息，验证其连通性并返回结果。
-public struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
+public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "check_model_availability"
+    public static let info = LumiAgentToolInfo(
+        id: "check_model_availability",
+        displayName: LumiPluginLocalization.string("Check Model Availability", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Check if a specific LLM model from a given provider is available. Sends a lightweight request to verify connectivity. Returns available ✅ or unavailable ❌ with reason.",
+            bundle: .module
+        )
+    )
+
     private let llmService: (any LLMAvailabilityLLMServicing)?
 
     public init(llmService: (any LLMAvailabilityLLMServicing)? = nil) {
         self.llmService = llmService
     }
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "检测指定供应商的某个大模型是否可用。通过向目标模型发送轻量请求验证连通性。返回可用 ✅ 或不可用 ❌ 及原因。"
-        case .english:
-            return "Check if a specific LLM model from a given provider is available. Sends a lightweight request to verify connectivity. Returns available ✅ or unavailable ❌ with reason."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "providerId": .object([
+                    "type": .string("string"),
+                    "description": .string("Provider ID (e.g., openai, anthropic, deepseek, zhipu, aliyun)")
+                ]),
+                "modelId": .object([
+                    "type": .string("string"),
+                    "description": .string("Model ID (e.g., gpt-4o, claude-sonnet-4-20250514, deepseek-chat)")
+                ])
+            ]),
+            "required": .array([.string("providerId"), .string("modelId")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let providerIdDesc: String
-        let modelIdDesc: String
-        switch language {
-        case .chinese:
-            providerIdDesc = "供应商 ID（如 openai、anthropic、deepseek、zhipu、aliyun 等）"
-            modelIdDesc = "模型 ID（如 gpt-4o、claude-sonnet-4-20250514、deepseek-chat 等）"
-        case .english:
-            providerIdDesc = "Provider ID (e.g., openai, anthropic, deepseek, zhipu, aliyun)"
-            modelIdDesc = "Model ID (e.g., gpt-4o, claude-sonnet-4-20250514, deepseek-chat)"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "providerId": [
-                    "type": "string",
-                    "description": providerIdDesc,
-                ],
-                "modelId": [
-                    "type": "string",
-                    "description": modelIdDesc,
-                ],
-            ],
-            "required": ["providerId", "modelId"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "检测模型可用性"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "检测模型可用性" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let providerId = arguments["providerId"]?.value as? String, !providerId.isEmpty else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let providerId = arguments["providerId"]?.stringValue, !providerId.isEmpty else {
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
                                     LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 providerId")
@@ -70,7 +58,7 @@ public struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
             return "## ❌ 参数错误\n\n缺少必填参数 `providerId`，请提供供应商 ID。"
         }
 
-        guard let modelId = arguments["modelId"]?.value as? String, !modelId.isEmpty else {
+        guard let modelId = arguments["modelId"]?.stringValue, !modelId.isEmpty else {
             if Self.verbose {
                 if LLMAvailabilityPlugin.verbose {
                                     LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 modelId")

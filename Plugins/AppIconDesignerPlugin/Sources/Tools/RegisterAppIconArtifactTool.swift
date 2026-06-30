@@ -1,57 +1,52 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct RegisterAppIconArtifactTool: SuperAgentTool {
-    public let name = "register_app_icon_artifact"
+public struct RegisterAppIconArtifactTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "register_app_icon_artifact",
+        displayName: "Register App Icon Artifact",
+        description: "Register an existing image file as an app icon candidate and show it in the App Icon Designer preview."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "把已有图片文件注册为 App 图标设计候选，并在 App Icon Designer 预览区显示。"
-        case .english:
-            return "Register an existing image file as an app icon candidate and show it in the App Icon Designer preview."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Absolute local path to the image file.", zh: "图片文件的本地绝对路径。")
+                    "description": "Absolute local path to the image file."
                 ],
                 "title": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "Short candidate title shown in the preview.", zh: "预览中显示的候选项短标题。")
+                    "description": "Short candidate title shown in the preview."
                 ],
                 "prompt": [
                     "type": "string",
-                    "description": IconToolSupport.description(language, en: "The prompt or design request that produced this image.", zh: "生成该图片的提示词或设计需求。")
+                    "description": "The prompt or design request that produced this image."
                 ],
             ],
             "required": ["path"],
         ]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Register app icon candidate"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
-        guard let path = arguments["path"]?.value as? String, !path.isEmpty else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
+        guard let path = arguments["path"]?.anyValue as? String, !path.isEmpty else {
             return IconToolSupport.missingParameter("path", language: language)
         }
 
-        let title = arguments["title"]?.value as? String
-        let prompt = arguments["prompt"]?.value as? String
+        let title = arguments["title"]?.anyValue as? String
+        let prompt = arguments["prompt"]?.anyValue as? String
 
         do {
             let artifact = try await MainActor.run {

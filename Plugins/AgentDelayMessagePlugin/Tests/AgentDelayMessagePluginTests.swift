@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import Testing
 @testable import AgentDelayMessagePlugin
 
@@ -7,12 +8,33 @@ import Testing
 }
 
 @Test func delayMessageSchemaDeclaresBoundedSeconds() throws {
-    let schema = DelayMessageTool().inputSchema(for: .english)
-    let properties = try #require(schema["properties"] as? [String: [String: Any]])
+    let schema = DelayMessageTool().inputSchema
 
-    #expect(properties["seconds"]?["type"] as? String == "number")
-    #expect(properties["seconds"]?["minimum"] as? TimeInterval == DelayMessageTool.minDelaySeconds)
-    #expect(properties["seconds"]?["maximum"] as? TimeInterval == DelayMessageTool.maxDelaySeconds)
+    guard case .object(let keys) = schema else {
+        Issue.record("schema should be an object")
+        return
+    }
+    guard case .object(let properties) = keys["properties"],
+          case .object(let secondsProps) = properties["seconds"] else {
+        Issue.record("schema should declare seconds property")
+        return
+    }
+
+    if case .string(let type) = secondsProps["type"] {
+        #expect(type == "number")
+    } else {
+        Issue.record("seconds type missing")
+    }
+    if case .double(let minimum) = secondsProps["minimum"] {
+        #expect(minimum == DelayMessageTool.minDelaySeconds)
+    } else {
+        Issue.record("seconds minimum missing")
+    }
+    if case .double(let maximum) = secondsProps["maximum"] {
+        #expect(maximum == DelayMessageTool.maxDelaySeconds)
+    } else {
+        Issue.record("seconds maximum missing")
+    }
 }
 
 @Test func delaySecondsAreNormalizedAcrossArgumentTypes() {

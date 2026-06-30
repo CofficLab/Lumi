@@ -1,51 +1,42 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 状态工具
-public struct GitStatusTool: SuperAgentTool, SuperLog {
+public struct GitStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_status"
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "获取 Git 仓库的当前状态，包括分支信息、文件变更等。返回结构化的 JSON 数据。"
-        case .english:
-            return "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "git_status",
+        displayName: "Git Status",
+        description: "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc,
-                ],
-            ],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看 Git 状态"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
 
         if Self.verbose {
             GitPlugin.logger.info("\(Self.t)获取 Git 状态：\(path ?? "当前目录")")
@@ -54,7 +45,7 @@ public struct GitStatusTool: SuperAgentTool, SuperLog {
         do {
             // 验证路径是否在允许的范围内
             let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
-            
+
             let status = try await GitService.shared.getStatus(path: validatedPath)
             return formatStatus(status)
         } catch {

@@ -19,11 +19,28 @@ import Testing
     #expect(GitLogTool.normalizedCount(500) == 50)
     #expect(GitLogTool.normalizedCount("not-a-number") == 10)
 
-    let schema = GitLogTool().inputSchema(for: .english)
-    let properties = try #require(schema["properties"] as? [String: [String: Any]])
-    #expect(properties["count"]?["type"] as? String == "integer")
-    #expect(properties["count"]?["minimum"] as? Int == 1)
-    #expect(properties["count"]?["maximum"] as? Int == 50)
+    let schema = GitLogTool().inputSchema
+    guard case .object(let keys) = schema,
+          case .object(let properties) = keys["properties"],
+          case .object(let countProps) = properties["count"] else {
+        Issue.record("schema should declare count property")
+        return
+    }
+    if case .string(let type) = countProps["type"] {
+        #expect(type == "integer")
+    } else {
+        Issue.record("count type missing")
+    }
+    if case .int(let minimum) = countProps["minimum"] {
+        #expect(minimum == 1)
+    } else {
+        Issue.record("count minimum missing")
+    }
+    if case .int(let maximum) = countProps["maximum"] {
+        #expect(maximum == 50)
+    } else {
+        Issue.record("count maximum missing")
+    }
 }
 
 @Test func validatePathRequiresAllowedDirectoryBoundary() throws {

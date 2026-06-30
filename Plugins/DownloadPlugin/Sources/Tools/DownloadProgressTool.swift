@@ -1,14 +1,23 @@
-import AgentToolKit
 import DownloadKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
-/// 查询下载进度工具
+/// 下载进度查询工具
 ///
-/// 返回指定下载任务的详细进度信息，包括百分比、已下载大小、速度等。
-public struct DownloadProgressTool: SuperAgentTool, SuperLog {
+/// 查询下载任务的当前进度。
+public struct DownloadProgressTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
     public nonisolated static let verbose: Bool = false
+
+    public static let info = LumiAgentToolInfo(
+        id: "download_progress",
+        displayName: LumiPluginLocalization.string("Download Progress", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Query detailed progress for a specific download task. Returns percentage, downloaded size, speed, and more.",
+            bundle: .module
+        )
+    )
 
     private let manager: DownloadManager
 
@@ -16,43 +25,32 @@ public struct DownloadProgressTool: SuperAgentTool, SuperLog {
         self.manager = manager
     }
 
-    public let name = "download_progress"
-
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查询指定下载任务的详细进度信息。返回百分比、已下载大小、下载速度等。"
-        case .english:
-            return "Query detailed progress for a specific download task. Returns percentage, downloaded size, speed, and more."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "task_id": .object([
+                    "type": .string("string"),
+                    "description": .string("任务 ID")
+                ])
+            ]),
+            "required": .array([.string("task_id")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "task_id": [
-                    "type": "string",
-                    "description": "任务 ID（由 download_file 或 download_batch 返回）",
-                ],
-            ],
-            "required": ["task_id"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        if let taskId = arguments["task_id"]?.value as? String {
-            return "查询进度: \(taskId.prefix(8))..."
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        if let taskId = arguments["task_id"]?.stringValue {
+            return "查询下载进度: \(taskId.prefix(8))..."
         }
         return "查询下载进度"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let taskId = arguments["task_id"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let taskId = arguments["task_id"]?.stringValue else {
             return "❌ 错误：task_id 参数必需"
         }
 
@@ -79,17 +77,29 @@ public struct DownloadProgressTool: SuperAgentTool, SuperLog {
             }
             result += String(format: "速度: %.2f MB/s\n", speedMB)
             result += "任务 ID: \(taskId)"
-
             return result
 
         case .completed:
-            return "✅ 下载已完成\n任务 ID: \(taskId)"
+            return "✅ 任务已完成\n任务 ID: \(taskId)"
 
         case .failed(let error):
-            return "❌ 下载失败\n任务 ID: \(taskId)\n错误: \(error.localizedDescription)"
+            return "❌ 任务失败: \(error.localizedDescription)\n任务 ID: \(taskId)"
 
         case .cancelled:
-            return "⛔ 下载已取消\n任务 ID: \(taskId)"
+            return "⛔ 任务已取消\n任务 ID: \(taskId)"
         }
+    }
+}
+
+extension DownloadProgressTool {
+    fileprivate static func formatBytes(_ bytes: Int64) -> String {
+        if bytes > 1_073_741_824 {
+            return String(format: "%.1f GB", Double(bytes) / 1_073_741_824)
+        } else if bytes > 1_048_576 {
+            return String(format: "%.1f MB", Double(bytes) / 1_048_576)
+        } else if bytes > 1024 {
+            return String(format: "%.1f KB", Double(bytes) / 1024)
+        }
+        return "\(bytes) B"
     }
 }

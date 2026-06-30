@@ -1,49 +1,44 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 import SuperLogKit
 
 /// 项目概览工具。
 ///
 /// 返回项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。
-public struct ProjectOverviewTool: SuperAgentTool, SuperLog {
+public struct ProjectOverviewTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "project_overview"
+    public static let info = LumiAgentToolInfo(
+        id: "project_overview",
+        displayName: "Project Overview",
+        description: "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "获取项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。"
-        case .english:
-            return "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Project root path. Omit to use current working directory."),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": "Project root path. Omit to use current working directory."
-                ]
-            ]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看项目概览"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String ?? FileManager.default.currentDirectoryPath
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path") ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: path).standardizedFileURL
 
         if Self.verbose {

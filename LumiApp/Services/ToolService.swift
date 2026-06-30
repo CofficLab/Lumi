@@ -8,12 +8,34 @@ final class ToolService: LumiToolServicing {
     var projectPathProvider: (any LumiCurrentProjectPathProviding)?
 
     func registerTools(_ tools: [any LumiAgentTool]) {
-        let uniqueTools = tools.reduce(into: [String: any LumiAgentTool]()) { result, tool in
-            result[tool.name] = tool
+        var uniqueTools: [String: any LumiAgentTool] = [:]
+
+        for tool in tools {
+            if let existing = uniqueTools[tool.name] {
+                let existingType = String(describing: type(of: existing))
+                let newType = String(describing: type(of: tool))
+                fatalError("Duplicate tool name '\(tool.name)': existing=\(existingType), new=\(newType)")
+            }
+            uniqueTools[tool.name] = tool
         }
 
         self.toolsByName = uniqueTools
         self.tools = uniqueTools.values.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+
+    /// 注册 built-in tools（如 conversation_info, no_op）
+    /// 这些工具会合并到现有的工具字典中
+    func registerBuiltInTools(_ tools: [any LumiAgentTool]) {
+        for tool in tools {
+            // 不覆盖已存在的工具（插件提供的工具优先）
+            if toolsByName[tool.name] == nil {
+                toolsByName[tool.name] = tool
+            }
+        }
+        // 重新排序
+        self.tools = toolsByName.values.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
     }

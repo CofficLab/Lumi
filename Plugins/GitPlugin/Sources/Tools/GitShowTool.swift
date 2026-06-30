@@ -1,59 +1,48 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 查看 Commit 详情工具
-public struct GitShowTool: SuperAgentTool, SuperLog {
+public struct GitShowTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔎"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_show"
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查看指定 commit 的详细信息，包括作者、日期、变更文件和统计。"
-        case .english:
-            return "View detailed information of a specific commit, including author, date, changed files and stats."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "git_show",
+        displayName: "Git Show",
+        description: "View detailed information of a specific commit, including author, date, changed files and stats."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+                "hash": .object([
+                    "type": .string("string"),
+                    "description": .string("Commit hash (full or abbreviated)"),
+                ]),
+            ]),
+            "required": .array([.string("hash")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        let hashDesc: String
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-            hashDesc = "Commit 哈希（完整或缩写均可）"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-            hashDesc = "Commit hash (full or abbreviated)"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc,
-                ],
-                "hash": [
-                    "type": "string",
-                    "description": hashDesc,
-                ],
-            ],
-            "required": ["hash"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看提交详情"
     }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
-        guard let hash = arguments["hash"]?.value as? String else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
+        guard let hash = arguments.string("hash") else {
             throw NSError(domain: "GitShowTool", code: -1,
                          userInfo: [NSLocalizedDescriptionKey: "缺少必需的 commit 哈希参数"])
         }
@@ -65,7 +54,7 @@ public struct GitShowTool: SuperAgentTool, SuperLog {
         do {
             // 验证路径是否在允许的范围内
             let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
-            
+
             let detail = try await GitService.shared.getCommitDetail(path: validatedPath, hash: hash)
             let changedFiles = try GitService.shared.getCommitChangedFiles(path: validatedPath, hash: hash)
             return formatDetail(detail, changedFiles: changedFiles)

@@ -81,12 +81,12 @@ public final class ConversationListContext: ObservableObject {
         // 持久化 current-project.json、以及内核 Layer A 三者一致，
         // 这样标题栏 ProjectControlView 才会同步刷新，且重启后状态保留。
         if let projectStore {
-            projectStore.setCurrentProjectPath(projectPath)
+            projectStore.setCurrentProjectPath(projectPath, reason: reason)
             return
         }
 
         // 降级：没有 projectStore 时只更新内核路径（与旧行为一致）。
-        projectPathStore?.setCurrentProjectPath(projectPath)
+        projectPathStore?.setCurrentProjectPath(projectPath, reason: reason)
     }
 
     private func bindChatService() {

@@ -48,7 +48,12 @@ final class ChatCoreService {
                 dependencies.register(LumiProjectStoring.self, ProjectsPlugin.sharedStore)
             }
         )
+
+        // 注册插件提供的工具
         toolService.registerTools(pluginService.agentTools(context: context))
+        // 注册 built-in tools（如 conversation_info, no_op）
+        toolService.registerBuiltInTools(ChatService.builtInTools)
+
         let providers = pluginService.llmProviders(context: context)
         chatService.registerProviders(providers)
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))

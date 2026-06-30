@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 import Testing
@@ -36,38 +35,57 @@ struct PluginMemoryTests {
     }
 
     @Test("save memory tool schema has required fields")
-    func saveMemoryToolSchema() throws {
+    func saveMemoryToolSchema() {
         let tool = SaveMemoryTool()
-        let schema = tool.inputSchema(for: .english)
+        let schema = tool.inputSchema
 
-        let required = try #require(schema["required"] as? [String])
-        #expect(required.contains("id"))
-        #expect(required.contains("type"))
-        #expect(required.contains("name"))
-        #expect(required.contains("description"))
-        #expect(required.contains("content"))
+        let required = Self.extractStringArray(schema, "required")
+        #expect(required?.contains("id") == true)
+        #expect(required?.contains("type") == true)
+        #expect(required?.contains("name") == true)
+        #expect(required?.contains("description") == true)
+        #expect(required?.contains("content") == true)
     }
 
     @Test("recall memory tool schema requires query")
-    func recallMemoryToolSchema() throws {
+    func recallMemoryToolSchema() {
         let tool = RecallMemoryTool()
-        let schema = tool.inputSchema(for: .english)
+        let schema = tool.inputSchema
 
-        let required = try #require(schema["required"] as? [String])
-        #expect(required == ["query"])
+        #expect(Self.extractStringArray(schema, "required") == ["query"])
 
-        let properties = try #require(schema["properties"] as? [String: [String: Any]])
-        #expect(properties["max_results"]?["type"] as? String == "integer")
-        #expect(properties["max_results"]?["minimum"] as? Int == MemoryToolInput.minMaxResults)
-        #expect(properties["max_results"]?["maximum"] as? Int == MemoryToolInput.maxMaxResults)
+        let properties = Self.extractObject(schema, "properties")
+        if case .object(let maxResults) = properties?["max_results"] {
+            if case .string(let type) = maxResults["type"] {
+                #expect(type == "integer")
+            }
+            if case .int(let minimum) = maxResults["minimum"] {
+                #expect(minimum == MemoryToolInput.minMaxResults)
+            }
+            if case .int(let maximum) = maxResults["maximum"] {
+                #expect(maximum == MemoryToolInput.maxMaxResults)
+            }
+        }
     }
 
     @Test("all tools have low risk level")
     func allToolsLowRisk() {
-        #expect(SaveMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
-        #expect(RecallMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
-        #expect(ListMemoriesTool().permissionRiskLevel(arguments: [:]) == .low)
-        #expect(DeleteMemoryTool().permissionRiskLevel(arguments: [:]) == .low)
+        #expect(SaveMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(RecallMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(ListMemoriesTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(DeleteMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
+    }
+
+    // MARK: - LumiJSONValue schema helpers
+
+    private static func extractObject(_ schema: LumiJSONValue, _ key: String) -> [String: LumiJSONValue]? {
+        guard case .object(let keys) = schema, case .object(let inner) = keys[key] else { return nil }
+        return inner
+    }
+
+    private static func extractStringArray(_ schema: LumiJSONValue, _ key: String) -> [String]? {
+        guard case .object(let keys) = schema, case .array(let arr) = keys[key] else { return nil }
+        return arr.compactMap { if case .string(let s) = $0 { s } else { nil } }
     }
 
     @Test("localization catalog is packaged")

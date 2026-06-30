@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -29,6 +28,6 @@ public enum ProjectOverviewPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [ProjectOverviewTool().asLumiAgentTool()]
+        [ProjectOverviewTool()]
     }
 }

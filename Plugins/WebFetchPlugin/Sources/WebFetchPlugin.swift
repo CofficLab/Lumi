@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 import SwiftUI
@@ -26,7 +25,7 @@ public enum WebFetchPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [WebFetchTool().asLumiAgentTool()]
+        [WebFetchTool()]
     }
 
         @MainActor

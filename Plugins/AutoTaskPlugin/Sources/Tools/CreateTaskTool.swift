@@ -1,72 +1,64 @@
-import AgentToolKit
 import Foundation
-import SuperLogKit
 import LumiCoreKit
+import SuperLogKit
 
 /// 创建任务工具
 ///
 /// 用于创建单个任务或批量创建任务列表。
 /// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
-public struct CreateTaskTool: SuperAgentTool, SuperLog {
+public struct CreateTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "create_task"
+    public static let info = LumiAgentToolInfo(
+        id: "create_task",
+        displayName: LumiPluginLocalization.string("Create Task", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Create tasks for a complex goal. When the user asks you to do something that requires multiple steps, break it down into tasks using this tool. You can create a single task or a batch of tasks at once. Each task should be a concrete, actionable step. Tasks are tracked in a kanban board and you will be reminded of progress automatically. After creating tasks, start working on the first one immediately.",
+            bundle: .module
+        )
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "为复杂目标创建任务。当用户提出需要多步完成的请求时，使用此工具将其拆分为任务。可以一次创建单个任务或一批任务。每个任务都应是具体、可执行的步骤。任务会在看板中跟踪，并自动提醒进度。创建任务后，应立即开始处理第一个任务。"
-        case .english:
-            return """
-    Create tasks for a complex goal. When the user asks you to do something that requires multiple steps, \
-    break it down into tasks using this tool. You can create a single task or a batch of tasks at once. \
-    Each task should be a concrete, actionable step. Tasks are tracked in a kanban board and you will be \
-    reminded of progress automatically. After creating tasks, start working on the first one immediately.
-    """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "tasks": .object([
+                    "type": .string("array"),
+                    "description": .string("Array of tasks to create. Each task has a title and optional detail."),
+                    "minItems": .int(1),
+                    "maxItems": .int(TaskStateManager.maxTasksPerConversation),
+                    "items": .object([
+                        "type": .string("object"),
+                        "properties": .object([
+                            "title": .object([
+                                "type": .string("string"),
+                                "description": .string("Short, actionable task title (e.g., 'Setup project structure')"),
+                                "minLength": .int(1)
+                            ]),
+                            "detail": .object([
+                                "type": .string("string"),
+                                "description": .string("Optional detailed description of what this task involves")
+                            ])
+                        ]),
+                        "required": .array([.string("title")])
+                    ])
+                ])
+            ]),
+            "required": .array([.string("tasks")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "tasks": [
-                    "type": "array",
-                    "description": "Array of tasks to create. Each task has a title and optional detail.",
-                    "minItems": 1,
-                    "maxItems": TaskStateManager.maxTasksPerConversation,
-                    "items": [
-                        "type": "object",
-                        "properties": [
-                            "title": [
-                                "type": "string",
-                                "description": "Short, actionable task title (e.g., 'Setup project structure')",
-                                "minLength": 1,
-                            ],
-                            "detail": [
-                                "type": "string",
-                                "description": "Optional detailed description of what this task involves",
-                            ],
-                        ],
-                        "required": ["title"],
-                    ],
-                ],
-            ],
-            "required": ["tasks"],
-        ]
-    }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "创建任务" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "创建任务" }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
-        let conversationId = context.conversationId.uuidString
+        let conversationId = context.conversationID.uuidString
 
-        guard let tasksArray = arguments["tasks"]?.value as? [[String: Any]] else {
+        guard let tasksArray = arguments["tasks"]?.anyValue as? [[String: Any]] else {
             return LumiPluginLocalization.string("Error: tasks array is required", bundle: .module)
         }
 

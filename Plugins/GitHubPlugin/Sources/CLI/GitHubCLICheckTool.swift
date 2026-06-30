@@ -1,42 +1,37 @@
 import Foundation
-import AgentToolKit
+import LumiCoreKit
 import SuperLogKit
 
 /// GitHub CLI 安装检测工具
 ///
 /// 检测用户系统是否安装了 GitHub CLI (gh) 命令行工具
-public struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
+public struct GitHubCLICheckTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
-    public let name = "github_cli_check"
+    public static let info = LumiAgentToolInfo(
+        id: "github_cli_check",
+        displayName: "GitHubCliCheck",
+        description: "GitHub tool: github_cli_check"
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
-        case .english:
-            return "Check whether GitHub CLI (gh) is installed on the user's system. Returns installation status, version, and executable path."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [:]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "检测 GitHub CLI"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         if Self.verbose {
             if GitHubPlugin.verbose {
                 GitHubPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")

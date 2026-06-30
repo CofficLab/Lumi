@@ -1,4 +1,3 @@
-import AgentToolKit
 import EditorService
 import EditorTabStripPlugin
 import LumiCoreKit
@@ -48,12 +47,12 @@ public enum EditorPanelPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            GetCurrentFileTool().asLumiAgentTool(),
-            SetCurrentFileTool().asLumiAgentTool(),
+            GetCurrentFileTool(),
+            SetCurrentFileTool(),
         ]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         pluginAboutView(
             icon: iconName,
@@ -88,5 +87,4 @@ public enum EditorPanelPlugin: LumiPlugin {
             }
         ]
     }
-
 }

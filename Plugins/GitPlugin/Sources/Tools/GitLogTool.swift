@@ -1,75 +1,59 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 
 /// Git 日志工具
-public struct GitLogTool: SuperAgentTool, SuperLog {
+public struct GitLogTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📜"
     public nonisolated static let verbose: Bool = false
-    public let name = "git_log"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
-        case .english:
-            return "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file."
-        }
+
+    public static let info = LumiAgentToolInfo(
+        id: "git_log",
+        displayName: "Git Log",
+        description: "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file."
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("Git repository path, defaults to current working directory"),
+                ]),
+                "count": .object([
+                    "type": .string("integer"),
+                    "description": .string("Number of commits to display, default 10, range 1-50"),
+                    "minimum": .int(1),
+                    "maximum": .int(50),
+                ]),
+                "branch": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional, view logs for a specific branch"),
+                ]),
+                "file": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional, view commit history for a specific file"),
+                ]),
+            ]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let pathDesc: String
-        let countDesc: String
-        let branchDesc: String
-        let fileDesc: String
-        switch language {
-        case .chinese:
-            pathDesc = "Git 仓库路径，默认为当前工作目录"
-            countDesc = "显示的提交数量，默认 10，范围 1-50"
-            branchDesc = "可选，查看特定分支的日志"
-            fileDesc = "可选，查看特定文件的提交历史"
-        case .english:
-            pathDesc = "Git repository path, defaults to current working directory"
-            countDesc = "Number of commits to display, default 10, range 1-50"
-            branchDesc = "Optional, view logs for a specific branch"
-            fileDesc = "Optional, view commit history for a specific file"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "path": [
-                    "type": "string",
-                    "description": pathDesc
-                ],
-                "count": [
-                    "type": "integer",
-                    "description": countDesc,
-                    "minimum": 1,
-                    "maximum": 50
-                ],
-                "branch": [
-                    "type": "string",
-                    "description": branchDesc
-                ],
-                "file": [
-                    "type": "string",
-                    "description": fileDesc
-                ]
-            ]
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "查看提交历史"
     }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let path = arguments["path"]?.value as? String
-        let count = Self.normalizedCount(arguments["count"]?.value)
-        let branch = arguments["branch"]?.value as? String
-        let file = arguments["file"]?.value as? String
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let path = arguments.string("path")
+        let count = Self.normalizedCount(arguments["count"]?.anyValue)
+        let branch = arguments.string("branch")
+        let file = arguments.string("file")
 
         if Self.verbose {
             GitPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
@@ -78,7 +62,7 @@ public struct GitLogTool: SuperAgentTool, SuperLog {
         do {
             // 验证路径是否在允许的范围内
             let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
-            
+
             let logs = try await GitService.shared.getLog(
                 path: validatedPath,
                 count: count,

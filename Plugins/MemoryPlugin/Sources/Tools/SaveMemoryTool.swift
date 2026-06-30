@@ -1,112 +1,91 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
 /// 保存记忆工具。
 ///
 /// 允许 AI 助手将重要信息保存到持久化记忆系统中。
 /// 核心原则：只记从代码/Git 推导不出来的信息。
-public struct SaveMemoryTool: SuperAgentTool {
-    public let name = "save_memory"
+public struct SaveMemoryTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "save_memory",
+        displayName: "Save Memory",
+        description: "Save a memory to the persistent memory system. Memories should be non-obvious information that cannot be derived from code or Git history. Do not save code patterns, architecture, or already-documented content."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "保存一条记忆到持久化记忆系统。记忆应该是非显而易见的、无法从代码或 Git 历史推导的信息。不要保存代码模式、架构或文档中已有的内容。"
-        case .english:
-            return "Save a memory to the persistent memory system. Memories should be non-obvious information that cannot be derived from code or Git history. Do not save code patterns, architecture, or already-documented content."
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "id": .object([
+                    "type": .string("string"),
+                    "description": .string("Unique identifier for this memory (kebab-case, e.g., 'user-role', 'feedback-no-summary')"),
+                ]),
+                "type": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("user"), .string("feedback"), .string("project"), .string("reference")]),
+                    "description": .string("Memory type: user (user preferences), feedback (behavioral guidance), project (project context), reference (external system pointers)"),
+                ]),
+                "name": .object([
+                    "type": .string("string"),
+                    "description": .string("Short, human-readable name for this memory"),
+                ]),
+                "description": .object([
+                    "type": .string("string"),
+                    "description": .string("One-line description used to determine relevance in future conversations. Be specific."),
+                ]),
+                "content": .object([
+                    "type": .string("string"),
+                    "description": .string("Full memory content. For feedback/project types, structure as: rule/fact, then **Why:** and **How to apply:** lines"),
+                ]),
+                "scope": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("global"), .string("project")]),
+                    "description": .string("Scope: global (cross-project) or project (current project only). user and feedback types typically use global, project and reference types typically use project"),
+                ]),
+                "project_path": .object([
+                    "type": .string("string"),
+                    "description": .string("Required when scope=project. The absolute path to the current project."),
+                ]),
+            ]),
+            "required": .array([.string("id"), .string("type"), .string("name"), .string("description"), .string("content")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let typeDesc: String
-        switch language {
-        case .chinese:
-            typeDesc = "记忆类型：user（用户偏好）、feedback（行为指导）、project（项目上下文）、reference（外部系统指针）"
-        case .english:
-            typeDesc = "Memory type: user (user preferences), feedback (behavioral guidance), project (project context), reference (external system pointers)"
-        }
-
-        let scopeDesc: String
-        switch language {
-        case .chinese:
-            scopeDesc = "作用域：global（跨项目通用）或 project（当前项目专属）。user 和 feedback 类型通常用 global，project 和 reference 类型通常用 project"
-        case .english:
-            scopeDesc = "Scope: global (cross-project) or project (current project only). user and feedback types typically use global, project and reference types typically use project"
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "id": [
-                    "type": "string",
-                    "description": "Unique identifier for this memory (kebab-case, e.g., 'user-role', 'feedback-no-summary')",
-                ],
-                "type": [
-                    "type": "string",
-                    "enum": ["user", "feedback", "project", "reference"],
-                    "description": typeDesc,
-                ],
-                "name": [
-                    "type": "string",
-                    "description": "Short, human-readable name for this memory",
-                ],
-                "description": [
-                    "type": "string",
-                    "description": "One-line description used to determine relevance in future conversations. Be specific.",
-                ],
-                "content": [
-                    "type": "string",
-                    "description": "Full memory content. For feedback/project types, structure as: rule/fact, then **Why:** and **How to apply:** lines",
-                ],
-                "scope": [
-                    "type": "string",
-                    "enum": ["global", "project"],
-                    "description": scopeDesc,
-                ],
-                "project_path": [
-                    "type": "string",
-                    "description": "Required when scope=project. The absolute path to the current project.",
-                ],
-            ],
-            "required": ["id", "type", "name", "description", "content"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "保存记忆"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        guard let id = MemoryToolInput.string(arguments["id"]?.value) else {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let id = MemoryToolInput.string(arguments["id"]?.anyValue) else {
             throw MemoryToolError.missingArgument("id")
         }
-        guard let typeRaw = MemoryToolInput.string(arguments["type"]?.value), let type = MemoryType(rawValue: typeRaw) else {
+        guard let typeRaw = MemoryToolInput.string(arguments["type"]?.anyValue), let type = MemoryType(rawValue: typeRaw) else {
             throw MemoryToolError.invalidArgument("type must be one of: user, feedback, project, reference")
         }
-        guard let name = MemoryToolInput.string(arguments["name"]?.value) else {
+        guard let name = MemoryToolInput.string(arguments["name"]?.anyValue) else {
             throw MemoryToolError.missingArgument("name")
         }
-        guard let description = MemoryToolInput.string(arguments["description"]?.value) else {
+        guard let description = MemoryToolInput.string(arguments["description"]?.anyValue) else {
             throw MemoryToolError.missingArgument("description")
         }
-        guard let content = MemoryToolInput.string(arguments["content"]?.value) else {
+        guard let content = MemoryToolInput.string(arguments["content"]?.anyValue) else {
             throw MemoryToolError.missingArgument("content")
         }
 
         let scopeRaw = try MemoryToolInput.scope(
-            arguments["scope"]?.value,
+            arguments["scope"]?.anyValue,
             default: "global",
             allowed: ["global", "project"]
         )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.value) else {
+            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)

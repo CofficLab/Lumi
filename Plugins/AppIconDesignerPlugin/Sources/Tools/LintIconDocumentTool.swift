@@ -1,34 +1,29 @@
-import AgentToolKit
 import Foundation
+import LumiCoreKit
 
-public struct LintIconDocumentTool: SuperAgentTool {
-    public let name = "lint_icon_document"
+public struct LintIconDocumentTool: LumiAgentTool {
+    public static let info = LumiAgentToolInfo(
+        id: "lint_icon_document",
+        displayName: "Lint Icon Document",
+        description: "Check the current icon document for export quality issues and return errors and warnings."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "检查当前图标文档的导出质量，返回错误和警告。"
-        case .english:
-            return "Check the current icon document for export quality issues and return errors and warnings."
-        }
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
+    public var inputSchema: LumiJSONValue {
         ["type": "object", "properties": [:]]
     }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Lint icon document"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(arguments)
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let language = IconToolSupport.language(context)
         do {
             let document = try await MainActor.run {
                 guard let document = IconDocumentStore.shared.selectedDocument else {
@@ -85,7 +80,7 @@ public struct LintIconDocumentTool: SuperAgentTool {
         }
     }
 
-    private func localizedSeverity(_ severity: IconDocumentLintIssue.Severity, language: LanguagePreference) -> String {
+    private func localizedSeverity(_ severity: IconDocumentLintIssue.Severity, language: LumiLanguagePreference) -> String {
         switch severity {
         case .warning:
             IconToolSupport.localized(language, en: "warning", zh: "警告")

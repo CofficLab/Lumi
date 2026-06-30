@@ -1,5 +1,4 @@
 import Foundation
-import AgentToolKit
 import LumiCoreKit
 
 struct ToolCallSignatureInfo: Equatable {

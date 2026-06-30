@@ -1,4 +1,3 @@
-import AgentToolKit
 import LumiCoreKit
 
 public enum AgentRulesPlugin: LumiPlugin {
@@ -22,8 +21,8 @@ public enum AgentRulesPlugin: LumiPlugin {
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
-            CreateAgentRuleLumiTool(),
-            ListAgentRulesLumiTool()
+            CreateAgentRuleTool(),
+            ListAgentRulesTool()
         ]
     }
 }

@@ -1,70 +1,52 @@
 import Foundation
-import SuperLogKit
-import AgentToolKit
 import LumiCoreKit
+import SuperLogKit
 
 /// 收集子智能体结果工具
 ///
 /// 等待指定的子智能体完成并返回结果。支持同时等待多个智能体，
 /// 超时后自动取消未完成的智能体。
-public struct CollectAgentsTool: SuperAgentTool, SuperLog {
+public struct CollectAgentsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📦"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "collect_agents"
+    public static let info = LumiAgentToolInfo(
+        id: "collect_agents",
+        displayName: LumiPluginLocalization.string("Collect Agents", bundle: .module),
+        description: LumiPluginLocalization.string("Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
+    )
 
-    // MARK: - SuperAgentTool
+    public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return LumiPluginLocalization.string("Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
-        case .english:
-            return LumiPluginLocalization.string("Wait for spawned sub-agents to complete and collect their results.", bundle: .module)
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "agent_ids": .object([
+                    "type": .string("string"),
+                    "description": .string("Comma-separated list of agent IDs returned by spawn_agent")
+                ]),
+                "timeout": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum seconds to wait for each agent (default: 120, range: 1-3600)"),
+                    "minimum": .int(1),
+                    "maximum": .int(3600)
+                ])
+            ]),
+            "required": .array([.string("agent_ids")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let agentIdsDesc: String
-        let timeoutDesc: String
-
-        switch language {
-        case .chinese:
-            agentIdsDesc = LumiPluginLocalization.string("Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
-            timeoutDesc = LumiPluginLocalization.string("Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
-        case .english:
-            agentIdsDesc = LumiPluginLocalization.string("Comma-separated list of agent IDs returned by spawn_agent", bundle: .module)
-            timeoutDesc = LumiPluginLocalization.string("Maximum seconds to wait for each agent (default: 120, range: 1-3600)", bundle: .module)
-        }
-
-        return [
-            "type": "object",
-            "properties": [
-                "agent_ids": [
-                    "type": "string",
-                    "description": agentIdsDesc,
-                ],
-                "timeout": [
-                    "type": "integer",
-                    "description": timeoutDesc,
-                    "minimum": 1,
-                    "maximum": 3600,
-                ],
-            ],
-            "required": ["agent_ids"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "收集子智能体结果"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "收集子智能体结果" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
 
-        guard let agentIdsRaw = arguments["agent_ids"]?.value as? String, !agentIdsRaw.isEmpty else {
+        guard let agentIdsRaw = arguments["agent_ids"]?.stringValue, !agentIdsRaw.isEmpty else {
             throw SubAgentError.missingArgument("agent_ids")
         }
 
@@ -77,7 +59,7 @@ public struct CollectAgentsTool: SuperAgentTool, SuperLog {
             return "Error: No valid agent IDs provided."
         }
 
-        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value)
+        let timeout = Self.normalizedTimeout(arguments["timeout"]?.anyValue)
 
         if Self.verbose {
             MultiAgentPlugin.logger.info("\(self.t)等待 \(agentIds.count) 个子智能体完成（超时: \(Int(timeout))s）")

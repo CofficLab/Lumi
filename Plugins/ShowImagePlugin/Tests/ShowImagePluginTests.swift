@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 import Testing
@@ -29,23 +28,49 @@ struct PluginShowImageTests {
     @Test("tool schema requires source")
     func toolSchemaRequiresSource() throws {
         let tool = ShowImageTool()
-        let schema = tool.inputSchema(for: .english)
+        let schema = tool.inputSchema
 
-        let required = try #require(schema["required"] as? [String])
+        guard case .object(let keys) = schema else {
+            Issue.record("schema should be an object"); return
+        }
+        guard case .array(let requiredValues) = keys["required"] else {
+            Issue.record("schema should declare required array"); return
+        }
+        let required = requiredValues.compactMap { if case .string(let s) = $0 { s } else { nil } }
         #expect(required == ["source"])
 
-        let properties = try #require(schema["properties"] as? [String: [String: Any]])
-        #expect(properties["source"]?["type"] as? String == "string")
-        #expect(properties["maxWidth"]?["type"] as? String == "integer")
-        #expect(properties["maxWidth"]?["minimum"] as? Int == ShowImageTool.minMaxWidth)
-        #expect(properties["maxWidth"]?["maximum"] as? Int == ShowImageTool.maxMaxWidth)
+        guard case .object(let properties) = keys["properties"],
+              case .object(let sourceProps) = properties["source"],
+              case .string(let sourceType) = sourceProps["type"] else {
+            Issue.record("schema should declare source property"); return
+        }
+        #expect(sourceType == "string")
+
+        guard case .object(let maxWidthProps) = properties["maxWidth"] else {
+            Issue.record("schema should declare maxWidth property"); return
+        }
+        if case .string(let type) = maxWidthProps["type"] {
+            #expect(type == "integer")
+        } else {
+            Issue.record("maxWidth type missing")
+        }
+        if case .int(let minimum) = maxWidthProps["minimum"] {
+            #expect(minimum == ShowImageTool.minMaxWidth)
+        } else {
+            Issue.record("maxWidth minimum missing")
+        }
+        if case .int(let maximum) = maxWidthProps["maximum"] {
+            #expect(maximum == ShowImageTool.maxMaxWidth)
+        } else {
+            Issue.record("maxWidth maximum missing")
+        }
     }
 
     @Test("tool risk level is low")
     func toolRiskLevel() {
         let tool = ShowImageTool()
 
-        #expect(tool.permissionRiskLevel(arguments: [:]) == .low)
+        #expect(tool.riskLevel(arguments: [:], context: nil) == .low)
     }
 
     @Test("max width is clamped to supported range")
@@ -65,10 +90,10 @@ struct PluginShowImageTests {
     func toolTrimsCopiedRemoteSourceWhitespace() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
+        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_1", toolName: tool.name)
 
         let result = try await tool.execute(
-            arguments: ["source": ToolArgument(" \nhttps://example.com/image.png\t")],
+            arguments: ["source": .string(" \nhttps://example.com/image.png\t")],
             context: context
         )
 
@@ -95,10 +120,10 @@ struct PluginShowImageTests {
     func toolAcceptsUppercaseHTTPSRemoteSource() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_upper_https", toolName: tool.name)
+        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_upper_https", toolName: tool.name)
 
         let result = try await tool.execute(
-            arguments: ["source": ToolArgument("HTTPS://example.com/image.png")],
+            arguments: ["source": .string("HTTPS://example.com/image.png")],
             context: context
         )
 
@@ -112,10 +137,10 @@ struct PluginShowImageTests {
     func toolReportsUnsupportedRemoteURLScheme() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_ftp", toolName: tool.name)
+        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_ftp", toolName: tool.name)
 
         let result = try await tool.execute(
-            arguments: ["source": ToolArgument("ftp://example.com/image.png")],
+            arguments: ["source": .string("ftp://example.com/image.png")],
             context: context
         )
 
@@ -128,12 +153,12 @@ struct PluginShowImageTests {
     func toolClampsDisplayedRemoteMaxWidth() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_2", toolName: tool.name)
+        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_2", toolName: tool.name)
 
         _ = try await tool.execute(
             arguments: [
-                "source": ToolArgument("https://example.com/image.png"),
-                "maxWidth": ToolArgument(9_999),
+                "source": .string("https://example.com/image.png"),
+                "maxWidth": .int(9_999),
             ],
             context: context
         )
@@ -147,12 +172,12 @@ struct PluginShowImageTests {
     func toolAcceptsJSONStyleMaxWidthValues() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_3", toolName: tool.name)
+        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_3", toolName: tool.name)
 
         _ = try await tool.execute(
             arguments: [
-                "source": ToolArgument("https://example.com/image.png"),
-                "maxWidth": ToolArgument(640.0),
+                "source": .string("https://example.com/image.png"),
+                "maxWidth": .double(640.0),
             ],
             context: context
         )
@@ -161,8 +186,8 @@ struct PluginShowImageTests {
 
         _ = try await tool.execute(
             arguments: [
-                "source": ToolArgument("https://example.com/image.png"),
-                "maxWidth": ToolArgument("500"),
+                "source": .string("https://example.com/image.png"),
+                "maxWidth": .string("500"),
             ],
             context: context
         )

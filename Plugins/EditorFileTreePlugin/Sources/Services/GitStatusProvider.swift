@@ -116,7 +116,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
 
     public nonisolated static let emoji = "🌳"
     public nonisolated static let verbose: Bool = true
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.git-status")
+    public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     // MARK: - Public
 

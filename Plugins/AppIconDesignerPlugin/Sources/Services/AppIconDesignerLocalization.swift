@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiCoreKit
 
@@ -10,7 +9,7 @@ enum AppIconDesignerLocalization {
         LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
     }
 
-    static func string(_ key: String, for language: LanguagePreference) -> String {
+    static func string(_ key: String, for language: LumiLanguagePreference) -> String {
         _ = language
         return string(key)
     }

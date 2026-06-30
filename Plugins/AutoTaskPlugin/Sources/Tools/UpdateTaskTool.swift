@@ -1,64 +1,56 @@
-import AgentToolKit
 import Foundation
-import SuperLogKit
 import LumiCoreKit
+import SuperLogKit
 
 /// 更新任务状态工具
 ///
 /// 用于标记任务为进行中、已完成或跳过。
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
-public struct UpdateTaskTool: SuperAgentTool, SuperLog {
+public struct UpdateTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "✅"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "update_task"
+    public static let info = LumiAgentToolInfo(
+        id: "update_task",
+        displayName: LumiPluginLocalization.string("Update Task", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Update the status of a task. Use this when you have started or completed a task. Mark a task as 'in_progress' when you begin working on it, and 'completed' when done. You can also 'skip' a task if it's not needed. After completing a task, check the remaining tasks and continue with the next one automatically.",
+            bundle: .module
+        )
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "更新任务状态。开始处理任务时将其标记为 'in_progress'，完成后标记为 'completed'。如果任务不再需要，也可以标记为 'skipped'。完成一个任务后，应检查剩余任务并自动继续下一个。"
-        case .english:
-            return """
-    Update the status of a task. Use this when you have started or completed a task. \
-    Mark a task as 'in_progress' when you begin working on it, and 'completed' when done. \
-    You can also 'skip' a task if it's not needed. \
-    After completing a task, check the remaining tasks and continue with the next one automatically.
-    """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "task_id": .object([
+                    "type": .string("string"),
+                    "description": .string("The ID of the task to update")
+                ]),
+                "status": .object([
+                    "type": .string("string"),
+                    "description": .string("New status: 'in_progress', 'completed', or 'skipped'"),
+                    "enum": .array([.string("in_progress"), .string("completed"), .string("skipped")])
+                ])
+            ]),
+            "required": .array([.string("task_id"), .string("status")])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "task_id": [
-                    "type": "string",
-                    "description": "The ID of the task to update",
-                ],
-                "status": [
-                    "type": "string",
-                    "description": "New status: 'in_progress', 'completed', or 'skipped'",
-                    "enum": ["in_progress", "completed", "skipped"],
-                ],
-            ],
-            "required": ["task_id", "status"],
-        ]
-    }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "更新任务状态" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
 
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "更新任务状态" }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
-
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
-        let conversationId = context.conversationId.uuidString
+        let conversationId = context.conversationID.uuidString
 
-        guard let taskId = arguments["task_id"]?.value as? String else {
+        guard let taskId = arguments["task_id"]?.stringValue else {
             return LumiPluginLocalization.string("Error: task_id is required", bundle: .module)
         }
 
-        guard let statusString = arguments["status"]?.value as? String,
+        guard let statusString = arguments["status"]?.stringValue,
               let status = TaskItem.TaskStatus(rawValue: statusString)
         else {
             return LumiPluginLocalization.string("Error: status must be one of: in_progress, completed, skipped", bundle: .module)

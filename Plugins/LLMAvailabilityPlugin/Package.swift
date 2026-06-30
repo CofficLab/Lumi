@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiCoreKit"),
@@ -25,7 +24,6 @@ let package = Package(
         .target(
             name: "LLMAvailabilityPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),

@@ -13,9 +13,7 @@ let package = Package(
             targets: ["EditorPanelPlugin"]
         )
     ],
-    dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/EditorService"),
+    dependencies: [        .package(path: "../../Packages/EditorService"),
         .package(path: "../LSPDocumentHighlightEditorPlugin"),
         .package(path: "../LSPRealtimeSignalsPlugin"),
         .package(path: "../LSPSignatureHelpEditorPlugin"),
@@ -34,9 +32,7 @@ let package = Package(
     targets: [
         .target(
             name: "EditorPanelPlugin",
-            dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "EditorService", package: "EditorService"),
+            dependencies: [                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LSPDocumentHighlightEditorPlugin", package: "LSPDocumentHighlightEditorPlugin"),
                 .product(name: "LSPRealtimeSignalsPlugin", package: "LSPRealtimeSignalsPlugin"),
                 .product(name: "LSPSignatureHelpEditorPlugin", package: "LSPSignatureHelpEditorPlugin"),
