@@ -22,7 +22,7 @@ public final class LSPViewportScheduler {
     // MARK: - Types
 
     /// LSP 请求类型
-    public enum Kind: CaseIterable, Hashable {
+    public enum Kind: CaseIterable, Hashable, Sendable {
         case inlayHints
         case diagnostics
         case codeActions
@@ -37,11 +37,11 @@ public final class LSPViewportScheduler {
         }
 
         /// 获取请求类型的默认 debounce 延迟（毫秒）
-        public var defaultDebounceMs: Int64 {
+        @MainActor public var defaultDebounceMs: Int64 {
             switch self {
-            case .inlayHints: return Self.inlayHintsDebounceMs
-            case .diagnostics: return Self.diagnosticsDebounceMs
-            case .codeActions: return Self.codeActionsDebounceMs
+            case .inlayHints: return LSPViewportScheduler.inlayHintsDebounceMs
+            case .diagnostics: return LSPViewportScheduler.diagnosticsDebounceMs
+            case .codeActions: return LSPViewportScheduler.codeActionsDebounceMs
             }
         }
     }

@@ -22,7 +22,7 @@ public final class LSPRequestCache {
         let timestamp: Date
         let generation: UInt64
 
-        var isExpired: Bool {
+        @MainActor var isExpired: Bool {
             Date().timeIntervalSince(timestamp) > LSPRequestCache.defaultExpiration
         }
     }
