@@ -19,7 +19,8 @@ public enum XiaomiPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [
+        ProviderRenderKindManager.shared.registerProviderPrefix("xiaomi-", for: XiaomiProvider.info.id)
+        return [
             ApiKeyMissingRenderer.item,
             Http401Renderer.item,
             Http403Renderer.item,

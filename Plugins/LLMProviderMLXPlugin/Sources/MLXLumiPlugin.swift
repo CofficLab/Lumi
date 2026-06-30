@@ -22,7 +22,8 @@ public enum MLXLumiPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [ModelNotDownloadedRenderer.item]
+        ProviderRenderKindManager.shared.registerProviderPrefix("mlx-", for: "mlx")
+        return [ModelNotDownloadedRenderer.item]
     }
 
     @MainActor

@@ -19,7 +19,8 @@ public enum StepFunPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [
+        ProviderRenderKindManager.shared.registerProviderPrefix("stepfun-", for: StepFunProvider.info.id)
+        return [
             ApiKeyMissingRenderer.item,
             Http401Renderer.item,
             Http403Renderer.item,

@@ -19,7 +19,8 @@ public enum AliyunPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [
+        ProviderRenderKindManager.shared.registerProviderPrefix("aliyun-", for: AliyunProvider.info.id)
+        return [
             ApiKeyMissingRenderer.item,
             Http401Renderer.item,
             Http403Renderer.item,

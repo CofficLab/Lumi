@@ -43,12 +43,7 @@ public enum MessageRendererPlugin: LumiPlugin {
                         return false
                     }
                     if let renderKind = message.renderKind,
-                       renderKind.hasPrefix("zhipu-")
-                           || renderKind.hasPrefix("aliyun-")
-                           || renderKind.hasPrefix("xiaomi-")
-                           || renderKind.hasPrefix("mlx-")
-                           || renderKind.hasPrefix("sublyx-")
-                           || renderKind.hasPrefix("stepfun-") {
+                       ProviderRenderKindManager.shared.isProviderSpecificRenderKind(renderKind) {
                         return false
                     }
                     return true

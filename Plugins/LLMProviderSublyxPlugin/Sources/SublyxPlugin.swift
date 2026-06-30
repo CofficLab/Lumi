@@ -19,7 +19,8 @@ public enum SublyxPlugin: LumiPlugin {
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        [
+        ProviderRenderKindManager.shared.registerProviderPrefix("sublyx-", for: SublyxProvider.info.id)
+        return [
             SublyxApiKeyMissingRenderer.item,
             SublyxHttpErrorRenderer.item,
             SublyxRequestFailedRenderer.item,
