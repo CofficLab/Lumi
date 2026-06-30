@@ -1,7 +1,7 @@
-import AgentToolKit
 import Foundation
 import LLMKit
 import LLMProviderKit
+import LumiCoreKit
 
 public protocol LLMAvailabilityProviderType: Sendable {
     var hasApiKey: Bool { get }
@@ -18,8 +18,7 @@ public protocol LLMAvailabilityLLMServicing: Sendable {
     func createProvider(id providerId: String) -> (any LLMAvailabilityCheckingProvider)?
     func sendMessage(
         messages: [ChatMessage],
-        config: LLMConfig,
-        tools: [SuperAgentTool]?
+        config: LLMConfig
     ) async throws -> ChatMessage
 }
 

@@ -1,50 +1,45 @@
 import Foundation
+import LumiCoreKit
 import SuperLogKit
-import AgentToolKit
 import os
 
 /// 列出可用 LLM 模型工具
-public struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
+public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🤖"
     public nonisolated static let verbose: Bool = false
 
-    public let name = "list_available_models"
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "列出当前可用的 LLM 供应商和模型。返回实际通过连通性检测的供应商+模型对。如果未传入参数，返回全部可用列表；可指定供应商过滤。"
-        case .english:
-            return "List all available LLM providers and models. Returns provider+model pairs that passed connectivity checks. Returns all available results if no parameter is provided; can filter by provider."
-        }
+    public static let info = LumiAgentToolInfo(
+        id: "list_available_models",
+        displayName: LumiPluginLocalization.string("List Available Models", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "List all available LLM providers and models. Returns provider+model pairs that passed connectivity checks. Returns all available results if no parameter is provided; can filter by provider.",
+            bundle: .module
+        )
+    )
+
+    public init() {}
+
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "providerId": .object([
+                    "type": .string("string"),
+                    "description": .string("Optional, filter by provider ID (e.g., OpenAI, Anthropic)")
+                ])
+            ]),
+            "required": .array([])
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        let providerIdDesc: String
-        switch language {
-        case .chinese:
-            providerIdDesc = "可选，按供应商 ID 过滤（如 OpenAI、Anthropic）"
-        case .english:
-            providerIdDesc = "Optional, filter by provider ID (e.g., OpenAI, Anthropic)"
-        }
-        return [
-            "type": "object",
-            "properties": [
-                "providerId": [
-                    "type": "string",
-                    "description": providerIdDesc,
-                ],
-            ],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {        "列出可用模型"    }
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "列出可用模型" }
+    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        let providerFilter = arguments["providerId"]?.value as? String
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let providerFilter = arguments["providerId"]?.stringValue
         let store = LLMAvailabilityStore.shared
         let allProviders = store.providers
 
