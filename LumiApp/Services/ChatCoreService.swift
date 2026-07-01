@@ -1,5 +1,5 @@
+import LLMAvailabilityPlugin
 import LumiChatKit
-import Foundation
 import LumiCoreKit
 import LumiPluginRegistry
 import ProjectsPlugin
@@ -37,16 +37,13 @@ final class ChatCoreService: SuperLog {
             Self.logger.info("\(Self.t)✅ ChatService 初始化完成")
         }
 
-        LumiPluginBootstrap.configurePluginRuntimes(
-            currentProjectPath: { [projectPathStore] in projectPathStore.currentProjectPath },
-            currentProjectName: { [projectPathStore] in
-                let path = projectPathStore.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !path.isEmpty else { return "" }
-                return URL(fileURLWithPath: path).lastPathComponent
-            },
-            chatServiceProvider: { [chatService] in chatService },
-            askUserResumer: chatService
-        )
+        // 触发插件生命周期 - 项目打开
+        let projectPath = projectPathStore.currentProjectPath
+        if !projectPath.isEmpty {
+            Task {
+                await LumiPluginRegistry.projectDidOpen(path: projectPath)
+            }
+        }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 插件运行时配置完成")
@@ -93,7 +90,7 @@ final class ChatCoreService: SuperLog {
         chatService.registerToolService(toolService)
 
         // 初始化 LLM 可用性检测
-        LumiPluginBootstrap.configureAvailabilityChecker(providers: providers)
+        LLMAvailabilityPlugin.bootstrap(providers: providers)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 插件贡献重载完成: \(providers.count) 个 LLM Provider")

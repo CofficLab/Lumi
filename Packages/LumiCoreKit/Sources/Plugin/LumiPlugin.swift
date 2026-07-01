@@ -78,6 +78,31 @@ public protocol LumiPlugin {
 
     @MainActor
     static func logoItems(context: LumiPluginContext) -> [LumiLogoItem]
+
+    // MARK: - Lifecycle
+
+    /// 插件生命周期事件
+    @MainActor
+    static func lifecycle(_ event: LumiPluginLifecycle)
+
+    // MARK: - Editor Extension (Optional)
+
+    /// 注册编辑器扩展（语言支持、LSP 等）。可选实现。
+    @MainActor
+    static func registerEditorExtensions(into registry: AnyObject) async
+
+    /// 配置编辑器运行时上下文。可选实现。
+    @MainActor
+    static func configureEditorRuntime(_ context: PluginRuntimeContext) async
+}
+
+// MARK: - Lifecycle Event
+
+public enum LumiPluginLifecycle {
+    case didRegister      // 插件注册时
+    case appDidLaunch     // 应用启动
+    case projectDidOpen(path: String)  // 项目打开时
+    case projectDidClose  // 项目关闭时
 }
 
 public extension LumiPlugin {
@@ -212,4 +237,17 @@ public extension LumiPlugin {
     static func logoItems(context: LumiPluginContext) -> [LumiLogoItem] {
         []
     }
+
+    // MARK: - Lifecycle Default Implementation
+
+    @MainActor
+    static func lifecycle(_ event: LumiPluginLifecycle) {}
+
+    // MARK: - Editor Extension Default Implementations
+
+    @MainActor
+    static func registerEditorExtensions(into registry: AnyObject) async {}
+
+    @MainActor
+    static func configureEditorRuntime(_ context: PluginRuntimeContext) async {}
 }

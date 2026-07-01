@@ -38,7 +38,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         self.themeRegistry = themeRegistry
         let core = EditorCore()
         core.extensionInstaller = { registry in
-            await EditorExtensionsBootstrap.registerAll(
+            await Self.registerEditorExtensions(
                 into: registry,
                 enabledPluginIDs: pluginService.enabledEditorExtensionPluginIDs
             )
@@ -50,7 +50,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         }
 
         EditorLanguageRuntimeBridge.configure = { context in
-            await EditorExtensionsBootstrap.configureRuntime(context)
+            await Self.configureEditorRuntime(context)
         }
 
         if Self.verbose {
@@ -67,6 +67,66 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }
     }
+
+    // MARK: - Editor Extensions Registration
+
+    private static func registerEditorExtensions(
+        into registry: EditorExtensionRegistry,
+        enabledPluginIDs: Set<String>?
+    ) async {
+        let plugins = LumiPluginRegistry.plugins
+
+        registry.uninstallAll()
+
+        var records: [EditorInstalledPluginRecord] = []
+
+        for pluginType in plugins {
+            let info = pluginType.info
+            let policy = pluginType.policy
+
+            // 检查插件是否启用
+            if let enabledPluginIDs {
+                let isAlwaysOn = policy == .alwaysOn
+                guard isAlwaysOn || enabledPluginIDs.contains(info.id) else { continue }
+            }
+
+            // 优先使用 LumiEditorExtensionRegistering 协议
+            if let editorExtensionPlugin = pluginType as? (any LumiEditorExtensionRegistering.Type) {
+                await editorExtensionPlugin.registerEditorExtensionsErased(into: registry)
+            } else {
+                await pluginType.registerEditorExtensions(into: registry)
+            }
+
+            // 记录已安装的插件
+            if policy.isConfigurable {
+                records.append(
+                    EditorInstalledPluginRecord(
+                        id: info.id,
+                        displayName: info.displayName,
+                        description: info.description,
+                        order: info.order,
+                        isConfigurable: policy.isConfigurable
+                    )
+                )
+            }
+        }
+
+        registry.recordInstalledPlugins(records)
+    }
+
+    private static func configureEditorRuntime(_ context: PluginRuntimeContext) async {
+        let plugins = LumiPluginRegistry.plugins
+
+        for pluginType in plugins {
+            if let editorExtensionPlugin = pluginType as? (any LumiEditorExtensionRegistering.Type) {
+                await editorExtensionPlugin.configureEditorRuntime(context)
+            } else {
+                await pluginType.configureEditorRuntime(context)
+            }
+        }
+    }
+
+    // MARK: - Public Methods
 
     func reinstallExtensions() {
         if Self.verbose {

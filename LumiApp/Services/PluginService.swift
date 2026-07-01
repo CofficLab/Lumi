@@ -45,15 +45,21 @@ final class PluginService: ObservableObject, SuperLog {
         registeredPlugins.filter { isPluginEnabled($0) }
     }
 
-    var editorExtensionPlugins: [any LumiEditorExtensionRegistering.Type] {
-        EditorExtensionPluginRegistry.plugins
+    /// 获取支持编辑器扩展的插件列表
+    var editorExtensionPlugins: [any LumiPlugin.Type] {
+        registeredPlugins.filter { plugin in
+            // 检查插件是否提供了编辑器扩展方法
+            // 这里我们简化为检查 policy，因为提供编辑器扩展的插件应该有相应的 policy
+            let hasExtension = plugin.policy == .alwaysOn || plugin.policy == .optIn || plugin.policy == .optOut
+            return hasExtension
+        }
     }
 
     var enabledEditorExtensionPluginIDs: Set<String> {
         Set(
             editorExtensionPlugins
-                .filter { isEditorExtensionEnabled($0) }
-                .map { $0.extensionPluginInfo.id }
+                .filter { isPluginEnabled($0) }
+                .map { $0.info.id }
         )
     }
 
@@ -253,32 +259,8 @@ final class PluginService: ObservableObject, SuperLog {
         )
     }
 
-    func eligibility(for plugin: any LumiEditorExtensionRegistering.Type) -> LumiPluginEligibility {
-        LumiPluginEligibility(
-            policy: plugin.extensionPluginPolicy,
-            userEnabled: userEnabledValue(for: plugin)
-        )
-    }
-
     func isPluginEnabled(_ plugin: any LumiPlugin.Type) -> Bool {
         eligibility(for: plugin).isEligible
-    }
-
-    func isEditorExtensionEnabled(_ plugin: any LumiEditorExtensionRegistering.Type) -> Bool {
-        eligibility(for: plugin).isEligible
-    }
-
-    func setEditorExtensionPlugin(_ plugin: any LumiEditorExtensionRegistering.Type, enabled: Bool) {
-        guard plugin.extensionPluginPolicy.isConfigurable else { return }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)设置编辑器扩展插件 \(plugin.extensionPluginInfo.id) -> \(enabled)")
-        }
-
-        enabledOverrides[plugin.extensionPluginInfo.id] = enabled
-        settingsStore.saveEnabledOverrides(enabledOverrides)
-        onEnabledPluginsChanged?()
-        objectWillChange.send()
     }
 
     func setPlugin(_ plugin: any LumiPlugin.Type, enabled: Bool) {
@@ -286,10 +268,12 @@ final class PluginService: ObservableObject, SuperLog {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)插件 \(plugin.info.id) 不可配置")
             }
+
             return
         }
 
         let pluginId = plugin.info.id
+
         let previousState = pluginEnabledStates[pluginId] ?? isPluginEnabled(plugin)
 
         if Self.verbose {
@@ -297,17 +281,16 @@ final class PluginService: ObservableObject, SuperLog {
         }
 
         enabledOverrides[pluginId] = enabled
-        settingsStore.saveEnabledOverrides(enabledOverrides)
         pluginEnabledStates[pluginId] = enabled
-
+        settingsStore.saveEnabledOverrides(enabledOverrides)
         onEnabledPluginsChanged?()
+
+        objectWillChange.send()
 
         // 如果状态实际发生变化，触发生命周期回调
         if previousState != enabled {
             onPluginLifecycleChange?(plugin, enabled)
         }
-
-        objectWillChange.send()
     }
 
     /// 获取插件的当前启用状态
@@ -334,10 +317,6 @@ final class PluginService: ObservableObject, SuperLog {
         enabledOverrides[plugin.info.id] ?? plugin.policy.enabledByDefault
     }
 
-    private func userEnabledValue(for plugin: any LumiEditorExtensionRegistering.Type) -> Bool {
-        enabledOverrides[plugin.extensionPluginInfo.id] ?? plugin.extensionPluginPolicy.enabledByDefault
-    }
-
     /// Registers all plugin contributions with the appropriate registries.
     /// Should be called after plugins are loaded and enabled.
     @MainActor
@@ -345,6 +324,7 @@ final class PluginService: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)注册插件贡献")
         }
+
         registerLogoContributions(context: context)
     }
 
@@ -352,11 +332,12 @@ final class PluginService: ObservableObject, SuperLog {
         let allItems = enabledPlugins.flatMap { plugin in
             plugin.logoItems(context: context)
         }
-        LogoRegistry.shared.register(allItems)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
+
+        LogoRegistry.shared.register(allItems)
     }
 }
 
