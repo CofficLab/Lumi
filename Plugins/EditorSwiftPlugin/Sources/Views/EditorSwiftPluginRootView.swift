@@ -13,7 +13,9 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
     public let content: Content
 
     @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject var recentProjectsVM: AppProjectsVM
+    
+    /// 使用 LumiProjectStore.shared 替代 AppProjectsVM
+    private var projectStore: LumiProjectStore { .shared }
 
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
@@ -36,24 +38,14 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
             }
             .onAppear {
                 if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                        SwiftPluginLog.logger.info("\(Self.t)RootView onAppear")
-                    }
+                    SwiftPluginLog.logger.info("\(Self.t)RootView onAppear")
                 }
                 guard !hasTriggeredPreload else {
-                    if SwiftPluginLog.verbose {
-                        if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("\(Self.t)预加载已触发过，跳过")
-                        }
-                    }
+                    SwiftPluginLog.logger.info("\(Self.t)预加载已触发过，跳过")
                     return
                 }
                 hasTriggeredPreload = true
-                if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                        SwiftPluginLog.logger.info("\(Self.t)准备延迟 3 秒后预加载最近 Xcode 项目")
-                    }
-                }
+                SwiftPluginLog.logger.info("\(Self.t)准备延迟 3 秒后预加载最近 Xcode 项目")
                 Task {
                     try? await Task.sleep(nanoseconds: 3000000000)
                     await preloadRecentXcodeProjects()
@@ -64,35 +56,19 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
     // MARK: - 预加载逻辑
 
     private func preloadRecentXcodeProjects() async {
-        if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                SwiftPluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
-            }
-        }
-        let recentProjects = recentProjectsVM.getRecentProjects()
-        if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                SwiftPluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")
-            }
-        }
+        SwiftPluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
+        let recentProjects = projectStore.getRecentProjects()
+        SwiftPluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")
         let xcodeProjects = await EditorXcodeProjectPreloader.filterXcodeProjects(recentProjects)
 
         guard !xcodeProjects.isEmpty else {
-            if SwiftPluginLog.verbose {
-                if SwiftPluginLog.verbose {
-                    SwiftPluginLog.logger.info("\(Self.t)没有找到最近的 Xcode 项目，跳过预加载")
-                }
-            }
+            SwiftPluginLog.logger.info("\(Self.t)没有找到最近的 Xcode 项目，跳过预加载")
             return
         }
 
         let projectsToPreload = Array(xcodeProjects.prefix(3))
 
-        if SwiftPluginLog.verbose {
-            if SwiftPluginLog.verbose {
-                SwiftPluginLog.logger.info("\(Self.t)开始预加载 \(projectsToPreload.count) 个最近的 Xcode 项目：\(projectsToPreload.map(\.name).joined(separator: ", "))")
-            }
-        }
+        SwiftPluginLog.logger.info("\(Self.t)开始预加载 \(projectsToPreload.count) 个最近的 Xcode 项目：\(projectsToPreload.map(\.name).joined(separator: ", "))")
 
         await MainActor.run {
             self.preloadStatus = .loading(count: projectsToPreload.count)
@@ -104,20 +80,12 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
             for project in projectsToPreload {
                 while activeTasks >= maxConcurrentTasks {
-                    if SwiftPluginLog.verbose {
-                        if SwiftPluginLog.verbose {
-                            SwiftPluginLog.logger.info("\(Self.t)预加载并发达到上限，等待一个任务完成")
-                        }
-                    }
+                    SwiftPluginLog.logger.info("\(Self.t)预加载并发达到上限，等待一个任务完成")
                     _ = await group.next()
                     activeTasks -= 1
                 }
 
-                if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                        SwiftPluginLog.logger.info("\(Self.t)添加预加载任务：\(project.name)")
-                    }
-                }
+                SwiftPluginLog.logger.info("\(Self.t)添加预加载任务：\(project.name)")
                 group.addTask(priority: .background) {
                     let store = EditorSwiftBuildServerStore.makeStore()
                     let activePath = await MainActor.run {
@@ -150,22 +118,14 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
                 } else {
                     failedCount += 1
                 }
-                if SwiftPluginLog.verbose {
-                    if SwiftPluginLog.verbose {
-                        SwiftPluginLog.logger.info("\(Self.t)预加载任务完成：\(project.name)，success=\(success)")
-                    }
-                }
+                SwiftPluginLog.logger.info("\(Self.t)预加载任务完成：\(project.name)，success=\(success)")
             }
 
             await MainActor.run {
                 self.preloadStatus = .completed(success: successCount, failed: failedCount)
             }
 
-            if SwiftPluginLog.verbose {
-                if SwiftPluginLog.verbose {
-                    SwiftPluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
-                }
-            }
+            SwiftPluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
         }
     }
 

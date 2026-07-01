@@ -147,9 +147,9 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
 
     private func configureLifecycle(
         persistenceRootURL: @escaping @Sendable () -> URL,
-        recentProjects: @escaping @Sendable () -> [Project]
+        recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
     ) {
-        AppProjectsVM.recentProjectsProvider = recentProjects
+        LumiProjectStore.recentProjectsProvider = recentProjects
 
         EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
         EditorSettingsLifecycle.onReinstallPlugins = { [weak self] registry in
