@@ -10,7 +10,7 @@ import LumiCoreKit
 /// - 分栏布局宽度比例（SplitView 各列的比例）
 ///
 /// 存储位置：AppConfig.getDBFolderURL()/LayoutPlugin/settings.plist
-public final class LayoutPluginLocalStore: @unchecked Sendable {
+public final class LayoutPluginLocalStore: @unchecked Sendable, LumiLayoutPersistence {
 
     // MARK: - Singleton
 
