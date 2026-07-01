@@ -56,6 +56,10 @@ public enum LumiLLMFailureDetailResolver {
             )
         case let .streamingFailed(message):
             return resolveStreamingFailed(message)
+        case .emptyResponse:
+            return .message(
+                LumiLLMProviderSupportLocalization.string("LLM returned an empty response.", locale: locale)
+            )
         }
     }
 

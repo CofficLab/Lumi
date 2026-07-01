@@ -659,18 +659,32 @@ public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDisposition
     case missingAPIKey(String)
     case allEndpointsFailed
     case streamingFailed(String)
+    case emptyResponse
 
     public var llmErrorDisposition: LumiLLMErrorDisposition {
         switch self {
         case .emptyConversation, .invalidBaseURL, .missingAPIKey:
             return .nonRetryable
-        case .allEndpointsFailed, .streamingFailed:
+        case .allEndpointsFailed, .streamingFailed, .emptyResponse:
             return .retryable()
         }
     }
 
     public var errorDescription: String? {
-        localizedDescription(locale: .current)
+        switch self {
+        case .emptyConversation:
+            return "空对话"
+        case .invalidBaseURL(let url):
+            return "无效的 Base URL：\(url)"
+        case .missingAPIKey(let name):
+            return "缺少 API Key：\(name)"
+        case .allEndpointsFailed:
+            return "所有端点均失败"
+        case .streamingFailed(let details):
+            return "流式请求失败：\(details)"
+        case .emptyResponse:
+            return "LLM 返回了空响应"
+        }
     }
 }
 
