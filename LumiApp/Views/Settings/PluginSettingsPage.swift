@@ -247,14 +247,12 @@ private struct PluginSettingsDetailView: View {
             ForEach(Array(settingsViews.enumerated()), id: \.offset) { _, view in
                 view
             }
-        } else if let detail = row.plugin.aboutView(context: settingsContext) {
-            detail
         } else {
-            DefaultPluginAboutView(
-                pluginName: row.displayName,
-                pluginDescription: row.description,
-                iconName: row.iconName
+            AppEmptyState(
+                icon: "puzzlepiece.extension",
+                title: String(localized: "该插件暂未提供设置页面。")
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -328,24 +326,4 @@ private struct PluginSettingsRowModel: Identifiable {
     var category: LumiPluginCategory { plugin.category }
     var policy: LumiPluginPolicy { plugin.policy }
     var stage: LumiPluginStage { plugin.stage }
-}
-
-private struct DefaultPluginAboutView: View {
-    @LumiTheme private var theme
-    let pluginName: String
-    let pluginDescription: String
-    let iconName: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "Plugin Description"))
-                .font(.appBodyEmphasized)
-                .foregroundStyle(theme.textPrimary)
-
-            Text(pluginDescription.isEmpty ? "该插件暂未提供自定义介绍视图。" : pluginDescription)
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 }
