@@ -13,7 +13,7 @@ public protocol ProjectsStoring: AnyObject {
     func remove(_ project: LumiProjectEntry)
 }
 
-/// 项目列表 Store，负责磁盘持久化与内存状态管理
+/// 项目列表 Store，负责磁盘持久化，并同步到内核的 LumiProjectStore
 @MainActor
 public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProjectStoring {
     @Published public private(set) var projects: [LumiProjectEntry]
@@ -30,20 +30,33 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     
     private let settingsDirectory: URL
     private let projectPathStore: LumiCurrentProjectPathStoring?
+    private let projectStore: LumiProjectStore?
     
     // MARK: - Init
     
     public init(
         pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects"),
-        projectPathStore: LumiCurrentProjectPathStoring? = nil
+        projectPathStore: LumiCurrentProjectPathStoring? = nil,
+        projectStore: LumiProjectStore? = nil
     ) {
         self.settingsDirectory = pluginDirectory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
         self.projectPathStore = projectPathStore
+        self.projectStore = projectStore
         self.projects = Self.loadProjects(from: settingsDirectory)
         
         let currentPath = Self.loadCurrentProjectPath(from: settingsDirectory)
         self.currentProject = projects.first { $0.path == currentPath } ?? projects.first
+        
+        // 同步到内核的 LumiProjectStore（启动时恢复）
+        if let projectStore {
+            for project in projects {
+                try? projectStore.add(path: project.path, select: false)
+            }
+            if let currentProject {
+                projectStore.select(currentProject)
+            }
+        }
         
         // 同步内核的 LumiCurrentProjectPathStore
         if let currentProject {
@@ -59,8 +72,12 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         projects.insert(updatedProject, at: 0)
         projects = Array(projects.prefix(Self.maxProjectsCount))
         currentProject = updatedProject
+        
+        // 持久化
         save()
-        syncProjectPath(updatedProject.path, reason: "用户选择项目")
+        
+        // 同步到内核
+        syncToKernel(updatedProject.path, reason: "用户选择项目")
     }
     
     @discardableResult
@@ -95,9 +112,9 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         if currentProject?.path == project.path {
             currentProject = projects.first
             if let currentProject {
-                syncProjectPath(currentProject.path, reason: "移除项目，切换至上一个")
+                syncToKernel(currentProject.path, reason: "移除项目，切换至上一个")
             } else {
-                syncProjectPath("", reason: "移除最后一个项目")
+                syncToKernel("", reason: "移除最后一个项目")
             }
         }
 
@@ -107,15 +124,15 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     public func setCurrentProjectPath(_ path: String, reason: String = "") {
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // 空/空白路径 → "无项目"态（与 remove 落空时的约定一致）
+        // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
             currentProject = nil
             save()
-            syncProjectPath("", reason: reason)
+            syncToKernel("", reason: reason)
             return
         }
 
-        // 标准化路径（展开 ~、解析符号链接），尽量与列表中既有条目的路径对齐
+        // 标准化路径
         let normalized = Self.normalizedPath(trimmed)
 
         if let existing = projects.first(where: { $0.path == normalized }) ?? projects.first(where: { $0.path == trimmed }) {
@@ -123,10 +140,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
             return
         }
 
-        // 项目不在列表中：构造条目并选中。复用 select(_) 顺便完成
-        // save() + syncProjectPath()（持久化 current-project.json + 同步内核 Layer A）。
-        // 注意：这里不做目录存在性校验——目录即便已被移走/删除，
-        // 也应让当前项目指向它，由真正使用该路径的消费者在使用时报错。
+        // 项目不在列表中：构造条目并选中
         let entry = LumiProjectEntry(name: Self.directoryName(for: normalized), path: normalized)
         select(entry)
     }
@@ -144,12 +158,10 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
     
     // MARK: - Private
     
-    private func syncProjectPath(_ path: String, reason: String = "") {
+    private func syncToKernel(_ path: String, reason: String = "") {
         projectPathStore?.setCurrentProjectPath(path, reason: reason)
     }
-
-    /// 标准化路径：展开 `~`、解析符号链接、标准化。
-    /// 与 `add(path:)` 的处理保持一致，确保 `setCurrentProjectPath` 能匹配到列表中既有条目。
+    
     private static func normalizedPath(_ path: String) -> String {
         let expanded = (path as NSString).expandingTildeInPath
         let url = URL(fileURLWithPath: expanded)
@@ -157,8 +169,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
             .standardizedFileURL
         return url.path
     }
-
-    /// 取路径末段作为项目名（与 `add(path:)` 用 `url.lastPathComponent` 一致）。
+    
     private static func directoryName(for path: String) -> String {
         let name = URL(fileURLWithPath: path).lastPathComponent
         return name.isEmpty ? path : name
@@ -172,7 +183,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, LumiProject
         if currentProject == nil {
             currentProject = projects.first
             if let currentProject {
-                syncProjectPath(currentProject.path, reason: "添加项目时自动选中")
+                syncToKernel(currentProject.path, reason: "添加项目时自动选中")
             }
         }
         

@@ -22,10 +22,14 @@ public enum ProjectsPlugin: LumiPlugin {
     @MainActor
     private static var _sharedStore: ProjectsStore?
     
-    /// 初始化插件的 Store 实例，应在应用启动时调用
+    /// 初始化插件的 Store 实例，接收内核提供的 projectStore
+    /// 插件负责将内存状态持久化到磁盘，并从磁盘恢复
     @MainActor
-    public static func setupStore(projectPathStore: LumiCurrentProjectPathStore) {
-        _sharedStore = ProjectsStore(projectPathStore: projectPathStore)
+    public static func setupStore(projectPathStore: LumiCurrentProjectPathStore, projectStore: LumiProjectStore) {
+        _sharedStore = ProjectsStore(
+            projectPathStore: projectPathStore,
+            projectStore: projectStore
+        )
     }
 
     @MainActor

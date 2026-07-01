@@ -1,7 +1,6 @@
 import LumiChatKit
 import LumiCoreKit
 import LumiUI
-import ProjectsPlugin
 import SuperLogKit
 import SwiftUI
 import os
@@ -45,10 +44,17 @@ final class RootContainer: ObservableObject, SuperLog {
         }
 
         self.projectPathStore = LumiCurrentProjectPathStore()
-        // ProjectsPlugin 负责项目数据的存储，在 ChatCoreService 之前初始化
-        ProjectsPlugin.setupStore(projectPathStore: projectPathStore)
+        // 内核提供的项目列表内存存储
+        let projectStore = LumiProjectStore(currentProjectPathStore: projectPathStore)
+        // 通过内核的 bootstrap 函数将 projectStore 注入到实现了 LumiProjectStoreConfiguring 的插件
+        // 不直接依赖具体插件，遵循依赖倒置原则
+        bootstrapProjectStore(
+            plugins: pluginService.registeredPlugins,
+            projectPathStore: projectPathStore,
+            projectStore: projectStore
+        )
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ ProjectsPlugin setup 完成")
+            Self.logger.info("\(Self.t)✅ 项目存储初始化完成")
         }
 
         self.editorCoreService = EditorCoreService(
