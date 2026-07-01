@@ -42,13 +42,13 @@ public struct SkillStatusBarView: View, SuperLog {
         }
         // 与 GitPluginStatusBarView 保持一致的刷新时机
         .onAppear {
-            refreshSkills()
+            refreshSkills(reason: "视图出现")
         }
         .onChange(of: projectPath) { _, _ in
-            refreshSkills()
+            refreshSkills(reason: "项目路径变更")
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            refreshSkills()
+            refreshSkills(reason: "应用激活")
         }
         .onDisappear {
             refreshTask?.cancel()
@@ -58,10 +58,10 @@ public struct SkillStatusBarView: View, SuperLog {
 
     // MARK: - 私有方法
 
-    private func refreshSkills() {
+    private func refreshSkills(reason: String) {
         let projectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         if SkillPlugin.verbose {
-            SkillPlugin.logger.info("\(Self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            SkillPlugin.logger.info("\(Self.t)刷新 Skill 列表，原因：\(reason)，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
         guard !projectPath.isEmpty else {
             if SkillPlugin.verbose {
