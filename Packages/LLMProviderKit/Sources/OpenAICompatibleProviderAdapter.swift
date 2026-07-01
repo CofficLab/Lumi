@@ -289,7 +289,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 纯 stop_reason 结束信号
             if let stopReason {
-                return StreamChunk(stopReason: stopReason, eventTitle: "")
+                return StreamChunk(stopReason: stopReason)
             }
         }
 
