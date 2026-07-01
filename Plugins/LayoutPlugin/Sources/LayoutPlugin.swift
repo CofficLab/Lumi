@@ -1,33 +1,13 @@
 import LumiCoreKit
 import SwiftUI
 
-/// Persists the active view container across launches.
+/// 布局持久化插件
+/// 实现 LumiLayoutPersistence 协议，提供布局数据的读写能力
 public enum LayoutPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "sidebar.left"
-
-    @MainActor
-    private static var didRestorePersistedState = false
-
-    /// Restores persisted layout state before the main window renders.
-    @MainActor
-    public static func restorePersistedStateIfNeeded() {
-        guard !didRestorePersistedState else { return }
-        didRestorePersistedState = true
-
-        let layoutState = LumiLayoutStateStore.shared
-        if let savedID = LayoutPluginLocalStore.shared.loadActiveViewContainerID() {
-            layoutState.activeViewContainerID = savedID
-        }
-        if let savedVisible = LayoutPluginLocalStore.shared.loadRightSidebarVisible() {
-            layoutState.chatSectionVisible = savedVisible
-        }
-        if let savedBottomVisible = LayoutPluginLocalStore.shared.loadBottomPanelVisible() {
-            layoutState.bottomPanelVisible = savedBottomVisible
-        }
-    }
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",
@@ -35,6 +15,28 @@ public enum LayoutPlugin: LumiPlugin {
         description: LumiPluginLocalization.string("Persist and restore layout state across app launches", bundle: .module),
         order: 99
     )
+
+    // MARK: - LumiPlugin Lifecycle
+
+    /// 插件注册时注入持久化实现
+    @MainActor
+    public static func lifecycle(_ event: LumiPluginLifecycle) {
+        switch event {
+        case .didRegister:
+            // 注入持久化实现到 LumiLayoutStateStore
+            LumiLayoutStateStore.shared.injectPersistence(LayoutPluginLocalStore.shared)
+            // 恢复持久化的布局状态
+            LumiLayoutStateStore.restorePersistedStateIfNeeded()
+        case .appDidLaunch:
+            break
+        case .projectDidOpen:
+            break
+        case .projectDidClose:
+            break
+        }
+    }
+
+    // MARK: - LumiPlugin Implementation
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
@@ -70,20 +72,23 @@ public enum LayoutPlugin: LumiPlugin {
     }
 }
 
+// MARK: - Persistence Anchor
+
 private struct LayoutPersistenceAnchor: View {
     let content: AnyView
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    private let persistence = LayoutPluginLocalStore.shared
 
     var body: some View {
         content
             .onChange(of: layoutState.activeViewContainerID) { _, newValue in
-                LayoutPluginLocalStore.shared.saveActiveViewContainerID(newValue)
+                persistence.saveActiveViewContainerID(newValue)
             }
             .onChange(of: layoutState.chatSectionVisible) { _, newValue in
-                LayoutPluginLocalStore.shared.saveRightSidebarVisible(newValue)
+                persistence.saveRightSidebarVisible(newValue)
             }
             .onChange(of: layoutState.bottomPanelVisible) { _, newValue in
-                LayoutPluginLocalStore.shared.saveBottomPanelVisible(newValue)
+                persistence.saveBottomPanelVisible(newValue)
             }
     }
 }

@@ -1,5 +1,4 @@
 import AppKit
-import LayoutPlugin
 import LumiCoreKit
 import SwiftUI
 
