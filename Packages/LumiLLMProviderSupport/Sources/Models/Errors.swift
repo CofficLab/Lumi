@@ -206,7 +206,11 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         if await hasNoDeliveredOutput(state) {
-            return .retry(LumiLLMProviderSupportError.emptyResponse)
+            // 如果有 stopReason 说明模型正常结束（如结构化输出两轮协议的第 2 轮），是合法空响应
+            if await state.stopReason == nil {
+                return .retry(LumiLLMProviderSupportError.emptyResponse)
+            }
+            // 合法空响应：直接返回空消息，不重试
         }
 
         let message = LumiChatMessage(
@@ -393,6 +397,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 await state.saveCurrentToolCall()
                 await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
                 return false
+            }
+
+            if let stopReason = parsed.stopReason {
+                await state.setStopReason(stopReason)
             }
 
             return true

@@ -256,6 +256,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let usage = json["usage"] as? [String: Any]
             let inputTokens = usage?["prompt_tokens"] as? Int
             let outputTokens = usage?["completion_tokens"] as? Int
+            let stopReason = delta["stop_reason"] as? String
 
             // 优先解析 reasoning_content（思考过程）
             // 注意：即使同时包含 content，也要先处理 reasoning_content
@@ -265,7 +266,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     content: reasoningContent,
                     eventType: .thinkingDelta,
                     inputTokens: inputTokens,
-                    outputTokens: outputTokens
+                    outputTokens: outputTokens,
+                    stopReason: stopReason
                 )
             }
 
@@ -275,13 +277,19 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     content: content,
                     eventType: .textDelta,
                     inputTokens: inputTokens,
-                    outputTokens: outputTokens
+                    outputTokens: outputTokens,
+                    stopReason: stopReason
                 )
             }
 
             // 解析工具调用
             if let toolCalls = delta["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
-                return parseToolCallDelta(toolCalls)
+                return parseToolCallDelta(toolCalls, stopReason: stopReason)
+            }
+
+            // 纯 stop_reason 结束信号
+            if let stopReason {
+                return StreamChunk(stopReason: stopReason, eventTitle: "")
             }
         }
 
@@ -330,7 +338,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         return dataLines.joined(separator: "\n")
     }
 
-    private func parseToolCallDelta(_ toolCalls: [[String: Any]]) -> StreamChunk? {
+    private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {
         var parsedToolCalls: [ToolCall] = []
         var partialJson: String?
 
@@ -362,14 +370,16 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             return StreamChunk(
                 toolCalls: parsedToolCalls,
                 partialJson: partialJson,
-                eventType: .contentBlockStart
+                eventType: .contentBlockStart,
+                stopReason: stopReason
             )
         }
 
         if let partialJson {
             return StreamChunk(
                 partialJson: partialJson,
-                eventType: .inputJsonDelta
+                eventType: .inputJsonDelta,
+                stopReason: stopReason
             )
         }
 

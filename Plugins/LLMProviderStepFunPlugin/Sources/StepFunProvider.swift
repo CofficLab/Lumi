@@ -107,16 +107,7 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
                 StepFunPlugin.logger.info("\(self.t)流式请求成功 finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
             }
 
-            // 检测空响应：API 返回了成功状态但没有实际内容，主动抛出错误以触发重试
-            if result.content.isEmpty, result.toolCalls == nil, result.reasoningContent == nil || result.reasoningContent!.isEmpty {
-                StepFunPlugin.logger.warning("\(self.t)检测到空响应，promptTokens=\(result.metadata["inputTokens"] ?? "0")，主动抛出错误以触发重试")
-                throw LumiLLMProviderSupportError.emptyResponse
-            }
-
             return result
-        } catch let supportError as LumiLLMProviderSupportError {
-            // LumiLLMProviderSupportError 类型的错误直接抛出，由上层重试机制处理
-            throw supportError
         } catch {
             if !accumulated.value.isEmpty {
                 StepFunPlugin.logger.info("\(self.t)流式输出已产生内容：\n\(accumulated.value)")
