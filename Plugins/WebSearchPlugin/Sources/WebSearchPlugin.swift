@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// Web Search 插件。
