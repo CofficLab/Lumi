@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import LumiCoreKit
+import LumiUI
 import SuperLogKit
 import SwiftUI
 import os

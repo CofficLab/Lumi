@@ -1,16 +1,21 @@
 import Foundation
 import SuperLogKit
 import os
+import Combine
 
 /// 项目列表内存存储实现，供插件通过 `LumiPluginDependencies.resolve(LumiProjectStoring.self)` 获取。
-public final class LumiProjectStore: LumiProjectStoring, SuperLog, @unchecked Sendable {
+@MainActor
+public final class LumiProjectStore: ObservableObject, LumiProjectStoring, SuperLog {
     public nonisolated static let emoji = "📁"
     public nonisolated static let verbose = false
     
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.project-store")
     
+    /// 共享实例，与 AppProjectsVM.shared 兼容
+    public static let shared = LumiProjectStore(currentProjectPathStore: LumiCurrentProjectPathStore())
+    
     /// 当前项目列表
-    public private(set) var projects: [LumiProjectEntry] = []
+    @Published public private(set) var projects: [LumiProjectEntry] = []
     
     /// 当前选中的项目
     public var currentProject: LumiProjectEntry? {
@@ -20,12 +25,37 @@ public final class LumiProjectStore: LumiProjectStoring, SuperLog, @unchecked Se
     private let currentProjectPathStore: LumiCurrentProjectPathStore
     private let lock = NSLock()
     
+    // MARK: - Legacy 兼容：外部 provider
+    
+    /// 外部 provider，用于动态提供最近项目列表
+    /// 与 AppProjectsVM.recentProjectsProvider 兼容
+    public static var recentProjectsProvider: @Sendable () -> [LumiProjectEntry] = { [] }
+    
     private var currentProjectPath: String {
         currentProjectPathStore.currentProjectPath
     }
     
     public init(currentProjectPathStore: LumiCurrentProjectPathStore) {
         self.currentProjectPathStore = currentProjectPathStore
+    }
+    
+    /// 获取最近项目列表
+    /// 优先使用外部 provider，否则返回内存中的项目列表
+    public func getRecentProjects() -> [LumiProjectEntry] {
+        // 优先使用外部 provider
+        let providerProjects = Self.recentProjectsProvider()
+        if !providerProjects.isEmpty {
+            return providerProjects
+        }
+        // 否则返回内存中的项目列表
+        return projects
+    }
+    
+    /// 同步最近项目到内存存储（供外部调用）
+    public func syncRecentProjects(_ entries: [LumiProjectEntry]) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.projects = entries
     }
     
     public func select(_ project: LumiProjectEntry) {

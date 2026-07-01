@@ -29,7 +29,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         pluginService: PluginService,
         persistenceRootURL: @escaping @Sendable () -> URL,
         themeRegistry: LumiUIThemeRegistry = .shared,
-        recentProjects: @escaping @Sendable () -> [Project] = { [] }
+        recentProjects: @escaping @Sendable () -> [LumiProjectEntry] = { [] }
     ) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 EditorCoreService")

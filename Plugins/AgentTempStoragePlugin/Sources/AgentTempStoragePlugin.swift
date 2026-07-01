@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// Agent 临时文件存储插件。

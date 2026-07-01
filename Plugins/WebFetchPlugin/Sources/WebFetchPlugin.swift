@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 /// Web Fetch 插件。
@@ -28,7 +29,7 @@ public enum WebFetchPlugin: LumiPlugin {
         [WebFetchTool()]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
@@ -41,7 +42,6 @@ public enum WebFetchPlugin: LumiPlugin {
             .padding()
         )
     }
-
 }
 
 enum PluginWebFetchLocalization {

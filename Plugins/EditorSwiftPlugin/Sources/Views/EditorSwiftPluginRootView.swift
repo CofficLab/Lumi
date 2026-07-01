@@ -74,7 +74,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
             self.preloadStatus = .loading(count: projectsToPreload.count)
         }
 
-        await withTaskGroup(of: (project: Project, success: Bool).self) { group in
+        await withTaskGroup(of: (project: LumiProjectEntry, success: Bool).self) { group in
             var activeTasks = 0
             let maxConcurrentTasks = 1
 

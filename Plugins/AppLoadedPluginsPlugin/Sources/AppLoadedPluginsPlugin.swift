@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public struct LoadedPluginInfo: Identifiable, Sendable {

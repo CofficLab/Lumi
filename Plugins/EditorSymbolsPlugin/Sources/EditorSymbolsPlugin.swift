@@ -1,5 +1,6 @@
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum EditorSymbolsPanelPlugin: LumiPlugin {
