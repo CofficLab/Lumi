@@ -128,12 +128,44 @@ import LogoCofficPlugin
 import VideoConverterPlugin
 import DownloadPlugin
 import DocxReadPlugin
+import EditorService
 
 @MainActor
 public enum LumiPluginRegistry {
+    /// 注册所有插件并触发 didRegister 生命周期事件
+    public static func registerAll() async {
+        for plugin in plugins {
+            await plugin.lifecycle(.didRegister)
+        }
+    }
+
+    /// 触发应用启动生命周期事件
+    public static func appDidLaunch() async {
+        for plugin in plugins {
+            await plugin.lifecycle(.appDidLaunch)
+        }
+    }
+
+    /// 触发项目打开生命周期事件
+    public static func projectDidOpen(path: String) async {
+        for plugin in plugins {
+            await plugin.lifecycle(.projectDidOpen(path: path))
+        }
+    }
+
+    /// 触发项目关闭生命周期事件
+    public static func projectDidClose() async {
+        for plugin in plugins {
+            await plugin.lifecycle(.projectDidClose)
+        }
+    }
+
     public static let plugins: [any LumiPlugin.Type] = [
-        FileLogPlugin.self,
-        LayoutPlugin.self,
+        
+// MARK: - Theme Plugins
+        
+//        FileLogPlugin.self,
+//        LayoutPlugin.self,
         ThemeLumiPlugin.self,
         ThemeMidnightPlugin.self,
         ThemeSkyPlugin.self,
@@ -152,14 +184,17 @@ public enum LumiPluginRegistry {
         ThemeOneDarkPlugin.self,
         ThemeDraculaPlugin.self,
         ThemeStatusBarPlugin.self,
-        OnboardingPlugin.self,
-        QuickFileSearchPlugin.self,
-        QuickLauncherPlugin.self,
-        AppUpdateStatusBarPlugin.self,
-        DeviceInfoPlugin.self,
-        NetworkManagerPlugin.self,
-        HostsManagerPlugin.self,
-        MenuBarManagerPlugin.self,
+
+// MARK: - Chat Plugins
+
+//        OnboardingPlugin.self,
+//        QuickFileSearchPlugin.self,
+//        QuickLauncherPlugin.self,
+//        AppUpdateStatusBarPlugin.self,
+//        DeviceInfoPlugin.self,
+//        NetworkManagerPlugin.self,
+//        HostsManagerPlugin.self,
+//        MenuBarManagerPlugin.self,
         ChatPanelPlugin.self,
         ChatMessagesSectionPlugin.self,
         ChatAttachmentSectionPlugin.self,
@@ -185,83 +220,83 @@ public enum LumiPluginRegistry {
         SublyxPlugin.self,
         StepFunPlugin.self,
         CodexLumiPlugin.self,
-        MLXLumiPlugin.self,
+//        MLXLumiPlugin.self,
         PortManagerPlugin.self,
         AppManagerPlugin.self,
         DockerManagerPlugin.self,
         DiskManagerPlugin.self,
         AppStoreConnectPlugin.self,
-        BrewManagerPlugin.self,
-        RClickPlugin.self,
-        NettoPlugin.self,
-        RegistryManagerPlugin.self,
-        ClipboardManagerPlugin.self,
-        InputPlugin.self,
-        AgentOpenInAntigravityPlugin.self,
-        AgentOpenInCursorPlugin.self,
-        AgentOpenInXcodePlugin.self,
-        AgentOpenRemotePlugin.self,
-        AgentOpenInGitHubDesktopPlugin.self,
-        AgentOpenInFinderPlugin.self,
-        AgentOpenInGitOKPlugin.self,
-        TerminalPlugin.self,
-        FontConfigPlugin.self,
-        AppLoadedPluginsPlugin.self,
+//        BrewManagerPlugin.self,
+//        RClickPlugin.self,
+//        NettoPlugin.self,
+//        RegistryManagerPlugin.self,
+//        ClipboardManagerPlugin.self,
+//        InputPlugin.self,
+//        AgentOpenInAntigravityPlugin.self,
+//        AgentOpenInCursorPlugin.self,
+//        AgentOpenInXcodePlugin.self,
+//        AgentOpenRemotePlugin.self,
+//        AgentOpenInGitHubDesktopPlugin.self,
+//        AgentOpenInFinderPlugin.self,
+//        AgentOpenInGitOKPlugin.self,
+//        TerminalPlugin.self,
+//        FontConfigPlugin.self,
+//        AppLoadedPluginsPlugin.self,
         ToolCorePlugin.self,
         MessageRendererPlugin.self,
         MemoryPlugin.self,
         AgentRulesPlugin.self,
-        SkillPlugin.self,
-        RequestLogPlugin.self,
-        HistoryDBStatusBarPlugin.self,
-        ActivityHeatmapPlugin.self,
-        RAGPlugin.self,
-        AgentTempStoragePlugin.self,
+//        SkillPlugin.self,
+//        RequestLogPlugin.self,
+//        HistoryDBStatusBarPlugin.self,
+//        ActivityHeatmapPlugin.self,
+//        RAGPlugin.self,
+//        AgentTempStoragePlugin.self,
         ConversationTitlePlugin.self,
-        ConversationTimelinePlugin.self,
+//        ConversationTimelinePlugin.self,
         ConversationLanguagePlugin.self,
         ChatModePlugin.self,
         VerbosityPlugin.self,
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
         EditorPanelPlugin.self,
-        EditorSwiftPlugin.self,
+//        EditorSwiftPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         StripHeaderPlugin.self,
-        EditorStickySymbolBarHeaderPlugin.self,
-        EditorProblemsPanelPlugin.self,
-        EditorReferencesPanelPlugin.self,
-        EditorSearchPanelPlugin.self,
-        EditorSymbolsPanelPlugin.self,
-        EditorCallHierarchyPanelPlugin.self,
-        EditorPreviewBottomPanelPlugin.self,
-        EditorTerminalPanelPlugin.self,
+//        EditorStickySymbolBarHeaderPlugin.self,
+//        EditorProblemsPanelPlugin.self,
+//        EditorReferencesPanelPlugin.self,
+//        EditorSearchPanelPlugin.self,
+//        EditorSymbolsPanelPlugin.self,
+//        EditorCallHierarchyPanelPlugin.self,
+//        EditorPreviewBottomPanelPlugin.self,
+//        EditorTerminalPanelPlugin.self,
         EditorFileTreePanelPlugin.self,
-        EditorOutlinePanelPlugin.self,
+//        EditorOutlinePanelPlugin.self,
         AutoTaskPlugin.self,
-        GitHubPlugin.self,
-        IdleTimePlugin.self,
-        ProjectIssueScannerPlugin.self,
-        AgentTurnNotificationPlugin.self,
+//        GitHubPlugin.self,
+//        IdleTimePlugin.self,
+//        ProjectIssueScannerPlugin.self,
+//        AgentTurnNotificationPlugin.self,
         ProjectsPlugin.self,
-        WebSearchPlugin.self,
-        WebFetchPlugin.self,
-        GitPlugin.self,
-        AskUserPlugin.self,
-        CaffeinatePlugin.self,
-        BrowserPlugin.self,
-        ProjectOverviewPlugin.self,
-        ShowImagePlugin.self,
-        MultiAgentPlugin.self,
-        DatabaseManagerPlugin.self,
-        CodeReviewPlugin.self,
-        DelayMessagePlugin.self,
-        LLMAvailabilityPlugin.self,
-        AppIconDesignerPlugin.self,
-        DisplayControlPlugin.self,
+//        WebSearchPlugin.self,
+//        WebFetchPlugin.self,
+//        GitPlugin.self,
+//        AskUserPlugin.self,
+//        CaffeinatePlugin.self,
+//        BrowserPlugin.self,
+//        ProjectOverviewPlugin.self,
+//        ShowImagePlugin.self,
+//        MultiAgentPlugin.self,
+//        DatabaseManagerPlugin.self,
+//        CodeReviewPlugin.self,
+//        DelayMessagePlugin.self,
+//        LLMAvailabilityPlugin.self,
+//        AppIconDesignerPlugin.self,
+//        DisplayControlPlugin.self,
         LogoSmartLightPlugin.self,
         LogoCofficPlugin.self,
-        VideoConverterPlugin.self,
+//        VideoConverterPlugin.self,
         DownloadPlugin.self,
         DocxReadPlugin.self,
     ]
