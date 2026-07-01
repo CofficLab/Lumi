@@ -6,7 +6,7 @@ import SuperLogKit
 
 public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "🌟"
-    nonisolated static let verbose: Int = 3
+    nonisolated static let verbose: Int = 0
     public static let shortName = "StepFun StepPlan"
 
     override public class var info: LumiLLMProviderInfo {
