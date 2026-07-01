@@ -1,4 +1,5 @@
 import Foundation
+import SuperLogKit
 
 /// Skill 扫描器协议
 ///
@@ -12,7 +13,9 @@ public protocol SkillScanning: Sendable {
 ///
 /// 扫描 `.agent/skills/` 目录，解析 `metadata.json`，验证 `SKILL.md` 存在。
 /// 支持文件大小限制和元数据基础校验。
-public struct SkillScanner: SkillScanning {
+public struct SkillScanner: SkillScanning, SuperLog {
+    public nonisolated static let emoji = "🔍"
+
     /// `metadata.json` 允许的最大字节数（默认 1 MB）
     public let maxMetadataSize: Int
 
@@ -33,6 +36,9 @@ public struct SkillScanner: SkillScanning {
 
         // 目录不存在时静默返回空
         guard FileManager.default.fileExists(atPath: directoryURL.path) else {
+            if SkillPlugin.verbose {
+                SkillPlugin.logger.info("\(Self.t)skills 目录不存在：\(directoryURL.path)")
+            }
             return []
         }
 
@@ -42,6 +48,9 @@ public struct SkillScanner: SkillScanning {
             includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]
         ) else {
+            if SkillPlugin.verbose {
+                SkillPlugin.logger.warning("\(Self.t)无法读取 skills 目录")
+            }
             return []
         }
 
@@ -60,6 +69,9 @@ public struct SkillScanner: SkillScanning {
 
             guard FileManager.default.fileExists(atPath: metadataURL.path),
                   FileManager.default.fileExists(atPath: skillMDURL.path) else {
+                if SkillPlugin.verbose {
+                    SkillPlugin.logger.warning("\(Self.t)缺少 metadata.json 或 SKILL.md：\(itemURL.lastPathComponent)")
+                }
                 continue
             }
 
@@ -67,18 +79,27 @@ public struct SkillScanner: SkillScanning {
             guard let metadataAttrs = try? FileManager.default.attributesOfItem(atPath: metadataURL.path),
                   let fileSize = metadataAttrs[.size] as? Int,
                   fileSize <= maxMetadataSize else {
+                if SkillPlugin.verbose {
+                    SkillPlugin.logger.warning("\(Self.t)metadata.json 超过大小限制：\(itemURL.lastPathComponent)")
+                }
                 continue
             }
 
             // 解析 metadata.json
             guard let data = try? Data(contentsOf: metadataURL),
                   let skill = try? JSONDecoder().decode(SkillMetadata.self, from: data) else {
+                if SkillPlugin.verbose {
+                    SkillPlugin.logger.error("\(Self.t)解析 metadata.json 失败：\(itemURL.lastPathComponent)")
+                }
                 continue
             }
 
             // 基础字段验证：name 和 title 不能为空或纯空白
             guard !skill.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   !skill.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                if SkillPlugin.verbose {
+                    SkillPlugin.logger.warning("\(Self.t)name 或 title 为空：\(itemURL.lastPathComponent)")
+                }
                 continue
             }
 
@@ -101,6 +122,10 @@ public struct SkillScanner: SkillScanning {
 
         // 按名称排序
         skills.sort { $0.name < $1.name }
+
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(Self.t)扫描到 \(skills.count) 个 Skill")
+        }
 
         return skills
     }

@@ -1,10 +1,13 @@
 import Foundation
+import SuperLogKit
 
 /// Skill 服务
 ///
 /// 负责扫描 `.agent/skills/` 目录，解析 `metadata.json` 和验证 `SKILL.md`。
 /// 使用带容量上限的内存缓存，避免高频对话中重复扫描文件系统。
-public actor SkillService {
+public actor SkillService: SuperLog {
+    public nonisolated static let emoji = "💾"
+    
     // MARK: - 单例
 
     public static let shared = SkillService()
@@ -45,9 +48,16 @@ public actor SkillService {
         // 检查缓存
         if let cached = cachedSkills[projectPath],
            Date().timeIntervalSince(cached.timestamp) < cacheTTL {
+            if SkillPlugin.verbose {
+                SkillPlugin.logger.info("\(Self.t)使用缓存数据，找到 \(cached.skills.count) 个 Skill")
+            }
             return cached.skills
         }
 
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(Self.t)缓存未命中或已过期，重新扫描文件系统")
+        }
+        
         // 扫描文件系统
         let skills = scanner.scanSkills(projectPath: projectPath)
 
@@ -61,11 +71,17 @@ public actor SkillService {
     /// 清除指定项目的缓存
     public func invalidateCache(projectPath: String) {
         cachedSkills.removeValue(forKey: projectPath)
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(Self.t)已清除项目缓存：\(projectPath)")
+        }
     }
 
     /// 清除所有缓存
     public func invalidateAllCache() {
         cachedSkills.removeAll()
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(Self.t)已清除所有缓存")
+        }
     }
 
     // MARK: - 私有方法
@@ -78,6 +94,10 @@ public actor SkillService {
         let removeCount = maxCacheEntries / 2
         for i in 0..<removeCount {
             cachedSkills.removeValue(forKey: sorted[i].key)
+        }
+        
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(Self.t)缓存已满，已淘汰 \(removeCount) 个旧条目")
         }
     }
 }
