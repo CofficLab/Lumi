@@ -148,7 +148,8 @@ struct ChatStore {
                 id: message.id,
                 conversationId: message.conversationID,
                 role: message.role.rawValue,
-                content: message.content
+                content: message.content,
+                reasoningContent: message.reasoningContent
             )
             if entity.modelContext == nil {
                 context.insert(entity)
@@ -322,6 +323,7 @@ struct ChatStore {
         entity.metadataJSON = encode(message.metadata)
         entity.toolCallsJSON = encode(message.toolCalls)
         entity.toolCallID = message.toolCallID
+        entity.reasoningContent = message.reasoningContent
     }
 
     private func currentState(createIfNeeded: Bool) throws -> ChatStateEntity? {
@@ -370,7 +372,8 @@ struct ChatStore {
             renderKind: entity.renderKind,
             metadata: decode([String: String].self, from: entity.metadataJSON) ?? [:],
             toolCalls: decode([LumiToolCall].self, from: entity.toolCallsJSON),
-            toolCallID: entity.toolCallID
+            toolCallID: entity.toolCallID,
+            reasoningContent: entity.reasoningContent
         )
     }
 
@@ -420,6 +423,7 @@ struct ChatStore {
         do {
             let titlesByConversationID = conversationTitlesByID()
             let tokenCountsByMessageID = messageTokenCountsByID()
+            let thinkingMetricsByMessageID = messageThinkingMetricsByMessageID()
 
             var descriptor = FetchDescriptor<ChatMessageEntity>(
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
@@ -432,6 +436,12 @@ struct ChatStore {
                     .replacingOccurrences(of: "\n", with: " ")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
 
+                let thinking = thinkingMetricsByMessageID[entity.id]
+                let thinkingPreview = thinking?.content?
+                    .replacingOccurrences(of: "\n", with: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let hasThinking = thinking?.hasThinking ?? false
+
                 return HistoryMessageRow(
                     id: entity.id,
                     conversationId: entity.conversationId,
@@ -440,7 +450,10 @@ struct ChatStore {
                     model: entity.modelName ?? "-",
                     tokens: tokenCountsByMessageID[entity.id] ?? 0,
                     timestamp: entity.timestamp,
-                    contentPreview: preview
+                    contentPreview: preview,
+                    thinkingContentPreview: thinkingPreview,
+                    hasThinking: hasThinking,
+                    thinkingDuration: thinking?.duration
                 )
             }
         } catch {
@@ -500,6 +513,47 @@ struct ChatStore {
             guard let totalTokens = metric.totalTokens else { return nil }
             return (metric.messageId, totalTokens)
         })
+    }
+
+    private struct MessageThinkingMetrics {
+        let hasThinking: Bool
+        let content: String?
+        let duration: Double?
+    }
+
+    private func messageThinkingMetricsByMessageID() -> [UUID: MessageThinkingMetrics] {
+        var result: [UUID: MessageThinkingMetrics] = [:]
+
+        if let messageMetrics = try? context.fetch(FetchDescriptor<MessageMetricsEntity>()),
+           let messageEntities = try? context.fetch(FetchDescriptor<ChatMessageEntity>()) {
+            let thinkingContentByMessageID = Dictionary(
+                uniqueKeysWithValues: messageMetrics.compactMap { metric -> (UUID, MessageThinkingMetrics)? in
+                    guard metric.hasThinking else { return nil }
+                    return (
+                        metric.messageId,
+                        MessageThinkingMetrics(
+                            hasThinking: true,
+                            content: metric.thinkingContent,
+                            duration: metric.thinkingDuration
+                        )
+                    )
+                }
+            )
+
+            for entity in messageEntities {
+                if let metrics = thinkingContentByMessageID[entity.id] {
+                    result[entity.id] = metrics
+                } else if let reasoning = entity.reasoningContent, !reasoning.isEmpty {
+                    result[entity.id] = MessageThinkingMetrics(
+                        hasThinking: true,
+                        content: reasoning,
+                        duration: nil
+                    )
+                }
+            }
+        }
+
+        return result
     }
 
     private func messageCountsByConversationID(for conversationIDs: [UUID]) -> [UUID: Int] {

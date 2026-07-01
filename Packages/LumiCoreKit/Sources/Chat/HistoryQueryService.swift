@@ -9,6 +9,9 @@ public struct HistoryMessageRow: Identifiable, Sendable, Equatable {
     public let tokens: Int
     public let timestamp: Date
     public let contentPreview: String
+    public let thinkingContentPreview: String?
+    public let hasThinking: Bool
+    public let thinkingDuration: Double?
 
     public init(
         id: UUID,
@@ -18,7 +21,10 @@ public struct HistoryMessageRow: Identifiable, Sendable, Equatable {
         model: String,
         tokens: Int,
         timestamp: Date,
-        contentPreview: String
+        contentPreview: String,
+        thinkingContentPreview: String? = nil,
+        hasThinking: Bool = false,
+        thinkingDuration: Double? = nil
     ) {
         self.id = id
         self.conversationId = conversationId
@@ -28,6 +34,9 @@ public struct HistoryMessageRow: Identifiable, Sendable, Equatable {
         self.tokens = tokens
         self.timestamp = timestamp
         self.contentPreview = contentPreview
+        self.thinkingContentPreview = thinkingContentPreview
+        self.hasThinking = hasThinking
+        self.thinkingDuration = thinkingDuration
     }
 }
 

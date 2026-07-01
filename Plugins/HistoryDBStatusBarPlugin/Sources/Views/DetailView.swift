@@ -145,6 +145,18 @@ public struct DetailView: View {
                         .foregroundColor(theme.textPrimary)
                 }
                 .width(min: 200)
+
+                TableColumn(LumiPluginLocalization.string("Thinking", bundle: .module)) { row in
+                    if row.role == "assistant", let thinking = row.thinkingContentPreview, !thinking.isEmpty {
+                        Text(thinking)
+                            .foregroundColor(theme.textSecondary)
+                            .lineLimit(3)
+                    } else {
+                        Text("")
+                            .hidden()
+                    }
+                }
+                .width(min: 120)
             }
             .tableStyle(.inset(alternatesRowBackgrounds: false))
             .background(Color.clear)
