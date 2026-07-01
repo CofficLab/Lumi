@@ -3,9 +3,15 @@ import Foundation
 import LumiCoreKit
 import LumiPluginRegistry
 import ProjectsPlugin
+import SuperLogKit
+import os
 
 @MainActor
-final class ChatCoreService {
+final class ChatCoreService: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.chat-core")
+    nonisolated static let emoji = "💬"
+    nonisolated static let verbose = true
+
     let chatService: ChatService
     let projectPathStore: LumiCurrentProjectPathStore
     private let toolService: ToolService
@@ -16,12 +22,21 @@ final class ChatCoreService {
         toolService: ToolService,
         projectPathStore: LumiCurrentProjectPathStore
     ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 ChatCoreService")
+        }
+
         self.toolService = toolService
         self.projectPathStore = projectPathStore
         toolService.projectPathProvider = projectPathStore
         self.chatService = ChatService(
             configuration: .coreDatabase(directory: lumiCoreService.coreDatabaseDirectory)
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ ChatService 初始化完成")
+        }
+
         LumiPluginBootstrap.configurePluginRuntimes(
             currentProjectPath: { [projectPathStore] in projectPathStore.currentProjectPath },
             currentProjectName: { [projectPathStore] in
@@ -32,11 +47,28 @@ final class ChatCoreService {
             chatServiceProvider: { [chatService] in chatService },
             askUserResumer: chatService
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 插件运行时配置完成")
+        }
+
         chatService.registerProjectPathProvider(projectPathStore)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)重载插件贡献")
+        }
         reloadPluginContributions(from: pluginService)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ ChatCoreService 初始化完成")
+        }
     }
 
     func reloadPluginContributions(from pluginService: PluginService) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)重载插件贡献")
+        }
+
         let context = LumiPluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core",
@@ -62,5 +94,9 @@ final class ChatCoreService {
 
         // 初始化 LLM 可用性检测
         LumiPluginBootstrap.configureAvailabilityChecker(providers: providers)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 插件贡献重载完成: \(providers.count) 个 LLM Provider")
+        }
     }
 }

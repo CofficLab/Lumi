@@ -5,9 +5,15 @@ import EditorService
 import LumiCoreKit
 import LumiPluginRegistry
 import LumiUI
+import SuperLogKit
+import os
 
 @MainActor
-final class EditorCoreService: LumiEditorServicing {
+final class EditorCoreService: LumiEditorServicing, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.editor-core")
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = true
+
     private let core: EditorCore
     private let themeRegistry: LumiUIThemeRegistry
 
@@ -25,6 +31,10 @@ final class EditorCoreService: LumiEditorServicing {
         themeRegistry: LumiUIThemeRegistry = .shared,
         recentProjects: @escaping @Sendable () -> [Project] = { [] }
     ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 EditorCoreService")
+        }
+
         self.themeRegistry = themeRegistry
         let core = EditorCore()
         core.extensionInstaller = { registry in
@@ -34,21 +44,41 @@ final class EditorCoreService: LumiEditorServicing {
             )
         }
         self.core = core
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ EditorCore 创建完成")
+        }
+
         EditorLanguageRuntimeBridge.configure = { context in
             await EditorExtensionsBootstrap.configureRuntime(context)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)配置生命周期")
         }
         configureLifecycle(
             persistenceRootURL: persistenceRootURL,
             recentProjects: recentProjects
         )
+
         core.reinstallExtensions()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
+        }
     }
 
     func reinstallExtensions() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)重新安装扩展")
+        }
         core.reinstallExtensions()
     }
 
     func syncAppSyntaxThemes() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)同步编辑器语法主题")
+        }
         EditorSettingsLifecycle.registerEditorThemeContributors?(extensionRegistry)
         let scheme = AppThemeAppearanceResolver.effectiveColorScheme
         let themeID = themeRegistry.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
@@ -64,8 +94,12 @@ final class EditorCoreService: LumiEditorServicing {
         EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
         EditorSettingsLifecycle.onReinstallPlugins = { [weak self] registry in
             Task { @MainActor in
-                await self?.core.extensionInstaller?(registry)
-                self?.core.editorService.state.refreshExtensionProviders()
+                guard let self else { return }
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)重新安装插件扩展")
+                }
+                await self.core.extensionInstaller?(registry)
+                self.core.editorService.state.refreshExtensionProviders()
             }
         }
         EditorSettingsLifecycle.editorThemeIDForAppThemeID = { [themeRegistry] _ in
@@ -81,6 +115,10 @@ final class EditorCoreService: LumiEditorServicing {
         }
         EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 生命周期配置完成")
         }
     }
 }

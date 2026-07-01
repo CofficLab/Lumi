@@ -1,16 +1,32 @@
 import Foundation
 import LumiCoreKit
+import SuperLogKit
+import os
 
 @MainActor
-final class LumiCoreService {
+final class LumiCoreService: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.lumi-core")
+    nonisolated static let emoji = "⚙️"
+    nonisolated static let verbose = true
+
     let dataRootDirectory: URL
     let coreDatabaseDirectory: URL
 
     init() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 LumiCoreService")
+        }
+
         let dataRootDirectory = Self.makeDataRootDirectory()
         AppConfig.configure(dataRootDirectory: dataRootDirectory)
         self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = Self.makeCoreDatabaseDirectory(in: dataRootDirectory)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)数据根目录: \(dataRootDirectory.path)")
+            Self.logger.info("\(Self.t)核心数据库目录: \(self.coreDatabaseDirectory.path)")
+            Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
+        }
     }
 
     private static func makeDataRootDirectory() -> URL {

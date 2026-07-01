@@ -2,10 +2,16 @@ import EditorService
 import LumiCoreKit
 import LumiPluginRegistry
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 @MainActor
-final class PluginService: ObservableObject {
+final class PluginService: ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
+    nonisolated static let emoji = "🔌"
+    nonisolated static let verbose = true
+
     let registeredPlugins: [any LumiPlugin.Type]
     @Published private(set) var enabledOverrides: [String: Bool]
     var onEnabledPluginsChanged: (() -> Void)?
@@ -16,11 +22,19 @@ final class PluginService: ObservableObject {
     private var pluginEnabledStates: [String: Bool] = [:]
 
     init(settingsStore: PluginSettingsStore = PluginSettingsStore()) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 PluginService")
+        }
+
         self.settingsStore = settingsStore
         self.enabledOverrides = settingsStore.loadEnabledOverrides()
         self.registeredPlugins = LumiPluginRegistry.plugins
             .filter { $0.policy.shouldRegister }
             .sorted { $0.info.order < $1.info.order }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 \(self.registeredPlugins.count) 个插件")
+        }
     }
 
     var plugins: [any LumiPlugin.Type] {
@@ -257,6 +271,10 @@ final class PluginService: ObservableObject {
     func setEditorExtensionPlugin(_ plugin: any LumiEditorExtensionRegistering.Type, enabled: Bool) {
         guard plugin.extensionPluginPolicy.isConfigurable else { return }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)设置编辑器扩展插件 \(plugin.extensionPluginInfo.id) -> \(enabled)")
+        }
+
         enabledOverrides[plugin.extensionPluginInfo.id] = enabled
         settingsStore.saveEnabledOverrides(enabledOverrides)
         onEnabledPluginsChanged?()
@@ -265,11 +283,18 @@ final class PluginService: ObservableObject {
 
     func setPlugin(_ plugin: any LumiPlugin.Type, enabled: Bool) {
         guard plugin.policy.isConfigurable else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)插件 \(plugin.info.id) 不可配置")
+            }
             return
         }
 
         let pluginId = plugin.info.id
         let previousState = pluginEnabledStates[pluginId] ?? isPluginEnabled(plugin)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)设置插件 \(pluginId) -> \(enabled)")
+        }
 
         enabledOverrides[pluginId] = enabled
         settingsStore.saveEnabledOverrides(enabledOverrides)
@@ -292,8 +317,16 @@ final class PluginService: ObservableObject {
 
     /// 初始化时记录所有插件的初始状态
     func initializePluginStates() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化插件状态")
+        }
+
         for plugin in registeredPlugins {
             pluginEnabledStates[plugin.info.id] = isPluginEnabled(plugin)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 插件状态初始化完成")
         }
     }
 
@@ -309,6 +342,9 @@ final class PluginService: ObservableObject {
     /// Should be called after plugins are loaded and enabled.
     @MainActor
     func registerPluginContributions(context: LumiPluginContext) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)注册插件贡献")
+        }
         registerLogoContributions(context: context)
     }
 
@@ -317,6 +353,10 @@ final class PluginService: ObservableObject {
             plugin.logoItems(context: context)
         }
         LogoRegistry.shared.register(allItems)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
+        }
     }
 }
 

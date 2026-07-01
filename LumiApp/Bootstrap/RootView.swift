@@ -1,7 +1,9 @@
 import EditorService
 import LumiCoreKit
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 struct RootView<Content: View>: View {
     @ObservedObject private var container: RootContainer
@@ -36,7 +38,8 @@ struct RootView<Content: View>: View {
                 overlay.apply(to: wrapped)
             }
             : baseView
-        overlayView
+
+        return overlayView
             .environment(\.onboardingPages, onboardingPages)
             .appThemedAppearance()
             .background {

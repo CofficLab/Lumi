@@ -1,10 +1,16 @@
 import AppKit
 import LumiCoreKit
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 @MainActor
-final class MenuBarService: NSObject, NSPopoverDelegate {
+final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.menu-bar")
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose = true
+
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?
     private var hostingView: MenuBarHostingView<MenuBarIconView>?
@@ -19,11 +25,19 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     nonisolated(unsafe) private var themeSyncObserver: NSObjectProtocol?
 
     init(pluginService: PluginService) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 MenuBarService")
+        }
+
         self.pluginService = pluginService
         super.init()
         observeSystemAppearanceChanges()
         observeThemeWindowSync()
         scheduleMenuBarSetup()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ MenuBarService 初始化完成")
+        }
     }
 
     deinit {
@@ -36,6 +50,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     }
 
     func refresh() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)刷新菜单栏")
+        }
+
         DispatchQueue.main.async { [weak self] in
             guard let self else {
                 return
@@ -73,7 +91,15 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
             return
         }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)设置菜单栏")
+        }
+
         let items = pluginService.menuBarContentItems(context: menuBarContext)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)菜单栏项目数: \(items.count)")
+        }
+
         statusItem = NSStatusBar.system.statusItem(withLength: menuBarWidthEstimate(for: items))
 
         guard let button = statusItem?.button else {
@@ -99,13 +125,17 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
 
         restoreMenuBarSystemAppearance()
         observeMenuBarAppearance(button: button)
-        
+
         // 延迟更新以确保布局完成
         DispatchQueue.main.async { [weak self] in
             self?.updateStatusItemLength()
         }
-        
+
         startContentTimer()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 菜单栏设置完成")
+        }
     }
 
     private func makeMenuBarIconView(items: [LumiMenuBarContentItem]) -> MenuBarIconView {
@@ -124,7 +154,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
 
         NotificationCenter.default.post(name: .lumiMenuBarAppearanceDidChange, object: button)
         hostingView?.needsDisplay = true
-        
+
         // 延迟更新以避免在 SwiftUI 布局过程中触发递归布局
         DispatchQueue.main.async { [weak self] in
             self?.updateStatusItemLength()
@@ -221,6 +251,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     }
 
     @objc private func togglePopover() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)切换弹出窗口")
+        }
+
         if popover?.isShown == true {
             closePopover()
         } else {
@@ -246,6 +280,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         configurePopoverWindowForSpaces()
         addEventMonitor()
+
+        if Self.verbose {
+            Self.logger.info("\(self.t)显示弹出窗口")
+        }
     }
 
     private func makePopupView() -> MenuBarPopupView {
@@ -266,6 +304,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
     }
 
     private func showMainWindow() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)显示主窗口")
+        }
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first(where: { $0.canBecomeKey }) {
             window.makeKeyAndOrderFront(nil)
@@ -301,10 +342,13 @@ final class MenuBarService: NSObject, NSPopoverDelegate {
         popover?.performClose(nil)
         popover = nil
         removeEventMonitor()
+
+        if Self.verbose {
+            Self.logger.info("\(self.t)关闭弹出窗口")
+        }
     }
 
     func popoverDidClose(_ notification: Notification) {
         removeEventMonitor()
     }
-
 }
