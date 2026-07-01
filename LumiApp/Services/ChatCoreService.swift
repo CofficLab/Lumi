@@ -2,7 +2,6 @@ import LLMAvailabilityPlugin
 import LumiChatKit
 import LumiCoreKit
 import LumiPluginRegistry
-import ProjectsPlugin
 import SuperLogKit
 import os
 
@@ -74,7 +73,10 @@ final class ChatCoreService: SuperLog {
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiToolServicing.self, toolService)
                 dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-                dependencies.register(LumiProjectStoring.self, ProjectsPlugin.sharedStore)
+                // 通过内核函数获取项目存储，不依赖具体插件
+                if let projectStore = getProjectStore(plugins: pluginService.registeredPlugins) {
+                    dependencies.register(LumiProjectStoring.self, projectStore)
+                }
             }
         )
 
