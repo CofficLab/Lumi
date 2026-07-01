@@ -1,4 +1,5 @@
 import LumiCoreKit
+import SwiftUI
 
 public enum ProjectsPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
@@ -35,13 +36,20 @@ public enum ProjectsPlugin: LumiPlugin {
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
+        // 从 context 获取已初始化的 projectStore
+        let projectStore = context.resolve(LumiProjectStoring.self) as? ProjectsStore
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).toolbar",
                 title: "Projects",
                 placement: .center
             ) {
-                ProjectControlView(projectPathStore: projectPathStore)
+                if let store = projectStore {
+                    ProjectControlView(projectPathStore: projectPathStore, store: store)
+                } else {
+                    // Fallback：如果 store 还没初始化，显示占位符
+                    ProgressView()
+                }
             }
         ]
     }
