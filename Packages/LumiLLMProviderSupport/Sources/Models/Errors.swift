@@ -205,6 +205,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             return .failure(streamError)
         }
 
+        if await hasNoDeliveredOutput(state) {
+            return .retry(LumiLLMProviderSupportError.emptyResponse)
+        }
+
         let message = LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
