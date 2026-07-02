@@ -56,10 +56,8 @@ public actor GoRunner: SuperLog {
 
         currentProcess = process
 
-        if EditorGoPlugin.verbose {
-            if EditorGoPlugin.verbose {
-                EditorGoPlugin.logger.info("\(Self.t)执行: go \(command) \(arguments.joined(separator: " "))")
-            }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)执行: go \(command) \(arguments.joined(separator: " "))")
         }
 
         async let stdoutData = GoRunnerOutputCollector.readData(from: stdoutPipe)
@@ -105,8 +103,8 @@ public actor GoRunner: SuperLog {
         guard let process = currentProcess, process.isRunning else { return }
         process.terminate()
         currentProcess = nil
-        if EditorGoPlugin.verbose {
-            EditorGoPlugin.logger.info("\(Self.t)已取消正在执行的命令")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已取消正在执行的命令")
         }
     }
 
