@@ -1,0 +1,70 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "用户提供 ask_user 工具，让 LLM 可以向用户提问并等待回答" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides ask_user tool, allowing LLM to ask questions and wait for answers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "final",
+            "value" : "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答"
+          }
+        }
+      }
+    },
+    "用户询问插件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask User"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "final",
+            "value" : "用户询问插件"
+          }
+        }
+      }
+    },
+    "无法解析问题内容" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to parse question content"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "final",
+            "value" : "无法解析问题内容"
+          }
+        }
+      }
+    },
+    "等待您的选择..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for your selection..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "final",
+            "value" : "等待您的选择..."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

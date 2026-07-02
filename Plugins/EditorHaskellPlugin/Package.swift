@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterHaskell", package: "tree-sitter-haskell"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorHaskellPluginTests", dependencies: ["EditorHaskellPlugin"], path: "Tests"),
     ]

@@ -28,7 +28,7 @@ let package = Package(
                 "TreeSitterPythonScannerFix",
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorPythonPluginTests", dependencies: ["EditorPythonPlugin"], path: "Tests"),
     ]

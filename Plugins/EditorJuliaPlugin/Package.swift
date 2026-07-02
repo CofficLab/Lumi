@@ -28,7 +28,7 @@ let package = Package(
                 "TreeSitterJuliaScannerFix",
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorJuliaPluginTests", dependencies: ["EditorJuliaPlugin"], path: "Tests"),
     ]

@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterZig", package: "tree-sitter-zig"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorZigPluginTests", dependencies: ["EditorZigPlugin"], path: "Tests"),
     ]

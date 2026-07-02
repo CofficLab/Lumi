@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterTOML", package: "tree-sitter-toml"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorTOMLPluginTests", dependencies: ["EditorTOMLPlugin"], path: "Tests"),
     ]

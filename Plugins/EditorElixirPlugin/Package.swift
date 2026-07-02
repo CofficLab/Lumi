@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterElixir", package: "tree-sitter-elixir"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorElixirPluginTests", dependencies: ["EditorElixirPlugin"], path: "Tests"),
     ]

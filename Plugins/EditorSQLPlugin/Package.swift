@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterSQL", package: "tree-sitter-sql"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorSQLPluginTests", dependencies: ["EditorSQLPlugin"], path: "Tests"),
     ]

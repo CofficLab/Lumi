@@ -11,10 +11,6 @@ public enum ProjectsPlugin: LumiPlugin {
         description: LumiPluginLocalization.string("Adds a project manager control to the title toolbar.", bundle: .module)
     )
 
-    /// 全局共享的 Store 实例，供插件内所有组件统一访问
-    public static let sharedStore = ProjectsStore.shared
-
-    @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
         return [
             LumiTitleToolbarItem(
@@ -22,17 +18,15 @@ public enum ProjectsPlugin: LumiPlugin {
                 title: "Projects",
                 placement: .center
             ) {
-                ProjectControlView(store: sharedStore)
+                ProjectControlView(store: ProjectsStore.shared)
             }
         ]
     }
 
-    @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         [ConversationHintMiddleware()]
     }
 
-    @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
             AddProjectTool(),

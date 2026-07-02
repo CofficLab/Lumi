@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterScala", package: "tree-sitter-scala"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorScalaPluginTests", dependencies: ["EditorScalaPlugin"], path: "Tests"),
     ]

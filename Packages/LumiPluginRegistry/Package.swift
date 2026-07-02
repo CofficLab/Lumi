@@ -197,10 +197,6 @@ let package = Package(
     targets: [
         .target(
             name: "LumiPluginRegistry",
-            path: "Sources",
-            resources: [
-                .process("../Resources")
-            ],
             dependencies: [
                 "LumiCoreKit",
                 .product(name: "ThemeLumiPlugin", package: "ThemeLumiPlugin"),
@@ -246,7 +242,7 @@ let package = Package(
                 .product(name: "LLMProviderStepFunPlugin", package: "LLMProviderStepFunPlugin"),
                 .product(name: "LLMProviderCodexPlugin", package: "LLMProviderCodexPlugin"),
                 .product(name: "LLMProviderMLXPlugin", package: "LLMProviderMLXPlugin"),
-                "ProjectsPlugin",
+                .product(name: "ProjectsPlugin", package: "ProjectsPlugin"),
                 .product(name: "AppManagerPlugin", package: "AppManagerPlugin"),
                 .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
                 .product(name: "PortManagerPlugin", package: "PortManagerPlugin"),
@@ -380,6 +376,10 @@ let package = Package(
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
                 .product(name: "DownloadPlugin", package: "DownloadPlugin"),
                 .product(name: "DocxReadPlugin", package: "DocxReadPlugin")
+            ],
+            path: "Sources",
+            resources: [
+                .process("../Resources")
             ]
         )
     ]
