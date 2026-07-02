@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterKotlin", package: "tree-sitter-kotlin"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorKotlinPluginTests", dependencies: ["EditorKotlinPlugin"], path: "Tests"),
     ]

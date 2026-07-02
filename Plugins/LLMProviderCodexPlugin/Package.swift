@@ -30,7 +30,7 @@ let package = Package(
                 "CodexProvider.swift",
             ],
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

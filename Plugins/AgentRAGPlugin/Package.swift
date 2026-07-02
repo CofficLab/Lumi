@@ -42,7 +42,7 @@ let package = Package(
             path: "Sources",
             exclude: ["CSQLite"],
             resources: [
-                .process("Localizable.xcstrings"),
+                .process("Resources/Localizable.xcstrings"),
                 .copy("Resources/vec0.dylib")
             ]
         ),

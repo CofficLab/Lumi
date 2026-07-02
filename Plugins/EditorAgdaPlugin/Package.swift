@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterAgda", package: "tree-sitter-agda"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorAgdaPluginTests", dependencies: ["EditorAgdaPlugin"], path: "Tests"),
     ]

@@ -105,7 +105,7 @@ Localizable.xcstrings
 Packages/<PackageName>/Resources/Localizable.xcstrings
 ```
 
-> 说明：插件在 Lumi 中也是 Package，因此统一遵循 Package 规范，不再单独放在 `LumiApp/Plugins/` 下。
+> 说明：Lumi 中插件与 Package 遵循同一套 i18n 约定。插件实际位于 `Plugins/` 目录，因此插件路径为 `Plugins/<PluginName>/Resources/Localizable.xcstrings`；核心 Package 路径为 `Packages/<PackageName>/Resources/Localizable.xcstrings`。
 
 ---
 

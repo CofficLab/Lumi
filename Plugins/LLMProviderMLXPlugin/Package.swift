@@ -43,7 +43,7 @@ let package = Package(
                 "MLXProvider.swift",
             ],
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(
