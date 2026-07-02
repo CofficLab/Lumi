@@ -11,13 +11,6 @@ public enum PluginCategory: String, Sendable, Codable, CaseIterable {
     case llmProvider = "llm_provider"
 }
 
-public enum PluginPolicy: String, Sendable, Codable, CaseIterable {
-    case alwaysOn
-    case optIn
-    case optOut
-    case disabled
-}
-
 public struct PluginContext: Sendable {
     public var activeIcon: String
     public var showsRail: Bool

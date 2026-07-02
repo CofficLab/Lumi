@@ -7,7 +7,7 @@ extension EditorJSPlugin: LumiEditorExtensionRegistering {
             id: info.id,
             displayName: info.displayName,
             description: info.description,
-            order: order
+            order: info.order
         )
     }
 
@@ -19,10 +19,5 @@ extension EditorJSPlugin: LumiEditorExtensionRegistering {
     public static func registerEditorExtensionsErased(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         await Self.registerEditorExtensions(into: registry)
-    }
-
-    @MainActor
-    public static func configureEditorRuntime(_ context: PluginRuntimeContext) async {
-        await Self.configureEditorRuntime(context: context)
     }
 }

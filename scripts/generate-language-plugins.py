@@ -127,14 +127,14 @@ def write_plugin(
         import TreeSitter{grammar_id.replace('-', '').title().replace('_', '') if False else ''}
 
         public actor {plugin_name}: SuperPlugin {{
-            public nonisolated static let policy: PluginPolicy = .optIn
+            public nonisolated static let policy: LumiPluginPolicy = .optIn
             public static let shared = {plugin_name}()
             public static let id = "{language_id.capitalize()}Highlight"
             public static let displayName = "{display_name} Highlight"
             public static let description = "Syntax highlighting and language detection for {display_name}."
             public static let iconName = "chevron.left.forwardslash.chevron.right"
             public static let order = 200
-            public static var category: PluginCategory {{ .editor }}
+            public static var category: LumiPluginCategory {{ .editor }}
             public nonisolated var providesEditorExtensions: Bool {{ true }}
 
             @MainActor
@@ -232,7 +232,7 @@ public actor {plugin_name}: SuperPlugin {{
     public static let description = "Syntax highlighting and language detection for {display_name}."
     public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static let order = 200
-    public static var category: PluginCategory {{ .editor }}
+    public static var category: LumiPluginCategory {{ .editor }}
     public nonisolated var providesEditorExtensions: Bool {{ true }}
 
     @MainActor
@@ -250,7 +250,7 @@ extension {plugin_name}: LumiEditorExtensionRegistering {{
     public static var extensionPluginInfo: LumiPluginInfo {{
         LumiPluginInfo(id: id, displayName: displayName, description: description, order: order)
     }}
-    public static var extensionPluginPolicy: LumiPluginPolicy {{ policy.lumiPluginPolicy }}
+    public static var extensionPluginPolicy: LumiPluginPolicy { policy }
     @MainActor
     public static func registerEditorExtensionsErased(into registry: AnyObject) async {{
         guard let registry = registry as? EditorExtensionRegistry else {{ return }}

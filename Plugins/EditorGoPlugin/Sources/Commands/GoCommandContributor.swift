@@ -154,8 +154,8 @@ public final class GoCommandContributor: SuperEditorCommandContributor, SuperLog
     private func resolveProjectRoot(state: EditorState) -> String? {
         guard let fileURL = state.currentFileURL else { return nil }
         let root = GoProjectDetector.findProjectRoot(from: fileURL)
-        if root == nil, EditorGoPlugin.verbose {
-            EditorGoPlugin.logger.warning("\(EditorGoPlugin.t)未找到 go.mod 项目根目录")
+        if root == nil {
+            print("[Go] 未找到 go.mod 项目根目录")
         }
         return root
     }

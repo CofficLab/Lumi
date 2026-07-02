@@ -7,7 +7,7 @@ extension LSPDocumentHighlightEditorPlugin: LumiEditorExtensionRegistering {
             id: info.id,
             displayName: info.displayName,
             description: info.description,
-            order: order
+            order: info.order
         )
     }
 

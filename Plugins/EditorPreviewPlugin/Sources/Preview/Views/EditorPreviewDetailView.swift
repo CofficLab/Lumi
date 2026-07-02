@@ -264,7 +264,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .buttonStyle(.borderless)
             .disabled(
                 isCleaningProjectStringCatalogs ||
-                LumiCore.projectState?.currentProject?.path ?? "".trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                (LumiCore.projectState?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }

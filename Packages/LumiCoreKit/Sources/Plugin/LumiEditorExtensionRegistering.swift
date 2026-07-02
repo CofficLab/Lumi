@@ -6,14 +6,3 @@ public protocol LumiEditorExtensionRegistering {
     @MainActor
     static func registerEditorExtensionsErased(into registry: AnyObject) async
 }
-
-public extension PluginPolicy {
-    var lumiPluginPolicy: LumiPluginPolicy {
-        switch self {
-        case .alwaysOn: .alwaysOn
-        case .optIn: .optIn
-        case .optOut: .optOut
-        case .disabled: .disabled
-        }
-    }
-}

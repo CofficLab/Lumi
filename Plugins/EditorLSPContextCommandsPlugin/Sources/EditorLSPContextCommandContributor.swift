@@ -8,6 +8,7 @@ import LumiCoreKit
 public final class EditorLSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
     public nonisolated static let emoji = "🔌"
     public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.lsp.context-commands")
 
     public let id: String = "builtin.lsp.context-commands"
 
@@ -18,9 +19,7 @@ public final class EditorLSPContextCommandContributor: SuperEditorCommandContrib
     ) -> [EditorCommandSuggestion] {
         let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         if Self.verbose {
-            if EditorLSPContextCommandsPlugin.verbose {
-                            EditorLSPContextCommandsPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
-            }
+            Self.logger.info("\(Self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
         }
 
         return [

@@ -46,7 +46,7 @@ public enum LSPServiceEditorPlugin: LumiPlugin {
     }
 
     public static func lifecycle(_ event: LumiPluginLifecycle) {
-        if case .willUnregister = event {
+        if case .projectDidClose = event {
             Task { @MainActor in
                 LSPService.shared.stopAll()
             }
