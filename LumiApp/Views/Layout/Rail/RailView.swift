@@ -23,7 +23,6 @@ struct RailView: View {
                         get: { layoutState.activeRailTabID },
                         set: { newValue in
                             layoutState.activeRailTabID = newValue
-                            layoutState.persistActiveRailTabID()
                         }
                     )
                 )
@@ -53,6 +52,5 @@ struct RailView: View {
         }
 
         layoutState.activeRailTabID = tabs[0].id
-        layoutState.persistActiveRailTabID()
     }
 }

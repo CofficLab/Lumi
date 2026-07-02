@@ -6,13 +6,28 @@ import SwiftUI
 
 struct AppLayoutView: View {
     @LumiTheme private var theme
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    @ObservedObject private var layoutState: LumiLayoutState
     @StateObject private var panelLayoutState = PanelLayoutState()
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
     let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
+
+    init(
+        pluginService: PluginService,
+        editorCoreService: EditorCoreService,
+        lumiUIService: LumiUIService,
+        chatService: ChatService,
+        chatSectionCoordinator: ChatSectionCoordinator
+    ) {
+        self.pluginService = pluginService
+        self.editorCoreService = editorCoreService
+        self.lumiUIService = lumiUIService
+        self.chatService = chatService
+        self.chatSectionCoordinator = chatSectionCoordinator
+        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+    }
 
     var body: some View {
         let containers = pluginService.viewContainers(context: basePluginContext())
@@ -96,31 +111,25 @@ struct AppLayoutView: View {
                         .borderTrailing()
 
                         if shouldShowChatSection {
+                            let stackItems = chatSectionItems.filter { $0.placement == .stack }
+                            let bottomItems = chatSectionItems.filter { $0.placement == .bottomFixed }
+                            
                             ChatSectionView(
                                 layout: chatSection,
                                 toolbarBarItems: chatSectionToolbarBarItems,
                                 headerItems: chatSectionHeaderItems,
-                                stackItems: chatSectionItems.filter { $0.placement == .stack },
-                                bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
+                                stackItems: stackItems,
+                                bottomItems: bottomItems,
                                 rootContent: pluginService.chatSectionRootWrapper(
                                     context: pluginContext,
                                     content: ChatSectionView.makeRootContent(
-                                        stackItems: chatSectionItems.filter { $0.placement == .stack },
-                                        bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed }
+                                        stackItems: stackItems,
+                                        bottomItems: bottomItems
                                     )
                                 )
                             )
                             .id("\(activeID)-\(chatSection.persistenceKeySuffix)")
                             .layoutPriority(isRailOnlyPanel ? 1 : 0)
-                            .background(
-                                ChatSectionWidthPersistence(
-                                    layout: chatSection,
-                                    storageKey: LayoutStorageKey.chatSectionWidth(
-                                        viewContainerID: activeID,
-                                        layout: chatSection
-                                    )
-                                )
-                            )
                         }
                     }
                     .background(
