@@ -1,4 +1,5 @@
 import AppKit
+import MagicLog
 import Foundation
 import LumiCoreKit
 import WorkspaceFileKit
@@ -17,6 +18,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         )
     )
 
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.read-file")
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose = true
 
