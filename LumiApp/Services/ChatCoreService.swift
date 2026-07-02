@@ -12,22 +12,18 @@ final class ChatCoreService: SuperLog {
     nonisolated static let verbose = true
 
     let chatService: ChatService
-    let projectPathStore: LumiCurrentProjectPathStore
     private let toolService: ToolService
 
     init(
         lumiCoreService: LumiCoreService,
         pluginService: PluginService,
-        toolService: ToolService,
-        projectPathStore: LumiCurrentProjectPathStore
+        toolService: ToolService
     ) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 ChatCoreService")
         }
 
         self.toolService = toolService
-        self.projectPathStore = projectPathStore
-        toolService.projectPathProvider = projectPathStore
         self.chatService = ChatService(
             configuration: .coreDatabase(directory: lumiCoreService.coreDatabaseDirectory)
         )
@@ -37,7 +33,7 @@ final class ChatCoreService: SuperLog {
         }
 
         // 触发插件生命周期 - 项目打开
-        let projectPath = projectPathStore.currentProjectPath
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
         if !projectPath.isEmpty {
             Task {
                 await LumiPluginRegistry.projectDidOpen(path: projectPath)
@@ -47,8 +43,6 @@ final class ChatCoreService: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 插件运行时配置完成")
         }
-
-        chatService.registerProjectPathProvider(projectPathStore)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)重载插件贡献")
@@ -72,9 +66,8 @@ final class ChatCoreService: SuperLog {
                 dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiToolServicing.self, toolService)
-                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-                // 通过内核函数获取项目存储，不依赖具体插件
-                if let projectStore = getProjectStore(plugins: pluginService.registeredPlugins) {
+                // 通过 ProjectsPlugin 获取项目存储
+                if let projectStore = ProjectsPlugin.sharedStore as? LumiProjectStoring {
                     dependencies.register(LumiProjectStoring.self, projectStore)
                 }
             }

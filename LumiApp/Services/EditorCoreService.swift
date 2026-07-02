@@ -149,7 +149,10 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         persistenceRootURL: @escaping @Sendable () -> URL,
         recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
     ) {
-        LumiProjectStore.recentProjectsProvider = recentProjects
+        // 通过 LumiCore 获取项目列表
+        let provider: () -> [LumiProjectEntry] = {
+            LumiCore.projectState?.projects ?? recentProjects()
+        }
 
         EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
         EditorSettingsLifecycle.onReinstallPlugins = { [weak self] registry in

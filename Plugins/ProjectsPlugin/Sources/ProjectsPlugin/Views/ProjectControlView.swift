@@ -4,12 +4,10 @@ import SwiftUI
 
 struct ProjectControlView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let projectPathStore: LumiCurrentProjectPathStoring?
     @ObservedObject private var store: ProjectsStore
     @State private var isPopoverPresented = false
 
-    init(projectPathStore: LumiCurrentProjectPathStoring? = nil, store: ProjectsStore) {
-        self.projectPathStore = projectPathStore
+    init(store: ProjectsStore) {
         self.store = store
     }
 

@@ -22,6 +22,9 @@ final class LumiCoreService: SuperLog {
         self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = Self.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
+        // 启动 LumiCore
+        LumiCore.boot()
+
         if Self.verbose {
             Self.logger.info("\(Self.t)数据根目录: \(dataRootDirectory.path)")
             Self.logger.info("\(Self.t)核心数据库目录: \(self.coreDatabaseDirectory.path)")

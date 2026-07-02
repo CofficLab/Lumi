@@ -1,12 +1,24 @@
+import Combine
 import Foundation
 import SwiftUI
 
 @MainActor
 public enum LumiCore {
     private static var configuration: LumiCoreConfiguration?
-    
-    /// 全局共享实例
+
+    /// Logo 注册表
     @MainActor public static let logoRegistry = LogoRegistry()
+
+    /// 项目状态管理器
+    @MainActor public static private(set) var projectState: LumiProjectState?
+
+    // MARK: - 启动
+
+    /// 启动 LumiCore
+    /// 初始化所有核心模块
+    public static func boot() {
+        projectState = LumiProjectState()
+    }
 
     // MARK: - 配置
 

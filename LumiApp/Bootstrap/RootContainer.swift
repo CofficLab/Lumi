@@ -16,7 +16,6 @@ final class RootContainer: ObservableObject, SuperLog {
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
     let toolService: ToolService
-    let projectPathStore: LumiCurrentProjectPathStore
     let editorCoreService: EditorCoreService
     let chatCoreService: ChatCoreService
     let chatSectionCoordinator: ChatSectionCoordinator
@@ -43,20 +42,6 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ ToolService 初始化完成")
         }
 
-        self.projectPathStore = LumiCurrentProjectPathStore()
-        // 内核提供的项目列表内存存储
-        let projectStore = LumiProjectStore(currentProjectPathStore: projectPathStore)
-        // 通过内核的 bootstrap 函数将 projectStore 注入到实现了 LumiProjectStoreConfiguring 的插件
-        // 不直接依赖具体插件，遵循依赖倒置原则
-        bootstrapProjectStore(
-            plugins: pluginService.registeredPlugins,
-            projectPathStore: projectPathStore,
-            projectStore: projectStore
-        )
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 项目存储初始化完成")
-        }
-
         self.editorCoreService = EditorCoreService(
             pluginService: pluginService,
             persistenceRootURL: { AppConfig.getDBFolderURL() },
@@ -69,8 +54,7 @@ final class RootContainer: ObservableObject, SuperLog {
         self.chatCoreService = ChatCoreService(
             lumiCoreService: lumiCoreService,
             pluginService: pluginService,
-            toolService: toolService,
-            projectPathStore: projectPathStore
+            toolService: toolService
         )
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ ChatCoreService 初始化完成")

@@ -15,41 +15,34 @@ public enum ProjectsPlugin: LumiPlugin {
     @MainActor
     public static var sharedStore: ProjectsStore {
         guard let store = _sharedStore else {
-            fatalError("ProjectsPlugin.setupStore must be called before accessing sharedStore")
+            // 如果还没初始化，创建一个默认的
+            if _sharedStore == nil {
+                _sharedStore = ProjectsStore()
+            }
+            return _sharedStore!
         }
         return store
     }
-    
+
     @MainActor
     private static var _sharedStore: ProjectsStore?
-    
-    /// 初始化插件的 Store 实例，接收内核提供的 projectStore
-    /// 插件负责将内存状态持久化到磁盘，并从磁盘恢复
+
+    /// 初始化插件的 Store 实例
+    /// 从磁盘加载项目，并同步到 LumiCore
     @MainActor
-    public static func setupStore(projectPathStore: LumiCurrentProjectPathStore, projectStore: LumiProjectStore) {
-        _sharedStore = ProjectsStore(
-            projectPathStore: projectPathStore,
-            projectStore: projectStore
-        )
+    public static func setupStore() {
+        _sharedStore = ProjectsStore()
     }
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
-        // 从 context 获取已初始化的 projectStore
-        let projectStore = context.resolve(LumiProjectStoring.self) as? ProjectsStore
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).toolbar",
                 title: "Projects",
                 placement: .center
             ) {
-                if let store = projectStore {
-                    ProjectControlView(projectPathStore: projectPathStore, store: store)
-                } else {
-                    // Fallback：如果 store 还没初始化，显示占位符
-                    ProgressView()
-                }
+                ProjectControlView(store: sharedStore)
             }
         ]
     }

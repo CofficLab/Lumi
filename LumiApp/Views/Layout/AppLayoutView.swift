@@ -13,7 +13,6 @@ struct AppLayoutView: View {
     let lumiUIService: LumiUIService
     let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
-    let projectPathStore: LumiCurrentProjectPathStore
 
     var body: some View {
         let containers = pluginService.viewContainers(context: basePluginContext())
@@ -87,7 +86,6 @@ struct AppLayoutView: View {
                             showRail: showRail,
                             railTabs: railTabs,
                             layoutState: panelLayoutState,
-                            projectPathStore: projectPathStore,
                             editor: editorCoreService
                         )
                         .layoutPriority(isRailOnlyPanel ? 0 : 1)
@@ -144,7 +142,6 @@ struct AppLayoutView: View {
                             showRail: showRail,
                             railTabs: railTabs,
                             layoutState: panelLayoutState,
-                            projectPathStore: projectPathStore,
                             editor: editorCoreService
                         )
                     }
@@ -165,7 +162,6 @@ struct AppLayoutView: View {
                 pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                projectPathStore: projectPathStore,
                 panelLayoutState: panelLayoutState
             )
         }
@@ -215,8 +211,6 @@ struct AppLayoutView: View {
             isChatSectionVisible: isChatSectionVisible,
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register((any LumiChatServicing).self, chatService)
-                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-                dependencies.register(LumiCurrentProjectPathProviding.self, projectPathStore)
                 dependencies.register(LumiEditorServicing.self, editorCoreService)
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
                 dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
