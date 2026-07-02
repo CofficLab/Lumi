@@ -13,10 +13,10 @@ import SwiftUI
 /// - ``order`` 值越大优先级越高
 /// - 可选的 ``overlay`` 视图会叠加在基础 Logo 视图之上
 @MainActor
-struct LogoItem: Identifiable, Sendable {
-    let id: String
+public struct LogoItem: Identifiable, Sendable {
+    public let id: String
     let order: Int
-    let makeView: @MainActor (LogoScene) -> AnyView
+    public let makeView: @MainActor (LogoScene) -> AnyView
     let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 
     init<V: View>(

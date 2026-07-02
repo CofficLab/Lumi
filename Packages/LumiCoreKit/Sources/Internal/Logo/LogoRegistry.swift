@@ -6,12 +6,12 @@ import SwiftUI
 /// 收集所有插件贡献的 ``LogoItem``，按 ``LogoItem/order`` 选出全局最高优先级的 Logo。
 /// 无插件贡献时回退到内置的 Logo。
 @MainActor
-final class LogoRegistry: ObservableObject {
+public final class LogoRegistry: ObservableObject {
     /// 全局共享实例
     @MainActor public static let shared = LogoRegistry()
 
     /// 当前最高优先级的 Logo 项（已缓存，注册时刷新）
-    @Published private(set) public var bestItem: LogoItem?
+    @Published public var bestItem: LogoItem?
 
     private init() {}
 

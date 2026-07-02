@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Logo 显示场景
 /// 不同的场景可能有不同的视觉要求和动画行为
-enum LogoScene: String, CaseIterable, Sendable {
+public enum LogoScene: String, CaseIterable, Sendable {
     case general
     case appIcon
     case about

@@ -78,14 +78,6 @@ public enum LumiCore {
     }
 
     /// 插件贡献的 Logo 项
-    ///
-    /// 插件通过 ``LumiPlugin/logoItems(context:)`` 返回此类型，
-    /// 框架会根据 ``order`` 值选出最高优先级的 Logo 用于显示。
-    ///
-    /// - 每个场景（如 about、statusBar 等）会独立选择最高优先级的 Logo
-    /// - 如果多个插件贡献相同 id 的项，行为未定义
-    /// - ``order`` 值越大优先级越高
-    /// - 可选的 ``overlay`` 视图会叠加在基础 Logo 视图之上
     @MainActor
     public struct LogoItem: Identifiable, Sendable {
         public let id: String
@@ -118,22 +110,14 @@ public enum LumiCore {
     }
 
     /// Logo 注册表
-    ///
-    /// 收集所有插件贡献的 ``LogoItem``，按 ``LogoItem/order`` 选出全局最高优先级的 Logo。
-    /// 无插件贡献时回退到内置的 Logo。
     @MainActor
     public final class LogoRegistry: ObservableObject {
-        /// 全局共享实例
         @MainActor public static let shared = LogoRegistry()
 
-        /// 当前最高优先级的 Logo 项（已缓存，注册时刷新）
         @Published private(set) public var bestItem: LogoItem?
 
         private init() {}
 
-        /// 批量注册 Logo 项，保留 order 最高的一项
-        ///
-        /// - Parameter items: 来自各插件的 Logo 贡献
         public func register(_ items: [LogoItem]) {
             let newBest = items.max(by: { $0.order < $1.order })
             Task { @MainActor [weak self] in
@@ -141,9 +125,10 @@ public enum LumiCore {
             }
         }
     }
-    
+
     public typealias LumiLogoRegistry = LogoRegistry
     public typealias LumiLogoItem = LogoItem
+    public typealias LumiLogoScene = LogoScene
 }
 
 // MARK: - 版本信息

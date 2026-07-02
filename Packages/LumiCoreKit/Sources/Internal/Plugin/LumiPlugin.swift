@@ -74,7 +74,7 @@ public protocol LumiPlugin {
     static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem]
 
     @MainActor
-    static func logoItems(context: LumiPluginContext) -> [LumiCore.LogoItem]
+    static func logoItems(context: LumiPluginContext) -> [LumiCore.LumiLogoItem]
 
     // MARK: - Lifecycle
 
@@ -226,7 +226,7 @@ public extension LumiPlugin {
     }
 
     @MainActor
-    static func logoItems(context: LumiPluginContext) -> [LumiCore.LogoItem] {
+    static func logoItems(context: LumiPluginContext) -> [LumiCore.LumiLogoItem] {
         []
     }
 
