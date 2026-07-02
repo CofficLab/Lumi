@@ -55,18 +55,7 @@ public enum LayoutPlugin: LumiPlugin {
                 title: LumiPluginLocalization.string("Layout", bundle: .module),
                 placement: .trailing
             ) {
-                LayoutMenuButton(
-                    layoutContext: LayoutControlContext(
-                        chatSectionVisible: Binding(
-                            get: { LumiLayoutStateStore.shared.chatSectionVisible },
-                            set: { LumiLayoutStateStore.shared.chatSectionVisible = $0 }
-                        ),
-                        bottomPanelVisible: Binding(
-                            get: { LumiLayoutStateStore.shared.bottomPanelVisible },
-                            set: { LumiLayoutStateStore.shared.bottomPanelVisible = $0 }
-                        )
-                    )
-                )
+                LayoutMenuButton()
             }
         ]
     }

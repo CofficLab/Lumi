@@ -21,6 +21,7 @@ public enum LumiCore {
     /// 初始化所有核心模块
     public static func boot() {
         projectState = LumiProjectState()
+        layoutState = LumiLayoutState()
     }
 
     // MARK: - 配置
