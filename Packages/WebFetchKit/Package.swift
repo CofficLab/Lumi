@@ -22,7 +22,10 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "WebFetchKitTests",

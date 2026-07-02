@@ -22,7 +22,10 @@ let package = Package(
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "XcodeProjectGenTests",
