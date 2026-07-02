@@ -3,7 +3,6 @@ import LumiCoreKit
 import SuperLogKit
 import os
 
-@MainActor
 final class ToolService: LumiToolServicing, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.tool")
     nonisolated static let emoji = "🛠️"
