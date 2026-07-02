@@ -65,7 +65,7 @@ let package = Package(
                 "Views"
             ],
             resources: [
-                .process("Localizable.xcstrings")
+                .process("Resources/Localizable.xcstrings")
             ]
         ),
         .target(

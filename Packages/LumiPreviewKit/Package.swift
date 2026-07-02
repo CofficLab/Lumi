@@ -27,7 +27,10 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
             path: "Sources",
-            exclude: ["LumiPreviewHostApp"]
+            exclude: ["LumiPreviewHostApp"],
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .executableTarget(
             name: "LumiPreviewHostApp",
