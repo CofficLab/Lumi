@@ -26,7 +26,10 @@ let package = Package(
                 .product(name: "ModelRouterKit", package: "ModelRouterKit"),
                 .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "LumiChatKitTests",

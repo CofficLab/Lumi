@@ -22,7 +22,10 @@ let package = Package(
             dependencies: [
                 "HttpKit",
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "LLMKitTests",

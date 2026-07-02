@@ -197,6 +197,10 @@ let package = Package(
     targets: [
         .target(
             name: "LumiPluginRegistry",
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ],
             dependencies: [
                 "LumiCoreKit",
                 .product(name: "ThemeLumiPlugin", package: "ThemeLumiPlugin"),
