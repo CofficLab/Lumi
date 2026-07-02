@@ -66,8 +66,9 @@ public enum LumiCore {
     }
 
     // MARK: - Logo 模块
-
+    
     /// Logo 显示场景
+    /// 详细实现见 Sources/Internal/Logo/LogoScene.swift
     public enum LogoScene: String, CaseIterable, Sendable {
         case general
         case appIcon
@@ -78,7 +79,7 @@ public enum LumiCore {
     }
 
     /// 插件贡献的 Logo 项
-    @MainActor
+    /// 详细实现见 Sources/Internal/Logo/LumiLogoItem.swift
     public struct LogoItem: Identifiable, Sendable {
         public let id: String
         public let order: Int
@@ -108,11 +109,12 @@ public enum LumiCore {
             self.makeOverlay = { scene in AnyView(makeOverlay(scene)) }
         }
     }
-
+    
     /// Logo 注册表
+    /// 详细实现见 Sources/Internal/Logo/LogoRegistry.swift
     @MainActor
     public final class LogoRegistry: ObservableObject {
-        @MainActor public static let shared = LogoRegistry()
+        public static let shared = LogoRegistry()
 
         @Published private(set) public var bestItem: LogoItem?
 
@@ -125,10 +127,6 @@ public enum LumiCore {
             }
         }
     }
-
-    public typealias LumiLogoRegistry = LogoRegistry
-    public typealias LumiLogoItem = LogoItem
-    public typealias LumiLogoScene = LogoScene
 }
 
 // MARK: - 版本信息
