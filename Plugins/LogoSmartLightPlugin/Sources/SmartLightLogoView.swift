@@ -2,7 +2,7 @@ import LumiCoreKit
 import SwiftUI
 
 struct SmartLightLogoView: View {
-    var scene: LogoScene = .general
+    var scene: LumiCore.LogoScene = .general
 
     var body: some View {
         GeometryReader { geometry in

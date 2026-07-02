@@ -1,4 +1,7 @@
+import Foundation
 import SwiftUI
+
+// MARK: - LogoItem
 
 /// 插件贡献的 Logo 项
 ///
@@ -10,13 +13,13 @@ import SwiftUI
 /// - ``order`` 值越大优先级越高
 /// - 可选的 ``overlay`` 视图会叠加在基础 Logo 视图之上
 @MainActor
-public struct LumiLogoItem: Identifiable, Sendable {
-    public let id: String
-    public let order: Int
-    public let makeView: @MainActor (LogoScene) -> AnyView
-    public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
+struct LogoItem: Identifiable, Sendable {
+    let id: String
+    let order: Int
+    let makeView: @MainActor (LogoScene) -> AnyView
+    let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 
-    public init<V: View>(
+    init<V: View>(
         id: String,
         order: Int,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V
@@ -27,7 +30,7 @@ public struct LumiLogoItem: Identifiable, Sendable {
         self.makeOverlay = nil
     }
 
-    public init<V: View, O: View>(
+    init<V: View, O: View>(
         id: String,
         order: Int,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V,

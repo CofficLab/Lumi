@@ -2,7 +2,7 @@ import LumiCoreKit
 import SwiftUI
 
 struct CofficLogoView: View {
-    var scene: LogoScene = .general
+    var scene: LumiCore.LogoScene = .general
     
     var body: some View {
         GeometryReader { geometry in

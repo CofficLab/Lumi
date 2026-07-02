@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreKit
 
 /// 在 `saveMessage` 后自动广播 `messageSaved`，供 Agent 插件链使用。
 @MainActor

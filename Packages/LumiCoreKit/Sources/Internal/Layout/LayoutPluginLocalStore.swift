@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreKit
 
 /// Layout 持久化实现（供 LayoutPlugin 使用）
 /// 负责将布局数据写入磁盘
