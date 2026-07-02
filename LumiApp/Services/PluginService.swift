@@ -337,7 +337,7 @@ final class PluginService: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
 
-        LogoRegistry.shared.register(allItems)
+        LumiCore.LogoRegistry.shared.register(allItems)
     }
 }
 
