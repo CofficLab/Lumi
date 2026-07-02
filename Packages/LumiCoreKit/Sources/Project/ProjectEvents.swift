@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Notification Names
 
@@ -17,6 +18,11 @@ extension Notification.Name {
     /// object: nil
     /// userInfo: ["path": String]
     public static let currentProjectPathDidChange = Notification.Name("CurrentProjectPathDidChange")
+
+    /// LLM providers 已注册完成
+    /// object: nil
+    /// userInfo: nil
+    public static let lumiLLMProvidersDidChange = Notification.Name("LumiLLMProvidersDidChange")
 }
 
 // MARK: - NotificationCenter Extensions
@@ -47,5 +53,19 @@ extension NotificationCenter {
             object: nil,
             userInfo: ["path": path]
         )
+    }
+}
+
+// MARK: - SwiftUI View Helpers
+
+public extension View {
+    /// 监听当前项目变更通知。
+    ///
+    /// 目前底层事件只携带新项目；若需要前后对比，建议上游在发送通知前缓存 `LumiProjectState.currentProject`。
+    func onCurrentProjectDidChange(perform action: @escaping (LumiProjectEntry) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .currentProjectDidChange)) { notification in
+            guard let project = notification.userInfo?["project"] as? LumiProjectEntry else { return }
+            action(project)
+        }
     }
 }

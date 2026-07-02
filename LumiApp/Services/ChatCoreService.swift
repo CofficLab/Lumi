@@ -1,4 +1,3 @@
-import LLMAvailabilityPlugin
 import LumiChatKit
 import LumiCoreKit
 import LumiPluginRegistry
@@ -84,8 +83,11 @@ final class ChatCoreService: SuperLog {
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
         chatService.registerToolService(toolService)
 
-        // 初始化 LLM 可用性检测
-        LLMAvailabilityPlugin.bootstrap(providers: providers)
+        NotificationCenter.default.post(
+            name: .lumiLLMProvidersDidChange,
+            object: nil,
+            userInfo: nil
+        )
 
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 插件贡献重载完成: \(providers.count) 个 LLM Provider")

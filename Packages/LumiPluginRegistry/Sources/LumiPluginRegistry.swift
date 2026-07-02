@@ -120,7 +120,6 @@ import EditorPreviewPlugin
 import EditorTerminalPlugin
 import EditorFileTreePlugin
 import EditorOutlinePlugin
-import LLMAvailabilityPlugin
 import ConversationNewPlugin
 import DisplayControlPlugin
 import LogoSmartLightPlugin
