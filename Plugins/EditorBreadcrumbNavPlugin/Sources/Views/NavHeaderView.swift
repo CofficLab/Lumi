@@ -8,9 +8,16 @@ import SwiftUI
 /// 在编辑器面板中显示当前文件的路径面包屑导航。
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 public struct NavHeaderView: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @ObservedObject private var service: EditorService
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+
+    private var isProjectSelected: Bool {
+        LumiCore.projectState?.currentProject != nil
+    }
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public init(service: EditorService) {
         self.service = service
@@ -28,7 +35,7 @@ public struct NavHeaderView: View {
             )
         ) {
             if let fileURL = service.files.currentFileURL,
-               projectVM.isProjectSelected,
+               isProjectSelected,
                isFileInCurrentProject(fileURL) {
                 breadcrumbPath(fileURL: fileURL)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,7 +53,7 @@ public struct NavHeaderView: View {
     }
 
     private func isFileInCurrentProject(_ fileURL: URL) -> Bool {
-        let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectPath = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         return Self.isFile(fileURL, inProjectPath: projectPath)
     }
 

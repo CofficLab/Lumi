@@ -11,14 +11,16 @@ public struct HeaderView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
-
     @State private var draggedTabSessionID: UUID?
     @ObservedObject private var service: EditorService
 
     /// 标签页持久化协调器
     @StateObject private var coordinator = StripCoordinator()
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public init(service: EditorService) {
         self._service = ObservedObject(wrappedValue: service)
@@ -47,13 +49,15 @@ public struct HeaderView: View {
         .onAppear {
             coordinator.startObserving(
                 sessionStore: sessionStore,
-                projectPathProvider: { [weak projectVM] in
-                    projectVM?.currentProjectPath ?? ""
+                projectPathProvider: {
+                    LumiCore.projectState?.currentProject?.path ?? ""
                 },
-                openFile: { [weak service, weak projectVM] url in
-                    let projectPath = projectVM?.currentProjectPath
-                    await service?.refreshProjectContext(for: projectPath)
-                    service?.sessions.open(at: url)
+                openFile: { [weak service] url in
+                    let projectPath = LumiCore.projectState?.currentProject?.path
+                    Task { @MainActor in
+                        await service?.refreshProjectContext(for: projectPath)
+                        service?.sessions.open(at: url)
+                    }
                 },
                 openFileSessionOnly: { [weak service] url in
                     service?.sessions.openFileSessionInBackground(at: url)
@@ -63,18 +67,20 @@ public struct HeaderView: View {
         .onDisappear {
             coordinator.stopObserving(
                 sessionStore: sessionStore,
-                projectPath: projectVM.currentProjectPath
+                projectPath: currentProjectPath
             )
         }
-        .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+        .onChange(of: currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(
                 oldPath: oldPath,
                 newPath: newPath,
                 sessionStore: sessionStore,
-                openFile: { [weak service, weak projectVM] url in
-                    let projectPath = projectVM?.currentProjectPath
-                    await service?.refreshProjectContext(for: projectPath)
-                    service?.sessions.open(at: url)
+                openFile: { [weak service] url in
+                    let projectPath = LumiCore.projectState?.currentProject?.path
+                    Task { @MainActor in
+                        await service?.refreshProjectContext(for: projectPath)
+                        service?.sessions.open(at: url)
+                    }
                 },
                 openFileSessionOnly: { [weak service] url in
                     service?.sessions.openFileSessionInBackground(at: url)
@@ -106,7 +112,7 @@ public struct HeaderView: View {
     }
 
     private var normalizedProjectRoot: String? {
-        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else { return nil }
         return URL(fileURLWithPath: path).standardizedFileURL.path
     }
@@ -173,7 +179,7 @@ public struct HeaderView: View {
 
         let url = URL(fileURLWithPath: path)
         Task { @MainActor in
-            await service.refreshProjectContext(for: projectVM.currentProjectPath)
+            await service.refreshProjectContext(for: currentProjectPath)
             service.sessions.open(at: url)
         }
     }
