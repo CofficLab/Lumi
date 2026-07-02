@@ -1,23 +1,23 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 /// CSS 语言编辑器插件：提供 CSS 补全和悬浮提示
-public actor EditorCSSPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = EditorCSSPlugin()
-    public static let id = "CSSEditor"
-    public static let displayName = LumiPluginLocalization.string("CSS Language Tools", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Provides CSS completions and hover help for common properties and values.", bundle: .module)
+public enum EditorCSSPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "paintpalette"
-    public static let order = 32
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "CSSEditor",
+        displayName: LumiPluginLocalization.string("CSS Language Tools", bundle: .module),
+        description: LumiPluginLocalization.string("Provides CSS completions and hover help for common properties and values.", bundle: .module),
+        order: 32
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorCSSPluginDescriptor.css)
         registry.registerLanguage(EditorCSSPluginDescriptor.scss)

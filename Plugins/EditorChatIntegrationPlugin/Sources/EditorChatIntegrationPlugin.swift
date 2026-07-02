@@ -1,43 +1,24 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import SwiftUI
 
 /// Editor Chat 集成插件：提供代码发送到 AI chat 的上下文菜单操作
-public actor EditorChatIntegrationPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public static let shared = EditorChatIntegrationPlugin()
-    public static let id = "EditorChatIntegration"
-    public static let displayName = LumiPluginLocalization.string("Chat Integration", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Adds context menu actions to send code and locations to the AI chat.", bundle: .module)
+public enum EditorChatIntegrationPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "bubble.left"
-    public static var category: PluginCategory { .editor }
-    public static let order = 12
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "EditorChatIntegration",
+        displayName: LumiPluginLocalization.string("Chat Integration", bundle: .module),
+        description: LumiPluginLocalization.string("Adds context menu actions to send code and locations to the AI chat.", bundle: .module),
+        order: 12
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerCommandContributor(EditorChatIntegrationCommandContributor())
-    }
-}
-
-extension EditorChatIntegrationPlugin: LumiEditorExtensionRegistering {
-    public static var extensionPluginInfo: LumiPluginInfo {
-        LumiPluginInfo(
-            id: id,
-            displayName: displayName,
-            description: description,
-            order: order
-        )
-    }
-
-    public static var extensionPluginPolicy: LumiPluginPolicy {
-        policy.lumiPluginPolicy
-    }
-
-    @MainActor
-    public static func registerEditorExtensionsErased(into registry: AnyObject) async {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        await shared.registerEditorExtensions(into: registry)
     }
 }

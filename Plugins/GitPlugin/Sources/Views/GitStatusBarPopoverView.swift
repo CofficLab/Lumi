@@ -2,6 +2,7 @@ import LibGit2Swift
 import SwiftUI
 import LumiCoreKit
 import LumiUI
+import MagicDiffView
 
 /// Git 状态栏弹出面板
 public struct GitPluginPopoverView: View {
@@ -247,7 +248,7 @@ public struct GitPluginPopoverView: View {
                         .foregroundColor(theme.textPrimary)
                     HStack(spacing: 10) {
                         Text(detail.author)
-                        Text(shortDate(detail.date))
+                        Text(detail.date)
                         Text(String(detail.hash.prefix(7)))
                             .font(.appMonoMicro)
                     }
@@ -276,7 +277,12 @@ public struct GitPluginPopoverView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if selectedFile != nil {
-                DiffTextView(oldText: oldText, newText: newText)
+                MagicDiffView(
+                    oldText: oldText,
+                    newText: newText,
+                    enableCollapsing: true,
+                    minUnchangedLines: 3
+                )
             } else {
                 Text(LumiPluginLocalization.string("Select a file to view diff", bundle: .module))
                     .font(.appCaption)
@@ -284,15 +290,6 @@ public struct GitPluginPopoverView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-    }
-
-    // MARK: - Computed Properties
-
-    private var filteredBranches: [GitBranch] {
-        if branchSearch.isEmpty {
-            return branches
-        }
-        return branches.filter { $0.name.localizedCaseInsensitiveContains(branchSearch) }
     }
 
     // MARK: - Data Loading
@@ -309,11 +306,17 @@ public struct GitPluginPopoverView: View {
         actionMessage = nil
 
         do {
-            async let branchesTask = GitBranchService.branches(at: path)
-            async let commitsTask = GitCommitService.commitLog(at: path, pageSize: commitPageSize)
-            async let statusTask = GitStatusService.changedFiles(at: path)
+            // 分支列表使用 GitBranchService.listLocalBranches
+            let branchesResult = GitBranchService.listLocalBranches(at: path)
 
-            let (branchesResult, commitsResult, statusResult) = try await (branchesTask, commitsTask, statusTask)
+            // 提交历史使用 GitService.shared.getLog
+            async let commitsTask = GitService.shared.getLog(path: path, count: commitPageSize, branch: nil, file: nil)
+
+            // 工作区状态使用 GitService.shared.getUncommittedChanges
+            async let statusTask = GitService.shared.getUncommittedChanges(path: path)
+
+            let commitsResult = try await commitsTask
+            let statusResult = try await statusTask
 
             guard refreshGeneration == generation else { return }
 
@@ -337,13 +340,17 @@ public struct GitPluginPopoverView: View {
         let path = currentProjectPath
         guard !path.isEmpty else { return }
 
+        let generation = detailGeneration
         loadingDetail = true
 
         do {
-            async let detailTask = GitCommitDetailService.commitDetail(hash: hash, at: path)
-            async let filesTask = GitCommitService.changedFiles(hash: hash, at: path)
+            async let detailTask = GitService.shared.getCommitDetail(path: path, hash: hash)
+            async let filesTask = GitService.shared.getCommitChangedFiles(path: path, hash: hash)
 
-            let (detail, files) = try await (detailTask, filesTask)
+            let detail = try await detailTask
+            let files = try await filesTask
+
+            guard detailGeneration == generation else { return }
 
             self.commitDetail = detail
             self.commitChangedFiles = files
@@ -368,7 +375,11 @@ public struct GitPluginPopoverView: View {
         loadingDiff = true
 
         do {
-            let (old, new) = try await GitDiffService.diff(for: file, at: path)
+            let (old, new) = try await GitCommitDetailService.loadFileDiff(
+                file: file,
+                projectPath: path,
+                commitHash: selectedCommitHash
+            )
 
             guard diffGeneration == generation else { return }
 
@@ -391,7 +402,7 @@ public struct GitPluginPopoverView: View {
         actionMessage = nil
 
         do {
-            try await GitBranchService.checkout(branch: branch, at: path)
+            try GitBranchService.checkout(branch: branch, at: path)
             await refreshAll()
             actionMessage = "Switched to \(branch)"
         } catch {
@@ -406,17 +417,11 @@ public struct GitPluginPopoverView: View {
         actionMessage = nil
 
         do {
-            try await GitBranchService.createBranch(named: name, at: path)
+            try GitBranchService.createBranch(name, at: path)
             await refreshAll()
             actionMessage = "Created branch \(name)"
         } catch {
             actionMessage = "Error: \(error.localizedDescription)"
         }
-    }
-
-    private func shortDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }

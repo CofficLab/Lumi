@@ -1,19 +1,21 @@
 import EditorService
 import LumiCoreKit
+import SwiftUI
 
-public actor EditorCPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .optIn
-    public static let shared = EditorCPlugin()
-    public static let id = "cHighlight"
-    public static let displayName = LumiPluginLocalization.string("C Highlight", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for C.", bundle: .module)
+public enum EditorCPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
-    public static let order = 200
-    public static var category: PluginCategory { .editor }
-    public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static let info = LumiPluginInfo(
+        id: "cHighlight",
+        displayName: LumiPluginLocalization.string("C Highlight", bundle: .module),
+        description: LumiPluginLocalization.string("Syntax highlighting and language detection for C.", bundle: .module),
+        order: 200
+    )
+
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorCPluginDescriptor.descriptor)
         registry.registerGrammarProvider(EditorCPluginGrammarProvider())

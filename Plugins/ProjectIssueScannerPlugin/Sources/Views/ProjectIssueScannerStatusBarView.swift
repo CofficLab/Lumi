@@ -138,7 +138,7 @@ public struct ProjectIssueScannerStatusBarView: View {
     }
 
     private var shouldShow: Bool {
-        !projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var iconName: String {

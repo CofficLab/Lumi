@@ -1,6 +1,6 @@
+import AppKit
 import LumiCoreKit
 import LumiUI
-import AppKit
 import SwiftUI
 
 /// 在 Finder 中打开项目插件
@@ -28,11 +28,11 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
                 statusBarView: {
                     OpenInFinderStatusBarView()
                 }
-            )
+            ),
         ]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
@@ -45,7 +45,6 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
             .padding()
         )
     }
-
 }
 
 // MARK: - Status Bar View
@@ -54,11 +53,9 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 public struct OpenInFinderStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
-
     public var body: some View {
         Group {
-            if projectVM.currentProjectPath.isEmpty {
+            if (LumiCore.projectState?.currentProject?.path ?? "").isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -103,8 +100,8 @@ public struct OpenInFinderStatusBarView: View {
     }
 
     private func openInFinder() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }
@@ -114,8 +111,6 @@ public struct OpenInFinderStatusBarView: View {
 /// Finder 打开详情视图（在 popover 中显示）
 public struct OpenInFinderDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    @EnvironmentObject private var projectVM: WindowProjectVM
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -152,7 +147,7 @@ public struct OpenInFinderDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(projectVM.currentProjectPath)
+                Text(LumiCore.projectState?.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -162,7 +157,7 @@ public struct OpenInFinderDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
+                    NSPasteboard.general.setString(LumiCore.projectState?.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -176,8 +171,8 @@ public struct OpenInFinderDetailView: View {
     }
 
     private func openInFinder() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }

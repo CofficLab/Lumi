@@ -1,11 +1,5 @@
 import SwiftUI
 
-public enum LumiStatusBarPlacement: Sendable, Equatable {
-    case leading
-    case center
-    case trailing
-}
-
 @MainActor
 public struct LumiStatusBarItem: Identifiable {
     public let id: String

@@ -205,7 +205,7 @@ final class SendPipeline {
         var context = LumiSendContext(
             conversationID: conversationID,
             messages: messages,
-            currentProjectPath: service.projectPathProvider?.currentProjectPath ?? "",
+            currentProjectPath: LumiCore.projectState?.currentProject?.path ?? "",
             conversationTitle: service.conversations.first(where: { $0.id == conversationID })?.title ?? "",
             conversationLanguage: service.language(for: conversationID)
         )

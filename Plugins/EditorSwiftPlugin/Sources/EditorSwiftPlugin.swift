@@ -15,10 +15,10 @@ public enum EditorSwiftPlugin: LumiPlugin {
     private static let editorPanelSectionID = "LumiEditor"
 
     public static let info = LumiPluginInfo(
-        id: EditorSwiftEditorPlugin.id,
-        displayName: EditorSwiftEditorPlugin.displayName,
-        description: EditorSwiftEditorPlugin.description,
-        order: EditorSwiftEditorPlugin.order
+        id: "EditorSwiftIntegration",
+        displayName: LumiPluginLocalization.string("Swift Integration", bundle: .module),
+        description: LumiPluginLocalization.string("Provides scheme toolbar, Xcode project integration, and Swift agent tools.", bundle: .module),
+        order: 5
     )
 
     @MainActor

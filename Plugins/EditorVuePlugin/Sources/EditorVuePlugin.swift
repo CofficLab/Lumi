@@ -1,8 +1,6 @@
 import LumiCoreKit
-import SuperLogKit
 import Foundation
 import EditorService
-import LumiUI
 import SwiftUI
 import os
 
@@ -19,30 +17,20 @@ import os
 ///
 /// LSP 基础能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 通过 Volar (vue-language-server) 提供完整 SFC 智能支持。
-public actor EditorVuePlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = EditorVuePlugin()
-    public nonisolated static let emoji = "💚"
-    public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi",
-        category: "plugin.vue-editor"
+public enum EditorVuePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
+    public static let iconName = "curlybraces"
+
+    public static let info = LumiPluginInfo(
+        id: "VueEditor",
+        displayName: LumiPluginLocalization.string("Vue Editor", bundle: .module),
+        description: LumiPluginLocalization.string("Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", bundle: .module),
+        order: 35
     )
 
-    public static let id = "VueEditor"
-    public static let displayName = LumiPluginLocalization.string("Vue Editor", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Vue SFC editing support: Volar LSP integration, template directive completion, and component hover docs.", bundle: .module)
-    public static let iconName = "curlybraces"
-    public static let order = 35
-    public static var category: PluginCategory { .editor }
-
-    public nonisolated var providesEditorExtensions: Bool { true }
-
-    /// Vue 组件大纲视图模型
-    @MainActor private var outlineViewModel: VueOutlineViewModel?
-
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
+    public static func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
         registry.registerLanguage(EditorVuePluginDescriptor.descriptor)
 
         // 基础补全：Vue 指令、内置组件、宏、修饰符
@@ -76,42 +64,21 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
             tabID: "vue-outline",
             title: LumiPluginLocalization.string("Vue", bundle: .module),
             systemImage: "curlybraces"
-        ) { [weak self] in
-            guard let self else { return AnyView(Color.clear) }
-            return self.makeOutlineRailViewPrivate()
+        ) {
+            makeOutlineRailView()
         }
     }
 
     // MARK: - UI Contributions
 
-    @MainActor public func addRailItems(context: PluginContext) -> [RailItem] {
-        guard context.activeIcon == Self.iconName else { return [] }
-        return [
-            RailItem(
-                id: "vue-outline",
-                title: LumiPluginLocalization.string("Vue Outline", bundle: .module),
-                systemImage: "curlybraces",
-                priority: 2,
-                makeView: { [weak self] in
-                    guard let self else { return AnyView(Color.clear) }
-                    return self.makeOutlineRailViewPrivate()
-                }
-            )
-        ]
-    }
-
-    @MainActor public func makeOutlineRailView() -> AnyView {
-        makeOutlineRailViewPrivate()
-    }
-
-    @MainActor private func makeOutlineRailViewPrivate() -> AnyView {
-        if outlineViewModel == nil {
-            outlineViewModel = VueOutlineViewModel()
+    @MainActor public static func makeOutlineRailView() -> AnyView {
+        if VueOutlineViewModel.shared == nil {
+            VueOutlineViewModel.shared = VueOutlineViewModel()
         }
 
         return AnyView(
             VueOutlineView(
-                viewModel: outlineViewModel!,
+                viewModel: VueOutlineViewModel.shared!,
                 onNavigate: { line in
                     // 跳转到指定行 — 由编辑器内核处理
                     NotificationCenter.default.post(
@@ -128,7 +95,7 @@ public actor EditorVuePlugin: SuperPlugin, SuperLog {
 
     /// 在打开 Vue 项目时预扫描组件
     /// 应在 EditorState 检测到项目根路径变化时调用
-    public func precacheComponents(projectPath: String) {
+    public static func precacheComponents(projectPath: String) {
         VueComponentImportResolver.precache(projectPath: projectPath)
     }
 }
@@ -139,3 +106,4 @@ extension Notification.Name {
     /// Vue 区块导航通知（携带 line 参数）
     public static let vueNavigateToLine = Notification.Name("com.coffic.lumi.vue.navigate-to-line")
 }
+

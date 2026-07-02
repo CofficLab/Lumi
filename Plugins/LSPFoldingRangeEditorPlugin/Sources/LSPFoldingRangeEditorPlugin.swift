@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 /// LSP 折叠范围编辑器插件。
 ///
@@ -11,19 +10,20 @@ import SwiftUI
 /// 本插件不提供独立 View。折叠范围会被编辑器内核和源码编辑器 UI 消费，
 /// 用于显示折叠箭头、折叠区域或恢复折叠状态。完整能力依赖 LSP 服务插件和
 /// 当前语言服务器对 folding range 的支持。
-public actor LSPFoldingRangeEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPFoldingRangeEditorPlugin()
-    public static let id = "LSPFoldingRangeEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Folding Ranges", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Provides code folding ranges from the language server.", bundle: .module)
+public enum LSPFoldingRangeEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.2"
-    public static let order = 26
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "LSPFoldingRangeEditor",
+        displayName: LumiPluginLocalization.string("LSP Folding Ranges", bundle: .module),
+        description: LumiPluginLocalization.string("Provides code folding ranges from the language server.", bundle: .module),
+        order: 26
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let provider = FoldingRangeProvider(lspService: .shared)
         registry.registerFoldingRangeProvider(provider)

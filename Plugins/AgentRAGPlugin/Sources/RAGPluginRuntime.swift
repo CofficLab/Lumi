@@ -6,12 +6,14 @@ public enum RAGPluginRuntime {
         FileManager.default.temporaryDirectory.appendingPathComponent("Lumi-RAGPlugin", isDirectory: true)
     }
 
-    /// 当前项目路径，从内核 `LumiCurrentProjectPathStore` 获取。
+    /// 当前项目路径，从内核 `LumiCore.projectState` 获取。
+    @MainActor
     public static var currentProjectPath: String {
-        LumiCurrentProjectPathStore().currentProjectPath
+        LumiCore.projectState?.currentProject?.path ?? ""
     }
 
     /// 当前项目名称，从路径推导。
+    @MainActor
     public static var currentProjectName: String {
         let path = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else { return "" }

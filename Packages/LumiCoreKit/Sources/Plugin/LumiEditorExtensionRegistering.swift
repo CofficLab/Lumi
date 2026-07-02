@@ -5,14 +5,6 @@ public protocol LumiEditorExtensionRegistering {
 
     @MainActor
     static func registerEditorExtensionsErased(into registry: AnyObject) async
-
-    @MainActor
-    static func configureEditorRuntime(_ context: PluginRuntimeContext) async
-}
-
-public extension LumiEditorExtensionRegistering {
-    @MainActor
-    static func configureEditorRuntime(_ context: PluginRuntimeContext) async {}
 }
 
 public extension PluginPolicy {

@@ -45,12 +45,12 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
 
         if Self.verbose {
             if let filter = providerFilter {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.info("\(self.t)📋 查询可用模型，过滤供应商: \(filter)")
+                if LLMAvailabilityChecker.verbose {
+                                    LLMAvailabilityChecker.logger.info("\(self.t)📋 查询可用模型，过滤供应商: \(filter)")
                 }
             } else {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.info("\(self.t)📋 查询所有可用模型")
+                if LLMAvailabilityChecker.verbose {
+                                    LLMAvailabilityChecker.logger.info("\(self.t)📋 查询所有可用模型")
                 }
             }
         }
@@ -58,8 +58,8 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
         // ── 情况 1：没有任何注册的供应商 ──
         if allProviders.isEmpty {
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.warning("\(self.t)⚠️ 未注册任何 LLM 供应商")
+                if LLMAvailabilityChecker.verbose {
+                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 未注册任何 LLM 供应商")
                 }
             }
             return """
@@ -84,8 +84,8 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
         if providers.isEmpty, let filter = providerFilter {
             let registeredIds = allProviders.map(\.providerId)
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.warning("\(self.t)⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
+                if LLMAvailabilityChecker.verbose {
+                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
                 }
             }
             return """
@@ -123,8 +123,8 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
             }
 
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.warning("\(self.t)⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
+                if LLMAvailabilityChecker.verbose {
+                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
                 }
             }
 
@@ -149,8 +149,8 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
         markdown += availableMarkdown
 
         if Self.verbose {
-            if ModelSelectorPlugin.verbose {
-                            ModelSelectorPlugin.logger.info("\(self.t)✅ 返回 \(totalAvailablePairs) 个可用模型对")
+            if LLMAvailabilityChecker.verbose {
+                            LLMAvailabilityChecker.logger.info("\(self.t)✅ 返回 \(totalAvailablePairs) 个可用模型对")
             }
         }
 

@@ -1,42 +1,24 @@
 import os
 import AgentToolKit
 import LumiUI
-import SuperLogKit
 import SwiftUI
 import LumiCoreKit
 
 /// 可用工具插件
 ///
 /// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
-public actor ToolAvailablePlugin: SuperPlugin, SuperLog {
-    public nonisolated static let emoji = "🧰"
-    public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-available")
-
-    public static let id = "ToolAvailable"
-    public static let displayName = LumiPluginLocalization.string("Tools", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Show all available tools", bundle: .module)
+public enum ToolAvailablePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optOut
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .agent
     public static let iconName = "wrench.and.screwdriver"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 85 }
-    public static let policy: PluginPolicy = .optOut
 
-    /// 默认启用，用户可在设置中关闭。
-
-    public static let shared = ToolAvailablePlugin()
-
-    public nonisolated func onRegister() {}
-    public nonisolated func onEnable() {}
-    public nonisolated func onDisable() {}
-
-    // MARK: - StatusBar Views
-
-    /// 状态栏右侧：可用工具按钮（仅在编辑器激活时显示）
-    @MainActor
-    public func addStatusBarTrailingView(context: PluginContext) -> AnyView? {
-        guard context.activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
-        return AnyView(AvailableToolsButton(context: context))
-    }
+    public static let info = LumiPluginInfo(
+        id: "ToolAvailable",
+        displayName: LumiPluginLocalization.string("Tools", bundle: .module),
+        description: LumiPluginLocalization.string("Show all available tools", bundle: .module),
+        order: 85
+    )
 }
 
 private struct AvailableToolsButton: View {

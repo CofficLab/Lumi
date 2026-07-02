@@ -7,13 +7,15 @@ import LumiUI
 
 /// Editor Rail 文件树根视图
 public struct TreeView: View, SuperLog {
-    @EnvironmentObject var projectVM: WindowProjectVM
-    @EnvironmentObject var editorContext: EditorContext
-    @EnvironmentObject var conversationVM: WindowConversationVM
-
     public nonisolated static let emoji = "🌳"
     public nonisolated static var verbose: Bool { EditorFileTreePanelPlugin.verbose }
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    @EnvironmentObject var editorContext: EditorContext
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = RefreshCoordinator()
@@ -36,36 +38,36 @@ public struct TreeView: View, SuperLog {
     @State private var openFileTask: Task<Void, Never>?
 
     private var showPackageDependencies: Bool {
-        guard !projectVM.currentProjectPath.isEmpty else { return false }
+        guard !currentProjectPath.isEmpty else { return false }
         guard EditorFileTreePanelPlugin.packageDependenciesEnabled else { return false }
         return PackageDependencyResolver.shouldShowPackageDependencies(
-            projectRootURL: URL(fileURLWithPath: projectVM.currentProjectPath)
+            projectRootURL: URL(fileURLWithPath: currentProjectPath)
         )
     }
 
     public var body: some View {
         let showsPackageDependencies = showPackageDependencies
         let _ = FileTreePerformanceLog.recordTreeBody(
-            projectPath: projectVM.currentProjectPath,
+            projectPath: currentProjectPath,
             rootRefreshToken: rootRefreshToken,
             showsPackageDependencies: showsPackageDependencies
         )
 
         VStack(spacing: 0) {
-            if projectVM.currentProjectPath.isEmpty {
+            if currentProjectPath.isEmpty {
                 NoProjectView()
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 6) {
                         NodeView(
-                            url: URL(fileURLWithPath: projectVM.currentProjectPath),
+                            url: URL(fileURLWithPath: currentProjectPath),
                             depth: 0,  // depth == 0 表示根节点
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
-                            windowId: conversationVM.windowId,
+                            windowId: nil,
                             refreshToken: rootRefreshToken,
-                            projectRootPath: projectVM.currentProjectPath,
+                            projectRootPath: currentProjectPath,
                             onExpansionChange: { relativePath, isExpanded in
                                 handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
                             },
@@ -84,7 +86,7 @@ public struct TreeView: View, SuperLog {
                                 .opacity(0.35)
 
                             PackageDependencySection(
-                                projectRootPath: projectVM.currentProjectPath,
+                                projectRootPath: currentProjectPath,
                                 dependencies: packageStore.dependencies,
                                 isLoading: packageStore.isLoading,
                                 diagnostic: packageStore.diagnostic,
@@ -111,7 +113,7 @@ public struct TreeView: View, SuperLog {
         .onChange(of: rootRefreshToken) { _, _ in
             selectionState.resetVisibleOrder()
         }
-        .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
+        .onChange(of: currentProjectPath, onProjectPathChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onReceive(
@@ -121,10 +123,6 @@ public struct TreeView: View, SuperLog {
         ) { notification in
             guard let userInfo = notification.userInfo,
                   let path = userInfo["path"] as? String else { return }
-            if let windowId = conversationVM.windowId {
-                guard let senderWindowId = userInfo["windowId"] as? UUID,
-                      senderWindowId == windowId else { return }
-            }
             onSyncSelectedFile(path: path)
         }
         .onReceive(coordinator.$refreshToken) { newToken in
@@ -143,7 +141,7 @@ public struct TreeView: View, SuperLog {
         openFileTask?.cancel()
         editorContext.setFileTreeHighlightedFileURL(url)
 
-        let projectPath = projectVM.currentProjectPath
+        let projectPath = currentProjectPath
         editorContext.openFile(at: url)
 
         openFileTask = Task { @MainActor in
@@ -152,8 +150,8 @@ public struct TreeView: View, SuperLog {
     }
 
     private func onProjectPathChanged() {
-        coordinator.setProjectRootPath(projectVM.currentProjectPath)
-        packageStore.setProjectRootPath(projectVM.currentProjectPath)
+        coordinator.setProjectRootPath(currentProjectPath)
+        packageStore.setProjectRootPath(currentProjectPath)
         openFileTask?.cancel()
         openFileTask = nil
         selectionState.clearSelection()
@@ -166,9 +164,9 @@ public struct TreeView: View, SuperLog {
     }
 
     private func onAppear() {
-        if !projectVM.currentProjectPath.isEmpty {
-            coordinator.setProjectRootPath(projectVM.currentProjectPath)
-            packageStore.setProjectRootPath(projectVM.currentProjectPath)
+        if !currentProjectPath.isEmpty {
+            coordinator.setProjectRootPath(currentProjectPath)
+            packageStore.setProjectRootPath(currentProjectPath)
             if editorContext.fileTreeHighlightedFileURL == nil {
                 editorContext.syncFileTreeHighlightFromEditor()
             } else if let highlighted = editorContext.fileTreeHighlightedFileURL {
@@ -178,7 +176,7 @@ public struct TreeView: View, SuperLog {
                 rootRefreshToken = 1
             }
             if Self.verbose {
-                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(currentProjectPath)")
             }
         }
     }

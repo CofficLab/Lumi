@@ -5,16 +5,16 @@ import SwiftUI
 /// 新会话按钮视图组件
 public struct NewChatButton: View {
     let chatService: any LumiChatServicing
-    let projectPathStore: (any LumiCurrentProjectPathStoring)?
+    let projectState: LumiProjectState?
 
     @State private var localStore: LocalStore?
 
     public init(
         chatService: any LumiChatServicing,
-        projectPathStore: (any LumiCurrentProjectPathStoring)? = nil
+        projectState: LumiProjectState? = nil
     ) {
         self.chatService = chatService
-        self.projectPathStore = projectPathStore
+        self.projectState = projectState
     }
 
     public var body: some View {
@@ -38,7 +38,7 @@ public struct NewChatButton: View {
 
     func createConversation(using localStore: LocalStore? = nil) {
         let store = localStore ?? resolvedLocalStore()
-        let projectPath = projectPathStore?.currentProjectPath
+        let projectPath = projectState?.currentProject?.path
         let resolvedPath = (projectPath?.isEmpty == false) ? projectPath : nil
         let language = chatService.language(for: chatService.selectedConversationID)
         let automationLevel = store.loadDefaultAutomationLevel()

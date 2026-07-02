@@ -9,6 +9,7 @@ import SuperLogKit
 /// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
 @MainActor
 public final class LLMAvailabilityChecker: SuperLog {
+    public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector.availability")
     public static let verbose: Bool = false
 
     private let llmService: any LLMAvailabilityLLMServicing
@@ -37,8 +38,8 @@ public final class LLMAvailabilityChecker: SuperLog {
         if Self.verbose {
             let providersInfo = llmService.allProviders()
             let totalModels = providersInfo.reduce(0) { $0 + $1.availableModels.count }
-            if ModelSelectorPlugin.verbose {
-                            ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
+            if Self.verbose {
+                            Self.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
             }
         }
 
@@ -56,8 +57,8 @@ public final class LLMAvailabilityChecker: SuperLog {
         let totalModelCount = store.providers.reduce(0) { $0 + $1.models.count }
 
         if Self.verbose {
-            if ModelSelectorPlugin.verbose {
-                            ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
+            if Self.verbose {
+                            Self.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
             }
         }
     }
@@ -94,15 +95,15 @@ public final class LLMAvailabilityChecker: SuperLog {
         let providerId = info.id
 
         if Self.verbose {
-            if ModelSelectorPlugin.verbose {
-                            ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
+            if Self.verbose {
+                            Self.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
             }
         }
 
         guard let providerType = llmService.providerType(forId: providerId) else {
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
+                if Self.verbose {
+                                    Self.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
                 }
             }
             for modelId in info.availableModels {
@@ -117,8 +118,8 @@ public final class LLMAvailabilityChecker: SuperLog {
 
         if !providerType.hasApiKey && !info.isLocal {
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                                    ModelSelectorPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置凭证，跳过所有模型")
+                if Self.verbose {
+                                    Self.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置凭证，跳过所有模型")
                 }
             }
             for modelId in info.availableModels {
@@ -137,8 +138,8 @@ public final class LLMAvailabilityChecker: SuperLog {
 
         let availableCount = store.providers.first(where: { $0.providerId == providerId })?.availableModels.count ?? 0
         if Self.verbose {
-            if ModelSelectorPlugin.verbose {
-                            ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
+            if Self.verbose {
+                            Self.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
             }
         }
     }
@@ -159,8 +160,8 @@ public final class LLMAvailabilityChecker: SuperLog {
         case .apiKeyOnly:
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                    ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（apiKeyOnly 策略）: \(providerId) / \(modelId)")
+                if Self.verbose {
+                    Self.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（apiKeyOnly 策略）: \(providerId) / \(modelId)")
                 }
             }
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
@@ -175,11 +176,11 @@ public final class LLMAvailabilityChecker: SuperLog {
             let status: LLMAvailabilityStatus = result.isAvailable ? .available : .unavailable(failure)
             store.updateStatus(providerId: providerId, modelId: modelId, status: status)
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
+                if Self.verbose {
                     if result.isAvailable {
-                        ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（custom 策略）: \(providerId) / \(modelId)")
+                        Self.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（custom 策略）: \(providerId) / \(modelId)")
                     } else {
-                        ModelSelectorPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用（custom 策略）: \(providerId) / \(modelId) - \(failure.logSummary)")
+                        Self.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用（custom 策略）: \(providerId) / \(modelId) - \(failure.logSummary)")
                     }
                 }
             }
@@ -199,8 +200,8 @@ public final class LLMAvailabilityChecker: SuperLog {
 
             store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                    ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
+                if Self.verbose {
+                    Self.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
                 }
             }
             return ModelCheckResult(providerId: providerId, modelId: modelId, isAvailable: true, failure: nil)
@@ -208,8 +209,8 @@ public final class LLMAvailabilityChecker: SuperLog {
             switch error {
             case .cancelled:
                 if Self.verbose {
-                    if ModelSelectorPlugin.verbose {
-                        ModelSelectorPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
+                    if Self.verbose {
+                        Self.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
                     }
                 }
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
@@ -217,8 +218,8 @@ public final class LLMAvailabilityChecker: SuperLog {
             default:
                 let failure = Self.messageFailure(error.errorDescription ?? error.localizedDescription)
                 if Self.verbose {
-                    if ModelSelectorPlugin.verbose {
-                        ModelSelectorPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(failure.logSummary)")
+                    if Self.verbose {
+                        Self.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(failure.logSummary)")
                     }
                 }
                 store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))
@@ -227,8 +228,8 @@ public final class LLMAvailabilityChecker: SuperLog {
         } catch {
             let failure = Self.messageFailure(error.localizedDescription)
             if Self.verbose {
-                if ModelSelectorPlugin.verbose {
-                    ModelSelectorPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(failure.logSummary)")
+                if Self.verbose {
+                    Self.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(failure.logSummary)")
                 }
             }
             store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(failure))

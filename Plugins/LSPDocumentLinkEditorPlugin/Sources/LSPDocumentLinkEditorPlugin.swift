@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 /// LSP 文档链接编辑器插件。
 ///
@@ -13,20 +12,16 @@ import SwiftUI
 /// 实际打开链接或跳转由上层编辑器 UI 注入。
 ///
 /// 完整启用该能力需要 LSP 服务可用，且当前语言服务器支持 document link 相关 LSP 方法。
-public actor LSPDocumentLinkEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPDocumentLinkEditorPlugin()
-    public static let id = "LSPDocumentLinkEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Document Links", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Makes URLs and file paths clickable in the editor.", bundle: .module)
+public enum LSPDocumentLinkEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "link"
-    public static let order = 29
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
-
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        // Provided via DocumentLinkProvider
-    }
+    public static let info = LumiPluginInfo(
+        id: "LSPDocumentLinkEditor",
+        displayName: LumiPluginLocalization.string("LSP Document Links", bundle: .module),
+        description: LumiPluginLocalization.string("Makes URLs and file paths clickable in the editor.", bundle: .module),
+        order: 29
+    )
 }

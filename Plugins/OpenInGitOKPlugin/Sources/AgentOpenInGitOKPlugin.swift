@@ -1,22 +1,22 @@
+import AppKit
 import LumiCoreKit
 import LumiUI
-import AppKit
-import SwiftUI
 import os
 import SuperLogKit
+import SwiftUI
 
 private let gitOKPluginLogger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-in-gitok")
 
 /// 在 GitOK 中打开项目插件
 ///
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 GitOK 中打开当前项目。
-/// 
+///
 /// ## 实现方式
 ///
 /// 使用 NSWorkspace 的 `open(_:withApplicationAt:configuration:)` 将项目文件夹
 /// 直接传给 GitOK 打开。这与 GitHub Desktop 插件使用完全相同的 API，
 /// macOS 会自动处理全屏 Space 切换。
-/// 
+///
 /// ## 注意事项
 ///
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
@@ -44,11 +44,11 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin, SuperLog {
                 statusBarView: {
                     OpenInGitOKStatusBarView()
                 }
-            )
+            ),
         ]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
@@ -61,7 +61,6 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin, SuperLog {
             .padding()
         )
     }
-
 }
 
 // MARK: - Status Bar View
@@ -70,12 +69,15 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin, SuperLog {
 public struct OpenInGitOKStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         Group {
-            if projectVM.currentProjectPath.isEmpty {
+            if currentProjectPath.isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -127,8 +129,9 @@ public struct OpenInGitOKStatusBarView: View {
     }
 
     private func openInGitOK() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let projectURL = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
+        let projectURL = URL(fileURLWithPath: projectPath)
         GitOKLauncher.openProject(projectURL)
     }
 }
@@ -139,7 +142,6 @@ public struct OpenInGitOKStatusBarView: View {
 public struct OpenInGitOKDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
     public var body: some View {
@@ -177,7 +179,7 @@ public struct OpenInGitOKDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(projectVM.currentProjectPath)
+                Text(LumiCore.projectState?.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -187,7 +189,7 @@ public struct OpenInGitOKDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
+                    NSPasteboard.general.setString(LumiCore.projectState?.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -204,8 +206,9 @@ public struct OpenInGitOKDetailView: View {
     }
 
     private func openInGitOK() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let projectURL = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
+        let projectURL = URL(fileURLWithPath: projectPath)
         GitOKLauncher.openProject(projectURL)
     }
 }

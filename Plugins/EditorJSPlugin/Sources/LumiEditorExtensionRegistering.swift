@@ -4,25 +4,25 @@ import LumiCoreKit
 extension EditorJSPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
         LumiPluginInfo(
-            id: id,
-            displayName: displayName,
-            description: description,
+            id: info.id,
+            displayName: info.displayName,
+            description: info.description,
             order: order
         )
     }
 
     public static var extensionPluginPolicy: LumiPluginPolicy {
-        policy.lumiPluginPolicy
+        policy
     }
 
     @MainActor
     public static func registerEditorExtensionsErased(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
-        await shared.registerEditorExtensions(into: registry)
+        await Self.registerEditorExtensions(into: registry)
     }
 
     @MainActor
     public static func configureEditorRuntime(_ context: PluginRuntimeContext) async {
-        await shared.configureRuntime(context: context)
+        await Self.configureEditorRuntime(context: context)
     }
 }

@@ -62,9 +62,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
         let provider: @MainActor @Sendable () -> String = {
-            projectPathProvider?.currentProjectPath ?? ""
+            LumiCore.projectState?.currentProject?.path ?? ""
         }
         AddToChat.currentProjectPathProvider = provider
         CoverArtRuntime.currentProjectPathProvider = provider

@@ -1,9 +1,8 @@
 import EditorService
 import Foundation
-import LumiCoreKit
 import os
+import LumiCoreKit
 import ShellKit
-import SuperLogKit
 import SwiftUI
 import XcodeKit
 
@@ -14,31 +13,23 @@ public enum SwiftPluginLog {
 }
 
 /// Swift / Xcode 项目编辑器扩展：语法高亮、LSP、构建上下文与 Xcode 集成
-public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
-    public nonisolated static let emoji = "🐦"
-
-    public static let shared = EditorSwiftEditorPlugin()
-    public static let id = "EditorSwift"
-    public static let displayName = LumiPluginLocalization.string("Swift Editor", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Provides Swift language support, Xcode project identity, build context, and sourcekit-lsp integration.", bundle: .module)
+public enum EditorSwiftEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "swift"
-    public static let order = 4
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
-
-    @MainActor lazy var buildContextProvider = XcodeBuildContextProvider(
-        store: EditorSwiftBuildServerStore.makeStore()
+    public static let info = LumiPluginInfo(
+        id: "EditorSwift",
+        displayName: LumiPluginLocalization.string("Swift Editor", bundle: .module),
+        description: LumiPluginLocalization.string("Provides Swift language support, Xcode project identity, build context, and sourcekit-lsp integration.", bundle: .module),
+        order: 4
     )
-    @MainActor private lazy var projectContextCapability = XcodeProjectContextCapabilityAdapter()
-    @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
-    @MainActor private lazy var languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("\(self.t)开始注册编辑器扩展")
+            SwiftPluginLog.logger.info("开始注册编辑器扩展")
         }
 
         registry.registerLanguage(EditorSwiftPluginDescriptor.swift)
@@ -53,13 +44,20 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
             }
         }
 
+        let buildContextProvider = XcodeBuildContextProvider(
+            store: EditorSwiftBuildServerStore.makeStore()
+        )
+        let projectContextCapability = XcodeProjectContextCapabilityAdapter()
+        let semanticCapability = XcodeSemanticCapabilityAdapter()
+        let languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
+
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
         if let bundledTool = Bundle.module.url(forResource: "xcode-build-server", withExtension: nil, subdirectory: "Tools") {
             XcodeBuildServerLocator.bundledToolPath = bundledTool.path
         }
         EditorSwiftHostEnvironmentConfiguration.apply()
         if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("\(self.t)已注册 buildContextProvider 到 Bridge")
+            SwiftPluginLog.logger.info("已注册 buildContextProvider 到 Bridge")
         }
 
         registry.registerCompletionContributor(XcodePlistCompletionContributor())
@@ -75,12 +73,7 @@ public actor EditorSwiftEditorPlugin: SuperPlugin, SuperLog {
         registry.registerCommandContributor(SwiftRunCommandContributor())
 
         if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("\(self.t)编辑器扩展注册完成")
+            SwiftPluginLog.logger.info("编辑器扩展注册完成")
         }
-    }
-
-
-    @MainActor public func addRootView<Content: View>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(EditorSwiftPluginRootView(content: content()))
     }
 }

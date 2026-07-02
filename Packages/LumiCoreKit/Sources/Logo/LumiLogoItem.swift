@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - LogoItem
-
 /// 插件贡献的 Logo 项
 ///
 /// 插件通过 ``LumiPlugin/logoItems(context:)`` 返回此类型，

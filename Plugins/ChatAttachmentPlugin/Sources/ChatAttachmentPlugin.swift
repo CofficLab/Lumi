@@ -1,5 +1,4 @@
 import LumiCoreKit
-import SuperLogKit
 import LumiUI
 import SwiftUI
 import os
@@ -7,33 +6,30 @@ import os
 /// 聊天附件插件
 ///
 /// 负责右侧栏中的待发送附件列表，以及右侧栏范围内的文件拖放入口。
-public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
+public actor ChatAttachmentPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-attachment")
 
     public nonisolated static let emoji = "📎"
     public nonisolated static let verbose: Bool = false
-    public nonisolated static let policy: PluginPolicy = .alwaysOn
+    public static let policy: LumiPluginPolicy = .alwaysOn
     public static let id = "ChatAttachment"
     public static let displayName = LumiPluginLocalization.string("Chat Attachment", bundle: .module)
     public static let description = LumiPluginLocalization.string("Pending chat attachments and sidebar drop handling", bundle: .module)
     public static let iconName = "paperclip"
-    public static var category: PluginCategory { .agent }
-    public static var order: Int { 94 }
-    public static let shared = ChatAttachmentPlugin()
+    public static let category: LumiPluginCategory = .agent
+    public static let order = 94
 
-    @MainActor public func addSidebarSections(context: PluginContext) -> [AnyView] {
+    public static func addSidebarSections(context: PluginContext) -> [AnyView] {
         guard context.showChat.isVisible else { return [] }
         return [AnyView(ChatAttachmentSectionView())]
     }
 
-    @MainActor public func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
+    public static func wrapRightSidebarRoot(_ content: AnyView, context: PluginContext) -> AnyView {
         guard context.showChat.isVisible else { return content }
         return AnyView(ChatAttachmentDropRootView(content: content))
     }
 
-    // MARK: - Sidebar Toolbar
-
-    @MainActor public func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
+    public static func addSidebarLeadingToolbarItems(context: PluginContext) -> [SidebarToolbarItem] {
         guard context.showChat.isVisible else { return [] }
         return [
             SidebarToolbarItem(
@@ -45,7 +41,7 @@ public actor ChatAttachmentPlugin: SuperPlugin, SuperLog {
         ]
     }
 
-    @MainActor public func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
+    public static func addSidebarToolbarItemView(itemId: String, context: PluginContext) -> AnyView? {
         guard itemId == "image-upload" else { return nil }
         return AnyView(ImageUploadToolbarButton())
     }

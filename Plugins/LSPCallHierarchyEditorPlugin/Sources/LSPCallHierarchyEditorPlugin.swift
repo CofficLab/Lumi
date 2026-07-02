@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 /// LSP 调用层级编辑器插件。
@@ -24,19 +23,20 @@ import SwiftUI
 ///
 /// 要完整测试该能力，需要同时启用 LSP 服务、调用层级 Provider、触发命令的入口以及展示结果的 UI 容器，
 /// 并确保当前语言服务器支持上述 Call Hierarchy LSP 方法。
-public actor LSPCallHierarchyEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPCallHierarchyEditorPlugin()
-    public static let id = "LSPCallHierarchyEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Call Hierarchy", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Shows incoming and outgoing call hierarchy for symbols.", bundle: .module)
+public enum LSPCallHierarchyEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "diagram"
-    public static let order = 25
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "LSPCallHierarchyEditor",
+        displayName: LumiPluginLocalization.string("LSP Call Hierarchy", bundle: .module),
+        description: LumiPluginLocalization.string("Shows incoming and outgoing call hierarchy for symbols.", bundle: .module),
+        order: 25
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let provider = CallHierarchyProvider(lspService: .shared)
         registry.registerCallHierarchyProvider(provider)

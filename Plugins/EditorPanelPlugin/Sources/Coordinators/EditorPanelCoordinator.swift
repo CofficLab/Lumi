@@ -20,7 +20,7 @@ import os
 ///
 /// ```swift
 /// @StateObject private var coordinator = EditorPanelCoordinator()
-/// coordinator.configure(panelService: service, projectVM: projectVM, ...)
+/// coordinator.configure(panelService: service, projectPath: ..., ...)
 /// ```
 @MainActor
 public final class EditorPanelCoordinator: ObservableObject {
@@ -33,9 +33,6 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 编辑器服务门面
     private var service: EditorService?
 
-    /// 项目 ViewModel（弱引用避免循环引用）
-    private weak var projectVM: WindowProjectVM?
-
     /// Combine 订阅令牌
     private var cancellables = Set<AnyCancellable>()
 
@@ -44,35 +41,34 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 配置协调器的依赖（在视图 onAppear 时调用）
     public func configure(
         panelService: EditorPanelService,
-        service: EditorService,
-        projectVM: WindowProjectVM
+        service: EditorService
     ) {
         self.panelService = panelService
         self.service = service
-        self.projectVM = projectVM
     }
 
     // MARK: - 生命周期
 
     /// 视图出现时的初始化逻辑
     public func handleAppear() {
-        guard let panelService, let service, let projectVM else { return }
+        guard let panelService, let service else { return }
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info(
-                "onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public)"
+                "onAppear, currentProjectPath=\(projectPath, privacy: .public)"
             )
         }
 
-        service.projectRootPath = projectRootPath(from: projectVM)
-        panelService.refreshProjectContext(for: projectVM.currentProjectPath, service: service)
+        service.projectRootPath = projectRootPath(from: projectPath)
+        panelService.refreshProjectContext(for: projectPath, service: service)
 
         if service.sessions.activeSessionID != nil || service.files.currentFileURL != nil {
             panelService.openOrActivateSession(
                 for: service.files.currentFileURL ?? service.sessions.activeSession?.fileURL,
                 service: service,
-                projectRootPath: projectRootPath(from: projectVM),
-                currentProjectPath: projectVM.currentProjectPath
+                projectRootPath: projectRootPath(from: projectPath),
+                currentProjectPath: projectPath
             )
             service.lsp.refreshDocumentOutline()
         }
@@ -95,7 +91,7 @@ public final class EditorPanelCoordinator: ObservableObject {
 
     /// 处理项目路径变化
     public func handleProjectPathChange(oldPath: String, newPath: String) {
-        guard let panelService, let service, let projectVM else { return }
+        guard let panelService, let service else { return }
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info(
@@ -107,7 +103,7 @@ public final class EditorPanelCoordinator: ObservableObject {
         if service.files.hasUnsavedChanges { service.files.saveNow() }
         service.sessions.closeAllSessions()
         service.files.loadFile(from: nil)
-        service.projectRootPath = projectRootPath(from: projectVM)
+        service.projectRootPath = projectRootPath(from: newPath)
         panelService.refreshProjectContext(for: newPath, service: service)
     }
 
@@ -186,9 +182,9 @@ public final class EditorPanelCoordinator: ObservableObject {
         return service?.state.windowId == targetWindowId
     }
 
-    private func projectRootPath(from projectVM: WindowProjectVM) -> String? {
-        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        return path.isEmpty ? nil : path
+    private func projectRootPath(from path: String) -> String? {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

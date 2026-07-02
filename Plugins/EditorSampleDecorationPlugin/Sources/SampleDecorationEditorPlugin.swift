@@ -1,23 +1,23 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 /// 编辑器 decoration 样例插件：演示 git-like 与 custom gutter decoration 的接入方式。
-public actor SampleDecorationEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = SampleDecorationEditorPlugin()
-    public static let id = "SampleDecorationEditor"
-    public static let displayName = LumiPluginLocalization.string("Sample Decoration", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Demonstrates sample gutter decorations for the editor extension surface.", bundle: .module)
+public enum SampleDecorationEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "signpost.right.and.left"
-    public static let order = 90
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "SampleDecorationEditor",
+        displayName: LumiPluginLocalization.string("Sample Decoration", bundle: .module),
+        description: LumiPluginLocalization.string("Demonstrates sample gutter decorations for the editor extension surface.", bundle: .module),
+        order: 90
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerDecorationContributor(SampleDecorationContributor())
     }

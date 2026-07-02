@@ -1,5 +1,7 @@
 import LumiChatKit
+import Logging
 import LumiCoreKit
+import os
 import SwiftUI
 
 public enum ModelSelectorPlugin: LumiPlugin {
@@ -7,6 +9,8 @@ public enum ModelSelectorPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "globe"
+    public static let verbose: Bool = true
+    public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.model-selector",

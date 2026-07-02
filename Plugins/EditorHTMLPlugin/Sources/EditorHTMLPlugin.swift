@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 /// HTML 编辑器插件
@@ -11,19 +10,20 @@ import SwiftUI
 /// - 悬浮文档提示
 /// - 标签自动闭合
 /// - 标签匹配与高亮
-public actor EditorHTMLPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = EditorHTMLPlugin()
-    public static let id = "HTMLEditor"
-    public static let displayName = LumiPluginLocalization.string("HTML Editor", bundle: .module)
-    public static let description = LumiPluginLocalization.string("HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", bundle: .module)
+public enum EditorHTMLPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "curlybraces"
-    public static let order = 31
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "HTMLEditor",
+        displayName: LumiPluginLocalization.string("HTML Editor", bundle: .module),
+        description: LumiPluginLocalization.string("HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.", bundle: .module),
+        order: 31
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorHTMLPluginDescriptor.descriptor)
         registry.registerGrammarProvider(EditorHTMLPluginGrammarProvider())

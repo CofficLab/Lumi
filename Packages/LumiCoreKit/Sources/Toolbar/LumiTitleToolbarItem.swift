@@ -1,11 +1,5 @@
 import SwiftUI
 
-public enum LumiTitleToolbarPlacement: Sendable, Equatable {
-    case leading
-    case center
-    case trailing
-}
-
 @MainActor
 public struct LumiTitleToolbarItem: Identifiable {
     public let id: String

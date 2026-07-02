@@ -4,24 +4,24 @@ import SuperLogKit
 import os
 
 /// DB 队列插件：出队 pending 消息、运行 SendPipeline、设置 turnPhase 启动插件链。
-public actor SendQueuePlugin: SuperPlugin, SuperLog {
+public actor SendQueuePlugin: LumiPlugin, SuperLog {
     nonisolated public static let emoji = "📥"
-    public static var category: PluginCategory { .agent }
+    public static let category: LumiPluginCategory = .agent
     nonisolated public static let verbose: Bool = false
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.send-queue")
 
-    nonisolated public static let policy: PluginPolicy = .alwaysOn
-
-    public static let id = "SendQueue"
-    public static let displayName = LumiPluginLocalization.string("Send Queue", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Dequeue pending messages and run send prepare pipeline", bundle: .module)
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
     public static let iconName = "tray.and.arrow.down"
-    public static var order: Int { 190 }
+
+    public static let info = LumiPluginInfo(
+        id: "SendQueue",
+        displayName: LumiPluginLocalization.string("Send Queue", bundle: .module),
+        description: LumiPluginLocalization.string("Dequeue pending messages and run send prepare pipeline", bundle: .module),
+        order: 190
+    )
 
     nonisolated public var instanceLabel: String { Self.id }
-    public static let shared = SendQueuePlugin()
-
-    private init() {}
 
     @MainActor
     public func configureRuntime(context: PluginRuntimeContext) {

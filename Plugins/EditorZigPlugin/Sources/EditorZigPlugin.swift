@@ -1,19 +1,21 @@
 import EditorService
 import LumiCoreKit
+import SwiftUI
 
-public actor EditorZigPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .optIn
-    public static let shared = EditorZigPlugin()
-    public static let id = "zigHighlight"
-    public static let displayName = LumiPluginLocalization.string("Zig Highlight", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for Zig.", bundle: .module)
+public enum EditorZigPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
-    public static let order = 200
-    public static var category: PluginCategory { .editor }
-    public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static let info = LumiPluginInfo(
+        id: "zigHighlight",
+        displayName: LumiPluginLocalization.string("Zig Highlight", bundle: .module),
+        description: LumiPluginLocalization.string("Syntax highlighting and language detection for Zig.", bundle: .module),
+        order: 200
+    )
+
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorZigPluginDescriptor.descriptor)
         registry.registerGrammarProvider(EditorZigPluginGrammarProvider())
