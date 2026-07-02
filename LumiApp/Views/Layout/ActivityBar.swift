@@ -16,6 +16,7 @@ struct ActivityBar: View {
                     isActive: layoutState.activeViewContainerID == container.id
                 ) {
                     layoutState.activateViewContainer(id: container.id)
+                    LumiCore.layoutState?.activateViewContainer(id: container.id)
                 }
             }
 
