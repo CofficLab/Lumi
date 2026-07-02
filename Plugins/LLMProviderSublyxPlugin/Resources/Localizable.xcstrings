@@ -1,380 +1,383 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Configure your Sublyx API Key below, then resend your message.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configure your Sublyx API Key below, then resend your message."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "Configure your Sublyx API Key below, then resend your message." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure your Sublyx API Key below, then resend your message."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在下方填写 Sublyx API Key，配置完成后重新发送消息即可。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在下方填写 Sublyx API Key，配置完成后重新发送消息即可。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在下方填寫 Sublyx API Key，設定完成後重新發送訊息即可。"
           }
         }
       }
     },
-    "Contributes Sublyx GPT models to Lumi Chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes Sublyx GPT models and Sublyx-specific chat error renderers."
+    "Contributes Sublyx GPT models to Lumi Chat." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes Sublyx GPT models and Sublyx-specific chat error renderers."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为 Lumi Chat 提供 Sublyx GPT 模型和特定错误渲染器。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 Lumi Chat 提供 Sublyx GPT 模型和特定错误渲染器。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 提供 Sublyx GPT 模型和特定錯誤渲染器。"
           }
         }
       }
     },
-    "Enter Sublyx API Key": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter Sublyx API Key"
+    "Enter Sublyx API Key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Sublyx API Key"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "输入 Sublyx API Key"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入 Sublyx API Key"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輸入 Sublyx API Key"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 Sublyx API Key"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輸入 Sublyx API Key"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 Sublyx API Key"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輸入 Sublyx API Key"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 Sublyx API Key"
           }
         }
       }
     },
-    "Get API Key on Sublyx": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Get API Key on Sublyx"
+    "Get API Key on Sublyx" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get API Key on Sublyx"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Sublyx 获取 API Key"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Sublyx 获取 API Key"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Sublyx 獲取 API Key"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Sublyx 獲取 API Key"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Sublyx 獲取 API Key"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Sublyx 獲取 API Key"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Sublyx 獲取 API Key"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Sublyx 獲取 API Key"
           }
         }
       }
     },
-    "GPT API Gateway by Sublyx": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPT API Gateway by Sublyx"
+    "GPT API Gateway by Sublyx" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPT API Gateway by Sublyx"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 提供的 GPT API 网关"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 提供的 GPT API 网关"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 提供的 GPT API 網關"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 提供的 GPT API 網關"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 提供的 GPT API 網關"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 提供的 GPT API 網關"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 提供的 GPT API 網關"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 提供的 GPT API 網關"
           }
         }
       }
     },
-    "Hide API Key": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hide API Key"
+    "Hide API Key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide API Key"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐藏 API Key"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏 API Key"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱藏 API Key"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API Key"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱藏 API Key"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API Key"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱藏 API Key"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API Key"
           }
         }
       }
     },
-    "Show API Key": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show API Key"
+    "Show API Key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show API Key"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示 API Key"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 API Key"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 API Key"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API Key"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 API Key"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API Key"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示 API Key"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API Key"
           }
         }
       }
     },
-    "Sublyx": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx"
+    "Sublyx" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx"
           }
         }
       }
     },
-    "Sublyx API Key required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx API Key required"
+    "Sublyx API Key required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx API Key required"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 Sublyx API Key"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 Sublyx API Key"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 Sublyx API Key"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 Sublyx API Key"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 Sublyx API Key"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 Sublyx API Key"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 Sublyx API Key"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 Sublyx API Key"
           }
         }
       }
     },
-    "Sublyx HTTP %lld": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx HTTP %lld"
+    "Sublyx HTTP %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx HTTP %lld"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx HTTP %lld"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx HTTP %lld"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx HTTP %lld"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx HTTP %lld"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx HTTP %lld"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx HTTP %lld"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx HTTP %lld"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx HTTP %lld"
           }
         }
       }
     },
-    "Sublyx request failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx request failed"
+    "Sublyx request failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx request failed"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 请求失败"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 请求失败"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 請求失敗"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 請求失敗"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 請求失敗"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 請求失敗"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sublyx 請求失敗"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublyx 請求失敗"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

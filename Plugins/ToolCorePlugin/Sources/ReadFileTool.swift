@@ -2,11 +2,12 @@ import AppKit
 import Foundation
 import LumiCoreKit
 import WorkspaceFileKit
+import os
 
 /// 文件读取工具
 ///
 /// 允许 AI 助手按行读取指定路径的 UTF-8 文本文件，默认每次最多 250 行。
-public struct ReadFileTool: LumiAgentTool {
+public struct ReadFileTool: LumiAgentTool, SuperLog {
     public static let info = LumiAgentToolInfo(
         id: "read_file",
         displayName: LumiPluginLocalization.string("Read File", bundle: .module),
@@ -15,6 +16,9 @@ public struct ReadFileTool: LumiAgentTool {
             bundle: .module
         )
     )
+
+    public nonisolated static let emoji = "📄"
+    public nonisolated static let verbose = true
 
     public init() {}
 
@@ -78,6 +82,10 @@ public struct ReadFileTool: LumiAgentTool {
             )
         }
 
+        if Self.verbose {
+            Self.logger.info("\(self.t)开始读取文件：\(path)")
+        }
+
         do {
             let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
             let data = try Data(contentsOf: url)
@@ -85,10 +93,16 @@ public struct ReadFileTool: LumiAgentTool {
             // 图片文件：读取并以图片形式回传给 LLM（而非报 UTF-8 错误）。
             if let mimeType = Self.imageMimeType(forPathExtension: url.pathExtension),
                let imageMessage = Self.readAsImage(data: data, url: url, mimeType: mimeType, context: context) {
+                if Self.verbose {
+                    Self.logger.info("\(self.t)识别为图片文件：\(path)，mimeType=\(mimeType)，大小=\(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
+                }
                 return imageMessage
             }
 
             guard let content = String(data: data, encoding: .utf8) else {
+                if Self.verbose {
+                    Self.logger.warning("\(self.t)文件不是有效 UTF-8 文本：\(path)")
+                }
                 return "Error: File content is not valid UTF-8 text."
             }
 
@@ -101,6 +115,9 @@ public struct ReadFileTool: LumiAgentTool {
                     path: url.path,
                     snapshot: WorkspaceReadFileSnapshot(modificationDate: modificationDate)
                 )
+                if Self.verbose {
+                    Self.logger.info("\(self.t)记录读取快照：\(url.path)，modificationDate=\(modificationDate)")
+                }
             }
 
             let request = ReadFileLineReader.Request(
@@ -109,12 +126,19 @@ public struct ReadFileTool: LumiAgentTool {
             )
             let result = ReadFileLineReader.read(content: content, request: request)
 
+            if Self.verbose {
+                Self.logger.info("\(self.t)读取完成：\(path)，总行数=\(result.totalLines)，返回行数=\(result.formattedContent.split(separator: "\n").count)")
+            }
+
             if result.totalLines == 0 {
                 return ""
             }
 
             return result.formattedContent
         } catch {
+            if Self.verbose {
+                Self.logger.error("\(self.t)读取文件失败：\(path) - \(error.localizedDescription)")
+            }
             return "Error reading file: \(error.localizedDescription)"
         }
     }
@@ -143,6 +167,9 @@ public struct ReadFileTool: LumiAgentTool {
     ) -> String? {
         // NSImage(data:) 与 representations 读取在后台线程安全可用。
         guard let image = NSImage(data: data), image.isValid else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)图片数据无效：\(url.lastPathComponent)")
+            }
             return nil
         }
 
@@ -163,7 +190,13 @@ public struct ReadFileTool: LumiAgentTool {
             ? "，\(pixelSize.width)×\(pixelSize.height) 像素"
             : ""
         let byteCount = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
-        return "已加载图片：\(url.lastPathComponent)\(sizeDescription)（\(byteCount)）。图片已随结果返回，可直接查看其内容。"
+        let result = "已加载图片：\(url.lastPathComponent)\(sizeDescription)（\(byteCount)）。图片已随结果返回，可直接查看其内容。"
+        
+        if Self.verbose {
+            Self.logger.info("\(Self.t)图片读取成功：\(url.lastPathComponent)，\(sizeDescription)，\(byteCount)")
+        }
+        
+        return result
     }
 
     private func intArgument(_ value: LumiJSONValue?) -> Int? {
