@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiCoreKit
 
@@ -29,14 +30,11 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring {
     // MARK: - Properties
 
     private let settingsDirectory: URL
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
     public init(
-        pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects"),
-        projectPathStore: LumiCurrentProjectPathStoring? = nil,
-        projectStore: LumiProjectStore? = nil
+        pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects")
     ) {
         self.settingsDirectory = pluginDirectory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
