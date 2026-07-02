@@ -16,9 +16,12 @@ public struct GitCommitDetailView: View, SuperLog {
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
     @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?

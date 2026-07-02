@@ -84,11 +84,14 @@ public enum ScannerState: Equatable, Sendable {
 ///
 /// 显示当前未解决问题数量的图标，点击展开 Popover 查看详情。
 public struct ProjectIssueScannerStatusBarView: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = ProjectIssueScannerViewModel()
 
     /// 模型偏好（从 UserDefaults 加载）
     @State private var modelPreference: ScannerModelPreference = ScannerModelPreference.load()
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         Group {
@@ -96,7 +99,7 @@ public struct ProjectIssueScannerStatusBarView: View {
                 StatusBarHoverContainer(
                     detailView: ProjectIssueScannerPopover(
                         viewModel: viewModel,
-                        projectPath: projectVM.currentProjectPath,
+                        projectPath: currentProjectPath,
                         modelPreference: $modelPreference
                     ),
                     popoverWidth: 480,
@@ -117,13 +120,13 @@ public struct ProjectIssueScannerStatusBarView: View {
             }
         }
         .onAppear {
-            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
+            Task { await viewModel.reloadIssues(projectPath: currentProjectPath) }
         }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
-            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
+        .onChange(of: currentProjectPath) { _, _ in
+            Task { await viewModel.reloadIssues(projectPath: currentProjectPath) }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            Task { await viewModel.reloadIssues(projectPath: projectVM.currentProjectPath) }
+            Task { await viewModel.reloadIssues(projectPath: currentProjectPath) }
         }
         .onChange(of: modelPreference) { _, newPreference in
             newPreference.save()

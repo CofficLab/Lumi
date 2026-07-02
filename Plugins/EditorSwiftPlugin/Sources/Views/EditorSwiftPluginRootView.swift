@@ -12,14 +12,17 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     public let content: Content
 
-    @EnvironmentObject var projectVM: WindowProjectVM
-    
-    /// 使用 LumiProjectStore.shared 替代 AppProjectsVM
-    private var projectStore: LumiProjectStore { .shared }
-
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
     @StateObject private var windowScope = EditorSwiftWindowScope()
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    private var projects: [LumiProjectEntry] {
+        LumiCore.projectState?.projects ?? []
+    }
 
     enum PreloadStatus: Sendable {
         case idle
@@ -57,7 +60,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     private func preloadRecentXcodeProjects() async {
         SwiftPluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
-        let recentProjects = projectStore.getRecentProjects()
+        let recentProjects = projects
         SwiftPluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")
         let xcodeProjects = await EditorXcodeProjectPreloader.filterXcodeProjects(recentProjects)
 

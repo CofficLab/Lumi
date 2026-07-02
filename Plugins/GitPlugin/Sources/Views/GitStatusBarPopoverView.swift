@@ -7,7 +7,6 @@ import LumiUI
 public struct GitPluginPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var branches: [GitBranch] = []
     @State private var commits: [GitCommitLog] = []
     @State private var uncommittedFiles: [GitChangedFile] = []
@@ -30,6 +29,10 @@ public struct GitPluginPopoverView: View {
     @State private var diffGeneration = 0
 
     private let commitPageSize = 25
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -65,7 +68,7 @@ public struct GitPluginPopoverView: View {
         }
         .frame(height: 620)
         .task { await refreshAll() }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
+        .onChange(of: currentProjectPath) { _, _ in
             Task { await refreshAll() }
         }
         .onApplicationDidBecomeActive {
@@ -90,6 +93,8 @@ public struct GitPluginPopoverView: View {
             }
         }
     }
+
+    // MARK: - Subviews
 
     private var header: some View {
         HStack(spacing: 8) {
@@ -182,6 +187,13 @@ public struct GitPluginPopoverView: View {
         }
     }
 
+    private var filteredBranches: [GitBranch] {
+        if branchSearch.isEmpty {
+            return branches
+        }
+        return branches.filter { $0.name.localizedCaseInsensitiveContains(branchSearch) }
+    }
+
     private var commitList: some View {
         VStack(spacing: 0) {
             Button {
@@ -252,204 +264,159 @@ public struct GitPluginPopoverView: View {
                     GitChangedFileRow(file: file)
                 }
                 .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
+
                 diffPanel
             }
         }
     }
 
     private var diffPanel: some View {
-        GitDiffPanelView(
-            selectedFile: selectedFile,
-            oldText: oldText,
-            newText: newText,
-            isLoading: loadingDiff,
-            loadingText: "Loading diff...",
-            selectFileText: "Select a file to view diff",
-            cannotDisplayText: "Cannot display diff for this file"
-        )
+        Group {
+            if loadingDiff {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if selectedFile != nil {
+                DiffTextView(oldText: oldText, newText: newText)
+            } else {
+                Text(LumiPluginLocalization.string("Select a file to view diff", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textTertiary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
     }
 
+    // MARK: - Computed Properties
+
     private var filteredBranches: [GitBranch] {
-        guard !branchSearch.isEmpty else { return branches }
+        if branchSearch.isEmpty {
+            return branches
+        }
         return branches.filter { $0.name.localizedCaseInsensitiveContains(branchSearch) }
     }
 
+    // MARK: - Data Loading
+
     private func refreshAll() async {
-        refreshGeneration += 1
+        let path = currentProjectPath
+        guard !path.isEmpty else { return }
+
         let generation = refreshGeneration
-        let path = projectVM.currentProjectPath
-        guard !path.isEmpty else {
-            branches = []
-            commits = []
-            uncommittedFiles = []
-            selectedCommitHash = nil
-            selectedFile = nil
-            loading = false
-            return
-        }
+        guard refreshGeneration == generation else { return }
 
         loading = true
         errorMessage = nil
-
-        async let branchTask: [(name: String, isCurrent: Bool, message: String)] = Task.detached {
-            let items = GitBranchService.listLocalBranches(at: path)
-            return items.map {
-                (name: $0.name, isCurrent: $0.isCurrent, message: $0.latestCommitMessage)
-            }
-        }.value
-
-        async let commitTask = GitService.shared.getLog(path: path, count: commitPageSize, branch: nil, file: nil)
-        async let fileTask = GitService.shared.getUncommittedChanges(path: path)
+        actionMessage = nil
 
         do {
-            let loadedBranchItems = await branchTask
-            let loadedCommits = try await commitTask
-            let loadedFiles = try await fileTask
-            guard isCurrentRefresh(generation, path: path) else { return }
-            branches = loadedBranchItems.map {
-                GitBranch(id: $0.name, name: $0.name, isCurrent: $0.isCurrent, upstream: nil, latestCommitHash: "", latestCommitMessage: $0.message)
-            }
-            commits = loadedCommits
-            uncommittedFiles = loadedFiles
-            if selectedCommitHash == nil {
-                selectedFile = loadedFiles.first?.path
+            async let branchesTask = GitBranchService.branches(at: path)
+            async let commitsTask = GitCommitService.commitLog(at: path, pageSize: commitPageSize)
+            async let statusTask = GitStatusService.changedFiles(at: path)
+
+            let (branchesResult, commitsResult, statusResult) = try await (branchesTask, commitsTask, statusTask)
+
+            guard refreshGeneration == generation else { return }
+
+            self.branches = branchesResult
+            self.commits = commitsResult
+            self.uncommittedFiles = statusResult
+
+            if !statusResult.isEmpty {
+                selectedFile = statusResult.first?.path
             }
         } catch {
-            guard isCurrentRefresh(generation, path: path) else { return }
-            errorMessage = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
 
-        if isCurrentRefresh(generation, path: path) {
-            loading = false
-        }
+        loading = false
     }
 
     private func loadDetail(for hash: String?) async {
-        detailGeneration += 1
-        let generation = detailGeneration
-        guard let hash else {
-            selectedFile = uncommittedFiles.first?.path
-            commitDetail = nil
-            commitChangedFiles = []
-            loadingDetail = false
-            return
-        }
-        let path = projectVM.currentProjectPath
-        guard !path.isEmpty else {
-            loadingDetail = false
-            return
-        }
+        guard let hash else { return }
+
+        let path = currentProjectPath
+        guard !path.isEmpty else { return }
 
         loadingDetail = true
+
         do {
-            let detail = try await GitService.shared.getCommitDetail(path: path, hash: hash)
-            let files = try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
-            guard isCurrentDetail(generation, path: path, hash: hash) else { return }
-            commitDetail = detail
-            commitChangedFiles = files
-            selectedFile = files.first?.path
+            async let detailTask = GitCommitDetailService.commitDetail(hash: hash, at: path)
+            async let filesTask = GitCommitService.changedFiles(hash: hash, at: path)
+
+            let (detail, files) = try await (detailTask, filesTask)
+
+            self.commitDetail = detail
+            self.commitChangedFiles = files
         } catch {
-            guard isCurrentDetail(generation, path: path, hash: hash) else { return }
-            errorMessage = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
-        if isCurrentDetail(generation, path: path, hash: hash) {
-            loadingDetail = false
-        }
+
+        loadingDetail = false
     }
 
     private func loadDiff(for file: String?) async {
-        diffGeneration += 1
-        let generation = diffGeneration
         guard let file else {
             oldText = ""
             newText = ""
-            loadingDiff = false
             return
         }
-        let path = projectVM.currentProjectPath
-        guard !path.isEmpty else {
-            loadingDiff = false
-            return
-        }
-        let hash = selectedCommitHash
 
+        let path = currentProjectPath
+        guard !path.isEmpty else { return }
+
+        let generation = diffGeneration
         loadingDiff = true
+
         do {
-            if let hash {
-                let values = try await GitService.shared.getCommitFileContentChange(path: path, hash: hash, file: file)
-                guard isCurrentDiff(generation, path: path, hash: hash, file: file) else { return }
-                oldText = values.before ?? ""
-                newText = values.after ?? ""
-            } else {
-                let values = try await GitService.shared.getUncommittedFileContentChange(path: path, file: file)
-                guard isCurrentDiff(generation, path: path, hash: nil, file: file) else { return }
-                oldText = values.before ?? ""
-                newText = values.after ?? ""
-            }
+            let (old, new) = try await GitDiffService.diff(for: file, at: path)
+
+            guard diffGeneration == generation else { return }
+
+            self.oldText = old
+            self.newText = new
         } catch {
-            guard isCurrentDiff(generation, path: path, hash: hash, file: file) else { return }
-            oldText = ""
-            newText = ""
-            errorMessage = error.localizedDescription
+            self.oldText = ""
+            self.newText = ""
         }
-        if isCurrentDiff(generation, path: path, hash: hash, file: file) {
-            loadingDiff = false
-        }
+
+        loadingDiff = false
     }
 
-    private func isCurrentRefresh(_ generation: Int, path: String) -> Bool {
-        refreshGeneration == generation && projectVM.currentProjectPath == path
-    }
-
-    private func isCurrentDetail(_ generation: Int, path: String, hash: String) -> Bool {
-        detailGeneration == generation && projectVM.currentProjectPath == path && selectedCommitHash == hash
-    }
-
-    private func isCurrentDiff(_ generation: Int, path: String, hash: String?, file: String) -> Bool {
-        diffGeneration == generation &&
-            projectVM.currentProjectPath == path &&
-            selectedCommitHash == hash &&
-            selectedFile == file
-    }
+    // MARK: - Actions
 
     private func checkout(branch: String) async {
-        let path = projectVM.currentProjectPath
-        actionMessage = "Switching to \(branch)..."
-        do {
-            try GitBranchService.checkout(branch: branch, at: path)
-            await refreshAll()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        let path = currentProjectPath
+        guard !path.isEmpty else { return }
+
         actionMessage = nil
+
+        do {
+            try await GitBranchService.checkout(branch: branch, at: path)
+            await refreshAll()
+            actionMessage = "Switched to \(branch)"
+        } catch {
+            actionMessage = "Error: \(error.localizedDescription)"
+        }
     }
 
     private func createBranch(named name: String) async {
-        let path = projectVM.currentProjectPath
-        do {
-            try GitBranchService.validateBranchName(name)
-        } catch {
-            errorMessage = error.localizedDescription
-            return
-        }
+        let path = currentProjectPath
+        guard !path.isEmpty else { return }
 
-        actionMessage = "Creating branch \(name)..."
-        do {
-            try GitBranchService.createBranch(name, at: path)
-            createBranchName = ""
-            await refreshAll()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
         actionMessage = nil
+
+        do {
+            try await GitBranchService.createBranch(named: name, at: path)
+            await refreshAll()
+            actionMessage = "Created branch \(name)"
+        } catch {
+            actionMessage = "Error: \(error.localizedDescription)"
+        }
     }
 
-    private func shortDate(_ value: String) -> String {
-        value.count >= 10 ? String(value.prefix(10)) : value
+    private func shortDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
-}
-
-#Preview("Git Plugin Popover") {
-    GitPluginPopoverView()
-        .inRootView()
 }

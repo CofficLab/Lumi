@@ -32,7 +32,7 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
         ]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
@@ -64,11 +64,13 @@ private enum XcodeOpener {
 public struct OpenInXcodeStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         Group {
-            if projectVM.currentProjectPath.isEmpty {
+            if currentProjectPath.isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -113,8 +115,8 @@ public struct OpenInXcodeStatusBarView: View {
     }
 
     private func openInXcode() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard !currentProjectPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: currentProjectPath)
         XcodeOpener.open(url)
     }
 }
@@ -125,7 +127,9 @@ public struct OpenInXcodeStatusBarView: View {
 public struct OpenInXcodeDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -162,7 +166,7 @@ public struct OpenInXcodeDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(projectVM.currentProjectPath)
+                Text(currentProjectPath)
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -172,7 +176,7 @@ public struct OpenInXcodeDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
+                    NSPasteboard.general.setString(currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -186,8 +190,8 @@ public struct OpenInXcodeDetailView: View {
     }
 
     private func openInXcode() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard !currentProjectPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: currentProjectPath)
         XcodeOpener.open(url)
     }
 }
