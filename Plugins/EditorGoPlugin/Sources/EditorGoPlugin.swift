@@ -1,4 +1,5 @@
 import Foundation
+import Logging
 import EditorService
 import LumiCoreKit
 import ShellKit
@@ -24,6 +25,8 @@ public enum EditorGoPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "goforward"
+    public static let verbose: Bool = true
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.go-editor")
 
     public static let info = LumiPluginInfo(
         id: "GoEditor",

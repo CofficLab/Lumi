@@ -20,9 +20,4 @@ extension EditorGoPlugin: LumiEditorExtensionRegistering {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         await Self.registerEditorExtensions(into: registry)
     }
-
-    @MainActor
-    public static func configureEditorRuntime(_ context: PluginRuntimeContext) async {
-        await Self.configureEditorRuntime(context: context)
-    }
 }
