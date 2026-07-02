@@ -19,7 +19,7 @@ public struct LogoItem: Identifiable, Sendable {
     public let makeView: @MainActor (LogoScene) -> AnyView
     public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 
-    init<V: View>(
+    public init<V: View>(
         id: String,
         order: Int,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V
@@ -30,7 +30,7 @@ public struct LogoItem: Identifiable, Sendable {
         self.makeOverlay = nil
     }
 
-    init<V: View, O: View>(
+    public init<V: View, O: View>(
         id: String,
         order: Int,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V,

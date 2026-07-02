@@ -9,7 +9,7 @@ import LumiCoreKit
 struct LogoView: View {
     var scene: LogoScene = .general
 
-    @ObservedObject private var logoRegistry = LogoRegistry.shared
+    @ObservedObject private var logoRegistry = LumiCore.logoRegistry
 
     var body: some View {
         if let item = logoRegistry.bestItem {

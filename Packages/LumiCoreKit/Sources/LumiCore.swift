@@ -4,6 +4,9 @@ import SwiftUI
 @MainActor
 public enum LumiCore {
     private static var configuration: LumiCoreConfiguration?
+    
+    /// 全局共享实例
+    @MainActor public static let logoRegistry = LogoRegistry()
 
     // MARK: - 配置
 

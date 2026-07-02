@@ -8,17 +8,15 @@ import SwiftUI
 @MainActor
 public final class LogoRegistry: ObservableObject {
     /// 全局共享实例
-    @MainActor public static let shared = LogoRegistry()
-
+    public static let shared = LogoRegistry()
+    
     /// 当前最高优先级的 Logo 项（已缓存，注册时刷新）
     @Published public var bestItem: LogoItem?
-
-    private init() {}
 
     /// 批量注册 Logo 项，保留 order 最高的一项
     ///
     /// - Parameter items: 来自各插件的 Logo 贡献
-    func register(_ items: [LogoItem]) {
+    public func register(_ items: [LogoItem]) {
         let newBest = items.max(by: { $0.order < $1.order })
         Task { @MainActor [weak self] in
             self?.bestItem = newBest
