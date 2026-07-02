@@ -14,7 +14,7 @@ final class OpenProjectHandler: SuperLog {
     private init() {}
 
     func requestOpen(path: String) {
-        let normalized = OpenProjectPathResolver.normalizePath(path)
+        let normalized = Self.normalizePath(path)
         guard !normalized.isEmpty else {
             Self.logger.warning("\(Self.t)路径为空或无效: \(path)")
             return
@@ -26,21 +26,19 @@ final class OpenProjectHandler: SuperLog {
         }
 
         guard Self.verbose else {
-            RootContainer.shared.projectPathStore.setCurrentProjectPath(normalized, reason: "外部打开项目")
-            NotificationCenter.default.post(
-                name: .lumiOpenExternalProject,
-                object: nil,
-                userInfo: [LumiOpenProjectUserInfoKey.path: normalized]
-            )
+            LumiCore.projectState?.setCurrentProjectPath(normalized)
             return
         }
 
         Self.logger.info("\(Self.t)外部打开项目: \(normalized)")
-        RootContainer.shared.projectPathStore.setCurrentProjectPath(normalized, reason: "外部打开项目")
-        NotificationCenter.default.post(
-            name: .lumiOpenExternalProject,
-            object: nil,
-            userInfo: [LumiOpenProjectUserInfoKey.path: normalized]
-        )
+        LumiCore.projectState?.setCurrentProjectPath(normalized)
+    }
+
+    private static func normalizePath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        let url = URL(fileURLWithPath: expanded)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+        return url.path
     }
 }

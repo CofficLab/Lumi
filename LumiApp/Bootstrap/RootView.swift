@@ -26,7 +26,6 @@ struct RootView<Content: View>: View {
             activeSectionTitle: "Lumi",
             dependencies: LumiPluginDependencies { dependencies in
                 dependencies.register((any LumiChatServicing).self, container.chatCoreService.chatService)
-                dependencies.register(LumiCurrentProjectPathStoring.self, container.projectPathStore)
                 dependencies.register(LumiEditorServicing.self, container.editorCoreService)
             }
         )
