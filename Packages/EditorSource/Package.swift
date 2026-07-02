@@ -34,7 +34,7 @@ let package = Package(
             path: "Sources",
             resources: [
                 .process("EditorSource/Symbols.xcassets"),
-                .process("Localizable.xcstrings")
+                .process("Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(
