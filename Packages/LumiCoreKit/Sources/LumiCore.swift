@@ -12,6 +12,9 @@ public enum LumiCore {
     /// 项目状态管理器
     @MainActor public static private(set) var projectState: LumiProjectState?
 
+    /// 布局状态管理器
+    @MainActor public static private(set) var layoutState: LumiLayoutState?
+
     // MARK: - 启动
 
     /// 启动 LumiCore
