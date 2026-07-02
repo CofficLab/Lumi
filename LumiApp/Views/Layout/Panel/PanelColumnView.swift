@@ -18,10 +18,6 @@ struct PanelColumnView: View {
         container?.id ?? "main"
     }
 
-    private var railStorageKey: String {
-        LayoutStorageKey.railWidth(viewContainerID: viewContainerID)
-    }
-
     var body: some View {
         let column = Group {
             if showRail {
@@ -52,9 +48,6 @@ struct PanelColumnView: View {
         if showsPanelChrome {
             HSplitView {
                 RailView(tabs: railTabs, layoutState: layoutState)
-                    .background(
-                        SplitViewWidthPersistence(storageKey: railStorageKey)
-                    )
                 PanelWorkspaceView(
                     container: container,
                     headerItems: headerItems,
@@ -66,9 +59,6 @@ struct PanelColumnView: View {
             .id(viewContainerID)
         } else {
             RailView(tabs: railTabs, layoutState: layoutState)
-                .background(
-                    SplitViewWidthPersistence(storageKey: railStorageKey)
-                )
                 .id(viewContainerID)
         }
     }

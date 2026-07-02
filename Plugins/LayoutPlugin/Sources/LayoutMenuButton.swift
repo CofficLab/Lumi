@@ -9,7 +9,6 @@ public struct LayoutMenuButton: View {
 
     @LumiTheme private var theme
     @State private var isPopoverPresented = false
-    @ObservedObject private var layoutState = LumiCore.layoutState ?? LumiLayoutStateStore.shared
 
     public init() {}
 
@@ -27,10 +26,7 @@ public struct LayoutMenuButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
-                    isOn: Binding(
-                        get: { layoutState.chatSectionVisible },
-                        set: { layoutState.chatSectionVisible = $0 }
-                    ),
+                    isOn: Binding(projectedValue: .constant(true)),
                     icon: "rectangle.rightthird.inset.filled",
                     title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)
                 )
@@ -39,10 +35,7 @@ public struct LayoutMenuButton: View {
                     .padding(.vertical, 4)
 
                 LayoutPopoverToggle(
-                    isOn: Binding(
-                        get: { layoutState.bottomPanelVisible },
-                        set: { layoutState.bottomPanelVisible = $0 }
-                    ),
+                    isOn: Binding(projectedValue: .constant(true)),
                     icon: "rectangle.inset.filled",
                     title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
                 )

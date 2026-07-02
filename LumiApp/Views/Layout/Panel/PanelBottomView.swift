@@ -18,12 +18,6 @@ struct PanelBottomView: View {
         }
         .frame(minHeight: SplitViewHeightPersistence.minimumHeight)
         .background(theme.surface)
-        .background {
-            SplitViewHeightPersistence(
-                storageKey: LayoutStorageKey.bottomPanelHeight(viewContainerID: viewContainerID)
-            )
-            .id(layoutState.bottomPanelFocusGeneration)
-        }
         .onAppear {
             ensureValidSelection()
         }

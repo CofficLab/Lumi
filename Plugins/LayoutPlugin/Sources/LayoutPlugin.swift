@@ -23,10 +23,7 @@ public enum LayoutPlugin: LumiPlugin {
     public static func lifecycle(_ event: LumiPluginLifecycle) {
         switch event {
         case .didRegister:
-            // 注入持久化实现到 LumiLayoutStateStore
-            LumiLayoutStateStore.shared.injectPersistence(LayoutPluginLocalStore.shared)
-            // 恢复持久化的布局状态
-            LumiLayoutStateStore.restorePersistedStateIfNeeded()
+            break
         case .appDidLaunch:
             break
         case .projectDidOpen:
@@ -65,19 +62,9 @@ public enum LayoutPlugin: LumiPlugin {
 
 private struct LayoutPersistenceAnchor: View {
     let content: AnyView
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
     private let persistence = LayoutPluginLocalStore.shared
 
     var body: some View {
         content
-            .onChange(of: layoutState.activeViewContainerID) { _, newValue in
-                persistence.saveActiveViewContainerID(newValue)
-            }
-            .onChange(of: layoutState.chatSectionVisible) { _, newValue in
-                persistence.saveRightSidebarVisible(newValue)
-            }
-            .onChange(of: layoutState.bottomPanelVisible) { _, newValue in
-                persistence.saveBottomPanelVisible(newValue)
-            }
     }
 }

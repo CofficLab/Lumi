@@ -17,7 +17,11 @@ public struct GitCommitDetailView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @EnvironmentObject var gitVM: AppGitVM
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    @ObservedObject private var layoutState: LumiLayoutState
+
+    public init() {
+        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+    }
 
     private var currentProjectPath: String {
         LumiCore.projectState?.currentProject?.path ?? ""

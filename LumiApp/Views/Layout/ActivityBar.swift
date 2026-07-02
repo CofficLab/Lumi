@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ActivityBar: View {
     @Environment(\.openWindow) private var openWindow
-    @ObservedObject var layoutState: LumiLayoutStateStore
+    @ObservedObject var layoutState: LumiLayoutState
     let containers: [LumiViewContainerItem]
 
     var body: some View {
@@ -16,7 +16,6 @@ struct ActivityBar: View {
                     isActive: layoutState.activeViewContainerID == container.id
                 ) {
                     layoutState.activateViewContainer(id: container.id)
-                    LumiCore.layoutState?.activateViewContainer(id: container.id)
                 }
             }
 

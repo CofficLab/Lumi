@@ -93,8 +93,7 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ UpdateController 启动完成")
         }
 
-        // 布局状态恢复由 LumiLayoutStateStore 统一管理
-        // LayoutPlugin 会通过插件生命周期自动注入持久化实现
+        // 布局状态由 LumiCore.layoutState 统一管理
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 布局状态已配置")
         }
