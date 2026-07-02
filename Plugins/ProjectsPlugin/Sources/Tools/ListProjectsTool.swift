@@ -34,7 +34,7 @@ struct ListProjectsTool: LumiAgentTool {
         let limit = min(arguments["limit"]?.intValue ?? 5, maxLimit)
 
         return await MainActor.run {
-            let store = ProjectsStore()
+            let store = ProjectsStore.shared
             let projects = Array(store.projects.prefix(limit))
 
             guard !projects.isEmpty else {

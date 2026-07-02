@@ -25,7 +25,7 @@ struct GetCurrentProjectTool: LumiAgentTool {
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         await MainActor.run {
-            let store = ProjectsStore()
+            let store = ProjectsStore.shared
 
             guard let project = store.currentProject else {
                 return """

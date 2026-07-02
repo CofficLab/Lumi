@@ -149,7 +149,7 @@ extension RAGSettingsView {
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let store = ProjectsPlugin.sharedStore
+        let store = ProjectsStore.shared
         let projects = store.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) }
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]

@@ -13,7 +13,7 @@ struct RAGSettingsPopoverView: View {
     @State private var runtimeInfo: RAGRuntimeInfo?
 
     private var projectStore: ProjectsStore {
-        ProjectsPlugin.sharedStore
+        ProjectsStore.shared
     }
 
     var body: some View {

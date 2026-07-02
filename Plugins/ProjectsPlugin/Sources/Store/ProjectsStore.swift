@@ -2,7 +2,8 @@ import Combine
 import Foundation
 import LumiCoreKit
 
-/// 项目列表存储协议
+// MARK: - Store Protocol
+
 @MainActor
 public protocol ProjectsStoring: AnyObject {
     var projects: [LumiProjectEntry] { get }
@@ -14,9 +15,12 @@ public protocol ProjectsStoring: AnyObject {
     func remove(_ project: LumiProjectEntry)
 }
 
-/// 项目列表 Store，负责磁盘持久化，并与 LumiCore 同步
+// MARK: - Store
+
 @MainActor
 public final class ProjectsStore: ObservableObject, ProjectsStoring {
+    public static let shared = ProjectsStore()
+
     @Published public private(set) var projects: [LumiProjectEntry]
     @Published public private(set) var currentProject: LumiProjectEntry?
 
@@ -33,9 +37,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring {
 
     // MARK: - Init
 
-    public init(
-        pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects")
-    ) {
+    public init(pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects")) {
         self.settingsDirectory = pluginDirectory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
         self.projects = Self.loadProjects(from: settingsDirectory)

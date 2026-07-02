@@ -40,7 +40,7 @@ struct AddProjectTool: LumiAgentTool {
 
         return await MainActor.run {
             do {
-                let store = ProjectsPlugin.sharedStore
+                let store = ProjectsStore.shared
                 let project = try store.add(path: path, select: false)
                 return Self.successMessage(project: project, projects: store.projects)
             } catch {
