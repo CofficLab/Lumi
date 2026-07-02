@@ -1,6 +1,37 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%1$@ · %2$@ tokens (in %3$@ / out %4$@)" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ tokens（输入 %3$@ / 输出 %4$@）"
+          }
+        }
+      }
+    },
+    "%1$@, total %2$@ tokens, peak %3$@" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@，共 %2$@ tokens，峰值 %3$@"
+          }
+        }
+      }
+    },
+    "%lld 个云端供应商" : {
+
+    },
+    "%lld 个本地供应商" : {
+
+    },
+    "%lld 个模型" : {
+
+    },
     "Availability" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -282,6 +313,7 @@
       }
     },
     "Detect available LLM providers and models via health checks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -385,7 +417,19 @@
         }
       }
     },
+    "last %lld days" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "最近 %lld 天"
+          }
+        }
+      }
+    },
     "LLM Availability" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -559,6 +603,28 @@
         }
       }
     },
+    "No Usage Data" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "暂无使用数据"
+          }
+        }
+      }
+    },
+    "peak %@" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "峰值 %@"
+          }
+        }
+      }
+    },
     "Please add LLM providers in Settings to enable AI features." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -664,6 +730,9 @@
         }
       }
     },
+    "Re-check availability" : {
+
+    },
     "Recheck this provider" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -733,6 +802,9 @@
           }
         }
       }
+    },
+    "Saved" : {
+
     },
     "Search providers or models…" : {
       "extractionState" : "stale",
@@ -838,6 +910,15 @@
           }
         }
       }
+    },
+    "不可用" : {
+
+    },
+    "打开供应商页面" : {
+
+    },
+    "搜索供应商" : {
+
     }
   },
   "version" : "1.1"
