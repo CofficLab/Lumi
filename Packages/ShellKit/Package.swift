@@ -9,7 +9,13 @@ let package = Package(
         .library(name: "ShellKit", targets: ["ShellKit"]),
     ],
     targets: [
-        .target(name: "ShellKit", path: "Sources"),
+        .target(
+            name: "ShellKit",
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
+        ),
         .testTarget(name: "ShellKitTests", dependencies: ["ShellKit"],
             path: "Tests"),
     ]

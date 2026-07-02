@@ -13,7 +13,10 @@ let package = Package(
         .target(
             name: "TerminalCoreKit",
             dependencies: ["SwiftTerm"],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "TerminalCoreKitTests",
