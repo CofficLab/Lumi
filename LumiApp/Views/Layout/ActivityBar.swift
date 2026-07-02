@@ -32,5 +32,6 @@ struct ActivityBar: View {
         .padding(.vertical, 8)
         .frame(width: 48)
         .appSurface(style: .panel, cornerRadius: 0)
+        .borderTrailing()
     }
 }

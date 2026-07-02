@@ -36,6 +36,7 @@ struct RailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
+        .borderTrailing()
         .onAppear {
             ensureValidSelection()
         }

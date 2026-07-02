@@ -70,14 +70,14 @@ struct AppLayoutView: View {
 
             AppDivider()
 
-            Group {
+            HStack(spacing: 0) {
+                ActivityBar(
+                    layoutState: layoutState,
+                    containers: containers
+                )
+
                 if shouldShowChatSection || showRail {
                     HSplitView {
-                        ActivityBar(
-                            layoutState: layoutState,
-                            containers: containers
-                        )
-
                         PanelColumnView(
                             container: selectedContainer,
                             headerItems: headerItems,
@@ -93,6 +93,7 @@ struct AppLayoutView: View {
                             maxWidth: isRailOnlyPanel ? nil : .infinity,
                             maxHeight: .infinity
                         )
+                        .borderTrailing()
 
                         if shouldShowChatSection {
                             ChatSectionView(
@@ -126,25 +127,18 @@ struct AppLayoutView: View {
                         SplitViewAutosaveConfigurator(autosaveName: autosaveName)
                     )
                 } else {
-                    HStack(spacing: 0) {
-                        ActivityBar(
-                            layoutState: layoutState,
-                            containers: containers
-                        )
+                    AppDivider(.vertical)
 
-                        AppDivider(.vertical)
-
-                        PanelColumnView(
-                            container: selectedContainer,
-                            headerItems: headerItems,
-                            bottomTabs: bottomTabs,
-                            showsPanelChrome: showsPanelChrome,
-                            showRail: showRail,
-                            railTabs: railTabs,
-                            layoutState: panelLayoutState,
-                            editor: editorCoreService
-                        )
-                    }
+                    PanelColumnView(
+                        container: selectedContainer,
+                        headerItems: headerItems,
+                        bottomTabs: bottomTabs,
+                        showsPanelChrome: showsPanelChrome,
+                        showRail: showRail,
+                        railTabs: railTabs,
+                        layoutState: panelLayoutState,
+                        editor: editorCoreService
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
