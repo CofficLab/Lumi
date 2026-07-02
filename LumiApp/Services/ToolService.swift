@@ -87,7 +87,10 @@ final class ToolService: LumiToolServicing, SuperLog {
 
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            let output = try await tool.execute(arguments: arguments, context: context)
+            let output = try await Task.detached { [context] in
+                try await tool.execute(arguments: arguments, context: context)
+            }.value
+
             // 工具可能在执行过程中通过 context.attachImage 注册了要回传的图片
             // （如 read_file 读取图片文件），这里收集并填入结果。
             let images = context.collectImages()
