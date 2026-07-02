@@ -2,21 +2,18 @@ import LumiUI
 import SuperLogKit
 import SwiftUI
 import LumiCoreKit
-import ProjectsPlugin
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    public nonisolated static var emoji: String { "🦞" }
-    public nonisolated static let verbose: Bool = false
-
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
 
+
     public init() {}
+
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -37,6 +34,7 @@ public struct RAGSettingsView: View, SuperLog {
                     runtimeCard(runtimeInfo)
                 }
 
+
                 ForEach(trackedProjects) { project in
                     projectCard(project)
                 }
@@ -53,7 +51,9 @@ public struct RAGSettingsView: View, SuperLog {
         }
     }
 
+
     // MARK: - Cards
+
 
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
@@ -66,6 +66,7 @@ public struct RAGSettingsView: View, SuperLog {
             }
         }
     }
+
 
     @ViewBuilder
     private func projectCard(_ project: RAGTrackedProject) -> some View {
@@ -110,6 +111,7 @@ public struct RAGSettingsView: View, SuperLog {
                         .foregroundColor(theme.textSecondary)
                 }
 
+
                 if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
                     ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
                     Text(String(format: LumiPluginLocalization.string("Progress: %lld/%lld", bundle: .module), progress.scannedFiles, progress.totalFiles))
@@ -121,6 +123,7 @@ public struct RAGSettingsView: View, SuperLog {
     }
 }
 
+
 // MARK: - Load Status
 
 extension RAGSettingsView {
@@ -130,9 +133,11 @@ extension RAGSettingsView {
         isLoading = true
         defer { isLoading = false }
 
+
         do {
             let service = RAGPlugin.getService()
             runtimeInfo = try await service.getRuntimeInfo()
+
 
             var next: [String: RAGIndexStatus] = [:]
             for project in projects {
@@ -145,22 +150,25 @@ extension RAGSettingsView {
     }
 }
 
+
 // MARK: - Helpers
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let store = ProjectsStore.shared
-        let projects = store.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) }
+        let projects = LumiCore.projectState?.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]
         if currentPath.isEmpty {
             current = []
         } else {
-            let name = RAGPluginRuntime.currentProjectName.isEmpty ? URL(fileURLWithPath: currentPath).lastPathComponent : RAGPluginRuntime.currentProjectName
+            let name = RAGPluginRuntime.currentProjectName.isEmpty
+                ? URL(fileURLWithPath: currentPath).lastPathComponent
+                : RAGPluginRuntime.currentProjectName
             current = [RAGTrackedProject(name: name, path: currentPath)]
         }
         return dedupProjects(current + projects)
     }
+
 
     private func dedupProjects(_ projects: [RAGTrackedProject]) -> [RAGTrackedProject] {
         var seen = Set<String>()
@@ -175,12 +183,14 @@ extension RAGSettingsView {
         return result
     }
 
+
     private func relativeDate(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
+
 
 private struct RAGTrackedProject: Identifiable, Equatable {
     public var id: String { path }
