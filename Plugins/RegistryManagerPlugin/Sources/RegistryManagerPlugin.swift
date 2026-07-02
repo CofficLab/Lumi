@@ -1,12 +1,14 @@
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import os
 
 public enum RegistryManagerPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "arrow.triangle.2.circlepath"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.registry-manager")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.registry-manager",

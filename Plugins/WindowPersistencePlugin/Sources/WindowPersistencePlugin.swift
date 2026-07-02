@@ -10,6 +10,7 @@ public enum WindowPersistencePlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "macwindow"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.window-persistence")
 
     public static let info = LumiPluginInfo(
         id: "WindowPersistence",

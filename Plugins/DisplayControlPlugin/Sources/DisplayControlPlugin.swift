@@ -1,6 +1,7 @@
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import os
 
 public enum DisplayControlPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -17,6 +18,7 @@ public enum DisplayControlPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
 
     public static let iconName = "display"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {

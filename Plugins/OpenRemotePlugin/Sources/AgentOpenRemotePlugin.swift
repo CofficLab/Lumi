@@ -15,6 +15,7 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "safari"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-remote",

@@ -118,11 +118,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         let plugins = LumiPluginRegistry.plugins
 
         for pluginType in plugins {
-            if let editorExtensionPlugin = pluginType as? (any LumiEditorExtensionRegistering.Type) {
-                await editorExtensionPlugin.configureEditorRuntime(context)
-            } else {
-                await pluginType.configureEditorRuntime(context)
-            }
+            await pluginType.configureEditorRuntime(context)
         }
     }
 

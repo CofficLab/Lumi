@@ -1,6 +1,7 @@
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import os
 
 public struct LoadedPluginInfo: Identifiable, Sendable {
     public let id: String
@@ -21,6 +22,7 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "puzzlepiece.extension"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-loaded-plugins")
 
     nonisolated(unsafe) public static var pluginProvider: @MainActor () -> [LoadedPluginInfo] = { [] }
 

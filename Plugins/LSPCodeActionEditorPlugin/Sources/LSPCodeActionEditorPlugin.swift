@@ -2,6 +2,8 @@ import Foundation
 import EditorService
 import LumiCoreKit
 import SwiftUI
+import os
+
 /// LSP Code Action 编辑器插件。
 ///
 /// 该插件负责把 `CodeActionProvider` 注册到编辑器扩展注册中心，
@@ -25,6 +27,7 @@ public enum LSPCodeActionEditorPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "lightbulb"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-code-action")
 
     public static let info = LumiPluginInfo(
         id: "LSPCodeActionEditor",

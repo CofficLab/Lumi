@@ -11,15 +11,18 @@ import UniformTypeIdentifiers
 /// 组合编辑器内容区域、Banner、Sheet 等 UI 组件。
 /// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
 public struct EditorPanelView: View {
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var service: EditorService
 
     /// 便利访问
     private var editorState: EditorState { service.state }
 
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
+
     private var projectRootPath: String? {
-        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         return path.isEmpty ? nil : path
     }
 
@@ -46,7 +49,7 @@ public struct EditorPanelView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeChromeTheme.workspaceBackgroundColor())
-        .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+        .onChange(of: currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
         .onChange(of: service.files.currentFileURL) {
@@ -55,8 +58,7 @@ public struct EditorPanelView: View {
         .onAppear {
             coordinator.configure(
                 panelService: panelService,
-                service: service,
-                projectVM: projectVM
+                service: service
             )
             coordinator.handleAppear()
         }
@@ -117,7 +119,7 @@ public struct EditorPanelView: View {
                                     highlightLine: highlightLine,
                                     service: service,
                                     projectRootPath: self.projectRootPath,
-                                    currentProjectPath: self.projectVM.currentProjectPath
+                                    currentProjectPath: self.currentProjectPath
                                 )
                             }
                         ) {

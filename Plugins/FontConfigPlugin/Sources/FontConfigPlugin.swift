@@ -1,12 +1,14 @@
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import os
 
 public enum FontConfigPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .theme
     public static let iconName = "textformat"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.font-config")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.font-config",

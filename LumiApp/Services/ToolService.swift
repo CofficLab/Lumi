@@ -11,7 +11,6 @@ final class ToolService: LumiToolServicing, SuperLog {
 
     private(set) var tools: [any LumiAgentTool] = []
     private var toolsByName: [String: any LumiAgentTool] = [:]
-    var projectPathProvider: (any LumiCurrentProjectPathProviding)?
 
     func registerTools(_ tools: [any LumiAgentTool]) {
         if Self.verbose {
@@ -84,7 +83,7 @@ final class ToolService: LumiToolServicing, SuperLog {
             conversationID: conversationID,
             toolCallID: toolCall.id,
             toolName: toolCall.name,
-            currentProjectPath: projectPathProvider?.currentProjectPath
+            currentProjectPath: LumiCore.projectState?.currentProject?.path
         )
 
         do {

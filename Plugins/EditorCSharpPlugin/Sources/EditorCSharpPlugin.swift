@@ -1,12 +1,14 @@
 import EditorService
 import LumiCoreKit
 import SwiftUI
+import os
 
 public enum EditorCSharpPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .optIn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-csharp")
 
     public static let info = LumiPluginInfo(
         id: "csharpHighlight",

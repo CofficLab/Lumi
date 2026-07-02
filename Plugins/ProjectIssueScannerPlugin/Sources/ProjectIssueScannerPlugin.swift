@@ -1,5 +1,6 @@
 import LumiCoreKit
 import SwiftUI
+import os
 
 /// 空闲时扫描项目问题，并在发送消息时向 LLM 提示已知问题。
 public enum ProjectIssueScannerPlugin: LumiPlugin {
@@ -7,6 +8,7 @@ public enum ProjectIssueScannerPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "scope"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-issue-scanner")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.project-issue-scanner",

@@ -1,3 +1,4 @@
+import Foundation
 import LumiChatKit
 import LumiCoreKit
 import LumiPluginRegistry
@@ -65,10 +66,6 @@ final class ChatCoreService: SuperLog {
                 dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register(LumiToolServicing.self, toolService)
-                // 通过 ProjectsPlugin 获取项目存储
-                if let projectStore = ProjectsPlugin.sharedStore as? LumiProjectStoring {
-                    dependencies.register(LumiProjectStoring.self, projectStore)
-                }
             }
         )
 

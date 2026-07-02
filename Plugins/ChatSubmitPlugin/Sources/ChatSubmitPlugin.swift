@@ -8,6 +8,7 @@ public enum ChatSubmitPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "paperplane"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-submit")
 
     public static let info = LumiPluginInfo(
         id: "ChatSubmit",

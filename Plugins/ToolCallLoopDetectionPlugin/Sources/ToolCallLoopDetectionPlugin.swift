@@ -1,15 +1,15 @@
 import Foundation
 import LumiCoreKit
 import SwiftUI
+import os
 
 /// 工具调用循环检测插件
-///
-/// 监听数据库事件，在即将发起下一轮 LLM 请求前检测工具调用是否进入循环。
 public enum ToolCallLoopDetectionPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .disabled
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "arrow.triangle.2.circlepath"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-call-loop-detection")
 
     public static let info = LumiPluginInfo(
         id: "tool-call-loop-detection",

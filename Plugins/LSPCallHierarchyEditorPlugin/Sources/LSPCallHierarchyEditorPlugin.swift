@@ -1,6 +1,7 @@
 import Foundation
 import EditorService
 import LumiCoreKit
+import os
 import SwiftUI
 
 /// LSP 调用层级编辑器插件。
@@ -28,6 +29,7 @@ public enum LSPCallHierarchyEditorPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "diagram"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-call-hierarchy")
 
     public static let info = LumiPluginInfo(
         id: "LSPCallHierarchyEditor",

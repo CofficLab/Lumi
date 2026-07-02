@@ -2,6 +2,8 @@ import Foundation
 import EditorService
 import LumiCoreKit
 import SwiftUI
+import os
+
 /// LSP 实时信号插件。
 ///
 /// 该插件向编辑器注册 `LSPRealtimeInteractionContributor`，用于把编辑器中的实时交互事件
@@ -15,6 +17,7 @@ public enum LSPRealtimeSignalsPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "wifi"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-realtime-signals")
 
     public static let info = LumiPluginInfo(
         id: "LSPRealtimeSignals",

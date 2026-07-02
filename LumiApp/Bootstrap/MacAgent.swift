@@ -24,9 +24,9 @@ final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLo
         Self.logger.info("\(self.t)接收 \(urls.count) 个 URL 请求")
         for url in urls {
             if url.isFileURL {
-                let resolvedPath = OpenProjectPathResolver.resolveProjectRoot(from: url.path)
+                let resolvedPath = url.standardized.path
                 setOpenPath(resolvedPath)
-            } else if let path = OpenProjectPathResolver.resolvePath(fromOpenURL: url) {
+            } else if let path = resolvePath(fromOpenURL: url) {
                 setOpenPath(path)
             }
         }
@@ -36,14 +36,19 @@ final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLo
     func application(_ application: NSApplication, openFile filename: String) -> Bool {
         guard Self.verbose else { return true }
         Self.logger.info("\(self.t)接收文件打开请求: \(filename)")
-        let path = OpenProjectPathResolver.resolveProjectRoot(from: filename)
+        let path = (filename as NSString).standardizingPath
         setOpenPath(path)
         activateMainWindow()
         return true
     }
 
+    private func resolvePath(fromOpenURL url: URL) -> String? {
+        guard url.isFileURL || url.scheme == "file" else { return nil }
+        return url.standardized.path
+    }
+
     private func setOpenPath(_ path: String) {
-        let normalized = OpenProjectPathResolver.normalizePath(path)
+        let normalized = (path as NSString).standardizingPath
         guard !normalized.isEmpty else {
             Self.logger.warning("\(self.t)路径为空或无效")
             return
