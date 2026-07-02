@@ -1,19 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - LumiCore 配置
-
-/// LumiCore 配置
-public struct LumiCoreConfiguration: Sendable {
-    public let dataRootDirectory: URL
-
-    public init(dataRootDirectory: URL) {
-        self.dataRootDirectory = dataRootDirectory
-    }
-}
-
-// MARK: - LumiCore 主入口
-
 @MainActor
 public enum LumiCore {
     private static var configuration: LumiCoreConfiguration?
@@ -64,73 +51,4 @@ public enum LumiCore {
 
         return sanitized.isEmpty ? fallback : sanitized
     }
-
-    // MARK: - Logo 模块
-    
-    /// Logo 显示场景
-    /// 详细实现见 Sources/Internal/Logo/LogoScene.swift
-    public enum LogoScene: String, CaseIterable, Sendable {
-        case general
-        case appIcon
-        case about
-        /// 系统菜单栏图标：恒为单色模板图（由系统统一着色），无动画。
-        case statusBar
-        case custom
-    }
-
-    /// 插件贡献的 Logo 项
-    /// 详细实现见 Sources/Internal/Logo/LumiLogoItem.swift
-    public struct LogoItem: Identifiable, Sendable {
-        public let id: String
-        public let order: Int
-        public let makeView: @MainActor (LogoScene) -> AnyView
-        public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
-
-        public init<V: View>(
-            id: String,
-            order: Int,
-            @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V
-        ) {
-            self.id = id
-            self.order = order
-            self.makeView = { scene in AnyView(makeView(scene)) }
-            self.makeOverlay = nil
-        }
-
-        public init<V: View, O: View>(
-            id: String,
-            order: Int,
-            @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V,
-            @ViewBuilder makeOverlay: @escaping @MainActor (LogoScene) -> O
-        ) {
-            self.id = id
-            self.order = order
-            self.makeView = { scene in AnyView(makeView(scene)) }
-            self.makeOverlay = { scene in AnyView(makeOverlay(scene)) }
-        }
-    }
-    
-    /// Logo 注册表
-    /// 详细实现见 Sources/Internal/Logo/LogoRegistry.swift
-    @MainActor
-    public final class LogoRegistry: ObservableObject {
-        public static let shared = LogoRegistry()
-
-        @Published private(set) public var bestItem: LogoItem?
-
-        private init() {}
-
-        public func register(_ items: [LogoItem]) {
-            let newBest = items.max(by: { $0.order < $1.order })
-            Task { @MainActor [weak self] in
-                self?.bestItem = newBest
-            }
-        }
-    }
-}
-
-// MARK: - 版本信息
-
-public enum LumiCoreKit {
-    public static let version = "1.0.0"
 }

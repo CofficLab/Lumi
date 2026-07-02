@@ -17,7 +17,7 @@ public struct LogoItem: Identifiable, Sendable {
     public let id: String
     let order: Int
     public let makeView: @MainActor (LogoScene) -> AnyView
-    let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
+    public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 
     init<V: View>(
         id: String,

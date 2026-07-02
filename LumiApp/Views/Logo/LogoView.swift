@@ -7,9 +7,9 @@ import LumiCoreKit
 /// via `ZStack`. When no plugin contributes a logo, a transparent placeholder
 /// is rendered instead.
 struct LogoView: View {
-    var scene: LumiCore.LogoScene = .general
+    var scene: LogoScene = .general
 
-    @ObservedObject private var logoRegistry = LumiCore.LogoRegistry.shared
+    @ObservedObject private var logoRegistry = LogoRegistry.shared
 
     var body: some View {
         if let item = logoRegistry.bestItem {

@@ -1,6 +1,5 @@
-// MARK: - LumiCore 配置
+import Foundation
 
-/// LumiCore 配置
 public struct LumiCoreConfiguration: Sendable {
     public let dataRootDirectory: URL
 
