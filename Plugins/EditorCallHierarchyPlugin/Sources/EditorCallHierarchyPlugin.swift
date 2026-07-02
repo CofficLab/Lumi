@@ -40,7 +40,6 @@ public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsRail,
-              context.activeSectionID == LumiEditorPanelContainer.id,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {
             return []

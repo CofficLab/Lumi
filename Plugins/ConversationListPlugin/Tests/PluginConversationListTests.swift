@@ -15,12 +15,12 @@ import Testing
 @MainActor
 @Test func titleToolbarItemsRequireChatSectionAndService() {
     let hiddenChatContext = LumiPluginContext(
-        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",
         chatSection: .none
     )
     let visibleWithoutService = LumiPluginContext(
-        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",
         chatSection: .narrow
     )
@@ -30,7 +30,7 @@ import Testing
 
     let chatService = ChatService(configuration: .coreDatabase(directory: databaseDirectory))
     let visibleWithService = LumiPluginContext(
-        activeSectionID: LumiEditorPanelContainer.id,
+        activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",
         chatSection: .narrow,
         dependencies: LumiPluginDependencies { dependencies in
@@ -101,7 +101,7 @@ import Testing
 @Test func pluginIgnoresEditorSectionForRailTabs() {
     let tabs = ConversationListPlugin.panelRailTabItems(
         context: LumiPluginContext(
-            activeSectionID: LumiEditorPanelContainer.id,
+            activeSectionID: "LumiEditor",
             activeSectionTitle: "Editor",
             showsRail: true
         )

@@ -208,7 +208,6 @@ final class PluginService: ObservableObject, SuperLog {
         }
 
         if context.showsPanelChrome,
-           context.activeSectionID == LumiEditorPanelContainer.id,
            let editor = context.resolve(LumiEditorServicing.self) {
             let service = editor.editorService
             if let languageId = service.editing.detectedLanguage?.tsName,
