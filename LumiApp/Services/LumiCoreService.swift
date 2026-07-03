@@ -1,4 +1,5 @@
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 import SuperLogKit
 import os
@@ -22,8 +23,13 @@ final class LumiCoreService: SuperLog {
         self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = Self.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
-        // 启动 LumiCore
-        LumiCore.boot()
+        // 设置 ChatService 工厂，LumiCore.boot() 时自动创建并注册
+        LumiCore.setupChatService { databaseDirectory in
+            ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+        }
+
+        // 启动 LumiCore（自动创建 ChatService 并注册到服务表）
+        LumiCore.boot(databaseDirectory: self.coreDatabaseDirectory)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)数据根目录: \(dataRootDirectory.path)")

@@ -18,7 +18,6 @@ final class RootContainer: ObservableObject, SuperLog {
     let pluginService: PluginService
     let toolService: ToolService
     let editorCoreService: EditorCoreService
-    let chatCoreService: ChatCoreService
     let chatSectionCoordinator: ChatSectionCoordinator
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
@@ -52,17 +51,8 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }
 
-        self.chatCoreService = ChatCoreService(
-            lumiCoreService: lumiCoreService,
-            pluginService: pluginService,
-            toolService: toolService
-        )
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ ChatCoreService 初始化完成")
-        }
-
         self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: chatCoreService.chatService,
+            chatService: LumiCore.chatService as! ChatService,
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
         if Self.verbose {
@@ -81,8 +71,6 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // 注册核心服务到 LumiCore，供 makePluginContext 自动注入
         LumiCore.registerService(LumiCoreService.self, lumiCoreService)
-        LumiCore.registerService((any LumiChatServicing).self, chatCoreService.chatService)
-        LumiCore.registerService((any HistoryQueryService).self, chatCoreService.chatService)
         LumiCore.registerService(LumiEditorServicing.self, editorCoreService)
         LumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
         LumiCore.registerService(LumiBottomPanelLayoutPresenting.self, LumiCore.layoutState ?? LumiLayoutState())
@@ -109,6 +97,12 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ UpdateController 启动完成")
         }
 
+        // 初始化聊天插件贡献（注册工具、LLM Provider 等）
+        reloadChatPluginContributions()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 聊天插件贡献初始化完成")
+        }
+
         // 布局状态由 LumiCore.layoutState 统一管理
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 布局状态已配置")
@@ -125,7 +119,7 @@ final class RootContainer: ObservableObject, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
             }
-            self.chatCoreService.reloadPluginContributions(from: self.pluginService)
+            self.reloadChatPluginContributions()
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
             self.editorCoreService.reinstallExtensions()
@@ -143,6 +137,45 @@ final class RootContainer: ObservableObject, SuperLog {
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🎉 RootContainer 初始化完成")
+        }
+    }
+
+    // MARK: - Chat Plugin Wiring
+
+    private func reloadChatPluginContributions() {
+        guard let chatService = LumiCore.chatService as? ChatService else { return }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)重载聊天插件贡献")
+        }
+
+        let context = LumiCore.makePluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core",
+            additionalDependencies: { dependencies in
+                dependencies.register((any LumiToolServicing).self, toolService)
+            }
+        )
+
+        // 注册插件提供的工具
+        toolService.registerTools(pluginService.agentTools(context: context))
+        // 注册 built-in tools
+        toolService.registerBuiltInTools(ChatService.builtInTools)
+
+        let providers = pluginService.llmProviders(context: context)
+        chatService.registerProviders(providers)
+        chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
+        chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
+        chatService.registerToolService(toolService)
+
+        NotificationCenter.default.post(
+            name: .lumiLLMProvidersDidChange,
+            object: nil,
+            userInfo: nil
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider")
         }
     }
 }

@@ -1,3 +1,5 @@
+import LumiChatKit
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -9,7 +11,7 @@ struct SettingsSceneContent: View {
             SettingsView(
                 pluginService: container.pluginService,
                 lumiUIService: container.lumiUIService,
-                chatService: container.chatCoreService.chatService
+                chatService: LumiCore.chatService as! ChatService
             )
             .ignoresSafeArea()
         }

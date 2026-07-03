@@ -15,6 +15,24 @@ public enum LumiCore {
     /// 布局状态管理器
     @MainActor public static private(set) var layoutState: LumiLayoutState?
 
+    /// 聊天服务（由外部通过 `setupChatService` 工厂创建，自动注册到服务表）
+    @MainActor public static private(set) var chatService: (any LumiChatServicing)?
+
+    /// ChatService 工厂闭包类型
+    public typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
+
+    /// ChatService 工厂，由 LumiApp 在启动时提供。
+    /// 提供后，LumiCore 在 boot() 时自动创建并注册到服务表。
+    private static var chatServiceFactory: ChatServiceFactory?
+
+    /// 设置 ChatService 工厂。
+    /// - Parameters:
+    ///   - factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
+    ///   - 应在 `LumiCore.boot()` 之前调用。
+    public static func setupChatService(_ factory: @escaping ChatServiceFactory) {
+        chatServiceFactory = factory
+    }
+
     // MARK: - Service Registry
 
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
@@ -56,6 +74,9 @@ public enum LumiCore {
         var dependencies = LumiPluginDependencies()
 
         // 基础服务自动注入（仅 LumiCoreKit 内部定义的服务）
+        if let chat = resolveService((any LumiChatServicing).self) {
+            dependencies.register((any LumiChatServicing).self, chat)
+        }
         if let history = resolveService((any HistoryQueryService).self) {
             dependencies.register((any HistoryQueryService).self, history)
         }
@@ -84,9 +105,19 @@ public enum LumiCore {
 
     /// 启动 LumiCore
     /// 初始化所有核心模块
-    public static func boot() {
+    public static func boot(databaseDirectory: URL? = nil) {
         projectState = LumiProjectState()
         layoutState = LumiLayoutState()
+
+        // 自动创建并注册 ChatService
+        if let databaseDirectory, let factory = chatServiceFactory {
+            chatService = factory(databaseDirectory)
+            registerService((any LumiChatServicing).self, chatService!)
+            // ChatService 通常也实现 HistoryQueryService
+            if let history = chatService as? any HistoryQueryService {
+                registerService((any HistoryQueryService).self, history)
+            }
+        }
     }
 
     // MARK: - 配置

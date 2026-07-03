@@ -1,3 +1,5 @@
+import LumiChatKit
+import LumiCoreKit
 import SwiftUI
 
 struct MainWindowSceneContent: View {
@@ -9,7 +11,7 @@ struct MainWindowSceneContent: View {
                 pluginService: container.pluginService,
                 editorCoreService: container.editorCoreService,
                 lumiUIService: container.lumiUIService,
-                chatService: container.chatCoreService.chatService,
+                chatService: LumiCore.chatService as! ChatService,
                 chatSectionCoordinator: container.chatSectionCoordinator
             )
         }
