@@ -31,10 +31,17 @@ public enum ConversationTitlePlugin: LumiPlugin {
 
     @MainActor
     public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
-        else {
+        guard context.showsChatSection else {
             return []
+        }
+
+        // ChatSectionCoordinator 不可用时显示错误按钮
+        guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
+            return [
+                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: 81) {
+                    ChatSectionCoordinatorErrorButton()
+                }
+            ]
         }
 
         return [

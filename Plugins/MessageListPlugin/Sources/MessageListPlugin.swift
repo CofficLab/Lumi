@@ -18,10 +18,17 @@ public enum MessageListPlugin: LumiPlugin {
 
     @MainActor
     public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
-        else {
+        guard context.showsChatSection else {
             return []
+        }
+
+        // ChatSectionCoordinator 不可用时显示错误视图
+        guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
+            return [
+                LumiChatSectionItem(id: info.id, order: info.order, fillsRemainingHeight: true) {
+                    ChatMessagesErrorView()
+                }
+            ]
         }
 
         return [
