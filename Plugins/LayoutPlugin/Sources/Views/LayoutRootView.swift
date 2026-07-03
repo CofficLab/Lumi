@@ -6,7 +6,7 @@ import SwiftUI
 /// 挂载到 RootOverlay 上，负责：
 /// 1. App 启动时从磁盘恢复布局状态
 /// 2. 监听内核发出的布局变更事件并持久化
-struct LayoutPersistenceAnchor: View {
+struct LayoutRootView: View {
     let content: AnyView
     @State private var hasRestored = false
 

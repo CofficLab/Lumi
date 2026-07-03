@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import os
 
 /// LumiCore 布局状态管理器
 /// 负责管理当前布局状态
@@ -8,12 +9,16 @@ import Foundation
 /// 插件可监听通知进行持久化等响应操作，内核本身不感知插件存在。
 @MainActor
 public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
+
     // MARK: - 当前激活视图容器
 
     @Published public var activeViewContainerID: String? {
         didSet {
             guard activeViewContainerID != oldValue else { return }
-            NotificationCenter.postActiveViewContainerIDDidChange(containerID: activeViewContainerID)
+            let value = activeViewContainerID
+            Self.logger.info("activeViewContainerID → \(value ?? "nil")")
+            NotificationCenter.postActiveViewContainerIDDidChange(containerID: value)
         }
     }
 
@@ -22,13 +27,17 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
     @Published public var chatSectionVisible: Bool = true {
         didSet {
             guard chatSectionVisible != oldValue else { return }
-            NotificationCenter.postChatSectionVisibleDidChange(visible: chatSectionVisible)
+            let value = chatSectionVisible
+            Self.logger.info("chatSectionVisible → \(value)")
+            NotificationCenter.postChatSectionVisibleDidChange(visible: value)
         }
     }
     @Published public var bottomPanelVisible: Bool = true {
         didSet {
             guard bottomPanelVisible != oldValue else { return }
-            NotificationCenter.postBottomPanelVisibleDidChange(visible: bottomPanelVisible)
+            let value = bottomPanelVisible
+            Self.logger.info("bottomPanelVisible → \(value)")
+            NotificationCenter.postBottomPanelVisibleDidChange(visible: value)
         }
     }
 
@@ -37,13 +46,17 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
     @Published public var activeRailTabID: String = "explorer" {
         didSet {
             guard activeRailTabID != oldValue else { return }
-            NotificationCenter.postActiveRailTabIDDidChange(railTabID: activeRailTabID)
+            let value = activeRailTabID
+            Self.logger.info("activeRailTabID → \(value)")
+            NotificationCenter.postActiveRailTabIDDidChange(railTabID: value)
         }
     }
     @Published public var activeBottomTabID: String = "editor-bottom-problems" {
         didSet {
             guard activeBottomTabID != oldValue else { return }
-            NotificationCenter.postActiveBottomTabIDDidChange(bottomTabID: activeBottomTabID)
+            let value = activeBottomTabID
+            Self.logger.info("activeBottomTabID → \(value)")
+            NotificationCenter.postActiveBottomTabIDDidChange(bottomTabID: value)
         }
     }
     @Published private(set) public var bottomPanelFocusGeneration = 0

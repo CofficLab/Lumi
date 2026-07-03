@@ -51,7 +51,7 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
         [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in
-                LayoutPersistenceAnchor(content: content)
+                LayoutRootView(content: content)
             }
         ]
     }
