@@ -1,6 +1,8 @@
 import LumiCoreKit
+import MagicLog
 import SwiftUI
 import Combine
+import os
 
 /// 布局持久化插件
 ///
@@ -9,11 +11,14 @@ import Combine
 ///
 /// 内核只提供 `@Published` 响应式状态和全局 `LumiCore.layoutState` 入口，
 /// 本插件通过订阅内核状态实现持久化，内核不知道插件的存在。
-public enum LayoutPlugin: LumiPlugin {
+public enum LayoutPlugin: LumiPlugin, SuperLog {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "sidebar.left"
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
+    public nonisolated static let emoji = "📐"
+    public nonisolated static let verbose = true
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",
@@ -30,7 +35,9 @@ public enum LayoutPlugin: LumiPlugin {
         case .didRegister:
             break
         case .appDidLaunch:
-            /// App 启动时从磁盘恢复布局状态
+            if Self.verbose {
+                Self.logger.info("\(Self.t)开始恢复布局状态")
+            }
             LayoutPersistenceCoordinator.shared.restore(from: LayoutPluginLocalStore.shared)
         case .projectDidOpen:
             break
@@ -83,10 +90,17 @@ final class LayoutPersistenceCoordinator {
     func startObserving(_ state: LumiLayoutState) {
         cancellables.removeAll()
 
+        if LayoutPlugin.verbose {
+            LayoutPlugin.logger.info("\(LayoutPlugin.t)开始监听内核状态变化")
+        }
+
         // activeViewContainerID
         state.$activeViewContainerID
             .removeDuplicates()
             .sink { [weak self] value in
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)activeViewContainerID → \(value ?? "nil")")
+                }
                 self?.store.saveActiveViewContainerID(value)
             }
             .store(in: &cancellables)
@@ -95,6 +109,9 @@ final class LayoutPersistenceCoordinator {
         state.$activeRailTabID
             .removeDuplicates()
             .sink { [weak self] value in
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)activeRailTabID → \(value)")
+                }
                 self?.store.saveSelectedAgentSidebarTabId(value)
             }
             .store(in: &cancellables)
@@ -103,6 +120,9 @@ final class LayoutPersistenceCoordinator {
         state.$activeBottomTabID
             .removeDuplicates()
             .sink { [weak self] value in
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)activeBottomTabID → \(value)")
+                }
                 self?.saveActiveBottomTabID(value)
             }
             .store(in: &cancellables)
@@ -111,6 +131,9 @@ final class LayoutPersistenceCoordinator {
         state.$bottomPanelVisible
             .removeDuplicates()
             .sink { [weak self] value in
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)bottomPanelVisible → \(value)")
+                }
                 self?.store.saveBottomPanelVisible(value)
             }
             .store(in: &cancellables)
@@ -119,6 +142,9 @@ final class LayoutPersistenceCoordinator {
         state.$chatSectionVisible
             .removeDuplicates()
             .sink { [weak self] value in
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)chatSectionVisible → \(value)")
+                }
                 self?.saveChatSectionVisible(value)
             }
             .store(in: &cancellables)
@@ -126,22 +152,42 @@ final class LayoutPersistenceCoordinator {
 
     /// 从磁盘恢复布局状态到内核
     func restore(from store: LayoutPluginLocalStore) {
-        guard let state = LumiCore.layoutState else { return }
+        guard let state = LumiCore.layoutState else {
+            if LayoutPlugin.verbose {
+                LayoutPlugin.logger.warning("\(LayoutPlugin.t)LumiCore.layoutState 未初始化，跳过恢复")
+            }
+            return
+        }
+
+        var restored: [String] = []
 
         if let id = store.loadActiveViewContainerID() {
             state.activeViewContainerID = id
+            restored.append("activeViewContainerID=\(id)")
         }
         if let tabId = store.loadSelectedAgentSidebarTabId() {
             state.activeRailTabID = tabId
+            restored.append("activeRailTabID=\(tabId)")
         }
         if let bottomTabId = loadActiveBottomTabID() {
             state.activeBottomTabID = bottomTabId
+            restored.append("activeBottomTabID=\(bottomTabId)")
         }
         if let visible = store.loadBottomPanelVisible() {
             state.bottomPanelVisible = visible
+            restored.append("bottomPanelVisible=\(visible)")
         }
         if let visible = store.loadContentPanelVisible() {
             state.chatSectionVisible = visible
+            restored.append("chatSectionVisible=\(visible)")
+        }
+
+        if LayoutPlugin.verbose {
+            if restored.isEmpty {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)磁盘无已保存布局，使用默认值")
+            } else {
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)已从磁盘恢复布局: \(restored.joined(separator: ", "))")
+            }
         }
 
         // 开始监听后续变化
@@ -174,6 +220,9 @@ private struct LayoutPersistenceAnchor: View {
     var body: some View {
         content
             .onAppear {
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)布局持久化锚点已挂载")
+                }
                 // 确保协调器开始监听（restore 已在 appDidLaunch 中调用）
                 _ = LayoutPersistenceCoordinator.shared
             }
