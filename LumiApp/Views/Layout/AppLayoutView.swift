@@ -178,7 +178,10 @@ struct AppLayoutView: View {
             chatSection: chatSection,
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible
+            isChatSectionVisible: isChatSectionVisible,
+            additionalDependencies: { dependencies in
+                dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
+            }
         )
     }
 
