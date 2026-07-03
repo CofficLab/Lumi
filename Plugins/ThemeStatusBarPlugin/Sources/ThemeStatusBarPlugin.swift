@@ -14,8 +14,17 @@ public enum ThemeStatusBarPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+        // LumiThemeServicing 不可用时显示错误视图
         guard let themeService = context.resolve(LumiThemeServicing.self) else {
-            return []
+            return [
+                LumiStatusBarItem(
+                    id: "\(info.id).error",
+                    title: "Theme",
+                    systemImage: "exclamationmark.triangle.fill",
+                    placement: .trailing,
+                    statusBarView: { ThemeStatusBarErrorView() }
+                )
+            ]
         }
 
         return [

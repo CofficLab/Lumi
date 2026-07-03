@@ -20,10 +20,17 @@ public enum StripHeaderPlugin: LumiPlugin {
 
     @MainActor
     public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
+        guard context.showsPanelChrome else {
             return []
+        }
+
+        // LumiEditorServicing 不可用时显示错误视图
+        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else {
+            return [
+                LumiPanelHeaderItem(id: "\(info.id).error", order: info.order) {
+                    StripHeaderErrorView()
+                }
+            ]
         }
 
         return [
