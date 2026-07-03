@@ -236,19 +236,22 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
     }
 
+    /// 使用运行时类型分发读取 API Key，确保子类覆盖的 apiKeyStorageKey 生效。
     private func apiKey() throws -> String {
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+        let storageKey = type(of: self).apiKeyStorageKey
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey),
            !storedKey.isEmpty {
             return storedKey
         }
 
-        if let environmentAPIKeyName = Self.environmentAPIKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[environmentAPIKeyName],
+        let envKeyName = type(of: self).environmentAPIKeyName
+        if let envKeyName,
+           let environmentKey = ProcessInfo.processInfo.environment[envKeyName],
            !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return environmentKey
         }
 
-        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        throw LumiLLMProviderSupportError.missingAPIKey(type(of: self).info.displayName)
     }
 
     fileprivate static func messageMetadata(from state: StreamingState) async -> [String: String] {
@@ -649,19 +652,22 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
     }
 
+    /// 使用运行时类型分发读取 API Key，确保子类覆盖的 apiKeyStorageKey 生效。
     private func apiKey() throws -> String {
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
+        let storageKey = type(of: self).apiKeyStorageKey
+        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey),
            !storedKey.isEmpty {
             return storedKey
         }
 
-        if let environmentAPIKeyName = Self.environmentAPIKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[environmentAPIKeyName],
+        let envKeyName = type(of: self).environmentAPIKeyName
+        if let envKeyName,
+           let environmentKey = ProcessInfo.processInfo.environment[envKeyName],
            !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return environmentKey
         }
 
-        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        throw LumiLLMProviderSupportError.missingAPIKey(type(of: self).info.displayName)
     }
 }
 
