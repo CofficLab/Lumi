@@ -21,13 +21,11 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        let context = LumiPluginContext(
+        let context = container.lumiCoreService.makePluginContext(
             activeSectionID: "app.root",
             activeSectionTitle: "Lumi",
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register((any LumiChatServicing).self, container.chatCoreService.chatService)
-                dependencies.register(LumiEditorServicing.self, container.editorCoreService)
-            }
+            chatService: container.chatCoreService.chatService,
+            editorService: container.editorCoreService
         )
         let _ = container.pluginService.registerPluginContributions(context: context)
         let onboardingPages = container.pluginService.onboardingPages(context: context)

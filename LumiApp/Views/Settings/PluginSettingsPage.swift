@@ -257,12 +257,10 @@ private struct PluginSettingsDetailView: View {
     }
 
     private var settingsContext: LumiPluginContext {
-        var dependencies = LumiPluginDependencies()
-        dependencies.register((any HistoryQueryService).self, chatService)
-        return LumiPluginContext(
+        RootContainer.shared.lumiCoreService.makePluginContext(
             activeSectionID: "settings.plugins",
             activeSectionTitle: "插件管理",
-            dependencies: dependencies
+            historyQueryService: chatService
         )
     }
 

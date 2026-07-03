@@ -13,6 +13,7 @@ final class ChatCoreService: SuperLog {
 
     let chatService: ChatService
     private let toolService: ToolService
+    private let lumiCoreService: LumiCoreService
 
     init(
         lumiCoreService: LumiCoreService,
@@ -24,6 +25,7 @@ final class ChatCoreService: SuperLog {
         }
 
         self.toolService = toolService
+        self.lumiCoreService = lumiCoreService
         self.chatService = ChatService(
             configuration: .coreDatabase(directory: lumiCoreService.coreDatabaseDirectory)
         )
@@ -59,14 +61,11 @@ final class ChatCoreService: SuperLog {
             Self.logger.info("\(Self.t)重载插件贡献")
         }
 
-        let context = LumiPluginContext(
+        let context = lumiCoreService.makePluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core",
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register((any LumiChatServicing).self, chatService)
-                dependencies.register((any HistoryQueryService).self, chatService)
-                dependencies.register(LumiToolServicing.self, toolService)
-            }
+            chatService: chatService,
+            toolService: toolService
         )
 
         // 注册插件提供的工具

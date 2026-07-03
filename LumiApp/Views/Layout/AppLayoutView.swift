@@ -13,19 +13,22 @@ struct AppLayoutView: View {
     let lumiUIService: LumiUIService
     let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
+    let lumiCoreService: LumiCoreService
 
     init(
         pluginService: PluginService,
         editorCoreService: EditorCoreService,
         lumiUIService: LumiUIService,
         chatService: ChatService,
-        chatSectionCoordinator: ChatSectionCoordinator
+        chatSectionCoordinator: ChatSectionCoordinator,
+        lumiCoreService: LumiCoreService
     ) {
         self.pluginService = pluginService
         self.editorCoreService = editorCoreService
         self.lumiUIService = lumiUIService
         self.chatService = chatService
         self.chatSectionCoordinator = chatSectionCoordinator
+        self.lumiCoreService = lumiCoreService
         _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
     }
 
@@ -205,19 +208,17 @@ struct AppLayoutView: View {
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil
     ) -> LumiPluginContext {
-        LumiPluginContext(
+        lumiCoreService.makePluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register((any LumiChatServicing).self, chatService)
-                dependencies.register(LumiEditorServicing.self, editorCoreService)
-                dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
-                dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
-            }
+            chatService: chatService,
+            editorService: editorCoreService,
+            chatSectionCoordinator: chatSectionCoordinator,
+            panelLayoutPresenter: panelLayoutState
         )
     }
 
