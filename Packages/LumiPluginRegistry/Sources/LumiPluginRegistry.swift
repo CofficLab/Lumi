@@ -33,6 +33,7 @@ import DownloadPlugin
 import EditorBreadcrumbNavPlugin
 import EditorCallHierarchyPlugin
 import EditorFileTreePlugin
+import EditorFileTreeV2Plugin
 import EditorOutlinePlugin
 import EditorPanelPlugin
 import EditorPreviewPlugin
@@ -272,6 +273,7 @@ public enum LumiPluginRegistry {
         EditorPreviewBottomPanelPlugin.self,
         EditorTerminalPanelPlugin.self,
         EditorFileTreePanelPlugin.self,
+        EditorFileTreeV2Plugin.self,
         EditorOutlinePanelPlugin.self,
         AutoTaskPlugin.self,
         GitHubPlugin.self,
