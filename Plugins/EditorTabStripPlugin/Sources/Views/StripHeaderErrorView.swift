@@ -6,13 +6,15 @@ import LumiCoreKit
 struct StripHeaderErrorView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
+    var pluginName: String = "Editor Tab Strip"
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 10))
                 .foregroundColor(.red)
 
-            Text(LumiPluginLocalization.string("Editor service unavailable", bundle: .module))
+            Text("\(pluginName): \(LumiPluginLocalization.string("Editor service unavailable", bundle: .module))")
                 .font(.appMicro)
                 .foregroundColor(theme.textSecondary)
         }

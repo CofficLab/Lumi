@@ -181,6 +181,7 @@ struct AppLayoutView: View {
             isChatSectionVisible: isChatSectionVisible,
             additionalDependencies: { dependencies in
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
+                dependencies.register((any LumiEditorServicing).self, editorCoreService)
             }
         )
     }

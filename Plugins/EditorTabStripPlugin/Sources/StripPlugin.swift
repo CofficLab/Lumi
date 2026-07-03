@@ -28,7 +28,7 @@ public enum StripHeaderPlugin: LumiPlugin {
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else {
             return [
                 LumiPanelHeaderItem(id: "\(info.id).error", order: info.order) {
-                    StripHeaderErrorView()
+                    StripHeaderErrorView(pluginName: info.displayName)
                 }
             ]
         }
