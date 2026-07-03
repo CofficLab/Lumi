@@ -14,13 +14,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../SuperLogKit")
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "LumiCoreKit",
             dependencies: [
-                .product(name: "SuperLogKit", package: "SuperLogKit")
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [

@@ -33,8 +33,8 @@ public enum LumiCore {
 
     // MARK: - Plugin Context Factory
 
-    /// 统一创建 `LumiPluginContext`，自动注入已注册到 `LumiCore` 的核心服务。
-    /// 未注册的服务可通过命名参数或 `additionalDependencies` 手动补充。
+    /// 统一创建 `LumiPluginContext`。
+    /// 外部服务（如 EditorService、LumiChatServicing 等）需要通过 `additionalDependencies` 手动注入。
     /// - Parameters:
     ///   - activeSectionID: 当前活跃区域 ID。
     ///   - activeSectionTitle: 当前活跃区域标题。
@@ -42,7 +42,7 @@ public enum LumiCore {
     ///   - showsRail: 是否显示侧边栏。
     ///   - showsPanelChrome: 是否显示面板边框。
     ///   - isChatSectionVisible: 聊天区是否可见。
-    ///   - additionalDependencies: 额外依赖注册回调，可覆盖或补充自动注入的依赖。
+    ///   - additionalDependencies: 依赖注册回调，用于注入外部服务。
     /// - Returns: 初始化完成的 `LumiPluginContext`。
     public static func makePluginContext(
         activeSectionID: String,
@@ -55,32 +55,18 @@ public enum LumiCore {
     ) -> LumiPluginContext {
         var dependencies = LumiPluginDependencies()
 
-        // 自动注入已注册的核心服务
-        if let chat = resolveService((any LumiChatServicing).self) {
-            dependencies.register((any LumiChatServicing).self, chat)
-        }
+        // 基础服务自动注入（仅 LumiCoreKit 内部定义的服务）
         if let history = resolveService((any HistoryQueryService).self) {
             dependencies.register((any HistoryQueryService).self, history)
         }
-        if let editor = resolveService(LumiEditorServicing.self) {
-            dependencies.register(LumiEditorServicing.self, editor)
-        }
-        if let coordinator = resolveService(ChatSectionCoordinator.self) {
-            dependencies.register(ChatSectionCoordinator.self, coordinator)
-        }
         if let presenter = resolveService(LumiBottomPanelLayoutPresenting.self) {
             dependencies.register(LumiBottomPanelLayoutPresenting.self, presenter)
-        }
-        if let tool = resolveService(ToolService.self) {
-            dependencies.register(ToolService.self, tool)
-        }
-        if let theme = resolveService(LumiThemeServicing.self) {
-            dependencies.register(LumiThemeServicing.self, theme)
         }
         if let providerSettings = resolveService((any LumiLLMProviderSettingsContributing).self) {
             dependencies.register((any LumiLLMProviderSettingsContributing).self, providerSettings)
         }
 
+        // 外部服务由调用者手动注入
         additionalDependencies(&dependencies)
 
         return LumiPluginContext(
