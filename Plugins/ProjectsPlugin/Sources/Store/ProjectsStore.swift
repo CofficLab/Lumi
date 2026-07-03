@@ -1,6 +1,8 @@
 import Combine
 import Foundation
 import LumiCoreKit
+import SuperLogKit
+import os
 
 // MARK: - Store Protocol
 
@@ -18,11 +20,21 @@ public protocol ProjectsStoring: AnyObject {
 // MARK: - Store
 
 @MainActor
-public final class ProjectsStore: ObservableObject, ProjectsStoring {
+public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
+    public nonisolated static let emoji = "📁"
+    public static var verbose = true
+
     public static let shared = ProjectsStore()
 
     @Published public private(set) var projects: [LumiProjectEntry]
-    @Published public private(set) var currentProject: LumiProjectEntry?
+    @Published public private(set) var currentProject: LumiProjectEntry? {
+        didSet {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)currentProject 变化: \(oldValue?.name ?? "nil") → \(self.currentProject?.name ?? "nil")")
+            }
+        }
+    }
 
     // MARK: - Constants
 
@@ -52,17 +64,29 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring {
     // MARK: - ProjectsStoring
 
     public func select(_ project: LumiProjectEntry) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)select 被调用: \(project.name) @ \(project.path)")
+        }
+
         let updatedProject = LumiProjectEntry(name: project.name, path: project.path)
         projects.removeAll { $0.path == updatedProject.path }
         projects.insert(updatedProject, at: 0)
         projects = Array(projects.prefix(Self.maxProjectsCount))
         currentProject = updatedProject
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)currentProject 已更新: \(self.currentProject?.name ?? "nil"), 准备调用 LumiCore.projectState?.switchToProject")
+        }
+
         // 持久化
         save()
 
         // 同步到 LumiCore
         LumiCore.projectState?.switchToProject(updatedProject)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)switchToProject 调用完成, LumiCore.projectState.currentProject: \(LumiCore.projectState?.currentProject?.name ?? "nil")")
+        }
     }
 
     @discardableResult

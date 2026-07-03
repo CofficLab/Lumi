@@ -1,17 +1,29 @@
 import Combine
 import Foundation
+import SuperLogKit
+import os
 
 /// LumiCore 项目状态管理器
 /// 负责管理当前项目和项目列表的状态（内存存储）
 @MainActor
-public final class LumiProjectState: ObservableObject {
+public final class LumiProjectState: ObservableObject, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.project-state")
+    public nonisolated static let emoji = "📂"
+    public static var verbose = true
+
     // MARK: - 当前项目
 
     @Published public var currentProject: LumiProjectEntry? {
         didSet {
             if currentProject != oldValue {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)currentProject didSet: \(oldValue?.name ?? "nil") → \(self.currentProject?.name ?? "nil") @ \(self.currentProject?.path ?? "")")
+                }
                 if let project = currentProject {
                     NotificationCenter.postCurrentProjectDidChange(project: project)
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)发送 CurrentProjectDidChange 通知")
+                    }
                 }
             }
         }
@@ -62,6 +74,9 @@ public final class LumiProjectState: ObservableObject {
 
     /// 切换到指定项目
     public func switchToProject(_ entry: LumiProjectEntry) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)switchToProject: \(entry.name) @ \(entry.path)")
+        }
         currentProject = entry
 
         // 如果项目不在列表中，添加到列表顶部
@@ -69,6 +84,9 @@ public final class LumiProjectState: ObservableObject {
             var updatedProjects = projects
             updatedProjects.insert(entry, at: 0)
             projects = updatedProjects
+            if Self.verbose {
+                Self.logger.info("\(Self.t)项目不在列表中，添加到列表顶部")
+            }
         }
     }
 
