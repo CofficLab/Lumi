@@ -42,7 +42,7 @@ public enum ConversationListPlugin: LumiPlugin {
                     placement: .trailing
                 ) {
                     ConversationListErrorButton()
-                }
+                },
             ]
         }
 
@@ -58,23 +58,30 @@ public enum ConversationListPlugin: LumiPlugin {
                     projectPathStore: projectState,
                     projectStore: projectState
                 )
-            }
+            },
         ]
     }
 
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              context.activeSectionID == ChatPanelSection.id
-        else {
+        guard context.showsRail else {
             return []
         }
 
         let chatService = context.resolve(LumiChatServicing.self) as? ChatService
 
-        // ChatService 不可用时返回空数组（Rail Tab 不显示）
+        // ChatService 不可用时显示错误视图
         guard let chatService else {
-            return []
+            return [
+                LumiPanelRailTabItem(
+                    id: "chats-error",
+                    order: 0,
+                    title: LumiPluginLocalization.string("Chats", bundle: .module),
+                    systemImage: "message.fill"
+                ) {
+                    ConversationListErrorView()
+                },
+            ]
         }
 
         let projectState = LumiCore.projectState
@@ -91,7 +98,7 @@ public enum ConversationListPlugin: LumiPlugin {
                     projectPathStore: projectState,
                     projectStore: projectState
                 )
-            }
+            },
         ]
     }
 
