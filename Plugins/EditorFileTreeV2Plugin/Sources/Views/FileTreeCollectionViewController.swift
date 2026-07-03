@@ -2,12 +2,15 @@ import AppKit
 import SwiftUI
 import EditorFileTreePlugin
 import LumiUI
+import os
 
 /// 文件树集合视图控制器
 ///
 /// 使用 NSCollectionView 实现高性能文件树渲染。
 @MainActor
 final class FileTreeCollectionViewController: NSViewController {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
+
     
     private let collectionView: NSCollectionView = {
         let cv = NSCollectionView()
@@ -34,7 +37,10 @@ final class FileTreeCollectionViewController: NSViewController {
     /// 树结构变化回调
     var onTreeMutation: (() -> Void)?
     
-    private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCell")
+    private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCellView")
+    
+    /// viewDidLoad 之前预存的根路径
+    private var pendingProjectRoot: String?
     
     override func loadView() {
         view = NSView()
@@ -47,14 +53,18 @@ final class FileTreeCollectionViewController: NSViewController {
         setupDataSource()
         setupBindings()
         setupTrackingArea()
+        Self.logger.info("[FileTreeCollectionViewController] viewDidLoad 完成")
+        
+        // bindings 就绪后再加载数据
+        if let path = pendingProjectRoot, !path.isEmpty {
+            Self.logger.info("[FileTreeCollectionViewController] 延迟加载项目: \(path)")
+            fileTreeDataSource.setProjectRoot(path)
+            pendingProjectRoot = nil
+        }
     }
     
     private func setupCollectionView() {
-        collectionView.register(
-            FileTreeNodeCell.self,
-            forItemWithIdentifier: Self.cellIdentifier
-        )
-        
+        // 注意：不注册 Cell 类，避免 makeItem 尝试加载不存在的 nib 导致崩溃
         let layout = Self.makeLayout()
         collectionView.collectionViewLayout = layout
         
@@ -69,14 +79,12 @@ final class FileTreeCollectionViewController: NSViewController {
     }
     
     private func setupDataSource() {
-        dataSource = FileTreeDiffableDataSource(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
-            guard let self = self,
-                  let cell = collectionView.makeItem(
-                    withIdentifier: Self.cellIdentifier,
-                    for: indexPath
-                  ) as? FileTreeNodeCell else {
-                return nil
-            }
+        dataSource = FileTreeDiffableDataSource(collectionView: collectionView) { [weak self] _, indexPath, item in
+            guard let self = self else { return nil }
+            
+            // 手动创建 cell，不使用 makeItem 避免 nib 查找崩溃
+            let cell = FileTreeNodeCell()
+            cell.loadView()
             
             let isSelected = self.selectionState.isSelected(item.url)
             let isHovered = self.hoveredItemURL == item.url
@@ -159,7 +167,14 @@ final class FileTreeCollectionViewController: NSViewController {
     // MARK: - Public API
     
     func setProjectRoot(_ path: String) {
-        fileTreeDataSource.setProjectRoot(path)
+        if isViewLoaded {
+            Self.logger.info("[FileTreeCollectionViewController] setProjectRoot: \(path)")
+            fileTreeDataSource.setProjectRoot(path)
+        } else {
+            // viewDidLoad 之前，暂存路径
+            pendingProjectRoot = path
+            Self.logger.info("[FileTreeCollectionViewController] 预存项目路径: \(path)")
+        }
     }
     
     func reloadDirectory(at url: URL) {

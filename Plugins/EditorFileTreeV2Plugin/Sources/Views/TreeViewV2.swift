@@ -35,23 +35,30 @@ public struct TreeViewV2: View, SuperLog {
 
     public var body: some View {
         let projectPath = currentProjectPath
+        let _ = Self.logger.info("\(Self.t)📝[body] projectPath: \(projectPath)")
 
         VStack(spacing: 0) {
             if projectPath.isEmpty {
+                let _ = Self.logger.warning("\(Self.t)📝[body] → NoProjectView (projectPath is empty)")
                 NoProjectView()
             } else {
+                let _ = Self.logger.info("\(Self.t)📝[body] → FileTreeNSViewBridge (projectPath is not empty)")
                 FileTreeNSViewBridge(
                     projectRootPath: projectPath,
                     onSelect: { selectedURL in
+                        Self.logger.info("\(Self.t)📝[onSelect] url: \(selectedURL.path)")
                         openProjectFile(selectedURL)
                     },
                     onExpansionChange: { relativePath, isExpanded in
+                        Self.logger.info("\(Self.t)📝[onExpansionChange] path: \(relativePath), isExpanded: \(isExpanded)")
                         handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
                     },
                     onTreeMutation: {
+                        Self.logger.info("\(Self.t)📝[onTreeMutation] triggered")
                         refreshTreeAfterMutation()
                     }
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .environmentObject(selectionState)

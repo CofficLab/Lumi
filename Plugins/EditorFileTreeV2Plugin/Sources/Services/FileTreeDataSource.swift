@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import EditorFileTreePlugin
+import os
 
 /// 文件树数据源
 ///
@@ -10,6 +11,7 @@ final class FileTreeDataSource: SuperLog {
     nonisolated static let emoji = "🌳"
     nonisolated static var verbose: Bool { EditorFileTreeV2Plugin.verbose }
     nonisolated static let logger = EditorFileTreeV2Plugin.logger
+
     
     /// 当前扁平化的节点列表（按可见顺序排列）
     private(set) var items: [FileTreeNodeItem] = []
@@ -45,7 +47,8 @@ final class FileTreeDataSource: SuperLog {
     private func expandDirectory(_ url: URL, depth: Int) -> [FileTreeNodeItem] {
         var result: [FileTreeNodeItem] = []
         let relativePath = PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
-        let isExpanded = expandedPaths.contains(relativePath)
+        // 根节点始终展开，避免文件树为空
+        let isExpanded = depth == 0 ? true : expandedPaths.contains(relativePath)
         let isDirectory = FileTreeFacade.isDirectory(url)
         
         result.append(FileTreeNodeItem(
