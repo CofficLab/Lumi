@@ -76,12 +76,8 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
 
     // MARK: - Provider Status
 
-    override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
+    override public func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 
     public init() {

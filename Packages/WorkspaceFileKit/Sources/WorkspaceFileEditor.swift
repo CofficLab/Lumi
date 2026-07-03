@@ -175,7 +175,7 @@ public struct WorkspaceFileEditor: Sendable {
         // 先按文件既有换行风格适配，再按文件既有引号风格适配，保持文件风格一致。
         var replacement = adaptReplacementLineEndings(newString, toMatch: match.matched)
         replacement = preserveQuoteStyle(replacement, matching: match.matched)
-        
+
         let updatedContent: String
         if replaceAll {
             updatedContent = originalContent.replacingOccurrences(of: match.matched, with: replacement)
@@ -186,6 +186,22 @@ public struct WorkspaceFileEditor: Sendable {
 
         guard updatedContent != originalContent else {
             throw WorkspaceFileError("Replacement produced no changes.")
+        }
+
+        // 安全检查：检测可能的重复编辑。
+        // 如果 new_string 中独有的非空白内容（不在 old_string 中的部分）已经存在于文件中，
+        // 说明该编辑可能已被执行过，或是 LLM 基于过时上下文发出的过时请求。
+        // 此时拒绝编辑，避免文件内容被重复污染。
+        let newOnlyLines = extractNewOnlyContent(oldString: oldString, newString: newString)
+        if !newOnlyLines.isEmpty {
+            for line in newOnlyLines {
+                if originalContent.contains(line) {
+                    let snippet = line.count > 80 ? String(line.prefix(80)) + "..." : line
+                    throw WorkspaceFileError(
+                        "Possible duplicate edit detected: the following new content already exists in the file:\n\"\(snippet)\"\n\nThis usually means the file was already modified by a previous edit, or the edit request is based on stale context. Re-read the file before retrying."
+                    )
+                }
+            }
         }
 
         try updatedContent.write(to: fileURL, atomically: true, encoding: originalEncoding)
@@ -383,6 +399,17 @@ public struct WorkspaceFileEditor: Sendable {
             swap(&prev, &curr)
         }
         return prev[m]
+    }
+
+    /// 提取 new_string 中独有的内容行（不在 old_string 中的行）。
+    ///
+    /// 用于检测重复编辑：如果这些独有内容行已经存在于文件中，说明编辑可能已被执行过。
+    /// 只检查有意义的非空行（跳过纯空白行），避免误报。
+    private func extractNewOnlyContent(oldString: String, newString: String) -> [String] {
+        let oldLines = Set(oldString.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) })
+        return newString.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !oldLines.contains($0) }
     }
 
     /// 生成 unified 风格的 diff 摘要。
