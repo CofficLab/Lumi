@@ -10,7 +10,7 @@ import SuperLogKit
 /// 插件可监听通知进行持久化等响应操作，内核本身不感知插件存在。
 @MainActor
 public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting, SuperLog {
-    nonisolated static let emoji = "📐"
+    nonisolated public static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
@@ -39,7 +39,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard bottomPanelVisible != oldValue else { return }
             let value = bottomPanelVisible
-            Self.logger.info("bottomPanelVisible → \(value)")
+            Self.logger.info("\(Self.t)bottomPanelVisible → \(value)")
             NotificationCenter.postBottomPanelVisibleDidChange(visible: value)
         }
     }
@@ -50,7 +50,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeRailTabID != oldValue else { return }
             let value = activeRailTabID
-            Self.logger.info("activeRailTabID → \(value)")
+            Self.logger.info("\(Self.t)activeRailTabID → \(value)")
             NotificationCenter.postActiveRailTabIDDidChange(railTabID: value)
         }
     }
@@ -58,7 +58,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeBottomTabID != oldValue else { return }
             let value = activeBottomTabID
-            Self.logger.info("activeBottomTabID → \(value)")
+            Self.logger.info("\(Self.t)activeBottomTabID → \(value)")
             NotificationCenter.postActiveBottomTabIDDidChange(bottomTabID: value)
         }
     }
