@@ -9,8 +9,7 @@ struct SettingsSceneContent: View {
             SettingsView(
                 pluginService: container.pluginService,
                 lumiUIService: container.lumiUIService,
-                chatService: container.chatCoreService.chatService,
-                lumiCoreService: container.lumiCoreService
+                chatService: container.chatCoreService.chatService
             )
             .ignoresSafeArea()
         }

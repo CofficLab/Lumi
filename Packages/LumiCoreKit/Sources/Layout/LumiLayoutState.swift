@@ -4,7 +4,7 @@ import Foundation
 /// LumiCore 布局状态管理器
 /// 负责管理当前布局状态
 @MainActor
-public final class LumiLayoutState: ObservableObject {
+public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting {
     // MARK: - 当前激活视图容器
 
     @Published public var activeViewContainerID: String? {
@@ -18,6 +18,12 @@ public final class LumiLayoutState: ObservableObject {
 
     @Published public var chatSectionVisible: Bool = true
     @Published public var bottomPanelVisible: Bool = true
+
+    // MARK: - 面板状态
+
+    @Published public var activeRailTabID: String = "explorer"
+    @Published public var activeBottomTabID: String = "editor-bottom-problems"
+    @Published private(set) public var bottomPanelFocusGeneration = 0
 
     // MARK: - 初始化
 
@@ -33,5 +39,16 @@ public final class LumiLayoutState: ObservableObject {
     /// 清除当前激活的视图容器
     public func clearActiveViewContainer() {
         activeViewContainerID = nil
+    }
+
+    // MARK: - LumiBottomPanelLayoutPresenting
+
+    public func presentRailTab(id: String) {
+        activeRailTabID = id
+    }
+
+    public func presentBottomTab(id: String, viewContainerID: String) {
+        activeBottomTabID = id
+        bottomPanelFocusGeneration += 1
     }
 }

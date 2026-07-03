@@ -61,11 +61,12 @@ final class ChatCoreService: SuperLog {
             Self.logger.info("\(Self.t)重载插件贡献")
         }
 
-        let context = lumiCoreService.makePluginContext(
+        let context = LumiCore.makePluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core",
-            chatService: chatService,
-            toolService: toolService
+            additionalDependencies: { dependencies in
+                dependencies.register((any LumiToolServicing).self, toolService)
+            }
         )
 
         // 注册插件提供的工具

@@ -10,8 +10,7 @@ struct MainWindowSceneContent: View {
                 editorCoreService: container.editorCoreService,
                 lumiUIService: container.lumiUIService,
                 chatService: container.chatCoreService.chatService,
-                chatSectionCoordinator: container.chatSectionCoordinator,
-                lumiCoreService: container.lumiCoreService
+                chatSectionCoordinator: container.chatSectionCoordinator
             )
         }
         .background {

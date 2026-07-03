@@ -21,11 +21,9 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        let context = container.lumiCoreService.makePluginContext(
+        let context = LumiCore.makePluginContext(
             activeSectionID: "app.root",
-            activeSectionTitle: "Lumi",
-            chatService: container.chatCoreService.chatService,
-            editorService: container.editorCoreService
+            activeSectionTitle: "Lumi"
         )
         let _ = container.pluginService.registerPluginContributions(context: context)
         let onboardingPages = container.pluginService.onboardingPages(context: context)

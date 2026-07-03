@@ -78,6 +78,21 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ MenuBarService 初始化完成")
         }
 
+        // 注册核心服务到 LumiCore，供 makePluginContext 自动注入
+        LumiCore.registerService(LumiCoreService.self, lumiCoreService)
+        LumiCore.registerService((any LumiChatServicing).self, chatCoreService.chatService)
+        LumiCore.registerService((any HistoryQueryService).self, chatCoreService.chatService)
+        LumiCore.registerService(LumiEditorServicing.self, editorCoreService)
+        LumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
+        LumiCore.registerService(LumiBottomPanelLayoutPresenting.self, LumiCore.layoutState ?? LumiLayoutState())
+        LumiCore.registerService(ToolService.self, toolService)
+        LumiCore.registerService(LumiThemeServicing.self, lumiUIService)
+        LumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ LumiCore 服务注册表初始化完成")
+        }
+
         self.lumiUIService.onThemesDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()
         }

@@ -52,7 +52,6 @@ struct SettingsView: View {
     let pluginService: PluginService
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
-    let lumiCoreService: LumiCoreService
     @State private var selectedTab: SettingsTabSelection?
 
     /// All plugin-registered settings tabs, aggregated from every loaded plugin.
@@ -78,12 +77,12 @@ struct SettingsView: View {
     }
 
     private var settingsPluginContext: LumiPluginContext {
-        lumiCoreService.makePluginContext(
+        LumiCore.makePluginContext(
             activeSectionID: "settings",
             activeSectionTitle: "设置",
-            chatService: chatService,
-            historyQueryService: chatService,
             additionalDependencies: { dependencies in
+                dependencies.register((any LumiChatServicing).self, chatService)
+                dependencies.register((any HistoryQueryService).self, chatService)
                 dependencies.register((any LumiLLMProviderSettingsContributing).self, pluginService)
             }
         )

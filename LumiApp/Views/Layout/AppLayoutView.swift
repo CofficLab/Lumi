@@ -7,28 +7,24 @@ import SwiftUI
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject private var layoutState: LumiLayoutState
-    @StateObject private var panelLayoutState = PanelLayoutState()
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
     let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
-    let lumiCoreService: LumiCoreService
 
     init(
         pluginService: PluginService,
         editorCoreService: EditorCoreService,
         lumiUIService: LumiUIService,
         chatService: ChatService,
-        chatSectionCoordinator: ChatSectionCoordinator,
-        lumiCoreService: LumiCoreService
+        chatSectionCoordinator: ChatSectionCoordinator
     ) {
         self.pluginService = pluginService
         self.editorCoreService = editorCoreService
         self.lumiUIService = lumiUIService
         self.chatService = chatService
         self.chatSectionCoordinator = chatSectionCoordinator
-        self.lumiCoreService = lumiCoreService
         _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
     }
 
@@ -103,7 +99,7 @@ struct AppLayoutView: View {
                             showsPanelChrome: showsPanelChrome,
                             showRail: showRail,
                             railTabs: railTabs,
-                            layoutState: panelLayoutState,
+                            layoutState: layoutState,
                             editor: editorCoreService
                         )
                         .layoutPriority(isRailOnlyPanel ? 0 : 1)
@@ -148,7 +144,7 @@ struct AppLayoutView: View {
                         showsPanelChrome: showsPanelChrome,
                         showRail: showRail,
                         railTabs: railTabs,
-                        layoutState: panelLayoutState,
+                        layoutState: layoutState,
                         editor: editorCoreService
                     )
                 }
@@ -168,7 +164,7 @@ struct AppLayoutView: View {
                 pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                panelLayoutState: panelLayoutState
+                panelLayoutState: layoutState
             )
         }
         .frame(minWidth: 1180, minHeight: 560)
@@ -208,17 +204,13 @@ struct AppLayoutView: View {
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil
     ) -> LumiPluginContext {
-        lumiCoreService.makePluginContext(
+        LumiCore.makePluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible,
-            chatService: chatService,
-            editorService: editorCoreService,
-            chatSectionCoordinator: chatSectionCoordinator,
-            panelLayoutPresenter: panelLayoutState
+            isChatSectionVisible: isChatSectionVisible
         )
     }
 

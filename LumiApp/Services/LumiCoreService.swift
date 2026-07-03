@@ -1,6 +1,4 @@
 import Foundation
-import LumiChatKit
-import EditorService
 import LumiCoreKit
 import SuperLogKit
 import os
@@ -32,73 +30,6 @@ final class LumiCoreService: SuperLog {
             Self.logger.info("\(Self.t)核心数据库目录: \(self.coreDatabaseDirectory.path)")
             Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
         }
-    }
-
-    // MARK: - Plugin Context Factory
-
-    /// 统一创建 `LumiPluginContext`，自动注册传入的非空服务依赖。
-    /// - Parameters:
-    ///   - activeSectionID: 当前活跃区域 ID。
-    ///   - activeSectionTitle: 当前活跃区域标题。
-    ///   - chatSection: 聊天区布局配置。
-    ///   - showsRail: 是否显示侧边栏。
-    ///   - showsPanelChrome: 是否显示面板边框。
-    ///   - isChatSectionVisible: 聊天区是否可见。
-    ///   - chatService: 聊天服务实例。
-    ///   - editorService: 编辑器服务实例。
-    ///   - toolService: 工具服务实例。
-    ///   - chatSectionCoordinator: 聊天区协调器。
-    ///   - panelLayoutPresenter: 底部面板布局 presenter。
-    ///   - historyQueryService: 历史查询服务实例。
-    ///   - additionalDependencies: 额外依赖注册回调。
-    /// - Returns: 初始化完成的 `LumiPluginContext`。
-    func makePluginContext(
-        activeSectionID: String,
-        activeSectionTitle: String,
-        chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
-        isChatSectionVisible: Bool? = nil,
-        chatService: (any LumiChatServicing)? = nil,
-        editorService: LumiEditorServicing? = nil,
-        toolService: ToolService? = nil,
-        chatSectionCoordinator: ChatSectionCoordinator? = nil,
-        panelLayoutPresenter: LumiBottomPanelLayoutPresenting? = nil,
-        historyQueryService: (any HistoryQueryService)? = nil,
-        additionalDependencies: (inout LumiPluginDependencies) -> Void = { _ in }
-    ) -> LumiPluginContext {
-        var dependencies = LumiPluginDependencies()
-
-        if let chatService {
-            dependencies.register((any LumiChatServicing).self, chatService)
-        }
-        if let editorService {
-            dependencies.register(LumiEditorServicing.self, editorService)
-        }
-        if let toolService {
-            dependencies.register(ToolService.self, toolService)
-        }
-        if let chatSectionCoordinator {
-            dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
-        }
-        if let panelLayoutPresenter {
-            dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutPresenter)
-        }
-        if let historyQueryService {
-            dependencies.register((any HistoryQueryService).self, historyQueryService)
-        }
-
-        additionalDependencies(&dependencies)
-
-        return LumiPluginContext(
-            activeSectionID: activeSectionID,
-            activeSectionTitle: activeSectionTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible,
-            dependencies: dependencies
-        )
     }
 
     // MARK: - Private

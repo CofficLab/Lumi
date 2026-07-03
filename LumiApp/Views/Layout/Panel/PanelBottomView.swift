@@ -6,7 +6,7 @@ struct PanelBottomView: View {
     @LumiTheme private var theme
 
     let tabs: [LumiPanelBottomTabItem]
-    @ObservedObject var layoutState: PanelLayoutState
+    @ObservedObject var layoutState: LumiLayoutState
     let viewContainerID: String
 
     var body: some View {
@@ -31,7 +31,9 @@ struct PanelBottomView: View {
             tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
             selectedTab: Binding(
                 get: { layoutState.activeBottomTabID },
-                set: { layoutState.activeBottomTabID = $0 }
+                set: { newValue in
+                    layoutState.activeBottomTabID = newValue
+                }
             )
         )
         .frame(maxWidth: .infinity)

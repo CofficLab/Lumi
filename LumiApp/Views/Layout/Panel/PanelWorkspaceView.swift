@@ -11,8 +11,7 @@ struct PanelWorkspaceView: View {
     let showsPanelChrome: Bool
     let viewContainerID: String
 
-    @ObservedObject private var globalLayoutState: LumiLayoutState
-    @ObservedObject var layoutState: PanelLayoutState
+    @ObservedObject var layoutState: LumiLayoutState
 
     init(
         container: LumiViewContainerItem?,
@@ -20,7 +19,7 @@ struct PanelWorkspaceView: View {
         bottomTabs: [LumiPanelBottomTabItem],
         showsPanelChrome: Bool,
         viewContainerID: String,
-        layoutState: PanelLayoutState
+        layoutState: LumiLayoutState
     ) {
         self.container = container
         self.headerItems = headerItems
@@ -28,11 +27,10 @@ struct PanelWorkspaceView: View {
         self.showsPanelChrome = showsPanelChrome
         self.viewContainerID = viewContainerID
         self.layoutState = layoutState
-        _globalLayoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
     }
 
     private var showBottomPanel: Bool {
-        showsPanelChrome && !bottomTabs.isEmpty && globalLayoutState.bottomPanelVisible
+        showsPanelChrome && !bottomTabs.isEmpty && layoutState.bottomPanelVisible
     }
 
     var body: some View {

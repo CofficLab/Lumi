@@ -11,7 +11,7 @@ struct PanelColumnView: View {
     let showsPanelChrome: Bool
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: PanelLayoutState
+    @ObservedObject var layoutState: LumiLayoutState
     let editor: any LumiEditorServicing
 
     private var viewContainerID: String {
@@ -28,7 +28,8 @@ struct PanelColumnView: View {
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    viewContainerID: viewContainerID, layoutState: layoutState
+                    viewContainerID: viewContainerID,
+                    layoutState: layoutState
                 )
             }
         }
@@ -53,7 +54,8 @@ struct PanelColumnView: View {
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    viewContainerID: viewContainerID, layoutState: layoutState
+                    viewContainerID: viewContainerID,
+                    layoutState: layoutState
                 )
             }
             .id(viewContainerID)
