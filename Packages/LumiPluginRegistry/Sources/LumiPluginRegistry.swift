@@ -230,6 +230,9 @@ public enum LumiPluginRegistry {
 //        RegistryManagerPlugin.self,
 //        ClipboardManagerPlugin.self,
 //        InputPlugin.self,
+
+        // MARK: - Open In Plugins
+
 //        AgentOpenInAntigravityPlugin.self,
 //        AgentOpenInCursorPlugin.self,
 //        AgentOpenInXcodePlugin.self,
@@ -237,6 +240,7 @@ public enum LumiPluginRegistry {
 //        AgentOpenInGitHubDesktopPlugin.self,
 //        AgentOpenInFinderPlugin.self,
 //        AgentOpenInGitOKPlugin.self,
+
 //        TerminalPlugin.self,
 //        FontConfigPlugin.self,
 //        AppLoadedPluginsPlugin.self,
