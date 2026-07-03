@@ -3,6 +3,8 @@ import LumiCoreKit
 
 /// 文件树无项目视图（未选择项目）
 public struct NoProjectView: View {
+    public init() {}
+    
     public var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder")

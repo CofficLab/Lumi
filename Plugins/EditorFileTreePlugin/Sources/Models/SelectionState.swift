@@ -8,7 +8,9 @@ import AppKit
 /// - Cmd+点击：切换选中项，不打开文件
 /// - Shift+点击：在可见行范围内连续多选，不打开文件
 @MainActor
-final class SelectionState: ObservableObject {
+public final class SelectionState: ObservableObject {
+    public init() {}
+
     @Published private(set) var selectedPaths: Set<String> = []
     @Published private(set) var anchorPath: String?
 
@@ -23,7 +25,7 @@ final class SelectionState: ObservableObject {
     /// 闪烁任务，新触发时取消旧的
     private var flashTask: Task<Void, Never>?
 
-    func isSelected(_ url: URL) -> Bool {
+    public func isSelected(_ url: URL) -> Bool {
         selectedPaths.contains(normalizedPath(url))
     }
 
@@ -78,13 +80,13 @@ final class SelectionState: ObservableObject {
         visibleOrderIndex = [:]
     }
 
-    func clearSelection() {
+    public func clearSelection() {
         selectedPaths = []
         anchorPath = nil
     }
 
     /// 编辑器当前文件变化时，将多选收束为单选。
-    func syncFromEditorHighlight(_ url: URL) {
+    public func syncFromEditorHighlight(_ url: URL) {
         let path = normalizedPath(url)
         selectedPaths = [path]
         anchorPath = path

@@ -32,7 +32,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     public nonisolated static let verbose: Bool = true
 
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
-    @Published var refreshToken: Int = 0
+    @Published public var refreshToken: Int = 0
 
     /// 精准刷新令牌：watcher 检测到具体目录变化时递增。
     /// 节点结合 `changedDirectoryPaths` 判断自身是否需要 reload，避免全树重载。
