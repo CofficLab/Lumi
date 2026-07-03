@@ -37,9 +37,9 @@ struct ChatView: View {
     }
 
     private var shouldShowChatSection: Bool {
-        chatSection.isVisible
+        let result = chatSection.isVisible
             && layoutState.chatSectionVisible
-            && !chatSectionItems.isEmpty
+        return result
     }
 
     private var finalContext: LumiPluginContext {

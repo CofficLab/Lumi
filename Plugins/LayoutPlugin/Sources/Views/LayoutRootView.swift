@@ -22,10 +22,6 @@ struct LayoutRootView: View {
             .onAppear {
                 guard !hasRestored else { return }
                 hasRestored = true
-
-                if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)布局持久化锚点已挂载")
-                }
                 LayoutPersistenceCoordinator.shared.restore()
             }
     }
