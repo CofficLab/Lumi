@@ -5,6 +5,7 @@ import LumiCoreKit
 /// 主题服务不可用时的状态栏错误视图
 struct ThemeStatusBarErrorView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    var pluginName: String = "Theme Status Bar"
 
     var body: some View {
         HStack(spacing: 4) {
@@ -12,7 +13,7 @@ struct ThemeStatusBarErrorView: View {
                 .font(.system(size: 8))
                 .foregroundColor(.red)
 
-            Text(LumiPluginLocalization.string("Service unavailable", bundle: .module))
+            Text("\(pluginName): \(LumiPluginLocalization.string("Service unavailable", bundle: .module))")
                 .font(.appMicro)
                 .foregroundColor(theme.textSecondary)
         }
