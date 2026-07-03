@@ -99,6 +99,9 @@ public struct LumiLLMRequest: Sendable {
 public protocol LumiLLMProvider: Sendable {
     static var info: LumiLLMProviderInfo { get }
 
+    /// 解析 API Key；由具体供应商实现存储策略
+    func lumiResolveAPIKey() throws -> String
+
     func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage
 
     func sendStreaming(

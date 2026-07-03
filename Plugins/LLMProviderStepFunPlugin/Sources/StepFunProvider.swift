@@ -52,94 +52,19 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         )
     }
 
-    override public class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_StepFun"
-    }
-
     public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
 
-    override public func logRawStreamChunk(_ data: Data) {
-        guard Self.verbose >= 3, let text = String(data: data, encoding: .utf8), !text.isEmpty else { return }
-        StepFunPlugin.logger.info("\(Self.t)raw chunk: \(text)")
-    }
-
-    public init() {
-        let config = LumiOpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
-            additionalHeaders: ["Accept": "text/event-stream"],
-            includeUsageInStreamOptions: false,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false,
-            includesReasoningContentInMessages: true
-        )
-        if Self.verbose > 0 {
-            StepFunPlugin.logger.info("\(Self.t)初始化配置完成 baseURL=\(config.baseURL)")
-        }
-        super.init(configuration: config)
-    }
-
-    override public func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        if Self.verbose > 0 {
-            StepFunPlugin.logger.info("\(Self.t)开始流式请求 model=\(request.model), messagesCount=\(request.messages.count)")
-        }
-
-        final class AccumulatedState: @unchecked Sendable {
-            var value = ""
-        }
-        let accumulated = AccumulatedState()
-        let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
-            if let content = chunk.content, !content.isEmpty {
-                accumulated.value += content
-            }
-
-            if chunk.isDone {
-                StepFunPlugin.logger.info("\(Self.t)chunk 完成 contentLength=\(accumulated.value.count)")
-            }
-            await onChunk(chunk)
-        }
-
-        do {
-            let result = try await super.sendStreaming(request, onChunk: wrappedChunk)
-            if Self.verbose > 0 {
-                StepFunPlugin.logger.info("\(self.t)流式请求成功 finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
-            }
-
-            return result
-        } catch {
-            if !accumulated.value.isEmpty {
-                StepFunPlugin.logger.info("\(self.t)流式输出已产生内容：\n\(accumulated.value)")
-            }
-            if Self.verbose > 0 {
-                StepFunPlugin.logger.error("\(self.t)流式请求失败：\(error.localizedDescription)")
-            }
-            throw error
-        }
-    }
-
-    override public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await AvailabilityService.checkAvailability(provider: self, model: model)
-    }
-
-    override public func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
-    }
-
-    // MARK: - Error Rendering
-
-    override public func errorRenderKind(for error: Error) -> String? {
-        if case LumiLLMProviderSupportError.missingAPIKey = error {
-            return StepFunRenderKind.apiKeyMissing
-        }
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
-            return StepFunRenderKind.http(statusCode)
-        }
-        return StepFunRenderKind.requestFailed
-    }
-
     // MARK: - API Key
+
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_StepFun"
+
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     public static func getApiKey() -> String {
         LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
@@ -147,5 +72,17 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+                baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
+                additionalHeaders: ["Accept": "text/event-stream"],
+                includeUsageInStreamOptions: false,
+                returnsEmptyChunkWhenNoDelta: false,
+                acceptsFunctionScopedToolCallID: false
+            )
+        )
     }
 }

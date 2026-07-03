@@ -3,6 +3,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class LPgptProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_LPgpt"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "lpgpt",
@@ -25,8 +27,12 @@ public final class LPgptProvider: OpenAICompatibleLumiProvider, @unchecked Senda
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_LPgpt"
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public init() {

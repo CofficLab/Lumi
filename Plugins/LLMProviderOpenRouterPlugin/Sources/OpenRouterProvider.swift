@@ -3,6 +3,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenRouter"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "openrouter",
@@ -76,8 +78,12 @@ public final class OpenRouterProvider: OpenAICompatibleLumiProvider, @unchecked 
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_OpenRouter"
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public init() {

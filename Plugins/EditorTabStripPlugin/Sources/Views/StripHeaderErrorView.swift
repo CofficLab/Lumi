@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LumiCoreKit
 
 /// 编辑器 Tab Strip 服务不可用时的错误视图
 struct StripHeaderErrorView: View {

@@ -61,7 +61,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             throw OpenAIProviderError.emptyConversation
         }
 
-        let apiKey = try apiKey()
+        let apiKey = try lumiResolveAPIKey()
         guard let url = URL(string: adapter.configuration.baseURL) else {
             throw OpenAIProviderError.invalidBaseURL(adapter.configuration.baseURL)
         }
@@ -95,7 +95,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     func performAvailabilityCheck(model: String) async -> LumiModelAvailabilityResult {
         let apiKeyValue: String
         do {
-            apiKeyValue = try apiKey()
+            apiKeyValue = try lumiResolveAPIKey()
         } catch {
             return .unavailable(.message(error.localizedDescription))
         }
@@ -159,18 +159,12 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         }
     }
 
-    private func apiKey() throws -> String {
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
-           !storedKey.isEmpty {
-            return storedKey
+    public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-
-        if let environmentKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"],
-           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentKey
-        }
-
-        throw OpenAIProviderError.missingAPIKey
+        return key
     }
 }
 

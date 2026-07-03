@@ -23,7 +23,7 @@ public enum EditorFileTreePanelPlugin: LumiPlugin, SuperLog {
     public static let dragAndDropEnabled: Bool = false
 
     /// 是否启用右键菜单、重命名、新建、删除等上下文操作入口。
-    public static let contextMenuEnabled: Bool = false
+    public static let contextMenuEnabled: Bool = true
 
     /// 是否显示缩进参考线。
     public static let indentGuidesEnabled: Bool = false

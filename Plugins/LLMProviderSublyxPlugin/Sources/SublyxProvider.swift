@@ -77,6 +77,8 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
 
     public static let apiKeyHelpURL: String? = "https://api.sublyx.org/"
 
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Sublyx"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "sublyx",
@@ -108,10 +110,6 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_Sublyx"
-    }
-
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(
@@ -122,6 +120,14 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
                 acceptsFunctionScopedToolCallID: false
             )
         )
+    }
+
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public override func errorRenderKind(for error: Error) -> String? {
@@ -139,7 +145,7 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
     // MARK: - API Key
 
     public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
     }
 
     public static func setApiKey(_ apiKey: String) {

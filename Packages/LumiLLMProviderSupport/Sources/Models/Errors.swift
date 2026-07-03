@@ -18,14 +18,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         fatalError("Subclasses must override info")
     }
 
-    open class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_\(info.id)"
-    }
-
-    open class var environmentAPIKeyName: String? {
-        nil
-    }
-
     private let apiService: LLMAPIService
     private let adapter: OpenAICompatibleProviderAdapter
 
@@ -39,7 +31,11 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiOpenAIAdapter: OpenAICompatibleProviderAdapter { adapter }
-    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    /// 子类必须实现以提供 API Key
+    open func lumiResolveAPIKey() throws -> String {
+        fatalError("子类必须实现 lumiResolveAPIKey()")
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
@@ -99,7 +95,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
         )
-        let apiKeyValue = try apiKey()
+        let apiKeyValue = try lumiResolveAPIKey()
 
         var lastError: Error?
         for baseURLString in resolvedBaseURLs() {
@@ -234,24 +230,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         let hasToolCalls = await !state.accumulatedToolCalls.isEmpty
         let hasActiveToolCall = await state.currentToolCallId != nil
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
-    }
-
-    /// 使用运行时类型分发读取 API Key，确保子类覆盖的 apiKeyStorageKey 生效。
-    private func apiKey() throws -> String {
-        let storageKey = type(of: self).apiKeyStorageKey
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey),
-           !storedKey.isEmpty {
-            return storedKey
-        }
-
-        let envKeyName = type(of: self).environmentAPIKeyName
-        if let envKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[envKeyName],
-           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentKey
-        }
-
-        throw LumiLLMProviderSupportError.missingAPIKey(type(of: self).info.displayName)
     }
 
     fileprivate static func messageMetadata(from state: StreamingState) async -> [String: String] {
@@ -420,14 +398,6 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         fatalError("Subclasses must override info")
     }
 
-    open class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_\(info.id)"
-    }
-
-    open class var environmentAPIKeyName: String? {
-        nil
-    }
-
     private let apiService: LLMAPIService
     private let adapter: AnthropicCompatibleProviderAdapter
 
@@ -441,7 +411,11 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiAnthropicAdapter: AnthropicCompatibleProviderAdapter { adapter }
-    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    /// 子类必须实现以提供 API Key
+    open func lumiResolveAPIKey() throws -> String {
+        fatalError("子类必须实现 lumiResolveAPIKey()")
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
@@ -492,7 +466,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         }
 
         let body = try buildAnthropicStreamingRequestBody(for: request)
-        let apiKeyValue = try apiKey()
+        let apiKeyValue = try lumiResolveAPIKey()
 
         var lastError: Error?
         for baseURLString in resolvedBaseURLs() {
@@ -650,24 +624,6 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         let hasToolCalls = await !state.accumulatedToolCalls.isEmpty
         let hasActiveToolCall = await state.currentToolCallId != nil
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
-    }
-
-    /// 使用运行时类型分发读取 API Key，确保子类覆盖的 apiKeyStorageKey 生效。
-    private func apiKey() throws -> String {
-        let storageKey = type(of: self).apiKeyStorageKey
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey),
-           !storedKey.isEmpty {
-            return storedKey
-        }
-
-        let envKeyName = type(of: self).environmentAPIKeyName
-        if let envKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[envKeyName],
-           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentKey
-        }
-
-        throw LumiLLMProviderSupportError.missingAPIKey(type(of: self).info.displayName)
     }
 }
 

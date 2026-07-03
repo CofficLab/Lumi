@@ -73,6 +73,14 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
 
     public static let apiKeyStorageKey = "DevAssistant_ApiKey_FreeModel"
 
+    public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
+
     private let openAIBackend: FreeModelOpenAIBackend
     private let claudeT0Backend: FreeModelClaudeBackend
     private let claudeT1Backend: FreeModelClaudeBackend

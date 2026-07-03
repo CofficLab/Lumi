@@ -3,6 +3,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "anthropic",
@@ -40,12 +42,12 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_Anthropic"
-    }
-
-    public override class var environmentAPIKeyName: String? {
-        "ANTHROPIC_API_KEY"
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public init() {

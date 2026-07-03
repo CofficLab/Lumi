@@ -8,6 +8,8 @@ import LumiLLMProviderSupport
 /// OpenAI 兼容接口（`https://api.xiaomimimo.com/v1`），使用独立的 API Key 与计费。
 /// 两者模型清单一致，方便用户在「按 Token 计费」与「标准 API」间切换。
 public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_XiaomiAPI"
+
     /// 获取 API Key 的帮助页面（小米 MIMO 开放平台）。
     public static let apiKeyHelpURL: String? = "https://platform.xiaomimimo.com/console/api-keys"
 
@@ -42,8 +44,12 @@ public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked S
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_XiaomiAPI"
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public init() {
@@ -61,8 +67,6 @@ public final class XiaomiAPIProvider: OpenAICompatibleLumiProvider, @unchecked S
     public override func errorRenderKind(for error: Error) -> String? {
         XiaomiErrorHandling.renderKind(for: error)
     }
-
-    // MARK: - API Key
 
     public static func getApiKey() -> String {
         LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
