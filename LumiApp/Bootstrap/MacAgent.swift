@@ -2,10 +2,16 @@ import AppKit
 import Combine
 import Foundation
 import LumiCoreKit
+import SuperLogKit
+import os
 
 /// macOS 应用代理：处理外部打开项目（Dock 拖拽、`open -a Lumi`、URL Scheme 等）
 @MainActor
-final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject {
+final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.mac-agent")
+    nonisolated static let emoji = "🍎"
+    nonisolated static let verbose = true
+
     @Published var pendingOpenPath: String?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -14,11 +20,13 @@ final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
+        guard Self.verbose else { return }
+        Self.logger.info("\(self.t)接收 \(urls.count) 个 URL 请求")
         for url in urls {
             if url.isFileURL {
-                let resolvedPath = OpenProjectPathResolver.resolveProjectRoot(from: url.path)
+                let resolvedPath = url.standardized.path
                 setOpenPath(resolvedPath)
-            } else if let path = OpenProjectPathResolver.resolvePath(fromOpenURL: url) {
+            } else if let path = resolvePath(fromOpenURL: url) {
                 setOpenPath(path)
             }
         }
@@ -26,15 +34,30 @@ final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func application(_ application: NSApplication, openFile filename: String) -> Bool {
-        let path = OpenProjectPathResolver.resolveProjectRoot(from: filename)
+        guard Self.verbose else { return true }
+        Self.logger.info("\(self.t)接收文件打开请求: \(filename)")
+        let path = (filename as NSString).standardizingPath
         setOpenPath(path)
         activateMainWindow()
         return true
     }
 
+    private func resolvePath(fromOpenURL url: URL) -> String? {
+        guard url.isFileURL || url.scheme == "file" else { return nil }
+        return url.standardized.path
+    }
+
     private func setOpenPath(_ path: String) {
-        let normalized = OpenProjectPathResolver.normalizePath(path)
-        guard !normalized.isEmpty else { return }
+        let normalized = (path as NSString).standardizingPath
+        guard !normalized.isEmpty else {
+            Self.logger.warning("\(self.t)路径为空或无效")
+            return
+        }
+        guard Self.verbose else {
+            pendingOpenPath = normalized
+            return
+        }
+        Self.logger.info("\(self.t)设置待打开路径: \(normalized)")
         pendingOpenPath = normalized
     }
 

@@ -8,11 +8,13 @@ import SwiftUI
 /// 面包屑路径视图
 public struct NavPathView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @ObservedObject private var service: EditorService
 
     public let fileURL: URL
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public init(fileURL: URL, service: EditorService) {
         self.fileURL = fileURL
@@ -26,12 +28,12 @@ public struct NavPathView: View {
         let fullPath = normalizedFile.path
         let cleanFull = fullPath.hasSuffix("/") ? String(fullPath.dropLast()) : fullPath
 
-        if let rawProjectPath = Optional(projectVM.currentProjectPath).flatMap({ path -> String? in
-            let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? nil : trimmed
-        }) {
+        let rawProjectPath = currentProjectPath
+        let trimmedProjectPath = rawProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !trimmedProjectPath.isEmpty {
             // 标准化项目路径
-            let normalizedProject = URL(fileURLWithPath: rawProjectPath).resolvingSymlinksInPath()
+            let normalizedProject = URL(fileURLWithPath: trimmedProjectPath).resolvingSymlinksInPath()
             let projectPath = normalizedProject.path
             let cleanProject = projectPath.hasSuffix("/") ? String(projectPath.dropLast()) : projectPath
 
@@ -90,13 +92,13 @@ public struct NavPathView: View {
                                 truncatedCrumbWidth: item.index == 0
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
-                                    let rawProjectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let rawProjectPath = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
                                     guard !rawProjectPath.isEmpty else { return }
                                     guard NavHeaderView.isFile(url, inProjectPath: rawProjectPath) else {
                                         return
                                     }
                                     Task { @MainActor in
-                                        await service.refreshProjectContext(for: projectVM.currentProjectPath)
+                                        await service.refreshProjectContext(for: currentProjectPath)
                                         service.sessions.open(at: url)
                                     }
                                 }

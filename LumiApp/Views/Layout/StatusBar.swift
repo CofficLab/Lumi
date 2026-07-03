@@ -7,42 +7,14 @@ import SwiftUI
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @ObservedObject var pluginService: PluginService
-    @StateObject private var projectVM: WindowProjectVM
     let editorCoreService: EditorCoreService
     let pluginContext: LumiPluginContext
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
-    let projectPathStore: LumiCurrentProjectPathStore
-    let panelLayoutState: PanelLayoutState
-
-    init(
-        pluginService: PluginService,
-        editorCoreService: EditorCoreService,
-        pluginContext: LumiPluginContext,
-        lumiUIService: LumiUIService,
-        chatService: ChatService,
-        projectPathStore: LumiCurrentProjectPathStore,
-        panelLayoutState: PanelLayoutState
-    ) {
-        self.pluginService = pluginService
-        self.editorCoreService = editorCoreService
-        self.pluginContext = pluginContext
-        self.lumiUIService = lumiUIService
-        self._chatService = ObservedObject(wrappedValue: chatService)
-        self.projectPathStore = projectPathStore
-        self.panelLayoutState = panelLayoutState
-        _projectVM = StateObject(wrappedValue: WindowProjectVM(store: projectPathStore))
-    }
+    let layoutState: LumiLayoutState
 
     var body: some View {
-        let context = pluginContext.withAdditionalDependencies { dependencies in
-            dependencies.register(LumiThemeServicing.self, lumiUIService)
-            dependencies.register((any LumiChatServicing).self, chatService)
-            dependencies.register((any HistoryQueryService).self, chatService)
-            dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-            dependencies.register(LumiEditorServicing.self, editorCoreService)
-            dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
-        }
+        let context = pluginContext
         let items = pluginService.statusBarItems(context: context)
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
@@ -73,7 +45,6 @@ struct StatusBar: View {
         .overlay(alignment: .top) {
             AppDivider()
         }
-        .environmentObject(projectVM)
     }
 
     private var chromeTheme: any LumiAppChromeTheme {

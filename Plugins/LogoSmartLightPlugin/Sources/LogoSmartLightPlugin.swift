@@ -11,9 +11,9 @@ public enum LogoSmartLightPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
 
-    public static func logoItems(context: LumiPluginContext) -> [LumiLogoItem] {
+    public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
         [
-            LumiLogoItem(
+            LogoItem(
                 id: info.id,
                 order: 200,
                 makeView: { scene in

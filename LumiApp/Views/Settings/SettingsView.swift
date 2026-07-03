@@ -63,26 +63,13 @@ struct SettingsView: View {
         return tabs
     }
 
-    private var trailingPluginTabs: [LumiSettingsTabItem] {
-        pluginTabs.filter { $0.sidebarPlacement == .pluginSection }
-    }
-
-    private func inlinePluginTabs(after coreTab: SettingsTab) -> [LumiSettingsTabItem] {
-        pluginTabs.filter { tab in
-            if case .inlineAfterCore(let tabID) = tab.sidebarPlacement {
-                return tabID == coreTab.rawValue
-            }
-            return false
-        }
-    }
-
     private var settingsPluginContext: LumiPluginContext {
-        LumiPluginContext(
+        LumiCore.makePluginContext(
             activeSectionID: "settings",
             activeSectionTitle: "设置",
-            dependencies: LumiPluginDependencies { dependencies in
+            additionalDependencies: { dependencies in
+                dependencies.register((any LumiChatServicing).self, chatService)
                 dependencies.register((any HistoryQueryService).self, chatService)
-                dependencies.register(LumiChatServicing.self, chatService)
                 dependencies.register((any LumiLLMProviderSettingsContributing).self, pluginService)
             }
         )
@@ -93,13 +80,10 @@ struct SettingsView: View {
         var items: [SettingsSidebarItem] = []
         for tab in SettingsTab.allCases {
             items.append(.selectable(.core(tab)))
-            for pluginTab in inlinePluginTabs(after: tab) {
-                items.append(.selectable(pluginSelection(for: pluginTab)))
-            }
         }
-        if !trailingPluginTabs.isEmpty {
+        if !pluginTabs.isEmpty {
             items.append(.separator)
-            for pluginTab in trailingPluginTabs {
+            for pluginTab in pluginTabs {
                 items.append(.selectable(pluginSelection(for: pluginTab)))
             }
         }

@@ -7,12 +7,23 @@ import SwiftUI
 
 public struct InputView: View, SuperLog {
     @EnvironmentObject private var conversationVM: WindowConversationVM
-    @EnvironmentObject private var projectVM: WindowProjectVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isFocused = false
     @State private var editorHeight: CGFloat = ChatInputEditorView.minHeight
     @State private var cursorPosition = 0
     @State private var isImageDragHovering = false
+
+    private var isProjectSelected: Bool {
+        LumiCore.projectState?.currentProject != nil
+    }
+
+    private var currentProjectName: String {
+        LumiCore.projectState?.currentProject?.name ?? ""
+    }
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public init() {}
 
@@ -158,9 +169,8 @@ public struct InputView: View, SuperLog {
         guard conversationVM.selectedConversationId == nil else { return }
 
         await conversationVM.createNewConversation(
-            projectName: projectVM.isProjectSelected ? projectVM.currentProjectName : nil,
-            projectPath: projectVM.isProjectSelected ? projectVM.currentProjectPath : nil,
-            languagePreference: projectVM.languagePreference
+            projectName: isProjectSelected ? currentProjectName : nil,
+            projectPath: isProjectSelected ? currentProjectPath : nil
         )
     }
 

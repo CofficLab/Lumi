@@ -1,11 +1,11 @@
 # StepFunPlugin
 
-LLM provider plugin for Lumi. Integrates **StepFun** — StepFun AI.
+LLM provider plugin for Lumi. Integrates **StepFun StepPlan** — StepFun StepPlan AI.
 
 ## Features
 
-- **LLM Provider** — registers StepFun in the model selector
-- **Model catalog** — provides available models for StepFun
+- **LLM Provider** — registers StepFun StepPlan in the model selector
+- **Model catalog** — provides available models for StepFun StepPlan
 - **Streaming support** — SSE streaming for real-time token output
 - **Settings integration** — API key configuration via Lumi settings
 
@@ -30,7 +30,7 @@ LLM provider plugin for Lumi. Integrates **StepFun** — StepFun AI.
 This plugin integrates with the Lumi application. It provides:
 
 - **LLM Provider Registration** — available models appear in the model selector
-- **Request Handling** — sends chat completion requests to StepFun
+- **Request Handling** — sends chat completion requests to StepFun StepPlan
 - **Configuration** — API key and endpoint settings
 
 ## License

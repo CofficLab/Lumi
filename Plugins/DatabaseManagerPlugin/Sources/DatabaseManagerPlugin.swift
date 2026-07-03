@@ -49,9 +49,9 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -70,7 +70,7 @@ public enum DatabaseManagerPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Database from the sidebar to connect to a server.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 }

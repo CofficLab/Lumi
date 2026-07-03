@@ -17,7 +17,7 @@
 ### 文件扩展名
 
 ```
-<PluginName>.xcstrings
+Localizable.xcstrings
 ```
 
 ### 文件结构
@@ -76,34 +76,36 @@
 
 ## 支持语言
 
-| 语言代码 | 语言 | 优先级 |
-|---------|------|--------|
-| `en` | 英语 | 必须（源语言） |
-| `zh-Hans` | 简体中文 | 必须 |
-| `zh-HK` | 繁体中文 | 推荐 |
+所有插件与 Package 的 `.xcstrings` 必须统一包含以下 4 种语言：
+
+| 语言代码 | 语言 | 地区 | 要求 |
+|---------|------|------|------|
+| `en` | 英语 | - | 必须（源语言） |
+| `zh-Hans` | 简体中文 | 中国大陆 | 必须 |
+| `zh-HK` | 繁体中文 | 中国香港 | 必须 |
+| `zh-TW` | 繁体中文 | 中国台湾 | 必须 |
+
+> 说明：`sourceLanguage` 固定为 `"en"`；其余 3 种中文语言缺一不可，不再使用“推荐”分级。
 
 ---
 
 ## 文件命名
 
-### 标准命名
+所有 Package（含插件）统一使用：
 
 ```
-<PluginName>.xcstrings
+Localizable.xcstrings
 ```
 
-**示例**：
-```
-AppManager.xcstrings
-ClipboardManager.xcstrings
-MemoryManager.xcstrings
-```
+即不再按模块名命名，统一为 `Localizable.xcstrings`，通过所在目录区分归属。
 
 ### 文件位置
 
 ```
-LumiApp/Plugins/<PluginName>/<PluginName>.xcstrings
+Packages/<PackageName>/Resources/Localizable.xcstrings
 ```
+
+> 说明：Lumi 中插件与 Package 遵循同一套 i18n 约定。插件实际位于 `Plugins/` 目录，因此插件路径为 `Plugins/<PluginName>/Resources/Localizable.xcstrings`；核心 Package 路径为 `Packages/<PackageName>/Resources/Localizable.xcstrings`。
 
 ---
 
@@ -112,35 +114,33 @@ LumiApp/Plugins/<PluginName>/<PluginName>.xcstrings
 ### 基础用法
 
 ```swift
-// 视图中使用
-Text(String(localized: "Hello World", table: "PluginName"))
+// Package 多语言文件统一为 Localizable.xcstrings，因此 table 可省略
+Text(String(localized: "Hello World", bundle: .module))
 
 // 属性定义
-static let displayName = String(localized: "Plugin Name", table: "PluginName")
+static let displayName = String(localized: "Plugin Name", bundle: .module)
 
 // 动态消息
-let message = String(localized: "Hello, %@", table: "PluginName", arguments: userName)
+let message = String(localized: "Hello, %@", bundle: .module, arguments: userName)
 ```
 
 ### 完整示例
-
-`SuperPlugin` 定义在 LumiApp；`SuperLog` 由 `Global.swift` 的 `@_exported import SuperLogKit` 提供，LumiApp 内无需单独 import。
 
 ```swift
 import SwiftUI
 
 struct MemoryManagerPlugin: SuperPlugin {
-    static let displayName = String(localized: "Memory Monitor", table: "MemoryManager")
-    static let description = String(localized: "Real-time monitoring of system memory usage", table: "MemoryManager")
+    static let displayName = String(localized: "Memory Monitor", bundle: .module)
+    static let description = String(localized: "Real-time monitoring of system memory usage", bundle: .module)
     
     var body: some View {
         VStack {
-            Text(String(localized: "Memory Usage", table: "MemoryManager"))
+            Text(String(localized: "Memory Usage", bundle: .module))
                 .font(.headline)
             
-            Text(String(localized: "Total: %@", table: "MemoryManager", arguments: totalMemory))
+            Text(String(localized: "Total: %@", bundle: .module, arguments: totalMemory))
             
-            Button(String(localized: "Refresh", table: "MemoryManager")) {
+            Button(String(localized: "Refresh", bundle: .module)) {
                 // ...
             }
         }
@@ -190,8 +190,8 @@ struct MemoryManagerPlugin: SuperPlugin {
 
 **Swift 代码**：
 ```swift
-Text(String(localized: "Selected: %@", table: "AppManager", arguments: selectedCount))
-Text(String(localized: "%lld Apps", table: "AppManager", arguments: appCount))
+Text(String(localized: "Selected: %@", bundle: .module, arguments: selectedCount))
+Text(String(localized: "%lld Apps", bundle: .module, arguments: appCount))
 ```
 
 ### 带命名参数的字符串
@@ -222,7 +222,7 @@ Text(String(localized: "%lld Apps", table: "AppManager", arguments: appCount))
 ```swift
 let message = String(
     localized: "Switched {type} registry to {name}",
-    table: "RegistryManager",
+    bundle: .module,
     arguments: ["type": registryType, "name": registryName]
 )
 ```
@@ -233,7 +233,7 @@ let message = String(
 
 ### 步骤 1：创建文件
 
-在插件目录下创建 `<PluginName>.xcstrings` 文件
+在 Package 目录下创建 `Resources/Localizable.xcstrings` 文件
 
 ### 步骤 2：添加基础结构
 
@@ -268,10 +268,10 @@ let message = String(
 
    ```swift
    // ✅ 好：使用完整句子作为键
-   String(localized: "Confirm Uninstall", table: "AppManager")
+   String(localized: "Confirm Uninstall", bundle: .module)
    
    // ❌ 避免：使用无意义的键
-   String(localized: "btn_confirm_1", table: "AppManager")
+   String(localized: "btn_confirm_1", bundle: .module)
    ```
 
 3. **保持翻译文件同步**
@@ -302,17 +302,17 @@ let message = String(
    Text("Click here to refresh")
    
    // ✅ 正确
-   Text(String(localized: "Click here to refresh", table: "PluginName"))
+   Text(String(localized: "Click here to refresh", bundle: .module))
    ```
 
 2. **混合语言**
 
    ```swift
    // ❌ 错误：中文硬编码
-   Text(String(localized: "点击刷新", table: "PluginName"))
+   Text(String(localized: "点击刷新", bundle: .module))
    
    // ✅ 正确：使用英文键
-   Text(String(localized: "Click to refresh", table: "PluginName"))
+   Text(String(localized: "Click to refresh", bundle: .module))
    ```
 
 3. **过长的字符串**
@@ -344,12 +344,13 @@ let message = String(
 
 创建新插件时，确保：
 
-- [ ] 创建 `<PluginName>.xcstrings` 文件
+- [ ] 创建 `Resources/Localizable.xcstrings` 文件
 - [ ] 设置 `sourceLanguage` 为 `"en"`
 - [ ] 提供英文 (`en`) 翻译
 - [ ] 提供简体中文 (`zh-Hans`) 翻译
-- [ ] 提供繁体中文 (`zh-HK`) 翻译（推荐）
-- [ ] 所有用户可见文本使用 `String(localized:table:)`
+- [ ] 提供繁体中文 (`zh-HK`) 翻译
+- [ ] 提供繁体中文 (`zh-TW`) 翻译
+- [ ] 所有用户可见文本使用 `String(localized:bundle:)`
 - [ ] 动态消息使用占位符 (`%@` 或 `{name}`)
 - [ ] 在 Xcode 中验证本地化文件
 

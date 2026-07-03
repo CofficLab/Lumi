@@ -16,9 +16,20 @@ public struct GitCommitDetailView: View, SuperLog {
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    @ObservedObject private var layoutState: LumiLayoutState
+
+    public init() {
+        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+    }
+
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    private var currentProjectName: String {
+        LumiCore.projectState?.currentProject?.name ?? ""
+    }
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?
@@ -74,7 +85,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 loadingView
             } else if let error = errorMessage {
                 errorView(error)
-            } else if projectVM.isProjectSelected {
+            } else if LumiCore.projectState?.currentProject != nil {
                 noSelectionView
             } else {
                 noProjectView
@@ -91,7 +102,7 @@ public struct GitCommitDetailView: View, SuperLog {
             newText = ""
             handleSelectionChange()
         }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
+        .onChange(of: currentProjectPath) { _, _ in
             loadTask?.cancel()
             diffTask?.cancel()
             loadGeneration += 1
@@ -283,7 +294,7 @@ public struct GitCommitDetailView: View, SuperLog {
                     .font(.appTitle)
                     .foregroundColor(theme.primary)
 
-                Text(projectVM.currentProjectName)
+                Text(currentProjectName)
                     .font(.appLargeTitle)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
@@ -635,7 +646,7 @@ public struct GitCommitDetailView: View, SuperLog {
 
     /// 加载工作状态（未提交变更）
     private func loadWorkingState() {
-        let path = projectVM.currentProjectPath
+        let path = currentProjectPath
         guard !path.isEmpty else {
             loadTask?.cancel()
             loadGeneration += 1
@@ -669,7 +680,7 @@ public struct GitCommitDetailView: View, SuperLog {
             if Task.isCancelled { return }
 
             guard self.loadGeneration == generation,
-                  self.projectVM.currentProjectPath == path,
+                  self.currentProjectPath == path,
                   self.gitVM.selectedCommitHash == nil else { return }
 
             self.uncommittedFiles = files
@@ -688,7 +699,7 @@ public struct GitCommitDetailView: View, SuperLog {
     /// 加载 commit 详情
     private func loadCommitDetail() {
         let hash = gitVM.selectedCommitHash
-        let path = projectVM.currentProjectPath
+        let path = currentProjectPath
 
         guard let hash = hash, !path.isEmpty else {
             loadTask?.cancel()
@@ -716,7 +727,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 if Task.isCancelled { return }
 
                 guard self.loadGeneration == generation,
-                      self.projectVM.currentProjectPath == path,
+                      self.currentProjectPath == path,
                       self.gitVM.selectedCommitHash == hash else { return }
                 self.commitDetail = detail
                 self.commitChangedFiles = files
@@ -726,7 +737,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 if Task.isCancelled { return }
 
                 guard self.loadGeneration == generation,
-                      self.projectVM.currentProjectPath == path,
+                      self.currentProjectPath == path,
                       self.gitVM.selectedCommitHash == hash else { return }
                 self.commitDetail = nil
                 self.commitChangedFiles = []
@@ -746,7 +757,7 @@ public struct GitCommitDetailView: View, SuperLog {
         diffGeneration += 1
 
         guard let file = file,
-              !projectVM.currentProjectPath.isEmpty else {
+              !currentProjectPath.isEmpty else {
             oldText = ""
             newText = ""
             loadingDiff = false
@@ -756,7 +767,7 @@ public struct GitCommitDetailView: View, SuperLog {
         let generation = diffGeneration
         loadingDiff = true
 
-        let path = projectVM.currentProjectPath
+        let path = currentProjectPath
         let hash = gitVM.selectedCommitHash
 
         diffTask = Task.detached(priority: .userInitiated) {
@@ -772,7 +783,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 await MainActor.run {
                     guard self.diffGeneration == generation,
                           self.selectedFile == file,
-                          self.projectVM.currentProjectPath == path,
+                          self.currentProjectPath == path,
                           self.gitVM.selectedCommitHash == hash else { return }
                     self.oldText = before
                     self.newText = after
@@ -784,7 +795,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 await MainActor.run {
                     guard self.diffGeneration == generation,
                           self.selectedFile == file,
-                          self.projectVM.currentProjectPath == path,
+                          self.currentProjectPath == path,
                           self.gitVM.selectedCommitHash == hash else { return }
                     self.oldText = ""
                     self.newText = ""

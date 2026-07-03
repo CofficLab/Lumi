@@ -298,7 +298,8 @@ struct RemoteProviderSettingsPage: View {
     }
 
     private func loadSettings() {
-        guard let storageKey = LumiLLMProviderKeys.apiKeyStorageKey(forProviderID: selectedProviderID) else {
+        guard let provider = remoteProviders.first(where: { $0.id == selectedProviderID }),
+              let storageKey = provider.apiKeyStorageKey else {
             apiKey = ""
             return
         }
@@ -312,7 +313,8 @@ struct RemoteProviderSettingsPage: View {
 
     private func saveAPIKey() {
         guard !isLoadingSettings,
-              let storageKey = LumiLLMProviderKeys.apiKeyStorageKey(forProviderID: selectedProviderID)
+              let provider = remoteProviders.first(where: { $0.id == selectedProviderID }),
+              let storageKey = provider.apiKeyStorageKey
         else {
             return
         }

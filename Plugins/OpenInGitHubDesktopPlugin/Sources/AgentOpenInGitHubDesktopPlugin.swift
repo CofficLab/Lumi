@@ -44,13 +44,17 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
         ]
     }
 
-        @MainActor
+    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .openIn
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 
@@ -74,11 +78,13 @@ private enum GitHubDesktopOpener {
 public struct OpenInGitHubDesktopStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         Group {
-            if projectVM.currentProjectPath.isEmpty {
+            if currentProjectPath.isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -123,8 +129,8 @@ public struct OpenInGitHubDesktopStatusBarView: View {
     }
 
     private func openInGitHubDesktop() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard !currentProjectPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: currentProjectPath)
         GitHubDesktopOpener.open(url)
     }
 }
@@ -135,7 +141,9 @@ public struct OpenInGitHubDesktopStatusBarView: View {
 public struct OpenInGitHubDesktopDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    private var currentProjectPath: String {
+        LumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -171,7 +179,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(projectVM.currentProjectPath)
+                Text(currentProjectPath)
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -181,7 +189,7 @@ public struct OpenInGitHubDesktopDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(projectVM.currentProjectPath, forType: .string)
+                    NSPasteboard.general.setString(currentProjectPath, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -195,8 +203,8 @@ public struct OpenInGitHubDesktopDetailView: View {
     }
 
     private func openInGitHubDesktop() {
-        guard !projectVM.currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: projectVM.currentProjectPath)
+        guard !currentProjectPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: currentProjectPath)
         GitHubDesktopOpener.open(url)
     }
 }

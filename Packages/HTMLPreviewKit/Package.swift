@@ -18,7 +18,7 @@ let package = Package(
             name: "HTMLPreviewKit",
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

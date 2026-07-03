@@ -1,8 +1,8 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
+import os
 
 /// LSP Code Action 编辑器插件。
 ///
@@ -22,19 +22,21 @@ import SwiftUI
 ///
 /// 插件主入口只注册 Provider；具体何时请求动作、在哪里显示灯泡或弹窗，
 /// 由编辑器状态、Overlay 或消费 `SuperEditorCodeActionProvider` 的 UI 负责。
-public actor LSPCodeActionEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPCodeActionEditorPlugin()
-    public static let id = "LSPCodeActionEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Code Actions", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Provides quick-fix code actions and lightbulb suggestions for diagnostics.", bundle: .module)
+public enum LSPCodeActionEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "lightbulb"
-    public static let order = 20
-    public static var category: PluginCategory { .editor }
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp-code-action")
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "LSPCodeActionEditor",
+        displayName: LumiPluginLocalization.string("LSP Code Actions", bundle: .module),
+        description: LumiPluginLocalization.string("Provides quick-fix code actions and lightbulb suggestions for diagnostics.", bundle: .module),
+        order: 20
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let provider = CodeActionProvider(lspService: .shared)
         provider.editorExtensionRegistry = registry

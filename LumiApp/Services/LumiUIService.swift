@@ -1,9 +1,15 @@
 import LumiCoreKit
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 @MainActor
-final class LumiUIService: ObservableObject, LumiThemeServicing {
+final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.lumi-ui")
+    nonisolated static let emoji = "🎨"
+    nonisolated static let verbose = true
+
     let themeRegistry: LumiUIThemeRegistry
     private let selectionStore: ThemeSelectionStore
     var onThemesDidChange: (() -> Void)?
@@ -13,10 +19,19 @@ final class LumiUIService: ObservableObject, LumiThemeServicing {
         themeRegistry: LumiUIThemeRegistry = .shared,
         selectionStoreDirectory: URL? = nil
     ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化 LumiUIService")
+        }
+
         self.themeRegistry = themeRegistry
         self.selectionStore = ThemeSelectionStore(
             pluginDirectory: selectionStoreDirectory ?? LumiCore.pluginDataDirectory(for: "LumiUI")
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ LumiUIService 初始化完成")
+            Self.logger.info("\(Self.t)重载主题")
+        }
         reloadThemes(from: pluginService)
     }
 
@@ -33,14 +48,27 @@ final class LumiUIService: ObservableObject, LumiThemeServicing {
     }
 
     func reloadThemes(from pluginService: PluginService) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)从插件服务重载主题贡献")
+        }
+
         let contributions = pluginService.themeContributions()
         let registryContributions = contributions.isEmpty ? [.builtInFallback()] : contributions
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)主题贡献数量: \(registryContributions.count)")
+        }
 
         do {
             try themeRegistry.replaceAll(registryContributions)
             restoreSavedThemeIfPossible()
             onThemesDidChange?()
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)✅ 主题重载完成")
+            }
         } catch {
+            Self.logger.error("\(Self.t)主题重载失败: \(error.localizedDescription)")
             try? themeRegistry.replaceAll([.builtInFallback()])
             assertionFailure("Failed to register LumiUI themes: \(error)")
             onThemesDidChange?()
@@ -48,6 +76,10 @@ final class LumiUIService: ObservableObject, LumiThemeServicing {
     }
 
     func selectTheme(id: String) throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)选择主题: \(id)")
+        }
+
         try themeRegistry.select(themeId: id)
         selectionStore.saveSelectedThemeID(id)
         onThemesDidChange?()
@@ -57,7 +89,14 @@ final class LumiUIService: ObservableObject, LumiThemeServicing {
         guard let savedThemeID = selectionStore.loadSelectedThemeID(),
               themeRegistry.themes.contains(where: { $0.id == savedThemeID })
         else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)未找到保存的主题或主题不存在，使用默认主题")
+            }
             return
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)恢复保存的主题: \(savedThemeID)")
         }
 
         try? themeRegistry.select(themeId: savedThemeID)

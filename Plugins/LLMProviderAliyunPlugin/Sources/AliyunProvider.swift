@@ -53,13 +53,7 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_Aliyun"
-    }
-
-    public override class var environmentAPIKeyName: String? {
-        "DASHSCOPE_API_KEY"
-    }
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
 
     public init() {
         super.init(
@@ -89,15 +83,19 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
+
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 }

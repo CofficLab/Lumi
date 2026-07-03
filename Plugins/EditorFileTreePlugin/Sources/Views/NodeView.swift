@@ -47,8 +47,10 @@ public struct NodeView: View, Equatable, SuperLog {
     /// 节点结合 `changedDirectoryPaths` 判断自身是否需要 reload，避免全树重载。
     public let targetedRefreshToken: Int
 
-    /// 最近一次精准刷新命中的目录绝对路径集合（标准化后）。
-    /// 节点仅当自身 url 命中此集合时才 reloadChildren。
+    /// 精准刷新路径集合版本令牌（Int 轻量比较，替代 Set<String> 大集合 O(m) 比较）
+    public let changedDirectoryPathsToken: Int
+
+    /// 精准刷新命中的目录集合（仅用于 handleTargetedRefresh 功能检查，不参与 Equatable 比较）
     public let changedDirectoryPaths: Set<String>
 
     /// Git 状态令牌：每次 Git 状态更新时递增，用于驱动 Git 状态标记颜色更新
@@ -116,13 +118,11 @@ public struct NodeView: View, Equatable, SuperLog {
     // MARK: - Equatable
 
     public nonisolated static func == (lhs: NodeView, rhs: NodeView) -> Bool {
-        // 比较影响视图渲染的所有外部属性，包括从 store 恢复的展开状态
         return lhs.url == rhs.url
             && lhs.depth == rhs.depth
             && lhs.refreshToken == rhs.refreshToken
             && lhs.targetedRefreshToken == rhs.targetedRefreshToken
-            && lhs.changedDirectoryPaths == rhs.changedDirectoryPaths
-            && lhs.gitStatusSnapshot == rhs.gitStatusSnapshot
+            && lhs.changedDirectoryPathsToken == rhs.changedDirectoryPathsToken
             && lhs.gitStatusToken == rhs.gitStatusToken
             && lhs.windowId == rhs.windowId
             && lhs.projectRootPath == rhs.projectRootPath
@@ -142,6 +142,7 @@ public struct NodeView: View, Equatable, SuperLog {
         onTreeMutation: (() -> Void)? = nil,
         gitStatusSnapshot: GitStatusSnapshot = .empty,
         targetedRefreshToken: Int = 0,
+        changedDirectoryPathsToken: Int = 0,
         changedDirectoryPaths: Set<String> = [],
         gitStatusToken: Int = 0
     ) {
@@ -155,6 +156,7 @@ public struct NodeView: View, Equatable, SuperLog {
         self.onTreeMutation = onTreeMutation
         self.gitStatusSnapshot = gitStatusSnapshot
         self.targetedRefreshToken = targetedRefreshToken
+        self.changedDirectoryPathsToken = changedDirectoryPathsToken
         self.changedDirectoryPaths = changedDirectoryPaths
         self.gitStatusToken = gitStatusToken
 
@@ -215,6 +217,7 @@ public struct NodeView: View, Equatable, SuperLog {
                                         onTreeMutation: onTreeMutation,
                                         gitStatusSnapshot: gitStatusSnapshot,
                                         targetedRefreshToken: targetedRefreshToken,
+                                        changedDirectoryPathsToken: changedDirectoryPathsToken,
                                         changedDirectoryPaths: changedDirectoryPaths
                                     )
                                     .equatable()

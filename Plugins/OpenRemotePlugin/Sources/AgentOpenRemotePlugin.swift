@@ -15,6 +15,7 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "safari"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-remote",
@@ -25,7 +26,7 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        let projectPath = context.resolve(LumiCurrentProjectPathStoring.self)?.currentProjectPath ?? ""
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: info.id,
@@ -41,11 +42,15 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
 
         @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .general
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 

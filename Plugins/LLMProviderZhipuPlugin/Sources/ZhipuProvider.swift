@@ -7,6 +7,8 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     public static let shortName = "ZhiPu"
     public static let apiKeyHelpURL: String? = "https://open.bigmodel.cn/usercenter/apikeys"
 
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "zhipu",
@@ -45,14 +47,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
             ],
             websiteURL: URL(string: "https://www.bigmodel.cn/")!
         )
-    }
-
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_Zhipu"
-    }
-
-    public override class var environmentAPIKeyName: String? {
-        "ZHIPU_API_KEY"
     }
 
     // Claude Code 模拟常量
@@ -114,8 +108,16 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
 
     // MARK: - API Key
 
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
+
     public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
     }
 
     public static func setApiKey(_ apiKey: String) {
@@ -152,10 +154,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 }

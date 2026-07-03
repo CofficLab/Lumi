@@ -122,7 +122,6 @@ let package = Package(
         .package(path: "../../Plugins/DatabaseManagerPlugin"),
         .package(path: "../../Plugins/CodeReviewPlugin"),
         .package(path: "../../Plugins/AgentDelayMessagePlugin"),
-        .package(path: "../../Plugins/LLMAvailabilityPlugin"),
         .package(path: "../../Plugins/EditorPanelPlugin"),
         .package(path: "../../Plugins/EditorBreadcrumbNavPlugin"),
         .package(path: "../../Plugins/EditorTabStripPlugin"),
@@ -156,7 +155,6 @@ let package = Package(
         .package(path: "../../Plugins/EditorChatIntegrationPlugin"),
         .package(path: "../../Plugins/EditorMinimapContextMenuPlugin"),
         .package(path: "../../Plugins/EditorMultiCursorCommandsPlugin"),
-        .package(path: "../../Plugins/EditorVuePlugin"),
         .package(path: "../../Plugins/EditorHTMLPlugin"),
         .package(path: "../../Plugins/EditorCSSPlugin"),
         .package(path: "../../Plugins/EditorMarkdownPlugin"),
@@ -193,7 +191,8 @@ let package = Package(
         .package(path: "../../Plugins/LogoSmartLightPlugin"),
         .package(path: "../../Plugins/LogoCofficPlugin"),
         .package(path: "../../Plugins/VideoConverterPlugin"),
-        .package(path: "../../Plugins/DownloadPlugin")
+        .package(path: "../../Plugins/DownloadPlugin"),
+        .package(path: "../../Plugins/DocxReadPlugin")
     ],
     targets: [
         .target(
@@ -243,7 +242,7 @@ let package = Package(
                 .product(name: "LLMProviderStepFunPlugin", package: "LLMProviderStepFunPlugin"),
                 .product(name: "LLMProviderCodexPlugin", package: "LLMProviderCodexPlugin"),
                 .product(name: "LLMProviderMLXPlugin", package: "LLMProviderMLXPlugin"),
-                "ProjectsPlugin",
+                .product(name: "ProjectsPlugin", package: "ProjectsPlugin"),
                 .product(name: "AppManagerPlugin", package: "AppManagerPlugin"),
                 .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
                 .product(name: "PortManagerPlugin", package: "PortManagerPlugin"),
@@ -307,7 +306,6 @@ let package = Package(
                 .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
                 .product(name: "CodeReviewPlugin", package: "CodeReviewPlugin"),
                 .product(name: "AgentDelayMessagePlugin", package: "AgentDelayMessagePlugin"),
-                .product(name: "LLMAvailabilityPlugin", package: "LLMAvailabilityPlugin"),
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),                .product(name: "EditorBreadcrumbNavPlugin", package: "EditorBreadcrumbNavPlugin"),
                 .product(name: "EditorTabStripPlugin", package: "EditorTabStripPlugin"),
                 .product(name: "EditorStickySymbolBarPlugin", package: "EditorStickySymbolBarPlugin"),
@@ -341,7 +339,6 @@ let package = Package(
                 .product(name: "EditorChatIntegrationPlugin", package: "EditorChatIntegrationPlugin"),
                 .product(name: "EditorMinimapContextMenuPlugin", package: "EditorMinimapContextMenuPlugin"),
                 .product(name: "EditorMultiCursorCommandsPlugin", package: "EditorMultiCursorCommandsPlugin"),
-                .product(name: "EditorVuePlugin", package: "EditorVuePlugin"),
                 .product(name: "EditorHTMLPlugin", package: "EditorHTMLPlugin"),
                 .product(name: "EditorCSSPlugin", package: "EditorCSSPlugin"),
                 .product(name: "EditorMarkdownPlugin", package: "EditorMarkdownPlugin"),
@@ -377,7 +374,12 @@ let package = Package(
                 .product(name: "LogoSmartLightPlugin", package: "LogoSmartLightPlugin"),
                 .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
-                .product(name: "DownloadPlugin", package: "DownloadPlugin")
+                .product(name: "DownloadPlugin", package: "DownloadPlugin"),
+                .product(name: "DocxReadPlugin", package: "DocxReadPlugin")
+            ],
+            path: "Sources",
+            resources: [
+                .process("../Resources")
             ]
         )
     ]

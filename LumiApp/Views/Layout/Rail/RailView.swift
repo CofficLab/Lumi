@@ -6,7 +6,7 @@ struct RailView: View {
     @LumiTheme private var theme
 
     let tabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: PanelLayoutState
+    @ObservedObject var layoutState: LumiLayoutState
 
     private static let minWidth: CGFloat = 200
 
@@ -23,7 +23,6 @@ struct RailView: View {
                         get: { layoutState.activeRailTabID },
                         set: { newValue in
                             layoutState.activeRailTabID = newValue
-                            layoutState.persistActiveRailTabID()
                         }
                     )
                 )
@@ -36,6 +35,7 @@ struct RailView: View {
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
+        .borderTrailing()
         .onAppear {
             ensureValidSelection()
         }
@@ -52,6 +52,5 @@ struct RailView: View {
         }
 
         layoutState.activeRailTabID = tabs[0].id
-        layoutState.persistActiveRailTabID()
     }
 }

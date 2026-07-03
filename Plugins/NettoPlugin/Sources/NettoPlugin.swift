@@ -34,9 +34,9 @@ public enum NettoPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -55,7 +55,7 @@ public enum NettoPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Netto Firewall from the sidebar to review permissions.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 }

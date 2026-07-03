@@ -1,6 +1,8 @@
 import Foundation
 import LumiCoreKit
+import LumiUI
 import SwiftUI
+import os
 
 /// Agent 临时文件存储插件。
 ///
@@ -11,6 +13,7 @@ public enum AgentTempStoragePlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "doc.badge.clock"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-temp-storage")
 
     public static let info = LumiPluginInfo(
         id: "AgentTempStorage",
@@ -32,11 +35,15 @@ public enum AgentTempStoragePlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .general
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 }

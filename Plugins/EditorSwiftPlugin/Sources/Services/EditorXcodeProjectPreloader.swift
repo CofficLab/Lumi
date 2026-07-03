@@ -7,7 +7,7 @@ import XcodeKit
 enum EditorXcodeProjectPreloader: SuperLog {
     private static let logPrefix = "🚀 "
 
-    public static func filterXcodeProjects(_ projects: [Project]) async -> [Project] {
+    public static func filterXcodeProjects(_ projects: [LumiProjectEntry]) async -> [LumiProjectEntry] {
         await Task.detached(priority: .utility) {
             projects.filter { project in
                 let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(URL(fileURLWithPath: project.path))
@@ -21,7 +21,7 @@ enum EditorXcodeProjectPreloader: SuperLog {
 
     @MainActor
     public static func preloadProject(
-        _ project: Project,
+        _ project: LumiProjectEntry,
         store: XcodeBuildServerStore,
         activeProjectPath: String?
     ) async -> Bool {

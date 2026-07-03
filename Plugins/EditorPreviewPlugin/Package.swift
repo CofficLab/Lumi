@@ -40,7 +40,7 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings")
             ]
         )
     ]

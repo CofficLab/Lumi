@@ -37,7 +37,6 @@ INFRA_PLUGINS = [
 
 # Rich language plugins
 RICH_LANGUAGE_PLUGINS = [
-    "EditorVuePlugin",
     "EditorJSPlugin",
     "EditorGoPlugin",
     "EditorHTMLPlugin",

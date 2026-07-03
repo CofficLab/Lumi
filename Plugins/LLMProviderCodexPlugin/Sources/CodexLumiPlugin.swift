@@ -1,10 +1,13 @@
 import LumiCoreKit
+import os
 
 public enum CodexLumiPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .llmProvider
     public static let iconName = "terminal"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.codex")
+
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.codex",
         displayName: LumiPluginLocalization.string("Codex CLI", bundle: .module),

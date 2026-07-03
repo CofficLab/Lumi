@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// 插件贡献的 Logo 项
@@ -10,9 +11,9 @@ import SwiftUI
 /// - ``order`` 值越大优先级越高
 /// - 可选的 ``overlay`` 视图会叠加在基础 Logo 视图之上
 @MainActor
-public struct LumiLogoItem: Identifiable, Sendable {
+public struct LogoItem: Identifiable, Sendable {
     public let id: String
-    public let order: Int
+    let order: Int
     public let makeView: @MainActor (LogoScene) -> AnyView
     public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 

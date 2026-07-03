@@ -1,16 +1,28 @@
 import AppKit
 import LumiCoreKit
+import SuperLogKit
 import SwiftUI
+import os
 
-struct DebugCommand: Commands {
+struct DebugCommand: Commands, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "command.debug")
+    nonisolated static let emoji = "🔧"
+    nonisolated static let verbose = true
+
     var body: some Commands {
         #if os(macOS)
             CommandMenu("调试") {
                 Button("打开 App Support 目录") {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)打开 App Support 目录")
+                    }
                     Self.openURL(Self.appSupportDirectory())
                 }
 
                 Button("打开容器目录") {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)打开容器目录")
+                    }
                     guard let directory = FileManager.default.containerURL(
                         forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
                     ) else {
@@ -22,6 +34,9 @@ struct DebugCommand: Commands {
                 }
 
                 Button("打开文档目录") {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)打开文档目录")
+                    }
                     guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
                         Self.showMissingDirectoryAlert(title: "打开文档目录出错", message: "文档目录不存在")
                         return
@@ -33,6 +48,9 @@ struct DebugCommand: Commands {
                 Divider()
 
                 Button("打开数据库目录") {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)打开数据库目录")
+                    }
                     Self.openURL(LumiCore.dataRootDirectory)
                 }
             }

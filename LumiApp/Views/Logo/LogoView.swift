@@ -3,13 +3,13 @@ import LumiCoreKit
 
 /// A view that renders the highest-priority logo from the plugin registry.
 ///
-/// If the winning `LumiLogoItem` provides an overlay, it is stacked on top
+/// If the winning `LumiCore.LogoItem` provides an overlay, it is stacked on top
 /// via `ZStack`. When no plugin contributes a logo, a transparent placeholder
 /// is rendered instead.
 struct LogoView: View {
     var scene: LogoScene = .general
 
-    @ObservedObject private var logoRegistry = LogoRegistry.shared
+    @ObservedObject private var logoRegistry = LumiCore.logoRegistry
 
     var body: some View {
         if let item = logoRegistry.bestItem {

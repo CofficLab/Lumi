@@ -4,16 +4,14 @@ import EditorService
 @testable import EditorChatIntegrationPlugin
 
 @Test func packageLoads() async throws {
-    #expect(EditorChatIntegrationPlugin.id == "EditorChatIntegration")
+    #expect(EditorChatIntegrationPlugin.info.id == "EditorChatIntegration")
 }
 
 @MainActor
 @Test func registersChatCommandContributor() async throws {
-    let plugin = EditorChatIntegrationPlugin.shared
     let registry = EditorExtensionRegistry()
 
-    #expect(plugin.providesEditorExtensions)
-    plugin.registerEditorExtensions(into: registry)
+    await EditorChatIntegrationPlugin.registerEditorExtensions(into: registry)
 
     #expect(registry.commandContributorsCount == 1)
 }

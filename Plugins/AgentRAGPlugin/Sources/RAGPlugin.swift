@@ -1,7 +1,6 @@
 import SwiftUI
 import LumiChatKit
 import LumiCoreKit
-import ProjectsPlugin
 import SuperLogKit
 import os
 

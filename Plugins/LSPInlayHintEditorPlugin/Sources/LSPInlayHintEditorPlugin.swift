@@ -1,30 +1,29 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
-/// LSP Inlay Hint 编辑器插件。
-///
-/// 该插件负责把 `InlayHintProvider` 注册到编辑器扩展注册中心，
-/// 为编辑器提供基于 LSP `textDocument/inlayHint` 的内联提示能力，
-/// 例如参数名提示、类型推断提示等。
-///
-/// 本插件目录中的 `Views/InlayHintLabel.swift` 提供单个 hint 的显示组件；
-/// 主入口只注册 Provider，不负责计算视图位置或直接挂载 UI。实际展示位置由编辑器 Overlay
-/// 或消费 `SuperEditorInlayHintProvider` 的 UI 决定。
-public actor LSPInlayHintEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPInlayHintEditorPlugin()
-    public static let id = "LSPInlayHintEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Inlay Hints", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Displays type inference and parameter name hints inline.", bundle: .module)
-    public static let iconName = "textformat.size"
-    public static let order = 22
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+/// LSP 内联提示编辑器插件
+///
+/// 该插件对应 LSP `textDocument/inlayHint` 能力，用于在编辑器中显示类型信息、
+/// 参数名称等内联提示。语言服务器会根据当前文档返回提示位置和内容。
+///
+/// 本插件负责把 `InlayHintProvider` 注册到编辑器扩展注册中心。
+/// 展示由编辑器内核消费 Provider 数据并渲染。
+public enum LSPInlayHintEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
+    public static let iconName = "text.badge.star"
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static let info = LumiPluginInfo(
+        id: "LSPInlayHintEditor",
+        displayName: LumiPluginLocalization.string("LSP Inlay Hints", bundle: .module),
+        description: LumiPluginLocalization.string("Shows inline type annotations and parameter names from the language server.", bundle: .module),
+        order: 22
+    )
+
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let provider = InlayHintProvider(lspService: .shared)
         registry.registerInlayHintProvider(provider)

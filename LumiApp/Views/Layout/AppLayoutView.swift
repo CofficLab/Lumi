@@ -1,20 +1,32 @@
 import EditorService
-import LayoutPlugin
-import LumiChatKit
 import LumiCoreKit
+import LumiChatKit
 import LumiUI
 import SwiftUI
 
 struct AppLayoutView: View {
     @LumiTheme private var theme
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
-    @StateObject private var panelLayoutState = PanelLayoutState()
+    @ObservedObject private var layoutState: LumiLayoutState
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
     let chatService: ChatService
     let chatSectionCoordinator: ChatSectionCoordinator
-    let projectPathStore: LumiCurrentProjectPathStore
+
+    init(
+        pluginService: PluginService,
+        editorCoreService: EditorCoreService,
+        lumiUIService: LumiUIService,
+        chatService: ChatService,
+        chatSectionCoordinator: ChatSectionCoordinator
+    ) {
+        self.pluginService = pluginService
+        self.editorCoreService = editorCoreService
+        self.lumiUIService = lumiUIService
+        self.chatService = chatService
+        self.chatSectionCoordinator = chatSectionCoordinator
+        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+    }
 
     var body: some View {
         let containers = pluginService.viewContainers(context: basePluginContext())
@@ -32,54 +44,42 @@ struct AppLayoutView: View {
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: chatSection.isVisible
         )
-        let chatSectionItems = pluginService.chatSectionItems(context: preliminaryPluginContext)
-        let shouldShowChatSection = chatSection.isVisible
-            && layoutState.chatSectionVisible
-            && !chatSectionItems.isEmpty
-        let pluginContext = basePluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: shouldShowChatSection
-        )
-        let chatSectionToolbarItems = shouldShowChatSection
-            ? pluginService.chatSectionToolbarItems(context: pluginContext)
-            : []
-        let chatSectionToolbarBarItems = shouldShowChatSection
-            ? pluginService.chatSectionToolbarBarItems(context: pluginContext)
-            : []
-        let chatSectionHeaderItems = shouldShowChatSection
-            ? pluginService.chatSectionHeaderItems(context: pluginContext)
-            : []
-        let headerItems = pluginService.panelHeaderItems(context: pluginContext)
-        let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
-        let railTabs = pluginService.panelRailTabItems(context: pluginContext)
+        let headerItems = pluginService.panelHeaderItems(context: preliminaryPluginContext)
+        let bottomTabs = pluginService.panelBottomTabItems(context: preliminaryPluginContext)
+        let railTabs = pluginService.panelRailTabItems(context: preliminaryPluginContext)
         let showRail = showsRail && !railTabs.isEmpty
         let isRailOnlyPanel = showRail && !showsPanelChrome
         let autosaveName = layoutAutosaveName(
             showRail: showRail,
-            showChatSection: shouldShowChatSection,
+            showChatSection: chatSection.isVisible,
             chatSection: chatSection
+        )
+        let chatView = ChatView(
+            layoutState: layoutState,
+            pluginService: pluginService,
+            context: preliminaryPluginContext,
+            chatSectionCoordinator: chatSectionCoordinator,
+            chatSection: chatSection,
+            activeID: activeID,
+            isRailOnlyPanel: isRailOnlyPanel
         )
 
         VStack(spacing: 0) {
             AppTitleToolbar(
                 pluginService: pluginService,
-                pluginContext: pluginContext
+                pluginContext: preliminaryPluginContext
             )
 
             AppDivider()
 
-            Group {
-                if shouldShowChatSection || showRail {
-                    HSplitView {
-                        ActivityBar(
-                            layoutState: layoutState,
-                            containers: containers
-                        )
+            HStack(spacing: 0) {
+                ActivityBar(
+                    layoutState: layoutState,
+                    containers: containers
+                )
 
+                if chatSection.isVisible || showRail {
+                    HSplitView {
                         PanelColumnView(
                             container: selectedContainer,
                             headerItems: headerItems,
@@ -87,8 +87,7 @@ struct AppLayoutView: View {
                             showsPanelChrome: showsPanelChrome,
                             showRail: showRail,
                             railTabs: railTabs,
-                            layoutState: panelLayoutState,
-                            projectPathStore: projectPathStore,
+                            layoutState: layoutState,
                             editor: editorCoreService
                         )
                         .layoutPriority(isRailOnlyPanel ? 0 : 1)
@@ -96,59 +95,26 @@ struct AppLayoutView: View {
                             maxWidth: isRailOnlyPanel ? nil : .infinity,
                             maxHeight: .infinity
                         )
+                        .borderTrailing()
 
-                        if shouldShowChatSection {
-                            ChatSectionView(
-                                layout: chatSection,
-                                toolbarBarItems: chatSectionToolbarBarItems,
-                                headerItems: chatSectionHeaderItems,
-                                stackItems: chatSectionItems.filter { $0.placement == .stack },
-                                bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed },
-                                rootContent: pluginService.chatSectionRootWrapper(
-                                    context: pluginContext,
-                                    content: ChatSectionView.makeRootContent(
-                                        stackItems: chatSectionItems.filter { $0.placement == .stack },
-                                        bottomItems: chatSectionItems.filter { $0.placement == .bottomFixed }
-                                    )
-                                )
-                            )
-                            .id("\(activeID)-\(chatSection.persistenceKeySuffix)")
-                            .layoutPriority(isRailOnlyPanel ? 1 : 0)
-                            .background(
-                                ChatSectionWidthPersistence(
-                                    layout: chatSection,
-                                    storageKey: LayoutStorageKey.chatSectionWidth(
-                                        viewContainerID: activeID,
-                                        layout: chatSection
-                                    )
-                                )
-                            )
-                        }
+                        chatView
                     }
                     .background(
                         SplitViewAutosaveConfigurator(autosaveName: autosaveName)
                     )
                 } else {
-                    HStack(spacing: 0) {
-                        ActivityBar(
-                            layoutState: layoutState,
-                            containers: containers
-                        )
+                    AppDivider(.vertical)
 
-                        AppDivider(.vertical)
-
-                        PanelColumnView(
-                            container: selectedContainer,
-                            headerItems: headerItems,
-                            bottomTabs: bottomTabs,
-                            showsPanelChrome: showsPanelChrome,
-                            showRail: showRail,
-                            railTabs: railTabs,
-                            layoutState: panelLayoutState,
-                            projectPathStore: projectPathStore,
-                            editor: editorCoreService
-                        )
-                    }
+                    PanelColumnView(
+                        container: selectedContainer,
+                        headerItems: headerItems,
+                        bottomTabs: bottomTabs,
+                        showsPanelChrome: showsPanelChrome,
+                        showRail: showRail,
+                        railTabs: railTabs,
+                        layoutState: layoutState,
+                        editor: editorCoreService
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -163,18 +129,17 @@ struct AppLayoutView: View {
             StatusBar(
                 pluginService: pluginService,
                 editorCoreService: editorCoreService,
-                pluginContext: pluginContext,
+                pluginContext: preliminaryPluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                projectPathStore: projectPathStore,
-                panelLayoutState: panelLayoutState
+                layoutState: layoutState
             )
         }
         .frame(minWidth: 1180, minHeight: 560)
         .background(theme.background)
         .background {
             ChatSectionToolbarSync(
-                items: chatSectionToolbarItems,
+                items: chatView.toolbarItems,
                 coordinator: chatSectionCoordinator
             )
         }
@@ -207,19 +172,16 @@ struct AppLayoutView: View {
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil
     ) -> LumiPluginContext {
-        LumiPluginContext(
+        LumiCore.makePluginContext(
             activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register((any LumiChatServicing).self, chatService)
-                dependencies.register(LumiCurrentProjectPathStoring.self, projectPathStore)
-                dependencies.register(LumiEditorServicing.self, editorCoreService)
+            additionalDependencies: { dependencies in
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
-                dependencies.register(LumiBottomPanelLayoutPresenting.self, panelLayoutState)
+                dependencies.register((any LumiEditorServicing).self, editorCoreService)
             }
         )
     }

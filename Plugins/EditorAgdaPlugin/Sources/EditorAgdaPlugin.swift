@@ -1,19 +1,21 @@
 import EditorService
 import LumiCoreKit
+import SwiftUI
 
-public actor EditorAgdaPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .optIn
-    public static let shared = EditorAgdaPlugin()
-    public static let id = "agdaHighlight"
-    public static let displayName = LumiPluginLocalization.string("Agda Highlight", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for Agda.", bundle: .module)
+public enum EditorAgdaPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
-    public static let order = 200
-    public static var category: PluginCategory { .editor }
-    public nonisolated var providesEditorExtensions: Bool { true }
 
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static let info = LumiPluginInfo(
+        id: "agdaHighlight",
+        displayName: LumiPluginLocalization.string("Agda Highlight", bundle: .module),
+        description: LumiPluginLocalization.string("Syntax highlighting and language detection for Agda.", bundle: .module),
+        order: 200
+    )
+
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorAgdaPluginDescriptor.descriptor)
         registry.registerGrammarProvider(EditorAgdaPluginGrammarProvider())

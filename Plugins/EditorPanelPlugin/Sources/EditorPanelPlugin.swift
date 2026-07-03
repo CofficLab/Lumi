@@ -26,10 +26,6 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        guard context.resolve(LumiEditorServicing.self) != nil else {
-            return []
-        }
-
         return [
             LumiViewContainerItem(
                 id: info.id,
@@ -54,18 +50,22 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .editor
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -84,7 +84,7 @@ public enum EditorPanelPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open a project, then pick Code Editor from the sidebar.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 }

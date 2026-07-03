@@ -43,6 +43,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 空集合表示无具体目标（节点应跳过 reload）。
     @Published var changedDirectoryPaths: Set<String> = []
 
+    /// 精准刷新路径集合的版本令牌：每次 `changedDirectoryPaths` 更新时递增。
+    /// 用于 `NodeView.Equatable` 轻量比较（Int vs Set<String>），避免大集合 O(m) 比较。
+    @Published var changedDirectoryPathsToken: Int = 0
+
     /// Git 状态快照，视图通过只读映射查询
     @Published var gitStatusSnapshot: GitStatusSnapshot = .empty
 
@@ -344,6 +348,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             return
         }
         changedDirectoryPaths = pendingChangedPaths
+        changedDirectoryPathsToken += 1
         pendingChangedPaths.removeAll()
         targetedRefreshToken += 1
         if Self.verbose {

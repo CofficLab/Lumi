@@ -25,7 +25,6 @@ let package = Package(
             url: "https://github.com/apple/swift-collections.git",
             .upToNextMajor(from: "1.0.0")
         ),
-        .package(path: "../LumiCoreKit"),
     ],
     targets: [
         // The main text view target.
@@ -35,7 +34,6 @@ let package = Package(
                 "TextStory",
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources",
             exclude: ["EditorTextViewObjC"],
@@ -53,7 +51,6 @@ let package = Package(
             name: "EditorTextViewTests",
             dependencies: [
                 "EditorTextView",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Tests"
         ),

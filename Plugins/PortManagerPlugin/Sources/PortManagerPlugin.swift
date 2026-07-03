@@ -32,9 +32,9 @@ public enum PortManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -53,7 +53,7 @@ public enum PortManagerPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Port Manager from the sidebar to audit open ports.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 }

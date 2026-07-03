@@ -1,6 +1,7 @@
 import LumiCoreKit
 import LumiUI
 import SwiftUI
+import os
 
 public enum DisplayControlPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -17,6 +18,7 @@ public enum DisplayControlPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
 
     public static let iconName = "display"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
@@ -37,9 +39,9 @@ public enum DisplayControlPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -58,7 +60,7 @@ public enum DisplayControlPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Display Control from the sidebar to tune your screens.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 

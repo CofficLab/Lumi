@@ -52,9 +52,7 @@ public enum EditorFileTreePanelPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              context.activeSectionID == LumiEditorPanelContainer.id
-        else { return [] }
+        guard context.showsRail else { return [] }
 
         return [
             LumiPanelRailTabItem(

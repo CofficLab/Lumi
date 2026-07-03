@@ -242,12 +242,15 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
     // MARK: - 页面聚合
 
-    private var pages: [LumiPluginOnboardingPage] {
+    private var pages: [OnboardingPageView] {
         guard !environmentPages.isEmpty else {
-            return OnboardingPlugin.onboardingPages(context: LumiPluginContext(
+            let fallback = OnboardingPlugin.onboardingPages(context: LumiPluginContext(
                 activeSectionID: "preview",
                 activeSectionTitle: "Preview"
             ))
+            return fallback.enumerated().map { (index, view) in
+                OnboardingPageView(order: index, view: view)
+            }
         }
         return environmentPages
     }
@@ -271,7 +274,7 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
-    let pages: [LumiPluginOnboardingPage]
+    let pages: [OnboardingPageView]
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Body
@@ -292,7 +295,7 @@ private struct OnboardingSheetView: View {
 
         ZStack {
             // 背景渐变
-            backgroundGradient(page: page)
+            backgroundGradient
 
             // 主内容
             VStack(spacing: 0) {
@@ -305,7 +308,7 @@ private struct OnboardingSheetView: View {
 
                 // 内容区域 - 动态渲染插件提供的页面
                 ScrollView(.vertical, showsIndicators: false) {
-                    page.makeContent()
+                    page.view
                         .padding(.horizontal, 32)
                         .padding(.top, 24)
                         .padding(.bottom, 16)
@@ -363,7 +366,7 @@ private struct OnboardingSheetView: View {
     // MARK: - 子视图
 
     /// 背景渐变
-    private func backgroundGradient(page: LumiPluginOnboardingPage) -> some View {
+    private var backgroundGradient: some View {
         // Use a generic gradient for contributed pages (they don't expose gradient colors).
         LinearGradient(
             colors: [

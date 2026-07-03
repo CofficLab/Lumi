@@ -13,15 +13,11 @@ let package = Package(
             targets: ["LumiUI"]
         )
     ],
-    dependencies: [
-        .package(path: "../LumiCoreKit"),
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "LumiUI",
-            dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+            dependencies: [],
             path: ".",
             exclude: ["Tests", "README.md"],
             sources: ["Sources"],

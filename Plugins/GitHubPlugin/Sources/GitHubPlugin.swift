@@ -6,7 +6,7 @@ import SwiftUI
 
 /// GitHub 插件：CLI 检测、生态洞察 + GitHub API 远程操作。
 public enum GitHubPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let policy: LumiPluginPolicy = .optOut
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "network"
@@ -59,7 +59,7 @@ public enum GitHubPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         bootstrapIfNeeded()
-        let projectPath = context.resolve(LumiCurrentProjectPathProviding.self)?.currentProjectPath ?? ""
+        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).kb",

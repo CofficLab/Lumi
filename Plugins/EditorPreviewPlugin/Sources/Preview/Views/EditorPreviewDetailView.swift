@@ -26,7 +26,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     public nonisolated static let emoji = "👁"
     public nonisolated static let verbose: Bool = false
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
+    // 使用 LumiCore.projectState 替代已移除的 WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
     private let pluginContext: PluginContext
@@ -264,7 +264,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .buttonStyle(.borderless)
             .disabled(
                 isCleaningProjectStringCatalogs ||
-                projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                (LumiCore.projectState?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
@@ -712,7 +712,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func cleanProjectStringCatalogs() {
         guard !isCleaningProjectStringCatalogs else { return }
-        let projectRootPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectRootPath = LumiCore.projectState?.currentProject?.path ?? "".trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
             alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return

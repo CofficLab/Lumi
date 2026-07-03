@@ -19,6 +19,19 @@ final class SendPipeline {
         return service?.sendingConversationIDs.contains(conversationID) ?? false
     }
 
+    private var turnStartTimeByConversationID: [UUID: Date] = [:]
+
+    private func markTurnStart(_ conversationID: UUID) {
+        turnStartTimeByConversationID[conversationID] = Date()
+    }
+
+    private func takeTurnDurationMs(for conversationID: UUID) -> Int? {
+        guard let start = turnStartTimeByConversationID[conversationID] else { return nil }
+        let duration = Date().timeIntervalSince(start) * 1000
+        turnStartTimeByConversationID.removeValue(forKey: conversationID)
+        return Int(duration.rounded())
+    }
+
     // MARK: - Enqueue
 
     func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?) {
@@ -153,6 +166,7 @@ final class SendPipeline {
                 metadata: userMetadata
             )
         )
+        markTurnStart(conversationID)
         service.statusState.setStatus(conversationID: conversationID, content: "正在发送消息…")
         service.revision += 1
 
@@ -191,7 +205,7 @@ final class SendPipeline {
         var context = LumiSendContext(
             conversationID: conversationID,
             messages: messages,
-            currentProjectPath: service.projectPathProvider?.currentProjectPath ?? "",
+            currentProjectPath: LumiCore.projectState?.currentProject?.path ?? "",
             conversationTitle: service.conversations.first(where: { $0.id == conversationID })?.title ?? "",
             conversationLanguage: service.language(for: conversationID)
         )
@@ -344,12 +358,18 @@ final class SendPipeline {
     }
 
     func appendTurnCompletedMarker(conversationID: UUID) {
+        var metadata: [String: String] = [:]
+        if let durationMs = takeTurnDurationMs(for: conversationID) {
+            metadata["turnDurationMs"] = "\(durationMs)"
+        }
+
         service?.append(
             LumiChatMessage(
                 conversationID: conversationID,
                 role: .status,
                 content: LumiChatMarkers.turnCompleted,
-                renderKind: "turn-completed"
+                renderKind: "turn-completed",
+                metadata: metadata
             )
         )
         let userInfo: [AnyHashable: Any] = [

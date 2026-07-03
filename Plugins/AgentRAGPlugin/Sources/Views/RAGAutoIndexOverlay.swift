@@ -1,7 +1,6 @@
 import SuperLogKit
 import SwiftUI
 import LumiCoreKit
-import ProjectsPlugin
 
 /// RAG 自动索引覆盖层
 ///
@@ -44,7 +43,7 @@ extension RAGAutoIndexOverlay {
         autoEnsureTask = Task { [currentPath] in
             let candidatePaths = await Task.detached(priority: .utility) {
                 let recentPaths = await MainActor.run {
-                    ProjectsPlugin.sharedStore.projects.map(\.path)
+                    LumiCore.projectState?.projects.map(\.path) ?? []
                 }
                 return Self.uniqueNonEmptyPaths([currentPath] + recentPaths)
                     .filter { Self.isExistingDirectory(path: $0) }

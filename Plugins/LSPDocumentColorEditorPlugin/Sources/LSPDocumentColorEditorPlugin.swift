@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 /// LSP 文档颜色编辑器插件。
 ///
@@ -13,20 +12,16 @@ import SwiftUI
 /// 编辑器 Overlay、Gutter 或弹窗能力。
 ///
 /// 完整启用该能力需要 LSP 服务可用，且当前语言服务器支持 document color 相关 LSP 方法。
-public actor LSPDocumentColorEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPDocumentColorEditorPlugin()
-    public static let id = "LSPDocumentColorEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Document Colors", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Displays color swatches for color literals from the language server.", bundle: .module)
+public enum LSPDocumentColorEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "paintpalette"
-    public static let order = 28
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
-
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        // Provided via DocumentColorProvider
-    }
+    public static let info = LumiPluginInfo(
+        id: "LSPDocumentColorEditor",
+        displayName: LumiPluginLocalization.string("LSP Document Colors", bundle: .module),
+        description: LumiPluginLocalization.string("Displays color swatches for color literals from the language server.", bundle: .module),
+        order: 28
+    )
 }

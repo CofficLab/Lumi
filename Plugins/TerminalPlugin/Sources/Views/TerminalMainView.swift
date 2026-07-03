@@ -7,12 +7,17 @@ import TerminalCoreKit
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @EnvironmentObject private var projectVM: WindowProjectVM
     /// 使用全局单例，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
     @ObservedObject private var viewModel = TerminalTabsViewModel.shared
 
     private var indexedSessions: [(offset: Int, session: TerminalSession)] {
         viewModel.sessions.enumerated().map { (offset: $0.offset, session: $0.element) }
+    }
+
+    private var currentProjectPathForTerminal: String? {
+        let path = LumiCore.projectState?.currentProject?.path ?? ""
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     public var body: some View {
@@ -69,14 +74,9 @@ public struct TerminalMainView: View {
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
+        .onChange(of: LumiCore.projectState?.currentProject?.path) { _, _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
-    }
-
-    private var currentProjectPathForTerminal: String? {
-        let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        return path.isEmpty ? nil : path
     }
 }
 

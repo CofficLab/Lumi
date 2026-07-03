@@ -7,7 +7,7 @@ import SwiftUI
 
 /// Handles panel chrome commands (toggle outline panel, toggle open editors panel)
 struct PanelChromeCommandHandler: ViewModifier {
-    @ObservedObject var layoutState: PanelLayoutState
+    @ObservedObject var layoutState: LumiLayoutState
 
     private var notifications: EditorHostEnvironment.Notifications {
         EditorHostEnvironment.current.notifications

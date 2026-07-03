@@ -1,19 +1,23 @@
 import EditorService
 import LumiCoreKit
+import SwiftUI
+import os
 
-public actor EditorJuliaPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .optIn
-    public static let shared = EditorJuliaPlugin()
-    public static let id = "juliaHighlight"
-    public static let displayName = LumiPluginLocalization.string("Julia Highlight", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Syntax highlighting and language detection for Julia.", bundle: .module)
+public enum EditorJuliaPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .optIn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "chevron.left.forwardslash.chevron.right"
-    public static let order = 200
-    public static var category: PluginCategory { .editor }
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-julia")
 
-    @MainActor
-    public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static let info = LumiPluginInfo(
+        id: "juliaHighlight",
+        displayName: LumiPluginLocalization.string("Julia Highlight", bundle: .module),
+        description: LumiPluginLocalization.string("Syntax highlighting and language detection for Julia.", bundle: .module),
+        order: 200
+    )
+
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerLanguage(EditorJuliaPluginDescriptor.descriptor)
         registry.registerGrammarProvider(EditorJuliaPluginGrammarProvider())

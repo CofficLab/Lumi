@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 /// LSP 工具栏编辑器插件。
 ///
@@ -10,19 +9,20 @@ import SwiftUI
 ///
 /// 本插件主要提供工具栏状态项 Contributor，不直接实现 LSP 请求；具体数据来自 `LSPServiceEditorPlugin`
 /// 注册的 LSP 服务、诊断流和进度 Provider。需要工具栏/状态栏 UI 消费 StatusItem contributor 后才会显示。
-public actor LSPToolbarEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPToolbarEditorPlugin()
-    public static let id = "LSPToolbarEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Toolbar", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Adds diagnostics, progress, and quick action items to the editor toolbar.", bundle: .module)
+public enum LSPToolbarEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "wrench.and.screwdriver"
-    public static let order = 19
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "LSPToolbarEditor",
+        displayName: LumiPluginLocalization.string("LSP Toolbar", bundle: .module),
+        description: LumiPluginLocalization.string("Adds diagnostics, progress, and quick action items to the editor toolbar.", bundle: .module),
+        order: 19
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         registry.registerStatusItemContributor(LSPToolbarContributor())
     }

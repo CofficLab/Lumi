@@ -21,7 +21,10 @@ let package = Package(
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "GitBranchMonitorKitTests",

@@ -50,17 +50,14 @@ public enum GitPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        guard let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self) as? LumiCurrentProjectPathStore else {
-            return []
-        }
-
+        // 不再依赖注入，直接从 LumiCore 获取项目路径
         return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                GitPanelHostView(projectPathStore: projectPathStore)
+                GitPanelHostView()
             }
         ]
     }
@@ -84,13 +81,9 @@ public enum GitPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        guard let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self) as? LumiCurrentProjectPathStore else {
-            return []
-        }
-
         return [
             LumiRootOverlayItem(id: "\(info.id).commit-history", order: info.order) { content in
-                GitPanelRootOverlay(content: content, projectPathStore: projectPathStore)
+                GitPanelRootOverlay(content: content)
             }
         ]
     }

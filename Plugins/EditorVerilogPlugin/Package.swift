@@ -20,7 +20,7 @@ let package = Package(
                 .product(name: "TreeSitterVerilog", package: "tree-sitter-verilog"),
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorVerilogPluginTests", dependencies: ["EditorVerilogPlugin"], path: "Tests"),
     ]

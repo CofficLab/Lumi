@@ -1,5 +1,7 @@
 import LumiCoreKit
+import LumiUI
 import SwiftUI
+import os
 
 public struct LoadedPluginInfo: Identifiable, Sendable {
     public let id: String
@@ -20,6 +22,7 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "puzzlepiece.extension"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-loaded-plugins")
 
     nonisolated(unsafe) public static var pluginProvider: @MainActor () -> [LoadedPluginInfo] = { [] }
 
@@ -47,11 +50,15 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
 
         @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .general
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 

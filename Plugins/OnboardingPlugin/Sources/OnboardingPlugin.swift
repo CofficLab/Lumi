@@ -25,14 +25,14 @@ public enum OnboardingPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).welcome", order: 10) {
+            AnyView(
                 OnboardingWelcomePage()
-            },
-            LumiPluginOnboardingPage(id: "\(info.id).plugins", order: 20) {
+            ),
+            AnyView(
                 OnboardingPluginsPage()
-            },
+            ),
         ]
     }
 }

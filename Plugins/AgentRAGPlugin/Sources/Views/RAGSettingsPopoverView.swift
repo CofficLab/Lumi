@@ -1,7 +1,6 @@
 import LumiUI
 import SwiftUI
 import LumiCoreKit
-import ProjectsPlugin
 
 @MainActor
 struct RAGSettingsPopoverView: View {
@@ -11,10 +10,6 @@ struct RAGSettingsPopoverView: View {
     /// 向量后端运行时信息：sqlite-vec 不可用时为 nil 或 .swiftCosine，需要提示用户
     /// 语义检索性能会下降（回退到内存逐个余弦计算）。
     @State private var runtimeInfo: RAGRuntimeInfo?
-
-    private var projectStore: ProjectsStore {
-        ProjectsPlugin.sharedStore
-    }
 
     var body: some View {
         StatusBarPopoverScaffold(
@@ -125,7 +120,7 @@ struct RAGSettingsPopoverView: View {
     // MARK: - Private
 
     private var trackedProjects: [RAGTrackedProjectPopover] {
-        let recent = projectStore.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) }
+        let recent = LumiCore.projectState?.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProjectPopover]
         if currentPath.isEmpty {

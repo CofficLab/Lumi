@@ -3,12 +3,12 @@ import LumiCoreKit
 
 extension EditorZigPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
-        LumiPluginInfo(id: id, displayName: displayName, description: description, order: order)
+        LumiPluginInfo(id: info.id, displayName: info.displayName, description: info.description, order: info.order)
     }
-    public static var extensionPluginPolicy: LumiPluginPolicy { policy.lumiPluginPolicy }
+    public static var extensionPluginPolicy: LumiPluginPolicy { policy }
     @MainActor
     public static func registerEditorExtensionsErased(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
-        await shared.registerEditorExtensions(into: registry)
+        await Self.registerEditorExtensions(into: registry)
     }
 }

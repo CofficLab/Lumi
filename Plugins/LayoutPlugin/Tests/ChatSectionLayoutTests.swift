@@ -4,20 +4,6 @@ import SwiftUI
 import Testing
 @testable import LayoutPlugin
 
-@Test func layoutControlContextBindsChatSectionVisibility() {
-    var visible = true
-    let context = LayoutControlContext(
-        chatSectionVisible: Binding(
-            get: { visible },
-            set: { visible = $0 }
-        )
-    )
-
-    #expect(context.chatSectionVisible.wrappedValue == true)
-    context.chatSectionVisible.wrappedValue = false
-    #expect(visible == false)
-}
-
 @Test func localStorePersistsRightSidebarVisibility() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-RightSidebar-\(UUID().uuidString)", isDirectory: true)
@@ -27,4 +13,11 @@ import Testing
     store.saveRightSidebarVisible(false)
 
     #expect(store.loadRightSidebarVisible() == false)
+}
+
+@Test func layoutStateBindsChatSectionVisibility() {
+    let layoutState = LumiLayoutState()
+    #expect(layoutState.chatSectionVisible == true)
+    layoutState.chatSectionVisible = false
+    #expect(layoutState.chatSectionVisible == false)
 }

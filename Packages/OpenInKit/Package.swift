@@ -18,7 +18,7 @@ let package = Package(
             name: "OpenInKit",
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

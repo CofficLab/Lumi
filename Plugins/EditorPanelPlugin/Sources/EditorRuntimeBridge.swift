@@ -55,7 +55,6 @@ public enum EditorRuntimeBridge {
 
         Task { @MainActor in
             await EditorLanguageRuntimeBridge.configure?(runtime)
-            await EditorPreviewPlugin.shared.configureRuntime(context: runtime)
         }
     }
 }

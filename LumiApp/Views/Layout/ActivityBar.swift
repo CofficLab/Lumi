@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ActivityBar: View {
     @Environment(\.openWindow) private var openWindow
-    @ObservedObject var layoutState: LumiLayoutStateStore
+    @ObservedObject var layoutState: LumiLayoutState
     let containers: [LumiViewContainerItem]
 
     var body: some View {
@@ -32,5 +32,6 @@ struct ActivityBar: View {
         .padding(.vertical, 8)
         .frame(width: 48)
         .appSurface(style: .panel, cornerRadius: 0)
+        .borderTrailing()
     }
 }

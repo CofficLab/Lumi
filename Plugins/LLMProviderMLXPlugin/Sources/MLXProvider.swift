@@ -5,6 +5,7 @@ import Combine
 import HttpKit
 import LLMKit
 import LumiCoreKit
+import LumiLLMProviderSupport
 import os
 
 /// MLX 本地模型 Provider
@@ -41,7 +42,15 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public static var description: String { "本地运行的模型（无需网络）" }
 
     /// API Key 存储键名 - 本地模型不需要 API Key
-    public static var apiKeyStorageKey: String { "" }
+    public static let apiKeyStorageKey: String = ""
+
+    public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     /// 模型选择存储键名
 

@@ -1,13 +1,21 @@
 import Foundation
 import LumiCoreKit
+import SuperLogKit
+import os
 
-@MainActor
-final class ToolService: LumiToolServicing {
+final class ToolService: LumiToolServicing, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.tool")
+    nonisolated static let emoji = "🛠️"
+    nonisolated static let verbose = true
+
     private(set) var tools: [any LumiAgentTool] = []
     private var toolsByName: [String: any LumiAgentTool] = [:]
-    var projectPathProvider: (any LumiCurrentProjectPathProviding)?
 
     func registerTools(_ tools: [any LumiAgentTool]) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)注册 \(tools.count) 个工具")
+        }
+
         var uniqueTools: [String: any LumiAgentTool] = [:]
 
         for tool in tools {
@@ -23,11 +31,19 @@ final class ToolService: LumiToolServicing {
         self.tools = uniqueTools.values.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 工具注册完成，总计 \(self.tools.count) 个")
+        }
     }
 
     /// 注册 built-in tools（如 conversation_info, no_op）
     /// 这些工具会合并到现有的工具字典中
     func registerBuiltInTools(_ tools: [any LumiAgentTool]) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)注册 \(tools.count) 个内置工具")
+        }
+
         for tool in tools {
             // 不覆盖已存在的工具（插件提供的工具优先）
             if toolsByName[tool.name] == nil {
@@ -38,6 +54,10 @@ final class ToolService: LumiToolServicing {
         self.tools = toolsByName.values.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ 内置工具注册完成，当前总计 \(self.tools.count) 个")
+        }
     }
 
     func tool(named name: String) -> (any LumiAgentTool)? {
@@ -46,10 +66,15 @@ final class ToolService: LumiToolServicing {
 
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
         guard let tool = tool(named: toolCall.name) else {
+            Self.logger.warning("\(Self.t)工具未找到: \(toolCall.name)")
             return LumiToolResult(
                 content: "Tool not found: \(toolCall.name)",
                 isError: true
             )
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)执行工具: \(toolCall.name)")
         }
 
         let startedAt = Date()
@@ -57,21 +82,31 @@ final class ToolService: LumiToolServicing {
             conversationID: conversationID,
             toolCallID: toolCall.id,
             toolName: toolCall.name,
-            currentProjectPath: projectPathProvider?.currentProjectPath
+            currentProjectPath: LumiCore.projectState?.currentProject?.path
         )
 
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            let output = try await tool.execute(arguments: arguments, context: context)
+            let output = try await Task.detached { [context] in
+                try await tool.execute(arguments: arguments, context: context)
+            }.value
+
             // 工具可能在执行过程中通过 context.attachImage 注册了要回传的图片
             // （如 read_file 读取图片文件），这里收集并填入结果。
             let images = context.collectImages()
+            let duration = Date().timeIntervalSince(startedAt)
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name) (\(String(format: "%.2f", duration * 1000))ms)")
+            }
+
             return LumiToolResult(
                 content: output,
-                duration: Date().timeIntervalSince(startedAt),
+                duration: duration,
                 imageAttachments: images
             )
         } catch {
+            Self.logger.error("\(Self.t)工具执行失败: \(toolCall.name) - \(error.localizedDescription)")
             return LumiToolResult(
                 content: "Tool execution failed: \(error.localizedDescription)",
                 duration: Date().timeIntervalSince(startedAt),

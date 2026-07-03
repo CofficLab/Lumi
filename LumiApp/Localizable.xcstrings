@@ -125,6 +125,7 @@
       }
     },
     "Plugin Description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -233,6 +234,9 @@
 
     },
     "设置..." : {
+
+    },
+    "该插件暂未提供设置页面。" : {
 
     },
     "调试" : {

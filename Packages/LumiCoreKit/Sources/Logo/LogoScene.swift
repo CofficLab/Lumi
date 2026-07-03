@@ -1,6 +1,7 @@
 import Foundation
+import SwiftUI
 
-/// 定义 Logo 的显示场景
+/// Logo 显示场景
 /// 不同的场景可能有不同的视觉要求和动画行为
 public enum LogoScene: String, CaseIterable, Sendable {
     case general

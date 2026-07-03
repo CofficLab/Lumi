@@ -18,10 +18,6 @@ import Testing
     let pages = OnboardingPlugin.onboardingPages(context: context)
 
     #expect(pages.count == 2)
-    #expect(pages[0].id.hasSuffix(".welcome"))
-    #expect(pages[0].order == 10)
-    #expect(pages[1].id.hasSuffix(".plugins"))
-    #expect(pages[1].order == 20)
 }
 
 @MainActor
@@ -33,7 +29,7 @@ import Testing
     let pages = OnboardingPlugin.onboardingPages(context: context)
 
     for page in pages {
-        let content = page.makeContent()
+        let content = page
         #expect("\(content)" != "")
     }
 }

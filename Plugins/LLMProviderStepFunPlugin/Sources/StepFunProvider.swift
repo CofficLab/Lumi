@@ -1,17 +1,19 @@
 import Foundation
-import os
 import LumiCoreKit
 import LumiLLMProviderSupport
+import os
+import SuperLogKit
 
-public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.stepfun")
-    public static let shortName = "StepFun"
+public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unchecked Sendable {
+    public nonisolated static let emoji = "🌟"
+    nonisolated static let verbose: Int = 0
+    public static let shortName = "StepFun StepPlan"
 
-    public override class var info: LumiLLMProviderInfo {
+    override public class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "stepfun",
-            displayName: LumiPluginLocalization.string("StepFun", bundle: .module),
-            description: LumiPluginLocalization.string("StepFun AI", bundle: .module),
+            displayName: LumiPluginLocalization.string("StepFun StepPlan", bundle: .module),
+            description: LumiPluginLocalization.string("StepFun StepPlan AI", bundle: .module),
             defaultModel: "step-3.5-flash",
             availableModels: [
                 "step-3.7-flash",
@@ -22,18 +24,18 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "stepaudio-2.5-realtime",
                 "step-image-edit-2",
                 "step-3.5-flash-2603",
-                "step-3.5-flash"
+                "step-3.5-flash",
             ],
             contextWindowSizes: [
-                "step-3.7-flash": 262_144,
-                "step-router-v1": 262_144,
-                "stepaudio-2.5-chat": 1_000_000,
-                "stepaudio-2.5-tts": 1_000_000,
-                "stepaudio-2.5-asr": 1_000_000,
-                "stepaudio-2.5-realtime": 1_000_000,
-                "step-image-edit-2": 1_000_000,
-                "step-3.5-flash-2603": 262_144,
-                "step-3.5-flash": 262_144
+                "step-3.7-flash": 262144,
+                "step-router-v1": 262144,
+                "stepaudio-2.5-chat": 1000000,
+                "stepaudio-2.5-tts": 1000000,
+                "stepaudio-2.5-asr": 1000000,
+                "stepaudio-2.5-realtime": 1000000,
+                "step-image-edit-2": 1000000,
+                "step-3.5-flash-2603": 262144,
+                "step-3.5-flash": 262144,
             ],
             modelCapabilities: [
                 "step-3.7-flash": .init(supportsVision: true, supportsTools: true),
@@ -44,87 +46,25 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "stepaudio-2.5-realtime": .init(supportsVision: false, supportsTools: true),
                 "step-image-edit-2": .init(supportsVision: true, supportsTools: false),
                 "step-3.5-flash-2603": .init(supportsVision: true, supportsTools: true),
-                "step-3.5-flash": .init(supportsVision: true, supportsTools: true)
+                "step-3.5-flash": .init(supportsVision: true, supportsTools: true),
             ],
             websiteURL: URL(string: "https://www.stepfun.com/")!
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_StepFun"
-    }
-
-    /// 获取 API Key 的帮助链接
     public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
 
-    public init() {
-        let config = LumiOpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
-            additionalHeaders: ["Accept": "text/event-stream"],
-            includeUsageInStreamOptions: false,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false,
-            includesReasoningContentInMessages: true
-        )
-        Self.logger.info("📝[init] ⚙️ baseURL=\(config.baseURL), acceptHeader=text/event-stream")
-        super.init(configuration: config)
-    }
-
-    public override func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        Self.logger.info("[sendStreaming] 🟢 start request model=\(request.model), messagesCount=\(request.messages.count)")
-        
-        let wrappedChunk: @Sendable (LumiStreamChunk) async -> Void = { chunk in
-            if chunk.isDone {
-                Self.logger.info("📝[sendStreaming] 🔵 chunk isDone")
-            } else {
-                let text = chunk.content ?? ""
-                if !text.isEmpty {
-                    Self.logger.info("📝[sendStreaming] 🟡 chunk contentLength=\(text.count), eventTitle=\(chunk.eventTitle ?? "-")")
-                } else {
-                    Self.logger.info("📝[sendStreaming] ⚪️ chunk EMPTY content, isThinking=\(chunk.isThinking), eventTitle=\(chunk.eventTitle ?? "-")")
-                }
-            }
-            await onChunk(chunk)
-        }
-        
-        do {
-            let result = try await super.sendStreaming(request, onChunk: wrappedChunk)
-            Self.logger.info("📝[sendStreaming] ✅ success finalContentLength=\(result.content.count), toolCallsCount=\(result.toolCalls?.count ?? 0)")
-            return result
-        } catch {
-            Self.logger.error("📝[sendStreaming] ❌ error=\(error.localizedDescription)")
-            throw error
-        }
-    }
-
-    public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await AvailabilityService.checkAvailability(provider: self, model: model)
-    }
-
-    public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
-    }
-
-    // MARK: - Error Rendering
-
-    public override func errorRenderKind(for error: Error) -> String? {
-        if case LumiLLMProviderSupportError.missingAPIKey = error {
-            return StepFunRenderKind.apiKeyMissing
-        }
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
-            return StepFunRenderKind.http(statusCode)
-        }
-        return StepFunRenderKind.requestFailed
-    }
-
     // MARK: - API Key
+
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_StepFun"
+
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     public static func getApiKey() -> String {
         LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
@@ -132,5 +72,23 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, @unchecked Sen
 
     public static func setApiKey(_ apiKey: String) {
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
+    }
+
+    // MARK: - Provider Status
+
+    override public func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+    }
+
+    public init() {
+        super.init(
+            configuration: LumiOpenAICompatibleProviderConfiguration(
+                baseURL: "https://api.stepfun.com/step_plan/v1/chat/completions",
+                additionalHeaders: ["Accept": "text/event-stream"],
+                includeUsageInStreamOptions: false,
+                returnsEmptyChunkWhenNoDelta: false,
+                acceptsFunctionScopedToolCallID: false
+            )
+        )
     }
 }

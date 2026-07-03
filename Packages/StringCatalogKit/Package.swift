@@ -16,7 +16,10 @@ let package = Package(
     targets: [
         .target(
             name: "StringCatalogKit",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "StringCatalogKitTests",

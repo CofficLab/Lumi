@@ -7,21 +7,23 @@ import LumiCoreKit
 public final class ConversationListContext: ObservableObject {
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
+    @Published public private(set) var unreadCount: Int = 0
 
     private let chatService: ChatService
-    private let projectPathStore: LumiCurrentProjectPathStoring?
-    private let projectStore: LumiProjectStoring?
+    private let projectPathStore: LumiProjectState?
+    private let projectStore: LumiProjectState?
     private var conversationSnapshots: [UUID: Date] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     public init(
         chatService: ChatService,
-        projectPathStore: LumiCurrentProjectPathStoring? = nil,
-        projectStore: LumiProjectStoring? = nil
+        projectPathStore: LumiProjectState? = nil,
+        projectStore: LumiProjectState? = nil
     ) {
         self.chatService = chatService
         self.projectPathStore = projectPathStore
         self.projectStore = projectStore
+
         conversationSnapshots = Dictionary(
             uniqueKeysWithValues: chatService.conversations.map { ($0.id, $0.updatedAt) }
         )
@@ -30,6 +32,21 @@ public final class ConversationListContext: ObservableObject {
 
     public var selectedConversationId: UUID? {
         chatService.selectedConversationID
+    }
+
+    private var selectedConversationUpdatedAt: Date? {
+        guard let selectedConversationId else { return nil }
+        return chatService.conversations.first(where: { $0.id == selectedConversationId })?.updatedAt
+    }
+
+    private func recalculateUnreadCount() {
+        let selectedUpdatedAt = selectedConversationUpdatedAt
+        guard let selectedUpdatedAt else {
+            unreadCount = 0
+            return
+        }
+
+        unreadCount = chatService.conversations.filter { $0.updatedAt > selectedUpdatedAt }.count
     }
 
     public func databaseDirectory() -> URL {
@@ -77,16 +94,16 @@ public final class ConversationListContext: ObservableObject {
     }
 
     public func switchProject(projectPath: String, reason: String) {
-        // 优先走 LumiProjectStoring（Layer B）：它会让 ProjectsStore.currentProject、
+        // 优先走 LumiProjectState（Layer B）：它会让 ProjectsStore.currentProject、
         // 持久化 current-project.json、以及内核 Layer A 三者一致，
         // 这样标题栏 ProjectControlView 才会同步刷新，且重启后状态保留。
         if let projectStore {
-            projectStore.setCurrentProjectPath(projectPath, reason: reason)
+            projectStore.setCurrentProjectPath(projectPath)
             return
         }
 
         // 降级：没有 projectStore 时只更新内核路径（与旧行为一致）。
-        projectPathStore?.setCurrentProjectPath(projectPath, reason: reason)
+        projectPathStore?.setCurrentProjectPath(projectPath)
     }
 
     private func bindChatService() {
@@ -108,6 +125,7 @@ public final class ConversationListContext: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
+                self?.recalculateUnreadCount()
             }
             .store(in: &cancellables)
     }
@@ -129,5 +147,6 @@ public final class ConversationListContext: ObservableObject {
 
         conversationSnapshots = nextSnapshots
         statusVersion += 1
+        recalculateUnreadCount()
     }
 }

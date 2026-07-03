@@ -11,6 +11,8 @@ public final class ZhipuAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
     public static let shortName = "ZhiPu API"
     public static let apiKeyHelpURL: String? = "https://open.bigmodel.cn/usercenter/apikeys"
 
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_ZhipuAPI"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "zhipu-api",
@@ -51,14 +53,6 @@ public final class ZhipuAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_ZhipuAPI"
-    }
-
-    public override class var environmentAPIKeyName: String? {
-        "ZHIPU_API_KEY"
-    }
-
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(
@@ -85,8 +79,16 @@ public final class ZhipuAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
 
     // MARK: - API Key
 
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
+
     public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
     }
 
     public static func setApiKey(_ apiKey: String) {
@@ -98,10 +100,6 @@ public final class ZhipuAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 }

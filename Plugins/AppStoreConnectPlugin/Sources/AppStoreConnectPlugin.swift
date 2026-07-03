@@ -62,9 +62,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        let projectPathProvider = context.resolve(LumiCurrentProjectPathStoring.self)
         let provider: @MainActor @Sendable () -> String = {
-            projectPathProvider?.currentProjectPath ?? ""
+            LumiCore.projectState?.currentProject?.path ?? ""
         }
         AddToChat.currentProjectPathProvider = provider
         CoverArtRuntime.currentProjectPathProvider = provider
@@ -86,9 +85,9 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -107,7 +106,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
                     ],
                     tip: AppStoreConnectLocalization.string("Open App Store from the sidebar and pick an app to begin.")
                 )
-            }
+            )
         ]
     }
 }

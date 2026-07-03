@@ -3,6 +3,7 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiCoreKit
+import LumiLLMProviderSupport
 import SuperLogKit
 import os
 
@@ -17,6 +18,14 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
     public static let description = LumiPluginLocalization.string("通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）", bundle: .module)
     public static let websiteURL: String? = "https://github.com/openai/codex"
     public static let apiKeyStorageKey = ""
+
+    public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     public static let defaultModel = "gpt-5.5"
 

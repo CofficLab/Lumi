@@ -18,14 +18,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         fatalError("Subclasses must override info")
     }
 
-    open class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_\(info.id)"
-    }
-
-    open class var environmentAPIKeyName: String? {
-        nil
-    }
-
     private let apiService: LLMAPIService
     private let adapter: OpenAICompatibleProviderAdapter
 
@@ -39,7 +31,11 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiOpenAIAdapter: OpenAICompatibleProviderAdapter { adapter }
-    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    /// 子类必须实现以提供 API Key
+    open func lumiResolveAPIKey() throws -> String {
+        fatalError("子类必须实现 lumiResolveAPIKey()")
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
@@ -81,6 +77,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         fatalError("\(Self.self) must override providerStatus()")
     }
 
+    open func logRawStreamChunk(_ data: Data) {
+        // 子类可覆写以记录原始流式 chunk
+    }
+
     open func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
@@ -95,7 +95,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
         )
-        let apiKeyValue = try apiKey()
+        let apiKeyValue = try lumiResolveAPIKey()
 
         var lastError: Error?
         for baseURLString in resolvedBaseURLs() {
@@ -162,12 +162,14 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                     )
                 },
                 onChunk: { [self] chunkData in
+                    logRawStreamChunk(chunkData)
                     await Self.processStreamChunk(
                         chunkData: chunkData,
                         parse: { try self.adapter.parseStreamChunk(data: $0) },
                         state: state,
                         onChunk: chunkHandler
                     )
+                    return true
                 }
             )
         } catch is CancellationError {
@@ -199,6 +201,14 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             return .failure(streamError)
         }
 
+        if await hasNoDeliveredOutput(state) {
+            // 如果有 stopReason 说明模型正常结束（如结构化输出两轮协议的第 2 轮），是合法空响应
+            if await state.stopReason == nil {
+                return .retry(LumiLLMProviderSupportError.emptyResponse)
+            }
+            // 合法空响应：直接返回空消息，不重试
+        }
+
         let message = LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
@@ -208,7 +218,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             metadata: await Self.messageMetadata(from: state),
             toolCalls: await state.getFinalToolCalls()?.map {
                 LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            }
+            },
+            reasoningContent: await state.getFinalThinking()
         )
         return .success(message)
     }
@@ -219,21 +230,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         let hasToolCalls = await !state.accumulatedToolCalls.isEmpty
         let hasActiveToolCall = await state.currentToolCallId != nil
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
-    }
-
-    private func apiKey() throws -> String {
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
-           !storedKey.isEmpty {
-            return storedKey
-        }
-
-        if let environmentAPIKeyName = Self.environmentAPIKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[environmentAPIKeyName],
-           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentKey
-        }
-
-        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
     }
 
     fileprivate static func messageMetadata(from state: StreamingState) async -> [String: String] {
@@ -287,7 +283,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
             lines.append("Response Body:")
             lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(responseBody))
         }
-
         return lines.joined(separator: "\n")
     }
 
@@ -385,6 +380,10 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 return false
             }
 
+            if let stopReason = parsed.stopReason {
+                await state.setStopReason(stopReason)
+            }
+
             return true
         } catch is CancellationError {
             return false
@@ -397,14 +396,6 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
 open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     open class var info: LumiLLMProviderInfo {
         fatalError("Subclasses must override info")
-    }
-
-    open class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_\(info.id)"
-    }
-
-    open class var environmentAPIKeyName: String? {
-        nil
     }
 
     private let apiService: LLMAPIService
@@ -420,7 +411,11 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
 
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiAnthropicAdapter: AnthropicCompatibleProviderAdapter { adapter }
-    open func lumiResolveAPIKey() throws -> String { try apiKey() }
+
+    /// 子类必须实现以提供 API Key
+    open func lumiResolveAPIKey() throws -> String {
+        fatalError("子类必须实现 lumiResolveAPIKey()")
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
@@ -471,7 +466,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         }
 
         let body = try buildAnthropicStreamingRequestBody(for: request)
-        let apiKeyValue = try apiKey()
+        let apiKeyValue = try lumiResolveAPIKey()
 
         var lastError: Error?
         for baseURLString in resolvedBaseURLs() {
@@ -594,6 +589,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         }
 
         await state.saveCurrentToolCall()
+
         if let error = await state.streamError {
             let detailed = await OpenAICompatibleLumiProvider.attachTransportDetails(
                 summary: error,
@@ -629,21 +625,6 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         let hasActiveToolCall = await state.currentToolCallId != nil
         return !hasContent && !hasThinking && !hasToolCalls && !hasActiveToolCall
     }
-
-    private func apiKey() throws -> String {
-        if let storedKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey),
-           !storedKey.isEmpty {
-            return storedKey
-        }
-
-        if let environmentAPIKeyName = Self.environmentAPIKeyName,
-           let environmentKey = ProcessInfo.processInfo.environment[environmentAPIKeyName],
-           !environmentKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentKey
-        }
-
-        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-    }
 }
 
 public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDispositionProviding {
@@ -652,18 +633,32 @@ public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDisposition
     case missingAPIKey(String)
     case allEndpointsFailed
     case streamingFailed(String)
+    case emptyResponse
 
     public var llmErrorDisposition: LumiLLMErrorDisposition {
         switch self {
         case .emptyConversation, .invalidBaseURL, .missingAPIKey:
             return .nonRetryable
-        case .allEndpointsFailed, .streamingFailed:
+        case .allEndpointsFailed, .streamingFailed, .emptyResponse:
             return .retryable()
         }
     }
 
     public var errorDescription: String? {
-        localizedDescription(locale: .current)
+        switch self {
+        case .emptyConversation:
+            return "空对话"
+        case .invalidBaseURL(let url):
+            return "无效的 Base URL：\(url)"
+        case .missingAPIKey(let name):
+            return "缺少 API Key：\(name)"
+        case .allEndpointsFailed:
+            return "所有端点均失败"
+        case .streamingFailed(let details):
+            return "流式请求失败：\(details)"
+        case .emptyResponse:
+            return "LLM 返回了空响应"
+        }
     }
 }
 

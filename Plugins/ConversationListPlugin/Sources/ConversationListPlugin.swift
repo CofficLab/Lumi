@@ -27,14 +27,26 @@ public enum ConversationListPlugin: LumiPlugin {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        guard context.showsChatSection,
-              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
-        else {
+        guard context.showsChatSection else {
             return []
         }
 
-        let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
-        let projectStore = context.resolve(LumiProjectStoring.self)
+        let chatService = context.resolve(LumiChatServicing.self) as? ChatService
+
+        // 如果 ChatService 不可用，显示错误按钮
+        guard let chatService else {
+            return [
+                LumiTitleToolbarItem(
+                    id: "\(info.id).conversation-list",
+                    title: LumiPluginLocalization.string("会话列表", bundle: .module),
+                    placement: .trailing
+                ) {
+                    ConversationListErrorButton()
+                },
+            ]
+        }
+
+        let projectState = LumiCore.projectState
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).conversation-list",
@@ -43,24 +55,36 @@ public enum ConversationListPlugin: LumiPlugin {
             ) {
                 ConversationListPopoverButton(
                     chatService: chatService,
-                    projectPathStore: projectPathStore,
-                    projectStore: projectStore
+                    projectPathStore: projectState,
+                    projectStore: projectState
                 )
-            }
+            },
         ]
     }
 
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              context.activeSectionID == ChatPanelSection.id,
-              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
-        else {
+        guard context.showsRail else {
             return []
         }
 
-        let projectPathStore = context.resolve(LumiCurrentProjectPathStoring.self)
-        let projectStore = context.resolve(LumiProjectStoring.self)
+        let chatService = context.resolve(LumiChatServicing.self) as? ChatService
+
+        // ChatService 不可用时显示错误视图
+        guard let chatService else {
+            return [
+                LumiPanelRailTabItem(
+                    id: "chats-error",
+                    order: 0,
+                    title: LumiPluginLocalization.string("Chats", bundle: .module),
+                    systemImage: "message.fill"
+                ) {
+                    ConversationListErrorView()
+                },
+            ]
+        }
+
+        let projectState = LumiCore.projectState
 
         return [
             LumiPanelRailTabItem(
@@ -71,10 +95,10 @@ public enum ConversationListPlugin: LumiPlugin {
             ) {
                 ConversationRailPanelView(
                     chatService: chatService,
-                    projectPathStore: projectPathStore,
-                    projectStore: projectStore
+                    projectPathStore: projectState,
+                    projectStore: projectState
                 )
-            }
+            },
         ]
     }
 

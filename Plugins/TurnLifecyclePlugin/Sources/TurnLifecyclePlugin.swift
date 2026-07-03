@@ -1,35 +1,18 @@
 import SwiftUI
 import LumiCoreKit
 
-public actor TurnLifecyclePlugin: SuperPlugin {
-    nonisolated public static let emoji = "🏁"
-    public static var category: PluginCategory { .agent }
-    nonisolated public static let policy: PluginPolicy = .alwaysOn
-
-    public static let id = "TurnLifecycle"
-    public static let displayName = LumiPluginLocalization.string("Turn Lifecycle", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Detect turn completion and run turn-finished pipeline", bundle: .module)
+public enum TurnLifecyclePlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .agent
     public static let iconName = "flag.checkered"
-    public static var order: Int { 210 }
 
-    nonisolated public var instanceLabel: String { Self.id }
-    public static let shared = TurnLifecyclePlugin()
-
-    private init() {}
-
-    @MainActor
-    public func configureRuntime(context: PluginRuntimeContext) {
-        TurnLifecycleRuntimeBridge.loadMessages = context.loadMessages
-        TurnLifecycleRuntimeBridge.loadTurnPhase = context.loadTurnPhase
-        TurnLifecycleRuntimeBridge.setTurnPhase = context.setTurnPhase
-        TurnLifecycleRuntimeBridge.releaseConversationLock = context.releaseConversationLock
-        TurnLifecycleRuntimeBridge.finishAgentTurn = context.finishAgentTurn
-    }
-
-    @MainActor
-    public func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(TurnLifecycleEventObserver(content: content()))
-    }
+    public static let info = LumiPluginInfo(
+        id: "TurnLifecycle",
+        displayName: LumiPluginLocalization.string("Turn Lifecycle", bundle: .module),
+        description: LumiPluginLocalization.string("Detect turn completion and run turn-finished pipeline", bundle: .module),
+        order: 210
+    )
 }
 
 private struct TurnLifecycleEventObserver<Content: View>: View {

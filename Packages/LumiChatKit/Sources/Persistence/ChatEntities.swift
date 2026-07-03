@@ -57,6 +57,7 @@ final class ChatMessageEntity {
     var metadataJSON: String?
     var toolCallsJSON: String?
     var toolCallID: String?
+    var reasoningContent: String?
 
     init(
         id: UUID = UUID(),
@@ -71,7 +72,8 @@ final class ChatMessageEntity {
         renderKind: String? = nil,
         metadataJSON: String? = nil,
         toolCallsJSON: String? = nil,
-        toolCallID: String? = nil
+        toolCallID: String? = nil,
+        reasoningContent: String? = nil
     ) {
         self.id = id
         self.conversationId = conversationId
@@ -86,6 +88,7 @@ final class ChatMessageEntity {
         self.metadataJSON = metadataJSON
         self.toolCallsJSON = toolCallsJSON
         self.toolCallID = toolCallID
+        self.reasoningContent = reasoningContent
     }
 }
 

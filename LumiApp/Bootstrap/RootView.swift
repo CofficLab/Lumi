@@ -1,7 +1,9 @@
 import EditorService
 import LumiCoreKit
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 struct RootView<Content: View>: View {
     @ObservedObject private var container: RootContainer
@@ -19,14 +21,9 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        let context = LumiPluginContext(
+        let context = LumiCore.makePluginContext(
             activeSectionID: "app.root",
-            activeSectionTitle: "Lumi",
-            dependencies: LumiPluginDependencies { dependencies in
-                dependencies.register((any LumiChatServicing).self, container.chatCoreService.chatService)
-                dependencies.register(LumiCurrentProjectPathStoring.self, container.projectPathStore)
-                dependencies.register(LumiEditorServicing.self, container.editorCoreService)
-            }
+            activeSectionTitle: "Lumi"
         )
         let _ = container.pluginService.registerPluginContributions(context: context)
         let onboardingPages = container.pluginService.onboardingPages(context: context)
@@ -36,7 +33,8 @@ struct RootView<Content: View>: View {
                 overlay.apply(to: wrapped)
             }
             : baseView
-        overlayView
+
+        return overlayView
             .environment(\.onboardingPages, onboardingPages)
             .appThemedAppearance()
             .background {

@@ -24,7 +24,10 @@ let package = Package(
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources")
+            ]
         ),
         .testTarget(
             name: "LLMProviderKitTests",

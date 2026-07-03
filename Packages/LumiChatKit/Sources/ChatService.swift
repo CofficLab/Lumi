@@ -27,7 +27,6 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     var middlewares: [any LumiSendMiddleware] = []
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
     weak var toolService: (any LumiToolServicing)?
-    var projectPathProvider: (any LumiCurrentProjectPathProviding)?
     let store: ChatStore
     let statusState = ConversationStatusState()
     var activeTasksByConversationID: [UUID: Task<Void, Never>] = [:]
@@ -103,10 +102,6 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
     public func registerTurnChecks(_ checks: [any LumiAgentTurnCheck]) {
         self.turnChecks = checks
-    }
-
-    public func registerProjectPathProvider(_ provider: any LumiCurrentProjectPathProviding) {
-        self.projectPathProvider = provider
     }
 
     // MARK: - Conversation Lifecycle (delegated)

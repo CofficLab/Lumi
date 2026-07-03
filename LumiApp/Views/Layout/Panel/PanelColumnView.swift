@@ -1,5 +1,4 @@
 import EditorService
-import LayoutPlugin
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -12,16 +11,11 @@ struct PanelColumnView: View {
     let showsPanelChrome: Bool
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: PanelLayoutState
-    let projectPathStore: LumiCurrentProjectPathStore
+    @ObservedObject var layoutState: LumiLayoutState
     let editor: any LumiEditorServicing
 
     private var viewContainerID: String {
         container?.id ?? "main"
-    }
-
-    private var railStorageKey: String {
-        LayoutStorageKey.railWidth(viewContainerID: viewContainerID)
     }
 
     var body: some View {
@@ -34,16 +28,14 @@ struct PanelColumnView: View {
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    viewContainerID: viewContainerID, layoutState: layoutState
+                    viewContainerID: viewContainerID,
+                    layoutState: layoutState
                 )
             }
         }
 
-        if showsPanelChrome {
-            EditorScopeView(
-                projectPathStore: projectPathStore,
-                editor: editor
-            ) {
+        if showRail || showsPanelChrome {
+            EditorScopeView(editor: editor) {
                 column
             }
             .modifier(PanelChromeCommandHandler(layoutState: layoutState))
@@ -57,23 +49,18 @@ struct PanelColumnView: View {
         if showsPanelChrome {
             HSplitView {
                 RailView(tabs: railTabs, layoutState: layoutState)
-                    .background(
-                        SplitViewWidthPersistence(storageKey: railStorageKey)
-                    )
                 PanelWorkspaceView(
                     container: container,
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     showsPanelChrome: showsPanelChrome,
-                    viewContainerID: viewContainerID, layoutState: layoutState
+                    viewContainerID: viewContainerID,
+                    layoutState: layoutState
                 )
             }
             .id(viewContainerID)
         } else {
             RailView(tabs: railTabs, layoutState: layoutState)
-                .background(
-                    SplitViewWidthPersistence(storageKey: railStorageKey)
-                )
                 .id(viewContainerID)
         }
     }

@@ -7,8 +7,6 @@ import LumiUI
 /// 提供手动输入 commit message 或 AI 自动生成的功能。
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 public struct GitCommitInputView: View {
-    @EnvironmentObject var projectVM: WindowProjectVM
-
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
 
@@ -194,7 +192,7 @@ public struct GitCommitInputView: View {
 
     /// AI 生成 commit message
     private func generateAICommitMessage() async {
-        let path = projectVM.currentProjectPath
+        let path = LumiCore.projectState?.currentProject?.path ?? ""
         guard !path.isEmpty else { return }
 
         guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
@@ -243,7 +241,7 @@ public struct GitCommitInputView: View {
 
     /// 执行 commit
     private func performCommit() async {
-        let path = projectVM.currentProjectPath
+        let path = LumiCore.projectState?.currentProject?.path ?? ""
         guard !path.isEmpty, canCommit else { return }
 
         let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)

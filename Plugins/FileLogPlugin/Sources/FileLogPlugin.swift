@@ -1,4 +1,5 @@
 import LumiCoreKit
+import os
 
 /// Collects OSLog entries to rotating on-disk log files.
 public enum FileLogPlugin: LumiPlugin {
@@ -6,6 +7,7 @@ public enum FileLogPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .system
     public static let iconName = "doc.text.below.ecg"
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-log")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.file-log",

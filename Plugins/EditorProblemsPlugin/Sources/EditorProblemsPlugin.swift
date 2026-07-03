@@ -1,5 +1,6 @@
 import EditorService
 import LumiCoreKit
+import LumiUI
 import SwiftUI
 
 public enum EditorProblemsPanelPlugin: LumiPlugin {
@@ -68,7 +69,6 @@ public enum EditorProblemsPanelPlugin: LumiPlugin {
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsRail,
-              context.activeSectionID == LumiEditorPanelContainer.id,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {
             return []
@@ -88,11 +88,15 @@ public enum EditorProblemsPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        pluginAboutView(
-            icon: iconName,
-            displayName: info.displayName,
-            description: info.description,
-            kind: .editorBottom
+        AnyView(
+            VStack(alignment: .leading, spacing: 16) {
+                Text(info.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(info.description)
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         )
     }
 }

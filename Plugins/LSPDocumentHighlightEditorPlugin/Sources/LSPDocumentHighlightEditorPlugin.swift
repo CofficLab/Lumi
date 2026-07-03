@@ -1,7 +1,6 @@
 import Foundation
 import EditorService
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 /// LSP 文档高亮编辑器插件。
 ///
@@ -11,19 +10,20 @@ import SwiftUI
 ///
 /// 本插件不提供独立 View。高亮结果会作为 `HighlightProviding` 数据源或文档高亮 Provider
 /// 被源码编辑器消费，最终由编辑器高亮系统把引用范围渲染到文本上。
-public actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
-    public nonisolated static let policy: PluginPolicy = .disabled
-    public static let shared = LSPDocumentHighlightEditorPlugin()
-    public static let id = "LSPDocumentHighlightEditor"
-    public static let displayName = LumiPluginLocalization.string("LSP Document Highlight", bundle: .module)
-    public static let description = LumiPluginLocalization.string("Highlights all references of the symbol at cursor position.", bundle: .module)
+public enum LSPDocumentHighlightEditorPlugin: LumiPlugin {
+    public static let policy: LumiPluginPolicy = .disabled
+    public static let stage: LumiPluginStage = .beta
+    public static let category: LumiPluginCategory = .development
     public static let iconName = "highlighter"
-    public static let order = 21
-    public static var category: PluginCategory { .editor }
 
-    public nonisolated var providesEditorExtensions: Bool { true }
+    public static let info = LumiPluginInfo(
+        id: "LSPDocumentHighlightEditor",
+        displayName: LumiPluginLocalization.string("LSP Document Highlight", bundle: .module),
+        description: LumiPluginLocalization.string("Highlights all references of the symbol at cursor position.", bundle: .module),
+        order: 21
+    )
 
-    @MainActor public func registerEditorExtensions(into registry: any EditorExtensionRegistryProtocol) {
+    public static func registerEditorExtensions(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
         let provider = DocumentHighlightProvider(lspService: .shared)
         registry.registerDocumentHighlightProvider(provider)

@@ -3,6 +3,8 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
+    private static let apiKeyStorageKey = "DevAssistant_ApiKey_DeepSeek"
+
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "deepseek",
@@ -25,8 +27,12 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
         )
     }
 
-    public override class var apiKeyStorageKey: String {
-        "DevAssistant_ApiKey_DeepSeek"
+    override public func lumiResolveAPIKey() throws -> String {
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     public init() {
@@ -46,10 +52,6 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
-            providerID: Self.info.id,
-            displayName: Self.info.displayName,
-            isLocal: Self.info.isLocal
-        )
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
     }
 }

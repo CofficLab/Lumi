@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -24,11 +25,12 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [
-                .process("Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

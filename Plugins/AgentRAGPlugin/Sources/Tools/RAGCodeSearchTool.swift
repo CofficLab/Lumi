@@ -3,7 +3,7 @@ import LumiCoreKit
 import SuperLogKit
 
 public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
-    public nonisolated static let emoji = "RAG"
+    public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
 
     /// 默认返回结果数量

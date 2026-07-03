@@ -92,7 +92,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         searchQuery = ""
     }
 
-    /// 选择文件并更新 WindowProjectVM
+    /// 选择文件并更新项目状态
     public func selectFile(_ result: FileResult, windowId: UUID? = nil) {
         if Self.verbose {
             QuickFileSearchLog.logger.info("\(Self.t)📄 选择文件: \(result.relativePath)")

@@ -3,21 +3,16 @@ import LumiCoreKit
 
 extension LSPServiceEditorPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
-        LumiPluginInfo(
-            id: id,
-            displayName: displayName,
-            description: description,
-            order: order
-        )
+        info
     }
 
     public static var extensionPluginPolicy: LumiPluginPolicy {
-        policy.lumiPluginPolicy
+        policy
     }
 
     @MainActor
     public static func registerEditorExtensionsErased(into registry: AnyObject) async {
         guard let registry = registry as? EditorExtensionRegistry else { return }
-        await shared.registerEditorExtensions(into: registry)
+        await Self.registerEditorExtensions(into: registry)
     }
 }

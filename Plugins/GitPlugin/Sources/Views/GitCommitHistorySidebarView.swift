@@ -10,9 +10,27 @@ import LumiUI
 /// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
 public struct GitCommitHistorySidebarView: View, SuperLog {
-    @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject var gitVM: AppGitVM
-    @ObservedObject private var layoutState = LumiLayoutStateStore.shared
+    @ObservedObject private var layoutState: LumiLayoutState
+
+    public init() {
+        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+    }
+
+    /// 项目状态
+    private var projectState: LumiProjectState? {
+        LumiCore.projectState
+    }
+
+    /// 当前项目路径
+    private var currentProjectPath: String {
+        projectState?.currentProject?.path ?? ""
+    }
+
+    /// 是否已选择项目
+    private var isProjectSelected: Bool {
+        projectState?.currentProject != nil
+    }
 
     /// 提交列表数据
     @State private var commits: [GitCommitLog] = []
@@ -50,7 +68,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             // 提交列表
-            if !commits.isEmpty || projectVM.isProjectSelected {
+            if !commits.isEmpty || isProjectSelected {
                 commitListView
             } else if loading {
                 loadingView
@@ -62,7 +80,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
         .onAppear {
             refresh("OnAppear")
         }
-        .onChange(of: projectVM.currentProjectPath) { _, _ in
+        .onChange(of: currentProjectPath) { _, _ in
             refresh("ProjectChanged")
         }
         .onApplicationDidBecomeActive {
@@ -218,7 +236,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
     /// 刷新提交列表
     /// - Parameter reason: 刷新原因，用于调试
     private func refresh(_ reason: String = "") {
-        let path = projectVM.currentProjectPath
+        let path = currentProjectPath
         guard !path.isEmpty else {
             commits = []
             loading = false
@@ -264,7 +282,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
 
                 await MainActor.run {
                     guard self.loadGeneration == generation,
-                          self.projectVM.currentProjectPath == path else { return }
+                          self.currentProjectPath == path else { return }
                     self.commits = newCommits
                     self.loading = false
                     self.loadedCount = newCommits.count
@@ -279,7 +297,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
 
                 await MainActor.run {
                     guard self.loadGeneration == generation,
-                          self.projectVM.currentProjectPath == path else { return }
+                          self.currentProjectPath == path else { return }
                     self.commits = []
                     self.loading = false
                     // 即使加载 commit 失败，也尝试更新未推送状态
@@ -322,7 +340,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
 
     /// 加载更多提交记录
     private func loadMoreCommits() {
-        let path = projectVM.currentProjectPath
+        let path = currentProjectPath
         guard !path.isEmpty, !loading, hasMoreCommits else { return }
 
         loading = true
@@ -343,7 +361,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
 
                 await MainActor.run {
                     guard self.loadGeneration == generation,
-                          self.projectVM.currentProjectPath == path else { return }
+                          self.currentProjectPath == path else { return }
                     if !newCommits.isEmpty {
                         // 去重
                         let uniqueNewCommits = newCommits.filter { newCommit in
@@ -364,7 +382,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
             } catch {
                 await MainActor.run {
                     guard self.loadGeneration == generation,
-                          self.projectVM.currentProjectPath == path else { return }
+                          self.currentProjectPath == path else { return }
                     self.loading = false
                 }
                 if GitPlugin.verbose {

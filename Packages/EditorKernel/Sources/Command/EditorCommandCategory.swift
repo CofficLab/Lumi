@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreKit
 
 public enum EditorCommandCategory: String, CaseIterable, Sendable {
     case edit
@@ -16,25 +15,25 @@ public enum EditorCommandCategory: String, CaseIterable, Sendable {
     public var displayTitle: String {
         switch self {
         case .edit:
-            return LumiPluginLocalization.string("Edit", bundle: .module)
+            return EditorKernelLocalization.string("Edit", bundle: .module)
         case .find:
-            return LumiPluginLocalization.string("Find", bundle: .module)
+            return EditorKernelLocalization.string("Find", bundle: .module)
         case .navigation:
-            return LumiPluginLocalization.string("Navigation", bundle: .module)
+            return EditorKernelLocalization.string("Navigation", bundle: .module)
         case .workbench:
-            return LumiPluginLocalization.string("Workbench", bundle: .module)
+            return EditorKernelLocalization.string("Workbench", bundle: .module)
         case .multiCursor:
-            return LumiPluginLocalization.string("Multi-Cursor", bundle: .module)
+            return EditorKernelLocalization.string("Multi-Cursor", bundle: .module)
         case .format:
-            return LumiPluginLocalization.string("Formatting", bundle: .module)
+            return EditorKernelLocalization.string("Formatting", bundle: .module)
         case .lsp:
-            return LumiPluginLocalization.string("Language", bundle: .module)
+            return EditorKernelLocalization.string("Language", bundle: .module)
         case .save:
-            return LumiPluginLocalization.string("Saving", bundle: .module)
+            return EditorKernelLocalization.string("Saving", bundle: .module)
         case .chat:
-            return LumiPluginLocalization.string("Chat", bundle: .module)
+            return EditorKernelLocalization.string("Chat", bundle: .module)
         case .other:
-            return LumiPluginLocalization.string("Other", bundle: .module)
+            return EditorKernelLocalization.string("Other", bundle: .module)
         }
     }
 

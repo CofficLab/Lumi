@@ -28,7 +28,7 @@ let package = Package(
                 "TreeSitterLuaScannerFix",
             ],
             path: "Sources",
-            resources: [.copy("Resources"), .process("Localizable.xcstrings")]
+            resources: [.copy("Resources"), .process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "EditorLuaPluginTests", dependencies: ["EditorLuaPlugin"], path: "Tests"),
     ]

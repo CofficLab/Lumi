@@ -1,6 +1,5 @@
 import LumiChatKit
 import LumiCoreKit
-import LumiUI
 import SwiftUI
 
 public enum ChatPendingSectionPlugin: LumiPlugin {
@@ -32,7 +31,7 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-attachment-section",
         displayName: LumiPluginLocalization.string("Chat Attachment", bundle: .module),
-        description: LumiPluginLocalization.string("Pending chat attachments and sidebar drop handling.", bundle: .module),
+        description: LumiPluginLocalization.string("Pending chat attachments above the composer.", bundle: .module),
         order: 94
     )
 
@@ -51,18 +50,6 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
         ]
     }
 
-    @MainActor
-    public static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
-        else {
-            return content
-        }
-
-        return AnyView(
-            ChatSectionDropRootView(coordinator: coordinator, content: content)
-        )
-    }
 }
 
 public enum ChatComposerSectionPlugin: LumiPlugin {

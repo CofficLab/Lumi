@@ -1,9 +1,8 @@
 import Foundation
+import LumiCoreKit
 
 @MainActor
-public protocol LumiEditorServicing: AnyObject {
+public protocol LumiEditorServicing: AbstractEditorServicing {
     var editorService: EditorService { get }
     var extensionRegistry: EditorExtensionRegistry { get }
-    var currentProjectPathProvider: (() -> String)? { get set }
-    func reinstallExtensions()
 }

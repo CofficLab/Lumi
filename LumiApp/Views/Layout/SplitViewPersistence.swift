@@ -1,5 +1,4 @@
 import AppKit
-import LayoutPlugin
 import LumiCoreKit
 import SwiftUI
 
@@ -270,7 +269,7 @@ final class SplitDimensionPersistenceView: NSView {
             return
         }
 
-        let savedSize = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey)
+        let savedSize = UserDefaults.standard.object(forKey: storageKey) as? Double
         let requestedSize = savedSize.map { CGFloat($0) } ?? dimensionConstraints.defaultSize
         let targetSize = clampedSize(
             requestedSize,
@@ -303,9 +302,9 @@ final class SplitDimensionPersistenceView: NSView {
         guard paneSize.isFinite, paneSize >= dimensionConstraints.minSize else { return }
 
         let clamped = min(max(paneSize, dimensionConstraints.minSize), dimensionConstraints.maxSize)
-        let saved = LayoutPluginLocalStore.shared.loadSplitDimension(forKey: storageKey) ?? 0
+        let saved = UserDefaults.standard.double(forKey: storageKey)
         guard abs(saved - Double(clamped)) > 0.5 else { return }
-        LayoutPluginLocalStore.shared.saveSplitDimension(Double(clamped), forKey: storageKey)
+        UserDefaults.standard.set(Double(clamped), forKey: storageKey)
     }
 
     private func clampedSize(
