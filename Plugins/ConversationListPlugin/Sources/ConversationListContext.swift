@@ -23,6 +23,7 @@ public final class ConversationListContext: ObservableObject {
         self.chatService = chatService
         self.projectPathStore = projectPathStore
         self.projectStore = projectStore
+
         conversationSnapshots = Dictionary(
             uniqueKeysWithValues: chatService.conversations.map { ($0.id, $0.updatedAt) }
         )

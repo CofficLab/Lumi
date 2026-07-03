@@ -334,6 +334,7 @@ extension ConversationListView {
     public func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
         let selectedId = context.selectedConversationId
+
         let contextId = selectedId?.uuidString ?? "nil"
         if Self.verbose, ConversationListPlugin.verbose {
             ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), context=\(contextId)")
