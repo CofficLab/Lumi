@@ -32,7 +32,7 @@ struct ChatView: View {
         self.isRailOnlyPanel = isRailOnlyPanel
     }
 
-    private var chatSectionItems: [any ChatSectionItem] {
+    private var chatSectionItems: [LumiChatSectionItem] {
         pluginService.chatSectionItems(context: context)
     }
 
@@ -43,34 +43,40 @@ struct ChatView: View {
     }
 
     private var finalContext: LumiPluginContext {
-        var updatedContext = context
-        updatedContext.isChatSectionVisible = shouldShowChatSection
-        return updatedContext
+        LumiPluginContext(
+            activeSectionID: context.activeSectionID,
+            activeSectionTitle: context.activeSectionTitle,
+            chatSection: context.chatSection,
+            showsRail: context.showsRail,
+            showsPanelChrome: context.showsPanelChrome,
+            isChatSectionVisible: shouldShowChatSection,
+            dependencies: context.dependencies
+        )
     }
 
-    private var chatSectionToolbarItems: [any ChatSectionToolbarItem] {
+    private var chatSectionToolbarItems: [LumiChatSectionToolbarItem] {
         shouldShowChatSection
             ? pluginService.chatSectionToolbarItems(context: finalContext)
             : []
     }
 
-    private var chatSectionToolbarBarItems: [any ChatSectionToolbarBarItem] {
+    private var chatSectionToolbarBarItems: [LumiChatSectionToolbarBarItem] {
         shouldShowChatSection
             ? pluginService.chatSectionToolbarBarItems(context: finalContext)
             : []
     }
 
-    private var chatSectionHeaderItems: [any ChatSectionHeaderItem] {
+    private var chatSectionHeaderItems: [LumiChatSectionHeaderItem] {
         shouldShowChatSection
             ? pluginService.chatSectionHeaderItems(context: finalContext)
             : []
     }
 
-    private var stackItems: [any ChatSectionItem] {
+    private var stackItems: [LumiChatSectionItem] {
         chatSectionItems.filter { $0.placement == .stack }
     }
 
-    private var bottomItems: [any ChatSectionItem] {
+    private var bottomItems: [LumiChatSectionItem] {
         chatSectionItems.filter { $0.placement == .bottomFixed }
     }
 
@@ -98,7 +104,7 @@ struct ChatView: View {
     }
 
     /// 返回用于 ChatSectionToolbarSync 的 toolbar items
-    var toolbarItems: [any ChatSectionToolbarItem] {
+    var toolbarItems: [LumiChatSectionToolbarItem] {
         chatSectionToolbarItems
     }
 }

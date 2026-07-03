@@ -26,10 +26,6 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        guard context.resolve(LumiEditorServicing.self) != nil else {
-            return []
-        }
-
         return [
             LumiViewContainerItem(
                 id: info.id,
