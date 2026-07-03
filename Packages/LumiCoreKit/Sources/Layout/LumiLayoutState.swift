@@ -20,7 +20,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeViewContainerID != oldValue else { return }
             let value = activeViewContainerID
-            Self.logger.info("\(Self.t)activeViewContainerID → \(value ?? "nil")")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)activeViewContainerID → \(value ?? "nil")")
+            }
             NotificationCenter.postActiveViewContainerIDDidChange(containerID: value)
         }
     }
@@ -31,7 +33,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard chatSectionVisible != oldValue else { return }
             let value = chatSectionVisible
-            Self.logger.info("\(Self.t)chatSectionVisible → \(value)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)chatSectionVisible → \(value)")
+            }
             NotificationCenter.postChatSectionVisibleDidChange(visible: value)
         }
     }
@@ -39,7 +43,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard bottomPanelVisible != oldValue else { return }
             let value = bottomPanelVisible
-            Self.logger.info("\(Self.t)bottomPanelVisible → \(value)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)bottomPanelVisible → \(value)")
+            }
             NotificationCenter.postBottomPanelVisibleDidChange(visible: value)
         }
     }
@@ -50,7 +56,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeRailTabID != oldValue else { return }
             let value = activeRailTabID
-            Self.logger.info("\(Self.t)activeRailTabID → \(value)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)activeRailTabID → \(value)")
+            }
             NotificationCenter.postActiveRailTabIDDidChange(railTabID: value)
         }
     }
@@ -58,7 +66,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeBottomTabID != oldValue else { return }
             let value = activeBottomTabID
-            Self.logger.info("\(Self.t)activeBottomTabID → \(value)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)activeBottomTabID → \(value)")
+            }
             NotificationCenter.postActiveBottomTabIDDidChange(bottomTabID: value)
         }
     }

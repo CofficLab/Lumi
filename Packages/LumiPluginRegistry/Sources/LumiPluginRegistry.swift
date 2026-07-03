@@ -185,14 +185,14 @@ public enum LumiPluginRegistry {
 
         // MARK: - Chat Plugins
 
-//        OnboardingPlugin.self,
-//        QuickFileSearchPlugin.self,
-//        QuickLauncherPlugin.self,
-//        AppUpdateStatusBarPlugin.self,
-//        DeviceInfoPlugin.self,
-//        NetworkManagerPlugin.self,
-//        HostsManagerPlugin.self,
-//        MenuBarManagerPlugin.self,
+        OnboardingPlugin.self,
+        QuickFileSearchPlugin.self,
+        QuickLauncherPlugin.self,
+        AppUpdateStatusBarPlugin.self,
+        DeviceInfoPlugin.self,
+        NetworkManagerPlugin.self,
+        HostsManagerPlugin.self,
+        MenuBarManagerPlugin.self,
         ChatPanelPlugin.self,
         ChatMessagesSectionPlugin.self,
         ChatAttachmentSectionPlugin.self,
@@ -223,27 +223,15 @@ public enum LumiPluginRegistry {
         CodexLumiPlugin.self,
         MLXLumiPlugin.self,
 
-        PortManagerPlugin.self,
-        AppManagerPlugin.self,
-        DockerManagerPlugin.self,
-        DiskManagerPlugin.self,
-        AppStoreConnectPlugin.self,
-//        BrewManagerPlugin.self,
-//        RClickPlugin.self,
-//        NettoPlugin.self,
-//        RegistryManagerPlugin.self,
-//        ClipboardManagerPlugin.self,
-//        InputPlugin.self,
-
         // MARK: - Open In Plugins
 
-//        AgentOpenInAntigravityPlugin.self,
-//        AgentOpenInCursorPlugin.self,
-//        AgentOpenInXcodePlugin.self,
-//        AgentOpenRemotePlugin.self,
-//        AgentOpenInGitHubDesktopPlugin.self,
-//        AgentOpenInFinderPlugin.self,
-//        AgentOpenInGitOKPlugin.self,
+        AgentOpenInAntigravityPlugin.self,
+        AgentOpenInCursorPlugin.self,
+        AgentOpenInXcodePlugin.self,
+        AgentOpenRemotePlugin.self,
+        AgentOpenInGitHubDesktopPlugin.self,
+        AgentOpenInFinderPlugin.self,
+        AgentOpenInGitOKPlugin.self,
 
 //        TerminalPlugin.self,
 //        FontConfigPlugin.self,
@@ -312,8 +300,21 @@ public enum LumiPluginRegistry {
         LogoSmartLightPlugin.self,
         LogoCofficPlugin.self,
 
-//        VideoConverterPlugin.self,
+        // MARK: - Others
+        
+        VideoConverterPlugin.self,
         DownloadPlugin.self,
         DocxReadPlugin.self,
+        PortManagerPlugin.self,
+        AppManagerPlugin.self,
+        DockerManagerPlugin.self,
+        DiskManagerPlugin.self,
+        AppStoreConnectPlugin.self,
+//        BrewManagerPlugin.self,
+//        RClickPlugin.self,
+//        NettoPlugin.self,
+//        RegistryManagerPlugin.self,
+//        ClipboardManagerPlugin.self,
+//        InputPlugin.self,
     ]
 }
