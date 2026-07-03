@@ -74,6 +74,16 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
     }
 
+    // MARK: - Provider Status
+
+    override func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(
+            providerID: Self.info.id,
+            displayName: Self.info.displayName,
+            isLocal: Self.info.isLocal
+        )
+    }
+
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(
