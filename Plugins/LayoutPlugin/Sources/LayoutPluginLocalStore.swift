@@ -73,17 +73,17 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
 
     /// 加载已保存的视图容器图标名称
     public func loadActiveViewContainerIcon() -> String? {
-        string(forKey: Keys.activeViewContainerIcon) ?? string(forKey: Keys.legacyActivePanelIcon)
+        string(forKey: LayoutStorageKey.activeViewContainerID) ?? string(forKey: Keys.legacyActivePanelIcon)
     }
 
     /// 保存视图容器图标名称
     public func saveActiveViewContainerIcon(_ icon: String?) {
-        set(icon, forKey: Keys.activeViewContainerIcon)
+        set(icon, forKey: LayoutStorageKey.activeViewContainerID)
     }
 
     /// 加载已保存的视图容器 ID
     public func loadActiveViewContainerID() -> String? {
-        string(forKey: Keys.activeViewContainerID)
+        string(forKey: LayoutStorageKey.activeViewContainerID)
     }
 
     /// 保存视图容器 ID
@@ -91,9 +91,9 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         queue.sync {
             var dict = self.readDict()
             if let id {
-                dict[Keys.activeViewContainerID] = id
+                dict[LayoutStorageKey.activeViewContainerID] = id
             } else {
-                dict.removeValue(forKey: Keys.activeViewContainerID)
+                dict.removeValue(forKey: LayoutStorageKey.activeViewContainerID)
             }
             self.writeDict(dict)
         }
@@ -101,12 +101,12 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
 
     /// 加载已保存的侧边栏 Tab ID
     public func loadSelectedAgentSidebarTabId() -> String? {
-        string(forKey: Keys.selectedAgentSidebarTabId)
+        string(forKey: LayoutStorageKey.activeRailTabID)
     }
 
     /// 保存侧边栏 Tab ID
     public func saveSelectedAgentSidebarTabId(_ id: String?) {
-        set(id, forKey: Keys.selectedAgentSidebarTabId)
+        set(id, forKey: LayoutStorageKey.activeRailTabID)
     }
 
     /// 加载已保存的 Detail 视图 ID
@@ -195,12 +195,12 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     /// 加载已保存的底部面板可见性（同步，需要返回值）
     /// - Returns: 可见性，默认返回 nil 表示未保存过
     public func loadBottomPanelVisible() -> Bool? {
-        object(forKey: Keys.bottomPanelVisible) as? Bool
+        object(forKey: LayoutStorageKey.bottomPanelVisible) as? Bool
     }
 
     /// 保存底部面板可见性（异步，不阻塞调用线程）
     public func saveBottomPanelVisible(_ visible: Bool) {
-        set(visible, forKey: Keys.bottomPanelVisible)
+        set(visible, forKey: LayoutStorageKey.bottomPanelVisible)
     }
 
     // MARK: - Content Panel Visibility
@@ -208,12 +208,12 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     /// 加载已保存的内容面板可见性（同步，需要返回值）
     /// - Returns: 可见性，默认返回 nil 表示未保存过
     public func loadContentPanelVisible() -> Bool? {
-        object(forKey: Keys.contentPanelVisible) as? Bool
+        object(forKey: LayoutStorageKey.chatSectionVisible) as? Bool
     }
 
     /// 保存内容面板可见性（异步，不阻塞调用线程）
     public func saveContentPanelVisible(_ visible: Bool) {
-        set(visible, forKey: Keys.contentPanelVisible)
+        set(visible, forKey: LayoutStorageKey.chatSectionVisible)
     }
 
     // MARK: - Editor Visibility
