@@ -2,13 +2,15 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// Layout menu for toggling the right ChatSection visibility.
+/// Layout menu for toggling layout visibility.
 public struct LayoutMenuButton: View {
     /// Borderless `Menu` labels ignore icon `foregroundStyle` on macOS and keep system primary.
     static let usesBorderlessMenuLabel = false
 
     @LumiTheme private var theme
     @State private var isPopoverPresented = false
+    @State private var chatSectionVisible = true
+    @State private var bottomPanelVisible = true
 
     public init() {}
 
@@ -26,7 +28,10 @@ public struct LayoutMenuButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
-                    isOn: Binding(projectedValue: .constant(true)),
+                    isOn: Binding(
+                        get: { chatSectionVisible },
+                        set: { LumiCore.layoutState?.chatSectionVisible = $0 }
+                    ),
                     icon: "rectangle.rightthird.inset.filled",
                     title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)
                 )
@@ -35,7 +40,10 @@ public struct LayoutMenuButton: View {
                     .padding(.vertical, 4)
 
                 LayoutPopoverToggle(
-                    isOn: Binding(projectedValue: .constant(true)),
+                    isOn: Binding(
+                        get: { bottomPanelVisible },
+                        set: { LumiCore.layoutState?.bottomPanelVisible = $0 }
+                    ),
                     icon: "rectangle.inset.filled",
                     title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
                 )
@@ -51,6 +59,15 @@ public struct LayoutMenuButton: View {
         .frame(width: 22, height: 22)
         .fixedSize()
         .help(LumiPluginLocalization.string("Layout", bundle: .module))
+        .onAppear {
+            syncFromLayoutState()
+        }
+    }
+
+    private func syncFromLayoutState() {
+        guard let state = LumiCore.layoutState else { return }
+        chatSectionVisible = state.chatSectionVisible
+        bottomPanelVisible = state.bottomPanelVisible
     }
 
     static func iconForegroundColor(theme: any LumiUITheme) -> Color {

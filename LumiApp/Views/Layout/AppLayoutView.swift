@@ -44,42 +44,30 @@ struct AppLayoutView: View {
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: chatSection.isVisible
         )
-        let chatSectionItems = pluginService.chatSectionItems(context: preliminaryPluginContext)
-        let shouldShowChatSection = chatSection.isVisible
-            && layoutState.chatSectionVisible
-            && !chatSectionItems.isEmpty
-        let pluginContext = basePluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: shouldShowChatSection
-        )
-        let chatSectionToolbarItems = shouldShowChatSection
-            ? pluginService.chatSectionToolbarItems(context: pluginContext)
-            : []
-        let chatSectionToolbarBarItems = shouldShowChatSection
-            ? pluginService.chatSectionToolbarBarItems(context: pluginContext)
-            : []
-        let chatSectionHeaderItems = shouldShowChatSection
-            ? pluginService.chatSectionHeaderItems(context: pluginContext)
-            : []
-        let headerItems = pluginService.panelHeaderItems(context: pluginContext)
-        let bottomTabs = pluginService.panelBottomTabItems(context: pluginContext)
-        let railTabs = pluginService.panelRailTabItems(context: pluginContext)
+        let headerItems = pluginService.panelHeaderItems(context: preliminaryPluginContext)
+        let bottomTabs = pluginService.panelBottomTabItems(context: preliminaryPluginContext)
+        let railTabs = pluginService.panelRailTabItems(context: preliminaryPluginContext)
         let showRail = showsRail && !railTabs.isEmpty
         let isRailOnlyPanel = showRail && !showsPanelChrome
         let autosaveName = layoutAutosaveName(
             showRail: showRail,
-            showChatSection: shouldShowChatSection,
+            showChatSection: chatSection.isVisible,
             chatSection: chatSection
+        )
+        let chatView = ChatView(
+            layoutState: layoutState,
+            pluginService: pluginService,
+            context: preliminaryPluginContext,
+            chatSectionCoordinator: chatSectionCoordinator,
+            chatSection: chatSection,
+            activeID: activeID,
+            isRailOnlyPanel: isRailOnlyPanel
         )
 
         VStack(spacing: 0) {
             AppTitleToolbar(
                 pluginService: pluginService,
-                pluginContext: pluginContext
+                pluginContext: preliminaryPluginContext
             )
 
             AppDivider()
@@ -90,7 +78,7 @@ struct AppLayoutView: View {
                     containers: containers
                 )
 
-                if shouldShowChatSection || showRail {
+                if chatSection.isVisible || showRail {
                     HSplitView {
                         PanelColumnView(
                             container: selectedContainer,
@@ -109,27 +97,7 @@ struct AppLayoutView: View {
                         )
                         .borderTrailing()
 
-                        if shouldShowChatSection {
-                            let stackItems = chatSectionItems.filter { $0.placement == .stack }
-                            let bottomItems = chatSectionItems.filter { $0.placement == .bottomFixed }
-                            
-                            ChatSectionView(
-                                layout: chatSection,
-                                toolbarBarItems: chatSectionToolbarBarItems,
-                                headerItems: chatSectionHeaderItems,
-                                stackItems: stackItems,
-                                bottomItems: bottomItems,
-                                rootContent: pluginService.chatSectionRootWrapper(
-                                    context: pluginContext,
-                                    content: ChatSectionView.makeRootContent(
-                                        stackItems: stackItems,
-                                        bottomItems: bottomItems
-                                    )
-                                )
-                            )
-                            .id("\(activeID)-\(chatSection.persistenceKeySuffix)")
-                            .layoutPriority(isRailOnlyPanel ? 1 : 0)
-                        }
+                        chatView
                     }
                     .background(
                         SplitViewAutosaveConfigurator(autosaveName: autosaveName)
@@ -161,7 +129,7 @@ struct AppLayoutView: View {
             StatusBar(
                 pluginService: pluginService,
                 editorCoreService: editorCoreService,
-                pluginContext: pluginContext,
+                pluginContext: preliminaryPluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
                 layoutState: layoutState
@@ -171,7 +139,7 @@ struct AppLayoutView: View {
         .background(theme.background)
         .background {
             ChatSectionToolbarSync(
-                items: chatSectionToolbarItems,
+                items: chatView.toolbarItems,
                 coordinator: chatSectionCoordinator
             )
         }

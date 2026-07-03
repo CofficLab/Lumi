@@ -3,7 +3,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-public enum ChatMessagesSectionPlugin: LumiPlugin {
+public enum MessageListPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent

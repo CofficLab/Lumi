@@ -194,7 +194,7 @@ public enum LumiPluginRegistry {
         HostsManagerPlugin.self,
         MenuBarManagerPlugin.self,
         ChatPanelPlugin.self,
-        ChatMessagesSectionPlugin.self,
+        MessageListPlugin.self,
         ChatAttachmentSectionPlugin.self,
         ChatPendingSectionPlugin.self,
         ChatComposerSectionPlugin.self,
