@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.12.0</title>
-            <pubDate>Tue, 30 Jun 2026 13:38:56 +0000</pubDate>
-            <sparkle:version>239</sparkle:version>
-            <sparkle:shortVersionString>4.12.0</sparkle:shortVersionString>
+            <title>4.13.0</title>
+            <pubDate>Fri, 03 Jul 2026 11:59:22 +0000</pubDate>
+            <sparkle:version>240</sparkle:version>
+            <sparkle:shortVersionString>4.13.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.12.0</h2>
-<h3>Changes since v4.11.0</h3>
+            <description><![CDATA[<h2>Release v4.13.0</h2>
+<h3>Changes since v4.12.0</h3>
 <ul>
 <li>bugfix:  fix a bug</li>
-<li>docs: remove completed LSP cache task from roadmap</li>
-<li>docs: remove completed main-thread-concurrency-roadmap</li>
-<li>docs: remove completed TreeSitter optimization from performance analysis</li>
-<li>docs: update performance analysis by removing completed optimizations</li>
-<li>feat: add performance test switches for file tree scrolling optimization</li>
-<li>feat: add StepFun LLM provider plugin</li>
-<li>feat: add Sublyx API key missing error rendering</li>
-<li>feat: add Sublyx LLM provider plugin</li>
-<li>feat: allow LLM to customize timeout for run_command tool</li>
-<li>feat: remove Availability tab from ModelSelectorPlugin popover</li>
-<li>feat: update AgentRulesPlugin localization strings</li>
-<li>feat(file-tree): add key logging points to NodeView (verbose mode)</li>
-<li>feat(file-tree): add SuperLog configuration to NodeView</li>
-<li>feat(file-tree): optimize performance and enhance UX for VS Code-like experience</li>
-<li>feat(LLMProviderMLX): add Intel Mac platform detection</li>
-<li>feat(MessageRenderer): show friendly tool descriptions instead of raw names</li>
-<li>feat(SublyxProvider): add superlog to log HTTP error responses</li>
-<li>fix: add missing LLMProviderStepFunPlugin dependency to LumiPluginRegistry</li>
-<li>fix: add missing view components and API key methods for StepFun plugin</li>
+<li>docs: add NSCollectionView native rendering design for EditorFileTree</li>
+<li>feat: add emptyResponse error case to LLM provider support</li>
+<li>feat: add logger to all plugins</li>
+<li>feat: add raw stream chunk logging for StepFun provider</li>
+<li>feat: add thinking popover button to message header</li>
+<li>feat: migrate legacy PluginPolicy to LumiPluginPolicy</li>
+<li>feat: persist and display LLM reasoning content in history</li>
+<li>feat: show turn duration in completed turn divider</li>
+<li>feat: StepFun empty-response retry and support-error passthrough</li>
+<li>feat(assistant): show model reasoning in message bubble</li>
+<li>feat(conversation-list): improve error handling and localization</li>
+<li>feat(conversation-list): show unread count on toolbar button</li>
+<li>feat(core): add LumiLayoutState and LumiCore.layoutState</li>
+<li>feat(core): upgrade LumiLayoutState logs to SuperLog format</li>
+<li>feat(core/plugin): extend LumiPlugin protocol with editor/contributions APIs, delegate lifecycle to services, and disable GitHubPlugin by default</li>
+<li>feat(i18n): add Localizable.xcstrings for 5 framework packages</li>
+<li>feat(i18n): unify localization rules for packages and plugins</li>
+<li>feat(layout): add trailing borders and fix ActivityBar layout</li>
+<li>feat(layout): sync ActivityBar selection to LumiCore.layoutState</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.12.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.13.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.12.0/Lumi_4.12.0_arm64.dmg" length="51575938" type="application/octet-stream" sparkle:edSignature="CHn+Syp6Cvkzo6nh9U/xcre+cEBjDqx66KzKB6hIjn4IfVx+jwe/36ZRl71PlykpAuNSrnZK1Dq1IyExGBmmBQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.13.0/Lumi_4.13.0_arm64.dmg" length="49754623" type="application/octet-stream" sparkle:edSignature="iEftHAkE2ocvsmYpHjiXWSi+e9bBVjmjYuWW43xUiM0B1j1UDq5Ujt3BAIpMJ6AW85KP9T8k3FW5VnezZnQiAw=="/>
         </item>
     </channel>
 </rss>
