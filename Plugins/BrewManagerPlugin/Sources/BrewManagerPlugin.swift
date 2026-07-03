@@ -46,9 +46,9 @@ public enum BrewManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -67,7 +67,7 @@ public enum BrewManagerPlugin: LumiPlugin {
                     ],
                     tip: PluginBrewManagerLocalization.string("Open Package Management from the sidebar to manage brew.")
                 )
-            }
+            )
         ]
     }
 

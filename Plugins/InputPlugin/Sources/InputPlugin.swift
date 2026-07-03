@@ -46,9 +46,9 @@ public enum InputPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -62,7 +62,7 @@ public enum InputPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Input Manager from the sidebar to review your settings.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 

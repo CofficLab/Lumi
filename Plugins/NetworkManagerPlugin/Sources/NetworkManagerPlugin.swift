@@ -37,9 +37,9 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -58,7 +58,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
                     ],
                     tip: LumiPluginLocalization.string("Open Network Monitor from the sidebar or the menu bar.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 

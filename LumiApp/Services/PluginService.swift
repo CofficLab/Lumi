@@ -131,12 +131,12 @@ final class PluginService: ObservableObject, SuperLog {
             .sorted { $0.order < $1.order }
     }
 
-    func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
-        enabledPlugins
-            .flatMap { plugin in
-                plugin.onboardingPages(context: context)
+    func onboardingPages(context: LumiPluginContext) -> [(order: Int, view: AnyView)] {
+        enabledPlugins.flatMap { plugin in
+            plugin.onboardingPages(context: context).map { view in
+                (plugin.info.order, view)
             }
-            .sorted { $0.order < $1.order }
+        }.sorted { $0.order < $1.order }
     }
 
     func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {

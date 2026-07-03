@@ -39,9 +39,9 @@ public enum DisplayControlPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [LumiPluginOnboardingPage] {
+    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
         [
-            LumiPluginOnboardingPage(id: "\(info.id).onboarding", order: info.order) {
+            AnyView(
                 PluginOnboardingPageView(
                     icon: iconName,
                     displayName: info.displayName,
@@ -60,7 +60,7 @@ public enum DisplayControlPlugin: LumiPlugin {
                     ],
                     tip: LumiPluginLocalization.string("Open Display Control from the sidebar to tune your screens.", bundle: .module)
                 )
-            }
+            )
         ]
     }
 
