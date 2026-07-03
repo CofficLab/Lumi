@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import os
+import SuperLogKit
 
 /// LumiCore 布局状态管理器
 /// 负责管理当前布局状态
@@ -8,8 +9,10 @@ import os
 /// 状态变更时会通过 `NotificationCenter` 发出事件，
 /// 插件可监听通知进行持久化等响应操作，内核本身不感知插件存在。
 @MainActor
-public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
+public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting, SuperLog {
+    nonisolated static let emoji = "📐"
+    nonisolated static let verbose = false
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
     // MARK: - 当前激活视图容器
 
@@ -17,7 +20,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard activeViewContainerID != oldValue else { return }
             let value = activeViewContainerID
-            Self.logger.info("activeViewContainerID → \(value ?? "nil")")
+            Self.logger.info("\(Self.t)activeViewContainerID → \(value ?? "nil")")
             NotificationCenter.postActiveViewContainerIDDidChange(containerID: value)
         }
     }
@@ -28,7 +31,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         didSet {
             guard chatSectionVisible != oldValue else { return }
             let value = chatSectionVisible
-            Self.logger.info("chatSectionVisible → \(value)")
+            Self.logger.info("\(Self.t)chatSectionVisible → \(value)")
             NotificationCenter.postChatSectionVisibleDidChange(visible: value)
         }
     }
