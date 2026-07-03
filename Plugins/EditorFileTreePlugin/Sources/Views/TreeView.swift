@@ -46,28 +46,29 @@ public struct TreeView: View, SuperLog {
     }
 
     public var body: some View {
+        let projectPath = currentProjectPath
         let showsPackageDependencies = showPackageDependencies
         let _ = FileTreePerformanceLog.recordTreeBody(
-            projectPath: currentProjectPath,
+            projectPath: projectPath,
             rootRefreshToken: rootRefreshToken,
             showsPackageDependencies: showsPackageDependencies
         )
 
         VStack(spacing: 0) {
-            if currentProjectPath.isEmpty {
+            if projectPath.isEmpty {
                 NoProjectView()
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 6) {
                         NodeView(
-                            url: URL(fileURLWithPath: currentProjectPath),
+                            url: URL(fileURLWithPath: projectPath),
                             depth: 0,  // depth == 0 表示根节点
                             onSelect: { selectedURL in
                                 openProjectFile(selectedURL)
                             },
                             windowId: nil,
                             refreshToken: rootRefreshToken,
-                            projectRootPath: currentProjectPath,
+                            projectRootPath: projectPath,
                             onExpansionChange: { relativePath, isExpanded in
                                 handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
                             },
@@ -86,7 +87,7 @@ public struct TreeView: View, SuperLog {
                                 .opacity(0.35)
 
                             PackageDependencySection(
-                                projectRootPath: currentProjectPath,
+                                projectRootPath: projectPath,
                                 dependencies: packageStore.dependencies,
                                 isLoading: packageStore.isLoading,
                                 diagnostic: packageStore.diagnostic,
@@ -113,7 +114,9 @@ public struct TreeView: View, SuperLog {
         .onChange(of: rootRefreshToken) { _, _ in
             selectionState.resetVisibleOrder()
         }
-        .onChange(of: currentProjectPath, onProjectPathChanged)
+        .onCurrentProjectDidChange { _ in
+            onProjectPathChanged()
+        }
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onReceive(
@@ -150,6 +153,9 @@ public struct TreeView: View, SuperLog {
     }
 
     private func onProjectPathChanged() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)onProjectPathChanged 触发: newPath=\(currentProjectPath.isEmpty ? "(空)" : currentProjectPath)")
+        }
         coordinator.setProjectRootPath(currentProjectPath)
         packageStore.setProjectRootPath(currentProjectPath)
         openFileTask?.cancel()
@@ -159,7 +165,7 @@ public struct TreeView: View, SuperLog {
         editorContext.syncFileTreeHighlightFromEditor()
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
+            Self.logger.info("\(Self.t)onProjectPathChanged 完成: newRefreshToken=\(rootRefreshToken)")
         }
     }
 
