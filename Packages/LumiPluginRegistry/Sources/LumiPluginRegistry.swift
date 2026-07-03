@@ -292,8 +292,12 @@ public enum LumiPluginRegistry {
 //        LLMAvailabilityPlugin.self,
 //        AppIconDesignerPlugin.self,
 //        DisplayControlPlugin.self,
+
+        // MARK: - Logo Plugins
+
         LogoSmartLightPlugin.self,
         LogoCofficPlugin.self,
+
 //        VideoConverterPlugin.self,
         DownloadPlugin.self,
         DocxReadPlugin.self,
