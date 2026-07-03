@@ -259,8 +259,7 @@ private struct PluginSettingsDetailView: View {
     private var settingsContext: LumiPluginContext {
         LumiCore.makePluginContext(
             activeSectionID: "settings.plugins",
-            activeSectionTitle: "插件管理",
-            historyQueryService: chatService
+            activeSectionTitle: "插件管理"
         )
     }
 

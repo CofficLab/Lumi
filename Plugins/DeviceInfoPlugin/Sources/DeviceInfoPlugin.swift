@@ -1,5 +1,6 @@
 import LumiCoreKit
 import LumiUI
+import SwiftUI
 import Foundation
 
 public enum DeviceInfoPlugin: LumiPlugin {

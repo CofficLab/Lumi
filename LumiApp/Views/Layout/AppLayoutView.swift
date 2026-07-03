@@ -164,7 +164,7 @@ struct AppLayoutView: View {
                 pluginContext: pluginContext,
                 lumiUIService: lumiUIService,
                 chatService: chatService,
-                panelLayoutState: layoutState
+                layoutState: layoutState
             )
         }
         .frame(minWidth: 1180, minHeight: 560)

@@ -242,14 +242,14 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
     // MARK: - 页面聚合
 
-    private var pages: [(order: Int, view: AnyView)] {
+    private var pages: [OnboardingPageView] {
         guard !environmentPages.isEmpty else {
             let fallback = OnboardingPlugin.onboardingPages(context: LumiPluginContext(
                 activeSectionID: "preview",
                 activeSectionTitle: "Preview"
             ))
             return fallback.enumerated().map { (index, view) in
-                (order: index, view: view)
+                OnboardingPageView(order: index, view: view)
             }
         }
         return environmentPages
@@ -274,7 +274,7 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
-    let pages: [(order: Int, view: AnyView)]
+    let pages: [OnboardingPageView]
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Body
