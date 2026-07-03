@@ -36,7 +36,7 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
             break
         case .appDidLaunch:
             if Self.verbose {
-                Self.logger.info("\(Self.t)开始恢复布局状态")
+                Self.logger.info("\(Self.t)appDidLaunch，触发布局恢复")
             }
             LayoutPersistenceCoordinator.shared.restore(from: LayoutPluginLocalStore.shared)
         case .projectDidOpen:
@@ -190,7 +190,7 @@ final class LayoutPersistenceCoordinator {
             }
         }
 
-        // 开始监听后续变化
+        // 开始监听后续变化（幂等，重复调用会先取消旧订阅）
         startObserving(state)
     }
 
@@ -216,15 +216,18 @@ final class LayoutPersistenceCoordinator {
 
 private struct LayoutPersistenceAnchor: View {
     let content: AnyView
+    @State private var hasRestored = false
 
     var body: some View {
         content
             .onAppear {
+                guard !hasRestored else { return }
+                hasRestored = true
+
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)布局持久化锚点已挂载")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)布局持久化锚点已挂载，开始恢复")
                 }
-                // 确保协调器开始监听（restore 已在 appDidLaunch 中调用）
-                _ = LayoutPersistenceCoordinator.shared
+                LayoutPersistenceCoordinator.shared.restore(from: LayoutPluginLocalStore.shared)
             }
     }
 }
