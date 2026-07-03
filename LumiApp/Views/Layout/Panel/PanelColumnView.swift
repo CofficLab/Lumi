@@ -34,7 +34,7 @@ struct PanelColumnView: View {
             }
         }
 
-        if showsPanelChrome {
+        if showRail || showsPanelChrome {
             EditorScopeView(editor: editor) {
                 column
             }
