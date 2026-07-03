@@ -218,7 +218,7 @@ public enum LumiPluginRegistry {
         SublyxPlugin.self,
         StepFunPlugin.self,
         CodexLumiPlugin.self,
-//        MLXLumiPlugin.self,
+        MLXLumiPlugin.self,
         PortManagerPlugin.self,
         AppManagerPlugin.self,
         DockerManagerPlugin.self,
@@ -250,6 +250,9 @@ public enum LumiPluginRegistry {
 //        ActivityHeatmapPlugin.self,
 //        RAGPlugin.self,
 //        AgentTempStoragePlugin.self,
+
+        // MARK: - Conversation Plugins
+
         ConversationTitlePlugin.self,
 //        ConversationTimelinePlugin.self,
         ConversationLanguagePlugin.self,
@@ -257,6 +260,9 @@ public enum LumiPluginRegistry {
         VerbosityPlugin.self,
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
+
+        // MARK: - Editor Plugins
+
         EditorPanelPlugin.self,
 //        EditorSwiftPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
