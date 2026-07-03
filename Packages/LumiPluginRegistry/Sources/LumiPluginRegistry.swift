@@ -199,6 +199,9 @@ public enum LumiPluginRegistry {
         ChatPendingSectionPlugin.self,
         ChatComposerSectionPlugin.self,
         ModelSelectorPlugin.self,
+
+        // MARK: - LLM Providers
+
         OpenAIPlugin.self,
         ZhipuPlugin.self,
         AiRouterPlugin.self,
@@ -219,6 +222,7 @@ public enum LumiPluginRegistry {
         StepFunPlugin.self,
         CodexLumiPlugin.self,
         MLXLumiPlugin.self,
+
         PortManagerPlugin.self,
         AppManagerPlugin.self,
         DockerManagerPlugin.self,
