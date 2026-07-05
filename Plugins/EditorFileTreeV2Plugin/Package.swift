@@ -44,6 +44,7 @@ let package = Package(
             dependencies: [
                 "EditorFileTreeV2Plugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Tests"
         )

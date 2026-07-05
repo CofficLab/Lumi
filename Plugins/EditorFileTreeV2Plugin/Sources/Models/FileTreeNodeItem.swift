@@ -27,12 +27,32 @@ public struct FileTreeNodeItem: Hashable {
 
     public var id: URL { url }
 
+    /// 默认初始化器（生产环境使用）
     public init(
         url: URL,
         depth: Int,
         isDirectory: Bool,
         isExpanded: Bool,
         projectRootPath: String
+    ) {
+        self.init(
+            url: url,
+            depth: depth,
+            isDirectory: isDirectory,
+            isExpanded: isExpanded,
+            projectRootPath: projectRootPath,
+            fileSystemReader: DefaultFileSystemReader()
+        )
+    }
+    
+    /// 可测试的初始化器（允许注入依赖）
+    init(
+        url: URL,
+        depth: Int,
+        isDirectory: Bool,
+        isExpanded: Bool,
+        projectRootPath: String,
+        fileSystemReader: FileSystemReading
     ) {
         self.url = url
         self.depth = depth
@@ -42,7 +62,7 @@ public struct FileTreeNodeItem: Hashable {
             fileName: url.lastPathComponent,
             fileExtension: url.pathExtension.lowercased(),
             isDirectory: isDirectory,
-            isSwiftPackageDirectory: isDirectory && FileManager.default.fileExists(
+            isSwiftPackageDirectory: isDirectory && fileSystemReader.fileExists(
                 atPath: url.appendingPathComponent("Package.swift").path
             )
         )
