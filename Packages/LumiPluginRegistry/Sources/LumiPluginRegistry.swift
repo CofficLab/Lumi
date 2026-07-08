@@ -262,6 +262,10 @@ public enum LumiPluginRegistry {
 
         EditorPanelPlugin.self,
         EditorSwiftPlugin.self,
+        // EditorSwiftEditorPlugin 是真正注册 Swift 语法 grammar / LSP 的类型（遵循
+        // LumiEditorExtensionRegistering）；EditorSwiftPlugin 仅负责 scheme 工具栏等集成。
+        // 两者 id 不同（EditorSwift / EditorSwiftIntegration），不会重复登记。
+        EditorSwiftEditorPlugin.self,
         EditorBreadcrumbHeaderPlugin.self,
         StripHeaderPlugin.self,
         EditorStickySymbolBarHeaderPlugin.self,

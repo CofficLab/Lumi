@@ -33,6 +33,40 @@ public enum LumiCore {
         chatServiceFactory = factory
     }
 
+    /// 编辑器服务（由外部通过 `setupEditorBootstrap` 工厂创建，自动注册到服务表）。
+    /// 使用 `AbstractEditorServicing` 抽象协议，避免 LumiCoreKit 反向依赖 EditorService（会成环）。
+    @MainActor public static private(set) var editorService: (any AbstractEditorServicing)?
+
+    /// EditorBootstrap 工厂闭包类型。
+    /// 返回抽象的 `AbstractEditorServicing`，具体 `LumiEditorServicing` 由 LumiApp 自行注册。
+    public typealias EditorBootstrapFactory = @MainActor () -> any AbstractEditorServicing
+
+    /// EditorBootstrap 工厂，由 LumiApp 在启动时提供。
+    /// 提供后，调用 `bootstrapEditor()` 时自动创建并注册到服务表。
+    /// 注意：与 ChatService 不同，此工厂**不在** `boot()` 中调用，因为编辑器启动依赖
+    /// `PluginService`（启用态过滤），而后者在 LumiCore.boot() 之后才构造完成。
+    private static var editorBootstrapFactory: EditorBootstrapFactory?
+
+    /// 设置 EditorBootstrap 工厂。
+    /// - Parameter factory: 工厂闭包，返回编辑器服务实例（遵循 `AbstractEditorServicing`）。
+    ///   应在依赖（如 PluginService）就绪后调用 `bootstrapEditor()`。
+    public static func setupEditorBootstrap(_ factory: @escaping EditorBootstrapFactory) {
+        editorBootstrapFactory = factory
+    }
+
+    /// 启动编辑器服务。
+    /// 调用工厂创建实例、存入 `editorService` 并注册到服务表。
+    /// 应在 `setupEditorBootstrap` 之后、且其依赖（如 PluginService）就绪时调用。
+    @MainActor
+    public static func bootstrapEditor() {
+        guard let factory = editorBootstrapFactory else { return }
+        let service = factory()
+        editorService = service
+        registerService((any AbstractEditorServicing).self, service)
+        // 清空工厂，避免重复 bootstrap
+        editorBootstrapFactory = nil
+    }
+
     // MARK: - Service Registry
 
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
