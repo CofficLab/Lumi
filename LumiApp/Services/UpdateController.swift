@@ -7,7 +7,7 @@ import Sparkle
 final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
     nonisolated static let emoji = "⬆️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = UpdateController()
 

@@ -12,7 +12,7 @@ import os
 final class EditorCoreService: LumiEditorServicing, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.editor-core")
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let core: EditorCore
     private let themeRegistry: LumiUIThemeRegistry

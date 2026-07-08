@@ -8,7 +8,7 @@ import os
 final class LumiCoreService: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.lumi-core")
     nonisolated static let emoji = "⚙️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let dataRootDirectory: URL
     let coreDatabaseDirectory: URL
