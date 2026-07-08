@@ -135,16 +135,24 @@ public struct ChatInputEditorView: NSViewRepresentable {
             textView.delegate = context.coordinator
         }
 
-        let targetPosition = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
-        let needsSelectionUpdate = textView.selectedRange().location != targetPosition || textChanged
+        // 仅在 cursorPosition binding 真正变化（程序化移动光标，如点击命令建议补全）
+        // 或 text 变化（程序化设置文本后需恢复光标）时同步光标。
+        //
+        // 关键：流式输出期间 updateNSView 会被高频触发（ChatService.revision 每 token
+        // 自增，经 coordinator 转发导致 composer 重渲染）。此时 text 和 cursorPosition
+        // 都没变，但用户可能已用键盘把光标移到文本中间——若每次都比较 textView 当前选区
+        // 与 binding 值并强制 setSelectedRange，会把用户光标拉回旧位置（通常在末尾）。
+        // 用 lastSyncedCursorPosition 记录上次同步值，只有它变了才同步，避免覆盖用户操作。
+        let cursorBindingChanged = context.coordinator.lastSyncedCursorPosition != cursorPosition
+        context.coordinator.lastSyncedCursorPosition = cursorPosition
 
-        if textChanged || needsSelectionUpdate {
-            let position = targetPosition
+        if textChanged || cursorBindingChanged {
+            let position = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
             DispatchQueue.main.async {
                 if textChanged, let tv = nsView.documentView as? EditorTextView {
                     updateHeight(for: tv)
                 }
-                if needsSelectionUpdate, let tv = nsView.documentView as? EditorTextView {
+                if let tv = nsView.documentView as? EditorTextView {
                     tv.setSelectedRange(NSRange(location: position, length: 0))
                 }
             }
@@ -180,6 +188,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
 extension ChatInputEditorView {
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
+        /// 记录上次通过 updateNSView 同步给 textView 的 cursorPosition。
+        /// 用于判断 binding 是否真正变化，避免流式期间高频 updateNSView 覆盖用户的手动光标移动。
+        var lastSyncedCursorPosition: Int?
 
         init(_ parent: ChatInputEditorView) {
             self.parent = parent
@@ -194,6 +205,8 @@ extension ChatInputEditorView {
             if parent.cursorPosition != swiftLocation {
                 parent.cursorPosition = swiftLocation
             }
+            // 用户输入后光标位置已由 textView 自己管理，同步记录避免下次 updateNSView 冗余刷新
+            lastSyncedCursorPosition = swiftLocation
 
             parent.updateHeight(for: textView)
         }
