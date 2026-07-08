@@ -28,7 +28,7 @@ enum FileTreeActions {
 
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
         textField.stringValue = defaultName
-        textField.placeholderString = defaultName.isEmpty ? "name" : defaultName
+        textField.placeholderString = defaultName.isEmpty ? LumiPluginLocalization.string("name", bundle: .module) : defaultName
         // 预填时全选，方便整体替换
         textField.currentEditor()?.selectAll(nil)
         alert.accessoryView = textField
