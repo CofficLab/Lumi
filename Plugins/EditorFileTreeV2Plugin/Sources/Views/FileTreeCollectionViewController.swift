@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import EditorFileTreePlugin
+import LumiCoreKit
 import LumiUI
 import os
 
@@ -36,6 +37,15 @@ final class FileTreeCollectionViewController: NSViewController {
     
     /// 树结构变化回调
     var onTreeMutation: (() -> Void)?
+
+    /// 删除文件后关闭对应编辑器 tab 的回调
+    var onCloseEditorTabs: (([URL]) -> Void)?
+
+    /// 重命名文件后迁移编辑器 tab 的回调（旧 URL → 新 URL）
+    var onRenameEditorTab: ((URL, URL) -> Void)?
+
+    /// 将文件加入对话的回调
+    var onAddToConversation: (([URL]) -> Void)?
     
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCellView")
     
@@ -64,10 +74,13 @@ final class FileTreeCollectionViewController: NSViewController {
     }
     
     private func setupCollectionView() {
-        // 注意：不注册 Cell 类，避免 makeItem 尝试加载不存在的 nib 导致崩溃
         let layout = Self.makeLayout()
         collectionView.collectionViewLayout = layout
-        
+
+        // 注册 cell 类以启用复用池。register(_:forItemWithIdentifier:) 会让
+        // makeItem 走类初始化路径（不查 nib），从而复用已创建的 cell，避免每次都 new。
+        collectionView.register(FileTreeNodeCell.self, forItemWithIdentifier: Self.cellIdentifier)
+
         // NSCollectionView 必须放在 NSScrollView 中才能滚动
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -75,9 +88,9 @@ final class FileTreeCollectionViewController: NSViewController {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.documentView = collectionView
-        
+
         view.addSubview(scrollView)
-        
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -89,14 +102,16 @@ final class FileTreeCollectionViewController: NSViewController {
     private func setupDataSource() {
         dataSource = FileTreeDiffableDataSource(collectionView: collectionView) { [weak self] _, indexPath, item in
             guard let self = self else { return nil }
-            
-            // 手动创建 cell，不使用 makeItem 避免 nib 查找崩溃
-            let cell = FileTreeNodeCell()
-            cell.loadView()
-            
+
+            // 走复用池：命中已存在的 cell 就复用，不会每次都新建 cell + NSHostingView
+            let cell = self.collectionView.makeItem(
+                withIdentifier: Self.cellIdentifier,
+                for: indexPath
+            ) as? FileTreeNodeCell ?? FileTreeNodeCell()
+
             let isSelected = self.selectionState.isSelected(item.url)
             let isHovered = self.hoveredItemURL == item.url
-            
+
             cell.configure(
                 with: item,
                 isSelected: isSelected,
@@ -104,10 +119,10 @@ final class FileTreeCollectionViewController: NSViewController {
                 gitStatus: nil,
                 theme: self.theme
             )
-            
+
             return cell
         }
-        
+
         collectionView.delegate = self
         collectionView.dataSource = dataSource
     }
@@ -138,38 +153,61 @@ final class FileTreeCollectionViewController: NSViewController {
     }
     
     override func mouseMoved(with event: NSEvent) {
-        let point = view.convert(event.locationInWindow, from: nil)
-        
+        // 必须转换到 collectionView 的坐标系，与 layoutAttributesForItem 的 frame 保持一致。
+        // 之前用 view.convert 会让 point 停留在最外层 view（不随滚动变化），
+        // 而 frame 是文档坐标，二者错位会导致高亮方向与鼠标移动方向相反。
+        let point = collectionView.convert(event.locationInWindow, from: nil)
+
+        var hitURL: URL?
         for indexPath in collectionView.indexPathsForVisibleItems() {
             guard let item = dataSource.itemIdentifier(for: indexPath),
                   let frame = collectionView.layoutAttributesForItem(at: indexPath)?.frame else {
                 continue
             }
-            
+
             if frame.contains(point) {
-                if hoveredItemURL != item.url {
-                    hoveredItemURL = item.url
-                    reloadVisibleItems()
-                }
-                return
+                hitURL = item.url
+                break
             }
         }
-        
-        if hoveredItemURL != nil {
-            hoveredItemURL = nil
-            reloadVisibleItems()
+
+        // 没有变化就不做任何重载，避免鼠标在同一个 item 内移动时重复刷新
+        if hitURL == hoveredItemURL { return }
+
+        let oldURL = hoveredItemURL
+        hoveredItemURL = hitURL
+
+        // 只重载新旧两个 item，绝不用 reloadSections（全量重建会新建所有 cell + hosting view，导致卡顿/风火轮）
+        var toReload: [IndexPath] = []
+        if let oldURL = oldURL, let oldIndex = indexPath(for: oldURL) {
+            toReload.append(oldIndex)
+        }
+        if let hitURL = hitURL, let newIndex = indexPath(for: hitURL) {
+            toReload.append(newIndex)
+        }
+        if !toReload.isEmpty {
+            collectionView.reloadItems(at: Set(toReload))
         }
     }
-    
+
     override func mouseExited(with event: NSEvent) {
-        if hoveredItemURL != nil {
+        guard let oldURL = hoveredItemURL, let oldIndex = indexPath(for: oldURL) else {
             hoveredItemURL = nil
-            reloadVisibleItems()
+            return
         }
+        hoveredItemURL = nil
+        collectionView.reloadItems(at: Set([oldIndex]))
     }
-    
-    private func reloadVisibleItems() {
-        collectionView.reloadSections(IndexSet(integer: 0))
+
+
+    /// 根据节点 URL 查找当前可见的 indexPath
+    private func indexPath(for url: URL) -> IndexPath? {
+        for indexPath in collectionView.indexPathsForVisibleItems() {
+            if let item = dataSource.itemIdentifier(for: indexPath), item.url == url {
+                return indexPath
+            }
+        }
+        return nil
     }
     
     // MARK: - Public API
@@ -262,68 +300,255 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return nil
         }
-        
-        let menu = NSMenu()
-        
-        if item.isDirectory {
-            let newFileItem = NSMenuItem(title: "New File", action: #selector(newFile(_:)), keyEquivalent: "")
-            newFileItem.representedObject = item.url
-            newFileItem.target = self
-            menu.addItem(newFileItem)
-            
-            let newFolderItem = NSMenuItem(title: "New Folder", action: #selector(newFolder(_:)), keyEquivalent: "")
-            newFolderItem.representedObject = item.url
-            newFolderItem.target = self
-            menu.addItem(newFolderItem)
-            
-            menu.addItem(NSMenuItem.separator())
+        return buildMenu(for: item.url, isDirectory: item.isDirectory)
+    }
+
+    /// 根据鼠标位置（window 坐标）构建右键菜单。
+    /// 供 hosting view 在 rightMouseDown 时调用——NSCollectionView 内部的命中测试
+    /// 在 NSHostingView 承载的 cell 上会失效（menuForItemsAt 不被调用），所以这里
+    /// 自己用 layoutAttributes 做命中测试，绕过该限制。
+    func menuForItem(atWindowLocation location: NSPoint) -> NSMenu? {
+        let point = collectionView.convert(location, from: nil)
+        for indexPath in collectionView.indexPathsForVisibleItems() {
+            guard let frame = collectionView.layoutAttributesForItem(at: indexPath)?.frame else {
+                continue
+            }
+            if frame.contains(point) {
+                guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
+                return buildMenu(for: item.url, isDirectory: item.isDirectory)
+            }
         }
-        
-        let renameItem = NSMenuItem(title: "Rename", action: #selector(renameItem(_:)), keyEquivalent: "")
-        renameItem.representedObject = item.url
-        renameItem.target = self
-        menu.addItem(renameItem)
-        
-        let deleteItem = NSMenuItem(title: "Delete", action: #selector(deleteItem(_:)), keyEquivalent: "")
-        deleteItem.representedObject = item.url
-        deleteItem.target = self
-        menu.addItem(deleteItem)
-        
-        menu.addItem(NSMenuItem.separator())
-        
-        let revealItem = NSMenuItem(title: "Reveal in Finder", action: #selector(revealInFinder(_:)), keyEquivalent: "")
-        revealItem.representedObject = item.url
-        revealItem.target = self
-        menu.addItem(revealItem)
-        
+        return nil
+    }
+
+    /// 构建指定节点 url 的右键菜单（顺序对齐 V1）。
+    private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
+        let menu = NSMenu()
+
+        // New File / New Folder（仅目录）
+        if isDirectory {
+            menu.addItem(menuItem(
+                title: LumiPluginLocalization.string("New File", bundle: .module),
+                action: #selector(newFile(_:)),
+                url: url
+            ))
+            menu.addItem(menuItem(
+                title: LumiPluginLocalization.string("New Folder", bundle: .module),
+                action: #selector(newFolder(_:)),
+                url: url
+            ))
+            menu.addItem(.separator())
+        }
+
+        // Rename
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Rename", bundle: .module),
+            action: #selector(renameItem(_:)),
+            url: url
+        ))
+        menu.addItem(.separator())
+
+        // Add to Conversation
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Add to Conversation", bundle: .module),
+            action: #selector(addToConversation(_:)),
+            url: url
+        ))
+
+        // Reveal in Finder
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
+            action: #selector(revealInFinder(_:)),
+            url: url
+        ))
+        // Open in VS Code
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Open in VS Code", bundle: .module),
+            action: #selector(openInVSCode(_:)),
+            url: url
+        ))
+        // Open in Terminal
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Open in Terminal", bundle: .module),
+            action: #selector(openInTerminal(_:)),
+            url: url
+        ))
+        // Copy Path
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Copy Path", bundle: .module),
+            action: #selector(copyPath(_:)),
+            url: url
+        ))
+
+        menu.addItem(.separator())
+
+        // Move to Trash
+        menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
+            action: #selector(deleteItem(_:)),
+            url: url
+        ))
+
         return menu
+    }
+
+    /// 便捷构建菜单项，统一设置 target 与 representedObject。
+    private func menuItem(title: String, action: Selector, url: URL) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.representedObject = url
+        item.target = self
+        return item
     }
     
     // MARK: - Menu Actions
-    
+
     @objc private func newFile(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        // TODO: 实现新建文件逻辑
+        guard let name = FileTreeActions.presentNamePrompt(
+            title: LumiPluginLocalization.string("New File", bundle: .module),
+            message: LumiPluginLocalization.string("Enter the name for the new file.", bundle: .module),
+            defaultName: "",
+            confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
+        ) else { return }
+
+        guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
+            presentErrorAlert(
+                title: LumiPluginLocalization.string("New File", bundle: .module),
+                message: LumiPluginLocalization.string(
+                    "Could not create the file. The name may be invalid or a file with that name already exists.",
+                    bundle: .module
+                )
+            )
+            return
+        }
+        Self.logger.info("[FileTreeV2] 新建文件: \(newURL.path)")
+        ensureDirectoryExpanded(url)
+        refreshAfterMutation(parentURL: url)
     }
-    
+
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        // TODO: 实现新建文件夹逻辑
+        guard let name = FileTreeActions.presentNamePrompt(
+            title: LumiPluginLocalization.string("New Folder", bundle: .module),
+            message: LumiPluginLocalization.string("Enter the name for the new folder.", bundle: .module),
+            defaultName: "",
+            confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
+        ) else { return }
+
+        guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
+            presentErrorAlert(
+                title: LumiPluginLocalization.string("New Folder", bundle: .module),
+                message: LumiPluginLocalization.string(
+                    "Could not create the folder. The name may be invalid or a folder with that name already exists.",
+                    bundle: .module
+                )
+            )
+            return
+        }
+        Self.logger.info("[FileTreeV2] 新建文件夹: \(newURL.path)")
+        ensureDirectoryExpanded(url)
+        refreshAfterMutation(parentURL: url)
     }
-    
+
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        // TODO: 实现重命名逻辑
+        guard let newName = FileTreeActions.presentNamePrompt(
+            title: LumiPluginLocalization.string("Rename", bundle: .module),
+            message: LumiPluginLocalization.string("Enter the new name for this item.", bundle: .module),
+            defaultName: url.lastPathComponent,
+            confirmButton: LumiPluginLocalization.string("Rename", bundle: .module)
+        ) else { return }
+
+        // 名字没变就不操作
+        guard newName != url.lastPathComponent else { return }
+
+        guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
+            presentErrorAlert(
+                title: LumiPluginLocalization.string("Rename", bundle: .module),
+                message: LumiPluginLocalization.string(
+                    "Could not rename the item. The name may be invalid or an item with that name already exists.",
+                    bundle: .module
+                )
+            )
+            return
+        }
+        Self.logger.info("[FileTreeV2] 重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
+        // 联动编辑器：关闭旧 tab，打开新路径
+        onRenameEditorTab?(url, newURL)
+        refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
     }
-    
+
     @objc private func deleteItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        // TODO: 实现删除逻辑
+        guard FileTreeActions.presentDeleteConfirmation(url: url) else { return }
+
+        guard FileTreeFacade.trashItem(at: url) else {
+            presentErrorAlert(
+                title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
+                message: LumiPluginLocalization.string("Could not move the item to the Trash.", bundle: .module)
+            )
+            return
+        }
+        Self.logger.info("[FileTreeV2] 删除: \(url.path)")
+        // 联动编辑器：关闭对应 tab
+        onCloseEditorTabs?([url])
+        selectionState.clearSelection()
+        refreshAfterMutation(parentURL: url.deletingLastPathComponent())
     }
     
     @objc private func revealInFinder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
+        FileTreeFacade.openInFinder(url)
+    }
+
+    @objc private func openInVSCode(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        FileTreeFacade.openInVSCode(url)
+    }
+
+    @objc private func openInTerminal(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        FileTreeFacade.openInTerminal(url)
+    }
+
+    @objc private func copyPath(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        FileTreeFacade.copyPath(url)
+    }
+
+    @objc private func addToConversation(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        onAddToConversation?([url])
+    }
+
+    // MARK: - File Operation Helpers
+
+    /// 确保目录处于展开状态（新建文件/文件夹后让新项立即可见）。
+    private func ensureDirectoryExpanded(_ url: URL) {
+        guard let item = fileTreeDataSource.items.first(where: { $0.url == url }),
+              item.isDirectory, !item.isExpanded else { return }
+        fileTreeDataSource.toggleExpansion(at: url)
+        // 同步展开状态到持久化（与正常点击展开走同一路径）
+        let relativePath = PathFormatter.expansionPath(
+            for: url, projectRootPath: fileTreeDataSource.projectRootPath
+        )
+        onExpansionChange?(relativePath, true)
+    }
+
+    /// 文件操作后刷新：通知 SwiftUI 层 + 精准重载父目录。
+    private func refreshAfterMutation(parentURL: URL) {
+        onTreeMutation?()
+        fileTreeDataSource.reloadDirectory(at: parentURL)
+    }
+
+    /// 弹出错误提示框。
+    private func presentErrorAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: LumiPluginLocalization.string("OK", bundle: .module))
+        alert.runModal()
     }
 }
 

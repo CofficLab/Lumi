@@ -56,6 +56,18 @@ public struct TreeViewV2: View, SuperLog {
                     onTreeMutation: {
                         Self.logger.info("\(Self.t)📝[onTreeMutation] triggered")
                         refreshTreeAfterMutation()
+                    },
+                    onCloseEditorTabs: { urls in
+                        Self.logger.info("\(Self.t)📝[onCloseEditorTabs] urls: \(urls.map(\.path))")
+                        editorContext.closeSessions(forURLs: urls)
+                    },
+                    onRenameEditorTab: { oldURL, newURL in
+                        Self.logger.info("\(Self.t)📝[onRenameEditorTab] \(oldURL.lastPathComponent) → \(newURL.lastPathComponent)")
+                        editorContext.replaceSessionURL(from: oldURL, to: newURL)
+                    },
+                    onAddToConversation: { urls in
+                        Self.logger.info("\(Self.t)📝[onAddToConversation] urls: \(urls.map(\.path))")
+                        editorContext.addToConversation(fileURLs: urls, windowId: nil)
                     }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -12,6 +12,9 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
     let onSelect: (URL) -> Void
     let onExpansionChange: ((String, Bool) -> Void)?
     let onTreeMutation: (() -> Void)?
+    let onCloseEditorTabs: (([URL]) -> Void)?
+    let onRenameEditorTab: ((URL, URL) -> Void)?
+    let onAddToConversation: (([URL]) -> Void)?
 
     func makeNSView(context: Context) -> NSView {
         Self.logger.info("📝[FileTreeNSViewBridge] makeNSView 开始, projectRootPath: \(self.projectRootPath)")
@@ -23,6 +26,9 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
         viewController.onSelect = onSelect
         viewController.onExpansionChange = onExpansionChange
         viewController.onTreeMutation = onTreeMutation
+        viewController.onCloseEditorTabs = onCloseEditorTabs
+        viewController.onRenameEditorTab = onRenameEditorTab
+        viewController.onAddToConversation = onAddToConversation
 
         // 强引用持有 viewController，防止被释放
         context.coordinator.viewController = viewController

@@ -39,6 +39,33 @@ public final class EditorContext: ObservableObject {
         service.sessions.open(at: url)
     }
 
+    /// 关闭 fileURL 匹配给定 URL 的编辑器 session（用于文件树删除后清理残留 tab）。
+    /// - Parameter urls: 已删除的文件/目录 URL 列表。
+    public func closeSessions(forURLs urls: [URL]) {
+        let targets = Set(urls.map { $0.standardizedFileURL })
+        guard !targets.isEmpty else { return }
+
+        // 收集匹配的 session id（按 tab.fileURL 精确匹配）
+        let sessionIDsToClose = service.sessions.tabs
+            .compactMap { tab -> EditorSession.ID? in
+                guard let fileURL = tab.fileURL else { return nil }
+                // 目录被删除时，其下所有已打开文件也需关闭
+                return targets.contains { fileURL.standardizedFileURL == $0 } ? tab.sessionID : nil
+            }
+        for id in Set(sessionIDsToClose) {
+            service.sessions.closeSession(id: id)
+        }
+    }
+
+    /// 关闭旧路径的编辑器 tab 并打开新路径（用于文件树重命名后迁移 tab）。
+    /// - Parameters:
+    ///   - oldURL: 重命名前的文件 URL。
+    ///   - newURL: 重命名后的文件 URL。
+    public func replaceSessionURL(from oldURL: URL, to newURL: URL) {
+        closeSessions(forURLs: [oldURL])
+        openFile(at: newURL)
+    }
+
     public func refreshProjectContext(for projectPath: String) async {
         await service.refreshProjectContext(for: projectPath)
     }

@@ -5,7 +5,7 @@ import SwiftUI
 import SuperLogKit
 
 public enum EditorFileTreePanelPlugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
+    public static let policy: LumiPluginPolicy = .disabled
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "folder"
