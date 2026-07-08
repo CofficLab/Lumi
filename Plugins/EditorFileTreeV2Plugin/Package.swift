@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../EditorFileTreePlugin"),
         .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
+        .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -33,6 +34,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "EditorFileTreePlugin", package: "EditorFileTreePlugin"),
+                .product(name: "MagicAlert", package: "MagicAlert"),
             ],
             path: "Sources",
             resources: [

@@ -3,6 +3,7 @@ import SwiftUI
 import EditorFileTreePlugin
 import LumiCoreKit
 import LumiUI
+import MagicAlert
 import os
 
 /// 文件树集合视图控制器
@@ -396,18 +397,17 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         ) else { return }
 
         guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
-            presentErrorAlert(
-                title: LumiPluginLocalization.string("New File", bundle: .module),
-                message: LumiPluginLocalization.string(
-                    "Could not create the file. The name may be invalid or a file with that name already exists.",
-                    bundle: .module
-                )
-            )
+            alert_error(LumiPluginLocalization.string(
+                "Could not create the file. The name may be invalid or a file with that name already exists.",
+                bundle: .module
+            ))
             return
         }
         Self.logger.info("[FileTreeV2] 新建文件: \(newURL.path)")
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
+        alert_success(LumiPluginLocalization.string("New File", bundle: .module),
+                      subtitle: name)
     }
 
     @objc private func newFolder(_ sender: NSMenuItem) {
@@ -420,18 +420,17 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         ) else { return }
 
         guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
-            presentErrorAlert(
-                title: LumiPluginLocalization.string("New Folder", bundle: .module),
-                message: LumiPluginLocalization.string(
-                    "Could not create the folder. The name may be invalid or a folder with that name already exists.",
-                    bundle: .module
-                )
-            )
+            alert_error(LumiPluginLocalization.string(
+                "Could not create the folder. The name may be invalid or a folder with that name already exists.",
+                bundle: .module
+            ))
             return
         }
         Self.logger.info("[FileTreeV2] 新建文件夹: \(newURL.path)")
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
+        alert_success(LumiPluginLocalization.string("New Folder", bundle: .module),
+                      subtitle: name)
     }
 
     @objc private func renameItem(_ sender: NSMenuItem) {
@@ -447,19 +446,18 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         guard newName != url.lastPathComponent else { return }
 
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
-            presentErrorAlert(
-                title: LumiPluginLocalization.string("Rename", bundle: .module),
-                message: LumiPluginLocalization.string(
-                    "Could not rename the item. The name may be invalid or an item with that name already exists.",
-                    bundle: .module
-                )
-            )
+            alert_error(LumiPluginLocalization.string(
+                "Could not rename the item. The name may be invalid or an item with that name already exists.",
+                bundle: .module
+            ))
             return
         }
         Self.logger.info("[FileTreeV2] 重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
         // 联动编辑器：关闭旧 tab，打开新路径
         onRenameEditorTab?(url, newURL)
         refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
+        alert_success(LumiPluginLocalization.string("Rename", bundle: .module),
+                      subtitle: "\(url.lastPathComponent) → \(newURL.lastPathComponent)")
     }
 
     @objc private func deleteItem(_ sender: NSMenuItem) {
@@ -467,10 +465,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         guard FileTreeActions.presentDeleteConfirmation(url: url) else { return }
 
         guard FileTreeFacade.trashItem(at: url) else {
-            presentErrorAlert(
-                title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
-                message: LumiPluginLocalization.string("Could not move the item to the Trash.", bundle: .module)
-            )
+            alert_error(LumiPluginLocalization.string(
+                "Could not move the item to the Trash.", bundle: .module
+            ))
             return
         }
         Self.logger.info("[FileTreeV2] 删除: \(url.path)")
@@ -478,6 +475,8 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         onCloseEditorTabs?([url])
         selectionState.clearSelection()
         refreshAfterMutation(parentURL: url.deletingLastPathComponent())
+        alert_success(LumiPluginLocalization.string("Moved to Trash", bundle: .module),
+                      subtitle: url.lastPathComponent)
     }
     
     @objc private func revealInFinder(_ sender: NSMenuItem) {
@@ -498,11 +497,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     @objc private func copyPath(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.copyPath(url)
+        alert_success(LumiPluginLocalization.string("Path copied to clipboard", bundle: .module),
+                      subtitle: url.lastPathComponent)
     }
 
     @objc private func addToConversation(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         onAddToConversation?([url])
+        alert_success(LumiPluginLocalization.string("Added to Conversation", bundle: .module),
+                      subtitle: url.lastPathComponent)
     }
 
     // MARK: - File Operation Helpers
@@ -523,16 +526,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     private func refreshAfterMutation(parentURL: URL) {
         onTreeMutation?()
         fileTreeDataSource.reloadDirectory(at: parentURL)
-    }
-
-    /// 弹出错误提示框。
-    private func presentErrorAlert(title: String, message: String) {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = title
-        alert.informativeText = message
-        alert.addButton(withTitle: LumiPluginLocalization.string("OK", bundle: .module))
-        alert.runModal()
     }
 }
 
