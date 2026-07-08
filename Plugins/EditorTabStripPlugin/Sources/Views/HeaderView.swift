@@ -111,6 +111,11 @@ public struct HeaderView: View {
         }
     }
 
+    /// 当前激活的会话 ID，用于驱动 tab 栏自动滚动到激活 tab
+    private var activeSessionID: UUID? {
+        service.sessions.activeSessionID
+    }
+
     private var normalizedProjectRoot: String? {
         let path = currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else { return nil }
@@ -120,27 +125,43 @@ public struct HeaderView: View {
     // MARK: - 子视图
 
     private var tabListContent: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(visibleTabs) { tab in
-                    ItemView(
-                        service: service,
-                        tab: tab,
-                        theme: theme,
-                        onStartDrag: beginTabDrag,
-                        onDropBefore: dropDraggedTabInActiveStrip
-                    )
-                }
-
-                Color.clear
-                    .frame(width: 24, height: 28)
-                    .contentShape(Rectangle())
-                    .onDrop(of: [.plainText], isTargeted: nil) { _ in
-                        dropDraggedTabInActiveStrip(before: nil)
-                        return true
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(visibleTabs) { tab in
+                        ItemView(
+                            service: service,
+                            tab: tab,
+                            theme: theme,
+                            onStartDrag: beginTabDrag,
+                            onDropBefore: dropDraggedTabInActiveStrip
+                        )
+                        .id(tab.sessionID)
                     }
+
+                    Color.clear
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                        .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                            dropDraggedTabInActiveStrip(before: nil)
+                            return true
+                        }
+                }
+                // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
             }
-            // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
+            // 激活 tab 变化时自动滚动到可视区域（对齐 VS Code 体验）：
+            // 覆盖新打开文件、点击切换、外部命令切换等所有场景。
+            .onChange(of: activeSessionID) { _, newSessionID in
+                guard let newSessionID else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(newSessionID, anchor: .center)
+                }
+            }
+            // 首次出现时（含从磁盘恢复标签后）定位到激活 tab
+            .onAppear {
+                guard let activeSessionID else { return }
+                proxy.scrollTo(activeSessionID, anchor: .center)
+            }
         }
     }
 

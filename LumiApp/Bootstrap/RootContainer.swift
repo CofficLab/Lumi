@@ -10,7 +10,7 @@ import os
 final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.root-container")
     nonisolated static let emoji = "🗂️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = RootContainer()
 
@@ -42,11 +42,18 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ ToolService 初始化完成")
         }
 
-        self.editorCoreService = EditorCoreService(
-            pluginService: pluginService,
-            persistenceRootURL: { AppConfig.getDBFolderURL() },
-            recentProjects: { [] }
-        )
+        // 通过 LumiCore 注入工厂启动编辑器（同 setupChatService 范式）。
+        // 注意：EditorCoreService 依赖 PluginService（启用态过滤），故必须在 pluginService 构造之后 bootstrap。
+        LumiCore.setupEditorBootstrap { [pluginService] in
+            EditorCoreService(
+                pluginService: pluginService,
+                persistenceRootURL: { AppConfig.getDBFolderURL() },
+                recentProjects: { [] }
+            )
+        }
+        LumiCore.bootstrapEditor()
+        // LumiCore 持有的是抽象 AbstractEditorServicing，强转回具体类型供本类的回调使用。
+        self.editorCoreService = LumiCore.editorService as! EditorCoreService
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }

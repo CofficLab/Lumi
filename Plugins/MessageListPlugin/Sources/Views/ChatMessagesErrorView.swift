@@ -5,6 +5,7 @@ import SwiftUI
 /// ChatSectionCoordinator 不可用时的错误视图
 struct ChatMessagesErrorView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    var pluginName: String = "Chat Messages"
 
     var body: some View {
         VStack(spacing: 12) {
@@ -12,7 +13,7 @@ struct ChatMessagesErrorView: View {
                 .font(.appTitle)
                 .foregroundColor(.red)
 
-            Text(LumiPluginLocalization.string("Service unavailable", bundle: .module))
+            Text("\(pluginName): \(LumiPluginLocalization.string("Service unavailable", bundle: .module))")
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
 

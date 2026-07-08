@@ -29,10 +29,7 @@ public enum OnboardingPlugin: LumiPlugin {
         [
             AnyView(
                 OnboardingWelcomePage()
-            ),
-            AnyView(
-                OnboardingPluginsPage()
-            ),
+            )
         ]
     }
 }

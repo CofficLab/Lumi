@@ -10,7 +10,7 @@ import os
 final class PluginService: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let registeredPlugins: [any LumiPlugin.Type]
     @Published private(set) var enabledOverrides: [String: Bool]

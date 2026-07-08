@@ -1,7 +1,7 @@
 import Foundation
 
-enum PathFormatter {
-    static func expansionPath(for nodeURL: URL, projectRootPath: String) -> String {
+public enum PathFormatter {
+    public static func expansionPath(for nodeURL: URL, projectRootPath: String) -> String {
         relativePath(
             for: nodeURL,
             projectRootPath: projectRootPath,
@@ -10,7 +10,7 @@ enum PathFormatter {
         )
     }
 
-    static func gitPath(for nodeURL: URL, projectRootPath: String) -> String {
+    public static func gitPath(for nodeURL: URL, projectRootPath: String) -> String {
         relativePath(
             for: nodeURL,
             projectRootPath: projectRootPath,

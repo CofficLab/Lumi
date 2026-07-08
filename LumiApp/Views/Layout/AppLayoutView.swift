@@ -182,6 +182,7 @@ struct AppLayoutView: View {
             additionalDependencies: { dependencies in
                 dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
                 dependencies.register((any LumiEditorServicing).self, editorCoreService)
+                dependencies.register(LumiThemeServicing.self, lumiUIService)
             }
         )
     }

@@ -22,7 +22,7 @@ public enum ThemeStatusBarPlugin: LumiPlugin {
                     title: "Theme",
                     systemImage: "exclamationmark.triangle.fill",
                     placement: .trailing,
-                    statusBarView: { ThemeStatusBarErrorView() }
+                    statusBarView: { ThemeStatusBarErrorView(pluginName: info.displayName) }
                 )
             ]
         }

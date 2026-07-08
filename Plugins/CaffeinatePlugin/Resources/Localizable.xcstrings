@@ -148,25 +148,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Anti-Sleep"
+            "value": "防休眠"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Anti-Sleep"
+            "value": "防休眠"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Anti-Sleep"
+            "value": "防休眠"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Anti-Sleep"
+            "value": "防休眠"
           }
         }
       }
@@ -318,25 +318,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prevent system sleep with timer and manual control"
+            "value": "通过定时和手动控制防止系统休眠"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prevent system sleep with timer and manual control"
+            "value": "透過定時和手動控制防止系統休眠"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prevent system sleep with timer and manual control"
+            "value": "透過定時和手動控制防止系統休眠"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prevent system sleep with timer and manual control"
+            "value": "透過定時和手動控制防止系統休眠"
           }
         }
       }

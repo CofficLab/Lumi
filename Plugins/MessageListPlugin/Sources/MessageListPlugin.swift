@@ -26,7 +26,7 @@ public enum MessageListPlugin: LumiPlugin {
         guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
             return [
                 LumiChatSectionItem(id: info.id, order: info.order, fillsRemainingHeight: true) {
-                    ChatMessagesErrorView()
+                    ChatMessagesErrorView(pluginName: info.displayName)
                 }
             ]
         }

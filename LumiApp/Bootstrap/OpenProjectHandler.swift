@@ -7,7 +7,7 @@ import os
 final class OpenProjectHandler: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.open-project")
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = OpenProjectHandler()
 

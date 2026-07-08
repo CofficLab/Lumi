@@ -10,18 +10,18 @@ public final class DeepSeekProvider: OpenAICompatibleLumiProvider, @unchecked Se
             id: "deepseek",
             displayName: LumiPluginLocalization.string("DeepSeek", bundle: .module),
             description: LumiPluginLocalization.string("DeepSeek AI", bundle: .module),
-            defaultModel: "deepseek-chat",
+            defaultModel: "deepseek-v4-flash",
             availableModels: [
-                "deepseek-chat",
-                "deepseek-coder"
+                "deepseek-v4-flash",
+                "deepseek-v4-pro"
             ],
             contextWindowSizes: [
-                "deepseek-chat": 1_000_000,
-                "deepseek-coder": 1_000_000
+                "deepseek-v4-flash": 1_000_000,
+                "deepseek-v4-pro": 1_000_000
             ],
             modelCapabilities: [
-                "deepseek-chat": .init(supportsVision: false, supportsTools: true),
-                "deepseek-coder": .init(supportsVision: false, supportsTools: true)
+                "deepseek-v4-flash": .init(supportsVision: false, supportsTools: true),
+                "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true)
             ],
             websiteURL: URL(string: "https://www.deepseek.com/")!
         )
