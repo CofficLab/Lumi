@@ -1,6 +1,7 @@
 import EditorService
 import LumiCoreKit
 import LumiUI
+import MagicAlert
 import SuperLogKit
 import SwiftUI
 import os
@@ -40,5 +41,8 @@ struct RootView<Content: View>: View {
             .background {
                 ThemeWindowAppearanceBridge()
             }
+            // 挂载全局 toast 容器，让 alert_success/alert_error/showStatusToast 生效。
+            // 放在最外层，确保 toast 覆盖在所有内容（含插件 overlay）之上。
+            .withMagicToast()
     }
 }
