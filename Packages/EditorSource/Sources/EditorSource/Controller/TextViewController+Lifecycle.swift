@@ -247,6 +247,9 @@ extension TextViewController {
         let controlKey = NSEvent.ModifierFlags.control
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
+        case (commandKey, "s"), (commandKey, "S"):
+            NotificationCenter.default.post(name: .lumiEditorSave, object: nil)
+            return nil
         case (commandKey, "/"):
             handleCommandSlash()
             return nil
