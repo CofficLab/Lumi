@@ -50,35 +50,6 @@ public struct OnboardingWelcomePage: View {
     }
 }
 
-// MARK: - OnboardingPluginsPage
-
-/// Onboarding page explaining plugin system.
-public struct OnboardingPluginsPage: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    public init() {}
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerSection(
-                icon: "puzzlepiece.extension",
-                gradient: pluginsGradient,
-                title: LumiPluginLocalization.string("Plugins On Your Terms", bundle: .module),
-                subtitle: LumiPluginLocalization.string("Enable or disable plugins anytime in Settings to customize your workspace", bundle: .module)
-            )
-
-            Spacer(minLength: 0)
-
-            tipCard(LumiPluginLocalization.string("Settings → Plugins, or press ⌘, to open Settings", bundle: .module))
-                .padding(.top, 24)
-        }
-    }
-
-    private var pluginsGradient: [Color] {
-        [.cyan, .blue]
-    }
-}
-
 // MARK: - Shared Components
 
 /// A single feature item displayed inside an onboarding page.
@@ -245,12 +216,6 @@ func tipCard(_ tip: String) -> some View {
 
 #Preview("Welcome Page") {
     OnboardingWelcomePage()
-        .padding(32)
-        .frame(width: 576)
-}
-
-#Preview("Plugins Page") {
-    OnboardingPluginsPage()
         .padding(32)
         .frame(width: 576)
 }
