@@ -154,8 +154,6 @@ final class FileTreeCollectionViewController: NSViewController {
     
     override func mouseMoved(with event: NSEvent) {
         // 必须转换到 collectionView 的坐标系，与 layoutAttributesForItem 的 frame 保持一致。
-        // 之前用 view.convert 会让 point 停留在最外层 view（不随滚动变化），
-        // 而 frame 是文档坐标，二者错位会导致高亮方向与鼠标移动方向相反。
         let point = collectionView.convert(event.locationInWindow, from: nil)
 
         var hitURL: URL?
@@ -164,50 +162,36 @@ final class FileTreeCollectionViewController: NSViewController {
                   let frame = collectionView.layoutAttributesForItem(at: indexPath)?.frame else {
                 continue
             }
-
             if frame.contains(point) {
                 hitURL = item.url
                 break
             }
         }
 
-        // 没有变化就不做任何重载，避免鼠标在同一个 item 内移动时重复刷新
+        // 没有变化就不做任何操作
         if hitURL == hoveredItemURL { return }
-
-        let oldURL = hoveredItemURL
         hoveredItemURL = hitURL
 
-        // 只重载新旧两个 item，绝不用 reloadSections（全量重建会新建所有 cell + hosting view，导致卡顿/风火轮）
-        var toReload: [IndexPath] = []
-        if let oldURL = oldURL, let oldIndex = indexPath(for: oldURL) {
-            toReload.append(oldIndex)
-        }
-        if let hitURL = hitURL, let newIndex = indexPath(for: hitURL) {
-            toReload.append(newIndex)
-        }
-        if !toReload.isEmpty {
-            collectionView.reloadItems(at: Set(toReload))
-        }
+        // 直接遍历可见 cell 实例同步更新 hover 状态——不走 reloadItems（异步排期，
+        // 快速移动时多批次叠加会残留多个高亮）也不走 item(at:)（diffable data source
+        // 下查找不可靠会返回 nil）。visibleItems() 直接返回 cell 对象，一定能拿到。
+        // 一次遍历把所有可见 cell 同步到正确状态，既不漏亮也不残留。
+        syncHoverState(hitURL: hitURL)
     }
 
     override func mouseExited(with event: NSEvent) {
-        guard let oldURL = hoveredItemURL, let oldIndex = indexPath(for: oldURL) else {
-            hoveredItemURL = nil
-            return
-        }
+        guard hoveredItemURL != nil else { return }
         hoveredItemURL = nil
-        collectionView.reloadItems(at: Set([oldIndex]))
+        syncHoverState(hitURL: nil)
     }
 
-
-    /// 根据节点 URL 查找当前可见的 indexPath
-    private func indexPath(for url: URL) -> IndexPath? {
-        for indexPath in collectionView.indexPathsForVisibleItems() {
-            if let item = dataSource.itemIdentifier(for: indexPath), item.url == url {
-                return indexPath
-            }
+    /// 遍历所有可见 cell，把 hover 状态同步为「仅 hitURL 高亮」。
+    private func syncHoverState(hitURL: URL?) {
+        for case let cell as FileTreeNodeCell in collectionView.visibleItems() {
+            guard let indexPath = collectionView.indexPath(for: cell),
+                  let item = dataSource.itemIdentifier(for: indexPath) else { continue }
+            cell.updateHovered(item.url == hitURL)
         }
-        return nil
     }
     
     // MARK: - Public API

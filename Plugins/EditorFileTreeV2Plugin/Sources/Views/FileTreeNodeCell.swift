@@ -63,10 +63,10 @@ final class FileTreeNodeCell: NSCollectionViewItem {
 
     /// 轻量更新悬停状态，避免重建 SwiftUI 视图。
     /// 悬停频繁切换时只改 rootView，不触发 cell/createView 重建。
+    /// 不做 isHovered 去重——mouseMoved 已在外层判断了 hoveredItemURL 是否变化，
+    /// 这里必须无条件生效，避免因状态不同步导致高亮残留。
     func updateHovered(_ hovered: Bool) {
-        guard isHovered != hovered,
-              let item = cachedItem,
-              let theme = cachedTheme else { return }
+        guard let item = cachedItem, let theme = cachedTheme else { return }
         isHovered = hovered
         hostingView?.rootView = NodeRowView(
             item: item,
