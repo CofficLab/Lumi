@@ -37,13 +37,48 @@ struct SplitDimensionConstraints: Equatable, SuperLog {
 struct SplitViewAutosaveConfigurator: NSViewRepresentable {
     let autosaveName: String
 
-    func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
+    func makeNSView(context: Context) -> SplitViewAutosaveHelper {
+        SplitViewAutosaveHelper(autosaveName: autosaveName)
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
+    func updateNSView(_ nsView: SplitViewAutosaveHelper, context: Context) {
+        nsView.autosaveName = autosaveName
+    }
+}
+
+final class SplitViewAutosaveHelper: NSView {
+    var autosaveName: String
+
+    init(autosaveName: String) {
+        self.autosaveName = autosaveName
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
         DispatchQueue.main.async {
-            enclosingSplitView(from: nsView)?.autosaveName = autosaveName
+            var current: NSView? = self
+            var foundSplitView: NSSplitView?
+            while let view = current {
+                if let sv = view as? NSSplitView {
+                    foundSplitView = sv
+                    break
+                }
+                current = view.superview
+            }
+            if let sv = foundSplitView {
+                sv.autosaveName = self.autosaveName
+                let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.autosave")
+                logger.info("[AutosaveConfigurator] set autosaveName=\(self.autosaveName) on splitView=\(sv)")
+            } else {
+                let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.autosave")
+                logger.warning("[AutosaveConfigurator] no enclosing NSSplitView found for autosaveName=\(self.autosaveName)")
+            }
         }
     }
 }
@@ -168,6 +203,7 @@ struct SplitViewHeightPersistence: NSViewRepresentable {
 @MainActor
 final class SplitDimensionPersistenceView: NSView, SuperLog {
     nonisolated static let emoji = "📐"
+    nonisolated static let verbose = true
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
     private static let maxApplyRetryCount = 20
 
@@ -211,13 +247,13 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         self.dimensionConstraints = constraints
         self.axis = axis
         didApplySize = false
-        Self.logger.info("\(self.t)config updated, key=\(storageKey)")
+        if Self.verbose { Self.logger.info("\(self.t)config updated, key=\(self.storageKey)") }
         applySizeIfPossible()
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        Self.logger.info("\(self.t)view moved to window, key=\(self.storageKey)")
+        if Self.verbose { Self.logger.info("\(self.t)view moved to window, key=\(self.storageKey)") }
         attachIfPossible()
     }
 
@@ -233,16 +269,16 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
 
     private func attachIfPossible() {
         guard window != nil else {
-            Self.logger.info("\(self.t)no window yet, key=\(self.storageKey)")
+            if Self.verbose { Self.logger.info("\(self.t)no window yet, key=\(self.storageKey)") }
             return
         }
         guard let splitView = enclosingSplitView() else {
-            Self.logger.info("\(self.t)no enclosing split view, key=\(self.storageKey), retry=\(self.applyRetryCount)")
+            if Self.verbose { Self.logger.info("\(self.t)no enclosing split view, key=\(self.storageKey), retry=\(self.applyRetryCount)") }
             scheduleRetry()
             return
         }
         guard splitView !== observedSplitView else {
-            Self.logger.info("\(self.t)already attached to same split view, key=\(self.storageKey)")
+            if Self.verbose { Self.logger.info("\(self.t)already attached to same split view, key=\(self.storageKey)") }
             applySizeIfPossible()
             return
         }
@@ -254,7 +290,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         observedSplitView = splitView
         didApplySize = false
         applyRetryCount = 0
-        Self.logger.info("\(self.t)attached to split view, key=\(self.storageKey), vertical=\(splitView.isVertical)")
+        if Self.verbose { Self.logger.info("\(self.t)attached to split view, key=\(self.storageKey), vertical=\(splitView.isVertical)") }
         applySizeIfPossible()
 
         resizeObserver = NotificationCenter.default.addObserver(
@@ -270,11 +306,11 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
 
     private func applySizeIfPossible() {
         guard !didApplySize else {
-            Self.logger.info("\(self.t)already applied, skipping, key=\(self.storageKey)")
+            if Self.verbose { Self.logger.info("\(self.t)already applied, skipping, key=\(self.storageKey)") }
             return
         }
         guard let splitView = observedSplitView ?? enclosingSplitView() else {
-            Self.logger.info("\(self.t)no split view found, key=\(self.storageKey)")
+            if Self.verbose { Self.logger.info("\(self.t)no split view found, key=\(self.storageKey)") }
             scheduleRetry()
             return
         }
@@ -283,14 +319,14 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
               splitView.arrangedSubviews.count >= 2,
               splitView.isVertical == (axis == .horizontal)
         else {
-            Self.logger.info("\(self.t)guard check failed, key=\(self.storageKey), pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)")
+            if Self.verbose { Self.logger.info("\(self.t)guard check failed, key=\(self.storageKey), pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)") }
             scheduleRetry()
             return
         }
 
         let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
         guard totalSize > 0 else {
-            Self.logger.info("\(self.t)totalSize is zero, key=\(self.storageKey)")
+            if Self.verbose { Self.logger.info("\(self.t)totalSize is zero, key=\(self.storageKey)") }
             scheduleRetry()
             return
         }
@@ -304,7 +340,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
             dividerThickness: splitView.dividerThickness
         )
 
-        Self.logger.info("\(self.t)applying size, key=\(self.storageKey), saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize)")
+        if Self.verbose { Self.logger.info("\(self.t)applying size, key=\(self.storageKey), saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize)") }
 
         guard let idx = paneIndex else { return }
         setPane(idx, size: targetSize, in: splitView)
@@ -333,7 +369,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         let saved = UserDefaults.standard.double(forKey: storageKey)
         guard abs(saved - Double(clamped)) > 0.5 else { return }
         UserDefaults.standard.set(Double(clamped), forKey: storageKey)
-        Self.logger.info("\(self.t)persisted size, key=\(self.storageKey), old=\(saved), new=\(clamped)")
+        if Self.verbose { Self.logger.info("\(self.t)persisted size, key=\(self.storageKey), old=\(saved), new=\(clamped)") }
     }
 
     private func clampedSize(
