@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.13.0</title>
-            <pubDate>Fri, 03 Jul 2026 11:59:26 +0000</pubDate>
-            <sparkle:version>240</sparkle:version>
-            <sparkle:shortVersionString>4.13.0</sparkle:shortVersionString>
+            <title>4.14.0</title>
+            <pubDate>Wed, 08 Jul 2026 11:26:11 +0000</pubDate>
+            <sparkle:version>241</sparkle:version>
+            <sparkle:shortVersionString>4.14.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.13.0</h2>
-<h3>Changes since v4.12.0</h3>
+            <description><![CDATA[<h2>Release v4.14.0</h2>
+<h3>Changes since v4.13.0</h3>
 <ul>
-<li>bugfix:  fix a bug</li>
-<li>docs: add NSCollectionView native rendering design for EditorFileTree</li>
-<li>feat: add emptyResponse error case to LLM provider support</li>
-<li>feat: add logger to all plugins</li>
-<li>feat: add raw stream chunk logging for StepFun provider</li>
-<li>feat: add thinking popover button to message header</li>
-<li>feat: migrate legacy PluginPolicy to LumiPluginPolicy</li>
-<li>feat: persist and display LLM reasoning content in history</li>
-<li>feat: show turn duration in completed turn divider</li>
-<li>feat: StepFun empty-response retry and support-error passthrough</li>
-<li>feat(assistant): show model reasoning in message bubble</li>
-<li>feat(conversation-list): improve error handling and localization</li>
-<li>feat(conversation-list): show unread count on toolbar button</li>
-<li>feat(core): add LumiLayoutState and LumiCore.layoutState</li>
-<li>feat(core): upgrade LumiLayoutState logs to SuperLog format</li>
-<li>feat(core/plugin): extend LumiPlugin protocol with editor/contributions APIs, delegate lifecycle to services, and disable GitHubPlugin by default</li>
-<li>feat(i18n): add Localizable.xcstrings for 5 framework packages</li>
-<li>feat(i18n): unify localization rules for packages and plugins</li>
-<li>feat(layout): add trailing borders and fix ActivityBar layout</li>
-<li>feat(layout): sync ActivityBar selection to LumiCore.layoutState</li>
+<li>feat: enable EditorFileTreePlugin features</li>
+<li>feat: register EditorFileTreeV2Plugin and set policy to alwaysOn</li>
+<li>feat(editor-file-tree-v2): add toast feedback for file operations</li>
+<li>feat(editor-file-tree-v2): complete file operations and context menu</li>
+<li>feat(editor-tab-strip): auto-scroll to active tab on activation</li>
+<li>feat(onboarding): remove OnboardingPluginsPage</li>
+<li>fix: inject LumiThemeServicing into plugin context to resolve service unavailable in ThemeStatusBarPlugin</li>
+<li>fix: show plugin name in service unavailable views</li>
+<li>fix: show plugin name in theme status bar unavailable view</li>
+<li>fix(app): mount global toast container so alert_xxx/showStatusToast display</li>
+<li>fix(chat-input): prevent cursor jumping to end during streaming output</li>
+<li>fix(editor-file-tree-v2): fix file tree blank display issue</li>
+<li>fix(editor-file-tree-v2): fix hover highlight not working and multiple highlights</li>
+<li>fix(editor-file-tree-v2): wrap NSCollectionView in NSScrollView to enable scrolling</li>
+<li>fix(editor): wire Command+S shortcut to editor save command</li>
+<li>fix(i18n): add version and missing name localization for EditorFileTreeV2Plugin</li>
+<li>fix(layout): add verbose guard and autosave helper to SplitViewPersistence</li>
+<li>fix(layout): persist Rail-Panel split view position on restart</li>
+<li>fix(layout): persist Rail-Panel split width via UserDefaults</li>
+<li>fix(layout): resolve SplitViewPersistence build errors</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.13.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.13.0/Lumi_4.13.0_x86_64.dmg" length="53819024" type="application/octet-stream" sparkle:edSignature="sJ+wvuNWarxFKnreknORInKlhcLW+EE0Nhuz03zCAfXA6nZbA78Lf53yBj+r00I8R81boQjn8kHVpA74zVKRDA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.14.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.14.0/Lumi_4.14.0_x86_64.dmg" length="54963894" type="application/octet-stream" sparkle:edSignature="HFny/Ce8EKad5smwWF1h9f6BbDCLJGYYDCYXEXNJYOpG/lEdoyCbnTziElgPGr5F2MSJF2tqxBeLPt8hkfFEDQ=="/>
         </item>
     </channel>
 </rss>
