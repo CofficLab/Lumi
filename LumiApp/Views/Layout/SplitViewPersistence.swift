@@ -1,8 +1,10 @@
 import AppKit
 import LumiCoreKit
+import os
 import SwiftUI
+import SuperLogKit
 
-struct SplitDimensionConstraints: Equatable {
+struct SplitDimensionConstraints: Equatable, SuperLog {
     var defaultSize: CGFloat
     var minSize: CGFloat
     var maxSize: CGFloat
@@ -47,9 +49,16 @@ struct SplitViewAutosaveConfigurator: NSViewRepresentable {
 }
 
 struct SplitDimensionPersistence: NSViewRepresentable {
-    enum Axis {
+    enum Axis: CustomStringConvertible {
         case horizontal
         case vertical
+
+        var description: String {
+            switch self {
+            case .horizontal: "horizontal"
+            case .vertical: "vertical"
+            }
+        }
     }
 
     let storageKey: String
@@ -157,7 +166,9 @@ struct SplitViewHeightPersistence: NSViewRepresentable {
 }
 
 @MainActor
-final class SplitDimensionPersistenceView: NSView {
+final class SplitDimensionPersistenceView: NSView, SuperLog {
+    nonisolated static let emoji = "📐"
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
     private static let maxApplyRetryCount = 20
 
     private var storageKey: String
@@ -200,11 +211,13 @@ final class SplitDimensionPersistenceView: NSView {
         self.dimensionConstraints = constraints
         self.axis = axis
         didApplySize = false
+        Self.logger.info("\(self.t)config updated, key=\(storageKey)")
         applySizeIfPossible()
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        Self.logger.info("\(self.t)view moved to window, key=\(self.storageKey)")
         attachIfPossible()
     }
 
@@ -219,12 +232,17 @@ final class SplitDimensionPersistenceView: NSView {
     }
 
     private func attachIfPossible() {
-        guard window != nil else { return }
+        guard window != nil else {
+            Self.logger.info("\(self.t)no window yet, key=\(self.storageKey)")
+            return
+        }
         guard let splitView = enclosingSplitView() else {
+            Self.logger.info("\(self.t)no enclosing split view, key=\(self.storageKey), retry=\(self.applyRetryCount)")
             scheduleRetry()
             return
         }
         guard splitView !== observedSplitView else {
+            Self.logger.info("\(self.t)already attached to same split view, key=\(self.storageKey)")
             applySizeIfPossible()
             return
         }
@@ -236,6 +254,7 @@ final class SplitDimensionPersistenceView: NSView {
         observedSplitView = splitView
         didApplySize = false
         applyRetryCount = 0
+        Self.logger.info("\(self.t)attached to split view, key=\(self.storageKey), vertical=\(splitView.isVertical)")
         applySizeIfPossible()
 
         resizeObserver = NotificationCenter.default.addObserver(
@@ -250,21 +269,28 @@ final class SplitDimensionPersistenceView: NSView {
     }
 
     private func applySizeIfPossible() {
-        guard !didApplySize else { return }
+        guard !didApplySize else {
+            Self.logger.info("\(self.t)already applied, skipping, key=\(self.storageKey)")
+            return
+        }
         guard let splitView = observedSplitView ?? enclosingSplitView() else {
+            Self.logger.info("\(self.t)no split view found, key=\(self.storageKey)")
             scheduleRetry()
             return
         }
-        guard containingPaneIndex(in: splitView) != nil,
+        let paneIndex = containingPaneIndex(in: splitView)
+        guard paneIndex != nil,
               splitView.arrangedSubviews.count >= 2,
               splitView.isVertical == (axis == .horizontal)
         else {
+            Self.logger.info("\(self.t)guard check failed, key=\(self.storageKey), pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)")
             scheduleRetry()
             return
         }
 
         let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
         guard totalSize > 0 else {
+            Self.logger.info("\(self.t)totalSize is zero, key=\(self.storageKey)")
             scheduleRetry()
             return
         }
@@ -278,8 +304,10 @@ final class SplitDimensionPersistenceView: NSView {
             dividerThickness: splitView.dividerThickness
         )
 
-        guard let paneIndex = containingPaneIndex(in: splitView) else { return }
-        setPane(paneIndex, size: targetSize, in: splitView)
+        Self.logger.info("\(self.t)applying size, key=\(self.storageKey), saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize)")
+
+        guard let idx = paneIndex else { return }
+        setPane(idx, size: targetSize, in: splitView)
         
         // 延迟布局避免在视图层次结构构建过程中触发递归布局
         DispatchQueue.main.async {
@@ -305,6 +333,7 @@ final class SplitDimensionPersistenceView: NSView {
         let saved = UserDefaults.standard.double(forKey: storageKey)
         guard abs(saved - Double(clamped)) > 0.5 else { return }
         UserDefaults.standard.set(Double(clamped), forKey: storageKey)
+        Self.logger.info("\(self.t)persisted size, key=\(self.storageKey), old=\(saved), new=\(clamped)")
     }
 
     private func clampedSize(
