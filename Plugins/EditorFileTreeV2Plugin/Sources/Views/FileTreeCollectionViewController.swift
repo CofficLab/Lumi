@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import EditorFileTreePlugin
 import LumiCoreKit
 import LumiUI
 import MagicAlert
@@ -247,7 +246,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
     /// 触发指定路径的闪烁高亮动画
     func triggerFlash(path: String) {
-        guard EditorFileTreePanelPlugin.flashHighlightEnabled else { return }
+        guard EditorFileTreeV2Plugin.flashHighlightEnabled else { return }
         let targetURL = URL(fileURLWithPath: path)
         flashItemURL = targetURL
         flashOpacity = 0.25

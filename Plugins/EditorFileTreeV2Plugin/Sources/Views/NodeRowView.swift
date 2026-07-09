@@ -1,5 +1,4 @@
 import SwiftUI
-import EditorFileTreePlugin
 import LumiUI
 
 /// 文件树节点行视图（精简版）

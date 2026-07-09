@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 import os
-import EditorFileTreePlugin
 
 /// NSViewRepresentable 桥接层
 ///

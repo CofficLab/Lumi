@@ -1,142 +1,145 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.0",
-  "strings": {
-    "New File": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New File"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+
+    },
+    "New File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New File"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新建文件"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增檔案"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增檔案"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增檔案"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增檔案"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增檔案"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增檔案"
           }
         }
       }
     },
-    "New Folder": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Folder"
+    "New Folder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新建文件夹"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件夹"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增資料夾"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增資料夾"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增資料夾"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
           }
         }
       }
     },
-    "Rename": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rename"
+    "Rename" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重命名"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重命名"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重命名"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重命名"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名"
           }
         }
       }
     },
-    "Reveal in Finder": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reveal in Finder"
+    "Reveal in Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal in Finder"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Finder 中显示"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中显示"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Finder 中顯示"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中顯示"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Finder 中顯示"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中顯示"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Finder 中顯示"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中顯示"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.0"
 }

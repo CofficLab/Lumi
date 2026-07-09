@@ -13,6 +13,12 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     public static let category: LumiPluginCategory = .development
     public static let iconName = "square.grid.2x2.fill"
 
+    /// 是否启用 Git 状态显示功能（禁用可提升文件树滚动性能）。
+    public static let gitStatusEnabled: Bool = true
+
+    /// 是否启用定位文件时的闪烁高亮。
+    public static let flashHighlightEnabled: Bool = true
+
     // MARK: - SuperLog Configuration
 
     public static let emoji = "🌲"

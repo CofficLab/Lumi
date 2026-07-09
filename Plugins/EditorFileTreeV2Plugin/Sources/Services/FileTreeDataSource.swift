@@ -1,6 +1,5 @@
 import Foundation
 import SuperLogKit
-import EditorFileTreePlugin
 import os
 
 // MARK: - Protocols for Testability

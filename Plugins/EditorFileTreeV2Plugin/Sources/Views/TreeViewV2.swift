@@ -1,7 +1,6 @@
 import SwiftUI
 import EditorService
 import LumiCoreKit
-import EditorFileTreePlugin
 import os
 import SuperLogKit
 
@@ -93,7 +92,7 @@ public struct TreeViewV2: View, SuperLog {
             if let url {
                 selectionState.syncFromEditorHighlight(url)
                 // 触发闪烁效果，帮助用户定位文件
-                if EditorFileTreePanelPlugin.flashHighlightEnabled {
+                if EditorFileTreeV2Plugin.flashHighlightEnabled {
                     selectionState.triggerFlash(for: url)
                 }
             } else {
@@ -135,7 +134,6 @@ public struct TreeViewV2: View, SuperLog {
 
     private var showPackageDependencies: Bool {
         guard !currentProjectPath.isEmpty else { return false }
-        guard EditorFileTreePanelPlugin.packageDependenciesEnabled else { return false }
         return PackageDependencyResolver.shouldShowPackageDependencies(
             projectRootURL: URL(fileURLWithPath: currentProjectPath)
         )

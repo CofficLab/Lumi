@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import EditorFileTreePlugin
 import LumiUI
 
 /// 文件树节点单元格
