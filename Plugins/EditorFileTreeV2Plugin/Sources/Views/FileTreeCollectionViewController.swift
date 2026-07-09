@@ -258,7 +258,7 @@ final class FileTreeCollectionViewController: NSViewController {
     private func reloadVisibleItems() {
         let visibleItems = collectionView.indexPathsForVisibleItems()
         guard !visibleItems.isEmpty else { return }
-        collectionView.reloadItems(at: Array(visibleItems))
+        collectionView.reloadItems(at: Set(visibleItems))
     }
 
     /// 根据文件 URL 查询 Git 状态
