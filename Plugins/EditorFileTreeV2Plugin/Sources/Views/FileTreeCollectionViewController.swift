@@ -12,6 +12,8 @@ import SuperLogKit
 @MainActor
 final class FileTreeCollectionViewController: NSViewController, SuperLog {
     nonisolated static let emoji = "📂"
+    nonisolated static var verbose: Bool { EditorFileTreeV2Plugin.verbose }
+    nonisolated static let logger = EditorFileTreeV2Plugin.logger
 
     
     private let collectionView: NSCollectionView = {
@@ -74,11 +76,15 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         setupDataSource()
         setupBindings()
         setupTrackingArea()
-        EditorFileTreeV2Plugin.logger.info("\(Self.t)视图加载完成")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)视图加载完成")
+        }
 
         // bindings 就绪后再加载数据
         if let path = pendingProjectRoot, !path.isEmpty {
-            EditorFileTreeV2Plugin.logger.info("\(Self.t)延迟加载项目：\(path)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)延迟加载项目：\(path)")
+            }
             fileTreeDataSource.setProjectRoot(path)
             pendingProjectRoot = nil
         }
@@ -212,12 +218,16 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     
     func setProjectRoot(_ path: String) {
         if isViewLoaded {
-            EditorFileTreeV2Plugin.logger.info("\(Self.t)设置项目根路径：\(path)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)设置项目根路径：\(path)")
+            }
             fileTreeDataSource.setProjectRoot(path)
         } else {
             // viewDidLoad 之前，暂存路径
             pendingProjectRoot = path
-            EditorFileTreeV2Plugin.logger.info("\(Self.t)预存项目路径（待 viewDidLoad 后加载）：\(path)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)预存项目路径（待 viewDidLoad 后加载）：\(path)")
+            }
         }
     }
     
@@ -462,7 +472,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        EditorFileTreeV2Plugin.logger.info("\(Self.t)创建文件：\(newURL.path)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)创建文件：\(newURL.path)")
+        }
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         alert_success(LumiPluginLocalization.string("New File", bundle: .module),
@@ -485,7 +497,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        EditorFileTreeV2Plugin.logger.info("\(Self.t)创建文件夹：\(newURL.path)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)创建文件夹：\(newURL.path)")
+        }
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         alert_success(LumiPluginLocalization.string("New Folder", bundle: .module),
@@ -511,7 +525,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        Self.logger.info("[FileTreeV2] 重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
+        }
         // 联动编辑器：关闭旧 tab，打开新路径
         onRenameEditorTab?(url, newURL)
         refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
@@ -529,7 +545,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        Self.logger.info("[FileTreeV2] 删除: \(url.path)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)删除: \(url.path)")
+        }
         // 联动编辑器：关闭对应 tab
         onCloseEditorTabs?([url])
         selectionState.clearSelection()
