@@ -3,38 +3,31 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.14.0</title>
-            <pubDate>Wed, 08 Jul 2026 11:26:04 +0000</pubDate>
-            <sparkle:version>241</sparkle:version>
-            <sparkle:shortVersionString>4.14.0</sparkle:shortVersionString>
+            <title>4.14.1</title>
+            <pubDate>Thu, 09 Jul 2026 11:31:23 +0000</pubDate>
+            <sparkle:version>242</sparkle:version>
+            <sparkle:shortVersionString>4.14.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.14.0</h2>
-<h3>Changes since v4.13.0</h3>
+            <description><![CDATA[<h2>Release v4.14.1</h2>
+<h3>Changes since v4.14.0</h3>
 <ul>
-<li>feat: enable EditorFileTreePlugin features</li>
-<li>feat: register EditorFileTreeV2Plugin and set policy to alwaysOn</li>
-<li>feat(editor-file-tree-v2): add toast feedback for file operations</li>
-<li>feat(editor-file-tree-v2): complete file operations and context menu</li>
-<li>feat(editor-tab-strip): auto-scroll to active tab on activation</li>
-<li>feat(onboarding): remove OnboardingPluginsPage</li>
-<li>fix: inject LumiThemeServicing into plugin context to resolve service unavailable in ThemeStatusBarPlugin</li>
-<li>fix: show plugin name in service unavailable views</li>
-<li>fix: show plugin name in theme status bar unavailable view</li>
-<li>fix(app): mount global toast container so alert_xxx/showStatusToast display</li>
-<li>fix(chat-input): prevent cursor jumping to end during streaming output</li>
-<li>fix(editor-file-tree-v2): fix file tree blank display issue</li>
-<li>fix(editor-file-tree-v2): fix hover highlight not working and multiple highlights</li>
-<li>fix(editor-file-tree-v2): wrap NSCollectionView in NSScrollView to enable scrolling</li>
-<li>fix(editor): wire Command+S shortcut to editor save command</li>
-<li>fix(i18n): add version and missing name localization for EditorFileTreeV2Plugin</li>
-<li>fix(layout): add verbose guard and autosave helper to SplitViewPersistence</li>
-<li>fix(layout): persist Rail-Panel split view position on restart</li>
-<li>fix(layout): persist Rail-Panel split width via UserDefaults</li>
-<li>fix(layout): resolve SplitViewPersistence build errors</li>
+<li>feat(cad-designer): add aluminum profile 3D CAD designer plugin</li>
+<li>feat(file-tree-v2): complete missing features to align with VS Code explorer</li>
+<li>feat(logging): add SuperLog heartbeat logging to resident loops</li>
+<li>fix(devicemonitor): wrap GPU/Battery/Storage startup logs with verbose guard</li>
+<li>fix(editor): wire up addToChatHandler for xcstrings AI fix button</li>
+<li>fix(file-tree-v2): fix logging format in TreeViewV2 onAppear/onDisappear</li>
+<li>fix(file-tree-v2): fix reloadItems index path type for NSCollectionView</li>
+<li>fix(file-tree-v2): standardize logging to follow SuperLog convention</li>
+<li>fix(menu-bar): break effectiveAppearance KVO feedback loop causing 100% CPU</li>
+<li>i18n:  translate or localize content</li>
+<li>refactor: migrate FileTreeCollectionViewController logging from os.Logger to SuperLogKit</li>
+<li>refactor: simplify SplitViewAutosaveConfigurator and fix layout timing</li>
+<li>refactor(file-tree-v2): decouple from EditorFileTreePlugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.14.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.14.1</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.14.0/Lumi_4.14.0_arm64.dmg" length="49776734" type="application/octet-stream" sparkle:edSignature="J1WnwqDuCGKECh926VcjdCzfr5tBLT6iwZEDiOD0Xw1Zc2KvDEKyj/7+NCjWMkjIbx0c+psiUEAtPzoMc0Z0Cg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.14.1/Lumi_4.14.1_arm64.dmg" length="51195737" type="application/octet-stream" sparkle:edSignature="jc66uRMsl+XcI0W34dbWqijmkUCooAXjkOGktjZIMd/VlXA+1b7gcx8Jo+kGeb07Rg3PKyi/dyFA1JlcGultDQ=="/>
         </item>
     </channel>
 </rss>
