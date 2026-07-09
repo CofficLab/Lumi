@@ -1,6 +1,11 @@
 import Foundation
+import SuperLogKit
+import os
 
-public enum RAGFileScanner {
+public enum RAGFileScanner: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.scanner")
+    nonisolated public static let emoji = "🔍"
+    nonisolated(unsafe) static var verbose: Bool = true
     /// 需要跳过的目录列表（精确匹配目录名）。
     ///
     /// `build` 已包含其中，因此 `build/SourcePackages` 会被一并跳过；独立的顶层
@@ -39,29 +44,37 @@ public enum RAGFileScanner {
     /// 带缓存的 `discoverFiles`：命中且未过期时直接返回缓存结果，否则重新扫描并写入缓存。
     public static func discoverFilesCached(in projectPath: String, maxFileSizeBytes: Int = defaultMaxFileSizeBytes) -> [String] {
         if let cached = cache.get(projectPath: projectPath, now: Date()) {
+            if Self.verbose { Self.logger.info("\(Self.t)discoverFilesCached 命中缓存，\(cached.count) 个文件") }
             return cached
         }
+        let started = Date()
         let files = discoverFiles(in: projectPath, maxFileSizeBytes: maxFileSizeBytes)
+        let elapsedMs = Int(Date().timeIntervalSince(started) * 1000)
+        if Self.verbose { Self.logger.info("\(Self.t)discoverFilesCached 未命中，重新扫描完成：\(files.count) 个文件，耗时 \(elapsedMs)ms") }
         cache.set(projectPath: projectPath, files: files, expiresAt: Date(timeIntervalSinceNow: cacheTTL))
         return files
     }
 
     /// 扫描项目目录下的所有文件
     public static func discoverFiles(in projectPath: String, maxFileSizeBytes: Int = defaultMaxFileSizeBytes) -> [String] {
+        let started = Date()
         let rootURL = URL(fileURLWithPath: projectPath)
         guard let enumerator = FileManager.default.enumerator(
             at: rootURL,
             includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
         ) else {
+            if Self.verbose { Self.logger.warning("\(Self.t)discoverFiles 无法创建枚举器，路径: \(projectPath)") }
             return []
         }
 
         var files: [String] = []
+        var skippedDirs = 0
 
         for case let url as URL in enumerator {
             let path = url.path
             if shouldSkipPath(path) {
+                skippedDirs += 1
                 enumerator.skipDescendants()
                 continue
             }
@@ -79,6 +92,12 @@ public enum RAGFileScanner {
             files.append(path)
         }
 
+        let elapsedMs = Int(Date().timeIntervalSince(started) * 1000)
+        // 全项目目录扫描是长尾 CPU 占用的元凶候选：若跳过的目录很少而文件数巨大，
+        // 说明忽略了 .build/DerivedData 等大目录的规则没生效，会持续吃满一个后台线程。
+        if Self.verbose {
+            Self.logger.info("\(Self.t)discoverFiles 完成：\(files.count) 个文件，跳过 \(skippedDirs) 个目录，耗时 \(elapsedMs)ms，根=\(projectPath)")
+        }
         return files
     }
 

@@ -7,7 +7,7 @@ import Combine
 public class ProcessMonitorService: ObservableObject, SuperLog {
     public static let shared = ProcessMonitorService()
     public nonisolated static let emoji = "👮"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     
     // Sampling interval
     private let interval: TimeInterval = 1.0
@@ -28,6 +28,11 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     private var task: Process?
     private var outputPipe: Pipe?
     private var dataAvailableObserver: NSObjectProtocol?
+
+    /// 心跳节流计数：nettop 子进程(-L 0 永久循环)每次输出回调自增，每 N 次打一条。
+    /// nettop 会高频持续产出数据，若本回调狂触发是 100% CPU 的直接信号。
+    private var tickCount = 0
+    private let tickLogEvery = 20
     
     // Data publishing
     @Published var processes: [NetworkProcess] = []
@@ -105,6 +110,9 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
 
     private func cleanupMonitoringResources() {
         isRunning = false
+        if Self.verbose, NetworkManagerPlugin.verbose {
+            NetworkManagerPlugin.logger.info("\(self.t)清理 nettop 监控资源（终止子进程 + 移除观察者）")
+        }
 
         if let dataAvailableObserver {
             NotificationCenter.default.removeObserver(dataAvailableObserver)
@@ -134,14 +142,22 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     
     private func processOutput(_ data: Data) {
         guard let string = String(data: data, encoding: .utf8) else { return }
-        
+
         let fullString = partialLine + string
         let lines = fullString.components(separatedBy: .newlines)
-        
+
         if let last = lines.last, !string.hasSuffix("\n") {
             partialLine = last
         } else {
             partialLine = ""
+        }
+
+        // 节流心跳：nettop -L 0 持续输出，确认本回调是否高频触发（100% CPU 的可能来源）。
+        tickCount += 1
+        if Self.verbose, tickCount % tickLogEvery == 0 {
+            let tick = tickCount
+            let lineCount = lines.count
+            NetworkManagerPlugin.logger.info("\(self.t)tick #\(tick) 解析 nettop 输出，\(lineCount) 行")
         }
         
         for line in lines.dropLast() {

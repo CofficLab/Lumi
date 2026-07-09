@@ -2,6 +2,8 @@ import AppKit
 import Combine
 import SwiftUI
 import LumiCoreKit
+import SuperLogKit
+import os
 
 /// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）
 struct DeviceInfoMenuBarContentView: View {
@@ -29,15 +31,25 @@ struct DeviceInfoMenuBarContentView: View {
 }
 
 @MainActor
-final class DeviceInfoMenuBarContentViewModel: ObservableObject {
+final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
     static let shared = DeviceInfoMenuBarContentViewModel()
+
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemenubar.view")
+    nonisolated public static let emoji = "📊"
+    nonisolated(unsafe) static var verbose: Bool = false
 
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 
     private var lastMetrics = DeviceInfoMenuBarMetrics.empty
     private var cancellables = Set<AnyCancellable>()
 
+    /// 心跳节流计数：Combine sink 每触发一次自增，每 N 次打一条日志，
+    /// 避免每秒 12 条心跳刷屏。用于排查 CPU 占用持续 100% 时确认本链路是否在狂跑。
+    private var sinkTickCount = 0
+    private let sinkTickLogEvery = 10
+
     private init() {
+        if Self.verbose { Self.logger.info("\(Self.t)ViewModel init，启动监控") }
         startMonitoring()
         observeMenuBarAppearanceChanges()
     }
@@ -47,6 +59,7 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] notification in
                 guard let self else { return }
+                if Self.verbose { Self.logger.info("\(self.t)收到外观变更通知，刷新快照") }
                 if let button = notification.object as? NSStatusBarButton {
                     let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
                     appearance.performAsCurrentDrawingAppearance {
@@ -66,6 +79,7 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
     private func startMonitoring() {
         CPUService.shared.startMonitoring()
         MemoryService.shared.startMonitoring()
+        if Self.verbose { Self.logger.info("\(Self.t)订阅 CPU/Memory 发布者，启动 Combine 链(debounce 80ms)") }
 
         let cpuMetrics = Publishers.CombineLatest3(
             CPUService.shared.$cpuUsage,
@@ -101,6 +115,12 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject {
                 guard let self else { return }
                 self.lastMetrics = metrics
                 self.snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
+                // 节流心跳：每 N 次重绘打一条，确认本链路是否持续在重生成 NSImage。
+                // 若这里高频触发，说明上游 CPU/Memory 发布者在持续推送，是 100% CPU 的直接信号。
+                self.sinkTickCount += 1
+                if Self.verbose, self.sinkTickCount % self.sinkTickLogEvery == 0 {
+                    Self.logger.info("\(self.t)tick #\(self.sinkTickCount) 刷新快照，cpu=\(metrics.cpu.usagePercent)%，mem=\(metrics.memory.usagePercent)%")
+                }
             }
             .store(in: &cancellables)
     }

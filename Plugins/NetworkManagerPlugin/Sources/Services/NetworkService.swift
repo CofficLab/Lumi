@@ -9,7 +9,7 @@ import ShellKit
 @MainActor
 public class NetworkService: SuperLog, ObservableObject {
     public nonisolated static let emoji = "📡"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let shared = NetworkService()
 
     // Published properties for subscribers
@@ -22,6 +22,11 @@ public class NetworkService: SuperLog, ObservableObject {
     private var monitoringTimer: Timer?
     private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
+
+    /// 心跳节流计数：每次网络采样 tick 自增，每 N 次打一条日志（1Hz → 约每 10 秒一条）。
+    /// 用于排查 CPU 占用持续 100% 时确认本采样链路是否在持续运行。
+    private var tickCount = 0
+    private let tickLogEvery = 10
 
     // Previous data for speed calculation
     private var lastBytesIn: UInt64 = 0
@@ -117,6 +122,12 @@ public class NetworkService: SuperLog, ObservableObject {
                 self.uploadSpeed = uploadSpeed
                 self.totalDownload = currentIn
                 self.totalUpload = currentOut
+
+                // 节流心跳：确认 1Hz 网络采样链路在持续运行。
+                self.tickCount += 1
+                if Self.verbose, NetworkManagerPlugin.verbose, self.tickCount % self.tickLogEvery == 0 {
+                    NetworkManagerPlugin.logger.info("\(self.t)tick #\(self.tickCount) 采样完成，↓\(String(format: "%.0f", downloadSpeed))B/s ↑\(String(format: "%.0f", uploadSpeed))B/s")
+                }
             }
         }
     }

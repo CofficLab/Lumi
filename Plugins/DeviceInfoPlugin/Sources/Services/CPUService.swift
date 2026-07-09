@@ -8,8 +8,8 @@ import os
 public final class CPUService: ObservableObject, SuperLog {
     public static let shared = CPUService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.cpu")
-    public nonisolated static let emoji = "🔍"
-    public nonisolated(unsafe) static var verbose: Bool = false
+    public nonisolated static let emoji = "🖥️"
+    public nonisolated(unsafe) static var verbose: Bool = true
 
     // MARK: - Published Properties
 
@@ -37,6 +37,11 @@ public final class CPUService: ObservableObject, SuperLog {
     private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
 
+    /// 心跳节流计数：每次 CPU 采样 tick 自增，每 N 次打一条日志（1Hz 定时器 → 约每 10 秒一条）。
+    /// 用于排查 CPU 占用持续 100% 时确认本采样链路是否在主线程持续运行。
+    private var tickCount = 0
+    private let tickLogEvery = 10
+
     // CPU Calculation State
     private var previousTicks: [integer_t]?
 
@@ -47,7 +52,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            if Self.verbose { Self.logger.info("\(self.t)开始 CPU 监控") }
+            if Self.verbose { Self.logger.info("\(Self.t)\(Self.emoji) 开始 CPU 监控") }
             updateCPUUsage()
 
             let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -63,7 +68,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            if Self.verbose { Self.logger.info("\(self.t)停止 CPU 监控") }
+            if Self.verbose { Self.logger.info("\(Self.t)\(Self.emoji) 停止 CPU 监控") }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             samplingTask?.cancel()
@@ -94,6 +99,12 @@ public final class CPUService: ObservableObject, SuperLog {
                 self.userUsage = snapshot.userUsage
                 self.systemUsage = snapshot.systemUsage
                 self.idleUsage = snapshot.idleUsage
+
+                // 节流心跳：确认 1Hz CPU 采样链路在持续运行。
+                self.tickCount += 1
+                if Self.verbose, self.tickCount % self.tickLogEvery == 0 {
+                    Self.logger.info("\(self.t)\(Self.emoji) tick #\(self.tickCount) 采样完成，cpu=\(String(format: "%.1f", snapshot.totalUsage))%")
+                }
             }
         }
     }
