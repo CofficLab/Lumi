@@ -13,6 +13,7 @@ import AskUserPlugin
 import AutoTaskPlugin
 import BrewManagerPlugin
 import BrowserPlugin
+import CADDesignerPlugin
 import CaffeinatePlugin
 import ChatModePlugin
 import ChatPanelPlugin
@@ -299,6 +300,7 @@ public enum LumiPluginRegistry {
         DelayMessagePlugin.self,
         AppIconDesignerPlugin.self,
         DisplayControlPlugin.self,
+        CADDesignerPlugin.self,
 
         // MARK: - Logo Plugins
 
