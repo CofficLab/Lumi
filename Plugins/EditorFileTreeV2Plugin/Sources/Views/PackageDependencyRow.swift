@@ -41,7 +41,7 @@ public struct PackageDependencyRow: View {
                     .help(dependency.status.displayText)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .padding(.horizontal, 6)
         .padding(.leading, CGFloat(depth) * 16)
         .frame(maxWidth: .infinity, alignment: .leading)
