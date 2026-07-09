@@ -16,6 +16,7 @@ final class FileTreeNodeCell: NSCollectionViewItem {
     private var cachedIsSelected = false
     private var cachedGitStatus: GitStatus?
     private var cachedTheme: (any LumiAppChromeTheme)?
+    private var cachedFlashOpacity: Double = 0
 
     override func loadView() {
         view = NSView()
@@ -44,20 +45,23 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         isSelected: Bool,
         isHovered: Bool,
         gitStatus: GitStatus?,
-        theme: any LumiAppChromeTheme
+        theme: any LumiAppChromeTheme,
+        flashOpacity: Double = 0
     ) {
         self.isHovered = isHovered
         self.cachedItem = item
         self.cachedIsSelected = isSelected
         self.cachedGitStatus = gitStatus
         self.cachedTheme = theme
+        self.cachedFlashOpacity = flashOpacity
 
         hostingView?.rootView = NodeRowView(
             item: item,
             isSelected: isSelected,
             isHovered: isHovered,
             gitStatus: gitStatus,
-            theme: theme
+            theme: theme,
+            flashOpacity: flashOpacity
         )
     }
 
@@ -73,7 +77,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
             isSelected: cachedIsSelected,
             isHovered: hovered,
             gitStatus: cachedGitStatus,
-            theme: theme
+            theme: theme,
+            flashOpacity: cachedFlashOpacity
         )
     }
 
@@ -85,6 +90,7 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         cachedIsSelected = false
         cachedGitStatus = nil
         cachedTheme = nil
+        cachedFlashOpacity = 0
     }
 }
 

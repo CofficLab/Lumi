@@ -144,7 +144,7 @@ final class FileTreeDataSource: SuperLog {
                     result.append(contentsOf: expandDirectory(childURL, depth: depth + 1))
                 }
             } catch {
-                Self.logger.warning("无法展开目录 \(url.lastPathComponent): \(error.localizedDescription)")
+                Self.logger.warning("\(Self.t)无法展开目录 \(url.lastPathComponent): \(error.localizedDescription)")
             }
         }
         

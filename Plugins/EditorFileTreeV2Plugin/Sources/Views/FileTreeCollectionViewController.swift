@@ -47,7 +47,17 @@ final class FileTreeCollectionViewController: NSViewController {
 
     /// 将文件加入对话的回调
     var onAddToConversation: (([URL]) -> Void)?
-    
+
+    /// 中键点击预览回调
+    var onMiddleClick: ((URL) -> Void)?
+
+    /// Git 状态快照
+    var gitStatusSnapshot: GitStatusSnapshot = .empty
+
+    /// 闪烁高亮不透明度（由外部通过 triggerFlash 设置）
+    private var flashItemURL: URL?
+    private var flashOpacity: Double = 0
+
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCellView")
     
     /// viewDidLoad 之前预存的根路径
@@ -65,7 +75,7 @@ final class FileTreeCollectionViewController: NSViewController {
         setupBindings()
         setupTrackingArea()
         Self.logger.info("[FileTreeCollectionViewController] viewDidLoad 完成")
-        
+
         // bindings 就绪后再加载数据
         if let path = pendingProjectRoot, !path.isEmpty {
             Self.logger.info("[FileTreeCollectionViewController] 延迟加载项目: \(path)")
@@ -112,13 +122,16 @@ final class FileTreeCollectionViewController: NSViewController {
 
             let isSelected = self.selectionState.isSelected(item.url)
             let isHovered = self.hoveredItemURL == item.url
+            let gitStatus = self.gitStatus(for: item.url)
+            let itemFlashOpacity: Double = (self.flashItemURL == item.url) ? self.flashOpacity : 0
 
             cell.configure(
                 with: item,
                 isSelected: isSelected,
                 isHovered: isHovered,
-                gitStatus: nil,
-                theme: self.theme
+                gitStatus: gitStatus,
+                theme: self.theme,
+                flashOpacity: itemFlashOpacity
             )
 
             return cell
@@ -217,8 +230,48 @@ final class FileTreeCollectionViewController: NSViewController {
     }
     
     func updateGitStatus(_ snapshot: GitStatusSnapshot) {
-        // Git 状态更新通过 onItemsChanged 触发
-        fileTreeDataSource.fullRefresh()
+        gitStatusSnapshot = snapshot
+        // 触发可见 cell 重绘以显示 Git 状态标记
+        reloadVisibleItems()
+    }
+
+    /// 触发指定路径的闪烁高亮动画
+    func triggerFlash(path: String) {
+        guard EditorFileTreePanelPlugin.flashHighlightEnabled else { return }
+        let targetURL = URL(fileURLWithPath: path)
+        flashItemURL = targetURL
+        flashOpacity = 0.25
+        reloadVisibleItems()
+
+        // 延迟后淡出并清除闪烁状态
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(0.6 * 1_000_000_000))
+            flashOpacity = 0
+            reloadVisibleItems()
+            try? await Task.sleep(nanoseconds: UInt64(0.4 * 1_000_000_000))
+            flashItemURL = nil
+            flashOpacity = 0
+        }
+    }
+
+    /// 重新加载可见 cell，用于 Git 状态更新和闪烁动画
+    private func reloadVisibleItems() {
+        let visibleItems = collectionView.indexPathsForVisibleItems()
+        guard !visibleItems.isEmpty else { return }
+        collectionView.reloadItems(at: Array(visibleItems))
+    }
+
+    /// 根据文件 URL 查询 Git 状态
+    private func gitStatus(for url: URL) -> GitStatus? {
+        guard !gitStatusSnapshot.isEmpty,
+              !gitStatusSnapshot.repoRootPath.isEmpty else { return nil }
+        let repoRoot = gitStatusSnapshot.repoRootPath
+        let path = url.path
+        guard path.hasPrefix(repoRoot) else { return nil }
+        let relativePath = path.dropFirst(repoRoot.count)
+            .trimmingCharacters(in: ["/"])
+        return gitStatusSnapshot.statusForPath(relativePath)
+            ?? gitStatusSnapshot.aggregateStatusForDirectory(relativePath)
     }
     
     func getProjectRootPath() -> String {
@@ -260,20 +313,26 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
-        
-        if item.isDirectory {
-            fileTreeDataSource.toggleExpansion(at: item.url)
-            
-            let relativePath = PathFormatter.expansionPath(
-                for: item.url,
-                projectRootPath: item.projectRootPath
-            )
-            onExpansionChange?(relativePath, !item.isExpanded)
-        } else {
-            selectionState.syncFromEditorHighlight(item.url)
-            onSelect?(item.url)
-        }
-        
+
+        let modifiers = ModifierFlags.currentClick
+
+        selectionState.handleTap(
+            url: item.url,
+            isDirectory: item.isDirectory,
+            modifiers: modifiers,
+            onOpenFile: {
+                self.onSelect?(item.url)
+            },
+            onToggleExpand: {
+                self.fileTreeDataSource.toggleExpansion(at: item.url)
+                let relativePath = PathFormatter.expansionPath(
+                    for: item.url,
+                    projectRootPath: item.projectRootPath
+                )
+                self.onExpansionChange?(relativePath, !item.isExpanded)
+            }
+        )
+
         collectionView.deselectItems(at: indexPaths)
     }
     

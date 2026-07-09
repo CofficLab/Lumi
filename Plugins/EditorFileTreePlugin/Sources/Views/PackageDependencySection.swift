@@ -14,6 +14,20 @@ public struct PackageDependencySection: View {
 
     @State private var isExpanded: Bool = true
 
+    public init(
+        projectRootPath: String,
+        dependencies: [PackageDependency],
+        isLoading: Bool,
+        diagnostic: String?,
+        onRetry: @escaping () -> Void
+    ) {
+        self.projectRootPath = projectRootPath
+        self.dependencies = dependencies
+        self.isLoading = isLoading
+        self.diagnostic = diagnostic
+        self.onRetry = onRetry
+    }
+
     public var body: some View {
         // 直接返回 VStack，避免 AnyView 擦除类型、阻断 SwiftUI 静态 diff（递归树中成本放大）。
         VStack(alignment: .leading, spacing: 0) {

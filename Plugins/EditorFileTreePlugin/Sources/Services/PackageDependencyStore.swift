@@ -5,12 +5,12 @@ import os
 @MainActor
 public final class PackageDependencyStore: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📦"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
-    @Published private(set) var dependencies: [PackageDependency] = []
-    @Published private(set) var isLoading: Bool = false
-    @Published private(set) var diagnostic: String?
+    @Published public private(set) var dependencies: [PackageDependency] = []
+    @Published public private(set) var isLoading: Bool = false
+    @Published public private(set) var diagnostic: String?
 
     private var projectRootPath: String = ""
     private var refreshTask: Task<Void, Never>?
@@ -18,6 +18,8 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
     deinit {
         refreshTask?.cancel()
     }
+
+    public init() {}
 
     public func setProjectRootPath(_ path: String) {
         guard path != projectRootPath else { return }

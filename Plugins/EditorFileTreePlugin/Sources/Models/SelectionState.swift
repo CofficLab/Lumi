@@ -15,7 +15,7 @@ public final class SelectionState: ObservableObject {
     @Published private(set) var anchorPath: String?
 
     /// 闪烁高亮路径：定位到文件时触发，触发后自动清除
-    @Published var flashPath: String?
+    @Published public var flashPath: String?
 
     /// 可见路径的有序数组（保持插入顺序）
     private var visibleOrder: [String] = []
@@ -92,7 +92,7 @@ public final class SelectionState: ObservableObject {
         anchorPath = path
     }
 
-    func handleTap(
+    public func handleTap(
         url: URL,
         isDirectory: Bool,
         modifiers: ModifierFlags,
@@ -154,7 +154,7 @@ public final class SelectionState: ObservableObject {
     /// - Parameters:
     ///   - url: 要闪烁的文件路径
     ///   - duration: 闪烁持续时间（毫秒）
-    func triggerFlash(for url: URL, duration: TimeInterval = 0.8) {
+    public func triggerFlash(for url: URL, duration: TimeInterval = 0.8) {
         let path = normalizedPath(url)
 
         // 取消之前的闪烁任务
@@ -177,25 +177,25 @@ public final class SelectionState: ObservableObject {
 }
 
 /// 跨平台修饰键抽象，便于单元测试。
-struct ModifierFlags: OptionSet, Sendable {
-    let rawValue: UInt
+public struct ModifierFlags: OptionSet, Sendable {
+    public let rawValue: UInt
 
-    static let command = ModifierFlags(rawValue: 1 << 0)
-    static let shift = ModifierFlags(rawValue: 1 << 1)
+    public static let command = ModifierFlags(rawValue: 1 << 0)
+    public static let shift = ModifierFlags(rawValue: 1 << 1)
 
-    init(rawValue: UInt) {
+    public init(rawValue: UInt) {
         self.rawValue = rawValue
     }
 
     #if canImport(AppKit)
-    init(_ flags: NSEvent.ModifierFlags) {
+    public init(_ flags: NSEvent.ModifierFlags) {
         var value: UInt = 0
         if flags.contains(.command) { value |= Self.command.rawValue }
         if flags.contains(.shift) { value |= Self.shift.rawValue }
         self.init(rawValue: value)
     }
 
-    static var currentClick: ModifierFlags {
+    public static var currentClick: ModifierFlags {
         let flags = NSApp.currentEvent?
             .modifierFlags
             .intersection(.deviceIndependentFlagsMask) ?? []

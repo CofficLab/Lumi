@@ -16,7 +16,7 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     // MARK: - SuperLog Configuration
 
     public static let emoji = "🌲"
-    public static let verbose: Bool = true
+    public static let verbose: Bool = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
 
     public static let info = LumiPluginInfo(
