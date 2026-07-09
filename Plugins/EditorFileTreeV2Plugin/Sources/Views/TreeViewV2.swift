@@ -178,12 +178,16 @@ public struct TreeViewV2: View, SuperLog {
     private func onAppear() {
         coordinator.setProjectRootPath(currentProjectPath)
         packageStore.setProjectRootPath(currentProjectPath)
-        Self.logger.info("FileTreeV2 出现，项目路径: \(currentProjectPath)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)出现，项目路径: \(currentProjectPath)")
+        }
     }
 
     private func onDisappear() {
         coordinator.stop()
-        Self.logger.info("FileTreeV2 消失")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)消失")
+        }
     }
 
     private func onCoordinatorRefresh(_ newToken: Int) {
