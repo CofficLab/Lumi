@@ -29,12 +29,17 @@ public enum ThemeWindowAppearanceSync {
     }
 
     /// 清除菜单栏系统窗口上被误设的主题外观，恢复壁纸自适应。
+    ///
+    /// 幂等守卫：仅当当前 `appearance != nil` 时才赋 `nil`，避免重复赋值触发
+    /// `effectiveAppearance` KVO 自激振荡（→ MenuBarService.replaceMenuBarContent 死循环）。
     public static func restoreMenuBarSystemAppearance() {
         NSApp?.windows
             .filter(\.isMenuBarOwnedWindow)
             .forEach { window in
-                window.appearance = nil
-                window.contentView?.needsDisplay = true
+                if window.appearance != nil {
+                    window.appearance = nil
+                    window.contentView?.needsDisplay = true
+                }
             }
     }
 }

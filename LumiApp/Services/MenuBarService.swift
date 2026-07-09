@@ -9,7 +9,7 @@ import os
 final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.menu-bar")
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?
@@ -18,7 +18,6 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     private var eventMonitor: Any?
     private var contentTimer: DispatchSourceTimer?
     private let contentRefreshInterval: TimeInterval = 1.0
-    private var effectiveAppearanceObservation: NSKeyValueObservation?
     private var windowAppearanceObservation: NSKeyValueObservation?
     private var buttonWindowObservation: NSKeyValueObservation?
     nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
@@ -145,6 +144,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     private func replaceMenuBarContent() {
         guard let button = statusItem?.button else { return }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)replaceMenuBarContent 进入")
+        }
+
         restoreMenuBarSystemAppearance()
 
         MenuBarAppearance.performAsCurrent(for: button) {
@@ -162,25 +165,45 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     }
 
     /// 清除 Lumi 主题同步对菜单栏系统窗口的 `appearance` 污染。
+    ///
+    /// 幂等守卫：仅当当前 `appearance != nil` 时才赋 `nil`。
+    /// 若无条件赋 `nil`，在 appearance 已为 nil 时也会再次改写 `effectiveAppearance`，
+    /// 触发 `observeMenuBarAppearance` 的 KVO → `replaceMenuBarContent` → 本方法，
+    /// 形成 KVO 自激振荡，导致主线程持续 100% CPU。
     private func restoreMenuBarSystemAppearance() {
         ThemeWindowAppearanceSync.restoreMenuBarSystemAppearance()
-        statusItem?.button?.appearance = nil
-        hostingView?.appearance = nil
+        if let button = statusItem?.button, button.appearance != nil {
+            button.appearance = nil
+        }
+        if let hostingView, hostingView.appearance != nil {
+            hostingView.appearance = nil
+        }
     }
 
     private func observeMenuBarAppearance(button: NSStatusBarButton) {
-        guard effectiveAppearanceObservation == nil else { return }
+        guard buttonWindowObservation == nil else { return }
 
-        effectiveAppearanceObservation = button.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in
-                self?.replaceMenuBarContent()
-            }
-        }
+        // 注意：不要观察 button.effectiveAppearance / window.effectiveAppearance。
+        //
+        // status item 的 effectiveAppearance 由系统综合「窗口主题」与「菜单栏壁纸自适应」计算，
+        // 是一个派生值。replaceMenuBarContent → restoreMenuBarSystemAppearance 把 appearance 置 nil
+        // 后，系统重新计算时会在 NSAppearanceNameDarkAqua 与 NSAppearanceNameVibrantLight 之间
+        // 来回横跳，触发 effectiveAppearance 的 KVO，而 KVO 又回调 replaceMenuBarContent，
+        // 形成跨 runloop 的自激振荡，导致主线程持续 100% CPU。
+        //
+        // 真正需要刷新内容的时机（系统主题切换、Lumi 主题同步）已由下面的低频信号覆盖：
+        // - observeSystemAppearanceChanges：监听 AppleInterfaceThemeChangedNotification
+        // - observeThemeWindowSync：监听 lumiThemeDidSyncWindowAppearances
+        // 这里仅保留对 button.window 的观察，用于在窗口挂载/变化时重新布局，不触碰 appearance。
 
         buttonWindowObservation = button.observe(\.window, options: [.new]) { [weak self] button, _ in
+            if Self.verbose {
+                Self.logger.info("\(Self.t)KVO[button.window] 变化，更新布局")
+            }
             Task { @MainActor in
                 self?.observeWindowAppearance(button.window)
-                self?.replaceMenuBarContent()
+                // 延迟更新尺寸，不触发内容重建（避免重启外观振荡）。
+                self?.updateStatusItemLength()
             }
         }
 
@@ -189,11 +212,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
 
     private func observeWindowAppearance(_ window: NSWindow?) {
         windowAppearanceObservation?.invalidate()
-        windowAppearanceObservation = window?.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in
-                self?.replaceMenuBarContent()
-            }
-        }
+        // 不观察 window.effectiveAppearance，原因同 observeMenuBarAppearance：避免与
+        // replaceMenuBarContent 的副作用形成 KVO 自激振荡。仅持有观察引用以备后续扩展。
+        windowAppearanceObservation = nil
     }
 
     private func observeSystemAppearanceChanges() {
@@ -202,6 +223,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            if Self.verbose {
+                Self.logger.info("\(Self.t)分布式通知[AppleInterfaceTheme] → replaceMenuBarContent")
+            }
             Task { @MainActor in
                 self?.replaceMenuBarContent()
             }
@@ -214,6 +238,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            if Self.verbose {
+                Self.logger.info("\(Self.t)通知[lumiThemeDidSyncWindowAppearances] → replaceMenuBarContent")
+            }
             Task { @MainActor in
                 self?.replaceMenuBarContent()
             }
