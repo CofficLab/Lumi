@@ -1,22 +1,22 @@
-import Foundation
-import Combine
-import SuperLogKit
-import os
 import AppKit
+import Combine
+import Foundation
+import os
+import SuperLogKit
 
 /// Process monitoring service that reports top N CPU-consuming processes via libproc.
 @MainActor
 public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.process")
-    nonisolated(unsafe) static var verbose: Bool = false
-    nonisolated public static let emoji = "⚙️"
+    nonisolated(unsafe) static var verbose: Bool = true
+    public nonisolated static let emoji = "⚙️"
 
     // MARK: - Constants
 
     private nonisolated static let processLimit = 5
     /// `proc_taskinfo.pti_total_user/system` reports CPU time in 100ns ticks.
-    private nonisolated static let processTimeTicksPerSecond = 10_000_000.0
+    private nonisolated static let processTimeTicksPerSecond = 10000000.0
 
     // MARK: - Published Properties
 
@@ -40,7 +40,7 @@ public final class ProcessService: ObservableObject, SuperLog {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                            Self.logger.info("\(self.t)开始进程监控")
+                Self.logger.info("\(self.t)开始进程监控")
             }
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
@@ -57,7 +57,7 @@ public final class ProcessService: ObservableObject, SuperLog {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                            Self.logger.info("\(self.t)停止进程监控")
+                Self.logger.info("\(self.t)停止进程监控")
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
@@ -144,7 +144,7 @@ public final class ProcessService: ObservableObject, SuperLog {
         var currentSnapshot: [Int32: (user: UInt64, system: UInt64)] = [:]
         var results: [ProcessMetric] = []
 
-        for i in 0..<actualCount {
+        for i in 0 ..< actualCount {
             if Task.isCancelled { break }
             let pid = pids[i]
             guard pid > 0 else { continue }

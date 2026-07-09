@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub 添加 Issue 评论工具
 public struct GitHubAddIssueCommentTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let info = LumiAgentToolInfo(
         id: "github_add_issue_comment",
         displayName: "GitHubAddIssueComment",

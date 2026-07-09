@@ -15,7 +15,7 @@ public extension LumiPreviewFacade {
     final class PreviewSurfaceView: NSView, @preconcurrency NSTextInputClient, SuperLog {
         nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiPreviewKit.PreviewSurfaceView")
         public nonisolated static let emoji = "👁"
-        public nonisolated static let verbose: Bool = false
+        public nonisolated static let verbose: Bool = true
 
         // MARK: - 公开属性
 

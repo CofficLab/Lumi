@@ -9,7 +9,7 @@ import os
 /// 使用 actor 保证同一时间只有一个命令在执行。
 public actor GoRunner: SuperLog {
     public nonisolated static let emoji = "🏃"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.go-editor.runner"

@@ -31,7 +31,7 @@ private enum QuickFileSearchLog {
 @MainActor
 public final class FileSearchService: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let shared = FileSearchService()
 
     // MARK: - Published Properties
@@ -58,7 +58,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
 
     private init() {
         if Self.verbose {
-            QuickFileSearchLog.logger.info("\(Self.t)✅ FileSearchService 初始化完成")
+            QuickFileSearchLog.logger.info("\(Self.t)\(Self.emoji) FileSearchService 初始化完成")
         }
     }
 

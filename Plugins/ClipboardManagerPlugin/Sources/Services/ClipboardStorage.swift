@@ -7,7 +7,7 @@ import SuperLogKit
 /// 存储位置：AppConfig.getDBFolderURL()/ClipboardManager/history.sqlite
 public actor ClipboardStorage: SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     
     public static let shared = ClipboardStorage()
     

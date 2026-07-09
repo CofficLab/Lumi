@@ -20,7 +20,7 @@ private typealias _MLXModels = MLXModels
 @MainActor
 public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
-    nonisolated public static let verbose: Bool = false
+    nonisolated public static let verbose: Bool = true
 
     /// 全局共享的下载管理器单例
     ///

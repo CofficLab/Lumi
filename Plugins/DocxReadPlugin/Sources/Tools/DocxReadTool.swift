@@ -8,7 +8,7 @@ import SuperLogKit
 /// 内部使用 macOS 自带 `/usr/bin/textutil` 将 DOCX 转为纯文本。
 public struct DocxReadTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "read_docx",

@@ -10,7 +10,7 @@ public actor ChatAttachmentPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-attachment")
 
     public nonisolated static let emoji = "📎"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let id = "ChatAttachment"
     public static let displayName = LumiPluginLocalization.string("Chat Attachment", bundle: .module)

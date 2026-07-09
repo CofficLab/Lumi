@@ -10,7 +10,7 @@ import os
 /// 包括网页导航、元素交互、截图、获取页面快照等。
 public struct BrowserAgentTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser-agent.tool")
 

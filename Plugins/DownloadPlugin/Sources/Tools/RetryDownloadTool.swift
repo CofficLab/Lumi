@@ -8,7 +8,7 @@ import SuperLogKit
 /// 重试一个失败的下载任务。
 public struct RetryDownloadTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔄"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "retry_download",

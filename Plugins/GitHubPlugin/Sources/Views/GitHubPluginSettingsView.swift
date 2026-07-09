@@ -8,7 +8,7 @@ public struct GitHubPluginSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public nonisolated static let emoji = "🐙"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     @State private var token: String = ""
     @State private var isSaved: Bool = false

@@ -8,7 +8,7 @@ import SuperLogKit
 /// 列出所有当前下载任务及其状态。
 public struct ListDownloadsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "list_downloads",

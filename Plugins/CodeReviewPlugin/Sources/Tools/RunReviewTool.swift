@@ -4,7 +4,7 @@ import SuperLogKit
 
 public struct RunReviewTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "run_review",

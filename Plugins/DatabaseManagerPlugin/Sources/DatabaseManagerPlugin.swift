@@ -9,7 +9,7 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .general
     public static let iconName = "server.rack"
-    public static let verbose: Bool = false
+    public static let verbose: Bool = true
 
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.database-manager")
 

@@ -7,7 +7,7 @@ import SuperLogKit
 /// 基于 StripStore 的 activeTabPath 设置当前活跃文件。
 public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "set_current_file",

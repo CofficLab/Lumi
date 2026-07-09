@@ -7,7 +7,7 @@ import SuperLogKit
 /// 检测用户是否安装了 GitHub CLI (gh) 命令行工具
 public final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let shared = GitHubCLIDetectService()
 
     typealias CommandRunner = @Sendable (String) -> ShellResult?

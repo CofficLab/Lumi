@@ -7,7 +7,7 @@ import SuperLogKit
 /// 返回项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。
 public struct ProjectOverviewTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "project_overview",

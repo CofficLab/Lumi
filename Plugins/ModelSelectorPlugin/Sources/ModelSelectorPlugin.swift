@@ -9,7 +9,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "globe"
-    public static let verbose: Bool = false
+    public static let verbose: Bool = true
     public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
 
     public static let info = LumiPluginInfo(

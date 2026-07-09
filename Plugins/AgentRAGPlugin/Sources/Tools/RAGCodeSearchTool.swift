@@ -4,7 +4,7 @@ import SuperLogKit
 
 public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     /// 默认返回结果数量
     static let defaultTopK = 8

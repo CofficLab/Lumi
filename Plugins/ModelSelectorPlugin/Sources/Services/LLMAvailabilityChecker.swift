@@ -10,7 +10,7 @@ import SuperLogKit
 @MainActor
 public final class LLMAvailabilityChecker: SuperLog {
     public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector.availability")
-    public static let verbose: Bool = false
+    public static let verbose: Bool = true
 
     private let llmService: any LLMAvailabilityLLMServicing
     private let store = LLMAvailabilityStore.shared

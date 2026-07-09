@@ -11,7 +11,7 @@ public final class GPUService: ObservableObject, SuperLog {
     public static let shared = GPUService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.gpu")
     nonisolated public static let emoji = "🎮"
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     // MARK: - Published Properties
 

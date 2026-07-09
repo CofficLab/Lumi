@@ -7,7 +7,7 @@ import os
 @MainActor
 public class QuickLauncherManager: SuperLog {
     public nonisolated static let emoji = "🎯"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     // MARK: - Singleton
 

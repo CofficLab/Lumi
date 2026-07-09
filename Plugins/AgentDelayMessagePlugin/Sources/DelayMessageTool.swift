@@ -22,7 +22,7 @@ import SuperLogKit
 /// - 不依赖 `RootViewContainer.shared`
 public struct DelayMessageTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "⏳"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     static let defaultDelaySeconds: TimeInterval = 5
     static let minDelaySeconds: TimeInterval = 1
     static let maxDelaySeconds: TimeInterval = 3600

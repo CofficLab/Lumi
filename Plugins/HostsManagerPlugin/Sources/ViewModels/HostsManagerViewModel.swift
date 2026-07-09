@@ -6,7 +6,7 @@ import Combine
 @MainActor
 public class HostsManagerViewModel: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     @Published var entries: [HostEntry] = []
     @Published var isLoading = false
     @Published var errorMessage: String?

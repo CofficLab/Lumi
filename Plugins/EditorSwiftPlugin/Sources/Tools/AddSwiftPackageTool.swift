@@ -7,7 +7,7 @@ import XcodeProj
 /// 向 Xcode 项目添加 Swift Package 的 Agent 工具。
 public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📦"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "add_xcode_package",

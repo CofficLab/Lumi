@@ -5,7 +5,7 @@ import LumiLLMProviderSupport
 
 enum AvailabilityService: SuperLog {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderStepFunPlugin")
-    static let verbose: Bool = false
+    static let verbose: Bool = true
 
     static func checkAvailability(
         provider: StepFunProvider,

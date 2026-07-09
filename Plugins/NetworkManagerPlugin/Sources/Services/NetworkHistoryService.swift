@@ -40,7 +40,7 @@ public enum TimeRange: String, CaseIterable, Identifiable {
 public class NetworkHistoryService: ObservableObject, SuperLog {
     public static let shared = NetworkHistoryService()
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     
     // Recent history (high resolution: 1 point per second for last hour)
     @Published var recentHistory: [NetworkDataPoint] = []

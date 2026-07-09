@@ -67,7 +67,7 @@ public final class ShowImageState: ObservableObject {
 /// 2. **远程 URL**：有效的 HTTP/HTTPS URL
 public struct ShowImageTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🖼️"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     static let defaultMaxWidth = 400
     static let minMaxWidth = 100
     static let maxMaxWidth = 800

@@ -8,7 +8,7 @@ import SuperLogKit
 /// 超时后自动取消未完成的智能体。
 public struct CollectAgentsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📦"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "collect_agents",
