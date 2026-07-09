@@ -7,6 +7,7 @@
 
 import Foundation
 import AppKit
+import os
 
 class CursorTimer {
     /// # Properties
@@ -17,6 +18,12 @@ class CursorTimer {
     private var cursors: NSHashTable<CursorView> = .init(options: .weakMemory)
     /// Tracks whether cursors are hidden or not.
     var shouldHide: Bool = false
+
+    /// 排查 CPU 占用：每个聚焦编辑器都会启动一个 0.5Hz 闪烁定时器。
+    /// 用 lifecycle 日志确认是否有泄漏（reset 后没 stop）。subsystem 对齐 com.coffic.lumi。
+    /// 本包不依赖 SuperLogKit，故用原生 os.Logger + 本地 verbose 开关，排查完改 false 即可。
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.cursor")
+    private static let verbose = true
 
     // MARK: - Methods
 
@@ -33,6 +40,7 @@ class CursorTimer {
         shouldHide = false
         notifyCursors(shouldHide: shouldHide)
 
+        if Self.verbose { Self.logger.info("CursorTimer 启动闪烁定时器 \(newBlinkDuration)s") }
         timer = Timer.scheduledTimer(withTimeInterval: newBlinkDuration, repeats: true) { [weak self] _ in
             self?.assertMain()
             self?.shouldHide.toggle()
@@ -42,6 +50,7 @@ class CursorTimer {
     }
 
     func stopTimer() {
+        if Self.verbose, timer != nil { Self.logger.info("CursorTimer 停止闪烁定时器") }
         shouldHide = true
         notifyCursors(shouldHide: true)
         cursors.removeAllObjects()

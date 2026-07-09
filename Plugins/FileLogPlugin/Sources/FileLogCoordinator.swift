@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import SuperLogKit
 
 /// 磁盘日志协调器
 ///
@@ -50,8 +51,12 @@ import OSLog
 /// | 过期清理 | 7 天 |
 /// | 轮转触发 | 启动时新建 + 超大小自动轮转 |
 /// | 轮询间隔 | 2 秒 |
-final class FileLogCoordinator: @unchecked Sendable {
+final class FileLogCoordinator: @unchecked Sendable, SuperLog {
     static let shared = FileLogCoordinator()
+
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-log")
+    nonisolated public static let emoji = "📝"
+    nonisolated(unsafe) static var verbose: Bool = true
 
     // MARK: - Constants
 
@@ -74,6 +79,11 @@ final class FileLogCoordinator: @unchecked Sendable {
     private var pollTimer: DispatchSourceTimer?
     private var pendingRecords: [LogRecord] = []
     private var seenRecordKeys: Set<String> = []
+
+    /// 心跳节流计数：每次 OSLog 轮询 tick 自增，每 N 次打一条日志。
+    /// 用于排查 CPU 占用持续 100% 时确认本后台轮询（2 秒一次扫描 OSLogStore）是否在狂跑。
+    private var pollTickCount = 0
+    private let pollTickLogEvery = 10
 
     // MARK: - Log Directory
 
@@ -98,6 +108,7 @@ final class FileLogCoordinator: @unchecked Sendable {
             lastPolledDate = Date().addingTimeInterval(-writeDelay)
             pendingRecords = []
             seenRecordKeys = []
+            if Self.verbose { Self.logger.info("\(Self.t)启动 OSLog 轮询(间隔 \(self.pollInterval)s)，写入 \(self.logsDirectory.path)") }
             purgeExpiredLogs()
             rotateLogFile()
             schedulePollTimer()
@@ -244,6 +255,14 @@ final class FileLogCoordinator: @unchecked Sendable {
                     if !self.isFileLoggingDisabled {
                         self.checkFileSize()
                     }
+                }
+
+                // 节流心跳：每 N 次轮询打一条，确认后台 OSLog 轮询是否持续运行。
+                // 若本轮读到的记录数持续很大，说明 app 自身打的日志过多，
+                // 每次扫描+去重+写盘会吃 CPU，是 100% CPU 的可能来源。
+                self.pollTickCount += 1
+                if Self.verbose, self.pollTickCount % self.pollTickLogEvery == 0 {
+                    Self.logger.info("\(Self.t)tick #\(self.pollTickCount) OSLog 轮询完成，本轮读到 \(records.count) 条，待写 \(self.pendingRecords.count) 条")
                 }
             }
         }

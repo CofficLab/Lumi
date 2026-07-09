@@ -1,5 +1,4 @@
 import AppKit
-import EditorFileTreePlugin
 import LumiCoreKit
 
 /// 文件树操作辅助

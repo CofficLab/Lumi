@@ -1,7 +1,13 @@
 import Foundation
+import SuperLogKit
+import os
 
 @MainActor
-public final class EditorExternalFileController {
+public final class EditorExternalFileController: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.ext-file")
+    nonisolated public static let emoji = "📄"
+    nonisolated(unsafe) static var verbose: Bool = true
+
     public struct ConflictState: Equatable {
         public let content: String
         public let modificationDate: Date
@@ -17,6 +23,13 @@ public final class EditorExternalFileController {
     public private(set) var conflictState: ConflictState?
     private let pollInterval: TimeInterval
 
+    /// 心跳节流计数：每个文件 watcher 的轮询 tick 自增，每 N 次打一条日志。
+    /// 每打开一个文件就会启动一个 \(pollInterval)Hz 主线程定时器，
+    /// 多文件累积会成为主线程 runloop 负担，用于排查 100% CPU 时确认是否在持续轮询。
+    private var tickCount = 0
+    private let tickLogEvery = 10
+    private var watchedURL: URL?
+
     public init(pollInterval: TimeInterval = 1.0) {
         self.pollInterval = pollInterval
     }
@@ -27,12 +40,19 @@ public final class EditorExternalFileController {
     ) {
         cleanupWatcher(clearConflict: {})
 
+        watchedURL = url
         lastKnownModificationDate = Self.getModificationDate(of: url)
-        let timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { _ in
+        if Self.verbose { Self.logger.info("\(self.t)启动文件轮询 \(url.lastPathComponent)，间隔 \(self.pollInterval)s（每打开一个文件即多一个主线程定时器）") }
+        let timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
             guard let currentModDate = Self.getModificationDate(of: url) else {
                 return
             }
             DispatchQueue.main.async {
+                guard let self else { return }
+                self.tickCount += 1
+                if Self.verbose, self.tickCount % self.tickLogEvery == 0 {
+                    Self.logger.info("\(self.t)tick #\(self.tickCount) 轮询 \(url.lastPathComponent)")
+                }
                 onPoll(url, currentModDate)
             }
         }
@@ -41,8 +61,12 @@ public final class EditorExternalFileController {
     }
 
     public func cleanupWatcher(clearConflict: @escaping @MainActor () -> Void) {
+        if let url = watchedURL, pollTimer != nil, Self.verbose {
+            Self.logger.info("\(self.t)停止文件轮询 \(url.lastPathComponent)")
+        }
         pollTimer?.invalidate()
         pollTimer = nil
+        watchedURL = nil
         lastKnownModificationDate = nil
         conflictState = nil
         clearConflict()

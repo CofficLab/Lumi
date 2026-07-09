@@ -26,7 +26,7 @@ import os
 /// 7. LLM 收到用户的回答作为 tool result，继续处理
 public struct AskUserTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "❓"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.ask-user")
 
     /// 工具名称，用于在整个插件中统一引用

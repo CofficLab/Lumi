@@ -23,7 +23,7 @@ import os
 public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     // MARK: - Provider Info
 
     /// 供应商唯一标识符

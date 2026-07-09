@@ -75,7 +75,7 @@ public enum ScannerModelPreference: Codable, Equatable, Hashable, Sendable {
 /// 支持自动模型路由或用户手动指定模型。
 public actor DeepIssueAnalyzer: SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     public static let shared = DeepIssueAnalyzer()
 

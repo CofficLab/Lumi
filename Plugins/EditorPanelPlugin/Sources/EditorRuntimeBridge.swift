@@ -33,7 +33,13 @@ public enum EditorRuntimeBridge {
             return LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
         }
 
-        EditorPreviewRuntimeBridge.addToChatHandler = { _, _ in }
+        EditorPreviewRuntimeBridge.addToChatHandler = { text, _ in
+            NotificationCenter.default.post(
+                name: Notification.Name("addToChat"),
+                object: nil,
+                userInfo: ["text": text, "windowId": service.state.windowId as Any]
+            )
+        }
 
         let runtime = PluginRuntimeContext(
             editorServiceProvider: { _ in service },

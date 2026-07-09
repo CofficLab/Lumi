@@ -5,7 +5,7 @@ import SuperLogKit
 /// Git 查看 Commit 详情工具
 public struct GitShowTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "git_show",

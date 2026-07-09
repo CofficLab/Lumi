@@ -5,7 +5,7 @@ import SuperLogKit
 /// Git 分支管理工具
 public struct GitBranchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔀"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "git_branch",

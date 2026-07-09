@@ -48,7 +48,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     @Published var changedDirectoryPathsToken: Int = 0
 
     /// Git 状态快照，视图通过只读映射查询
-    @Published var gitStatusSnapshot: GitStatusSnapshot = .empty
+    @Published public private(set) var gitStatusSnapshot: GitStatusSnapshot = .empty
 
     /// Git 状态令牌：每次 Git 状态更新时递增，用于驱动 Git 状态标记颜色更新，
     /// 但不触发文件列表重建。与文件系统的 targetedRefreshToken 分离。

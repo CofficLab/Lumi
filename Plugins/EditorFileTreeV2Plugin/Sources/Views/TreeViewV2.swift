@@ -1,7 +1,6 @@
 import SwiftUI
 import EditorService
 import LumiCoreKit
-import EditorFileTreePlugin
 import os
 import SuperLogKit
 
@@ -22,6 +21,9 @@ public struct TreeViewV2: View, SuperLog {
     /// 刷新协调器
     @StateObject private var coordinator = RefreshCoordinator()
 
+    /// Swift Package Dependencies 数据源
+    @StateObject private var packageStore = PackageDependencyStore()
+
     /// 根节点刷新令牌
     @State private var rootRefreshToken: Int = 0
 
@@ -35,42 +37,53 @@ public struct TreeViewV2: View, SuperLog {
 
     public var body: some View {
         let projectPath = currentProjectPath
-        let _ = Self.logger.info("\(Self.t)📝[body] projectPath: \(projectPath)")
 
         VStack(spacing: 0) {
             if projectPath.isEmpty {
-                let _ = Self.logger.warning("\(Self.t)📝[body] → NoProjectView (projectPath is empty)")
                 NoProjectView()
             } else {
-                let _ = Self.logger.info("\(Self.t)📝[body] → FileTreeNSViewBridge (projectPath is not empty)")
-                FileTreeNSViewBridge(
-                    projectRootPath: projectPath,
-                    onSelect: { selectedURL in
-                        Self.logger.info("\(Self.t)📝[onSelect] url: \(selectedURL.path)")
-                        openProjectFile(selectedURL)
-                    },
-                    onExpansionChange: { relativePath, isExpanded in
-                        Self.logger.info("\(Self.t)📝[onExpansionChange] path: \(relativePath), isExpanded: \(isExpanded)")
-                        handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
-                    },
-                    onTreeMutation: {
-                        Self.logger.info("\(Self.t)📝[onTreeMutation] triggered")
-                        refreshTreeAfterMutation()
-                    },
-                    onCloseEditorTabs: { urls in
-                        Self.logger.info("\(Self.t)📝[onCloseEditorTabs] urls: \(urls.map(\.path))")
-                        editorContext.closeSessions(forURLs: urls)
-                    },
-                    onRenameEditorTab: { oldURL, newURL in
-                        Self.logger.info("\(Self.t)📝[onRenameEditorTab] \(oldURL.lastPathComponent) → \(newURL.lastPathComponent)")
-                        editorContext.replaceSessionURL(from: oldURL, to: newURL)
-                    },
-                    onAddToConversation: { urls in
-                        Self.logger.info("\(Self.t)📝[onAddToConversation] urls: \(urls.map(\.path))")
-                        editorContext.addToConversation(fileURLs: urls, windowId: nil)
+                VStack(spacing: 0) {
+                    FileTreeNSViewBridge(
+                        projectRootPath: projectPath,
+                        onSelect: { selectedURL in
+                            openProjectFile(selectedURL)
+                        },
+                        onExpansionChange: { relativePath, isExpanded in
+                            handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
+                        },
+                        onTreeMutation: {
+                            refreshTreeAfterMutation()
+                        },
+                        onCloseEditorTabs: { urls in
+                            editorContext.closeSessions(forURLs: urls)
+                        },
+                        onRenameEditorTab: { oldURL, newURL in
+                            editorContext.replaceSessionURL(from: oldURL, to: newURL)
+                        },
+                        onAddToConversation: { urls in
+                            editorContext.addToConversation(fileURLs: urls, windowId: nil)
+                        },
+                        flashTrigger: flashTrigger,
+                        onMiddleClick: { selectedURL in
+                            openProjectFile(selectedURL)
+                        },
+                        gitStatusSnapshot: coordinator.gitStatusSnapshot
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    if showPackageDependencies {
+                        Divider()
+                            .opacity(0.35)
+
+                        PackageDependencySection(
+                            projectRootPath: projectPath,
+                            dependencies: packageStore.dependencies,
+                            isLoading: packageStore.isLoading,
+                            diagnostic: packageStore.diagnostic,
+                            onRetry: { packageStore.refresh() }
+                        )
                     }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .environmentObject(selectionState)
@@ -78,9 +91,24 @@ public struct TreeViewV2: View, SuperLog {
         .onChange(of: editorContext.fileTreeHighlightedFileURL) { url in
             if let url {
                 selectionState.syncFromEditorHighlight(url)
+                // 触发闪烁效果，帮助用户定位文件
+                if EditorFileTreeV2Plugin.flashHighlightEnabled {
+                    selectionState.triggerFlash(for: url)
+                }
             } else {
                 selectionState.clearSelection()
             }
+        }
+        // 同步选中文件通知：外部触发时自动打开文件
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: EditorContext.syncSelectedFileNotificationName ?? Notification.Name("___unused___")
+            )
+        ) { notification in
+            guard let userInfo = notification.userInfo,
+                  let path = userInfo["path"] as? String else { return }
+            let url = URL(fileURLWithPath: path)
+            openProjectFile(url)
         }
         .onCurrentProjectDidChange { _ in
             onProjectPathChanged()
@@ -90,6 +118,12 @@ public struct TreeViewV2: View, SuperLog {
         .onReceive(coordinator.$refreshToken) { newToken in
             onCoordinatorRefresh(newToken)
         }
+        // 监听闪烁路径变化，转换为 flashTrigger 传递给 AppKit 层
+        .onReceive(selectionState.$flashPath) { path in
+            if let path = path {
+                flashTrigger = (path, UUID())
+            }
+        }
     }
 
     // MARK: - Private Computed Properties
@@ -98,12 +132,25 @@ public struct TreeViewV2: View, SuperLog {
         LumiCore.projectState?.currentProject?.path ?? ""
     }
 
+    private var showPackageDependencies: Bool {
+        guard !currentProjectPath.isEmpty else { return false }
+        return PackageDependencyResolver.shouldShowPackageDependencies(
+            projectRootURL: URL(fileURLWithPath: currentProjectPath)
+        )
+    }
+
     // MARK: - Event Handlers
 
     private func openProjectFile(_ url: URL) {
         openFileTask?.cancel()
         editorContext.setFileTreeHighlightedFileURL(url)
+
+        let projectPath = currentProjectPath
         editorContext.openFile(at: url)
+
+        openFileTask = Task { @MainActor in
+            await editorContext.refreshProjectContext(for: projectPath)
+        }
     }
 
     private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
@@ -117,24 +164,32 @@ public struct TreeViewV2: View, SuperLog {
 
     private func refreshTreeAfterMutation() {
         coordinator.refresh()
+        packageStore.refresh()
     }
 
     private func onProjectPathChanged() {
         coordinator.stop()
+        packageStore.setProjectRootPath(currentProjectPath)
         rootRefreshToken += 1
     }
 
     private func onAppear() {
         coordinator.setProjectRootPath(currentProjectPath)
-        Self.logger.info("FileTreeV2 出现，项目路径: \(currentProjectPath)")
+        packageStore.setProjectRootPath(currentProjectPath)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)出现，项目路径: \(currentProjectPath)")
+        }
     }
 
     private func onDisappear() {
         coordinator.stop()
-        Self.logger.info("FileTreeV2 消失")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)消失")
+        }
     }
 
     private func onCoordinatorRefresh(_ newToken: Int) {
         rootRefreshToken = newToken
+        packageStore.refresh()
     }
 }

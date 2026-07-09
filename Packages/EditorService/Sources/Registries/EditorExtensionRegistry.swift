@@ -19,7 +19,7 @@ import os
 @MainActor
 public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     private static let logger = os.Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.ext-registry")
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
     nonisolated public static let emoji = "🔌"
 
     /// 已安装的编辑器插件（按 order 排序）

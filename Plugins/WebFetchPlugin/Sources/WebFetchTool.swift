@@ -7,7 +7,7 @@ import SuperLogKit
 /// 从指定 URL 抓取内容并转换为 Markdown 格式。支持处理 HTML、纯文本、JSON 等内容。
 public struct WebFetchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "web_fetch",

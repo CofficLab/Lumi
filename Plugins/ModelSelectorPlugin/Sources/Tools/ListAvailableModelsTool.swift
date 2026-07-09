@@ -6,7 +6,7 @@ import os
 /// 列出可用 LLM 模型工具
 public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🤖"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "list_available_models",

@@ -8,7 +8,7 @@ import os
 final class EditorDocumentController: SuperLog {
     nonisolated static let emoji = "📄"
     private static let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.doc-controller")
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
     struct LoadedTextDocument {

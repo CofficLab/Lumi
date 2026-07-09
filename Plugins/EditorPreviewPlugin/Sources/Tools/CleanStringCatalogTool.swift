@@ -14,7 +14,7 @@ public struct CleanStringCatalogTool: SuperAgentTool, SuperLog {
         category: "plugin.editor-preview.clean-string-catalog"
     )
     public nonisolated static let emoji = "🧹"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public let name = "clean_string_catalog"
 

@@ -8,7 +8,7 @@ import os
 /// 请求日志历史管理器（HTTP 视角）
 public actor RequestLogHistoryManager: SuperLog {
     public nonisolated static let emoji = "📝"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     static let maxPageLimit = 1000
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "request-log.history")
     public static let shared = RequestLogHistoryManager()

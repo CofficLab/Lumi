@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub 趋势项目工具
 public struct GitHubTrendingTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔥"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     static let minLimit = 1
     static let defaultLimit = 10
     static let maxLimit = 100

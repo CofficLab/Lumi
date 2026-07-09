@@ -5,7 +5,7 @@ import SuperLogKit
 /// 创建子智能体工具。
 public struct SpawnAgentTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🚀"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "spawn_agent",

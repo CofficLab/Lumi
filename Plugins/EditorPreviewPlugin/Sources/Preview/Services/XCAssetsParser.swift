@@ -11,7 +11,7 @@ public enum XCAssetsParser: SuperLog {
         category: "plugin.editor-inline-preview.xcassets-parser"
     )
     public nonisolated static let emoji = "🎨"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     /// 解析结果
     public enum ParseResult {

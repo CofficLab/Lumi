@@ -22,7 +22,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         category: "plugin.editor-inline-preview.viewmodel"
     )
     public nonisolated static let emoji = "🔮"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     // MARK: - 类型
 

@@ -9,7 +9,7 @@ public enum MultiAgentPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .agent
     public static let iconName = "person.3.fill"
-    public static let verbose: Bool = false
+    public static let verbose: Bool = true
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.multi-agent")
 
     public static let info = LumiPluginInfo(

@@ -16,7 +16,7 @@ public enum SemanticIndexMetrics: SuperLog {
     private nonisolated(unsafe) static var cacheMisses = 0
     private nonisolated(unsafe) static var lastIndexDuration: TimeInterval?
     private nonisolated(unsafe) static var lastEntryCount: Int?
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     public static func recordCacheHit(workspacePath: String, entryCount: Int?) {
         lock.lock()

@@ -16,7 +16,7 @@ struct CacheStats {
 /// 缓存管理器 - 使用 SwiftData 持久化
 actor CacheManager: SuperLog {
     nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let shared = CacheManager()
 
     private let container: ModelContainer

@@ -4,7 +4,7 @@ import SuperLogKit
 
 public struct DatabaseListConnectionsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔌"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "database_list_connections",
@@ -32,7 +32,7 @@ public struct DatabaseListConnectionsTool: LumiAgentTool, SuperLog {
 
 public struct DatabaseDescribeSchemaTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "database_describe_schema",
@@ -72,7 +72,7 @@ public struct DatabaseDescribeSchemaTool: LumiAgentTool, SuperLog {
 
 public struct DatabaseReadonlyQueryTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "database_query_readonly",
@@ -119,7 +119,7 @@ public struct DatabaseReadonlyQueryTool: LumiAgentTool, SuperLog {
 
 public struct DatabaseSampleTableTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "database_sample_table",

@@ -7,7 +7,7 @@ import os
 public actor MessageSenderPlugin: LumiPlugin, SuperLog {
     nonisolated public static let emoji = "📬"
     public static let category: LumiPluginCategory = .agent
-    nonisolated public static let verbose: Bool = false
+    nonisolated public static let verbose: Bool = true
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-sender")
 
     public static let policy: LumiPluginPolicy = .alwaysOn

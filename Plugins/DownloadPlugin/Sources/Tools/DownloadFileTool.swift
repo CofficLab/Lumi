@@ -9,7 +9,7 @@ import SuperLogKit
 /// 支持 HTTP/HTTPS 协议，自动断点续传。
 public struct DownloadFileTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📥"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "download_file",

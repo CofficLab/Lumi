@@ -55,7 +55,7 @@ public actor RAGService: SuperLog {
         self.databaseDirectoryProvider = databaseDirectoryProvider
         self.onProgress = onProgress
         if Self.verbose {
-            Self.logger.info("\(Self.t)RAG 服务已创建")
+            Self.logger.info("\(Self.t)\(Self.emoji) RAG 服务已创建")
         }
     }
 

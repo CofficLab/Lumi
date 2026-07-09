@@ -19,7 +19,7 @@ public struct JSScriptResult: Sendable {
 public actor RuntimeBridge: SuperLog {
     public nonisolated static let emoji = "🚀"
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "js.runtime")
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     public static let shared = RuntimeBridge()
 

@@ -8,8 +8,8 @@ import os
 public final class MemoryService: ObservableObject, SuperLog {
     public static let shared = MemoryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.memory")
-    nonisolated(unsafe) static var verbose: Bool = false
-    nonisolated public static let emoji = "💾"
+    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated public static let emoji = "🧠"
 
     // MARK: - Published Properties
 
@@ -31,6 +31,11 @@ public final class MemoryService: ObservableObject, SuperLog {
     private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
 
+    /// 心跳节流计数：每次内存采样 tick 自增，每 N 次打一条日志（1Hz 定时器 → 约每 10 秒一条）。
+    /// 用于排查 CPU 占用持续 100% 时确认本采样链路是否在主线程持续运行。
+    private var tickCount = 0
+    private let tickLogEvery = 10
+
     package init() {
         self.totalMemory = ProcessInfo.processInfo.physicalMemory
     }
@@ -41,7 +46,7 @@ public final class MemoryService: ObservableObject, SuperLog {
         subscribersCount += 1
         if monitoringTimer == nil {
             if Self.verbose {
-                            Self.logger.info("\(self.t)开始 Memory 监控")
+                Self.logger.info("\(Self.t)\(Self.emoji) 开始 Memory 监控")
             }
 
             updateMemoryUsage()
@@ -60,7 +65,7 @@ public final class MemoryService: ObservableObject, SuperLog {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
             if Self.verbose {
-                            Self.logger.info("\(self.t)停止 Memory 监控")
+                Self.logger.info("\(Self.t)\(Self.emoji) 停止 Memory 监控")
             }
 
             monitoringTimer?.invalidate()
@@ -118,6 +123,12 @@ public final class MemoryService: ObservableObject, SuperLog {
                 guard self.subscribersCount > 0 else { return }
                 self.usedMemory = used
                 self.memoryUsagePercentage = min(100.0, Double(used) / Double(total) * 100.0)
+
+                // 节流心跳：确认 1Hz 内存采样链路在持续运行。
+                self.tickCount += 1
+                if Self.verbose, self.tickCount % self.tickLogEvery == 0 {
+                    Self.logger.info("\(self.t)\(Self.emoji) tick #\(self.tickCount) 采样完成，mem=\(String(format: "%.1f", self.memoryUsagePercentage))%")
+                }
             }
         }
     }

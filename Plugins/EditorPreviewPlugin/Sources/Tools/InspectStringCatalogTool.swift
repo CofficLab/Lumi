@@ -18,7 +18,7 @@ public struct InspectStringCatalogTool: SuperAgentTool, SuperLog {
         category: "plugin.editor-preview.inspect-string-catalog"
     )
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public let name = "inspect_string_catalog"
 

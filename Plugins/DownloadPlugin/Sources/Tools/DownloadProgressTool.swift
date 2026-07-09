@@ -8,7 +8,7 @@ import SuperLogKit
 /// 查询下载任务的当前进度。
 public struct DownloadProgressTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "download_progress",

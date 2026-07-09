@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub 文件内容获取工具
 public struct GitHubFileContentTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let info = LumiAgentToolInfo(
         id: "github_file_content",
         displayName: "GitHubFileContent",

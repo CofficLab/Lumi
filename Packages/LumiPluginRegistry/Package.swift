@@ -193,7 +193,8 @@ let package = Package(
         .package(path: "../../Plugins/LogoCofficPlugin"),
         .package(path: "../../Plugins/VideoConverterPlugin"),
         .package(path: "../../Plugins/DownloadPlugin"),
-        .package(path: "../../Plugins/DocxReadPlugin")
+        .package(path: "../../Plugins/DocxReadPlugin"),
+        .package(path: "../../Plugins/CADDesignerPlugin")
     ],
     targets: [
         .target(
@@ -377,7 +378,8 @@ let package = Package(
                 .product(name: "LogoCofficPlugin", package: "LogoCofficPlugin"),
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
                 .product(name: "DownloadPlugin", package: "DownloadPlugin"),
-                .product(name: "DocxReadPlugin", package: "DocxReadPlugin")
+                .product(name: "DocxReadPlugin", package: "DocxReadPlugin"),
+                .product(name: "CADDesignerPlugin", package: "CADDesignerPlugin")
             ],
             path: "Sources",
             resources: [
