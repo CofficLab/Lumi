@@ -28,7 +28,7 @@ enum AppStoreConnectClientError: LocalizedError {
 
 final class ConnectClient: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🔗"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-store-connect.client")
 
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!

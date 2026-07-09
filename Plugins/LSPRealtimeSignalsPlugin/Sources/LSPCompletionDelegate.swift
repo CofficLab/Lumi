@@ -15,7 +15,7 @@ private protocol ApplicableCompletionEntry: CodeSuggestionEntry {
 @MainActor
 public final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     public nonisolated static let emoji = "💡"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lsp.realtime.completion")
 
     weak var lspClient: (any SuperEditorLSPClient)?

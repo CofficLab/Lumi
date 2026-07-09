@@ -11,7 +11,7 @@ import os
 /// 存储位置：<dbRoot>/EditorTabStrip/projects/<projectHash>/tabs.json
 public final class StripStore: @unchecked Sendable, SuperLog {
     public nonisolated static var emoji: String { "📑" }
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip-store")
 

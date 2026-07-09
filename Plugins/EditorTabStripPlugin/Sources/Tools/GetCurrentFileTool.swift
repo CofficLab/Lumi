@@ -8,7 +8,7 @@ import os
 /// 基于 StripStore 的 activeTabPath 获取当前活跃文件。
 public struct GetCurrentFileTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let info = LumiAgentToolInfo(
         id: "get_current_file",

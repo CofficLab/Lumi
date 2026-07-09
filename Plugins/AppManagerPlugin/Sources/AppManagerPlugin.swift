@@ -5,7 +5,7 @@ import SwiftUI
 
 public enum AppManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
-    public static let verbose = true
+    public static let verbose = false
     nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = { AppConfig.getDBFolderURL() }
 
     public static let policy: LumiPluginPolicy = .optIn

@@ -5,7 +5,7 @@ import os
 
 enum ToolCallLoopDetectionOrchestrator: SuperLog {
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-call-loop-detection")
 
     @MainActor

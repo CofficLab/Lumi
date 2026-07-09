@@ -9,7 +9,7 @@ import os
 /// 使用 Actor 模式确保线程安全，参考 `CacheManager` 模板。
 public actor TaskStateManager: SuperLog {
     nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.state-manager")
 
     // MARK: - Singleton

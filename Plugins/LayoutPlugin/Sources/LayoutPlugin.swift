@@ -17,7 +17,7 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
     public static let iconName = "sidebar.left"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     public nonisolated static let emoji = "📐"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.layout",

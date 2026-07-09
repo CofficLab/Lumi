@@ -9,7 +9,7 @@ import os
 public final class LumiProjectState: ObservableObject, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.project-state")
     public nonisolated static let emoji = "📂"
-    public static var verbose = true
+    public static var verbose = false
 
     // MARK: - 当前项目
 

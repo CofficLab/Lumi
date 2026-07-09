@@ -9,7 +9,7 @@ import os
 /// - 负责查询检索并返回相关片段
 public actor RAGService: SuperLog {
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.service")
 
     private static let pluginName = "RAGPlugin"

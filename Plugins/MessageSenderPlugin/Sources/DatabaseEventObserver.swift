@@ -5,7 +5,7 @@ import SwiftUI
 
 struct DatabaseEventObserver<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "📬" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
     nonisolated static var logger: Logger { MessageSenderPlugin.logger }
 
     let senderService: SenderService
