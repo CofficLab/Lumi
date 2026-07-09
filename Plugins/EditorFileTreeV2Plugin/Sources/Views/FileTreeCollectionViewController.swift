@@ -4,14 +4,14 @@ import EditorFileTreePlugin
 import LumiCoreKit
 import LumiUI
 import MagicAlert
-import os
+import SuperLogKit
 
 /// 文件树集合视图控制器
 ///
 /// 使用 NSCollectionView 实现高性能文件树渲染。
 @MainActor
-final class FileTreeCollectionViewController: NSViewController {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
+final class FileTreeCollectionViewController: NSViewController, SuperLog {
+    nonisolated static let emoji = "📂"
 
     
     private let collectionView: NSCollectionView = {
@@ -74,11 +74,11 @@ final class FileTreeCollectionViewController: NSViewController {
         setupDataSource()
         setupBindings()
         setupTrackingArea()
-        Self.logger.info("[FileTreeCollectionViewController] viewDidLoad 完成")
+        EditorFileTreeV2Plugin.logger.info("\(Self.t)视图加载完成")
 
         // bindings 就绪后再加载数据
         if let path = pendingProjectRoot, !path.isEmpty {
-            Self.logger.info("[FileTreeCollectionViewController] 延迟加载项目: \(path)")
+            EditorFileTreeV2Plugin.logger.info("\(Self.t)延迟加载项目：\(path)")
             fileTreeDataSource.setProjectRoot(path)
             pendingProjectRoot = nil
         }
@@ -212,12 +212,12 @@ final class FileTreeCollectionViewController: NSViewController {
     
     func setProjectRoot(_ path: String) {
         if isViewLoaded {
-            Self.logger.info("[FileTreeCollectionViewController] setProjectRoot: \(path)")
+            EditorFileTreeV2Plugin.logger.info("\(Self.t)设置项目根路径：\(path)")
             fileTreeDataSource.setProjectRoot(path)
         } else {
             // viewDidLoad 之前，暂存路径
             pendingProjectRoot = path
-            Self.logger.info("[FileTreeCollectionViewController] 预存项目路径: \(path)")
+            EditorFileTreeV2Plugin.logger.info("\(Self.t)预存项目路径（待 viewDidLoad 后加载）：\(path)")
         }
     }
     
@@ -462,7 +462,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        Self.logger.info("[FileTreeV2] 新建文件: \(newURL.path)")
+        EditorFileTreeV2Plugin.logger.info("\(Self.t)创建文件：\(newURL.path)")
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         alert_success(LumiPluginLocalization.string("New File", bundle: .module),
@@ -485,7 +485,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             return
         }
-        Self.logger.info("[FileTreeV2] 新建文件夹: \(newURL.path)")
+        EditorFileTreeV2Plugin.logger.info("\(Self.t)创建文件夹：\(newURL.path)")
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         alert_success(LumiPluginLocalization.string("New Folder", bundle: .module),
