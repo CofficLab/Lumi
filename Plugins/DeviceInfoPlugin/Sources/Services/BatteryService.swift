@@ -17,6 +17,7 @@ public final class BatteryService: ObservableObject, SuperLog {
     public static let shared = BatteryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.battery")
     nonisolated public static let emoji = "🔋"
+    nonisolated(unsafe) static var verbose: Bool = false
 
     // MARK: - Published Properties
 
@@ -70,7 +71,9 @@ public final class BatteryService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(self.t)开始电池增强监控")
+            if Self.verbose {
+                Self.logger.info("\(self.t)开始电池增强监控")
+            }
             sampleBattery()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
@@ -84,7 +87,9 @@ public final class BatteryService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(self.t)停止电池增强监控")
+            if Self.verbose {
+                Self.logger.info("\(self.t)停止电池增强监控")
+            }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             samplingTask?.cancel()
