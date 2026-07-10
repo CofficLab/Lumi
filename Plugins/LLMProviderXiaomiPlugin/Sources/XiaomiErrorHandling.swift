@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import LumiLLMProviderSupport
 
 enum XiaomiErrorHandling {

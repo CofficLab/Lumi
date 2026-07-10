@@ -28,8 +28,10 @@ struct PluginLLMProviderXiaomiTests {
     }
 
     @Test func providersUseDistinctAPIKeyStorage() {
-        // TokenPlan 与小米 API 是独立服务，API Key 必须分开存储
-        #expect(XiaomiProvider.apiKeyStorageKey != XiaomiAPIProvider.apiKeyStorageKey)
+        // TokenPlan 与小米 API 是独立服务，API Key 必须分开存储。
+        // 通过 info.id 区分（重构后 apiKeyStorageKey 已是 internal 细节，
+        // 由 info 内部按 id 派生 Keychain 键）。
+        #expect(XiaomiProvider.info.id != XiaomiAPIProvider.info.id)
     }
 
     @Test func unsupportedTokenPlanModelMapsToStructuredFailure() {
