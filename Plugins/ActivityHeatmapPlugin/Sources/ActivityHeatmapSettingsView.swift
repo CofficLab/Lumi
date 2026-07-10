@@ -17,16 +17,6 @@ struct ActivityHeatmapSettingsView: View {
             subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
-            // Heatmap card
-            AppCard {
-                if viewModel.heatmapData.isEmpty && !viewModel.isLoading {
-                    emptyState
-                } else {
-                    ActivityHeatmapView(data: viewModel.heatmapData)
-                        .padding(16)
-                }
-            }
-
             // Period selector
             AppCard {
                 AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
@@ -38,6 +28,16 @@ struct ActivityHeatmapSettingsView: View {
                             Text(p.localizedTitle).tag(p)
                         }
                     }
+                }
+            }
+
+            // Heatmap card
+            AppCard {
+                if viewModel.heatmapData.isEmpty && !viewModel.isLoading {
+                    emptyState
+                } else {
+                    ActivityHeatmapView(data: viewModel.heatmapData)
+                        .padding(16)
                 }
             }
         }

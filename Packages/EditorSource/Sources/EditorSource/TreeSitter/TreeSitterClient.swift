@@ -30,7 +30,7 @@ import SuperLogKit
 public final class TreeSitterClient: HighlightProviding, SuperLog {
     public static let emoji: String = "🌳"
     static let logger: Logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "TreeSitterClient")
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
 
     enum TreeSitterClientError: Error {
         case invalidEdit
