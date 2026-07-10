@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 // MARK: - Cache Model
 
@@ -18,6 +19,8 @@ public struct ScanCache: Codable {
 // MARK: - Cache Service
 
 public actor ScanCacheService {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-cache")
+
     public static let shared = ScanCacheService()
 
     private let cacheDirectory: URL
@@ -58,7 +61,9 @@ public actor ScanCacheService {
             do {
                 let data = try JSONEncoder().encode(cache)
                 try data.write(to: fileURL)
-            } catch {}
+            } catch {
+                Self.logger.error("Failed to save scan cache: \(error.localizedDescription)")
+            }
         }
     }
 
