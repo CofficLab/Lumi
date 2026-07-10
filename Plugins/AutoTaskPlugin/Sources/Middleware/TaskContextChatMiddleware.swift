@@ -169,8 +169,7 @@ struct TaskContextChatMiddleware: LumiSendMiddleware {
             prompt += "- Task **\"\(current.title)\"** (`\(current.id)`) is currently **in_progress**.\n"
             prompt += "- When you finish this task, you MUST immediately call `update_task(task_id: \"\(current.id)\", status: \"completed\")` before doing anything else.\n"
             prompt += "- Do NOT start the next task without calling `update_task` first.\n"
-        } else if !pendingTasks.isEmpty {
-            let next = pendingTasks.first!
+        } else if let next = pendingTasks.first {
             prompt += "- Call `update_task(task_id: \"\(next.id)\", status: \"in_progress\")` to start the next task: **\(next.title)**\n"
         }
 
@@ -217,8 +216,7 @@ struct TaskContextChatMiddleware: LumiSendMiddleware {
             prompt += "- 任务 **\"\(current.title)\"** (`\(current.id)`) 当前处于 **in_progress** 状态。\n"
             prompt += "- 完成该任务后，必须先调用 `update_task(task_id: \"\(current.id)\", status: \"completed\")`，然后才能做其他事。\n"
             prompt += "- 调用 `update_task` 前，不要开始下一个任务。\n"
-        } else if !pendingTasks.isEmpty {
-            let next = pendingTasks.first!
+        } else if let next = pendingTasks.first {
             prompt += "- 调用 `update_task(task_id: \"\(next.id)\", status: \"in_progress\")` 开始下一个任务：**\(next.title)**\n"
         }
 

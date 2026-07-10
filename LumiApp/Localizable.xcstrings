@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@" : {
+
+    },
     "%lld enabled" : {
       "localizations" : {
         "en" : {
@@ -35,6 +38,9 @@
     "%lld 个插件" : {
 
     },
+    "App Support" : {
+
+    },
     "Check for Updates..." : {
       "localizations" : {
         "en" : {
@@ -63,7 +69,16 @@
         }
       }
     },
+    "Copied" : {
+
+    },
+    "Copy Error Details" : {
+
+    },
     "Focus Chat Input" : {
+
+    },
+    "Folders" : {
 
     },
     "MLX local models require macOS 14 or later." : {
@@ -124,6 +139,9 @@
         }
       }
     },
+    "Please quit and reopen the app, or check logs for more details." : {
+
+    },
     "Plugin Description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -152,6 +170,9 @@
           }
         }
       }
+    },
+    "Quit" : {
+
     },
     "Saved" : {
       "extractionState" : "stale",
@@ -189,6 +210,9 @@
 
     },
     "Stop Generation" : {
+
+    },
+    "Unable to continue" : {
 
     },
     "主要文字 Primary" : {

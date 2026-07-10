@@ -33,6 +33,7 @@ final class ActivityHeatmapViewModel {
 
     private(set) var heatmapData: [ActivityDay] = []
     private(set) var isLoading = false
+    private(set) var hasLoaded = false
     var period: ActivityHeatmapPeriod = .year {
         didSet {
             Task { await load() }
@@ -48,9 +49,12 @@ final class ActivityHeatmapViewModel {
     // MARK: - Load
 
     func load() async {
-        guard let service = historyService else { return }
+        guard let service = historyService else {
+            hasLoaded = true
+            return
+        }
         isLoading = true
-        defer { isLoading = false }
+        defer { isLoading = false; hasLoaded = true }
 
         let totalCount = await service.fetchMessageCount()
         guard totalCount > 0 else {

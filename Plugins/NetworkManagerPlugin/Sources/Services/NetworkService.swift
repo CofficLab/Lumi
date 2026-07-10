@@ -157,8 +157,8 @@ public class NetworkService: SuperLog, ObservableObject {
         var totalOut: UInt64 = 0
         
         var ptr = ifaddr
-        while ptr != nil {
-            let interface = ptr!.pointee
+        while let current = ptr {
+            let interface = current.pointee
             guard let address = interface.ifa_addr else {
                 ptr = interface.ifa_next
                 continue
@@ -191,8 +191,8 @@ public class NetworkService: SuperLog, ObservableObject {
         defer { freeifaddrs(ifaddr) }
         
         var ptr = ifaddr
-        while ptr != nil {
-            let interface = ptr!.pointee
+        while let current = ptr {
+            let interface = current.pointee
             guard let address = interface.ifa_addr else {
                 ptr = interface.ifa_next
                 continue

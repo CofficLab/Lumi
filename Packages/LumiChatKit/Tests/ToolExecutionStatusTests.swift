@@ -27,6 +27,8 @@ private final class AgentTurnMockProvider: LumiLLMProvider, @unchecked Sendable 
         try await sendStreaming(request) { _ in }
     }
 
+    func lumiResolveAPIKey() throws -> String { "mock-key" }
+
     func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void

@@ -1,195 +1,171 @@
 import AppKit
-import MagicLog
 import LumiCoreKit
 import os
+import SuperLogKit
 import SwiftUI
 
-struct SplitDimensionConstraints: Equatable {
-    var defaultSize: CGFloat
-    var minSize: CGFloat
-    var maxSize: CGFloat
-    var minimumOppositeSize: CGFloat
+// MARK: - 角色与访问层
 
-    static let rail = SplitDimensionConstraints(
-        defaultSize: 240,
-        minSize: 180,
-        maxSize: 480,
-        minimumOppositeSize: 280
-    )
-
-    static let bottomPanel = SplitDimensionConstraints(
-        defaultSize: 200,
-        minSize: 80,
-        maxSize: 600,
-        minimumOppositeSize: 120
-    )
-
-    static func chatSection(_ layout: LumiChatSectionLayout) -> SplitDimensionConstraints {
-        SplitDimensionConstraints(
-            defaultSize: layout.defaultWidth,
-            minSize: layout.minWidth,
-            maxSize: layout.maximumWidth,
-            minimumOppositeSize: layout.minimumRemainingWidth
-        )
-    }
+/// divider 位置的访问层。
+///
+/// 视图层不直接读写内核或磁盘，而是通过此闭包桥接与 `LumiLayoutState` 交互：
+/// - `readInitialPosition`: 从内核状态读取上一次保存的位置（无值时返回 nil，由调用方回退到默认值）
+/// - `persist`: 把用户拖拽后的位置写回内核（内核变更会发通知，由插件负责落盘）
+///
+/// 这样 `SplitDividerPersistenceView`（一个 NSView）无需持有 `ObservableObject`，
+/// 也不依赖 SwiftUI 的观察机制，保持与 AppKit 的交互方式不变。
+///
+/// 两个闭包均标记 `@MainActor`，因为它们最终调用 `LumiLayoutState`（`@MainActor`）的方法。
+struct SplitDividerAccess {
+    let readInitialPosition: @MainActor () -> CGFloat?
+    let persist: @MainActor (CGFloat) -> Void
+    /// 用于在日志中描述该角色的可读标签，例如 `railDivider[LumiEditor]`。
+    let labelForLog: @MainActor () -> String
 }
 
-struct SplitViewAutosaveConfigurator: NSViewRepresentable {
-    let autosaveName: String
+/// 描述一个分栏 divider 位置的角色，用于在视图层语义化地选择读写哪一类位置。
+enum SplitDividerRole {
+    case rail(viewContainerID: String)
+    case bottomPanel(viewContainerID: String)
+    case chatSection(viewContainerID: String, layout: LumiChatSectionLayout)
 
-    func makeNSView(context: Context) -> NSView {
-        NSView(frame: .zero)
+    /// 基于该角色与内核 `layoutState` 构造读写桥接。
+    @MainActor
+    func makeAccess(layoutState: LumiLayoutState) -> SplitDividerAccess {
+        switch self {
+        case let .rail(viewContainerID):
+            return SplitDividerAccess(
+                readInitialPosition: { layoutState.storedRailDivider(for: viewContainerID) },
+                persist: { layoutState.setRailDivider($0, for: viewContainerID) },
+                labelForLog: { "railDivider[\(viewContainerID)]" }
+            )
+        case let .bottomPanel(viewContainerID):
+            return SplitDividerAccess(
+                readInitialPosition: { layoutState.storedBottomPanelDivider(for: viewContainerID) },
+                persist: { layoutState.setBottomPanelDivider($0, for: viewContainerID) },
+                labelForLog: { "bottomPanelDivider[\(viewContainerID)]" }
+            )
+        case let .chatSection(viewContainerID, layout):
+            return SplitDividerAccess(
+                readInitialPosition: { layoutState.storedChatSectionDivider(for: viewContainerID, layout: layout) },
+                persist: { layoutState.setChatSectionDivider($0, for: viewContainerID, layout: layout) },
+                labelForLog: { "chatSectionDivider[\(viewContainerID).\(layout.persistenceKeySuffix)]" }
+            )
+        }
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            enclosingSplitView(from: nsView)?.autosaveName = autosaveName
+    /// 首次显示且无持久化值时的回退位置（轴向无关，由 split view 自己的 bounds 决定最终生效值）。
+    @MainActor
+    func defaultPosition() -> CGFloat {
+        switch self {
+        case .rail:
+            return 240
+        case .bottomPanel:
+            return 400
+        case .chatSection(_, let layout):
+            return layout.idealWidth
         }
     }
 }
 
-struct SplitDimensionPersistence: NSViewRepresentable {
-    enum Axis: CustomStringConvertible {
-        case horizontal
-        case vertical
+// MARK: - 视图包装
 
-        var description: String {
-            switch self {
-            case .horizontal: return "horizontal"
-            case .vertical: return "vertical"
-            }
-        }
+/// 把分栏 divider 位置持久化挂到 NSSplitView 旁边的"幽灵" NSView 包装。
+///
+/// 单一 API 覆盖三种 role；通过静态工厂让调用点读起来自然：
+/// ```
+/// .background(SplitViewDividerPersistence.rail(layoutState: ..., viewContainerID: ...))
+/// .background(SplitViewDividerPersistence.bottomPanel(layoutState: ..., viewContainerID: ...))
+/// .background(SplitViewDividerPersistence.chatSection(layoutState: ..., viewContainerID: ..., layout: ...))
+/// ```
+struct SplitViewDividerPersistence: NSViewRepresentable {
+    let layoutState: LumiLayoutState
+    let role: SplitDividerRole
+
+    static func rail(layoutState: LumiLayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
+        SplitViewDividerPersistence(layoutState: layoutState, role: .rail(viewContainerID: viewContainerID))
     }
 
-    let storageKey: String
-    let constraints: SplitDimensionConstraints
-    let axis: Axis
+    static func bottomPanel(layoutState: LumiLayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
+        SplitViewDividerPersistence(layoutState: layoutState, role: .bottomPanel(viewContainerID: viewContainerID))
+    }
 
-    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
-        SplitDimensionPersistenceView(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: axis
+    static func chatSection(
+        layoutState: LumiLayoutState,
+        viewContainerID: String,
+        layout: LumiChatSectionLayout
+    ) -> SplitViewDividerPersistence {
+        SplitViewDividerPersistence(
+            layoutState: layoutState,
+            role: .chatSection(viewContainerID: viewContainerID, layout: layout)
         )
     }
 
-    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
-        nsView.updateConfiguration(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: axis
-        )
+    func makeNSView(context: Context) -> SplitDividerPersistenceView {
+        SplitDividerPersistenceView(layoutState: layoutState, role: role)
     }
 
-    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
+    func updateNSView(_ nsView: SplitDividerPersistenceView, context: Context) {
+        nsView.updateConfiguration(layoutState: layoutState, role: role)
+    }
+
+    static func dismantleNSView(_ nsView: SplitDividerPersistenceView, coordinator: ()) {
         nsView.detach()
     }
 }
 
-struct SplitViewWidthPersistence: NSViewRepresentable {
-    let storageKey: String
-    var constraints: SplitDimensionConstraints = .rail
+// MARK: - 幽灵 NSView
 
-    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
-        SplitDimensionPersistenceView(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: .horizontal
-        )
-    }
-
-    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
-        nsView.updateConfiguration(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: .horizontal
-        )
-    }
-
-    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
-        nsView.detach()
-    }
-}
-
-struct ChatSectionWidthPersistence: NSViewRepresentable {
-    let layout: LumiChatSectionLayout
-    let storageKey: String
-
-    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
-        SplitDimensionPersistenceView(
-            storageKey: storageKey,
-            constraints: .chatSection(layout),
-            axis: .horizontal
-        )
-    }
-
-    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
-        nsView.updateConfiguration(
-            storageKey: storageKey,
-            constraints: .chatSection(layout),
-            axis: .horizontal
-        )
-    }
-
-    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
-        nsView.detach()
-    }
-}
-
-struct SplitViewHeightPersistence: NSViewRepresentable {
-    static let minimumHeight = SplitDimensionConstraints.bottomPanel.minSize
-    static let maximumHeight = SplitDimensionConstraints.bottomPanel.maxSize
-    static let minimumOppositeHeight = SplitDimensionConstraints.bottomPanel.minimumOppositeSize
-
-    let storageKey: String
-    var constraints: SplitDimensionConstraints = .bottomPanel
-
-    func makeNSView(context: Context) -> SplitDimensionPersistenceView {
-        SplitDimensionPersistenceView(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: .vertical
-        )
-    }
-
-    func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
-        nsView.updateConfiguration(
-            storageKey: storageKey,
-            constraints: constraints,
-            axis: .vertical
-        )
-    }
-
-    static func dismantleNSView(_ nsView: SplitDimensionPersistenceView, coordinator: ()) {
-        nsView.detach()
-    }
-}
-
+/// 挂在 NSSplitView 旁边的"幽灵" NSView，负责：
+/// 1. 在 attach 时把内核中的持久化 divider 位置应用到 NSSplitView 的 divider 0；
+/// 2. 监听 NSSplitView 的 `will/didResizeSubviewsNotification` 配对，
+///    **仅在用户拖拽 divider（bounds 未变）且位置真的变了**时写回内核并打"拖拽结束"日志。
+///
+/// ## 设计要点
+/// - **不用 150ms 防抖计时器**：v1 的 `DispatchQueue.main.asyncAfter` 是 hack，
+///   没法区分"用户按住思考中"和"用户已松手"。v2 直接用 NSSplitView 的 will/did 配对
+///   + bounds 尺寸对比，这是 NSSplitView 自己区分"用户拖 divider"和"系统/窗口 resize"
+///   的官方机制。
+/// - **不用 `initialAppliedSize` 黑名单**：v1 的 setPosition 自身会触发 didResize，
+///   必须用额外 flag 抑制"初始 apply 被误认为用户拖拽"。v2 用 `isApplyingInitialPosition`
+///   局部标志在 setPosition 调用期间屏蔽 will/did，调用结束立即清掉，行为更精确。
+/// - **不用 `containingPaneIndex`**：持久化 view 通过 `.background(...)` 挂在
+///   NSSplitView 旁边，本身就在 NSSplitView 的视图层级内。读 `position(ofDividerAt: 0)`
+///   不需要知道当前 pane 在 split view 中的下标。
+/// - **跨 2-pane / 3-pane 兼容**：通过 split view 自身的 `isVertical` + `position(ofDividerAt:)`
+///   推算轴向，不依赖外部传入。
 @MainActor
-final class SplitDimensionPersistenceView: NSView, SuperLog {
+final class SplitDividerPersistenceView: NSView, SuperLog {
     nonisolated static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
-    private static let maxApplyRetryCount = 20
+    /// 初始 attach 失败时最多重试多少次（每个 runloop 一次）。
+    /// 100 × 0.1s = 10s，覆盖 SwiftUI hosting view 装好的极端延迟。
+    private static let maxApplyRetryCount = 100
 
-    private var storageKey: String
-    private var dimensionConstraints: SplitDimensionConstraints
-    private var axis: SplitDimensionPersistence.Axis
+    private var layoutState: LumiLayoutState
+    private var role: SplitDividerRole
+    private var access: SplitDividerAccess
 
     private weak var observedSplitView: NSSplitView?
-    private var resizeObserver: NSObjectProtocol?
-    private var didApplySize = false
-    private var applyRetryCount = 0
-    private var pendingRetryWorkItem: DispatchWorkItem?
+    private var willResizeObserver: NSObjectProtocol?
+    private var didResizeObserver: NSObjectProtocol?
 
-    init(
-        storageKey: String,
-        constraints: SplitDimensionConstraints,
-        axis: SplitDimensionPersistence.Axis
-    ) {
-        self.storageKey = storageKey
-        self.dimensionConstraints = constraints
-        self.axis = axis
+    /// 是否已把持久化位置应用到 NSSplitView。`true` 之前所有 will/did 一律跳过。
+    private var hasAppliedInitialPosition = false
+    /// 当前 apply 调用的重试计数。
+    private var applyRetryCount = 0
+    /// 正在调用 setPosition 应用初始位置。期间 will/did 一律跳过，避免被误认为"用户拖拽"。
+    private var isApplyingInitialPosition = false
+
+    /// will 阶段记录：用于在 did 阶段判断"是否用户拖拽"。
+    private var dragStartBoundsSize: NSSize?
+    private var dragStartPosition: CGFloat?
+
+    init(layoutState: LumiLayoutState, role: SplitDividerRole) {
+        self.layoutState = layoutState
+        self.role = role
+        self.access = role.makeAccess(layoutState: layoutState)
         super.init(frame: .zero)
     }
 
@@ -198,234 +174,225 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func updateConfiguration(
-        storageKey: String,
-        constraints: SplitDimensionConstraints,
-        axis: SplitDimensionPersistence.Axis
-    ) {
-        guard self.storageKey != storageKey
-            || self.dimensionConstraints != constraints
-            || self.axis != axis
-        else { return }
-
-        self.storageKey = storageKey
-        self.dimensionConstraints = constraints
-        self.axis = axis
-        didApplySize = false
+    func updateConfiguration(layoutState: LumiLayoutState, role: SplitDividerRole) {
+        let roleChanged = !rolesEqual(self.role, role)
+        self.layoutState = layoutState
+        self.role = role
+        self.access = role.makeAccess(layoutState: layoutState)
+        guard roleChanged else { return }
+        // role 变了：重置 apply 状态，等下次 layout 重新挂代理
+        hasAppliedInitialPosition = false
+        applyRetryCount = 0
+        isApplyingInitialPosition = false
+        dragStartBoundsSize = nil
+        dragStartPosition = nil
         if Self.verbose {
-            Self.logger.info("\(self.t)config updated, key=\(storageKey)")
+            Self.logger.info("\(self.t)config updated, role changed")
         }
-        applySizeIfPossible()
+        if let split = observedSplitView {
+            applyInitialPositionIfPossible(in: split)
+        }
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if Self.verbose {
-            Self.logger.info("\(self.t)view moved to window, key=\(self.storageKey)")
+            Self.logger.info("\(self.t)view moved to window")
         }
         attachIfPossible()
     }
 
     func detach() {
-        if let resizeObserver {
-            NotificationCenter.default.removeObserver(resizeObserver)
-            self.resizeObserver = nil
+        if let willResizeObserver {
+            NotificationCenter.default.removeObserver(willResizeObserver)
+            self.willResizeObserver = nil
         }
-        pendingRetryWorkItem?.cancel()
-        pendingRetryWorkItem = nil
+        if let didResizeObserver {
+            NotificationCenter.default.removeObserver(didResizeObserver)
+            self.didResizeObserver = nil
+        }
         observedSplitView = nil
     }
+
+    // MARK: - 挂载
 
     private func attachIfPossible() {
         guard window != nil else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no window yet, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)no window yet")
             }
             return
         }
         guard let splitView = enclosingSplitView() else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no enclosing split view, key=\(self.storageKey), retry=\(self.applyRetryCount)")
+                Self.logger.info("\(self.t)no enclosing split view yet, retry=\(self.applyRetryCount)")
             }
-            scheduleRetry()
+            scheduleRetryAttach()
             return
         }
         guard splitView !== observedSplitView else {
-            if Self.verbose {
-                Self.logger.info("\(self.t)already attached to same split view, key=\(self.storageKey)")
-            }
-            applySizeIfPossible()
+            applyInitialPositionIfPossible(in: splitView)
             return
         }
 
-        if let resizeObserver {
-            NotificationCenter.default.removeObserver(resizeObserver)
-        }
-
         observedSplitView = splitView
-        didApplySize = false
+        hasAppliedInitialPosition = false
         applyRetryCount = 0
         if Self.verbose {
-            Self.logger.info("\(self.t)attached to split view, kself.ey=\(self.storageKey), vertical=\(splitView.isVertical)")
+            Self.logger.info("\(self.t)attached to split view, isVertical=\(splitView.isVertical)")
         }
-        applySizeIfPossible()
+        applyInitialPositionIfPossible(in: splitView)
 
-        resizeObserver = NotificationCenter.default.addObserver(
+        if let willResizeObserver {
+            NotificationCenter.default.removeObserver(willResizeObserver)
+        }
+        if let didResizeObserver {
+            NotificationCenter.default.removeObserver(didResizeObserver)
+        }
+
+        willResizeObserver = NotificationCenter.default.addObserver(
+            forName: NSSplitView.willResizeSubviewsNotification,
+            object: splitView,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.handleWillResize() }
+        }
+        didResizeObserver = NotificationCenter.default.addObserver(
             forName: NSSplitView.didResizeSubviewsNotification,
             object: splitView,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.persistCurrentSize()
-            }
+            Task { @MainActor [weak self] in self?.handleDidResize() }
         }
     }
 
-    private func applySizeIfPossible() {
-        guard !didApplySize else {
-            if Self.verbose {
-                Self.logger.info("\(self.t)already applied, skipping, key=\(self.storageKey)")
-            }
+    private func scheduleRetryAttach() {
+        guard applyRetryCount < Self.maxApplyRetryCount else {
+            // 失败时把 superview 链 dump 出来，便于排查 SwiftUI hosting view 嵌套问题
+            Self.logger.warning("\(self.t)gave up attaching after \(Self.maxApplyRetryCount) retries; superview chain: \(self.debugSuperviewChain())")
             return
         }
-        guard let splitView = observedSplitView ?? enclosingSplitView() else {
+        applyRetryCount += 1
+        DispatchQueue.main.async { [weak self] in self?.attachIfPossible() }
+    }
+
+    // MARK: - 初始 apply
+
+    private func applyInitialPositionIfPossible(in splitView: NSSplitView) {
+        guard !hasAppliedInitialPosition else { return }
+        guard splitView.arrangedSubviews.count >= 2 else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no split view found, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)split view has <2 arrangedSubviews, retry later")
             }
-            scheduleRetry()
-            return
-        }
-        let paneIndex = containingPaneIndex(in: splitView)
-        guard paneIndex != nil,
-              splitView.arrangedSubviews.count >= 2,
-              splitView.isVertical == (axis == .horizontal)
-        else {
-            if Self.verbose {
-                Self.logger.info("\(self.t)guard check failed, key=\(self.storageKey), pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)")
-            }
-            scheduleRetry()
+            scheduleRetryApply(in: splitView)
             return
         }
 
-        let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
+        let totalSize = splitView.isVertical ? splitView.bounds.width : splitView.bounds.height
         guard totalSize > 0 else {
             if Self.verbose {
-                Self.logger.info("\(self.t)totalSize is zero, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)totalSize is 0, retry later")
             }
-            scheduleRetry()
+            scheduleRetryApply(in: splitView)
             return
         }
 
-        let savedSize = UserDefaults.standard.object(forKey: storageKey) as? Double
-        let requestedSize = savedSize.map { CGFloat($0) } ?? dimensionConstraints.defaultSize
-        let targetSize = clampedSize(
-            requestedSize,
-            totalSize: totalSize,
-            dividerCount: splitView.arrangedSubviews.count - 1,
-            dividerThickness: splitView.dividerThickness
-        )
+        let savedPosition = access.readInitialPosition() ?? role.defaultPosition()
+        let maxPosition = max(0, totalSize - splitView.dividerThickness)
+        let clampedPosition = min(max(savedPosition, 0), maxPosition)
 
         if Self.verbose {
-            Self.logger.info("\(self.t)applying size, key=\(self.storageKey), saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize), paneIndex=\(paneIndex ?? -1)")
+            Self.logger.info("\(self.t)applying initial position: saved=\(self.access.readInitialPosition().map { "\($0)" } ?? "nil"), requested=\(savedPosition), target=\(clampedPosition), total=\(totalSize)")
         }
 
-        guard let idx = paneIndex else { return }
+        // 同步 setPosition：will/did 在此期间会触发，isApplyingInitialPosition 标志屏蔽它们。
+        isApplyingInitialPosition = true
+        splitView.setPosition(clampedPosition, ofDividerAt: 0)
+        splitView.layoutSubtreeIfNeeded()
+        isApplyingInitialPosition = false
+        hasAppliedInitialPosition = true
 
-        // 延迟到下一个 RunLoop 执行，避免在 SwiftUI 布局过程中 setPosition 被覆盖
-        DispatchQueue.main.async { [weak self, weak splitView] in
-            guard let self, let splitView, !self.didApplySize else { return }
-            self.setPane(idx, size: targetSize, in: splitView)
-            splitView.layoutSubtreeIfNeeded()
-            self.didApplySize = true
+        // 日志：仅在确实不是默认值时显式记录，便于 QA 验证。
+        if access.readInitialPosition() != nil {
+            Self.logger.info("\(self.t)applied initial position: \(self.access.labelForLog()) = \(String(format: "%.1f", clampedPosition))")
         }
     }
 
-    private func persistCurrentSize() {
-        guard let splitView = observedSplitView,
-              let paneIndex = containingPaneIndex(in: splitView),
-              splitView.arrangedSubviews.count > paneIndex,
-              splitView.isVertical == (axis == .horizontal)
+    private func scheduleRetryApply(in splitView: NSSplitView) {
+        guard applyRetryCount < Self.maxApplyRetryCount else {
+            Self.logger.warning("\(self.t)gave up applying after \(Self.maxApplyRetryCount) retries")
+            return
+        }
+        applyRetryCount += 1
+        DispatchQueue.main.async { [weak self, weak splitView] in
+            guard let self, let splitView else { return }
+            self.applyInitialPositionIfPossible(in: splitView)
+        }
+    }
+
+    // MARK: - will/did 配对
+
+    private func handleWillResize() {
+        guard hasAppliedInitialPosition,
+              !isApplyingInitialPosition,
+              let splitView = observedSplitView
+        else { return }
+        dragStartBoundsSize = splitView.bounds.size
+        dragStartPosition = dividerPosition(at: 0, in: splitView)
+    }
+
+    private func handleDidResize() {
+        guard hasAppliedInitialPosition,
+              !isApplyingInitialPosition,
+              let splitView = observedSplitView,
+              let startBounds = dragStartBoundsSize,
+              let startPosition = dragStartPosition
         else { return }
 
-        let paneSize = axis == .horizontal
-            ? splitView.arrangedSubviews[paneIndex].frame.width
-            : splitView.arrangedSubviews[paneIndex].frame.height
-        guard paneSize.isFinite, paneSize >= dimensionConstraints.minSize else { return }
+        defer {
+            dragStartBoundsSize = nil
+            dragStartPosition = nil
+        }
 
-        let clamped = min(max(paneSize, dimensionConstraints.minSize), dimensionConstraints.maxSize)
-        let saved = UserDefaults.standard.double(forKey: storageKey)
-        guard abs(saved - Double(clamped)) > 0.5 else { return }
-        UserDefaults.standard.set(Double(clamped), forKey: storageKey)
-        if Self.verbose {
-            Self.logger.info("\(self.t)persisted size, key=\(self.storageKey), old=\(saved), new=\(clamped)")
+        // 窗口 / split view 自身 resize：bounds 尺寸变了，不是用户拖 divider → 跳过。
+        if splitView.bounds.size != startBounds { return }
+
+        let newPosition = dividerPosition(at: 0, in: splitView)
+        if abs(newPosition - startPosition) < 0.5 { return }
+
+        access.persist(newPosition)
+        // 日志始终输出（不依赖 verbose），便于人工/QA 直接观察到拖拽结果。
+        let label = access.labelForLog()
+        let oldText = String(format: "%.1f", startPosition)
+        let newText = String(format: "%.1f", newPosition)
+        Self.logger.info("\(self.t)拖拽结束: \(label) = \(newText) (旧值: \(oldText))")
+    }
+
+    // MARK: - 工具
+
+    private func rolesEqual(_ lhs: SplitDividerRole, _ rhs: SplitDividerRole) -> Bool {
+        switch (lhs, rhs) {
+        case (.rail(let a), .rail(let b)): return a == b
+        case (.bottomPanel(let a), .bottomPanel(let b)): return a == b
+        case (.chatSection(let a1, let a2), .chatSection(let b1, let b2)):
+            return a1 == b1 && a2 == b2
+        default: return false
         }
     }
 
-    private func clampedSize(
-        _ requestedSize: CGFloat,
-        totalSize: CGFloat,
-        dividerCount: Int,
-        dividerThickness: CGFloat
-    ) -> CGFloat {
-        let dividersSize = CGFloat(dividerCount) * dividerThickness
-        let usableSize = max(1, totalSize - dividersSize)
-        let maximumAvailableSize = max(
-            dimensionConstraints.minSize,
-            usableSize - dimensionConstraints.minimumOppositeSize
-        )
-        return min(
-            max(requestedSize, dimensionConstraints.minSize),
-            min(dimensionConstraints.maxSize, maximumAvailableSize)
-        )
-    }
-
-    private func setPane(_ paneIndex: Int, size: CGFloat, in splitView: NSSplitView) {
-        let dividerIndex: Int
-        let position: CGFloat
-        let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
-
-        if paneIndex == splitView.arrangedSubviews.count - 1 {
-            dividerIndex = max(0, paneIndex - 1)
-            position = max(
-                dimensionConstraints.minimumOppositeSize,
-                totalSize - size - splitView.dividerThickness
-            )
-        } else if axis == .vertical {
-            dividerIndex = max(0, paneIndex - 1)
-            position = max(
-                dimensionConstraints.minimumOppositeSize,
-                totalSize - size - splitView.dividerThickness
-            )
-        } else {
-            dividerIndex = paneIndex
-            var nextPosition: CGFloat = 0
-            for index in 0..<dividerIndex {
-                nextPosition += splitView.arrangedSubviews[index].frame.width
-                nextPosition += splitView.dividerThickness
-            }
-            nextPosition += size
-            position = nextPosition
-        }
-
-        splitView.setPosition(position, ofDividerAt: dividerIndex)
-    }
-
-    private func containingPaneIndex(in splitView: NSSplitView) -> Int? {
-        splitView.arrangedSubviews.firstIndex { arrangedSubview in
-            isContained(in: arrangedSubview)
-        }
-    }
-
-    private func isContained(in candidateAncestor: NSView) -> Bool {
-        var current: NSView? = self
-        while let view = current {
-            if view === candidateAncestor { return true }
-            current = view.superview
-        }
-        return false
-    }
-
+    /// 找到与本 view 关联的 NSSplitView。
+    ///
+    /// 之所以需要多重回退：SwiftUI 的 `.background(NSViewRepresentable)` 在
+    /// HSplitView/VSplitView 上**不**保证把背景 NSView 挂成 NSSplitView 的直接子 view——
+    /// 多数情况下背景 view 会被放到一个 hosting view 里，而 NSSplitView 是该 hosting view
+    /// 的兄弟节点。简单走 superview 链会漏掉。
+    ///
+    /// 三层策略（按可能性从高到低）：
+    /// 1. superview 链上能直接遇到 NSSplitView（最简单场景，SwiftUI 直接挂成子 view）
+    /// 2. 沿 superview 链向上找，看哪个祖先的 subviews 里包含 NSSplitView（兄弟节点场景）
+    /// 3. 整个 window 视图树 BFS（兜底，理论上不会到这一步）
     private func enclosingSplitView() -> NSSplitView? {
+        // 策略 1：直接走 superview 链
         var current = superview
         while let view = current {
             if let splitView = view as? NSSplitView {
@@ -433,30 +400,59 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
             }
             current = view.superview
         }
+
+        // 策略 2：找祖先的兄弟节点
+        var ancestor = superview
+        while let view = ancestor {
+            for subview in view.subviews {
+                if let splitView = subview as? NSSplitView {
+                    return splitView
+                }
+            }
+            ancestor = view.superview
+        }
+
+        // 策略 3：window 视图树兜底
+        if let rootView = window?.contentView, let found = findNSSplitView(in: rootView) {
+            return found
+        }
         return nil
     }
 
-    private func scheduleRetry() {
-        guard applyRetryCount < Self.maxApplyRetryCount else { return }
-        pendingRetryWorkItem?.cancel()
-        applyRetryCount += 1
-
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.attachIfPossible()
+    private func findNSSplitView(in view: NSView) -> NSSplitView? {
+        for subview in view.subviews {
+            if let splitView = subview as? NSSplitView {
+                return splitView
+            }
+            if let found = findNSSplitView(in: subview) {
+                return found
+            }
         }
-        pendingRetryWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
+        return nil
     }
-}
 
-@MainActor
-private func enclosingSplitView(from view: NSView) -> NSSplitView? {
-    var current = view.superview
-    while let view = current {
-        if let splitView = view as? NSSplitView {
-            return splitView
+    /// 调试用：把 superview 链打印成 "view1 <- view2 <- view3" 形式。
+    /// 仅在 verbose 开启 + attach 失败时调用，避免日常日志噪音。
+    private func debugSuperviewChain() -> String {
+        var parts: [String] = []
+        var current: NSView? = self
+        var depth = 0
+        while let view = current, depth < 8 {
+            let typeName = String(describing: type(of: view))
+            let isSplit = view is NSSplitView ? " [NSSplitView]" : ""
+            parts.append("\(typeName)\(isSplit)")
+            current = view.superview
+            depth += 1
         }
-        current = view.superview
+        return parts.joined(separator: " <- ")
     }
-    return nil
+
+    /// 读取 divider 的当前位置。NSSplitView 没有提供 getter（只有 setter `setPosition`），
+    /// 从 `arrangedSubviews[i].frame` 推算：divider i 在 HSplitView 里 = pane i 的 maxX，
+    /// 在 VSplitView 里 = pane i 的 maxY。
+    private func dividerPosition(at index: Int, in splitView: NSSplitView) -> CGFloat {
+        guard index >= 0, index < splitView.arrangedSubviews.count else { return 0 }
+        let frame = splitView.arrangedSubviews[index].frame
+        return splitView.isVertical ? frame.maxX : frame.maxY
+    }
 }

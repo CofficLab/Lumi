@@ -677,7 +677,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             destination: destination
         )
         if let cached = buildSettingsCache[cacheKey], !cached.isEmpty {
-            let selectedSettings = selectBuildSettings(from: cached, preferredTargetNames: matchedTargets) ?? cached.first!
+            guard let selectedSettings = selectBuildSettings(from: cached, preferredTargetNames: matchedTargets) ?? cached.first
+            else { return nil }
             updateActiveDestination(using: selectedSettings)
             return XcodeFileBuildContext(
                 fileURL: fileURL,
@@ -701,7 +702,8 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         guard let settings = settings, !settings.isEmpty else { return nil }
 
         buildSettingsCache[cacheKey] = settings
-        let selectedSettings = selectBuildSettings(from: settings, preferredTargetNames: matchedTargets) ?? settings.first!
+        guard let selectedSettings = selectBuildSettings(from: settings, preferredTargetNames: matchedTargets) ?? settings.first
+        else { return nil }
         updateActiveDestination(using: selectedSettings)
 
         return XcodeFileBuildContext(

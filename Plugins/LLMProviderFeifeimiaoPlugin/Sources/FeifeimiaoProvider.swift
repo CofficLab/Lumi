@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Feifeimiao"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "feifeimiao",
@@ -33,15 +31,9 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
                 "gpt-5.2": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://feifeimiao.top")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_Feifeimiao"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -61,7 +53,6 @@ public final class FeifeimiaoProvider: OpenAICompatibleLumiProvider, @unchecked 
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-
 }

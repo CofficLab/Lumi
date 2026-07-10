@@ -48,3 +48,26 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.reasoningContent = reasoningContent
     }
 }
+
+public extension LumiChatMessage {
+    /// 是否为「空响应」：无可见文本、无工具调用、非错误消息。
+    ///
+    /// 这类响应对用户完全不可见，通常是模型异常终止（如 Gemini 2.5 Pro 的
+    /// 已知空响应 bug、流式中断、或上下文过长导致模型放弃）。
+    ///
+    /// 判定标准：
+    /// - `isError == false`（错误消息走独立的 error 处理路径）
+    /// - `content` 去除首尾空白后为空
+    /// - `toolCalls` 为 nil 或空数组
+    ///
+    /// 注意：`reasoningContent`（thinking）不参与判空——即使有 thinking，
+    /// 如果正文为空，用户仍然看不到任何回应。
+    var isEmptyResponse: Bool {
+        guard !isError else { return false }
+        let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedContent.isEmpty else { return false }
+        let hasToolCalls = toolCalls?.isEmpty == false
+        guard !hasToolCalls else { return false }
+        return true
+    }
+}

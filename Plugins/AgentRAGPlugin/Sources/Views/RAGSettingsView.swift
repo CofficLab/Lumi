@@ -10,6 +10,7 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
+    @State private var loadError: String?
 
 
     public init() {}
@@ -21,6 +22,9 @@ public struct RAGSettingsView: View, SuperLog {
             subtitle: LumiPluginLocalization.string("Manage semantic indexes for tracked projects.", bundle: .module),
             showHeader: false
         ) {
+            if let loadError {
+                errorBanner(loadError)
+            }
             if trackedProjects.isEmpty {
                 AppCard {
                     AppEmptyState(
@@ -54,6 +58,30 @@ public struct RAGSettingsView: View, SuperLog {
 
     // MARK: - Cards
 
+
+    @ViewBuilder
+    private func errorBanner(_ message: String) -> some View {
+        AppCard {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(theme.error)
+                Text(message)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button {
+                    Task { await loadStatus() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.appMicro)
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(theme.textSecondary)
+            }
+            .padding(10)
+        }
+    }
 
     @ViewBuilder
     private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
@@ -146,7 +174,10 @@ extension RAGSettingsView {
                 }
             }
             statusesByPath = next
-        } catch {}
+            loadError = nil
+        } catch {
+            loadError = error.localizedDescription
+        }
     }
 }
 

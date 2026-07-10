@@ -1,8 +1,13 @@
 import Foundation
 import LumiCoreKit
+import SuperLogKit
+import os
 
 /// Service that wraps FFmpeg CLI for video conversion.
-actor VideoConverterService {
+actor VideoConverterService: SuperLog {
+    nonisolated static let emoji = "🎬"
+    nonisolated static let verbose: Bool = true
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
     private var currentProcess: Process?
 
     /// Convert a video file to the specified format using FFmpeg.
@@ -135,7 +140,9 @@ actor VideoConverterService {
             if let output = String(data: data, encoding: .utf8) {
                 return parseDuration(output) ?? 0
             }
-        } catch {}
+        } catch {
+            Self.logger.error("\(Self.t)Probe video duration failed: \(error.localizedDescription)")
+        }
 
         return 0
     }

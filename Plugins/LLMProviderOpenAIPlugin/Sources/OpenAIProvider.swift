@@ -33,9 +33,9 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
         ],
         websiteURL: URL(string: "https://openai.com/")!
-    )
-
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"
+    ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
+        )
 
     private let apiService: LLMAPIService
     private let adapter: OpenAICompatibleProviderAdapter
@@ -130,7 +130,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
     private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
@@ -157,14 +157,6 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         case .error, .status:
             .error
         }
-    }
-
-    public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 }
 

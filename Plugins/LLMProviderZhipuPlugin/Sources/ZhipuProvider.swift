@@ -7,8 +7,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     public static let shortName = "ZhiPu"
     public static let apiKeyHelpURL: String? = "https://open.bigmodel.cn/usercenter/apikeys"
 
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "zhipu",
@@ -46,6 +44,8 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
                 "glm-4.5-air": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://www.bigmodel.cn/")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_Zhipu"
         )
     }
 
@@ -106,24 +106,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
         return ZhipuRenderKind.requestFailed
     }
 
-    // MARK: - API Key
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
     // MARK: - Claude Code 模拟辅助方法
 
     /// 生成 Claude Code 风格的 User-Agent
@@ -154,6 +136,6 @@ public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Se
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }

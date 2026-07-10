@@ -49,35 +49,17 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
                 "step-3.5-flash": .init(supportsVision: true, supportsTools: true),
             ],
             websiteURL: URL(string: "https://www.stepfun.com/")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_StepFun"
         )
     }
 
     public static let apiKeyHelpURL: String? = "https://www.stepfun.com/#/api"
 
-    // MARK: - API Key
-
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_StepFun"
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
     // MARK: - Provider Status
 
     override public func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
     public init() {

@@ -26,9 +26,6 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         self.cli = cli
     }
 
-    /// 本地 CLI 供应商无需 API Key
-    public func lumiResolveAPIKey() throws -> String { "" }
-
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }

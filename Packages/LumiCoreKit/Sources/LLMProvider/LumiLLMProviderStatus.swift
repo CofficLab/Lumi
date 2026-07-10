@@ -25,24 +25,22 @@ public enum LumiLLMProviderStatusSupport {
     }
 
     /// Default status for remote providers that require an API key.
+    ///
+    /// 必须传 `any LumiLLMProvider` 实例；存储策略由 Provider 自己决定。
+    /// 不再提供 `providerInfo:` 重载：避免外部代码绕开 Provider 封装直接读存储键。
     public static func statusForRemoteAPIKeyProvider(
-        providerInfo: LumiLLMProviderInfo
+        provider: any LumiLLMProvider
     ) -> LumiLLMProviderStatus? {
-        guard !providerInfo.isLocal else { return nil }
-        guard hasConfiguredAPIKey(providerInfo: providerInfo) else {
-            return missingAPIKeyStatus(providerName: providerInfo.displayName)
+        let info = type(of: provider).info
+        guard !info.isLocal else { return nil }
+        guard hasConfiguredAPIKey(provider: provider) else {
+            return missingAPIKeyStatus(providerName: info.displayName)
         }
         return nil
     }
 
-    public static func hasConfiguredAPIKey(providerInfo: LumiLLMProviderInfo) -> Bool {
-        guard !providerInfo.isLocal,
-              let storageKey = providerInfo.apiKeyStorageKey
-        else {
-            return true
-        }
-
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey)
-        return key?.isEmpty == false
+    /// 基于 `provider.hasApiKey()` 判定。
+    public static func hasConfiguredAPIKey(provider: any LumiLLMProvider) -> Bool {
+        provider.hasApiKey()
     }
 }

@@ -1,5 +1,5 @@
 import LumiCoreKit
-import MagicLog
+import SuperLogKit
 import SwiftUI
 import os
 

@@ -45,6 +45,12 @@ struct PanelWorkspaceView: View {
                         viewContainerID: viewContainerID
                     )
                 }
+                .background(
+                    SplitViewDividerPersistence.bottomPanel(
+                        layoutState: layoutState,
+                        viewContainerID: viewContainerID
+                    )
+                )
             } else {
                 contentPanel
             }

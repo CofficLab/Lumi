@@ -1,5 +1,4 @@
 import LumiChatKit
-import Logging
 import LumiCoreKit
 import os
 import SwiftUI

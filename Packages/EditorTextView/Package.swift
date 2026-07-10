@@ -25,6 +25,8 @@ let package = Package(
             url: "https://github.com/apple/swift-collections.git",
             .upToNextMajor(from: "1.0.0")
         ),
+        // Logging protocol
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         // The main text view target.
@@ -34,6 +36,7 @@ let package = Package(
                 "TextStory",
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             exclude: ["EditorTextViewObjC"],

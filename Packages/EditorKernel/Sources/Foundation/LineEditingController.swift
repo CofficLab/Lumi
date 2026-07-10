@@ -25,8 +25,8 @@ public enum LineEditingController: Sendable {
         }
 
         let mergedRanges = mergeOverlappingRanges(lineRanges)
+        guard let lastRange = mergedRanges.last else { return nil }
         let totalLength = nsText.length
-        let lastRange = mergedRanges.last!
         let isDeletingToEnd = NSMaxRange(lastRange) >= totalLength
 
         var replacements: [(range: NSRange, text: String)] = []
@@ -274,7 +274,7 @@ public enum LineEditingController: Sendable {
 
         var merged: [NSRange] = [sorted[0]]
         for range in sorted.dropFirst() {
-            let last = merged.last!
+            guard let last = merged.last else { continue }
             if range.location <= NSMaxRange(last) {
                 let newEnd = max(NSMaxRange(last), NSMaxRange(range))
                 merged[merged.count - 1] = NSRange(
@@ -414,9 +414,10 @@ public enum LineEditingController: Sendable {
                   firstRange.location > 0 else { return nil }
 
             let aboveLineRange = nsText.lineRange(for: NSRange(location: firstRange.location - 1, length: 0))
+            guard let lastRange = mergedRanges.last else { return nil }
             let swapRange = NSRange(
                 location: aboveLineRange.location,
-                length: NSMaxRange(mergedRanges.last!) - aboveLineRange.location
+                length: NSMaxRange(lastRange) - aboveLineRange.location
             )
 
             let aboveText = nsText.substring(with: aboveLineRange)
@@ -428,8 +429,9 @@ public enum LineEditingController: Sendable {
             let blockContent = stripTrailingLineEnding(from: blockText)
             let newText = blockContent + lineEnding + aboveContent
 
+            guard let firstRange = mergedRanges.first else { return nil }
             let newCursors = selections.map { selection in
-                let offset = selection.location - mergedRanges.first!.location
+                let offset = selection.location - firstRange.location
                 let newLocation = swapRange.location + min(offset, max((blockContent as NSString).length, 0))
                 return NSRange(location: newLocation, length: selection.length)
             }
@@ -444,12 +446,13 @@ public enum LineEditingController: Sendable {
         case .down:
             guard let lastRange = mergedRanges.last,
                   NSMaxRange(lastRange) < nsText.length else { return nil }
+            guard let firstRange = mergedRanges.first else { return nil }
 
             let belowLineStart = NSMaxRange(lastRange)
             let belowLineRange = nsText.lineRange(for: NSRange(location: belowLineStart, length: 0))
             let swapRange = NSRange(
-                location: mergedRanges.first!.location,
-                length: NSMaxRange(belowLineRange) - mergedRanges.first!.location
+                location: firstRange.location,
+                length: NSMaxRange(belowLineRange) - firstRange.location
             )
 
             let blockText = mergedRanges.map { nsText.substring(with: $0) }.joined()
@@ -465,8 +468,9 @@ public enum LineEditingController: Sendable {
             let blockSize = (blockContent as NSString).length
             let movedBlockStart = swapRange.location + (belowContent as NSString).length + (lineEnding as NSString).length
 
+            guard let firstRange = mergedRanges.first else { return nil }
             let newCursors = selections.map { selection in
-                let offset = selection.location - mergedRanges.first!.location
+                let offset = selection.location - firstRange.location
                 let newLocation = movedBlockStart + min(offset, max(blockSize - 1, 0))
                 return NSRange(location: newLocation, length: selection.length)
             }
@@ -489,11 +493,12 @@ public enum LineEditingController: Sendable {
         guard !replacements.isEmpty else { return nil }
 
         let nsText = text as NSString
-        let firstRange = replacements.first!.range
-        let lastRange = replacements.last!.range
+        guard let firstRange = replacements.first,
+              let lastRange = replacements.last
+        else { return nil }
         let totalRange = NSRange(
-            location: firstRange.location,
-            length: NSMaxRange(lastRange) - firstRange.location
+            location: firstRange.range.location,
+            length: NSMaxRange(lastRange.range) - firstRange.range.location
         )
 
         var result = ""

@@ -32,9 +32,18 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiOpenAIAdapter: OpenAICompatibleProviderAdapter { adapter }
 
-    /// 子类必须实现以提供 API Key
+    /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
+    /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
     open func lumiResolveAPIKey() throws -> String {
-        fatalError("子类必须实现 lumiResolveAPIKey()")
+        if Self.info.isLocal { return "" }
+        guard let storageKey = Self.info._apiKeyStorageKey else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
@@ -246,6 +255,12 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 streamingDurationMs: await state.getStreamingDuration()
             )
         ) { _, new in new }
+
+        // 持久化 stopReason，供 Turn 层和诊断工具使用
+        if let stopReason = await state.stopReason {
+            metadata["stopReason"] = stopReason
+        }
+
         return metadata
     }
 
@@ -412,9 +427,18 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiAnthropicAdapter: AnthropicCompatibleProviderAdapter { adapter }
 
-    /// 子类必须实现以提供 API Key
+    /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
+    /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
     open func lumiResolveAPIKey() throws -> String {
-        fatalError("子类必须实现 lumiResolveAPIKey()")
+        if Self.info.isLocal { return "" }
+        guard let storageKey = Self.info._apiKeyStorageKey else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
@@ -627,40 +651,8 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     }
 }
 
-public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDispositionProviding {
-    case emptyConversation
-    case invalidBaseURL(String)
-    case missingAPIKey(String)
-    case allEndpointsFailed
-    case streamingFailed(String)
-    case emptyResponse
-
-    public var llmErrorDisposition: LumiLLMErrorDisposition {
-        switch self {
-        case .emptyConversation, .invalidBaseURL, .missingAPIKey:
-            return .nonRetryable
-        case .allEndpointsFailed, .streamingFailed, .emptyResponse:
-            return .retryable()
-        }
-    }
-
-    public var errorDescription: String? {
-        switch self {
-        case .emptyConversation:
-            return "空对话"
-        case .invalidBaseURL(let url):
-            return "无效的 Base URL：\(url)"
-        case .missingAPIKey(let name):
-            return "缺少 API Key：\(name)"
-        case .allEndpointsFailed:
-            return "所有端点均失败"
-        case .streamingFailed(let details):
-            return "流式请求失败：\(details)"
-        case .emptyResponse:
-            return "LLM 返回了空响应"
-        }
-    }
-}
+// `LumiLLMProviderSupportError` 已迁移到 `LumiCoreKit`（`LumiLLMProvider` 协议
+// 默认实现需要直接抛该错误），由 `LumiLLMProviderSupport` 透传使用。
 
 private struct LumiToolSchema: LLMToolSchemaProviding {
     let name: String

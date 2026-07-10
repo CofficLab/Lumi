@@ -1,3 +1,4 @@
+import CoreGraphics
 import LumiCoreKit
 import SwiftUI
 import Combine
@@ -34,8 +35,11 @@ struct LayoutRootView: View {
 @MainActor
 final class LayoutEventListener: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
+    private let store: LayoutPluginLocalStore
 
-    init() {
+    /// - Parameter store: 落盘目标，默认为共享单例（生产环境）。
+    init(store: LayoutPluginLocalStore = .shared) {
+        self.store = store
         if LayoutPlugin.verbose {
             LayoutPlugin.logger.info("\(LayoutPlugin.t)开始监听布局变更事件")
         }
@@ -46,7 +50,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeViewContainerID → \(containerID)")
                 }
-                LayoutPluginLocalStore.shared.saveActiveViewContainerID(containerID)
+                store.saveActiveViewContainerID(containerID)
             }
             .store(in: &cancellables)
 
@@ -56,7 +60,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeRailTabID → \(railTabID)")
                 }
-                LayoutPluginLocalStore.shared.saveSelectedAgentSidebarTabId(railTabID)
+                store.saveSelectedAgentSidebarTabId(railTabID)
             }
             .store(in: &cancellables)
 
@@ -66,7 +70,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeBottomTabID → \(bottomTabID)")
                 }
-                LayoutPluginLocalStore.shared.set(bottomTabID, forKey: LayoutStorageKey.activeBottomTabID)
+                store.set(bottomTabID, forKey: LayoutStorageKey.activeBottomTabID)
             }
             .store(in: &cancellables)
 
@@ -76,7 +80,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelVisible → \(visible)")
                 }
-                LayoutPluginLocalStore.shared.saveBottomPanelVisible(visible)
+                store.saveBottomPanelVisible(visible)
             }
             .store(in: &cancellables)
 
@@ -86,7 +90,49 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: chatSectionVisible → \(visible)")
                 }
-                LayoutPluginLocalStore.shared.set(visible, forKey: LayoutStorageKey.chatSectionVisible)
+                store.set(visible, forKey: LayoutStorageKey.chatSectionVisible)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .railDividerDidChange)
+            .sink { notification in
+                guard let containerID = notification.userInfo?["containerID"] as? String,
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
+                else { return }
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: railDivider[\(containerID)] → \(position)")
+                }
+                let key = LayoutStorageKey.railDivider(viewContainerID: containerID)
+                store.saveSplitDimension(Double(position), forKey: key)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .chatSectionDividerDidChange)
+            .sink { notification in
+                guard let containerID = notification.userInfo?["containerID"] as? String,
+                      let layoutSuffix = notification.userInfo?["layout"] as? String,
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
+                else { return }
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: chatSectionDivider[\(containerID).\(layoutSuffix)] → \(position)")
+                }
+                // 还原布局档位枚举以复用 LayoutStorageKey 的 key 生成逻辑
+                let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix) ?? .narrow
+                let key = LayoutStorageKey.chatSectionDivider(viewContainerID: containerID, layout: layout)
+                store.saveSplitDimension(Double(position), forKey: key)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .bottomPanelDividerDidChange)
+            .sink { notification in
+                guard let containerID = notification.userInfo?["containerID"] as? String,
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
+                else { return }
+                if LayoutPlugin.verbose {
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelDivider[\(containerID)] → \(position)")
+                }
+                let key = LayoutStorageKey.bottomPanelDivider(viewContainerID: containerID)
+                store.saveSplitDimension(Double(position), forKey: key)
             }
             .store(in: &cancellables)
     }

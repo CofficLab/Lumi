@@ -8,6 +8,7 @@ import SuperLogKit
 
 @MainActor
 final class EditorInputRouter: SuperLog {
+    nonisolated static let verbose = EditorState.verbose
     private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.input-router")
 
     func handleTextDidChange(
@@ -18,7 +19,9 @@ final class EditorInputRouter: SuperLog {
         bridge: TextViewBridge
     ) {
         if state == nil {
-            logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
+            if Self.verbose {
+                logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
+            }
         }
         if !shouldSuppressReconciliation {
             state?.notifyContentChanged(fromTextViewString: currentText)

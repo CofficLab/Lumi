@@ -54,4 +54,14 @@ public enum LumiChatSectionLayout: Sendable, Equatable {
         case .wide: "wide"
         }
     }
+
+    /// 根据持久化 key 后缀还原布局档位，无法识别时返回 nil。
+    public static func from(persistenceKeySuffix suffix: String) -> LumiChatSectionLayout? {
+        switch suffix {
+        case "none": .none
+        case "narrow": .narrow
+        case "wide": .wide
+        default: nil
+        }
+    }
 }

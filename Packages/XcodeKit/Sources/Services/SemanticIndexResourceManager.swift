@@ -4,6 +4,8 @@ import SuperLogKit
 
 /// Global resource limits for semantic indexing workloads.
 public enum SemanticIndexResourceManager: SuperLog {
+    nonisolated(unsafe) static var verbose: Bool = false
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index.resources")
     private static let lock = NSLock()
     private nonisolated(unsafe) static var activeXcodebuildJobs = 0
@@ -73,7 +75,9 @@ public enum SemanticIndexResourceManager: SuperLog {
                 try? FileManager.default.removeItem(at: derivedData)
                 remaining -= directorySize(derivedData)
                 removed += 1
-                logger.info("\(Self.t)LRU removed DerivedData for \(url.lastPathComponent, privacy: .public)")
+                if Self.verbose {
+                    logger.info("\(Self.t)LRU removed DerivedData for \(url.lastPathComponent, privacy: .public)")
+                }
             }
         }
         lock.lock()

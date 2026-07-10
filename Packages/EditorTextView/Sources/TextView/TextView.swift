@@ -1,10 +1,3 @@
-//
-//  TextView.swift
-//  EditorTextView
-//
-//  Created by Khan Winter on 6/21/23.
-//
-
 import AppKit
 import TextStory
 

@@ -12,7 +12,25 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
-    static let shared = RootContainer()
+    /// 安全获取 ChatService，类型不匹配时提供清晰的错误信息。
+    static var checkedChatService: ChatService {
+        guard let service = LumiCore.chatService as? ChatService else {
+            fatalError("LumiCore.chatService 必须是 ChatService 类型。当前类型: \(String(describing: type(of: LumiCore.chatService)))。请确保 LumiCore.setupChatBootstrap 已正确调用。")
+        }
+        return service
+    }
+
+    static let shared: RootContainer = {
+        do {
+            return try RootContainer()
+        } catch {
+            RootContainer.logger.error("🗂️启动失败: \(error.localizedDescription)")
+            let container = RootContainer(error: error)
+            return container
+        }
+    }()
+
+    @Published var initializationError: Error?
 
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
@@ -22,11 +40,8 @@ final class RootContainer: ObservableObject, SuperLog {
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
 
-    private init() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)开始初始化 RootContainer")
-        }
-
+    /// Normal throwing initializer
+    private init() throws {
         self.lumiCoreService = LumiCoreService()
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
@@ -53,13 +68,16 @@ final class RootContainer: ObservableObject, SuperLog {
         }
         LumiCore.bootstrapEditor()
         // LumiCore 持有的是抽象 AbstractEditorServicing，强转回具体类型供本类的回调使用。
-        self.editorCoreService = LumiCore.editorService as! EditorCoreService
+        guard let editorService = LumiCore.editorService as? EditorCoreService else {
+            fatalError("LumiCore.editorService 必须是 EditorCoreService 类型。当前类型: \(String(describing: type(of: LumiCore.editorService)))。请确保 LumiCore.setupEditorBootstrap 已正确调用。")
+        }
+        self.editorCoreService = editorService
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }
 
         self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: LumiCore.chatService as! ChatService,
+            chatService: Self.checkedChatService,
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
         if Self.verbose {
@@ -145,6 +163,39 @@ final class RootContainer: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)🎉 RootContainer 初始化完成")
         }
+    }
+
+    /// Fallback initializer when bootstrap fails.
+    /// Creates a minimal container that just holds the error for CrashedView.
+    private init(error: Error) {
+        self.initializationError = error
+        self.lumiCoreService = LumiCoreService()
+        self.pluginService = PluginService()
+        self.toolService = ToolService()
+        self.lumiUIService = LumiUIService(pluginService: PluginService())
+        self.menuBarService = MenuBarService(pluginService: PluginService())
+
+        // These services are not used when initialization fails (CrashedView is shown).
+        // Use guarded initialization to avoid secondary crashes that would mask the original error.
+        do {
+            self.editorCoreService = try EditorCoreService(
+                pluginService: self.pluginService,
+                persistenceRootURL: { AppConfig.getDBFolderURL() },
+                recentProjects: { [] }
+            )
+        } catch {
+            Self.logger.error("Fallback EditorCoreService init failed: \(error.localizedDescription)")
+            fatalError("Cannot create fallback EditorCoreService: \(error.localizedDescription)")
+        }
+
+        guard let chatService = LumiCore.chatService as? ChatService else {
+            Self.logger.error("LumiCore.chatService type mismatch in fallback container")
+            fatalError("LumiCore.chatService must be ChatService in fallback container")
+        }
+        self.chatSectionCoordinator = ChatSectionCoordinator(
+            chatService: chatService,
+            databaseDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        )
     }
 
     // MARK: - Chat Plugin Wiring

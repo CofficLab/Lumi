@@ -1,10 +1,15 @@
 import Foundation
+import SuperLogKit
+import os
 
 /// 空闲扫描调度器
 ///
 /// 监听空闲状态变化，当空闲时间超过阈值时触发问题扫描。
 /// 扫描策略：先执行本地规则扫描（零成本），再按需执行 LLM 深度分析（有成本）。
-public actor IdleScannerService {
+public actor IdleScannerService: SuperLog {
+    public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.idle-scanner")
     public static let shared = IdleScannerService()
 
     // MARK: - Configuration
@@ -46,22 +51,30 @@ public actor IdleScannerService {
         defer { isScanning = false; lastScanAt = Date() }
 
         let localIssues = localRuleScanner.scan(projectPath: projectPath)
-        await ProjectIssueStore.shared.replaceIssues(
-            projectPath: projectPath,
-            source: .localRule,
-            with: localIssues
-        )
+        do {
+            try await ProjectIssueStore.shared.replaceIssues(
+                projectPath: projectPath,
+                source: .localRule,
+                with: localIssues
+            )
+        } catch {
+            Self.logger.error("\(Self.t)保存本地规则扫描结果失败: \(error.localizedDescription)")
+        }
 
         resetDailyCounterIfNeeded()
         if todayLLMAnalysisCount < maxLLMAnalysisPerDay,
            await deepAnalyzer.isReady(),
            let llmIssues = await deepAnalyzer.analyze(projectPath: projectPath) {
-            await ProjectIssueStore.shared.replaceIssues(
-                projectPath: projectPath,
-                source: .llmAnalysis,
-                with: llmIssues
-            )
-            todayLLMAnalysisCount += 1
+            do {
+                try await ProjectIssueStore.shared.replaceIssues(
+                    projectPath: projectPath,
+                    source: .llmAnalysis,
+                    with: llmIssues
+                )
+                todayLLMAnalysisCount += 1
+            } catch {
+                Self.logger.error("\(Self.t)保存LLM分析结果失败: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -74,19 +87,27 @@ public actor IdleScannerService {
         defer { isScanning = false; lastScanAt = Date() }
 
         let localIssues = localRuleScanner.scan(projectPath: projectPath)
-        await ProjectIssueStore.shared.replaceIssues(
-            projectPath: projectPath,
-            source: .localRule,
-            with: localIssues
-        )
+        do {
+            try await ProjectIssueStore.shared.replaceIssues(
+                projectPath: projectPath,
+                source: .localRule,
+                with: localIssues
+            )
+        } catch {
+            Self.logger.error("\(Self.t)保存本地规则扫描结果失败: \(error.localizedDescription)")
+        }
 
         if await deepAnalyzer.isReady(),
            let llmIssues = await deepAnalyzer.analyze(projectPath: projectPath) {
-            await ProjectIssueStore.shared.replaceIssues(
-                projectPath: projectPath,
-                source: .llmAnalysis,
-                with: llmIssues
-            )
+            do {
+                try await ProjectIssueStore.shared.replaceIssues(
+                    projectPath: projectPath,
+                    source: .llmAnalysis,
+                    with: llmIssues
+                )
+            } catch {
+                Self.logger.error("\(Self.t)保存LLM分析结果失败: \(error.localizedDescription)")
+            }
         }
     }
 

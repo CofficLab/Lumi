@@ -72,22 +72,29 @@ public final class LumiAPIKeyStore: @unchecked Sendable {
     }
 
     /// Reads from Keychain, migrating a legacy UserDefaults value when present.
+    ///
+    /// 兼容两层旧数据：
+    /// 1. 当前 Keychain 键
+    /// 2. 旧版 UserDefaults 键（与当前键同名，老版本曾用 UserDefaults 存 key）→ 自动迁到 Keychain
     public func loadMigratingLegacyUserDefaults(forKey key: String) -> String? {
+        guard !key.isEmpty else { return nil }
+
+        // 1. 当前 Keychain 键
         if let keychainValue = string(forKey: key)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !keychainValue.isEmpty {
             return keychainValue
         }
 
-        guard let legacyValue = UserDefaults.standard.string(forKey: key)?
+        // 2. 旧版 UserDefaults 键（与当前键同名）→ 迁到 Keychain
+        if let legacyUserDefaultsValue = UserDefaults.standard.string(forKey: key)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
-              !legacyValue.isEmpty
-        else {
-            return nil
+           !legacyUserDefaultsValue.isEmpty {
+            set(legacyUserDefaultsValue, forKey: key)
+            UserDefaults.standard.removeObject(forKey: key)
+            return legacyUserDefaultsValue
         }
 
-        set(legacyValue, forKey: key)
-        UserDefaults.standard.removeObject(forKey: key)
-        return legacyValue
+        return nil
     }
 }

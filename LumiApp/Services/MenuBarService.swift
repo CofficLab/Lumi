@@ -9,7 +9,7 @@ import os
 final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.menu-bar")
     nonisolated static let emoji = "📋"
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
 
     private let pluginService: PluginService
     private var statusItem: NSStatusItem?

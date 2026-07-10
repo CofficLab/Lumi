@@ -9,7 +9,7 @@ import os
 /// - 负责查询检索并返回相关片段
 public actor RAGService: SuperLog {
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.service")
 
     private static let pluginName = "RAGPlugin"
@@ -53,7 +53,18 @@ public actor RAGService: SuperLog {
         onProgress: ((RAGIndexProgressEvent) -> Void)? = nil
     ) {
         self.databaseDirectoryProvider = databaseDirectoryProvider
-        self.onProgress = onProgress
+        // 确保进度回调始终在主线程执行（通常用于 UI 更新）
+        if let onProgress {
+            let box = UncheckedSendableBox(onProgress)
+            self.onProgress = { event in
+                let handler = box.value
+                Task { @MainActor in
+                    handler(event)
+                }
+            }
+        } else {
+            self.onProgress = nil
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)\(Self.emoji) RAG 服务已创建")
         }
@@ -405,4 +416,10 @@ public actor RAGService: SuperLog {
         let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
         return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
     }
+}
+
+/// Unchecked Sendable wrapper for closures that the caller guarantees are thread-safe.
+private final class UncheckedSendableBox<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
 }

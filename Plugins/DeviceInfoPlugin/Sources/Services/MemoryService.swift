@@ -8,7 +8,7 @@ import os
 public final class MemoryService: ObservableObject, SuperLog {
     public static let shared = MemoryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.memory")
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
     nonisolated public static let emoji = "🧠"
 
     // MARK: - Published Properties

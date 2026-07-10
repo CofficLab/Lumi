@@ -29,7 +29,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     // MARK: - Properties
 
     public nonisolated static let emoji = "🌳"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
     @Published public var refreshToken: Int = 0

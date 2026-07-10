@@ -42,9 +42,6 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
     public init() {}
 
-    /// 本地 MLX 供应商无需 API Key
-    public func lumiResolveAPIKey() throws -> String { "" }
-
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }

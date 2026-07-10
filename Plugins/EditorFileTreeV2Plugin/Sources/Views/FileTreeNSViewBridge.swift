@@ -1,14 +1,15 @@
 import AppKit
 import SwiftUI
 import os
+import SuperLogKit
 
 /// NSViewRepresentable 桥接层
 ///
 /// 将 FileTreeCollectionViewController 包装为 SwiftUI 视图。
-struct FileTreeNSViewBridge: NSViewRepresentable {
-    private static let emoji = "🌲"
+struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
     private static let verbose = EditorFileTreeV2Plugin.verbose
+    public nonisolated static let emoji: String = "🌲"
 
     let projectRootPath: String
     let onSelect: (URL) -> Void
@@ -23,12 +24,12 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         if Self.verbose {
-            Self.logger.info("\(Self.emoji) makeNSView 开始, projectRootPath: \(self.projectRootPath)")
+            Self.logger.info("\(Self.t)🏗️ makeNSView 开始, projectRootPath: \(self.projectRootPath)")
         }
 
         let viewController = FileTreeCollectionViewController()
         if Self.verbose {
-            Self.logger.info("\(Self.emoji) ViewController 创建完成")
+            Self.logger.info("\(Self.t)✅ ViewController 创建完成")
         }
 
         viewController.setProjectRoot(projectRootPath)
@@ -44,13 +45,13 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
         // 强引用持有 viewController，防止被释放
         context.coordinator.viewController = viewController
         if Self.verbose {
-            Self.logger.info("\(Self.emoji) ViewController 已保存到 Coordinator")
+            Self.logger.info("\(Self.t)💾 ViewController 已保存到 Coordinator")
         }
 
         let view = viewController.view
         let w = view.frame.size.width, h = view.frame.size.height
         if Self.verbose {
-            Self.logger.info("\(Self.emoji) 返回 view, size: \(w)x\(h)")
+            Self.logger.info("\(Self.t)📐 返回 view, size: \(w)x\(h)")
         }
 
         return view
@@ -59,17 +60,17 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {
         let w = nsView.frame.size.width, h = nsView.frame.size.height
         if Self.verbose {
-            Self.logger.info("\(Self.emoji) updateNSView 调用, view size: \(w)x\(h)")
+            Self.logger.info("\(Self.t)🔄 updateNSView 调用, view size: \(w)×\(h)")
         }
         guard let viewController = context.coordinator.viewController else {
-            Self.logger.warning("\(Self.emoji) updateNSView: viewController 为 nil!")
+            Self.logger.warning("\(Self.t)❌ updateNSView: viewController 为 nil!")
             return
         }
 
         // 检查项目路径是否变化
         if viewController.getProjectRootPath() != projectRootPath {
             if Self.verbose {
-                Self.logger.info("\(Self.emoji) 项目路径变化, 重新设置: \(self.projectRootPath)")
+                Self.logger.info("\(Self.t)📂 项目路径变化, 重新设置: \(self.projectRootPath)")
             }
             viewController.setProjectRoot(projectRootPath)
         }
@@ -78,20 +79,16 @@ struct FileTreeNSViewBridge: NSViewRepresentable {
         viewController.gitStatusSnapshot = gitStatusSnapshot
 
         // 更新闪烁触发
-        if let flashTrigger {
+        if let flashTrigger, !flashTrigger.path.isEmpty {
             viewController.triggerFlash(path: flashTrigger.path)
         }
     }
 
     func makeCoordinator() -> Coordinator {
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji) makeCoordinator 调用")
-        }
-        return Coordinator()
+        Coordinator()
     }
 
     class Coordinator {
-        // 强引用持有 viewController，防止被释放
         var viewController: FileTreeCollectionViewController?
     }
 }

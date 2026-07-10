@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Xybbz"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "xybbz",
@@ -24,15 +22,9 @@ public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Senda
                 "gpt-5.4": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://xybbz.xyz")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_Xybbz"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -52,7 +44,6 @@ public final class XybbzProvider: OpenAICompatibleLumiProvider, @unchecked Senda
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-
 }

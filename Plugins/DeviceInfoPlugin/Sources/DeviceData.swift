@@ -2,6 +2,7 @@ import AppKit
 import Darwin
 import Foundation
 import IOKit.ps
+import os
 import SwiftUI
 
 // Helper class to hold timer avoiding actor isolation issues
@@ -17,6 +18,8 @@ private final class TimerHolder: @unchecked Sendable {
 /// 设备信息数据模型
 @MainActor
 class DeviceData: ObservableObject {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-data")
+
     // MARK: - Published Properties
 
     @Published var cpuUsage: Double = 0.0
@@ -204,7 +207,9 @@ class DeviceData: ObservableObject {
             if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
                 return (Int64(total), Int64(total - available))
             }
-        } catch {}
+        } catch {
+            Self.logger.error("Failed to read disk capacity: \(error.localizedDescription)")
+        }
         return (0, 0)
     }
 

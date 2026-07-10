@@ -17,16 +17,6 @@ struct ActivityHeatmapSettingsView: View {
             subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
-            // Heatmap card
-            AppCard {
-                if viewModel.heatmapData.isEmpty && !viewModel.isLoading {
-                    emptyState
-                } else {
-                    ActivityHeatmapView(data: viewModel.heatmapData)
-                        .padding(16)
-                }
-            }
-
             // Period selector
             AppCard {
                 AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
@@ -40,6 +30,18 @@ struct ActivityHeatmapSettingsView: View {
                     }
                 }
             }
+
+            // Heatmap card
+            AppCard {
+                if viewModel.isLoading {
+                    loadingView
+                } else if viewModel.hasLoaded && viewModel.heatmapData.isEmpty {
+                    emptyState
+                } else {
+                    ActivityHeatmapView(data: viewModel.heatmapData)
+                        .padding(16)
+                }
+            }
         }
         .onChange(of: period) { _, newValue in
             viewModel.period = newValue
@@ -48,6 +50,16 @@ struct ActivityHeatmapSettingsView: View {
             viewModel.period = period
             await viewModel.load()
         }
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text(LumiPluginLocalization.string("Loading activity data…", bundle: .module))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
     }
 
     private var emptyState: some View {

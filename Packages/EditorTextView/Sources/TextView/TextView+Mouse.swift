@@ -1,10 +1,3 @@
-//
-//  TextView+Mouse.swift
-//  EditorTextView
-//
-//  Created by Khan Winter on 9/19/23.
-//
-
 import AppKit
 import os
 
@@ -12,7 +5,7 @@ extension TextView {
     /// 排查 CPU 占用：鼠标拖拽自动滚动定时器(45Hz)若 stop 路径遗漏会导致持续 100% CPU。
     /// 仅在 setup/disable 打 lifecycle 日志，确认是否泄漏。subsystem 对齐 com.coffic.lumi。
     private static let mouseDragLogger = Logger(subsystem: "com.coffic.lumi", category: "editor.mouse-autoscroll")
-    private static let mouseDragVerbose = true
+    private static let mouseDragVerbose = false
 
     override public func mouseDown(with event: NSEvent) {
         // Set cursor
@@ -193,12 +186,12 @@ extension TextView {
                 self?.autoscroll(with: event)
             }
         }
-        if Self.mouseDragVerbose { Self.mouseDragLogger.info("TextView 启动鼠标自动滚动定时器(45Hz)——若长期未 disable 将持续吃满主线程") }
+        if Self.mouseDragVerbose { Self.mouseDragLogger.info("🔥 | 🖱️ TextView                      | ⏱️ 启动鼠标自动滚动定时器(45Hz)——若长期未 disable 将持续吃满主线程") }
     }
 
     /// Disables the mouse drag timer started by ``setUpMouseAutoscrollTimer``
     func disableMouseAutoscrollTimer() {
-        if Self.mouseDragVerbose, mouseDragTimer != nil { Self.mouseDragLogger.info("TextView 停止鼠标自动滚动定时器") }
+        if Self.mouseDragVerbose, mouseDragTimer != nil { Self.mouseDragLogger.info("🔥 | 🖱️ TextView                      | ⏱️ 停止鼠标自动滚动定时器") }
         mouseDragTimer?.invalidate()
         mouseDragTimer = nil
     }

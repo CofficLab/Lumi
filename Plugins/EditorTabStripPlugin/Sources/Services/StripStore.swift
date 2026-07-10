@@ -93,7 +93,11 @@ public final class StripStore: @unchecked Sendable, SuperLog {
     public func clearTabs(forProject projectPath: String) {
         queue.async { [self] in
             let fileURL = self.getFileURL(forProject: projectPath)
-            try? self.fileManager.removeItem(at: fileURL)
+            do {
+                try self.fileManager.removeItem(at: fileURL)
+            } catch {
+                Self.logger.error("\(Self.t)Clear editor tab strip state failed: \(error.localizedDescription)")
+            }
         }
     }
 

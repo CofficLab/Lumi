@@ -22,7 +22,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         category: "plugin.editor-inline-preview.viewmodel"
     )
     public nonisolated static let emoji = "🔮"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     // MARK: - 类型
 
@@ -516,12 +516,20 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         Task { [weak self] in
             do {
                 let response = try await self?.session.requestEntryDebugState()
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 requestEntryDebugState response: success=\(response?.success == true, privacy: .public) message=\(response?.message ?? "nil", privacy: .public)")
+                }
+                }
                 if response?.success == false {
                     self?.entryDebugState = response?.message
                 }
             } catch {
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.error("\(Self.t)📝 requestEntryDebugState failed: \(error.localizedDescription, privacy: .public)")
+                }
+                }
                 self?.entryDebugState = error.localizedDescription
             }
             self?.isRequestingEntryDebugState = false
@@ -554,7 +562,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     private func autoBuildIfPossible() {
         let currentStatus = status
-        Self.logger.info("\(self.t)📝 autoBuildIfPossible enter: status=\(currentStatus.description, privacy: .public) mode=\(String(describing: self.previewMode), privacy: .public) visible=\(self.isViewVisible, privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) sourceLength=\(self.latestSourceText?.count ?? -1, privacy: .public) canvas=\(self.canvasSize.width, privacy: .public)×\(self.canvasSize.height, privacy: .public) @\(String(format: "%.1f", self.canvasScale), privacy: .public) frames=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+        if Self.verbose {
+            if Self.verbose {
+            Self.logger.info("\(self.t)📝 autoBuildIfPossible enter: status=\(currentStatus.description, privacy: .public) mode=\(String(describing: self.previewMode), privacy: .public) visible=\(self.isViewVisible, privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) sourceLength=\(self.latestSourceText?.count ?? -1, privacy: .public) canvas=\(self.canvasSize.width, privacy: .public)×\(self.canvasSize.height, privacy: .public) @\(String(format: "%.1f", self.canvasScale), privacy: .public) frames=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+        }
+        }
         guard currentStatus == .running else {
             if Self.verbose {
                             Self.logger.info("\(self.t)⏭ 跳过 autoBuild — Session 未运行（状态=\(currentStatus.description, privacy: .public)）")
@@ -562,7 +574,13 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             return
         }
         guard canAutoBuildActiveFile() else {
-            Self.logger.info("\(self.t)📝 autoBuildIfPossible skipped: canAutoBuild=false mode=\(String(describing: self.previewMode), privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) hasSource=\(self.latestSourceText != nil, privacy: .public)")
+            if Self.verbose {
+                if Self.verbose {
+                if Self.verbose {
+                Self.logger.info("\(self.t)📝 autoBuildIfPossible skipped: canAutoBuild=false mode=\(String(describing: self.previewMode), privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) hasSource=\(self.latestSourceText != nil, privacy: .public)")
+                }
+            }
+            }
             if isEntryAuto() {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)🔄 autoBuild：无匹配文件，卸载 Dylib")
@@ -586,9 +604,13 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         clearRenderedPreview()
         lastBuildLogURL = nil
         entryStatus = .building(file: displayName)
-        Self.logger.info("\(self.t)📝 autoBuild start: file=\(url.path, privacy: .public) previewIndex=\(self.selectedPreviewIndex, privacy: .public) sourceLength=\(source.count, privacy: .public) frameCountBeforeBuild=\(self.receivedFrameCount, privacy: .public) seqBeforeBuild=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
         if Self.verbose {
-                    Self.logger.info("\(self.t)🔨 autoBuild：正在构建 \(displayName)")
+            Self.logger.info("\(self.t)📝 autoBuild start: file=\(url.path, privacy: .public) previewIndex=\(self.selectedPreviewIndex, privacy: .public) sourceLength=\(source.count, privacy: .public) frameCountBeforeBuild=\(self.receivedFrameCount, privacy: .public) seqBeforeBuild=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+        }
+        if Self.verbose {
+                    if Self.verbose {
+                        Self.logger.info("\(self.t)🔨 autoBuild：正在构建 \(displayName)")
+                    }
         }
 
         Task { [weak self] in
@@ -601,9 +623,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
                 )
                 guard self.isCurrentPreviewGeneration(generation, fileURL: url) else { return }
                 if Self.verbose {
-                                    Self.logger.info("\(Self.t)✅ 构建成功：\(result.dylibURL.path) 指纹=\(result.fingerprint) 标题=\(result.primaryTitle)")
+                                    if Self.verbose {
+                                        Self.logger.info("\(Self.t)✅ 构建成功：\(result.dylibURL.path) 指纹=\(result.fingerprint) 标题=\(result.primaryTitle)")
+                                    }
                 }
-                Self.logger.info("\(Self.t)📝 build result: dylib=\(result.dylibURL.path, privacy: .public) fingerprint=\(result.fingerprint, privacy: .public) usedCache=\(result.usedCache, privacy: .public) previewCount=\(result.previewCount, privacy: .public) selectedIndex=\(result.selectedPreviewIndex, privacy: .public) title=\(result.primaryTitle, privacy: .public)")
+                if Self.verbose {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)📝 build result: dylib=\(result.dylibURL.path, privacy: .public) fingerprint=\(result.fingerprint, privacy: .public) usedCache=\(result.usedCache, privacy: .public) previewCount=\(result.previewCount, privacy: .public) selectedIndex=\(result.selectedPreviewIndex, privacy: .public) title=\(result.primaryTitle, privacy: .public)")
+                }
+                }
                 self.lastBuildInfo = BuildInfo(
                     completedAt: Date(),
                     usedCache: result.usedCache,
@@ -623,13 +651,21 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
                 self.entryStatus = .loading(path: result.dylibURL.path)
                 let frameSeqBeforeLoad = self.lastFrameSeq
                 let frameCountBeforeLoad = self.receivedFrameCount
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 loadDylib start: path=\(result.dylibURL.path, privacy: .public) frameCountBeforeLoad=\(frameCountBeforeLoad, privacy: .public) seqBeforeLoad=\(frameSeqBeforeLoad.map(String.init) ?? "nil", privacy: .public) policy=\(self.policy.rawValue, privacy: .public)")
+                }
+                }
                 let loadResponse = try await self.session.loadDylib(path: result.dylibURL.path)
                 guard self.isCurrentPreviewGeneration(generation, fileURL: url) else { return }
                 if Self.verbose {
                     Self.logger.info("\(Self.t)📥 loadDylib 响应：success=\(loadResponse.success, privacy: .public) message=\(loadResponse.message ?? "nil", privacy: .public)")
                 }
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 loadDylib response: success=\(loadResponse.success, privacy: .public) message=\(loadResponse.message ?? "nil", privacy: .public) frameCountAfterResponse=\(self.receivedFrameCount, privacy: .public) seqAfterResponse=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+                }
+                }
                 guard loadResponse.success else {
                     let message = loadResponse.message ?? "unknown dylib load failure"
                     if Self.verbose {
@@ -641,7 +677,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
                 self.lastLoadedFingerprint = result.fingerprint
                 self.entryDebugState = nil
                 self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 entry marked loaded: title=\(result.primaryTitle, privacy: .public) fingerprint=\(result.fingerprint, privacy: .public) frameCountAtLoaded=\(self.receivedFrameCount, privacy: .public) seqAtLoaded=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+                }
+                }
                 self.schedulePostLoadFrameDiagnostics(
                     fingerprint: result.fingerprint,
                     title: result.primaryTitle,
@@ -836,7 +876,9 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             )
             try fullLog.write(to: logURL, atomically: true, encoding: .utf8)
             if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 构建日志已写入：\(logURL.path)")
+                }
             }
             return logURL
         } catch {
@@ -1060,10 +1102,18 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             let currentCount = self.receivedFrameCount
             if currentCount == frameCountAtLoad {
                 let seqText = currentSeq.map(String.init) ?? "nil"
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.error("\(Self.t)📝 Inline Preview 诊断：dylib 已加载但 3s 内没有新帧。title=\(title, privacy: .public) fingerprint=\(fingerprint, privacy: .public) seqAtLoad=\(frameSeqAtLoad.map(String.init) ?? "nil", privacy: .public) currentSeq=\(seqText, privacy: .public) status=\(self.status.description, privacy: .public) policy=\(self.policy.rawValue, privacy: .public) canvas=\(self.canvasSize.width, privacy: .public)×\(self.canvasSize.height, privacy: .public) @\(String(format: "%.1f", self.canvasScale), privacy: .public)")
+                }
+                }
                 self.requestEntryDebugState()
             } else {
+                if Self.verbose {
+                if Self.verbose {
                 Self.logger.info("\(Self.t)📝 Inline Preview 诊断：dylib 加载后已收到新帧。title=\(title, privacy: .public) framesDelta=\(currentCount - frameCountAtLoad, privacy: .public) seq=\(currentSeq.map(String.init) ?? "nil", privacy: .public) policy=\(self.policy.rawValue, privacy: .public)")
+                }
+                }
             }
         }
     }
@@ -1259,7 +1309,9 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     public func takeScreenshot(from nsView: NSView?) -> NSImage? {
         guard let nsView else {
             if Self.verbose {
+                if Self.verbose {
                 Self.logger.warning("\(self.t)📸 takeScreenshot: nsView 为 nil")
+                }
             }
             return nil
         }
@@ -1267,7 +1319,9 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         // 尝试找到 PreviewSurfaceView
         guard let surfaceView = findPreviewSurfaceView(in: nsView) else {
             if Self.verbose {
+                if Self.verbose {
                 Self.logger.warning("\(self.t)📸 takeScreenshot: 未找到 PreviewSurfaceView")
+                }
             }
             return nil
         }

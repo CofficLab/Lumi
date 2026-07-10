@@ -10,6 +10,8 @@ struct RAGSettingsPopoverView: View {
     /// 向量后端运行时信息：sqlite-vec 不可用时为 nil 或 .swiftCosine，需要提示用户
     /// 语义检索性能会下降（回退到内存逐个余弦计算）。
     @State private var runtimeInfo: RAGRuntimeInfo?
+    /// 状态加载失败时的错误提示
+    @State private var loadError: String?
 
     var body: some View {
         StatusBarPopoverScaffold(
@@ -19,6 +21,9 @@ struct RAGSettingsPopoverView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if isVectorBackendDegraded {
                     vectorBackendWarning
+                }
+                if let loadError {
+                    loadErrorBanner(loadError)
                 }
                 if trackedProjects.isEmpty {
                     Text(LumiPluginLocalization.string("No Projects", bundle: .module))
@@ -66,6 +71,31 @@ struct RAGSettingsPopoverView: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.warning.opacity(0.12))
+        .cornerRadius(8)
+    }
+
+    @ViewBuilder
+    private func loadErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "xmark.circle.fill")
+                .foregroundColor(theme.error)
+            Text(message)
+                .font(.appMicro)
+                .foregroundColor(theme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button {
+                Task { await loadStatus() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.appMicro)
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(theme.textSecondary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.error.opacity(0.12))
         .cornerRadius(8)
     }
 
@@ -165,8 +195,11 @@ struct RAGSettingsPopoverView: View {
             }
             statusesByPath = next
             // 同步拉取向量后端运行时信息，用于判定是否需要展示降级提示
-            runtimeInfo = try? await service.getRuntimeInfo()
-        } catch {}
+            runtimeInfo = try await service.getRuntimeInfo()
+            loadError = nil
+        } catch {
+            loadError = error.localizedDescription
+        }
     }
 }
 

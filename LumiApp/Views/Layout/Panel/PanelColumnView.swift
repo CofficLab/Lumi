@@ -59,7 +59,7 @@ struct PanelColumnView: View {
                 )
             }
             .id(viewContainerID)
-            .background(SplitViewWidthPersistence(storageKey: "Layout.Width.\(viewContainerID).Rail"))
+            .background(SplitViewDividerPersistence.rail(layoutState: layoutState, viewContainerID: viewContainerID))
         } else {
             RailView(tabs: railTabs, layoutState: layoutState)
                 .id(viewContainerID)

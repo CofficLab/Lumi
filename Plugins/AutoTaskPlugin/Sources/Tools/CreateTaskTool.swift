@@ -107,7 +107,9 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
             }
             result += "\n"
         }
-        let firstTask = createdTasks.first!
+        guard let firstTask = createdTasks.first else {
+            return LumiPluginLocalization.string("Error: no tasks were created", bundle: .module)
+        }
         let firstTaskLabel = "[\(firstTask.id)] \(firstTask.title)"
         let startLabel = String(
             format: LumiPluginLocalization.string("Now start working on task #1: %@", bundle: .module),

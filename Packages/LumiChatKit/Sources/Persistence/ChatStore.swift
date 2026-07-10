@@ -45,29 +45,16 @@ struct ChatStore {
         let storeURL = configuration.databaseDirectory
             .appendingPathComponent(configuration.databaseFileName, isDirectory: false)
 
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            url: storeURL,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
         do {
-            let modelConfiguration = ModelConfiguration(
-                schema: schema,
-                url: storeURL,
-                allowsSave: true,
-                cloudKitDatabase: .none
-            )
             self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            Self.quarantineStoreFiles(baseURL: storeURL, fileManager: fileManager)
-            do {
-                let modelConfiguration = ModelConfiguration(
-                    schema: schema,
-                    url: storeURL,
-                    allowsSave: true,
-                    cloudKitDatabase: .none
-                )
-                self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            } catch {
-                let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-                self.container = try! ModelContainer(for: schema, configurations: [fallbackConfiguration])
-                assertionFailure("LumiChatKit failed to open SwiftData store and fell back to memory: \(error)")
-            }
+            fatalError("无法打开聊天数据库 (\(storeURL.lastPathComponent)): \(error.localizedDescription)。请检查磁盘空间和文件权限。")
         }
 
         self.context = ModelContext(container)

@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_HyperAPI"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "hyperapi",
@@ -51,15 +49,9 @@ public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
                 "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://hyperapi.cc")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_HyperAPI"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -79,7 +71,6 @@ public final class HyperAPIProvider: OpenAICompatibleLumiProvider, @unchecked Se
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-
 }

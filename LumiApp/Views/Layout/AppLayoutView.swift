@@ -49,11 +49,6 @@ struct AppLayoutView: View {
         let railTabs = pluginService.panelRailTabItems(context: preliminaryPluginContext)
         let showRail = showsRail && !railTabs.isEmpty
         let isRailOnlyPanel = showRail && !showsPanelChrome
-        let autosaveName = layoutAutosaveName(
-            showRail: showRail,
-            showChatSection: chatSection.isVisible,
-            chatSection: chatSection
-        )
         let chatView = ChatView(
             layoutState: layoutState,
             pluginService: pluginService,
@@ -100,7 +95,15 @@ struct AppLayoutView: View {
                         chatView
                     }
                     .background(
-                        SplitViewAutosaveConfigurator(autosaveName: autosaveName)
+                        Group {
+                            if chatSection.isVisible {
+                                SplitViewDividerPersistence.chatSection(
+                                    layoutState: layoutState,
+                                    viewContainerID: activeID,
+                                    layout: chatSection
+                                )
+                            }
+                        }
                     )
                 } else {
                     AppDivider(.vertical)
@@ -131,8 +134,7 @@ struct AppLayoutView: View {
                 editorCoreService: editorCoreService,
                 pluginContext: preliminaryPluginContext,
                 lumiUIService: lumiUIService,
-                chatService: chatService,
-                layoutState: layoutState
+                chatService: chatService
             )
         }
         .frame(minWidth: 1180, minHeight: 560)
@@ -144,24 +146,6 @@ struct AppLayoutView: View {
             )
         }
         .ignoresSafeArea()
-    }
-
-    private func layoutAutosaveName(
-        showRail: Bool,
-        showChatSection: Bool,
-        chatSection: LumiChatSectionLayout
-    ) -> String {
-        let chatSuffix = showChatSection ? "_\(chatSection.persistenceKeySuffix)" : ""
-        return switch (showRail, showChatSection) {
-        case (true, true):
-            "Unified_MainSplit_Rail_ChatSection\(chatSuffix)"
-        case (true, false):
-            "Unified_MainSplit_Rail"
-        case (false, true):
-            "Unified_MainSplit_ChatSection\(chatSuffix)"
-        case (false, false):
-            "Unified_MainSplit"
-        }
     }
 
     private func basePluginContext(
@@ -196,7 +180,7 @@ struct AppLayoutView: View {
         return containers.first
     }
 
-    private func selectDefaultContainerIfNeeded(_ containers: [LumiViewContainerItem]) {
+    private func selectDefaultContainerIfNeeded(_ containers: [LumiViewContainerItem]) -> Void {
         guard !containers.isEmpty else {
             layoutState.activeViewContainerID = nil
             return

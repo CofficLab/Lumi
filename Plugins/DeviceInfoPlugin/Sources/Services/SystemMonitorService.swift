@@ -311,8 +311,8 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         var totalOut: UInt64 = 0
 
         var ptr = ifaddr
-        while ptr != nil {
-            let interface = ptr!.pointee
+        while let current = ptr {
+            let interface = current.pointee
             let addressFamily = interface.ifa_addr?.pointee.sa_family
             if Self.shouldReadNetworkCounters(flags: interface.ifa_flags, addressFamily: addressFamily) {
                 if let data = interface.ifa_data {
@@ -509,8 +509,8 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
         var totalOut: UInt64 = 0
 
         var ptr = ifaddr
-        while ptr != nil {
-            let interface = ptr!.pointee
+        while let current = ptr {
+            let interface = current.pointee
             let addressFamily = interface.ifa_addr?.pointee.sa_family
             if shouldReadNetworkCounters(flags: interface.ifa_flags, addressFamily: addressFamily) {
                 if let data = interface.ifa_data {
