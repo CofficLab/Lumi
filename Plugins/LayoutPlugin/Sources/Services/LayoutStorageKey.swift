@@ -3,22 +3,30 @@ import LumiCoreKit
 /// 布局存储键定义
 ///
 /// 集中管理所有持久化存储的 key，避免硬编码字符串分散在各处。
+///
+/// ## 尺寸 key 格式
+/// v2 起，分栏尺寸存储为 **divider 位置**（NSSplitView 原生粒度），
+/// key 格式：`Layout.Position.<id>.<role>[.<layoutSuffix>].<dividerIndex>`
+///
+/// - `Layout.Position.LumiEditor.Rail.0`
+/// - `Layout.Position.LumiEditor.ChatSection.narrow.0`
+/// - `Layout.Position.LumiEditor.BottomPanel.0`
 public enum LayoutStorageKey {
     // MARK: - 尺寸相关
 
-    public static func railWidth(viewContainerID: String) -> String {
-        "Layout.Width.\(viewContainerID).Rail"
+    public static func railDivider(viewContainerID: String) -> String {
+        "Layout.Position.\(viewContainerID).Rail.0"
     }
 
-    public static func chatSectionWidth(
+    public static func chatSectionDivider(
         viewContainerID: String,
         layout: LumiChatSectionLayout
     ) -> String {
-        "Layout.Width.\(viewContainerID).ChatSection.\(layout.persistenceKeySuffix)"
+        "Layout.Position.\(viewContainerID).ChatSection.\(layout.persistenceKeySuffix).0"
     }
 
-    public static func bottomPanelHeight(viewContainerID: String) -> String {
-        "Layout.Height.\(viewContainerID).BottomPanel"
+    public static func bottomPanelDivider(viewContainerID: String) -> String {
+        "Layout.Position.\(viewContainerID).BottomPanel.0"
     }
 
     // MARK: - 状态相关

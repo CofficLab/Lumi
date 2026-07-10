@@ -51,6 +51,8 @@ final class LayoutPersistenceCoordinator: SuperLog {
             restored.append("chatSectionVisible=\(visible)")
         }
 
+        // 先清掉 v1 旧 key（Width/Height 格式），避免遗留数据堆积。
+        cleanupLegacySplitDimensions(in: store)
         restoreSplitDimensions(into: state, from: store, restored: &restored)
 
         if Self.verbose {
@@ -61,17 +63,17 @@ final class LayoutPersistenceCoordinator: SuperLog {
             }
         }
 
-        // DEBUG: 打印恢复后 layoutState 中实际的 chatSectionWidths 值
+        // DEBUG: 打印恢复后 layoutState 中实际的 chatSectionDivider 值
         #if DEBUG
         if Self.verbose {
-        let editorNarrow = state.storedChatSectionWidth(for: "LumiEditor", layout: .narrow)
-        let editorWide = state.storedChatSectionWidth(for: "LumiEditor", layout: .wide)
-        LayoutPlugin.logger.info("\(self.t)[DEBUG restore] after restore, storedChatSectionWidth(LumiEditor.narrow)=\(editorNarrow.map { String(describing: $0) } ?? "nil"), storedChatSectionWidth(LumiEditor.wide)=\(editorWide.map { String(describing: $0) } ?? "nil")")
+            let editorNarrow = state.storedChatSectionDivider(for: "LumiEditor", layout: .narrow)
+            let editorWide = state.storedChatSectionDivider(for: "LumiEditor", layout: .wide)
+            LayoutPlugin.logger.info("\(self.t)[DEBUG restore] after restore, storedChatSectionDivider(LumiEditor.narrow)=\(editorNarrow.map { String(describing: $0) } ?? "nil"), storedChatSectionDivider(LumiEditor.wide)=\(editorWide.map { String(describing: $0) } ?? "nil")")
         }
         #endif
     }
 
-    /// 从 store 的 splitDimensions 字典中按 key 前缀回填各分栏尺寸到 layoutState。
+    /// 从 store 的 splitDimensions 字典中按新格式 key 回填各分栏 divider 位置到 layoutState。
     /// 回填使用不发通知的 `restoreXxx` 方法，避免启动时触发落盘。
     private func restoreSplitDimensions(
         into state: LumiLayoutState,
@@ -90,58 +92,91 @@ final class LayoutPersistenceCoordinator: SuperLog {
             LayoutPlugin.logger.info("\(self.t)[restoreSplitDimensions] found \(dimensions.count) keys: \(dimensions.keys.sorted().joined(separator: ", "))")
         }
 
-        let railPrefix = "Layout.Width."
-        let railSuffix = ".Rail"
-        let chatPrefix = "Layout.Width."
-        let chatInfix = ".ChatSection."
-        let bottomPrefix = "Layout.Height."
-        let bottomSuffix = ".BottomPanel"
+        // 新格式 key 前缀：Layout.Position.<id>.<role>[.<layoutSuffix>].<dividerIndex>
+        // divider index 是最后一个 dot-separated 段，先剥掉它再解析 role。
+        let prefix = "Layout.Position."
 
         for (key, value) in dimensions {
+            guard key.hasPrefix(prefix) else { continue }
             let cgValue = CGFloat(value)
-            // Rail 宽度: Layout.Width.<id>.Rail
-            if key.hasPrefix(railPrefix), key.hasSuffix(railSuffix) {
-                let inner = String(key.dropFirst(railPrefix.count).dropLast(railSuffix.count))
-                guard !inner.isEmpty else { continue }
-                state.restoreRailWidth(cgValue, for: inner)
-                restored.append("railWidth[\(inner)]=\(cgValue)")
+            let rest = String(key.dropFirst(prefix.count))
+
+            // 1) 形如 "Rail" / "BottomPanel"：直接以 suffix 匹配
+            // 2) 形如 "ChatSection.<layoutSuffix>"：从右往左找 .ChatSection.
+            // 两种都需要先剥掉尾部的 ".<dividerIndex>"
+
+            // BottomPanel: 形如 "<id>.BottomPanel.0"
+            if let id = extractIDForRole(in: rest, roleSuffix: ".BottomPanel") {
+                state.restoreBottomPanelDivider(cgValue, for: id)
+                restored.append("bottomPanelDivider[\(id)]=\(cgValue)")
                 continue
             }
-            // 聊天区宽度: Layout.Width.<id>.ChatSection.<layout>
-            if key.hasPrefix(chatPrefix), key.contains(chatInfix) {
-                let inner = String(key.dropFirst(chatPrefix.count))
-                guard let dotRange = inner.range(of: chatInfix) else {
-                    if Self.verbose {
-                        LayoutPlugin.logger.warning("\(self.t)[restoreSplitDimensions] chat key parse failed: '\(key)' has no '\(chatInfix)' range in '\(inner)'")
-                    }
-                    continue
-                }
-                let containerID = String(inner[..<dotRange.lowerBound])
-                let layoutSuffix = String(inner[dotRange.upperBound...])
-                guard !containerID.isEmpty,
-                      let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix)
-                else {
-                    if Self.verbose {
-                        LayoutPlugin.logger.warning("\(self.t)[restoreSplitDimensions] chat key parse failed: containerID='\(containerID)', layoutSuffix='\(layoutSuffix)'")
-                    }
-                    continue
-                }
-                state.restoreChatSectionWidth(cgValue, for: containerID, layout: layout)
-                restored.append("chatSectionWidth[\(containerID).\(layoutSuffix)]=\(cgValue)")
+            // Rail: 形如 "<id>.Rail.0"
+            if let id = extractIDForRole(in: rest, roleSuffix: ".Rail") {
+                state.restoreRailDivider(cgValue, for: id)
+                restored.append("railDivider[\(id)]=\(cgValue)")
                 continue
             }
-            // 底部面板高度: Layout.Height.<id>.BottomPanel
-            if key.hasPrefix(bottomPrefix), key.hasSuffix(bottomSuffix) {
-                let inner = String(key.dropFirst(bottomPrefix.count).dropLast(bottomSuffix.count))
-                guard !inner.isEmpty else { continue }
-                state.restoreBottomPanelHeight(cgValue, for: inner)
-                restored.append("bottomPanelHeight[\(inner)]=\(cgValue)")
+            // ChatSection: 形如 "<id>.ChatSection.<layout>.0"
+            if let parsed = extractChatSection(in: rest) {
+                state.restoreChatSectionDivider(cgValue, for: parsed.id, layout: parsed.layout)
+                restored.append("chatSectionDivider[\(parsed.id).\(parsed.layout.persistenceKeySuffix)]=\(cgValue)")
                 continue
             }
 
             if Self.verbose {
                 LayoutPlugin.logger.info("\(self.t)[restoreSplitDimensions] key '\(key)' did not match any pattern, skipped")
             }
+        }
+    }
+
+    /// 从 "<id>.<role>.0" 格式中提取 id（假设 role 后还有 .<dividerIndex> 后缀）。
+    /// 找不到或 id 为空时返回 nil。
+    private func extractIDForRole(in rest: String, roleSuffix: String) -> String? {
+        // rest 末尾必为 ".<dividerIndex>"，先剥掉
+        guard let lastDot = rest.lastIndex(of: ".") else { return nil }
+        let body = String(rest[..<lastDot])
+        guard body.hasSuffix(roleSuffix) else { return nil }
+        let id = String(body.dropLast(roleSuffix.count))
+        return id.isEmpty ? nil : id
+    }
+
+    /// 从 "<id>.ChatSection.<layoutSuffix>.0" 中解析 (id, layout)。
+    /// 找最右侧的 ".ChatSection." 分隔点；前面的部分是 id，后面的最后一段是 layoutSuffix（再剥掉尾部的 divider index）。
+    private func extractChatSection(in rest: String) -> (id: String, layout: LumiChatSectionLayout)? {
+        let infix = ".ChatSection."
+        guard let range = rest.range(of: infix, options: .backwards) else { return nil }
+        let id = String(rest[..<range.lowerBound])
+        let after = String(rest[range.upperBound...])
+        // after 形如 "<layout>.0"
+        guard let lastDot = after.lastIndex(of: ".") else { return nil }
+        let layoutSuffix = String(after[..<lastDot])
+        guard !id.isEmpty,
+              let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix)
+        else {
+            if Self.verbose {
+                LayoutPlugin.logger.warning("\(self.t)[restoreSplitDimensions] chat key parse failed: id='\(id)', layoutSuffix='\(layoutSuffix)'")
+            }
+            return nil
+        }
+        return (id, layout)
+    }
+
+    /// 清理 v1 旧 key（"Layout.Width.*" / "Layout.Height.*"）。
+    /// 旧 key 里的值是 pane width/height，与 v2 的 divider position 语义不同，不能直接迁移；
+    /// 一次性删除以避免遗留数据堆积。
+    private func cleanupLegacySplitDimensions(in store: LayoutPluginLocalStore) {
+        let dimensions = store.loadSplitDimensions()
+        let legacyPrefixes = ["Layout.Width.", "Layout.Height."]
+        let legacyKeys = dimensions.keys.filter { key in
+            legacyPrefixes.contains(where: { key.hasPrefix($0) })
+        }
+        guard !legacyKeys.isEmpty else { return }
+        if Self.verbose {
+            LayoutPlugin.logger.info("\(self.t)清理 v1 旧分栏尺寸 key: \(legacyKeys.sorted().joined(separator: ", "))")
+        }
+        for key in legacyKeys {
+            store.removeSplitDimension(forKey: key)
         }
     }
 }

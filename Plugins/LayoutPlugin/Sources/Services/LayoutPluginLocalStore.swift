@@ -137,6 +137,21 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         }
     }
 
+    /// 删除单个分栏尺寸 key。子字典为空时一并移除 `splitDimensions` 键，避免空 dict 残留。
+    public func removeSplitDimension(forKey key: String) {
+        queue.async { [self] in
+            var dict = self.readDict()
+            var dimensions = dict[Keys.splitDimensions] as? [String: Double] ?? [:]
+            guard dimensions.removeValue(forKey: key) != nil else { return }
+            if dimensions.isEmpty {
+                dict.removeValue(forKey: Keys.splitDimensions)
+            } else {
+                dict[Keys.splitDimensions] = dimensions
+            }
+            self.writeDict(dict)
+        }
+    }
+
     /// 加载全部分栏尺寸
     public func loadSplitDimensions() -> [String: Double] {
         queue.sync {

@@ -94,54 +94,46 @@ final class LayoutEventListener: ObservableObject {
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .railWidthDidChange)
+        NotificationCenter.default.publisher(for: .railDividerDidChange)
             .sink { notification in
                 guard let containerID = notification.userInfo?["containerID"] as? String,
-                      let width = LayoutEventListener.cgFloat(from: notification.userInfo?["width"])
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
                 else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: railWidth[\(containerID)] → \(width)")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: railDivider[\(containerID)] → \(position)")
                 }
-                let key = LayoutStorageKey.railWidth(viewContainerID: containerID)
-                store.saveSplitDimension(Double(width), forKey: key)
+                let key = LayoutStorageKey.railDivider(viewContainerID: containerID)
+                store.saveSplitDimension(Double(position), forKey: key)
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .chatSectionWidthDidChange)
+        NotificationCenter.default.publisher(for: .chatSectionDividerDidChange)
             .sink { notification in
                 guard let containerID = notification.userInfo?["containerID"] as? String,
                       let layoutSuffix = notification.userInfo?["layout"] as? String,
-                      let width = LayoutEventListener.cgFloat(from: notification.userInfo?["width"])
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
                 else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: chatSectionWidth[\(containerID).\(layoutSuffix)] → \(width)")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: chatSectionDivider[\(containerID).\(layoutSuffix)] → \(position)")
                 }
                 // 还原布局档位枚举以复用 LayoutStorageKey 的 key 生成逻辑
                 let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix) ?? .narrow
-                let key = LayoutStorageKey.chatSectionWidth(viewContainerID: containerID, layout: layout)
-                store.saveSplitDimension(Double(width), forKey: key)
+                let key = LayoutStorageKey.chatSectionDivider(viewContainerID: containerID, layout: layout)
+                store.saveSplitDimension(Double(position), forKey: key)
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .bottomPanelHeightDidChange)
+        NotificationCenter.default.publisher(for: .bottomPanelDividerDidChange)
             .sink { notification in
                 guard let containerID = notification.userInfo?["containerID"] as? String,
-                      let height = LayoutEventListener.cgFloat(from: notification.userInfo?["height"])
+                      let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
                 else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelHeight[\(containerID)] → \(height)")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelDivider[\(containerID)] → \(position)")
                 }
-                let key = LayoutStorageKey.bottomPanelHeight(viewContainerID: containerID)
-                store.saveSplitDimension(Double(height), forKey: key)
+                let key = LayoutStorageKey.bottomPanelDivider(viewContainerID: containerID)
+                store.saveSplitDimension(Double(position), forKey: key)
             }
             .store(in: &cancellables)
-    }
-
-    /// 从通知 userInfo 的数值中解析 `CGFloat`，兼容 `CGFloat` / `NSNumber` / `Double`。
-    private static func cgFloat(from value: Any?) -> CGFloat? {
-        if let cg = value as? CGFloat { return cg }
-        if let number = value as? NSNumber { return CGFloat(number.doubleValue) }
-        if let double = value as? Double { return CGFloat(double) }
-        return nil
     }
 }
