@@ -67,6 +67,7 @@ import LLMProviderFreeModelPlugin
 import LLMProviderHappyCodePlugin
 import LLMProviderHyperAPIPlugin
 import LLMProviderLPgptPlugin
+import LLMProviderMiniMaxPlugin
 import LLMProviderMegaLLMPlugin
 import LLMProviderMLXPlugin
 import LLMProviderOpenAIPlugin
@@ -217,6 +218,7 @@ public enum LumiPluginRegistry {
         HyperAPIPlugin.self,
         LPgptPlugin.self,
         MegaLLMPlugin.self,
+        MiniMaxPlugin.self,
         OpenRouterPlugin.self,
         XiaomiPlugin.self,
         XybbzPlugin.self,

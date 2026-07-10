@@ -1,0 +1,101 @@
+import LumiCoreKit
+import LumiUI
+import SwiftUI
+
+enum ApiKeyIssue {
+    case missing
+    case invalid
+}
+
+struct ApiKeyMissingView: View {
+    @LumiTheme private var theme
+
+    let message: LumiChatMessage
+    var issue: ApiKeyIssue = .missing
+    @Binding var showRawMessage: Bool
+
+    @State private var apiKey: String = ""
+    @State private var isApiKeyVisible = false
+
+    private var title: String {
+        switch issue {
+        case .missing:
+            LumiPluginLocalization.string("MiniMax TokenPlan API Key required", bundle: .module)
+        case .invalid:
+            LumiPluginLocalization.string("MiniMax TokenPlan API Key invalid or expired", bundle: .module)
+        }
+    }
+
+    private var subtitle: String {
+        switch issue {
+        case .missing:
+            LumiPluginLocalization.string(
+                "Configure your MiniMax TokenPlan API Key below, then resend your message.",
+                bundle: .module
+            )
+        case .invalid:
+            LumiPluginLocalization.string(
+                "Use a TokenPlan API Key from the MiniMax open platform. Update it below, then resend your message.",
+                bundle: .module
+            )
+        }
+    }
+
+    var body: some View {
+        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.appCallout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.textPrimary)
+
+                Text(subtitle)
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+
+                if let url = URL(string: MiniMaxTokenPlanProvider.apiKeyHelpURL ?? "") {
+                    Link(destination: url) {
+                        Label(
+                            LumiPluginLocalization.string("Get API Key on MiniMax Open Platform", bundle: .module),
+                            systemImage: "arrow.up.right.square"
+                        )
+                        .font(.appCaption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(theme.primary)
+                }
+
+                HStack(alignment: .center, spacing: 8) {
+                    AppInputField(
+                        LocalizedStringKey(LumiPluginLocalization.string("Enter MiniMax TokenPlan API Key", bundle: .module)),
+                        text: Binding(
+                            get: { apiKey },
+                            set: { newValue in
+                                apiKey = newValue
+                                MiniMaxTokenPlanProvider.setApiKey(newValue)
+                            }
+                        ),
+                        fieldType: isApiKeyVisible ? .plain : .secure
+                    )
+
+                    AppIconButton(
+                        systemImage: isApiKeyVisible ? "eye.slash" : "eye",
+                        tint: isApiKeyVisible ? theme.textPrimary : theme.textSecondary,
+                        size: .regular,
+                        isActive: isApiKeyVisible
+                    ) {
+                        isApiKeyVisible.toggle()
+                    }
+                    .help(
+                        isApiKeyVisible
+                            ? LumiPluginLocalization.string("Hide API Key", bundle: .module)
+                            : LumiPluginLocalization.string("Show API Key", bundle: .module)
+                    )
+                }
+            }
+        }
+        .onAppear {
+            apiKey = MiniMaxTokenPlanProvider.getApiKey()
+        }
+    }
+}
