@@ -35,8 +35,11 @@ struct LayoutRootView: View {
 @MainActor
 final class LayoutEventListener: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
+    private let store: LayoutPluginLocalStore
 
-    init() {
+    /// - Parameter store: 落盘目标，默认为共享单例（生产环境）。
+    init(store: LayoutPluginLocalStore = .shared) {
+        self.store = store
         if LayoutPlugin.verbose {
             LayoutPlugin.logger.info("\(LayoutPlugin.t)开始监听布局变更事件")
         }
@@ -47,7 +50,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeViewContainerID → \(containerID)")
                 }
-                LayoutPluginLocalStore.shared.saveActiveViewContainerID(containerID)
+                store.saveActiveViewContainerID(containerID)
             }
             .store(in: &cancellables)
 
@@ -57,7 +60,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeRailTabID → \(railTabID)")
                 }
-                LayoutPluginLocalStore.shared.saveSelectedAgentSidebarTabId(railTabID)
+                store.saveSelectedAgentSidebarTabId(railTabID)
             }
             .store(in: &cancellables)
 
@@ -67,7 +70,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeBottomTabID → \(bottomTabID)")
                 }
-                LayoutPluginLocalStore.shared.set(bottomTabID, forKey: LayoutStorageKey.activeBottomTabID)
+                store.set(bottomTabID, forKey: LayoutStorageKey.activeBottomTabID)
             }
             .store(in: &cancellables)
 
@@ -77,7 +80,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelVisible → \(visible)")
                 }
-                LayoutPluginLocalStore.shared.saveBottomPanelVisible(visible)
+                store.saveBottomPanelVisible(visible)
             }
             .store(in: &cancellables)
 
@@ -87,7 +90,7 @@ final class LayoutEventListener: ObservableObject {
                 if LayoutPlugin.verbose {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: chatSectionVisible → \(visible)")
                 }
-                LayoutPluginLocalStore.shared.set(visible, forKey: LayoutStorageKey.chatSectionVisible)
+                store.set(visible, forKey: LayoutStorageKey.chatSectionVisible)
             }
             .store(in: &cancellables)
 
@@ -100,7 +103,7 @@ final class LayoutEventListener: ObservableObject {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: railWidth[\(containerID)] → \(width)")
                 }
                 let key = LayoutStorageKey.railWidth(viewContainerID: containerID)
-                LayoutPluginLocalStore.shared.saveSplitDimension(Double(width), forKey: key)
+                store.saveSplitDimension(Double(width), forKey: key)
             }
             .store(in: &cancellables)
 
@@ -116,7 +119,7 @@ final class LayoutEventListener: ObservableObject {
                 // 还原布局档位枚举以复用 LayoutStorageKey 的 key 生成逻辑
                 let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix) ?? .narrow
                 let key = LayoutStorageKey.chatSectionWidth(viewContainerID: containerID, layout: layout)
-                LayoutPluginLocalStore.shared.saveSplitDimension(Double(width), forKey: key)
+                store.saveSplitDimension(Double(width), forKey: key)
             }
             .store(in: &cancellables)
 
@@ -129,7 +132,7 @@ final class LayoutEventListener: ObservableObject {
                     LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: bottomPanelHeight[\(containerID)] → \(height)")
                 }
                 let key = LayoutStorageKey.bottomPanelHeight(viewContainerID: containerID)
-                LayoutPluginLocalStore.shared.saveSplitDimension(Double(height), forKey: key)
+                store.saveSplitDimension(Double(height), forKey: key)
             }
             .store(in: &cancellables)
     }
