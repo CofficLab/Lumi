@@ -15,7 +15,7 @@ struct MainWindowSceneContent: View {
                         pluginService: container.pluginService,
                         editorCoreService: container.editorCoreService,
                         lumiUIService: container.lumiUIService,
-                        chatService: LumiCore.chatService as! ChatService,
+                        chatService: RootContainer.checkedChatService,
                         chatSectionCoordinator: container.chatSectionCoordinator
                     )
                 }

@@ -55,9 +55,11 @@ public actor RAGService: SuperLog {
         self.databaseDirectoryProvider = databaseDirectoryProvider
         // 确保进度回调始终在主线程执行（通常用于 UI 更新）
         if let onProgress {
+            let box = UncheckedSendableBox(onProgress)
             self.onProgress = { event in
+                let handler = box.value
                 Task { @MainActor in
-                    onProgress(event)
+                    handler(event)
                 }
             }
         } else {
@@ -414,4 +416,10 @@ public actor RAGService: SuperLog {
         let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
         return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
     }
+}
+
+/// Unchecked Sendable wrapper for closures that the caller guarantees are thread-safe.
+private final class UncheckedSendableBox<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
 }

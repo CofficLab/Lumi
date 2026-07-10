@@ -12,6 +12,14 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
+    /// 安全获取 ChatService，类型不匹配时提供清晰的错误信息。
+    static var checkedChatService: ChatService {
+        guard let service = LumiCore.chatService as? ChatService else {
+            fatalError("LumiCore.chatService 必须是 ChatService 类型。当前类型: \(String(describing: type(of: LumiCore.chatService)))。请确保 LumiCore.setupChatBootstrap 已正确调用。")
+        }
+        return service
+    }
+
     static let shared: RootContainer = {
         do {
             return try RootContainer()
@@ -60,13 +68,16 @@ final class RootContainer: ObservableObject, SuperLog {
         }
         LumiCore.bootstrapEditor()
         // LumiCore 持有的是抽象 AbstractEditorServicing，强转回具体类型供本类的回调使用。
-        self.editorCoreService = LumiCore.editorService as! EditorCoreService
+        guard let editorService = LumiCore.editorService as? EditorCoreService else {
+            fatalError("LumiCore.editorService 必须是 EditorCoreService 类型。当前类型: \(String(describing: type(of: LumiCore.editorService)))。请确保 LumiCore.setupEditorBootstrap 已正确调用。")
+        }
+        self.editorCoreService = editorService
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }
 
         self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: LumiCore.chatService as! ChatService,
+            chatService: Self.checkedChatService,
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
         if Self.verbose {

@@ -15,7 +15,7 @@ struct SettingsSceneContent: View {
                     SettingsView(
                         pluginService: container.pluginService,
                         lumiUIService: container.lumiUIService,
-                        chatService: LumiCore.chatService as! ChatService
+                        chatService: RootContainer.checkedChatService
                     )
                     .ignoresSafeArea()
                 }
