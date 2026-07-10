@@ -33,7 +33,9 @@ struct ActivityHeatmapSettingsView: View {
 
             // Heatmap card
             AppCard {
-                if viewModel.heatmapData.isEmpty && !viewModel.isLoading {
+                if viewModel.isLoading {
+                    loadingView
+                } else if viewModel.hasLoaded && viewModel.heatmapData.isEmpty {
                     emptyState
                 } else {
                     ActivityHeatmapView(data: viewModel.heatmapData)
@@ -48,6 +50,16 @@ struct ActivityHeatmapSettingsView: View {
             viewModel.period = period
             await viewModel.load()
         }
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text(LumiPluginLocalization.string("Loading activity data…", bundle: .module))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
     }
 
     private var emptyState: some View {
