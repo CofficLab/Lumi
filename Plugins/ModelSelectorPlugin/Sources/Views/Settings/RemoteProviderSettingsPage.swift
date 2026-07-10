@@ -33,6 +33,13 @@ struct RemoteProviderSettingsPage: View {
         remoteProviders.first { $0.id == selectedProviderID }
     }
 
+    /// 通过 ChatService 拿到当前选中 provider 的**实例**（不是 info），
+    /// 走协议层 `hasApiKey` / `getApiKey` / `setApiKey` 访问 API Key，
+    /// 避免直接接触 Provider 内部的 storage key 字符串。
+    private var selectedProviderInstance: (any LumiLLMProvider)? {
+        chatService.providersByID[selectedProviderID]
+    }
+
     private var filteredProviders: [LumiLLMProviderInfo] {
         let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !keyword.isEmpty else { return remoteProviders }
@@ -298,14 +305,13 @@ struct RemoteProviderSettingsPage: View {
     }
 
     private func loadSettings() {
-        guard let provider = remoteProviders.first(where: { $0.id == selectedProviderID }),
-              let storageKey = provider.apiKeyStorageKey else {
+        guard let provider = selectedProviderInstance else {
             apiKey = ""
             return
         }
 
         isLoadingSettings = true
-        apiKey = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        apiKey = provider.getApiKey()
         DispatchQueue.main.async {
             isLoadingSettings = false
         }
@@ -313,11 +319,10 @@ struct RemoteProviderSettingsPage: View {
 
     private func saveAPIKey() {
         guard !isLoadingSettings,
-              let provider = remoteProviders.first(where: { $0.id == selectedProviderID }),
-              let storageKey = provider.apiKeyStorageKey
+              let provider = selectedProviderInstance
         else {
             return
         }
-        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
+        provider.setApiKey(apiKey)
     }
 }

@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_MegaLLM"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "megallm",
@@ -57,15 +55,9 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
                 "newclaude-opus-4-6": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://megallm.io")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_MegaLLM"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -85,7 +77,6 @@ public final class MegaLLMProvider: OpenAICompatibleLumiProvider, @unchecked Sen
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-
 }

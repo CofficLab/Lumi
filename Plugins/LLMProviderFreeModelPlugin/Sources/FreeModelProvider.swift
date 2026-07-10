@@ -67,19 +67,11 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
         ],
         websiteURL: URL(string: "https://freemodel.dev/")!
-    )
+    ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_FreeModel"
+        )
 
     public static var info: LumiLLMProviderInfo { providerInfo }
-
-    public static let apiKeyStorageKey = "DevAssistant_ApiKey_FreeModel"
-
-    public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
 
     private let openAIBackend: FreeModelOpenAIBackend
     private let claudeT0Backend: FreeModelClaudeBackend
@@ -247,7 +239,7 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }
 

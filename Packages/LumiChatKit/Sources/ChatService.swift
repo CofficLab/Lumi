@@ -23,7 +23,9 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
     var messagesByConversationID: [UUID: [LumiChatMessage]]
     var toolApprovalContinuation: CheckedContinuation<Bool, Never>?
-    var providersByID: [String: any LumiLLMProvider] = [:]
+    /// 运行时供应商实例（按 id 索引），供设置页等需要直接操作实例的 UI 层访问。
+    /// 写入由 `ProviderManager` 负责，外部只读即可。
+    public internal(set) var providersByID: [String: any LumiLLMProvider] = [:]
     var middlewares: [any LumiSendMiddleware] = []
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
     weak var toolService: (any LumiToolServicing)?

@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "anthropic",
@@ -39,15 +37,9 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
                 "claude-3-haiku-20240307": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://www.anthropic.com/")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_Anthropic"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -61,6 +53,6 @@ public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecke
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }

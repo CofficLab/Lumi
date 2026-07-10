@@ -47,11 +47,10 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
                 "MiniMax-Text-01": .init(supportsVision: false, supportsTools: false)
             ],
             websiteURL: URL(string: "https://platform.minimaxi.com/")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
         )
     }
-
-    /// API Key 存储键名。
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_MiniMax"
 
     public init() {
         super.init(
@@ -73,27 +72,11 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
         return MiniMaxRenderKind.requestFailed
     }
 
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.missingAPIKeyStatus(providerName: Self.info.displayName)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }

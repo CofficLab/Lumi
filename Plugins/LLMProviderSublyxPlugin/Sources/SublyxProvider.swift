@@ -77,8 +77,6 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
 
     public static let apiKeyHelpURL: String? = "https://api.sublyx.org/"
 
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Sublyx"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "sublyx",
@@ -107,6 +105,8 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
                 "gpt-4.1": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://api.sublyx.org/")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_Sublyx"
         )
     }
 
@@ -122,14 +122,6 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
         )
     }
 
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
     public override func errorRenderKind(for error: Error) -> String? {
         if case LumiLLMProviderSupportError.missingAPIKey = error {
             return SublyxRenderKind.apiKeyMissing
@@ -142,22 +134,12 @@ public final class SublyxProvider: OpenAICompatibleLumiProvider, SuperLog, @unch
         return SublyxRenderKind.requestFailed
     }
 
-    // MARK: - API Key
-
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
     // MARK: - Streaming

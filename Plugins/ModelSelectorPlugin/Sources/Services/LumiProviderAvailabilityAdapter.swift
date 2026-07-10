@@ -86,22 +86,17 @@ public struct LumiProviderAvailabilityAdapter: LLMAvailabilityLLMServicing {
 // MARK: - Provider Type Adapter
 
 /// 适配单个供应商的 API Key 状态。
+/// 走 `LumiLLMProvider` 协议层的 `hasApiKey()` / `getApiKey()`，
+/// 不再直接读 `info.apiKeyStorageKey`，让 Provider 自己决定存储策略。
 private struct LumiProviderTypeAdapter: LLMAvailabilityProviderType {
     let provider: any LumiLLMProvider
 
     var hasApiKey: Bool {
-        let info = type(of: provider).info
-        if info.isLocal { return true }
-
-        guard let storageKey = info.apiKeyStorageKey else { return false }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey)
-        return key != nil && !(key?.isEmpty ?? true)
+        provider.hasApiKey()
     }
 
     func getApiKey() -> String {
-        let info = type(of: provider).info
-        let storageKey = info.apiKeyStorageKey ?? ""
-        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        provider.getApiKey()
     }
 }
 

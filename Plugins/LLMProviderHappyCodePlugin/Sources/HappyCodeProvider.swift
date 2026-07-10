@@ -3,8 +3,6 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 
 public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked Sendable {
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_HappyCode"
-
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "happycode",
@@ -21,15 +19,9 @@ public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked S
                 "gpt-5.5": .init(supportsVision: true, supportsTools: true)
             ],
             websiteURL: URL(string: "https://happycode.vip")!
+        ,
+            apiKeyStorageKey: "DevAssistant_ApiKey_HappyCode"
         )
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
     }
 
     public init() {
@@ -49,7 +41,6 @@ public final class HappyCodeProvider: OpenAICompatibleLumiProvider, @unchecked S
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-
 }

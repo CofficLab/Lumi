@@ -53,8 +53,6 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
         )
     }
 
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
-
     public init() {
         super.init(
             configuration: LumiAnthropicCompatibleProviderConfiguration(
@@ -75,27 +73,11 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
         return AliyunRenderKind.requestFailed
     }
 
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }

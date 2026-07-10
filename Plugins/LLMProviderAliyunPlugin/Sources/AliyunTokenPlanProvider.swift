@@ -73,12 +73,11 @@ public final class AliyunTokenPlanProvider: AnthropicCompatibleLumiProvider, @un
                 "glm-5.2": .init(supportsVision: true, supportsTools: true),
                 "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!
+            websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!,
+            // 与 AliyunProvider（CodingPlan）共享同一 Keychain 存储键。
+            apiKeyStorageKey: "DevAssistant_ApiKey_aliyun"
         )
     }
-
-    // 与 CodingPlan 共享同一个 API Key
-    private static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"
 
     public init() {
         super.init(
@@ -100,27 +99,11 @@ public final class AliyunTokenPlanProvider: AnthropicCompatibleLumiProvider, @un
         return AliyunRenderKind.requestFailed
     }
 
-    public static func getApiKey() -> String {
-        LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
-    }
-
-    public static func setApiKey(_ apiKey: String) {
-        LumiAPIKeyStore.shared.set(apiKey, forKey: apiKeyStorageKey)
-    }
-
-    override public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
     public override func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public override func providerStatus() -> LumiLLMProviderStatus? {
-        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(providerInfo: Self.info)
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 }
