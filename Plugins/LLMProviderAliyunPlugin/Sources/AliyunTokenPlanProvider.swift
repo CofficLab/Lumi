@@ -74,8 +74,8 @@ public final class AliyunTokenPlanProvider: AnthropicCompatibleLumiProvider, @un
                 "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true)
             ],
             websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!,
-            // 与 AliyunProvider（CodingPlan）共享同一 Keychain 存储键。
-            apiKeyStorageKey: "DevAssistant_ApiKey_aliyun"
+            // 与 AliyunProvider（CodingPlan）共享同一 Keychain 存储键（保持与历史硬编码 key 一致）。
+            apiKeyStorageKey: "DevAssistant_ApiKey_Aliyun"
         )
     }
 

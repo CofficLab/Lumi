@@ -49,7 +49,10 @@ public final class AliyunProvider: AnthropicCompatibleLumiProvider, @unchecked S
                 "glm-4.7": .init(supportsVision: false, supportsTools: true),
                 "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true)
             ],
-            websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!
+            websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!,
+            // 保持与历史硬编码 key 一致（`DevAssistant_ApiKey_Aliyun`），
+            // 避免老用户数据落在新派生的 `DevAssistant_ApiKey_aliyun` 位置而读不到。
+            apiKeyStorageKey: "DevAssistant_ApiKey_Aliyun"
         )
     }
 
