@@ -5,7 +5,7 @@ extension TextView {
     /// 排查 CPU 占用：鼠标拖拽自动滚动定时器(45Hz)若 stop 路径遗漏会导致持续 100% CPU。
     /// 仅在 setup/disable 打 lifecycle 日志，确认是否泄漏。subsystem 对齐 com.coffic.lumi。
     private static let mouseDragLogger = Logger(subsystem: "com.coffic.lumi", category: "editor.mouse-autoscroll")
-    private static let mouseDragVerbose = true
+    private static let mouseDragVerbose = false
 
     override public func mouseDown(with event: NSEvent) {
         // Set cursor
