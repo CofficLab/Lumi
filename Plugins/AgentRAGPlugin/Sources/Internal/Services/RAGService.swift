@@ -53,7 +53,16 @@ public actor RAGService: SuperLog {
         onProgress: ((RAGIndexProgressEvent) -> Void)? = nil
     ) {
         self.databaseDirectoryProvider = databaseDirectoryProvider
-        self.onProgress = onProgress
+        // 确保进度回调始终在主线程执行（通常用于 UI 更新）
+        if let onProgress {
+            self.onProgress = { event in
+                Task { @MainActor in
+                    onProgress(event)
+                }
+            }
+        } else {
+            self.onProgress = nil
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)\(Self.emoji) RAG 服务已创建")
         }
