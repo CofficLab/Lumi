@@ -89,6 +89,7 @@ import Testing
 
 // MARK: - 分栏尺寸恢复链路
 
+@MainActor
 @Test func restoreWritesSplitDimensionsIntoLayoutState() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayout-Restore-\(UUID().uuidString)", isDirectory: true)
@@ -153,6 +154,7 @@ import Testing
 
 /// 验证：直接写盘 → 重启读取 → 恢复链路。
 /// 不经过 NotificationCenter，直接测试 store 与 coordinator 的持久化层。
+@MainActor
 @Test func chatSectionWidthDirectWriteRoundTrip() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayout-DirectWrite-\(UUID().uuidString)", isDirectory: true)
@@ -184,6 +186,7 @@ import Testing
 }
 
 /// 验证：多档位宽度各自独立持久化与恢复。
+@MainActor
 @Test func chatSectionWidthMultipleLayoutsAreIndependent() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayout-MultiLayout-\(UUID().uuidString)", isDirectory: true)

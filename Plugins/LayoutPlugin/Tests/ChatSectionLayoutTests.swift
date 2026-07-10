@@ -15,6 +15,7 @@ import Testing
     #expect(store.loadRightSidebarVisible() == false)
 }
 
+@MainActor
 @Test func layoutStateBindsChatSectionVisibility() {
     let layoutState = LumiLayoutState()
     #expect(layoutState.chatSectionVisible == true)
