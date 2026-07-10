@@ -246,6 +246,12 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
                 streamingDurationMs: await state.getStreamingDuration()
             )
         ) { _, new in new }
+
+        // 持久化 stopReason，供 Turn 层和诊断工具使用
+        if let stopReason = await state.stopReason {
+            metadata["stopReason"] = stopReason
+        }
+
         return metadata
     }
 

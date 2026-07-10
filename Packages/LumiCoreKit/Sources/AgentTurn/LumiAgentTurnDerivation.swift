@@ -28,6 +28,11 @@ public enum LumiAgentTurnDerivation {
       guard last.toolCalls == nil || last.toolCalls?.isEmpty == true else {
         return nil
       }
+      // 空响应（无文本 + 无 toolCall）视为失败，而非正常完成。
+      // 防止历史中残留的空 assistant 消息被当作 .completed 误导自动续聊。
+      if last.isEmptyResponse {
+        return .failed
+      }
       return .completed
     case .user, .tool, .system, .status:
       return nil

@@ -69,3 +69,15 @@ public struct AgentChatMessage: Identifiable, Sendable, Equatable {
     self.modelName = modelName
   }
 }
+
+public extension AgentChatMessage {
+  /// 判定标准与 `LumiChatMessage.isEmptyResponse` 一致。
+  var isEmptyResponse: Bool {
+    guard !isError else { return false }
+    let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard trimmedContent.isEmpty else { return false }
+    let hasToolCalls = toolCalls?.isEmpty == false
+    guard !hasToolCalls else { return false }
+    return true
+  }
+}

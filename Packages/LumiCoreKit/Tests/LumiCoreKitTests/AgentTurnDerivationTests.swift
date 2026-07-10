@@ -130,3 +130,172 @@ struct LumiAgentTurnDerivationTests {
         #expect(completedFired == true)
     }
 }
+
+// MARK: - isEmptyResponse Tests
+
+@Suite("LumiChatMessage.isEmptyResponse")
+struct LumiChatMessageIsEmptyResponseTests {
+    private let conversationId = UUID()
+
+    @Test("normal text message is not empty")
+    func normalTextIsNotEmpty() {
+        let msg = LumiChatMessage(conversationID: conversationId, role: .assistant, content: "Hello")
+        #expect(!msg.isEmptyResponse)
+    }
+
+    @Test("empty string is empty")
+    func emptyStringIsEmpty() {
+        let msg = LumiChatMessage(conversationID: conversationId, role: .assistant, content: "")
+        #expect(msg.isEmptyResponse)
+    }
+
+    @Test("whitespace-only is empty")
+    func whitespaceOnlyIsEmpty() {
+        let msg = LumiChatMessage(conversationID: conversationId, role: .assistant, content: "  \n  ")
+        #expect(msg.isEmptyResponse)
+    }
+
+    @Test("with toolCall is not empty")
+    func withToolCallIsNotEmpty() {
+        let msg = LumiChatMessage(
+            conversationID: conversationId,
+            role: .assistant,
+            content: "",
+            toolCalls: [LumiToolCall(id: "1", name: "read", arguments: "{}")]
+        )
+        #expect(!msg.isEmptyResponse)
+    }
+
+    @Test("error message is not empty")
+    func errorMessageIsNotEmpty() {
+        let msg = LumiChatMessage(conversationID: conversationId, role: .error, content: "", isError: true)
+        #expect(!msg.isEmptyResponse)
+    }
+
+    @Test("thinking-only without content is empty")
+    func thinkingOnlyIsEmpty() {
+        let msg = LumiChatMessage(
+            conversationID: conversationId,
+            role: .assistant,
+            content: "",
+            reasoningContent: "Let me think..."
+        )
+        #expect(msg.isEmptyResponse)
+    }
+
+    @Test("normal text with toolCall is not empty")
+    func textWithToolCallIsNotEmpty() {
+        let msg = LumiChatMessage(
+            conversationID: conversationId,
+            role: .assistant,
+            content: "Let me check",
+            toolCalls: [LumiToolCall(id: "1", name: "read", arguments: "{}")]
+        )
+        #expect(!msg.isEmptyResponse)
+    }
+}
+
+@Suite("AgentChatMessage.isEmptyResponse")
+struct AgentChatMessageIsEmptyResponseTests {
+    private let conversationId = UUID()
+
+    @Test("normal text is not empty")
+    func normalTextIsNotEmpty() {
+        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "Hello")
+        #expect(!msg.isEmptyResponse)
+    }
+
+    @Test("empty string is empty")
+    func emptyStringIsEmpty() {
+        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "")
+        #expect(msg.isEmptyResponse)
+    }
+
+    @Test("with toolCall is not empty")
+    func withToolCallIsNotEmpty() {
+        let msg = AgentChatMessage(
+            role: .assistant,
+            conversationId: conversationId,
+            content: "",
+            toolCalls: [AgentChatToolCall(id: "1", name: "read", arguments: "{}")]
+        )
+        #expect(!msg.isEmptyResponse)
+    }
+
+    @Test("error message is not empty")
+    func errorMessageIsNotEmpty() {
+        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "", isError: true)
+        #expect(!msg.isEmptyResponse)
+    }
+}
+
+// MARK: - Turn Derivation with Empty Response
+
+@Suite("LumiAgentTurnDerivation empty response")
+struct LumiAgentTurnDerivationEmptyResponseTests {
+    private let conversationId = UUID()
+
+    @Test("empty assistant without toolCall is failed")
+    func emptyAssistantIsFailed() {
+        let messages = [
+            LumiChatMessage(conversationID: conversationId, role: .user, content: "hi"),
+            LumiChatMessage(conversationID: conversationId, role: .assistant, content: ""),
+        ]
+        #expect(LumiAgentTurnDerivation.turnEndReason(in: messages) == .failed)
+    }
+
+    @Test("whitespace-only assistant is failed")
+    func whitespaceOnlyAssistantIsFailed() {
+        let messages = [
+            LumiChatMessage(conversationID: conversationId, role: .user, content: "hi"),
+            LumiChatMessage(conversationID: conversationId, role: .assistant, content: "  \n  "),
+        ]
+        #expect(LumiAgentTurnDerivation.turnEndReason(in: messages) == .failed)
+    }
+
+    @Test("non-empty assistant completes")
+    func nonEmptyAssistantCompletes() {
+        let messages = [
+            LumiChatMessage(conversationID: conversationId, role: .user, content: "hi"),
+            LumiChatMessage(conversationID: conversationId, role: .assistant, content: "done"),
+        ]
+        #expect(LumiAgentTurnDerivation.turnEndReason(in: messages) == .completed)
+    }
+
+    @Test("assistant with toolCall is incomplete")
+    func assistantWithToolCallIsIncomplete() {
+        let messages = [
+            LumiChatMessage(conversationID: conversationId, role: .user, content: "hi"),
+            LumiChatMessage(
+                conversationID: conversationId,
+                role: .assistant,
+                content: "",
+                toolCalls: [LumiToolCall(id: "1", name: "read", arguments: "{}")]
+            ),
+        ]
+        #expect(LumiAgentTurnDerivation.turnEndReason(in: messages) == nil)
+    }
+}
+
+@Suite("AgentTurnDerivation empty response")
+struct AgentTurnDerivationEmptyResponseTests {
+    private let conversationId = UUID()
+
+    @Test("empty assistant without toolCall is failed")
+    func emptyAssistantIsFailed() {
+        let messages = [
+            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
+            AgentChatMessage(role: .assistant, conversationId: conversationId, content: ""),
+        ]
+        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .failed(""))
+    }
+
+    @Test("non-empty assistant completes")
+    func nonEmptyAssistantCompletes() {
+        let messages = [
+            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
+            AgentChatMessage(role: .assistant, conversationId: conversationId, content: "done"),
+        ]
+        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .completed)
+    }
+}

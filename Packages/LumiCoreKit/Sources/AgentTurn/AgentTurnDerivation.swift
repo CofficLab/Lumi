@@ -35,6 +35,10 @@ public enum AgentTurnDerivation {
       guard last.toolCalls == nil || last.toolCalls?.isEmpty == true else {
         return nil
       }
+      // 空响应（无文本 + 无 toolCall）视为失败，而非正常完成。
+      if last.isEmptyResponse {
+        return .failed(last.content)
+      }
       return .completed
     case .user, .tool, .system, .status:
       return nil

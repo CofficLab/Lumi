@@ -36,6 +36,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     let modelRouter = ModelRouter()
     var persistCallCount = 0
 
+    /// 空响应（empty response）最大重试次数。
+    /// 不含首次调用，即总共最多调用 LLM `1 + emptyResponseMaxRetries` 次。
+    let emptyResponseMaxRetries = 2
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!
@@ -504,6 +508,112 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         conversationManager.title(from: text)
     }
 
+    // MARK: - Empty Response Handling
+
+    /// 生成空响应重试时注入给 LLM 的 nudge 消息。
+    ///
+    /// 以 `.system` 角色追加在消息列表末尾，提醒模型上一次回复为空，
+    /// 需要回应用户请求或总结已完成的工作。
+    static func emptyResponseNudgeMessage(
+        conversationID: UUID,
+        language: LumiConversationLanguage
+    ) -> LumiChatMessage {
+        let content: String
+        switch language {
+        case .chinese:
+            content = "注意：你的上一次回复没有可见内容。请回应用户的请求。" +
+                "如果你已经完成了任务，请简要总结你的工作成果；" +
+                "如果任务尚未完成，请继续执行。"
+        case .english:
+            content = "Note: Your previous response contained no visible content. " +
+                "Please respond to the user's request. " +
+                "If you have completed the task, briefly summarize what was accomplished; " +
+                "if the task is incomplete, continue working on it."
+        }
+
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .system,
+            content: content,
+            metadata: ["lumi-nudge": "empty-response-retry"]
+        )
+    }
+
+    /// 重试耗尽后展示给用户的 fallback 提示文案。
+    static func emptyResponseFallbackMessage(language: LumiConversationLanguage) -> String {
+        switch language {
+        case .chinese:
+            return "抱歉，模型多次返回了空响应，未能完成你的请求。" +
+                "你可以尝试重新表述需求，或重新发送消息重试。"
+        case .english:
+            return "Sorry, the model returned empty responses after multiple retries " +
+                "and could not complete your request. " +
+                "Please try rephrasing your request or resend your message."
+        }
+    }
+
+    /// 调用 LLM 生成 assistant 消息，遇到空响应时自动重试。
+    ///
+    /// - 首次调用使用原始 `baseMessages`。
+    /// - 若返回空响应，注入 nudge 消息后重调，最多重试 `emptyResponseMaxRetries` 次。
+    /// - 重试过程中的空消息**不** append、**不**持久化，避免污染对话历史。
+    /// - 重试耗尽后返回最后的空消息，由调用方决定 fallback 策略。
+    func makeAssistantMessageWithEmptyRetry(
+        conversationID: UUID,
+        baseMessages: [LumiChatMessage],
+        imageAttachments: [LumiImageAttachment]
+    ) async throws -> LumiChatMessage {
+        let maxRetries = emptyResponseMaxRetries
+        let conversationLanguage = language(for: conversationID)
+        var lastMessage: LumiChatMessage?
+
+        for attempt in 0 ... maxRetries {
+            try Task.checkCancellation()
+
+            let messagesToSend: [LumiChatMessage]
+            if attempt == 0 {
+                messagesToSend = baseMessages
+            } else {
+                // 注入 nudge，追加在消息列表末尾
+                messagesToSend = baseMessages + [
+                    Self.emptyResponseNudgeMessage(
+                        conversationID: conversationID,
+                        language: conversationLanguage
+                    )
+                ]
+                statusState.setStatus(
+                    conversationID: conversationID,
+                    content: "模型返回空响应，正在重试（\(attempt)/\(maxRetries)）..."
+                )
+                incrementRevision()
+            }
+
+            let message = try await makeAssistantMessage(
+                conversationID: conversationID,
+                messages: messagesToSend,
+                imageAttachments: imageAttachments
+            )
+            lastMessage = message
+
+            // 非空响应，直接返回
+            if !message.isEmptyResponse {
+                return message
+            }
+        }
+
+        // 重试耗尽，返回最后的空消息（调用方处理 fallback）
+        guard let finalMessage = lastMessage else {
+            // 理论上不可达（循环至少执行一次），防御性处理
+            return LumiChatMessage(
+                conversationID: conversationID,
+                role: .error,
+                content: "Empty response retry produced no message.",
+                isError: true
+            )
+        }
+        return finalMessage
+    }
+
     // MARK: - Agent Loop Execution
 
     /// Executes the agent turn loop: send to LLM → evaluate checks → execute tools → repeat.
@@ -516,15 +626,33 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         while true {
             try Task.checkCancellation()
 
-            // ── Phase 1: Call LLM ──────────────────────────────────
+            // ── Phase 1: Call LLM (with empty-response retry) ──────
             let requestMessages = messages(for: conversationID)
             let expandedMessages = Self.messagesByExpandingToolResults(requestMessages)
             let preparedContext = await prepareSendContext(expandedMessages, conversationID: conversationID)
-            let assistantMessage = try await makeAssistantMessage(
+            let baseMessages = messagesWithConversationPreferences(preparedContext)
+
+            let assistantMessage = try await makeAssistantMessageWithEmptyRetry(
                 conversationID: conversationID,
-                messages: messagesWithConversationPreferences(preparedContext),
+                baseMessages: baseMessages,
                 imageAttachments: imageAttachments
             )
+
+            // 重试耗尽仍为空响应 → 注入用户可见 fallback，turn 以 failed 结束
+            if assistantMessage.isEmptyResponse {
+                let fallback = LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .error,
+                    content: Self.emptyResponseFallbackMessage(language: language(for: conversationID)),
+                    isError: true,
+                    metadata: ["lumi-empty-response": "true"]
+                )
+                append(fallback)
+                statusState.clearStatus(conversationID: conversationID)
+                incrementRevision()
+                return .failed
+            }
+
             append(assistantMessage)
             statusState.clearStatus(conversationID: conversationID)
             incrementRevision()
