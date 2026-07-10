@@ -94,6 +94,17 @@ struct AppLayoutView: View {
 
                         chatView
                     }
+                    .background(
+                        Group {
+                            if chatSection.isVisible {
+                                SplitViewDividerPersistence.chatSection(
+                                    layoutState: layoutState,
+                                    viewContainerID: activeID,
+                                    layout: chatSection
+                                )
+                            }
+                        }
+                    )
                 } else {
                     AppDivider(.vertical)
 
