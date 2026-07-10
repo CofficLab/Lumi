@@ -28,8 +28,12 @@ func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePoi
 // It follows the Core Foundation "Create" rule — returns a retained CFTypeRef or NULL.
 // We use dlsym to call it dynamically to avoid @_silgen_name ABI issues that cause crashes.
 // Note: allocator param should be NULL (not kCFAllocatorDefault) since kCFAllocatorDefault is nil on macOS.
-private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?) = {
-    let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService")!
+// Made optional so that missing symbol is handled gracefully instead of crashing at launch.
+private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?)? = {
+    guard let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService") else {
+        ddcLog.warning("DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
+        return nil
+    }
     return unsafeBitCast(sym, to: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?).self)
 }()
 
@@ -293,7 +297,11 @@ private final class Arm64DDCMatcher {
     /// Safety wrapper for creating AV service — logs failures instead of crashing.
     /// Passes NULL for the allocator (kCFAllocatorDefault is nil on macOS, meaning "use default").
     private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
-        guard let rawPtr = ioAVServiceCreateWithService(nil, entry) else {
+        guard let createService = ioAVServiceCreateWithService else {
+            ddcLog.warning("DDC: IOAVServiceCreateWithService unavailable — DDC control disabled")
+            return nil
+        }
+        guard let rawPtr = createService(nil, entry) else {
             ddcLog.warning("DDC: IOAVServiceCreateWithService returned nil for entry")
             return nil
         }
