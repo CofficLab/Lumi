@@ -12,7 +12,17 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
-    static let shared = RootContainer()
+    static let shared: RootContainer = {
+        do {
+            return try RootContainer()
+        } catch {
+            RootContainer.logger.error("🗂️启动失败: \(error.localizedDescription)")
+            let container = RootContainer(error: error)
+            return container
+        }
+    }()
+
+    @Published var initializationError: Error?
 
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
@@ -22,11 +32,8 @@ final class RootContainer: ObservableObject, SuperLog {
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
 
-    private init() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)开始初始化 RootContainer")
-        }
-
+    /// Normal throwing initializer
+    private init() throws {
         self.lumiCoreService = LumiCoreService()
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
@@ -145,6 +152,27 @@ final class RootContainer: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)🎉 RootContainer 初始化完成")
         }
+    }
+
+    /// Fallback initializer when bootstrap fails.
+    /// Creates a minimal container that just holds the error for CrashedView.
+    private init(error: Error) {
+        self.initializationError = error
+        self.lumiCoreService = LumiCoreService()
+        self.pluginService = PluginService()
+        self.toolService = ToolService()
+        self.lumiUIService = LumiUIService(pluginService: PluginService())
+        self.menuBarService = MenuBarService(pluginService: PluginService())
+        // These won't be used since CrashedView is shown instead of the main UI
+        self.editorCoreService = try! EditorCoreService(
+            pluginService: self.pluginService,
+            persistenceRootURL: { AppConfig.getDBFolderURL() },
+            recentProjects: { [] }
+        )
+        self.chatSectionCoordinator = ChatSectionCoordinator(
+            chatService: LumiCore.chatService as! ChatService,
+            databaseDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        )
     }
 
     // MARK: - Chat Plugin Wiring

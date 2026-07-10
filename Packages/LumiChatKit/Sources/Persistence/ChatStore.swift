@@ -45,7 +45,12 @@ struct ChatStore {
         let storeURL = configuration.databaseDirectory
             .appendingPathComponent(configuration.databaseFileName, isDirectory: false)
 
+        // 数据库初始化采用三级降级策略，确保尽可能可用：
+        //   第一级：正常打开磁盘数据库
+        //   第二级：隔离损坏文件后重试磁盘数据库
+        //   第三级：回退到纯内存数据库（重启后数据丢失）
         do {
+            // 第一级：尝试正常打开磁盘数据库
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
                 url: storeURL,
@@ -54,8 +59,10 @@ struct ChatStore {
             )
             self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
+            // 第一级失败（可能是数据库文件损坏），将损坏文件隔离后重试
             Self.quarantineStoreFiles(baseURL: storeURL, fileManager: fileManager)
             do {
+                // 第二级：隔离旧文件后，用新路径重试磁盘数据库
                 let modelConfiguration = ModelConfiguration(
                     schema: schema,
                     url: storeURL,
@@ -64,6 +71,9 @@ struct ChatStore {
                 )
                 self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
             } catch {
+                // 第二级也失败，回退到第三级：纯内存数据库
+                // ⚠️ 注意：这里使用 try! 存在崩溃风险，如果内存模式也初始化失败会直接 fatalError
+                // 理论上内存模式不涉及磁盘 I/O 不应失败，但 Schema 定义异常等极端情况仍有可能触发
                 let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
                 self.container = try! ModelContainer(for: schema, configurations: [fallbackConfiguration])
                 assertionFailure("LumiChatKit failed to open SwiftData store and fell back to memory: \(error)")
