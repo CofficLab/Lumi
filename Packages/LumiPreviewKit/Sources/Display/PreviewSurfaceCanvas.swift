@@ -12,7 +12,7 @@ public extension LumiPreviewFacade {
     struct PreviewSurfaceCanvas: NSViewRepresentable, SuperLog {
         nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiPreviewKit.PreviewSurfaceCanvas")
         public nonisolated static let emoji = "🖥"
-        public nonisolated static let verbose: Bool = true
+        public nonisolated static let verbose: Bool = false
         // MARK: - 属性
 
         public let surfaceID: UInt32?

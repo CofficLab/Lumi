@@ -11,7 +11,7 @@ public enum LumiPreviewFacade {
         category: "LumiPreviewKit"
     )
     /// 是否启用日志输出，由宿主 App 的插件 verbose 控制。
-    nonisolated(unsafe) public static var verbose: Bool = true
+    nonisolated(unsafe) public static var verbose: Bool = false
 }
 
 typealias PreviewSession = LumiPreviewFacade.PreviewSession
