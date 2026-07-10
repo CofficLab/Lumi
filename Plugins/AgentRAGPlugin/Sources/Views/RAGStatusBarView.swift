@@ -10,7 +10,7 @@ import LumiCoreKit
 /// 支持悬停弹出详细信息
 public struct RAGStatusBarView: View, SuperLog {
     public nonisolated static let emoji = "🦞"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     // MARK: - 属性
     @State private var indexStatus: RAGIndexStatus?
     @State private var isIndexing = false

@@ -12,7 +12,7 @@ import os
 
 class CursorTimer: SuperLog {
     nonisolated static let emoji = "⏱️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.cursor")
 
     /// The timer that publishes the cursor toggle timer.
@@ -47,7 +47,7 @@ class CursorTimer: SuperLog {
     }
 
     func stopTimer() {
-        if Self.verbose, timer != nil { Self.logger.info("\(Self.emoji)\(Self.t)停止闪烁定时器") }
+        if Self.verbose, timer != nil { Self.logger.info("\(Self.t)停止闪烁定时器") }
         shouldHide = true
         notifyCursors(shouldHide: true)
         cursors.removeAllObjects()

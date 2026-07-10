@@ -1,10 +1,3 @@
-//
-//  TextView+Mouse.swift
-//  EditorTextView
-//
-//  Created by Khan Winter on 9/19/23.
-//
-
 import AppKit
 import os
 
@@ -193,12 +186,12 @@ extension TextView {
                 self?.autoscroll(with: event)
             }
         }
-        if Self.mouseDragVerbose { Self.mouseDragLogger.info("TextView 启动鼠标自动滚动定时器(45Hz)——若长期未 disable 将持续吃满主线程") }
+        if Self.mouseDragVerbose { Self.mouseDragLogger.info("🔥 | 🖱️ TextView                      | ⏱️ 启动鼠标自动滚动定时器(45Hz)——若长期未 disable 将持续吃满主线程") }
     }
 
     /// Disables the mouse drag timer started by ``setUpMouseAutoscrollTimer``
     func disableMouseAutoscrollTimer() {
-        if Self.mouseDragVerbose, mouseDragTimer != nil { Self.mouseDragLogger.info("TextView 停止鼠标自动滚动定时器") }
+        if Self.mouseDragVerbose, mouseDragTimer != nil { Self.mouseDragLogger.info("🔥 | 🖱️ TextView                      | ⏱️ 停止鼠标自动滚动定时器") }
         mouseDragTimer?.invalidate()
         mouseDragTimer = nil
     }
