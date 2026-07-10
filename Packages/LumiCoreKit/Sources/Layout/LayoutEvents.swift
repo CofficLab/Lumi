@@ -30,20 +30,20 @@ extension Notification.Name {
     /// userInfo: ["visible": Bool]
     public static let chatSectionVisibleDidChange = Notification.Name("ChatSectionVisibleDidChange")
 
-    /// 侧边栏 Rail 宽度已变更
+    /// 侧边栏 Rail divider 位置已变更
     /// object: nil
-    /// userInfo: ["containerID": String, "width": CGFloat]
-    public static let railWidthDidChange = Notification.Name("RailWidthDidChange")
+    /// userInfo: ["containerID": String, "position": CGFloat]
+    public static let railDividerDidChange = Notification.Name("RailDividerDidChange")
 
-    /// 聊天区宽度已变更
+    /// 聊天区 divider 位置已变更
     /// object: nil
-    /// userInfo: ["containerID": String, "layout": String, "width": CGFloat]
-    public static let chatSectionWidthDidChange = Notification.Name("ChatSectionWidthDidChange")
+    /// userInfo: ["containerID": String, "layout": String, "position": CGFloat]
+    public static let chatSectionDividerDidChange = Notification.Name("ChatSectionDividerDidChange")
 
-    /// 底部面板高度已变更
+    /// 底部面板 divider 位置已变更
     /// object: nil
-    /// userInfo: ["containerID": String, "height": CGFloat]
-    public static let bottomPanelHeightDidChange = Notification.Name("BottomPanelHeightDidChange")
+    /// userInfo: ["containerID": String, "position": CGFloat]
+    public static let bottomPanelDividerDidChange = Notification.Name("BottomPanelDividerDidChange")
 }
 
 // MARK: - NotificationCenter Extensions
@@ -89,31 +89,31 @@ extension NotificationCenter {
         )
     }
 
-    public static func postRailWidthDidChange(containerID: String, width: CGFloat) {
+    public static func postRailDividerDidChange(containerID: String, position: CGFloat) {
         NotificationCenter.default.post(
-            name: .railWidthDidChange,
+            name: .railDividerDidChange,
             object: nil,
-            userInfo: ["containerID": containerID, "width": width]
+            userInfo: ["containerID": containerID, "position": position]
         )
     }
 
-    public static func postChatSectionWidthDidChange(
+    public static func postChatSectionDividerDidChange(
         containerID: String,
         layout: String,
-        width: CGFloat
+        position: CGFloat
     ) {
         NotificationCenter.default.post(
-            name: .chatSectionWidthDidChange,
+            name: .chatSectionDividerDidChange,
             object: nil,
-            userInfo: ["containerID": containerID, "layout": layout, "width": width]
+            userInfo: ["containerID": containerID, "layout": layout, "position": position]
         )
     }
 
-    public static func postBottomPanelHeightDidChange(containerID: String, height: CGFloat) {
+    public static func postBottomPanelDividerDidChange(containerID: String, position: CGFloat) {
         NotificationCenter.default.post(
-            name: .bottomPanelHeightDidChange,
+            name: .bottomPanelDividerDidChange,
             object: nil,
-            userInfo: ["containerID": containerID, "height": height]
+            userInfo: ["containerID": containerID, "position": position]
         )
     }
 }
@@ -161,34 +161,44 @@ public extension View {
         }
     }
 
-    /// 监听侧边栏 Rail 宽度变更
-    func onRailWidthDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .railWidthDidChange)) { notification in
+    /// 监听侧边栏 Rail divider 位置变更
+    func onRailDividerDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .railDividerDidChange)) { notification in
             guard let containerID = notification.userInfo?["containerID"] as? String,
-                  let width = notification.userInfo?["width"] as? CGFloat
+                  let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
             else { return }
-            action(containerID, width)
+            action(containerID, position)
         }
     }
 
-    /// 监听聊天区宽度变更
-    func onChatSectionWidthDidChange(perform action: @escaping (String, String, CGFloat) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .chatSectionWidthDidChange)) { notification in
+    /// 监听聊天区 divider 位置变更
+    func onChatSectionDividerDidChange(perform action: @escaping (String, String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .chatSectionDividerDidChange)) { notification in
             guard let containerID = notification.userInfo?["containerID"] as? String,
                   let layout = notification.userInfo?["layout"] as? String,
-                  let width = notification.userInfo?["width"] as? CGFloat
+                  let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
             else { return }
-            action(containerID, layout, width)
+            action(containerID, layout, position)
         }
     }
 
-    /// 监听底部面板高度变更
-    func onBottomPanelHeightDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .bottomPanelHeightDidChange)) { notification in
+    /// 监听底部面板 divider 位置变更
+    func onBottomPanelDividerDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .bottomPanelDividerDidChange)) { notification in
             guard let containerID = notification.userInfo?["containerID"] as? String,
-                  let height = notification.userInfo?["height"] as? CGFloat
+                  let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
             else { return }
-            action(containerID, height)
+            action(containerID, position)
         }
+    }
+}
+
+/// 解析通知 userInfo 数值字段的辅助，兼容 CGFloat / NSNumber / Double。
+public enum LayoutEventPayload {
+    public static func cgFloat(from value: Any?) -> CGFloat? {
+        if let cg = value as? CGFloat { return cg }
+        if let number = value as? NSNumber { return CGFloat(number.doubleValue) }
+        if let double = value as? Double { return CGFloat(double) }
+        return nil
     }
 }

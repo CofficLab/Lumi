@@ -6,85 +6,85 @@ import Testing
 
 @Suite(.serialized) struct LayoutStateTests {
 
-    // MARK: - 尺寸读写与默认值回退
+    // MARK: - divider 位置读写与默认值回退
 
     @MainActor
-    @Test func railWidthFallsBackToDefaultWhenUnset() {
+    @Test func railDividerFallsBackToDefaultWhenUnset() {
         let state = LumiLayoutState()
-        #expect(state.railWidth(for: "LumiEditor") == 240)
-        #expect(state.storedRailWidth(for: "LumiEditor") == nil)
+        #expect(state.railDivider(for: "LumiEditor") == 240)
+        #expect(state.storedRailDivider(for: "LumiEditor") == nil)
     }
 
     @MainActor
-    @Test func railWidthReturnsCustomFallbackWhenUnset() {
+    @Test func railDividerReturnsCustomFallbackWhenUnset() {
         let state = LumiLayoutState()
-        #expect(state.railWidth(for: "LumiEditor", fallback: 300) == 300)
+        #expect(state.railDivider(for: "LumiEditor", fallback: 300) == 300)
     }
 
     @MainActor
-    @Test func setRailWidthStoresAndReadsBack() {
+    @Test func setRailDividerStoresAndReadsBack() {
         let state = LumiLayoutState()
-        state.setRailWidth(312, for: "LumiEditor")
-        #expect(state.railWidth(for: "LumiEditor") == 312)
-        #expect(state.storedRailWidth(for: "LumiEditor") == 312)
+        state.setRailDivider(312, for: "LumiEditor")
+        #expect(state.railDivider(for: "LumiEditor") == 312)
+        #expect(state.storedRailDivider(for: "LumiEditor") == 312)
     }
 
     @MainActor
-    @Test func bottomPanelHeightStoresAndReadsBack() {
+    @Test func bottomPanelDividerStoresAndReadsBack() {
         let state = LumiLayoutState()
-        #expect(state.bottomPanelHeight(for: "main") == 200)
-        state.setBottomPanelHeight(450, for: "main")
-        #expect(state.bottomPanelHeight(for: "main") == 450)
-        #expect(state.storedBottomPanelHeight(for: "main") == 450)
+        #expect(state.bottomPanelDivider(for: "main") == 400)
+        state.setBottomPanelDivider(450, for: "main")
+        #expect(state.bottomPanelDivider(for: "main") == 450)
+        #expect(state.storedBottomPanelDivider(for: "main") == 450)
     }
 
     @MainActor
-    @Test func chatSectionWidthStoresAndReadsBack() {
+    @Test func chatSectionDividerStoresAndReadsBack() {
         let state = LumiLayoutState()
-        #expect(state.chatSectionWidth(for: "main", layout: .wide) == 320)
-        state.setChatSectionWidth(500, for: "main", layout: .wide)
-        #expect(state.chatSectionWidth(for: "main", layout: .wide) == 500)
-        #expect(state.storedChatSectionWidth(for: "main", layout: .wide) == 500)
+        #expect(state.chatSectionDivider(for: "main", layout: .wide) == 320)
+        state.setChatSectionDivider(500, for: "main", layout: .wide)
+        #expect(state.chatSectionDivider(for: "main", layout: .wide) == 500)
+        #expect(state.storedChatSectionDivider(for: "main", layout: .wide) == 500)
     }
 
     @MainActor
-    @Test func chatSectionWidthIsolatesByLayoutSuffix() {
+    @Test func chatSectionDividerIsolatesByLayoutSuffix() {
         let state = LumiLayoutState()
-        state.setChatSectionWidth(500, for: "main", layout: .wide)
+        state.setChatSectionDivider(500, for: "main", layout: .wide)
         // narrow 档位应独立、未受 wide 设置影响
-        #expect(state.storedChatSectionWidth(for: "main", layout: .narrow) == nil)
-        #expect(state.chatSectionWidth(for: "main", layout: .narrow) == 320)
+        #expect(state.storedChatSectionDivider(for: "main", layout: .narrow) == nil)
+        #expect(state.chatSectionDivider(for: "main", layout: .narrow) == 320)
     }
 
     @MainActor
-    @Test func dimensionsIsolateByViewContainerID() {
+    @Test func dividersIsolateByViewContainerID() {
         let state = LumiLayoutState()
-        state.setRailWidth(200, for: "LumiEditor")
-        state.setRailWidth(400, for: "LumiAgent")
-        #expect(state.railWidth(for: "LumiEditor") == 200)
-        #expect(state.railWidth(for: "LumiAgent") == 400)
+        state.setRailDivider(200, for: "LumiEditor")
+        state.setRailDivider(400, for: "LumiAgent")
+        #expect(state.railDivider(for: "LumiEditor") == 200)
+        #expect(state.railDivider(for: "LumiAgent") == 400)
     }
 
     // MARK: - 通知发送
 
     @MainActor
-    @Test func setRailWidthPostsNotification() async {
+    @Test func setRailDividerPostsNotification() async {
         let state = LumiLayoutState()
         let box = EventBox<String, CGFloat>()
 
         let token = NotificationCenter.default.addObserver(
-            forName: .railWidthDidChange,
+            forName: .railDividerDidChange,
             object: nil,
             queue: .main
         ) { notification in
             guard let id = notification.userInfo?["containerID"] as? String,
-                  let width = notification.userInfo?["width"] as? CGFloat
+                  let position = notification.userInfo?["position"] as? CGFloat
             else { return }
-            box.record(id, width)
+            box.record(id, position)
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        state.setRailWidth(333, for: "LumiEditor")
+        state.setRailDivider(333, for: "LumiEditor")
 
         // NotificationCenter 主队列投递是异步的，等待一次 runloop。
         await Task.yield()
@@ -97,19 +97,19 @@ import Testing
     }
 
     @MainActor
-    @Test func setRailWidthDoesNotNotifyForSameValue() async {
+    @Test func setRailDividerDoesNotNotifyForSameValue() async {
         let state = LumiLayoutState()
-        state.setRailWidth(300, for: "main")
+        state.setRailDivider(300, for: "main")
 
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
-            forName: .railWidthDidChange,
+            forName: .railDividerDidChange,
             object: nil,
             queue: .main
         ) { _ in counter.increment() }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        state.setRailWidth(300, for: "main") // 同值，不应发通知
+        state.setRailDivider(300, for: "main") // 同值，不应发通知
 
         await Task.yield()
         try? await Task.sleep(nanoseconds: 50_000_000)
@@ -117,23 +117,23 @@ import Testing
     }
 
     @MainActor
-    @Test func setBottomPanelHeightPostsNotification() async {
+    @Test func setBottomPanelDividerPostsNotification() async {
         let state = LumiLayoutState()
         let box = EventBox<String, CGFloat>()
 
         let token = NotificationCenter.default.addObserver(
-            forName: .bottomPanelHeightDidChange,
+            forName: .bottomPanelDividerDidChange,
             object: nil,
             queue: .main
         ) { notification in
             guard let id = notification.userInfo?["containerID"] as? String,
-                  let height = notification.userInfo?["height"] as? CGFloat
+                  let position = notification.userInfo?["position"] as? CGFloat
             else { return }
-            box.record(id, height)
+            box.record(id, position)
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        state.setBottomPanelHeight(278, for: "main")
+        state.setBottomPanelDivider(278, for: "main")
 
         await Task.yield()
         try? await Task.sleep(nanoseconds: 50_000_000)
@@ -144,26 +144,26 @@ import Testing
     }
 
     @MainActor
-    @Test func setChatSectionWidthPostsNotificationWithLayoutSuffix() async {
+    @Test func setChatSectionDividerPostsNotificationWithLayoutSuffix() async {
         let state = LumiLayoutState()
         let box = EventBox<String, CGFloat>()
         var layoutSuffix: String?
 
         let token = NotificationCenter.default.addObserver(
-            forName: .chatSectionWidthDidChange,
+            forName: .chatSectionDividerDidChange,
             object: nil,
             queue: .main
         ) { notification in
             guard let id = notification.userInfo?["containerID"] as? String,
                   let layout = notification.userInfo?["layout"] as? String,
-                  let width = notification.userInfo?["width"] as? CGFloat
+                  let position = notification.userInfo?["position"] as? CGFloat
             else { return }
-            box.record(id, width)
+            box.record(id, position)
             layoutSuffix = layout
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        state.setChatSectionWidth(420, for: "LumiEditor", layout: .narrow)
+        state.setChatSectionDivider(420, for: "LumiEditor", layout: .narrow)
 
         await Task.yield()
         try? await Task.sleep(nanoseconds: 50_000_000)
@@ -177,22 +177,22 @@ import Testing
     // MARK: - restore 路径不发通知
 
     @MainActor
-    @Test func restoreRailWidthDoesNotPostNotification() async {
+    @Test func restoreRailDividerDoesNotPostNotification() async {
         let state = LumiLayoutState()
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
-            forName: .railWidthDidChange,
+            forName: .railDividerDidChange,
             object: nil,
             queue: .main
         ) { _ in counter.increment() }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        state.restoreRailWidth(300, for: "main")
+        state.restoreRailDivider(300, for: "main")
         await Task.yield()
         try? await Task.sleep(nanoseconds: 50_000_000)
 
         #expect(counter.count == 0)
-        #expect(state.railWidth(for: "main") == 300)
+        #expect(state.railDivider(for: "main") == 300)
     }
 
     // MARK: - 自定义默认值
@@ -200,13 +200,13 @@ import Testing
     @MainActor
     @Test func customDefaultsApplyWhenUnset() {
         let state = LumiLayoutState(
-            defaultRailWidth: 260,
-            defaultChatSectionWidth: 360,
-            defaultBottomPanelHeight: 220
+            defaultRailDivider: 260,
+            defaultChatSectionDivider: 360,
+            defaultBottomPanelDivider: 420
         )
-        #expect(state.railWidth(for: "main") == 260)
-        #expect(state.chatSectionWidth(for: "main", layout: .wide) == 360)
-        #expect(state.bottomPanelHeight(for: "main") == 220)
+        #expect(state.railDivider(for: "main") == 260)
+        #expect(state.chatSectionDivider(for: "main", layout: .wide) == 360)
+        #expect(state.bottomPanelDivider(for: "main") == 420)
     }
 }
 
