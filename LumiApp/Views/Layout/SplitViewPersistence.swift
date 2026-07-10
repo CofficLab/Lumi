@@ -139,8 +139,9 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     nonisolated static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
-    /// 初始 apply 失败时最多重试多少次（每个 runloop 一次）。超过后放弃 + 警告日志。
-    private static let maxApplyRetryCount = 20
+    /// 初始 attach 失败时最多重试多少次（每个 runloop 一次）。
+    /// 100 × 0.1s = 10s，覆盖 SwiftUI hosting view 装好的极端延迟。
+    private static let maxApplyRetryCount = 100
 
     private var layoutState: LumiLayoutState
     private var role: SplitDividerRole
@@ -267,7 +268,8 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
 
     private func scheduleRetryAttach() {
         guard applyRetryCount < Self.maxApplyRetryCount else {
-            Self.logger.warning("\(self.t)gave up attaching after \(Self.maxApplyRetryCount) retries")
+            // 失败时把 superview 链 dump 出来，便于排查 SwiftUI hosting view 嵌套问题
+            Self.logger.warning("\(self.t)gave up attaching after \(Self.maxApplyRetryCount) retries; superview chain: \(self.debugSuperviewChain())")
             return
         }
         applyRetryCount += 1
@@ -378,7 +380,19 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         }
     }
 
+    /// 找到与本 view 关联的 NSSplitView。
+    ///
+    /// 之所以需要多重回退：SwiftUI 的 `.background(NSViewRepresentable)` 在
+    /// HSplitView/VSplitView 上**不**保证把背景 NSView 挂成 NSSplitView 的直接子 view——
+    /// 多数情况下背景 view 会被放到一个 hosting view 里，而 NSSplitView 是该 hosting view
+    /// 的兄弟节点。简单走 superview 链会漏掉。
+    ///
+    /// 三层策略（按可能性从高到低）：
+    /// 1. superview 链上能直接遇到 NSSplitView（最简单场景，SwiftUI 直接挂成子 view）
+    /// 2. 沿 superview 链向上找，看哪个祖先的 subviews 里包含 NSSplitView（兄弟节点场景）
+    /// 3. 整个 window 视图树 BFS（兜底，理论上不会到这一步）
     private func enclosingSplitView() -> NSSplitView? {
+        // 策略 1：直接走 superview 链
         var current = superview
         while let view = current {
             if let splitView = view as? NSSplitView {
@@ -386,7 +400,51 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             }
             current = view.superview
         }
+
+        // 策略 2：找祖先的兄弟节点
+        var ancestor = superview
+        while let view = ancestor {
+            for subview in view.subviews {
+                if let splitView = subview as? NSSplitView {
+                    return splitView
+                }
+            }
+            ancestor = view.superview
+        }
+
+        // 策略 3：window 视图树兜底
+        if let rootView = window?.contentView, let found = findNSSplitView(in: rootView) {
+            return found
+        }
         return nil
+    }
+
+    private func findNSSplitView(in view: NSView) -> NSSplitView? {
+        for subview in view.subviews {
+            if let splitView = subview as? NSSplitView {
+                return splitView
+            }
+            if let found = findNSSplitView(in: subview) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    /// 调试用：把 superview 链打印成 "view1 <- view2 <- view3" 形式。
+    /// 仅在 verbose 开启 + attach 失败时调用，避免日常日志噪音。
+    private func debugSuperviewChain() -> String {
+        var parts: [String] = []
+        var current: NSView? = self
+        var depth = 0
+        while let view = current, depth < 8 {
+            let typeName = String(describing: type(of: view))
+            let isSplit = view is NSSplitView ? " [NSSplitView]" : ""
+            parts.append("\(typeName)\(isSplit)")
+            current = view.superview
+            depth += 1
+        }
+        return parts.joined(separator: " <- ")
     }
 
     /// 读取 divider 的当前位置。NSSplitView 没有提供 getter（只有 setter `setPosition`），
