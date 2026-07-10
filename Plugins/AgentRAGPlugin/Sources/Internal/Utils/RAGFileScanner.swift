@@ -5,7 +5,7 @@ import os
 public enum RAGFileScanner: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.scanner")
     nonisolated public static let emoji = "🔍"
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
     /// 需要跳过的目录列表（精确匹配目录名）。
     ///
     /// `build` 已包含其中，因此 `build/SourcePackages` 会被一并跳过；独立的顶层
