@@ -3,30 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.14.1</title>
-            <pubDate>Thu, 09 Jul 2026 11:31:26 +0000</pubDate>
-            <sparkle:version>242</sparkle:version>
-            <sparkle:shortVersionString>4.14.1</sparkle:shortVersionString>
+            <title>4.15.0</title>
+            <pubDate>Fri, 10 Jul 2026 16:51:33 +0000</pubDate>
+            <sparkle:version>243</sparkle:version>
+            <sparkle:shortVersionString>4.15.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.14.1</h2>
-<h3>Changes since v4.14.0</h3>
+            <description><![CDATA[<h2>Release v4.15.0</h2>
+<h3>Changes since v4.14.1</h3>
 <ul>
-<li>feat(cad-designer): add aluminum profile 3D CAD designer plugin</li>
-<li>feat(file-tree-v2): complete missing features to align with VS Code explorer</li>
-<li>feat(logging): add SuperLog heartbeat logging to resident loops</li>
-<li>fix(devicemonitor): wrap GPU/Battery/Storage startup logs with verbose guard</li>
-<li>fix(editor): wire up addToChatHandler for xcstrings AI fix button</li>
-<li>fix(file-tree-v2): fix logging format in TreeViewV2 onAppear/onDisappear</li>
-<li>fix(file-tree-v2): fix reloadItems index path type for NSCollectionView</li>
-<li>fix(file-tree-v2): standardize logging to follow SuperLog convention</li>
-<li>fix(menu-bar): break effectiveAppearance KVO feedback loop causing 100% CPU</li>
-<li>i18n:  translate or localize content</li>
-<li>refactor: migrate FileTreeCollectionViewController logging from os.Logger to SuperLogKit</li>
-<li>refactor: simplify SplitViewAutosaveConfigurator and fix layout timing</li>
-<li>refactor(file-tree-v2): decouple from EditorFileTreePlugin</li>
+<li>feat: add MiniMax TokenPlan provider</li>
+<li>feat(activity-heatmap): show loading state while fetching data, reorder UI</li>
+<li>feat(bootstrap): add CrashedView for fatal startup errors</li>
+<li>fix(auto-task): replace force unwrap with safe optional binding for task access</li>
+<li>fix(bootstrap): replace force casts with guarded conversions and clear diagnostics</li>
+<li>fix(bootstrap): replace force try/cast in fallback initializer with guarded versions</li>
+<li>fix(chat): retry empty LLM responses instead of silently ending turn</li>
+<li>fix(chat): simplify database init to single-level with clear error on failure</li>
+<li>fix(cursor): conform CursorTimer to SuperLog protocol</li>
+<li>fix(cursor): normalize log format with emoji prefix</li>
+<li>fix(ddc): handle missing IOAVServiceCreateWithService symbol gracefully</li>
+<li>fix(device): log disk capacity read failure instead of swallowing error</li>
+<li>fix(disk): log scan cache write failure instead of swallowing error</li>
+<li>fix(editor-kernel): replace 9 force unwraps with safe optional binding in LineEditingController</li>
+<li>fix(editor-kernel): replace unnecessary force unwrap with constants in cursor motion</li>
+<li>fix(issues): surface persist failures instead of silently discarding user actions</li>
+<li>fix(layout): fix MainActor isolation warnings in LayoutPlugin tests</li>
+<li>fix(llm-provider): override lumiResolveAPIKey in compatible provider base classes</li>
+<li>fix(llm-provider): pin Aliyun storage key to historical capitalized form</li>
+<li>fix(message-renderer): show tool calls regardless of verbosity level</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.14.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.14.1/Lumi_4.14.1_x86_64.dmg" length="55413971" type="application/octet-stream" sparkle:edSignature="xgbp5yo0YNXhm7ch37kG5cNSZU6xrjFXbi9Kkn3ar4p9rLDcqUXD6xaGjQZqtWvoC6uTZSwMvFyHgEvw2dgbBA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.15.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.15.0/Lumi_4.15.0_x86_64.dmg" length="55483553" type="application/octet-stream" sparkle:edSignature="dkpsfIXt0m/Huh4yxBoJ52UYZvtaopeoyjIPHQrGF3osYouQDjytPcQOAOGE13sd+Y6rglCChzOUoE/I86PIBg=="/>
         </item>
     </channel>
 </rss>
