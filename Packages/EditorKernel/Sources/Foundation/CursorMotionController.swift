@@ -11,6 +11,9 @@ public struct CursorMotionTarget: Equatable, Sendable {
 }
 
 public enum CursorMotionController: Sendable {
+    private static let crCode = UInt16(("\r" as UnicodeScalar).value)
+    private static let lfCode = UInt16(("\n" as UnicodeScalar).value)
+
     public static func moveLeft(location: Int, text: String) -> CursorMotionTarget {
         let target = max(0, location - 1)
         return CursorMotionTarget(location: target)
@@ -106,11 +109,11 @@ public enum CursorMotionController: Sendable {
         let target: Int
         if lineEnd > 0, lineEnd <= textLength {
             if lineEnd > lineRange.location + 1,
-               nsText.character(at: lineEnd - 2) == UInt16(("\r" as Character).utf16.first!),
-               nsText.character(at: lineEnd - 1) == UInt16(("\n" as Character).utf16.first!) {
+               nsText.character(at: lineEnd - 2) == Self.crCode,
+               nsText.character(at: lineEnd - 1) == Self.lfCode {
                 target = lineEnd - 2
             } else if lineEnd > lineRange.location,
-                      nsText.character(at: lineEnd - 1) == UInt16(("\n" as Character).utf16.first!) {
+                      nsText.character(at: lineEnd - 1) == Self.lfCode {
                 target = lineEnd - 1
             } else {
                 target = lineEnd
