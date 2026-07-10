@@ -102,6 +102,17 @@ struct AppLayoutView: View {
                     .background(
                         SplitViewAutosaveConfigurator(autosaveName: autosaveName)
                     )
+                    .background(
+                        Group {
+                            if chatSection.isVisible {
+                                ChatSectionWidthPersistence(
+                                    layoutState: layoutState,
+                                    viewContainerID: activeID,
+                                    layout: chatSection
+                                )
+                            }
+                        }
+                    )
                 } else {
                     AppDivider(.vertical)
 

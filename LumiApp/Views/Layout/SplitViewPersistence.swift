@@ -34,6 +34,52 @@ struct SplitDimensionConstraints: Equatable {
     }
 }
 
+/// 分栏尺寸的访问层。
+///
+/// 视图层不直接读写磁盘或插件存储，而是通过此闭包桥接与 `LumiLayoutState` 交互：
+/// - `readInitialSize`: 从内核状态读取上一次保存的尺寸（无值时返回 nil，由调用方回退到默认值）
+/// - `persist`: 把用户拖拽后的尺寸写回内核状态（内核变更会发通知，由插件负责落盘）
+///
+/// 这样 `SplitDimensionPersistenceView`（一个 NSView）无需持有 `ObservableObject`，
+/// 也不依赖 SwiftUI 的观察机制，保持与 AppKit 的交互方式不变。
+///
+/// 两个闭包均标记 `@MainActor`，因为它们最终调用 `LumiLayoutState`（`@MainActor`）的方法。
+struct SplitDimensionAccess {
+    let readInitialSize: @MainActor () -> CGFloat?
+    let persist: @MainActor (CGFloat) -> Void
+}
+
+/// 描述一个分栏尺寸的角色，用于在视图层语义化地选择读写哪一类尺寸。
+enum SplitDimensionRole {
+    case rail(viewContainerID: String)
+    case bottomPanelHeight(viewContainerID: String)
+    case chatSectionWidth(viewContainerID: String, layout: LumiChatSectionLayout)
+}
+
+extension SplitDimensionRole {
+    /// 基于该角色与内核 `layoutState` 构造读写桥接。
+    @MainActor
+    func makeAccess(layoutState: LumiLayoutState) -> SplitDimensionAccess {
+        switch self {
+        case let .rail(viewContainerID):
+            return SplitDimensionAccess(
+                readInitialSize: { layoutState.storedRailWidth(for: viewContainerID) },
+                persist: { layoutState.setRailWidth($0, for: viewContainerID) }
+            )
+        case let .bottomPanelHeight(viewContainerID):
+            return SplitDimensionAccess(
+                readInitialSize: { layoutState.storedBottomPanelHeight(for: viewContainerID) },
+                persist: { layoutState.setBottomPanelHeight($0, for: viewContainerID) }
+            )
+        case let .chatSectionWidth(viewContainerID, layout):
+            return SplitDimensionAccess(
+                readInitialSize: { layoutState.storedChatSectionWidth(for: viewContainerID, layout: layout) },
+                persist: { layoutState.setChatSectionWidth($0, for: viewContainerID, layout: layout) }
+            )
+        }
+    }
+}
+
 struct SplitViewAutosaveConfigurator: NSViewRepresentable {
     let autosaveName: String
 
@@ -61,13 +107,13 @@ struct SplitDimensionPersistence: NSViewRepresentable {
         }
     }
 
-    let storageKey: String
+    let access: SplitDimensionAccess
     let constraints: SplitDimensionConstraints
     let axis: Axis
 
     func makeNSView(context: Context) -> SplitDimensionPersistenceView {
         SplitDimensionPersistenceView(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: axis
         )
@@ -75,7 +121,7 @@ struct SplitDimensionPersistence: NSViewRepresentable {
 
     func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
         nsView.updateConfiguration(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: axis
         )
@@ -87,12 +133,17 @@ struct SplitDimensionPersistence: NSViewRepresentable {
 }
 
 struct SplitViewWidthPersistence: NSViewRepresentable {
-    let storageKey: String
+    let layoutState: LumiLayoutState
+    let viewContainerID: String
     var constraints: SplitDimensionConstraints = .rail
+
+    private var access: SplitDimensionAccess {
+        SplitDimensionRole.rail(viewContainerID: viewContainerID).makeAccess(layoutState: layoutState)
+    }
 
     func makeNSView(context: Context) -> SplitDimensionPersistenceView {
         SplitDimensionPersistenceView(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: .horizontal
         )
@@ -100,7 +151,7 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
 
     func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
         nsView.updateConfiguration(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: .horizontal
         )
@@ -112,12 +163,18 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
 }
 
 struct ChatSectionWidthPersistence: NSViewRepresentable {
+    let layoutState: LumiLayoutState
+    let viewContainerID: String
     let layout: LumiChatSectionLayout
-    let storageKey: String
+
+    private var access: SplitDimensionAccess {
+        SplitDimensionRole.chatSectionWidth(viewContainerID: viewContainerID, layout: layout)
+            .makeAccess(layoutState: layoutState)
+    }
 
     func makeNSView(context: Context) -> SplitDimensionPersistenceView {
         SplitDimensionPersistenceView(
-            storageKey: storageKey,
+            access: access,
             constraints: .chatSection(layout),
             axis: .horizontal
         )
@@ -125,7 +182,7 @@ struct ChatSectionWidthPersistence: NSViewRepresentable {
 
     func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
         nsView.updateConfiguration(
-            storageKey: storageKey,
+            access: access,
             constraints: .chatSection(layout),
             axis: .horizontal
         )
@@ -141,12 +198,18 @@ struct SplitViewHeightPersistence: NSViewRepresentable {
     static let maximumHeight = SplitDimensionConstraints.bottomPanel.maxSize
     static let minimumOppositeHeight = SplitDimensionConstraints.bottomPanel.minimumOppositeSize
 
-    let storageKey: String
+    let layoutState: LumiLayoutState
+    let viewContainerID: String
     var constraints: SplitDimensionConstraints = .bottomPanel
+
+    private var access: SplitDimensionAccess {
+        SplitDimensionRole.bottomPanelHeight(viewContainerID: viewContainerID)
+            .makeAccess(layoutState: layoutState)
+    }
 
     func makeNSView(context: Context) -> SplitDimensionPersistenceView {
         SplitDimensionPersistenceView(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: .vertical
         )
@@ -154,7 +217,7 @@ struct SplitViewHeightPersistence: NSViewRepresentable {
 
     func updateNSView(_ nsView: SplitDimensionPersistenceView, context: Context) {
         nsView.updateConfiguration(
-            storageKey: storageKey,
+            access: access,
             constraints: constraints,
             axis: .vertical
         )
@@ -172,7 +235,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
     private static let maxApplyRetryCount = 20
 
-    private var storageKey: String
+    private var access: SplitDimensionAccess
     private var dimensionConstraints: SplitDimensionConstraints
     private var axis: SplitDimensionPersistence.Axis
 
@@ -181,13 +244,15 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     private var didApplySize = false
     private var applyRetryCount = 0
     private var pendingRetryWorkItem: DispatchWorkItem?
+    /// 上一次回写到内核的尺寸，用于在拖拽过程中抑制重复通知。
+    private var lastPersistedSize: CGFloat?
 
     init(
-        storageKey: String,
+        access: SplitDimensionAccess,
         constraints: SplitDimensionConstraints,
         axis: SplitDimensionPersistence.Axis
     ) {
-        self.storageKey = storageKey
+        self.access = access
         self.dimensionConstraints = constraints
         self.axis = axis
         super.init(frame: .zero)
@@ -199,21 +264,21 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     }
 
     func updateConfiguration(
-        storageKey: String,
+        access: SplitDimensionAccess,
         constraints: SplitDimensionConstraints,
         axis: SplitDimensionPersistence.Axis
     ) {
-        guard self.storageKey != storageKey
-            || self.dimensionConstraints != constraints
-            || self.axis != axis
-        else { return }
-
-        self.storageKey = storageKey
+        let constraintsChanged = self.dimensionConstraints != constraints || self.axis != axis
+        self.access = access
         self.dimensionConstraints = constraints
         self.axis = axis
+        // 闭包无法比较相等性：只要约束或轴向变化就重新应用一次，
+        // 否则保持已应用状态，避免在 SwiftUI 频繁重渲染时反复重置用户拖拽后的尺寸。
+        guard constraintsChanged else { return }
         didApplySize = false
+        lastPersistedSize = nil
         if Self.verbose {
-            Self.logger.info("\(self.t)config updated, key=\(storageKey)")
+            Self.logger.info("\(self.t)config updated")
         }
         applySizeIfPossible()
     }
@@ -221,7 +286,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if Self.verbose {
-            Self.logger.info("\(self.t)view moved to window, key=\(self.storageKey)")
+            Self.logger.info("\(self.t)view moved to window")
         }
         attachIfPossible()
     }
@@ -239,20 +304,20 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     private func attachIfPossible() {
         guard window != nil else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no window yet, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)no window yet")
             }
             return
         }
         guard let splitView = enclosingSplitView() else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no enclosing split view, key=\(self.storageKey), retry=\(self.applyRetryCount)")
+                Self.logger.info("\(self.t)no enclosing split view, retry=\(self.applyRetryCount)")
             }
             scheduleRetry()
             return
         }
         guard splitView !== observedSplitView else {
             if Self.verbose {
-                Self.logger.info("\(self.t)already attached to same split view, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)already attached to same split view")
             }
             applySizeIfPossible()
             return
@@ -266,7 +331,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         didApplySize = false
         applyRetryCount = 0
         if Self.verbose {
-            Self.logger.info("\(self.t)attached to split view, kself.ey=\(self.storageKey), vertical=\(splitView.isVertical)")
+            Self.logger.info("\(self.t)attached to split view, vertical=\(splitView.isVertical)")
         }
         applySizeIfPossible()
 
@@ -284,13 +349,13 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
     private func applySizeIfPossible() {
         guard !didApplySize else {
             if Self.verbose {
-                Self.logger.info("\(self.t)already applied, skipping, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)already applied, skipping")
             }
             return
         }
         guard let splitView = observedSplitView ?? enclosingSplitView() else {
             if Self.verbose {
-                Self.logger.info("\(self.t)no split view found, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)no split view found")
             }
             scheduleRetry()
             return
@@ -301,7 +366,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
               splitView.isVertical == (axis == .horizontal)
         else {
             if Self.verbose {
-                Self.logger.info("\(self.t)guard check failed, key=\(self.storageKey), pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)")
+                Self.logger.info("\(self.t)guard check failed, pane=\(paneIndex.map { "\($0)" } ?? "nil"), arrangedCount=\(splitView.arrangedSubviews.count), isVertical=\(splitView.isVertical), axis=\(self.axis)")
             }
             scheduleRetry()
             return
@@ -310,14 +375,15 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         let totalSize = axis == .horizontal ? splitView.bounds.width : splitView.bounds.height
         guard totalSize > 0 else {
             if Self.verbose {
-                Self.logger.info("\(self.t)totalSize is zero, key=\(self.storageKey)")
+                Self.logger.info("\(self.t)totalSize is zero")
             }
             scheduleRetry()
             return
         }
 
-        let savedSize = UserDefaults.standard.object(forKey: storageKey) as? Double
-        let requestedSize = savedSize.map { CGFloat($0) } ?? dimensionConstraints.defaultSize
+        // 从内核状态读取上一次保存的尺寸；无值时回退到约束默认值。
+        let savedSize = access.readInitialSize()
+        let requestedSize = savedSize ?? dimensionConstraints.defaultSize
         let targetSize = clampedSize(
             requestedSize,
             totalSize: totalSize,
@@ -326,7 +392,7 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         )
 
         if Self.verbose {
-            Self.logger.info("\(self.t)applying size, key=\(self.storageKey), saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize), paneIndex=\(paneIndex ?? -1)")
+            Self.logger.info("\(self.t)applying size, saved=\(savedSize.map { "\($0)" } ?? "nil"), requested=\(requestedSize), target=\(targetSize), total=\(totalSize), paneIndex=\(paneIndex ?? -1)")
         }
 
         guard let idx = paneIndex else { return }
@@ -353,11 +419,13 @@ final class SplitDimensionPersistenceView: NSView, SuperLog {
         guard paneSize.isFinite, paneSize >= dimensionConstraints.minSize else { return }
 
         let clamped = min(max(paneSize, dimensionConstraints.minSize), dimensionConstraints.maxSize)
-        let saved = UserDefaults.standard.double(forKey: storageKey)
-        guard abs(saved - Double(clamped)) > 0.5 else { return }
-        UserDefaults.standard.set(Double(clamped), forKey: storageKey)
+        // 仅当与上次回写的值有实际差异时才写回内核，避免拖拽过程中产生大量重复通知。
+        let lastWritten = lastPersistedSize
+        guard lastWritten.map({ abs($0 - clamped) > 0.5 }) ?? true else { return }
+        lastPersistedSize = clamped
+        access.persist(clamped)
         if Self.verbose {
-            Self.logger.info("\(self.t)persisted size, key=\(self.storageKey), old=\(saved), new=\(clamped)")
+            Self.logger.info("\(self.t)persisted size, old=\(lastWritten.map { "\($0)" } ?? "nil"), new=\(clamped)")
         }
     }
 

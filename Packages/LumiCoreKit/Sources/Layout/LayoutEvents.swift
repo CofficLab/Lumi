@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import SwiftUI
 
@@ -28,6 +29,21 @@ extension Notification.Name {
     /// object: nil
     /// userInfo: ["visible": Bool]
     public static let chatSectionVisibleDidChange = Notification.Name("ChatSectionVisibleDidChange")
+
+    /// 侧边栏 Rail 宽度已变更
+    /// object: nil
+    /// userInfo: ["containerID": String, "width": CGFloat]
+    public static let railWidthDidChange = Notification.Name("RailWidthDidChange")
+
+    /// 聊天区宽度已变更
+    /// object: nil
+    /// userInfo: ["containerID": String, "layout": String, "width": CGFloat]
+    public static let chatSectionWidthDidChange = Notification.Name("ChatSectionWidthDidChange")
+
+    /// 底部面板高度已变更
+    /// object: nil
+    /// userInfo: ["containerID": String, "height": CGFloat]
+    public static let bottomPanelHeightDidChange = Notification.Name("BottomPanelHeightDidChange")
 }
 
 // MARK: - NotificationCenter Extensions
@@ -72,6 +88,34 @@ extension NotificationCenter {
             userInfo: ["visible": visible]
         )
     }
+
+    public static func postRailWidthDidChange(containerID: String, width: CGFloat) {
+        NotificationCenter.default.post(
+            name: .railWidthDidChange,
+            object: nil,
+            userInfo: ["containerID": containerID, "width": width]
+        )
+    }
+
+    public static func postChatSectionWidthDidChange(
+        containerID: String,
+        layout: String,
+        width: CGFloat
+    ) {
+        NotificationCenter.default.post(
+            name: .chatSectionWidthDidChange,
+            object: nil,
+            userInfo: ["containerID": containerID, "layout": layout, "width": width]
+        )
+    }
+
+    public static func postBottomPanelHeightDidChange(containerID: String, height: CGFloat) {
+        NotificationCenter.default.post(
+            name: .bottomPanelHeightDidChange,
+            object: nil,
+            userInfo: ["containerID": containerID, "height": height]
+        )
+    }
 }
 
 // MARK: - SwiftUI View Helpers
@@ -114,6 +158,37 @@ public extension View {
         self.onReceive(NotificationCenter.default.publisher(for: .chatSectionVisibleDidChange)) { notification in
             guard let visible = notification.userInfo?["visible"] as? Bool else { return }
             action(visible)
+        }
+    }
+
+    /// 监听侧边栏 Rail 宽度变更
+    func onRailWidthDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .railWidthDidChange)) { notification in
+            guard let containerID = notification.userInfo?["containerID"] as? String,
+                  let width = notification.userInfo?["width"] as? CGFloat
+            else { return }
+            action(containerID, width)
+        }
+    }
+
+    /// 监听聊天区宽度变更
+    func onChatSectionWidthDidChange(perform action: @escaping (String, String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .chatSectionWidthDidChange)) { notification in
+            guard let containerID = notification.userInfo?["containerID"] as? String,
+                  let layout = notification.userInfo?["layout"] as? String,
+                  let width = notification.userInfo?["width"] as? CGFloat
+            else { return }
+            action(containerID, layout, width)
+        }
+    }
+
+    /// 监听底部面板高度变更
+    func onBottomPanelHeightDidChange(perform action: @escaping (String, CGFloat) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .bottomPanelHeightDidChange)) { notification in
+            guard let containerID = notification.userInfo?["containerID"] as? String,
+                  let height = notification.userInfo?["height"] as? CGFloat
+            else { return }
+            action(containerID, height)
         }
     }
 }

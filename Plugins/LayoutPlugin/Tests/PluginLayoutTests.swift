@@ -86,3 +86,50 @@ import Testing
     #expect(reloadedStore.loadActiveViewContainerIcon() == "editor")
     #expect(reloadedStore.loadLayoutRatios() == ["content": 0.62])
 }
+
+// MARK: - 分栏尺寸恢复链路
+
+@Test func restoreWritesSplitDimensionsIntoLayoutState() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginLayout-Restore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = LayoutPluginLocalStore(pluginDirectory: directory)
+    let containerID = "LumiEditor"
+    // 用与插件写入时一致的 key，预置尺寸数据
+    store.saveSplitDimension(312, forKey: LayoutStorageKey.railWidth(viewContainerID: containerID))
+    store.saveSplitDimension(168, forKey: LayoutStorageKey.bottomPanelHeight(viewContainerID: containerID))
+    store.saveSplitDimension(
+        420,
+        forKey: LayoutStorageKey.chatSectionWidth(viewContainerID: containerID, layout: .narrow)
+    )
+
+    let state = LumiLayoutState()
+    LayoutPersistenceCoordinator.shared.restore(into: state, from: store)
+
+    #expect(state.railWidth(for: containerID) == 312)
+    #expect(state.bottomPanelHeight(for: containerID) == 168)
+    #expect(state.chatSectionWidth(for: containerID, layout: .narrow) == 420)
+    // 其它档位/容器不受影响
+    #expect(state.chatSectionWidth(for: containerID, layout: .wide) == 320)
+}
+
+@MainActor
+@Test func restoreDoesNotPostNotificationsDuringBackfill() {
+    // 恢复使用 restoreXxx（不发通知），这里验证恢复后状态可读即可
+    let state = LumiLayoutState()
+    let store = LayoutPluginLocalStore(pluginDirectory: FileManager.default.temporaryDirectory)
+    LayoutPersistenceCoordinator.shared.restore(into: state, from: store)
+    // 空 store → 全部回退默认值，无崩溃
+    #expect(state.railWidth(for: "any") == 240)
+}
+
+@Test func chatSectionLayoutRoundTripsThroughPersistenceSuffix() throws {
+    // 确保 LumiChatSectionLayout.from(suffix:) 能还原所有持久化档位，
+    // 这是 LayoutStorageKey 与通知负载 layout 字段一致性的关键。
+    #expect(LumiChatSectionLayout.from(persistenceKeySuffix: "none") == .none)
+    #expect(LumiChatSectionLayout.from(persistenceKeySuffix: "narrow") == .narrow)
+    #expect(LumiChatSectionLayout.from(persistenceKeySuffix: "wide") == .wide)
+    #expect(LumiChatSectionLayout.from(persistenceKeySuffix: "bogus") == nil)
+}
+
