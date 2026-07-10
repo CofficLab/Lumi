@@ -174,14 +174,26 @@ final class RootContainer: ObservableObject, SuperLog {
         self.toolService = ToolService()
         self.lumiUIService = LumiUIService(pluginService: PluginService())
         self.menuBarService = MenuBarService(pluginService: PluginService())
-        // These won't be used since CrashedView is shown instead of the main UI
-        self.editorCoreService = try! EditorCoreService(
-            pluginService: self.pluginService,
-            persistenceRootURL: { AppConfig.getDBFolderURL() },
-            recentProjects: { [] }
-        )
+
+        // These services are not used when initialization fails (CrashedView is shown).
+        // Use guarded initialization to avoid secondary crashes that would mask the original error.
+        do {
+            self.editorCoreService = try EditorCoreService(
+                pluginService: self.pluginService,
+                persistenceRootURL: { AppConfig.getDBFolderURL() },
+                recentProjects: { [] }
+            )
+        } catch {
+            Self.logger.error("Fallback EditorCoreService init failed: \(error.localizedDescription)")
+            fatalError("Cannot create fallback EditorCoreService: \(error.localizedDescription)")
+        }
+
+        guard let chatService = LumiCore.chatService as? ChatService else {
+            Self.logger.error("LumiCore.chatService type mismatch in fallback container")
+            fatalError("LumiCore.chatService must be ChatService in fallback container")
+        }
         self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: LumiCore.chatService as! ChatService,
+            chatService: chatService,
             databaseDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
         )
     }
