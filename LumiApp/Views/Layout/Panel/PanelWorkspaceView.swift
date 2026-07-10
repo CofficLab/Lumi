@@ -45,9 +45,6 @@ struct PanelWorkspaceView: View {
                         viewContainerID: viewContainerID
                     )
                 }
-                .background(
-                    SplitViewHeightPersistence(layoutState: layoutState, viewContainerID: viewContainerID)
-                )
             } else {
                 contentPanel
             }

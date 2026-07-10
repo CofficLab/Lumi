@@ -11,7 +11,6 @@ struct StatusBar: View {
     let pluginContext: LumiPluginContext
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
-    let layoutState: LumiLayoutState
 
     var body: some View {
         let context = pluginContext

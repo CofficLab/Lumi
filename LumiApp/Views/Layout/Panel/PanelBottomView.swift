@@ -16,7 +16,7 @@ struct PanelBottomView: View {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minHeight: SplitViewHeightPersistence.minimumHeight)
+        .frame(minHeight: 80)
         .background(theme.surface)
         .onAppear {
             ensureValidSelection()
