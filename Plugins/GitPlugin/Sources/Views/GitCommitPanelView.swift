@@ -7,19 +7,14 @@ import LumiUI
 /// 左栏显示提交历史列表（含工作状态入口），
 /// 右栏显示选中 commit 的详情、变更文件和 diff。
 public struct GitCommitPanelView: View {
-    /// 插件专属的 storage key，用于持久化内部分割比例
-    private let storageKey = "Split.Panel.GitCommitHistory"
-
     public var body: some View {
         HSplitView {
             // 左栏：提交历史列表
             GitCommitHistorySidebarView()
-                .background(SplitViewWidthPersistence(storageKey: storageKey))
 
             // 右栏：详情视图
             GitCommitDetailView()
         }
-        .background(SplitViewAutosaveConfigurator(autosaveName: storageKey))
     }
 }
 
