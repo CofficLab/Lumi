@@ -479,7 +479,7 @@ enum XcodeSemanticIndexRunner: SuperLog {
                 line.localizedCaseInsensitiveContains("failed") ||
                 line.localizedCaseInsensitiveContains("no such module") ||
                 line.localizedCaseInsensitiveContains("command")
-        } ?? lines.last!
+        } ?? lines.last ?? ""
         return important
     }
 
