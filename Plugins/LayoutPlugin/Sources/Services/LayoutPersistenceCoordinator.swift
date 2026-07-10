@@ -1,5 +1,6 @@
 import CoreGraphics
 import LumiCoreKit
+import SuperLogKit
 import os
 
 /// 布局持久化协调器
@@ -7,11 +8,10 @@ import os
 /// 仅负责从磁盘读取已保存的布局状态并写入 `LumiCore.layoutState`。
 /// 事件监听和持久化写入由 `LayoutPersistenceAnchor` 视图处理。
 @MainActor
-final class LayoutPersistenceCoordinator {
+final class LayoutPersistenceCoordinator: SuperLog {
+    nonisolated static let emoji = LayoutPlugin.emoji
+    nonisolated static let verbose = LayoutPlugin.verbose
     static let shared = LayoutPersistenceCoordinator()
-    static let verbose = true
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.coordinator")
-    private static let t = "[LayoutPersistenceCoordinator] "
 
     private init() {}
 
@@ -19,7 +19,7 @@ final class LayoutPersistenceCoordinator {
     func restore() {
         guard let state = LumiCore.layoutState else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)LumiCore.layoutState 未初始化，跳过恢复")
+                LayoutPlugin.logger.warning("\(self.t)LumiCore.layoutState 未初始化，跳过恢复")
             }
             return
         }
@@ -55,9 +55,9 @@ final class LayoutPersistenceCoordinator {
 
         if Self.verbose {
             if restored.isEmpty {
-                Self.logger.info("\(Self.t)磁盘无已保存布局，使用默认值")
+                LayoutPlugin.logger.info("\(self.t)磁盘无已保存布局，使用默认值")
             } else {
-                Self.logger.info("\(Self.t)已从磁盘恢复: \(restored.joined(separator: ", "))")
+                LayoutPlugin.logger.info("\(self.t)已从磁盘恢复: \(restored.joined(separator: ", "))")
             }
         }
 
@@ -65,7 +65,7 @@ final class LayoutPersistenceCoordinator {
         #if DEBUG
         let editorNarrow = state.storedChatSectionWidth(for: "LumiEditor", layout: .narrow)
         let editorWide = state.storedChatSectionWidth(for: "LumiEditor", layout: .wide)
-        Self.logger.info("\(Self.t)[DEBUG restore] after restore, storedChatSectionWidth(LumiEditor.narrow)=\(editorNarrow.map { String(describing: $0) } ?? "nil"), storedChatSectionWidth(LumiEditor.wide)=\(editorWide.map { String(describing: $0) } ?? "nil")")
+        LayoutPlugin.logger.info("\(self.t)[DEBUG restore] after restore, storedChatSectionWidth(LumiEditor.narrow)=\(editorNarrow.map { String(describing: $0) } ?? "nil"), storedChatSectionWidth(LumiEditor.wide)=\(editorWide.map { String(describing: $0) } ?? "nil")")
         #endif
     }
 
@@ -79,13 +79,13 @@ final class LayoutPersistenceCoordinator {
         let dimensions = store.loadSplitDimensions()
         guard !dimensions.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(Self.t)[restoreSplitDimensions] dimensions is empty, skipping")
+                LayoutPlugin.logger.info("\(self.t)[restoreSplitDimensions] dimensions is empty, skipping")
             }
             return
         }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)[restoreSplitDimensions] found \(dimensions.count) keys: \(dimensions.keys.sorted().joined(separator: ", "))")
+            LayoutPlugin.logger.info("\(self.t)[restoreSplitDimensions] found \(dimensions.count) keys: \(dimensions.keys.sorted().joined(separator: ", "))")
         }
 
         let railPrefix = "Layout.Width."
@@ -110,7 +110,7 @@ final class LayoutPersistenceCoordinator {
                 let inner = String(key.dropFirst(chatPrefix.count))
                 guard let dotRange = inner.range(of: chatInfix) else {
                     if Self.verbose {
-                        Self.logger.warning("\(Self.t)[restoreSplitDimensions] chat key parse failed: '\(key)' has no '\(chatInfix)' range in '\(inner)'")
+                        LayoutPlugin.logger.warning("\(self.t)[restoreSplitDimensions] chat key parse failed: '\(key)' has no '\(chatInfix)' range in '\(inner)'")
                     }
                     continue
                 }
@@ -120,7 +120,7 @@ final class LayoutPersistenceCoordinator {
                       let layout = LumiChatSectionLayout.from(persistenceKeySuffix: layoutSuffix)
                 else {
                     if Self.verbose {
-                        Self.logger.warning("\(Self.t)[restoreSplitDimensions] chat key parse failed: containerID='\(containerID)', layoutSuffix='\(layoutSuffix)'")
+                        LayoutPlugin.logger.warning("\(self.t)[restoreSplitDimensions] chat key parse failed: containerID='\(containerID)', layoutSuffix='\(layoutSuffix)'")
                     }
                     continue
                 }
@@ -138,7 +138,7 @@ final class LayoutPersistenceCoordinator {
             }
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)[restoreSplitDimensions] key '\(key)' did not match any pattern, skipped")
+                LayoutPlugin.logger.info("\(self.t)[restoreSplitDimensions] key '\(key)' did not match any pattern, skipped")
             }
         }
     }
