@@ -63,9 +63,11 @@ final class LayoutPersistenceCoordinator: SuperLog {
 
         // DEBUG: 打印恢复后 layoutState 中实际的 chatSectionWidths 值
         #if DEBUG
+        if Self.verbose {
         let editorNarrow = state.storedChatSectionWidth(for: "LumiEditor", layout: .narrow)
         let editorWide = state.storedChatSectionWidth(for: "LumiEditor", layout: .wide)
         LayoutPlugin.logger.info("\(self.t)[DEBUG restore] after restore, storedChatSectionWidth(LumiEditor.narrow)=\(editorNarrow.map { String(describing: $0) } ?? "nil"), storedChatSectionWidth(LumiEditor.wide)=\(editorWide.map { String(describing: $0) } ?? "nil")")
+        }
         #endif
     }
 

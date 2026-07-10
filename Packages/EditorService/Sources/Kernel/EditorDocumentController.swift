@@ -1,14 +1,14 @@
 import AppKit
 import Foundation
 import LanguageServerProtocol
+import os
 import SuperLogKit
 import UniformTypeIdentifiers
-import os
 
 final class EditorDocumentController: SuperLog {
     nonisolated static let emoji = "📄"
     private static let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.doc-controller")
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
     struct LoadedTextDocument {
@@ -96,7 +96,7 @@ final class EditorDocumentController: SuperLog {
                 .init(
                     range: EditorRange(location: range.location, length: range.length),
                     text: text
-                )
+                ),
             ]
         )
         guard let result = buffer.apply(transaction), result.snapshot.text != previousText else {
@@ -141,12 +141,12 @@ final class EditorDocumentController: SuperLog {
 
         let isLikelyText = try isLikelyTextFile(url: url)
         if Self.verbose {
-                    Self.logger.info("\(self.t)loadDocument: url=\(url.path), fileSize=\(fileSize), ext=\(fileExtension), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
+            Self.logger.info("\(self.t)loadDocument: url=\(url.path), fileSize=\(fileSize), ext=\(fileExtension), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
         }
 
         guard isLikelyText else {
             if Self.verbose {
-                            Self.logger.info("\(self.t)loadDocument: → 二进制文件, url=\(url.path)")
+                Self.logger.info("\(self.t)loadDocument: → 二进制文件, url=\(url.path)")
             }
             return .binary(
                 .init(
