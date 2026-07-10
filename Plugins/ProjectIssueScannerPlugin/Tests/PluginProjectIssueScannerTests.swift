@@ -165,7 +165,7 @@ import Foundation
     #expect(loadedIssues.count == 1)
     #expect(loadedIssues.first?.id == firstIssue.id)
 
-    await store.replaceIssues(
+    try await store.replaceIssues(
         projectPath: firstIssue.projectPath,
         source: firstIssue.source,
         with: [

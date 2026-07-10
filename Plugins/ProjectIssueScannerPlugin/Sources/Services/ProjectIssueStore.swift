@@ -35,17 +35,17 @@ public actor ProjectIssueStore {
     // MARK: - Public API
 
     /// 添加问题（自动去重）
-    public func upsert(_ issue: ProjectIssue) {
+    public func upsert(_ issue: ProjectIssue) throws {
         if let index = issues.firstIndex(where: { $0.dedupeKey == issue.dedupeKey }) {
             issues[index] = issue
         } else {
             issues.append(issue)
         }
-        try? persist()
+        try persist()
     }
 
     /// 批量添加（自动去重）
-    public func upsertBatch(_ newIssues: [ProjectIssue]) {
+    public func upsertBatch(_ newIssues: [ProjectIssue]) throws {
         for issue in newIssues {
             if let index = issues.firstIndex(where: { $0.dedupeKey == issue.dedupeKey }) {
                 issues[index] = issue
@@ -53,7 +53,7 @@ public actor ProjectIssueStore {
                 issues.append(issue)
             }
         }
-        try? persist()
+        try persist()
     }
 
     /// 获取所有未解决的问题
@@ -118,21 +118,21 @@ public actor ProjectIssueStore {
     }
 
     /// 更新问题状态
-    public func updateStatus(id: UUID, status: ProjectIssueStatus) {
+    public func updateStatus(id: UUID, status: ProjectIssueStatus) throws {
         guard let index = issues.firstIndex(where: { $0.id == id }) else { return }
         issues[index].status = status
         issues[index].updatedAt = Date()
-        try? persist()
+        try persist()
     }
 
     /// 移除指定文件的所有问题（文件已删除或重命名时使用）
-    public func removeIssues(forFilePath path: String) {
+    public func removeIssues(forFilePath path: String) throws {
         issues.removeAll { $0.filePath == path }
-        try? persist()
+        try persist()
     }
 
     /// 替换某个项目下指定来源的问题，保留用户已确认/忽略的问题状态。
-    public func replaceIssues(projectPath: String, source: ProjectIssueSource, with newIssues: [ProjectIssue]) {
+    public func replaceIssues(projectPath: String, source: ProjectIssueSource, with newIssues: [ProjectIssue]) throws {
         let normalizedPath = normalizeProjectPath(projectPath)
         let previousByKey = Self.groupByDedupeKey(issues)
         let incomingKeys = Set(newIssues.map(\.dedupeKey))
@@ -158,13 +158,13 @@ public actor ProjectIssueStore {
             }
         }
 
-        try? persist()
+        try persist()
     }
 
     /// 清空所有问题
-    public func clearAll() {
+    public func clearAll() throws {
         issues.removeAll()
-        try? persist()
+        try persist()
     }
 
     /// 未解决问题的数量

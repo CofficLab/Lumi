@@ -23,6 +23,9 @@ public final class ProjectIssueScannerViewModel: ObservableObject {
     /// 是否有更多问题未展示
     public var hasMore: Bool { totalOpenCount > issues.count }
 
+    /// 最近一次持久化错误（用于向用户提示）
+    @Published public var lastError: String?
+
     /// 触发手动扫描
     public func scan(projectPath: String) {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -62,7 +65,11 @@ public final class ProjectIssueScannerViewModel: ObservableObject {
 
     /// 忽略指定问题
     public func dismiss(id: UUID, projectPath: String) async {
-        await ProjectIssueStore.shared.updateStatus(id: id, status: .dismissed)
+        do {
+            try await ProjectIssueStore.shared.updateStatus(id: id, status: .dismissed)
+        } catch {
+            lastError = error.localizedDescription
+        }
         await reloadIssues(projectPath: projectPath)
     }
 }
