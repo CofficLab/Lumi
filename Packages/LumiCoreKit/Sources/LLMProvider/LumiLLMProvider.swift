@@ -54,6 +54,10 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     /// 任何子类如果想用不同的存储策略，仍然可以 override 这几个协议方法。
     internal let apiKeyStorageKey: String?
 
+    /// Provider 内部（含跨包基类）获取 API Key 存储键的唯一公开入口。
+    /// 外部代码（设置页、可用性检测等）禁止直接读取，应通过协议方法访问。
+    public var _apiKeyStorageKey: String? { apiKeyStorageKey }
+
     public init(
         id: String,
         displayName: String,

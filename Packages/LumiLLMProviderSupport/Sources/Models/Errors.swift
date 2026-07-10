@@ -32,8 +32,19 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiOpenAIAdapter: OpenAICompatibleProviderAdapter { adapter }
 
-    // `lumiResolveAPIKey()` 由 `LumiLLMProvider` 协议扩展提供默认实现（基于 `info.apiKeyStorageKey` + Keychain）。
-    // 基类不再强制子类 override；子类如有自定义存储策略，可 override `setApiKey / removeApiKey / getApiKey` 即可。
+    /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
+    /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
+    open func lumiResolveAPIKey() throws -> String {
+        if Self.info.isLocal { return "" }
+        guard let storageKey = Self.info._apiKeyStorageKey else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
@@ -416,8 +427,19 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     open var lumiAPIService: LLMAPIService { apiService }
     open var lumiAnthropicAdapter: AnthropicCompatibleProviderAdapter { adapter }
 
-    // `lumiResolveAPIKey()` 由 `LumiLLMProvider` 协议扩展提供默认实现（基于 `info.apiKeyStorageKey` + Keychain）。
-    // 基类不再强制子类 override；子类如有自定义存储策略，可 override `setApiKey / removeApiKey / getApiKey` 即可。
+    /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
+    /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
+    open func lumiResolveAPIKey() throws -> String {
+        if Self.info.isLocal { return "" }
+        guard let storageKey = Self.info._apiKeyStorageKey else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        if key.isEmpty {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
+    }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
