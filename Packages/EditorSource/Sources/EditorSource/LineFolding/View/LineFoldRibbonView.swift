@@ -8,6 +8,7 @@
 import Foundation
 import AppKit
 import EditorTextView
+import SuperLogKit
 import os
 
 /// Displays the code folding ribbon in the ``GutterView``.
@@ -16,12 +17,12 @@ import os
 /// with needing to manage view reuse and positioning. Drawing allows this view to draw only what macOS requests, and
 /// ends up being extremely efficient. This does mean that animations have to be done manually with a timer.
 /// Re: the `hoveredFold` property.
-class LineFoldRibbonView: NSView {
+class LineFoldRibbonView: NSView, SuperLog {
     /// 排查 CPU 占用：悬停折叠动画用 60Hz 定时器，正常 0.2s 后自动 invalidate。
     /// 若 setup 后没 complete 说明动画未结束（泄漏），会持续触发重绘。subsystem 对齐 com.coffic.lumi。
-    /// 本包不依赖 SuperLogKit，故用原生 os.Logger + 本地 verbose 开关，排查完改 false 即可。
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.fold-ribbon")
-    private static let verbose = true
+    private static let verbose = false
+    static let emoji = "📐"
 
     struct HoverAnimationDetails: Equatable {
         var fold: FoldRange?
@@ -203,7 +204,7 @@ class LineFoldRibbonView: NSView {
             let duration: TimeInterval = 0.2
             let startTime = CACurrentMediaTime()
 
-            if Self.verbose { Self.logger.info("LineFoldRibbon 启动悬停动画(60Hz, \(duration)s)——若长期未 complete 将持续触发重绘") }
+            if Self.verbose { Self.logger.info("\(Self.t)启动悬停动画") }
             hoveringFold = HoverAnimationDetails(
                 fold: fold,
                 timer: Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
@@ -213,7 +214,7 @@ class LineFoldRibbonView: NSView {
                     self.hoveringFold.progress = min(1.0, time)
                     if self.hoveringFold.progress >= 1.0 {
                         timer.invalidate()
-                        if Self.verbose { Self.logger.info("LineFoldRibbon 悬停动画完成，定时器已停止") }
+                        if Self.verbose { Self.logger.info("\(Self.t)悬停动画完成") }
                     }
                 }
             )
