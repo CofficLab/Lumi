@@ -1,4 +1,5 @@
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 import SuperLogKit
 import os
