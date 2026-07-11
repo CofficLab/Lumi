@@ -6,6 +6,7 @@ import SwiftUI
 struct RemoteProviderSettingsPage: View {
     @LumiTheme private var theme
     @ObservedObject private var chatService: ChatService
+    @StateObject private var availability = ModelAvailabilityState()
 
     let providerSettingsViews: [LumiLLMProviderSettingsViewItem]
 
@@ -261,7 +262,8 @@ struct RemoteProviderSettingsPage: View {
                         provider: provider,
                         model: model,
                         stat: stat(for: provider.id, modelName: model),
-                        dailyUsage: dailyUsage(for: provider.id, modelName: model)
+                        dailyUsage: dailyUsage(for: provider.id, modelName: model),
+                        availability: availability
                     )
 
                     if index < provider.availableModels.count - 1 {
@@ -277,6 +279,18 @@ struct RemoteProviderSettingsPage: View {
         loadSelectedProviderID()
         loadSettings()
         reloadStats()
+        triggerInitialCheck(for: remoteProviders)
+    }
+
+    /// 首次打开时跑一次可用性检测。
+    private func triggerInitialCheck(for providers: [LumiLLMProviderInfo]) {
+        let items: [(info: LumiLLMProviderInfo, instance: any LumiLLMProvider)] =
+            providers.compactMap { info in
+                guard let instance = chatService.provider(forID: info.id) else { return nil }
+                return (info, instance)
+            }
+        guard !items.isEmpty else { return }
+        Task { await availability.checkAll(items) }
     }
 
     private func reloadStats() {

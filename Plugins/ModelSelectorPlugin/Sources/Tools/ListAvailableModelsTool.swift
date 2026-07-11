@@ -1,12 +1,24 @@
+
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 import SuperLogKit
 import os
 
-/// 列出可用 LLM 模型工具
+/// 列出可用 LLM 模型工具。
+///
+/// 直接走 `LumiLLMProvider.checkAvailability(model:)`，由各 provider 自带的
+/// 5 分钟磁盘缓存做去抖（同一窗口内多次调用几乎免费）。
+///
+/// 之前依赖全局 `LLMAvailabilityStore` 缓存的历史结果；新版每次调用都做一次
+/// "fresh" 检测——结果更准，且不依赖任何"幽灵 runtime"是否被注入。
 public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🤖"
     public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = os.Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.model-selector.list-available-models"
+    )
 
     public static let info = LumiAgentToolInfo(
         id: "list_available_models",
@@ -17,7 +29,11 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
         )
     )
 
-    public init() {}
+    private let chatService: ChatService
+
+    public init(chatService: ChatService) {
+        self.chatService = chatService
+    }
 
     public var inputSchema: LumiJSONValue {
         .object([
@@ -40,27 +56,20 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
     @MainActor
     public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         let providerFilter = arguments["providerId"]?.stringValue
-        let store = LLMAvailabilityStore.shared
-        let allProviders = store.providers
+        let allProviders = chatService.providerInfos
 
         if Self.verbose {
             if let filter = providerFilter {
-                if LLMAvailabilityChecker.verbose {
-                                    LLMAvailabilityChecker.logger.info("\(self.t)📋 查询可用模型，过滤供应商: \(filter)")
-                }
+                Self.logger.info("📋 查询可用模型，过滤供应商: \(filter)")
             } else {
-                if LLMAvailabilityChecker.verbose {
-                                    LLMAvailabilityChecker.logger.info("\(self.t)📋 查询所有可用模型")
-                }
+                Self.logger.info("📋 查询所有可用模型")
             }
         }
 
         // ── 情况 1：没有任何注册的供应商 ──
         if allProviders.isEmpty {
             if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 未注册任何 LLM 供应商")
-                }
+                Self.logger.warning("⚠️ 未注册任何 LLM 供应商")
             }
             return """
                 ## ⚠️ 未注册任何 LLM 供应商
@@ -77,16 +86,14 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
 
         // 按供应商过滤
         let providers = providerFilter != nil
-            ? allProviders.filter { $0.providerId == providerFilter }
+            ? allProviders.filter { $0.id == providerFilter }
             : allProviders
 
         // ── 情况 2：过滤后未找到指定供应商 ──
         if providers.isEmpty, let filter = providerFilter {
-            let registeredIds = allProviders.map(\.providerId)
+            let registeredIds = allProviders.map(\.id)
             if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
-                }
+                Self.logger.warning("⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
             }
             return """
                 ## ❌ 未找到供应商：\(filter)
@@ -98,34 +105,64 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
                 """
         }
 
-        // 统计可用模型对
+        // ── 真实检测：每个 provider 调一次 checkAvailability ──
+        // provider 内部的 5 分钟磁盘缓存会让重复调用几乎免费。
         var availableMarkdown = ""
         var totalAvailablePairs = 0
+        var unavailableByProvider: [String: (total: Int, sample: [String])] = [:]
 
-        for provider in providers {
-            let available = provider.availableModels
-            guard !available.isEmpty else { continue }
-
-            availableMarkdown += "### \(provider.displayName) (`\(provider.providerId)`)\n\n"
-            for modelId in available {
-                availableMarkdown += "- `\(modelId)`\n"
+        for info in providers {
+            guard let provider = chatService.provider(forID: info.id) else {
+                unavailableByProvider[info.id] = (info.availableModels.count, ["供应商实例未注册"])
+                continue
             }
-            availableMarkdown += "\n"
-            totalAvailablePairs += available.count
+
+            var providerPairs: [(model: String, available: Bool, reason: String?)] = []
+            for model in info.availableModels {
+                let result = await provider.checkAvailability(model: model)
+                switch result {
+                case .available:
+                    providerPairs.append((model, true, nil))
+                case .unavailable(let failure):
+                    let reason = failure.logSummary.isEmpty ? "未知原因" : failure.logSummary
+                    providerPairs.append((model, false, reason))
+                }
+            }
+
+            let availableModels = providerPairs.filter { $0.available }.map(\.model)
+            if !availableModels.isEmpty {
+                availableMarkdown += "### \(info.displayName) (`\(info.id)`)\n\n"
+                for model in availableModels {
+                    availableMarkdown += "- `\(model)`\n"
+                }
+                availableMarkdown += "\n"
+                totalAvailablePairs += availableModels.count
+            }
+
+            let unavailable = providerPairs.filter { !$0.available }
+            if !unavailable.isEmpty {
+                let sample = unavailable.prefix(3).compactMap { $0.reason }
+                unavailableByProvider[info.id] = (unavailable.count, Array(sample))
+            }
         }
 
-        // ── 情况 3：有注册供应商但无可用模型（API Key 未配置或检测未通过）──
+        // ── 情况 3：有注册供应商但无可用模型 ──
         if totalAvailablePairs == 0 {
-            let providerSummaries = providers.map { provider -> String in
-                let totalModels = provider.models.count
-                let statusSummary = summarizeStatuses(provider.models)
-                return "- **\(provider.displayName)** (`\(provider.providerId)`)：\(totalModels) 个模型，\(statusSummary)"
+            let providerSummaries = providers.map { info -> String in
+                let total = info.availableModels.count
+                let entry = unavailableByProvider[info.id]
+                let statusSummary: String
+                if let entry {
+                    let reason = entry.sample.isEmpty ? "" : "（原因：\(entry.sample.joined(separator: "；"))）"
+                    statusSummary = "\(entry.total)/\(total) 不可用\(reason)"
+                } else {
+                    statusSummary = "0/\(total) 可用"
+                }
+                return "- **\(info.displayName)** (`\(info.id)`)：\(statusSummary)"
             }
 
             if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
-                }
+                Self.logger.warning("⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
             }
 
             return """
@@ -138,58 +175,20 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
                 1. API Key 未配置（请在设置中为对应供应商填写 API Key）
                 2. API Key 已过期或无效
                 3. 网络连接异常，可用性检测未通过
-                4. 可用性检测尚未完成（请稍后再试）
 
                 请在设置中检查各供应商的 API Key 配置。
                 """
         }
 
         // ── 情况 4：正常返回可用模型 ──
-        var markdown = "## 可用 LLM 供应商和模型\n\n"
-        markdown += availableMarkdown
-
         if Self.verbose {
-            if LLMAvailabilityChecker.verbose {
-                            LLMAvailabilityChecker.logger.info("\(self.t)✅ 返回 \(totalAvailablePairs) 个可用模型对")
-            }
+            Self.logger.info("✅ 返回 \(totalAvailablePairs) 个可用模型对")
         }
 
-        return markdown
-    }
+        return """
+        ## 可用 LLM 供应商和模型
 
-    // MARK: - Private
-
-    /// 汇总模型状态，生成可读描述
-    private func summarizeStatuses(_ models: [LLMModelAvailability]) -> String {
-        var unknown = 0, checking = 0, available = 0, unavailable = 0
-        var unavailableReasons: [String] = []
-
-        for model in models {
-            switch model.status {
-            case .unknown:
-                unknown += 1
-            case .checking:
-                checking += 1
-            case .available:
-                available += 1
-            case .unavailable(let failure):
-                unavailable += 1
-                if unavailableReasons.count < 3 {
-                    unavailableReasons.append(failure.logSummary)
-                }
-            }
-        }
-
-        var parts: [String] = []
-        if available > 0 { parts.append("\(available) 可用") }
-        if checking > 0 { parts.append("\(checking) 检测中") }
-        if unavailable > 0 { parts.append("\(unavailable) 不可用") }
-        if unknown > 0 { parts.append("\(unknown) 未检测") }
-
-        var summary = parts.joined(separator: "、")
-        if !unavailableReasons.isEmpty {
-            summary += "（原因：\(unavailableReasons.joined(separator: "；"))）"
-        }
-        return summary
+        \(availableMarkdown)
+        """
     }
 }

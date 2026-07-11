@@ -8,7 +8,8 @@ struct ModelSelectorView: View {
     @LumiTheme private var theme
 
     @ObservedObject private var chatService: ChatService
-    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    /// 本 view 持有的可用性状态。不是全局单例，是 view 自己的。
+    @StateObject private var availability = ModelAvailabilityState()
     let conversationID: UUID?
     let onClose: () -> Void
 
@@ -17,7 +18,6 @@ struct ModelSelectorView: View {
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
     @State private var fastModels: [ModelFastModelEntry] = []
     @State private var dailyUsage: [String: ModelDailyTokenSeries] = [:]
-    @State private var checkingProviderID: String? = nil
 
     init(
         chatService: any LumiChatServicing,
@@ -35,6 +35,7 @@ struct ModelSelectorView: View {
     var body: some View {
         HStack(spacing: 0) {
             ModelSelectorSidebar(
+                availability: availability,
                 providers: chatService.providerInfos,
                 selectedProviderID: chatService.providerID(for: conversationID),
                 selectedTab: $selectedTab,
@@ -61,6 +62,7 @@ struct ModelSelectorView: View {
         .onAppear {
             selectedTab = .current
             reloadStats()
+            triggerInitialAvailabilityCheck()
         }
         .onChange(of: chatService.revision) { _, _ in
             reloadStats()
@@ -124,12 +126,15 @@ struct ModelSelectorView: View {
                 ForEach(visibleProviders) { provider in
                     Section {
                         ProviderSummaryCard(
+                            availability: availability,
                             provider: provider,
-                            isChecking: checkingProviderID == provider.id,
+                            isChecking: availability.isChecking(providerId: provider.id),
                             onRefresh: { checkProviderAvailability(provider) },
                             statusMessage: resolvedProviderStatus(for: provider)?.message,
                             statusMessageColor: providerStatusColor(for: resolvedProviderStatus(for: provider)?.level ?? .info),
-                            dailyUsage: dailyUsage
+                            dailyUsage: dailyUsage,
+                            providerInstance: chatService.provider(forID: provider.id),
+                            onAPIKeySaved: { checkProviderAvailability(provider) }
                         )
 
                         ForEach(filteredModels(for: provider), id: \.self) { model in
@@ -141,6 +146,7 @@ struct ModelSelectorView: View {
                                     && chatService.routingMode == .manual,
                                 stat: detailedStat(providerID: provider.id, modelName: model),
                                 dailyUsage: dailyUsage(for: provider.id, modelName: model),
+                                availability: availability,
                                 onSelect: {
                                     selectModel(providerID: provider.id, model: model)
                                 }
@@ -234,6 +240,7 @@ struct ModelSelectorView: View {
                                 && chatService.modelName(for: conversationID) == entry.model,
                             stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
                             dailyUsage: dailyUsage(for: entry.provider.id, modelName: entry.model),
+                            availability: availability,
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -270,6 +277,7 @@ struct ModelSelectorView: View {
                                 && chatService.modelName(for: conversationID) == entry.model,
                             stat: detailedStat(providerID: entry.provider.id, modelName: entry.model),
                             dailyUsage: dailyUsage(for: entry.provider.id, modelName: entry.model),
+                            availability: availability,
                             onSelect: {
                                 selectModel(providerID: entry.provider.id, model: entry.model)
                             }
@@ -304,42 +312,6 @@ struct ModelSelectorView: View {
         case .error:
             theme.error
         }
-    }
-
-    private func sectionHeader(for provider: LumiLLMProviderInfo) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(provider.displayName)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(theme.textPrimary)
-
-                if checkingProviderID == provider.id {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 16, height: 16)
-                } else {
-                    Button {
-                        checkProviderAvailability(provider)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(theme.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Re-check availability")
-                }
-
-                Spacer()
-            }
-
-            if let status = resolvedProviderStatus(for: provider) {
-                Text(status.message)
-                    .font(.system(size: 12))
-                    .foregroundColor(providerStatusColor(for: status.level))
-                    .lineLimit(2)
-            }
-        }
-        .padding(.vertical, 4)
     }
 
     private func selectModel(providerID: String, model: String) {
@@ -387,17 +359,24 @@ struct ModelSelectorView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // MARK: - Availability orchestration
+
+    /// 触发单个供应商的可用性检测。
+    /// `providerInstance` 由调用方解析（来自 `chatService.providersByID`），
+    /// 这样 state 不需要反向依赖 LumiChatKit。
     private func checkProviderAvailability(_ provider: LumiLLMProviderInfo) {
-        guard let llmService = LLMAvailabilityRuntime.llmService else { return }
+        guard let instance = chatService.provider(forID: provider.id) else { return }
+        Task { await availability.checkProvider(provider, providerInstance: instance) }
+    }
 
-        checkingProviderID = provider.id
-        let checker = LLMAvailabilityChecker(llmService: llmService)
-
-        Task {
-            for model in provider.availableModels {
-                await checker.checkModel(providerId: provider.id, modelId: model)
+    /// 首次打开时跑一次全量检测，让用户看到真实的供应商/模型状态。
+    private func triggerInitialAvailabilityCheck() {
+        let items: [(info: LumiLLMProviderInfo, instance: any LumiLLMProvider)] =
+            chatService.providerInfos.compactMap { info in
+                guard let instance = chatService.provider(forID: info.id) else { return nil }
+                return (info, instance)
             }
-            checkingProviderID = nil
-        }
+        guard !items.isEmpty else { return }
+        Task { await availability.checkAll(items) }
     }
 }
