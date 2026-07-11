@@ -479,11 +479,15 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// ## 嵌套消歧（关键）
     /// Lumi 的布局是**三层嵌套** NSSplitView：
     ///
-    ///     HSplitView [A] (Panel | Chat)        ← chatSection（水平）
+    ///     HSplitView [A] (Panel | Chat)        ← chatSection（水平，最外层）
     ///       └ PanelColumnView
-    ///           └ HSplitView [B] (Rail | Panel) ← rail（水平）
+    ///           └ HSplitView [B] (Rail | Panel) ← rail（水平，最内层 HSplitView）
     ///               └ PanelWorkspaceView
     ///                   └ VSplitView [C] (content | bottom) ← bottomPanel（垂直）
+    ///
+    /// **绝不能**对所有 role 一律"取面积最小"——A 和 B 的 ghost 中心都同时被 A 和 B "包含"
+    /// （B 整体嵌在 A 内），最小那条规则对 rail 蒙对、对 chatSection 蒙错。选错层会导致
+    /// divider 语义错位：A.divider0 是聊天区宽度、B.divider0 是 rail 宽度，两者不能互换。
     ///
     /// ## 三步定位法
     /// 1. **轴向过滤**：`bottomPanel` 只要 `isVertical == false`（VSplitView）；
@@ -491,9 +495,10 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     ///    这一步把三层嵌套里错层级的候选直接剔除（rail 不可能盯到 bottomPanel 那层）。
     /// 2. **几何包含**：把每个候选 split view 的 frame 转到 window 坐标，保留**包含 ghost 中心点**的候选。
     ///    ghost 是背景层，其中心点必然落在所属 split view 内部。
-    /// 3. **取嵌套最深的**：在几何上被包含的候选里，取**面积最小**的那个。
-    ///    嵌套越深面积越小——rail 的 HSplitView [B]（panel 列宽）比 chatSection 的 HSplitView [A]（整个窗口宽）小，
-    ///    取最小即取到 ghost 真正所属的那一层。
+    /// 3. **按 role 选层级**：在几何上被包含的候选里——
+    ///    - `chatSection` 取面积**最大**的（最外层 A）
+    ///    - `rail` / `bottomPanel` 取面积**最小**的（最内层 B / C）
+    ///    候选唯一时 min/max 退化为同一结果，无副作用。
     private func enclosingSplitView() -> NSSplitView? {
         // Step 1: 在整个 window 视图树里 BFS 收集所有 NSSplitView 候选。
         // 只走祖先链会漏掉兄弟节点的 NSSplitView（见上文 hosting view 兄弟场景）。
@@ -526,19 +531,35 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         // （旧版 fallback 到最近的任意 split view 正是 bottomPanel 错绑 HSplitView 的根因。）
         guard !orientationMatches.isEmpty else { return nil }
 
-        // Step 3: 保留包含 ghost 中心点的候选，再取面积最小（嵌套最深）的那个。
+        // Step 3: 保留包含 ghost 中心点的候选，再按 role 选层级。
+        // 关键：rail 和 chatSection 的 ghost 中心都会被 A 和 B 同时"包含"（B 整体嵌在 A 内），
+        // 不能对所有 role 一律"取最小"——chatSection 实际挂在外层 A 上，要取最大；rail 挂在内层 B 上，要取最小。
+        // 选错层级会导致 divider 语义错位：A.divider0 = 聊天区宽度，B.divider0 = rail 宽度。
         let ghostCenterInWindow = convert(NSPoint(x: bounds.midX, y: bounds.midY), to: nil)
         // ghost 刚加入 window 时 bounds 还是 .zero，中心点退化为 (0,0)，无法可靠定位。
-        // 此时取面积最小的候选作为兜底（最内层最可能正确）。
+        // 此时按 role 取兜底：chatSection 取最大（最外层），rail/bottomPanel 取最小（最内层）。
         guard ghostCenterInWindow.x != 0 || ghostCenterInWindow.y != 0 else {
-            return orientationMatches.min(by: { area($0.bounds) < area($1.bounds) })
+            return pickByRole(from: orientationMatches)
         }
         let containing = orientationMatches.filter { sv in
             let frameInWindow = sv.superview?.convert(sv.frame, to: nil) ?? sv.frame
             return frameInWindow.contains(ghostCenterInWindow)
         }
         let resolved = containing.isEmpty ? orientationMatches : containing
-        return resolved.min(by: { area($0.bounds) < area($1.bounds) })
+        return pickByRole(from: resolved)
+    }
+
+    /// 按 role 在候选 split views 中挑出正确的那一层。
+    /// - chatSection：挂在最外层 A（Panel | Chat）上 → 取面积最大的
+    /// - rail / bottomPanel：挂在内层 B（Rail | Panel）或 C（content | bottom）上 → 取面积最小的
+    /// 候选只有 1 个时 min/max 退化为同一结果，无副作用。
+    private func pickByRole(from candidates: [NSSplitView]) -> NSSplitView? {
+        switch role {
+        case .chatSection:
+            return candidates.max(by: { area($0.bounds) < area($1.bounds) })
+        case .rail, .bottomPanel:
+            return candidates.min(by: { area($0.bounds) < area($1.bounds) })
+        }
     }
 
     private func area(_ rect: NSRect) -> CGFloat {
