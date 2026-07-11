@@ -116,11 +116,16 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
     }
 
     /// 检查所有提供的供应商。
+    /// 多个 provider 并发执行，缩短总检测时间；每个 provider 内部仍串行遍历模型。
     public func checkAll(
         _ items: [(info: LumiLLMProviderInfo, instance: any LumiLLMProvider)]
     ) async {
-        for (info, instance) in items {
-            await checkProvider(info, providerInstance: instance)
+        await withTaskGroup(of: Void.self) { group in
+            for (info, instance) in items {
+                group.addTask {
+                    await self.checkProvider(info, providerInstance: instance)
+                }
+            }
         }
     }
 
