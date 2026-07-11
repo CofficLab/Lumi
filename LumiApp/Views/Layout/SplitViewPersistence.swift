@@ -545,7 +545,10 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         guard !allCandidates.isEmpty else { return nil }
 
         // Step 2: 按 role 的轴向要求过滤。
-        if Self.verbose {
+        // 候选 dump 只在"首次评估"时打——post-attach recheck 期间（postAttachRecheckCount > 0）
+        // 候选列表通常没变，每次都打一份会刷屏 60+ 行。重新挂到不同 split view 时
+        // 已有"attached to split view"日志带 id，所以重挂本身不会丢信息。
+        if Self.verbose, postAttachRecheckCount == 0 {
             let dump = allCandidates.map { sv -> String in
                 let f = sv.superview?.convert(sv.frame, to: nil) ?? sv.frame
                 let id = ObjectIdentifier(sv).hashValue

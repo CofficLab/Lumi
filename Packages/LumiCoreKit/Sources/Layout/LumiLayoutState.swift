@@ -262,7 +262,9 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
     /// 调用时机：`setRailDivider` / `setChatSectionDivider` 在写完新值后。
     /// - `rail` 直接读 `railDividers[viewContainerID]`。
     /// - `middle` = `panelColumn - rail`，依赖视图层通过 `setPanelColumnWidth` 持续同步 panel column。
-    /// - `chat` 列出该 viewContainerID 下所有已存储的 chat section divider（每个布局档位一份）。
+    /// - `chatDivider` 列出该 viewContainerID 下所有已存储的 chat section divider（每个布局档位一份）。
+    ///   命名特意带 "Divider" 后缀——存的**是** A 的 divider 0 位置（即聊天区左边缘 x 坐标），
+    ///   **不是**聊天区宽度（宽度 = `A.bounds.width - divider`）。读日志时不要把这个值当宽度看。
     ///   因为一个 view container 可能挂多个 chat section 档位（none / narrow / wide），
     ///   没有"当前档位"概念，全部列出便于人工核对。
     ///
@@ -289,7 +291,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         let parts: [String] = [
             rail.map { "rail=\(String(format: "%.1f", $0))" } ?? "rail=n/a",
             middle.map { "middle=\(String(format: "%.1f", $0))" } ?? "middle=n/a",
-            "chat=[\(chatText)]"
+            "chatDivider=[\(chatText)]"
         ]
         Self.logger.info("\(Self.t)三栏宽度[\(viewContainerID)]: \(parts.joined(separator: ", "))")
     }
