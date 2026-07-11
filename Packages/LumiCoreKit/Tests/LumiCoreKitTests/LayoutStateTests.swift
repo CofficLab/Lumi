@@ -273,6 +273,106 @@ import Testing
         try? await Task.sleep(nanoseconds: 50_000_000)
         #expect(counter.count == 0)
     }
+
+    // MARK: - restore 路径不发通知（补 chatSection / bottomPanel 的对照）
+
+    @MainActor
+    @Test func restoreChatSectionDividerDoesNotPostNotification() async {
+        let state = LumiLayoutState()
+        let counter = CounterBox()
+        let token = NotificationCenter.default.addObserver(
+            forName: .chatSectionDividerDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in counter.increment() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        state.restoreChatSectionDivider(480, for: "main", layout: .wide)
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(counter.count == 0)
+        #expect(state.chatSectionDivider(for: "main", layout: .wide) == 480)
+    }
+
+    @MainActor
+    @Test func restoreBottomPanelDividerDoesNotPostNotification() async {
+        let state = LumiLayoutState()
+        let counter = CounterBox()
+        let token = NotificationCenter.default.addObserver(
+            forName: .bottomPanelDividerDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in counter.increment() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        state.restoreBottomPanelDivider(450, for: "main")
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(counter.count == 0)
+        #expect(state.bottomPanelDivider(for: "main") == 450)
+    }
+
+    // MARK: - 同值不通知（补 chatSection / bottomPanel 的对照）
+
+    @MainActor
+    @Test func setChatSectionDividerDoesNotNotifyForSameValue() async {
+        let state = LumiLayoutState()
+        state.setChatSectionDivider(500, for: "main", layout: .wide)
+        let counter = CounterBox()
+        let token = NotificationCenter.default.addObserver(
+            forName: .chatSectionDividerDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in counter.increment() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        // 再设同样的值 → 不应发通知。
+        state.setChatSectionDivider(500, for: "main", layout: .wide)
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(counter.count == 0)
+    }
+
+    @MainActor
+    @Test func setBottomPanelDividerDoesNotNotifyForSameValue() async {
+        let state = LumiLayoutState()
+        state.setBottomPanelDivider(450, for: "main")
+        let counter = CounterBox()
+        let token = NotificationCenter.default.addObserver(
+            forName: .bottomPanelDividerDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in counter.increment() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        state.setBottomPanelDivider(450, for: "main")
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(counter.count == 0)
+    }
+
+    // MARK: - LayoutEventPayload.cgFloat 解码
+
+    @Test func cgFloatDecodesFromCGFloat() {
+        #expect(LayoutEventPayload.cgFloat(from: CGFloat(3.14) as Any?) == 3.14)
+    }
+
+    @Test func cgFloatDecodesFromNSNumber() {
+        #expect(LayoutEventPayload.cgFloat(from: NSNumber(value: 42.5) as Any?) == 42.5)
+    }
+
+    @Test func cgFloatDecodesFromDouble() {
+        #expect(LayoutEventPayload.cgFloat(from: Double(7.0) as Any?) == 7.0)
+    }
+
+    @Test func cgFloatReturnsNilForInvalidInput() {
+        #expect(LayoutEventPayload.cgFloat(from: nil) == nil)
+        #expect(LayoutEventPayload.cgFloat(from: "not a number" as Any?) == nil)
+    }
 }
 
 /// 线程安全的事件收集器，供测试在主队列回调中按顺序记录通知负载。

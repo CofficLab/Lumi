@@ -4,97 +4,10 @@ import os
 import SuperLogKit
 import SwiftUI
 
-// MARK: - 角色与访问层
-
-/// divider 位置的访问层。
-///
-/// 视图层不直接读写内核或磁盘，而是通过此闭包桥接与 `LumiLayoutState` 交互：
-/// - `readInitialPosition`: 从内核状态读取上一次保存的位置（无值时返回 nil，由调用方回退到默认值）
-/// - `persist`: 把用户拖拽后的位置写回内核（内核变更会发通知，由插件负责落盘）
-///
-/// 这样 `SplitDividerPersistenceView`（一个 NSView）无需持有 `ObservableObject`，
-/// 也不依赖 SwiftUI 的观察机制，保持与 AppKit 的交互方式不变。
-///
-/// 两个闭包均标记 `@MainActor`，因为它们最终调用 `LumiLayoutState`（`@MainActor`）的方法。
-struct SplitDividerAccess {
-    let readInitialPosition: @MainActor () -> CGFloat?
-    let persist: @MainActor (CGFloat) -> Void
-    /// 用于在日志中描述该角色的可读标签，例如 `railDivider[LumiEditor]`。
-    let labelForLog: @MainActor () -> String
-}
-
-/// 描述一个分栏 divider 位置的角色，用于在视图层语义化地选择读写哪一类位置。
-enum SplitDividerRole {
-    case rail(viewContainerID: String)
-    case bottomPanel(viewContainerID: String)
-    case chatSection(viewContainerID: String, layout: LumiChatSectionLayout)
-
-    /// 基于该角色与内核 `layoutState` 构造读写桥接。
-    @MainActor
-    func makeAccess(layoutState: LumiLayoutState) -> SplitDividerAccess {
-        switch self {
-        case let .rail(viewContainerID):
-            return SplitDividerAccess(
-                readInitialPosition: { layoutState.storedRailDivider(for: viewContainerID) },
-                persist: { layoutState.setRailDivider($0, for: viewContainerID) },
-                labelForLog: { "railDivider[\(viewContainerID)]" }
-            )
-        case let .bottomPanel(viewContainerID):
-            return SplitDividerAccess(
-                readInitialPosition: { layoutState.storedBottomPanelDivider(for: viewContainerID) },
-                persist: { layoutState.setBottomPanelDivider($0, for: viewContainerID) },
-                labelForLog: { "bottomPanelDivider[\(viewContainerID)]" }
-            )
-        case let .chatSection(viewContainerID, layout):
-            return SplitDividerAccess(
-                readInitialPosition: { layoutState.storedChatSectionDivider(for: viewContainerID, layout: layout) },
-                persist: { layoutState.setChatSectionDivider($0, for: viewContainerID, layout: layout) },
-                labelForLog: { "chatSectionDivider[\(viewContainerID).\(layout.persistenceKeySuffix)]" }
-            )
-        }
-    }
-
-    /// 首次显示且无持久化值时的回退位置（轴向无关，由 split view 自己的 bounds 决定最终生效值）。
-    @MainActor
-    func defaultPosition() -> CGFloat {
-        switch self {
-        case .rail:
-            return 240
-        case .bottomPanel:
-            return 400
-        case .chatSection(_, let layout):
-            return layout.idealWidth
-        }
-    }
-
-    /// 该角色期望的 NSSplitView 轴向。
-    ///
-    /// 返回值语义直接对齐 `NSSplitView.isVertical`，供消歧过滤做相等比较。
-    /// 注意命名陷阱：`NSSplitView.isVertical == true` 表示**垂直分隔线**（左右分栏，即 SwiftUI 的 HSplitView）；
-    /// `== false` 表示水平分隔线（上下分栏，即 VSplitView）。
-    ///
-    /// 用于在多层嵌套 NSSplitView 中消歧，避免幽灵 NSView 绑错层级：
-    /// - `rail` / `chatSection` 挂在 HSplitView 上 → `isVertical == true` → 返回 `true`
-    /// - `bottomPanel` 挂在 VSplitView 上 → `isVertical == false` → 返回 `false`
-    func expectsVerticalSplit() -> Bool {
-        switch self {
-        case .rail, .chatSection:
-            return true   // HSplitView：左右分栏，分隔线垂直
-        case .bottomPanel:
-            return false  // VSplitView：上下分栏，分隔线水平
-        }
-    }
-
-    /// 是否参与"rail / middle / chat"水平三栏宽度日志。
-    /// - `rail` / `chatSection`：是
-    /// - `bottomPanel`：否（影响的是垂直高度，不在三栏中）
-    var participatesInHorizontalThreeColumns: Bool {
-        switch self {
-        case .rail, .chatSection: return true
-        case .bottomPanel: return false
-        }
-    }
-}
+// `SplitDividerAccess`、`SplitDividerRole` 及纯数学（`DividerClamp`、
+// `classifyDividerDrag`、`shouldReapplyDivider`、`dividerPositionValue`）
+// 已下沉到 LumiCoreKit，以便在无 AppKit 环境下单元测试。本文件仅保留
+// 与 NSSplitView 交互的 ghost NSView 视图包装。
 
 // MARK: - 视图包装
 
@@ -209,6 +122,23 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     private var lastObservedBoundsSize: NSSize?
     private var lastObservedDividerPosition: CGFloat?
 
+    /// 角色变更（切换 ViewContainer）后的位置校验计数。
+    ///
+    /// 外层 chatSection HSplitView 在容器切换时被复用而非重建（不像 rail 那样 `.id` 重建），
+    /// `updateConfiguration` 里异步派发的 `setPosition` 容易被紧随其后的 SwiftUI 布局 pass
+    /// 覆盖。这里在一段时间窗口内反复核对“持久化值 vs 实际 divider 位置”，一旦发现被覆盖
+    /// 就重新应用，确保切回容器时各栏宽度真正恢复到上次的值。
+    private var roleChangeRecheckCount = 0
+    private static let maxRoleChangeRecheckCount = 20  // 20 × 0.1s = 2s
+
+    /// 抑制接下来若干次 didResize 的持久化。
+    ///
+    /// 我们主动 `setPosition` 后会触发 didResize，且其后 SwiftUI 的布局 pass 也可能再次
+    /// 搬动 divider——二者都不是真正的用户拖拽。若任由 `handleDidResize` 把它们判定为拖拽
+    /// 并持久化，布局默认值会覆盖掉上次的宽度。设置此计数后，窗口内的 didResize 只刷新基线、
+    /// 不持久化，把“是不是用户拖拽”的判定推迟到窗口之外。
+    private var persistenceSuppressionCount = 0
+
     init(layoutState: LumiLayoutState, role: SplitDividerRole) {
         self.layoutState = layoutState
         self.role = role
@@ -222,7 +152,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     }
 
     func updateConfiguration(layoutState: LumiLayoutState, role: SplitDividerRole) {
-        let roleChanged = !rolesEqual(self.role, role)
+        let roleChanged = self.role != role
         self.layoutState = layoutState
         self.role = role
         self.access = role.makeAccess(layoutState: layoutState)
@@ -234,11 +164,44 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         lastObservedBoundsSize = nil
         lastObservedDividerPosition = nil
         postAttachRecheckCount = 0
+        roleChangeRecheckCount = 0
+        // 角色切换后，本次（及随后若干次）didResize 都可能是我们主动 setPosition 的余波，
+        // 不能持久化，否则会把上次的宽度覆盖成默认值。
+        persistenceSuppressionCount = 3
         if Self.verbose {
             Self.logger.info("\(self.t)config updated, role changed")
         }
         if let split = observedSplitView {
             applyInitialPositionIfPossible(in: split)
+            scheduleRoleChangeRecheck()
+        }
+    }
+
+    /// 角色变更后的位置校验：反复核对“持久化值 vs 实际 divider 位置”，被覆盖则重新应用。
+    private func scheduleRoleChangeRecheck() {
+        guard roleChangeRecheckCount < Self.maxRoleChangeRecheckCount else { return }
+        roleChangeRecheckCount += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else { return }
+            guard self.window != nil else { return }
+            guard let split = self.observedSplitView else { return }
+
+            let savedPosition = self.access.readInitialPosition()
+            guard let savedPosition else { return }
+
+            let currentPosition = self.dividerPosition(at: 0, in: split)
+            let totalSize = split.isVertical ? split.bounds.width : split.bounds.height
+            let clamp = DividerClamp(totalSize: totalSize, dividerThickness: split.dividerThickness)
+            let clampedSaved = clamp.clamp(savedPosition)
+
+            if shouldReapplyDivider(current: currentPosition, saved: clampedSaved) {
+                if Self.verbose {
+                    Self.logger.info("\(self.t)role-change recheck: 被覆盖 (current=\(currentPosition), saved=\(clampedSaved))，重新应用")
+                }
+                self.hasAppliedInitialPosition = false
+                self.applyInitialPositionIfPossible(in: split)
+            }
+            self.scheduleRoleChangeRecheck()
         }
     }
 
@@ -368,8 +331,8 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         }
 
         let savedPosition = access.readInitialPosition() ?? role.defaultPosition()
-        let maxPosition = max(0, totalSize - splitView.dividerThickness)
-        let clampedPosition = min(max(savedPosition, 0), maxPosition)
+        let clamp = DividerClamp(totalSize: totalSize, dividerThickness: splitView.dividerThickness)
+        let clampedPosition = clamp.clamp(savedPosition)
 
         if Self.verbose {
             Self.logger.info("\(self.t)applying initial position: saved=\(self.access.readInitialPosition().map { "\($0)" } ?? "nil"), requested=\(savedPosition), target=\(clampedPosition), total=\(totalSize)")
@@ -455,41 +418,40 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             lastObservedDividerPosition = currentPosition
         }
 
-        // 首次观测到稳定状态：只记录基线，不做任何判断（没有“上一次”可比）。
-        guard let prevBounds, let prevPosition else {
+        // 判定交给纯函数，分支顺序（baseline → resize → jitter → suppress → drag）
+        // 与原内联实现完全一致，且已被 SplitDividerMathTests 锁定。
+        let classification = classifyDividerDrag(
+            currentBounds: currentBounds,
+            currentPosition: currentPosition,
+            prevBounds: prevBounds,
+            prevPosition: prevPosition,
+            suppressionCount: persistenceSuppressionCount
+        )
+
+        switch classification {
+        case .firstBaseline:
             if Self.verbose {
                 Self.logger.info("\(self.t)didResize 建立基线: pos=\(currentPosition), bounds=\(currentBounds.width)x\(currentBounds.height)")
             }
-            return
+        case .windowResize, .jitter:
+            break  // 只刷新基线（defer 已处理），不持久化。
+        case .suppressed:
+            persistenceSuppressionCount -= 1
+            if Self.verbose {
+                Self.logger.info("\(self.t)didResize 抑制持久化 (remaining=\(self.persistenceSuppressionCount))")
+            }
+        case .dragConfirmed(let position):
+            access.persist(position)
+            // 日志始终输出（不依赖 verbose），便于人工/QA 直接观察到拖拽结果。
+            let label = access.labelForLog()
+            let oldText = String(format: "%.1f", prevPosition ?? position)
+            let newText = String(format: "%.1f", position)
+            Self.logger.info("\(self.t)拖拽结束: \(label) = \(newText) (旧值: \(oldText))")
         }
-
-        // 窗口 / split view 自身 resize：整体尺寸变了 → 用户在缩放窗口，不是拖 divider → 跳过。
-        if currentBounds != prevBounds { return }
-
-        // 尺寸不变但 divider 位置也没变 → 无意义抖动 → 跳过。
-        let delta = currentPosition - prevPosition
-        if abs(delta) < 0.5 { return }
-
-        // 尺寸不变 + divider 位置变了 → 用户在拖 divider → 持久化并打日志。
-        access.persist(currentPosition)
-        // 日志始终输出（不依赖 verbose），便于人工/QA 直接观察到拖拽结果。
-        let label = access.labelForLog()
-        let oldText = String(format: "%.1f", prevPosition)
-        let newText = String(format: "%.1f", currentPosition)
-        Self.logger.info("\(self.t)拖拽结束: \(label) = \(newText) (旧值: \(oldText))")
     }
 
     // MARK: - 工具
 
-    private func rolesEqual(_ lhs: SplitDividerRole, _ rhs: SplitDividerRole) -> Bool {
-        switch (lhs, rhs) {
-        case (.rail(let a), .rail(let b)): return a == b
-        case (.bottomPanel(let a), .bottomPanel(let b)): return a == b
-        case (.chatSection(let a1, let a2), .chatSection(let b1, let b2)):
-            return a1 == b1 && a2 == b2
-        default: return false
-        }
-    }
 
     /// 找到与本 view 关联的 NSSplitView。
     ///
@@ -587,10 +549,9 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// - rail / bottomPanel：挂在内层 B（Rail | Panel）或 C（content | bottom）上 → 取面积最小的
     /// 候选只有 1 个时 min/max 退化为同一结果，无副作用。
     private func pickByRole(from candidates: [NSSplitView]) -> NSSplitView? {
-        switch role {
-        case .chatSection:
+        if role.prefersLargestCandidate {
             return candidates.max(by: { area($0.bounds) < area($1.bounds) })
-        case .rail, .bottomPanel:
+        } else {
             return candidates.min(by: { area($0.bounds) < area($1.bounds) })
         }
     }
@@ -601,10 +562,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
 
     /// 提取当前 role 关联的视图容器 ID，用于把 panel column 宽度同步给 layout state。
     private var currentViewContainerID: String? {
-        switch role {
-        case .rail(let id), .bottomPanel(let id), .chatSection(let id, _):
-            return id
-        }
+        role.viewContainerID
     }
 
     /// 计算当前 split view 视角下的 panel column 宽度（= rail 所在 HSplitView 的总宽度）。
@@ -642,10 +600,18 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
 
     /// 读取 divider 的当前位置。NSSplitView 没有提供 getter（只有 setter `setPosition`），
     /// 从 `arrangedSubviews[i].frame` 推算：divider i 在 HSplitView 里 = pane i 的 maxX，
-    /// 在 VSplitView 里 = pane i 的 maxY。
+    /// 在 VSplitView 里 = pane i 的 maxY。越界保护交给纯函数 `dividerPositionValue`。
     private func dividerPosition(at index: Int, in splitView: NSSplitView) -> CGFloat {
-        guard index >= 0, index < splitView.arrangedSubviews.count else { return 0 }
+        let count = splitView.arrangedSubviews.count
+        // 越界时不访问 arrangedSubviews[index]（会 crash），直接返回 0。
+        guard index >= 0, index < count else { return 0 }
         let frame = splitView.arrangedSubviews[index].frame
-        return splitView.isVertical ? frame.maxX : frame.maxY
+        let paneMax = splitView.isVertical ? frame.maxX : frame.maxY
+        return dividerPositionValue(
+            index: index,
+            count: count,
+            paneMax: paneMax,
+            isVertical: splitView.isVertical
+        )
     }
 }
