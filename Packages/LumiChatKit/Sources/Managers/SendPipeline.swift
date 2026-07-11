@@ -60,17 +60,23 @@ final class SendPipeline {
     // MARK: - Tool Approval
 
     func approvePendingTool() {
-        guard let service else { return }
-        service.pendingToolConfirmation = nil
-        service.toolApprovalContinuation?.resume(returning: true)
-        service.toolApprovalContinuation = nil
+        resolvePendingToolApproval(approved: true)
     }
 
     func rejectPendingTool() {
+        resolvePendingToolApproval(approved: false)
+    }
+
+    /// Resume 挂起的工具审批（若存在）并清空所有相关状态。
+    ///
+    /// 三条路径复用：approve / reject / cancel。
+    /// resume-once 由「resume 后立即置 nil」保证——`SendPipeline` 与 `ChatService` 均为
+    /// `@MainActor`，continuation 的读写在 main actor 上串行，不会发生双重 resume。
+    private func resolvePendingToolApproval(approved: Bool) {
         guard let service else { return }
-        service.pendingToolConfirmation = nil
-        service.toolApprovalContinuation?.resume(returning: false)
+        service.toolApprovalContinuation?.resume(returning: approved)
         service.toolApprovalContinuation = nil
+        service.pendingToolConfirmation = nil
     }
 
     func requestToolApproval(
@@ -80,14 +86,29 @@ final class SendPipeline {
     ) async -> Bool {
         guard let service else { return false }
 
-        return await withCheckedContinuation { continuation in
-            service.toolApprovalContinuation = continuation
-            service.pendingToolConfirmation = LumiPendingToolConfirmation(
-                conversationID: conversationID,
-                toolCall: toolCall,
-                displayDescription: displayDescription
-            )
-            service.revision += 1
+        // `withCheckedContinuation` 不响应 task cancellation——若调用方直接 `task.cancel()`
+        // 而未走 `cancelSending`，continuation 会泄漏、await 永久挂起。
+        // 这里用 `withTaskCancellationHandler` 兜底：task 取消时把挂起的审批当作「拒绝」resume 掉。
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                // cancellation handler 与本闭包的执行顺序未定义：
+                // 若 handler 先跑（已 resume 并置 nil），这里就不能再把已 resume 的
+                // continuation 赋回去，否则下一次 resume 会触发 fatal error。赋值前判空。
+                guard service.toolApprovalContinuation == nil else { return }
+                service.toolApprovalContinuation = continuation
+                service.pendingToolConfirmation = LumiPendingToolConfirmation(
+                    conversationID: conversationID,
+                    toolCall: toolCall,
+                    displayDescription: displayDescription
+                )
+                service.revision += 1
+            }
+        } onCancel: { [weak service] in
+            // onCancel 在取消 task 的线程上同步执行（可能非 MainActor），需 hop 回 MainActor。
+            Task { @MainActor [weak service] in
+                service?.toolApprovalContinuation?.resume(returning: false)
+                service?.toolApprovalContinuation = nil
+            }
         }
     }
 
@@ -97,6 +118,14 @@ final class SendPipeline {
         guard let service else { return }
         let targetID = conversationID ?? service.selectedConversationID
         guard let targetID else { return }
+
+        // 取消前先把挂起的工具审批当作「拒绝」resume 掉。
+        // `withCheckedContinuation` 不响应 cancellation——若不主动 resume，
+        // `await requestToolApproval` 会永久挂起，turn 的 `defer` 永不执行 → 死锁。
+        // 仅处理属于本会话的审批，避免误伤其他会话挂起的审批。
+        if service.pendingToolConfirmation?.conversationID == targetID {
+            resolvePendingToolApproval(approved: false)
+        }
 
         service.activeTasksByConversationID[targetID]?.cancel()
         service.activeTasksByConversationID[targetID] = nil
