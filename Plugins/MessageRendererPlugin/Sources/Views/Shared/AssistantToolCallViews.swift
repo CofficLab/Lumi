@@ -24,6 +24,8 @@ struct BorderedUtilityContent<Content: View>: View {
 }
 
 // MARK: - ToolCallRowsView
+/// V1 (brief) 模式：纯文本 inline 样式，完全融入消息正文；
+/// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
 
 struct ToolCallRowsView: View {
     let message: LumiChatMessage
@@ -37,6 +39,14 @@ struct ToolCallRowsView: View {
     }
 
     var body: some View {
+        if verbosity == .brief {
+            LumiInlineToolCallListView(toolCalls: toolCalls)
+        } else {
+            lumiCardRows
+        }
+    }
+
+    private var lumiCardRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(toolCalls) { toolCall in
                 ToolCallRowView(
@@ -48,6 +58,32 @@ struct ToolCallRowsView: View {
                 )
             }
         }
+    }
+}
+
+// MARK: - V1 inline tool call view (brief mode)
+
+/// V1 模式下的工具调用展示：纯文本 inline，完全融入消息正文样式。
+/// 与 AssistantMessageBody 的正文保持一致的字体与颜色，
+/// 不带图标、背景、边框、按钮，保持简洁的 inline 风格。
+private struct LumiInlineToolCallListView: View {
+    @LumiTheme private var theme
+    let toolCalls: [LumiToolCall]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(toolCalls) { toolCall in
+                Text(lineText(for: toolCall))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+                    .allowsHitTesting(true)
+            }
+        }
+    }
+
+    private func lineText(for toolCall: LumiToolCall) -> String {
+        let title = (toolCall.displayName?.isEmpty == false ? toolCall.displayName : nil) ?? toolCall.name
+        return "\u{00b7} \(title)"
     }
 }
 
