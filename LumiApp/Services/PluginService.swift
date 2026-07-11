@@ -35,6 +35,14 @@ final class PluginService: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 \(self.registeredPlugins.count) 个插件")
         }
+
+        // 统一触发插件生命周期事件：先 .didRegister，再 .appDidLaunch。
+        // 让所有 alwaysOn 插件（如 FileLogPlugin）在 PluginService 初始化阶段
+        // 完成自启动，避免宿主各处显式调用具体插件。
+        Task { @MainActor in
+            await LumiPluginRegistry.registerAll()
+            await LumiPluginRegistry.appDidLaunch()
+        }
     }
 
     var plugins: [any LumiPlugin.Type] {

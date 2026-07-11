@@ -21,4 +21,21 @@ public enum FileLogPlugin: LumiPlugin {
     public static func bootstrapIfNeeded() {
         FileLogCoordinator.shared.start()
     }
+
+    // MARK: - LumiPlugin Lifecycle
+
+    /// 在应用启动生命周期事件中启动 OSLog 轮询。
+    ///
+    /// 同时响应 `.didRegister` 和 `.appDidLaunch` 作为防御性兜底：
+    /// 只要 `LumiPluginRegistry` 在任一阶段调用了 `lifecycle(...)`，
+    /// Coordinator 就会被启动。宿主无需感知本插件存在。
+    @MainActor
+    public static func lifecycle(_ event: LumiPluginLifecycle) {
+        switch event {
+        case .didRegister, .appDidLaunch:
+            bootstrapIfNeeded()
+        case .projectDidOpen, .projectDidClose:
+            break
+        }
+    }
 }
