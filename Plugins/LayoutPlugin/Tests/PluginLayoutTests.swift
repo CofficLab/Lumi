@@ -19,7 +19,7 @@ import Testing
     #expect(reloadedStore.loadSplitDimension(forKey: railKey) == 312)
 }
 
-@Test func localStoreRemovesSplitDimension() throws {
+@Test func localStoreRemovesSplitDimension() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginLayoutLocalStore-Remove-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -95,7 +95,7 @@ import Testing
 
     let store = LayoutPluginLocalStore(pluginDirectory: directory)
     #expect(store.loadActiveViewContainerIcon() == nil)
-    #expect(FileManager.fileExists(atPath: settingsURL.path) == false)
+    #expect(FileManager.default.fileExists(atPath: settingsURL.path) == false)
     #expect((try? Data(contentsOf: corruptURL)) == invalidData)
 
     store.saveActiveViewContainerIcon("editor")

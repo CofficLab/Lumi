@@ -112,7 +112,8 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
             question: question,
             options: options,
             allowFreeInput: allowFreeInput,
-            conversationId: context.conversationId.uuidString
+            conversationId: context.conversationId.uuidString,
+            verbosity: context.verbosity ?? "standard"
         )
 
         let encoder = JSONEncoder()
@@ -153,6 +154,23 @@ public struct AskUserPendingResponse: Codable {
     public let options: [String]
     public let allowFreeInput: Bool
     public let conversationId: String
+    public let verbosity: String
+    
+    public init(
+        toolCallId: String,
+        question: String,
+        options: [String],
+        allowFreeInput: Bool,
+        conversationId: String,
+        verbosity: String
+    ) {
+        self.toolCallId = toolCallId
+        self.question = question
+        self.options = options
+        self.allowFreeInput = allowFreeInput
+        self.conversationId = conversationId
+        self.verbosity = verbosity
+    }
 }
 
 /// 错误响应数据结构

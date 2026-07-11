@@ -78,12 +78,23 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         try await sendStreaming(request) { _ in }
     }
 
+    /// 默认实现：发送最小 ping 请求检测连接。子类应 override 以提供带缓存和结构化错误报告的版本。
     open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        fatalError("\(Self.self) must override checkAvailability(model:)")
+        let request = LumiLLMRequest(
+            messages: [LumiChatMessage(conversationID: UUID(), role: .user, content: "ping")],
+            model: model
+        )
+        do {
+            _ = try await send(request)
+            return .available
+        } catch {
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        }
     }
 
+    /// 默认实现：返回 nil 表示无异常状态。子类应 override 以提供 API Key 缺失等状态信息。
     open func providerStatus() -> LumiLLMProviderStatus? {
-        fatalError("\(Self.self) must override providerStatus()")
+        nil
     }
 
     open func logRawStreamChunk(_ data: Data) {
@@ -473,12 +484,23 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         try await sendStreaming(request) { _ in }
     }
 
+    /// 默认实现：发送最小 ping 请求检测连接。子类应 override 以提供带缓存和结构化错误报告的版本。
     open func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        fatalError("\(Self.self) must override checkAvailability(model:)")
+        let request = LumiLLMRequest(
+            messages: [LumiChatMessage(conversationID: UUID(), role: .user, content: "ping")],
+            model: model
+        )
+        do {
+            _ = try await send(request)
+            return .available
+        } catch {
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        }
     }
 
+    /// 默认实现：返回 nil 表示无异常状态。子类应 override 以提供 API Key 缺失等状态信息。
     open func providerStatus() -> LumiLLMProviderStatus? {
-        fatalError("\(Self.self) must override providerStatus()")
+        nil
     }
 
     open func sendStreaming(

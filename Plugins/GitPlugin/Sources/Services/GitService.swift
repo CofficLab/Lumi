@@ -28,10 +28,19 @@ public final class GitService: @unchecked Sendable, SuperLog {
     private init() {}
 
     /// 在 gitQueue 上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
+    ///
+    /// 在调用 body 之前先验证路径是否为有效 Git 仓库，
+    /// 避免 libgit2 C 层在无效仓库上触发 abort() 导致 EXC_BREAKPOINT 崩溃。
     private func performOnGitQueue<T: Sendable>(
-        _ body: @escaping @Sendable () throws -> T
+        repoPath: String,
+        body: @escaping @Sendable () throws -> T
     ) async throws -> T {
-        try await GitAsyncBridge.perform(on: gitQueue, body: body)
+        try await GitAsyncBridge.perform(on: gitQueue) {
+            guard LibGit2.isGitRepository(at: repoPath) else {
+                throw GitServiceError.repositoryNotGit(path: repoPath)
+            }
+            return try body()
+        }
     }
 
     // MARK: - Git Status
@@ -39,7 +48,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getStatus(path: String?) async throws -> GitStatus {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             // 获取当前分支
             let branch = (try? LibGit2.getCurrentBranch(at: repoPath)) ?? ""
 
@@ -91,7 +100,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getDiff(path: String?, staged: Bool, file: String?) async throws -> GitDiff {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             // 获取 diff 内容
             let content: String
             if let file = file {
@@ -115,7 +124,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getLog(path: String?, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count)
 
             let dateFormatter = ISO8601DateFormatter()
@@ -138,7 +147,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getLogWithSkip(path: String?, count: Int, skip: Int) async throws -> [GitCommitLog] {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             let gitCommits = try LibGit2.getCommitList(at: repoPath, limit: count, skip: skip)
 
             let dateFormatter = ISO8601DateFormatter()
@@ -163,7 +172,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getCommitDetail(path: String?, hash: String) async throws -> GitCommitDetail {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             // 直接按 hash 查找 commit，不再遍历 500 个 commit
             guard let commit = try LibGit2.getCommitDetail(commitHash: hash, at: repoPath) else {
                 throw NSError(domain: "GitService", code: -1, userInfo: [NSLocalizedDescriptionKey: "无法找到 commit \(hash.prefix(7))"])
@@ -217,7 +226,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public func getUncommittedChanges(path: String?) async throws -> [GitChangedFile] {
         let repoPath = Self.resolvePath(path)
 
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             let unstagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: false)
             let stagedFiles = try LibGit2.getDiffFileList(at: repoPath, staged: true)
 
@@ -241,7 +250,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 获取未提交文件的内容差异
     public func getUncommittedFileContentChange(path: String?, file: String) async throws -> (before: String?, after: String?) {
         let repoPath = Self.resolvePath(path)
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             try LibGit2.getUncommittedFileContentChange(for: file, at: repoPath)
         }
     }
@@ -249,7 +258,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 获取指定 commit 中某个文件的变更前后内容
     public func getCommitFileContentChange(path: String?, hash: String, file: String) async throws -> (before: String?, after: String?) {
         let repoPath = Self.resolvePath(path)
-        return try await performOnGitQueue {
+        return try await performOnGitQueue(repoPath: repoPath) {
             try LibGit2.getFileContentChange(atCommit: hash, file: file, at: repoPath)
         }
     }
@@ -304,7 +313,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
             }
         }
 
-        let commitHash: String = try await performOnGitQueue {
+        let commitHash: String = try await performOnGitQueue(repoPath: repoPath) {
             if amend {
                 return try LibGit2.amendCommit(message: message, at: repoPath, verbose: Self.verbose)
             }
@@ -388,10 +397,13 @@ public final class GitService: @unchecked Sendable, SuperLog {
 // MARK: - Git Service Error
 
 public enum GitServiceError: LocalizedError {
+    case repositoryNotGit(path: String)
     case pathNotAllowed(path: String, allowedDirectories: [String])
 
     public var errorDescription: String? {
         switch self {
+        case .repositoryNotGit(let path):
+            return "Git 仓库不存在：`\(path)`。请确认路径是有效的 Git 仓库根目录。"
         case .pathNotAllowed(let path, let allowedDirectories):
             let formattedDirs = allowedDirectories.map { "`\($0)`" }.joined(separator: ", ")
             return "🚫 路径访问被拒绝：\(path)\n\n允许的目录：\(formattedDirs)\n\n此路径不在允许的访问范围内。请确保 Git 操作在允许的项目目录中执行。"

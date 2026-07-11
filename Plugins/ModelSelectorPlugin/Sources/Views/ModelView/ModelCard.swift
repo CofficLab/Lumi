@@ -8,7 +8,7 @@ import SwiftUI
 /// 展示模型名称、可用性状态、能力标签、性能统计和使用数据。
 struct ModelCard: View {
     @LumiTheme private var theme
-    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    @ObservedObject var availability: ModelAvailabilityState
     @State private var presentedTransportFailure: LumiLLMFailureDetail?
 
     let provider: LumiLLMProviderInfo
@@ -24,6 +24,7 @@ struct ModelCard: View {
         isSelected: Bool = false,
         stat: ModelPerformanceStats? = nil,
         dailyUsage: ModelDailyTokenSeries? = nil,
+        availability: ModelAvailabilityState,
         onSelect: (() -> Void)? = nil
     ) {
         self.provider = provider
@@ -31,6 +32,7 @@ struct ModelCard: View {
         self.isSelected = isSelected
         self.stat = stat
         self.dailyUsage = dailyUsage
+        self.availability = availability
         self.onSelect = onSelect
     }
 
@@ -44,8 +46,8 @@ struct ModelCard: View {
         provider.modelCapabilities[model]
     }
 
-    private var availabilityStatus: LLMAvailabilityStatus {
-        availabilityStore.status(providerId: provider.id, modelId: model) ?? .unknown
+    private var checkState: ModelCheckState {
+        availability.state(providerId: provider.id, modelId: model)
     }
 
     private var hasMetricBadges: Bool {
@@ -53,10 +55,7 @@ struct ModelCard: View {
     }
 
     private var availabilityFailure: LumiLLMFailureDetail? {
-        if case .unavailable(let failure) = availabilityStatus {
-            return failure
-        }
-        return nil
+        checkState.failure
     }
 
     // MARK: - Body
@@ -123,7 +122,7 @@ struct ModelCard: View {
     @ViewBuilder
     private var headerRow: some View {
         HStack(spacing: 8) {
-            availabilityStatusIcon(availabilityStatus)
+            availabilityStatusIcon(checkState)
 
             Text(modelDisplayName)
                 .font(.system(size: 15, weight: .regular))
@@ -228,17 +227,16 @@ struct ModelCard: View {
     }
 
     @ViewBuilder
-    private func availabilityStatusIcon(_ status: LLMAvailabilityStatus) -> some View {
-        switch status {
-        case .available:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 11))
-                .foregroundColor(.green)
-        case .checking:
+    private func availabilityStatusIcon(_ state: ModelCheckState) -> some View {
+        if state.phase == .checking {
             ProgressView()
                 .scaleEffect(0.5)
                 .frame(width: 12, height: 12)
-        case .unavailable(let failure):
+        } else if state.isAvailable {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(.green)
+        } else if let failure = state.failure {
             if failure.reason == .unsupportedModel {
                 Image(systemName: "minus.circle.fill")
                     .font(.system(size: 11))
@@ -248,7 +246,7 @@ struct ModelCard: View {
                     .font(.system(size: 11))
                     .foregroundColor(.red)
             }
-        case .unknown:
+        } else {
             Image(systemName: "questionmark.circle.fill")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
@@ -259,7 +257,8 @@ struct ModelCard: View {
 // MARK: - Preview
 
 #Preview {
-    VStack(spacing: 8) {
+    let state = ModelAvailabilityState()
+    return VStack(spacing: 8) {
         ModelCard(
             provider: LumiLLMProviderInfo(
                 id: "openai",
@@ -274,6 +273,7 @@ struct ModelCard: View {
             isSelected: true,
             stat: nil,
             dailyUsage: nil,
+            availability: state,
             onSelect: {}
         )
 
@@ -291,6 +291,7 @@ struct ModelCard: View {
             isSelected: false,
             stat: ModelPerformanceStats(providerID: "ollama", modelName: "llama2"),
             dailyUsage: nil,
+            availability: state,
             onSelect: {}
         )
     }

@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import LumiCoreKit
 import LumiUI
 import SuperLogKit
@@ -23,6 +24,10 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
     nonisolated(unsafe) private var themeSyncObserver: NSObjectProtocol?
 
+    /// 订阅 `LogoRegistry.$bestItem`：插件贡献的 Logo 就绪后，
+    /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
+    nonisolated(unsafe) private var logoRegistryCancellable: AnyCancellable?
+
     init(pluginService: PluginService) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 MenuBarService")
@@ -32,6 +37,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         super.init()
         observeSystemAppearanceChanges()
         observeThemeWindowSync()
+        observeLogoRegistry()
         scheduleMenuBarSetup()
 
         if Self.verbose {
@@ -46,6 +52,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         if let themeSyncObserver {
             NotificationCenter.default.removeObserver(themeSyncObserver)
         }
+        logoRegistryCancellable?.cancel()
     }
 
     func refresh() {
@@ -245,6 +252,40 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
                 self?.replaceMenuBarContent()
             }
         }
+    }
+
+
+    /// 订阅 `LumiCore.logoRegistry.$bestItem`。
+    ///
+    /// `MenuBarService` 启动时（`init` → `scheduleMenuBarSetup`）会立刻创建 `NSStatusItem`
+    /// 并渲染 `MenuBarIconView`，但此时插件的 Logo 贡献可能尚未注册（由 `RootView.body`
+    /// 触发的 `registerPluginContributions` 才是真正的注册时机）。结果就是
+    /// `LogoView(scene: .statusBar)` 第一次求值时拿到 `bestItem == nil`，
+    /// 菜单栏显示一张透明占位图。
+    ///
+    /// 这里订阅 `@Published` 变更：插件贡献的 Logo 一旦就绪，`bestItem` 立刻变化，
+    /// 我们重建菜单栏内容（与系统主题、主题同步共用同一条 `replaceMenuBarContent` 路径），
+    /// 让 `LogoView` 在第二轮渲染中拿到正确的 LogoItem。
+    ///
+    /// 选择 Combine 订阅而不是依赖 `onEnabledPluginsChanged`：
+    /// - `onEnabledPluginsChanged` 的语义是「启用列表变了」，跟「Logo 注册了」是两件事，
+    ///   用它当信号灯会引入误触发与漏触发；
+    /// - `LogoRegistry` 已经是 `ObservableObject`，订阅 `@Published` 是单一事实源路径，
+    ///   与 `LogoView` 用 `@ObservedObject` 订阅同一份数据保持一致。
+    ///
+    /// `dropFirst()` 跳过初始 nil（菜单栏还没创建，按钮状态 item 也是 nil，没必要重建）。
+    /// `replaceMenuBarContent` 内部用 `statusItem?.button` 守护，未创建时直接 return，不会崩溃。
+    private func observeLogoRegistry() {
+        logoRegistryCancellable = LumiCore.logoRegistry
+            .$bestItem
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)LogoRegistry.$bestItem 变化 → replaceMenuBarContent")
+                }
+                self?.replaceMenuBarContent()
+            }
     }
 
     private func startContentTimer() {

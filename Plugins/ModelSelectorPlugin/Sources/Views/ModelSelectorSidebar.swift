@@ -5,7 +5,7 @@ import SwiftUI
 
 struct ModelSelectorSidebar: View {
     @LumiTheme private var theme
-    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    @ObservedObject var availability: ModelAvailabilityState
 
     let providers: [LumiLLMProviderInfo]
     let selectedProviderID: String?
@@ -33,6 +33,7 @@ struct ModelSelectorSidebar: View {
                 VStack(spacing: 6) {
                     ForEach(providers) { provider in
                         ProviderCard(
+                            availability: availability,
                             provider: provider,
                             isSelected: selectedTab == .provider(provider.id),
                             isActive: selectedProviderID == provider.id,
@@ -67,13 +68,5 @@ struct ModelSelectorSidebar: View {
                 Spacer()
             }
         }
-    }
-
-    /// 判断服务商是否有可用的模型
-    private func isProviderAvailable(_ provider: LumiLLMProviderInfo) -> Bool {
-        guard let providerAvailability = availabilityStore.providers.first(where: { $0.providerId == provider.id }) else {
-            return false
-        }
-        return providerAvailability.hasAvailableModels
     }
 }

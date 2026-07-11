@@ -6,6 +6,7 @@ import SwiftUI
 struct LocalProviderSettingsPage: View {
     @LumiTheme private var theme
     @ObservedObject private var chatService: ChatService
+    @StateObject private var availability = ModelAvailabilityState()
 
     let providerSettingsViews: [LumiLLMProviderSettingsViewItem]
 
@@ -68,6 +69,7 @@ struct LocalProviderSettingsPage: View {
         .onAppear {
             loadSelectedProviderID()
             reloadStats()
+            triggerInitialCheck(for: localProviders)
         }
         .onChange(of: chatService.revision) { _, _ in
             reloadStats()
@@ -212,7 +214,8 @@ struct LocalProviderSettingsPage: View {
                         provider: provider,
                         model: model,
                         stat: stat(for: provider.id, modelName: model),
-                        dailyUsage: dailyUsage(for: provider.id, modelName: model)
+                        dailyUsage: dailyUsage(for: provider.id, modelName: model),
+                        availability: availability
                     )
 
                     if index < provider.availableModels.count - 1 {
@@ -247,5 +250,18 @@ struct LocalProviderSettingsPage: View {
         } else if let first = localProviders.first {
             selectedProviderID = first.id
         }
+    }
+
+    /// 首次打开时跑一次可用性检测，让卡片上能看到真实状态。
+    /// 之前用的是全局 `LLMAvailabilityStore.shared`，从 model selector 那借数据；
+    /// 现在每个 view 持有自己的 state，靠 provider 自己的 5 分钟磁盘缓存去重。
+    private func triggerInitialCheck(for providers: [LumiLLMProviderInfo]) {
+        let items: [(info: LumiLLMProviderInfo, instance: any LumiLLMProvider)] =
+            providers.compactMap { info in
+                guard let instance = chatService.provider(forID: info.id) else { return nil }
+                return (info, instance)
+            }
+        guard !items.isEmpty else { return }
+        Task { await availability.checkAll(items) }
     }
 }

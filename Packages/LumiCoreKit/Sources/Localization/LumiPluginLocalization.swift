@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Runtime localization for Swift Package Manager plugin bundles.
 ///
@@ -7,7 +8,7 @@ import Foundation
 public enum LumiPluginLocalization {
     private static let missingMarker = "\u{FFFF}"
     private static let supportedLanguages = ["en", "zh-Hans", "zh-HK", "zh-TW", "zh-Hant"]
-    nonisolated(unsafe) private static var catalogCaches: [CatalogCacheKey: [String: [String: String]]] = [:]
+    private static let cacheLock = OSAllocatedUnfairLock(initialState: [CatalogCacheKey: [String: [String: String]]]())
 
     public static func string(
         _ key: String,
@@ -47,12 +48,14 @@ public enum LumiPluginLocalization {
 
     private static func catalog(for bundle: Bundle, table: String) -> [String: [String: String]] {
         let cacheKey = CatalogCacheKey(bundlePath: bundle.bundlePath, table: table)
-        if let cached = catalogCaches[cacheKey] {
+
+        // 快速路径：命中缓存则直接返回（OSAllocatedUnfairLock 读操作很快）
+        if let cached = cacheLock.withLock({ $0[cacheKey] }) {
             return cached
         }
 
         let loaded = loadCatalog(bundle: bundle, table: table)
-        catalogCaches[cacheKey] = loaded
+        cacheLock.withLock { $0[cacheKey] = loaded }
         return loaded
     }
 

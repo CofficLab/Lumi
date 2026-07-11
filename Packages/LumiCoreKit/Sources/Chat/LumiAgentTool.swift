@@ -191,6 +191,12 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
     /// 不再依赖历史上向参数注入 `__lumi_language` 的做法。
     public let language: LumiLanguagePreference
 
+    /// 当前对话的详细程度（可选）。
+    ///
+    /// 值为 `LumiResponseVerbosity.rawValue`（如 "v1"/"v2"/"v3"）。
+    /// 工具可以据此决定输出的详细程度。
+    public let verbosity: String?
+
     /// 工具执行过程中收集的图片附件（线程安全）。
     ///
     /// 工具在 `execute` 内可通过 `attachImage(_:)` 注册要回传给 LLM 的图片，
@@ -205,7 +211,8 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
         toolName: String,
         currentProjectPath: String? = nil,
         allowedDirectories: [String] = [],
-        language: LumiLanguagePreference = .english
+        language: LumiLanguagePreference = .english,
+        verbosity: String? = nil
     ) {
         self.conversationID = conversationID
         self.toolCallID = toolCallID
@@ -213,6 +220,7 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
         self.currentProjectPath = currentProjectPath
         self.allowedDirectories = allowedDirectories.map(Self.resolvePath)
         self.language = language
+        self.verbosity = verbosity
     }
 
     public func isPathAllowed(_ path: String) -> Bool {

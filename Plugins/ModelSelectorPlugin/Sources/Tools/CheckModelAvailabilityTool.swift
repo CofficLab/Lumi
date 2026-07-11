@@ -1,11 +1,15 @@
+
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 import os
 import SuperLogKit
 
-/// 检测指定供应商+模型可用性的工具
+/// 检测指定供应商+模型可用性的工具。
 ///
-/// 向目标模型发送一条轻量 ping 消息，验证其连通性并返回结果。
+/// 直接通过 `LumiLLMProvider.checkAvailability(model:)` 调用 provider 自身的检查逻辑。
+/// 之前依赖 `LLMAvailabilityRuntime.llmService`（一个全局单例，从来没被注入），
+/// 重构后改成从 `ChatService` 直接拿 provider 实例——更直白，没有"幽灵 runtime"。
 public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
@@ -19,10 +23,10 @@ public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
         )
     )
 
-    private let llmService: (any LLMAvailabilityLLMServicing)?
+    private let chatService: ChatService
 
-    public init(llmService: (any LLMAvailabilityLLMServicing)? = nil) {
-        self.llmService = llmService
+    public init(chatService: ChatService) {
+        self.chatService = chatService
     }
 
     public var inputSchema: LumiJSONValue {
@@ -50,62 +54,58 @@ public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
     @MainActor
     public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         guard let providerId = arguments["providerId"]?.stringValue, !providerId.isEmpty else {
-            if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 缺少必填参数 providerId")
-                }
-            }
             return "## ❌ 参数错误\n\n缺少必填参数 `providerId`，请提供供应商 ID。"
         }
 
         guard let modelId = arguments["modelId"]?.stringValue, !modelId.isEmpty else {
-            if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                    LLMAvailabilityChecker.logger.warning("\(self.t)⚠️ 缺少必填参数 modelId")
-                }
-            }
             return "## ❌ 参数错误\n\n缺少必填参数 `modelId`，请提供模型 ID。"
         }
 
         if Self.verbose {
-            if LLMAvailabilityChecker.verbose {
-                LLMAvailabilityChecker.logger.info("\(self.t)🔍 开始检测：\(providerId) / \(modelId)")
+            ModelSelectorPlugin.logger.info("\(self.t)开始检测：\(providerId) / \(modelId)")
+        }
+
+        guard let provider = chatService.provider(forID: providerId) else {
+            return """
+            ## ❌ 供应商未注册
+
+            - **供应商 ID**：`\(providerId)`
+            - **状态**：当前应用未注册该供应商插件
+
+            请检查供应商 ID 是否正确，或在设置中确认该插件已启用。
+            """
+        }
+
+        // 走协议层的 `checkAvailability(model:)`，由 provider 自己决定怎么检测
+        // （chatPing / apiKeyOnly / custom）。状态层和"runtime"都不参与。
+        let result = await provider.checkAvailability(model: modelId)
+
+        if Self.verbose {
+            switch result {
+            case .available:
+                ModelSelectorPlugin.logger.info("\(self.t)检测完成：\(providerId) / \(modelId) 可用")
+            case .unavailable(let failure):
+                ModelSelectorPlugin.logger.warning("\(self.t)检测完成：\(providerId) / \(modelId) 不可用 - \(failure.logSummary)")
             }
         }
 
-        guard let llmService else {
-            return "## ❌ 模型不可用\n\n当前运行时没有注入 LLM 服务，无法执行连通性检测。"
-        }
-
-        let checker = LLMAvailabilityChecker(llmService: llmService)
-        let result = await checker.checkModel(providerId: providerId, modelId: modelId)
-
-        if result.isAvailable {
-            if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                    LLMAvailabilityChecker.logger.info("\(self.t)✅ 检测完成：\(providerId) / \(modelId) 可用")
-                }
-            }
+        switch result {
+        case .available:
             return """
             ## ✅ 模型可用
 
-            - **供应商**：`\(result.providerId)`
-            - **模型**：`\(result.modelId)`
+            - **供应商**：`\(providerId)`
+            - **模型**：`\(modelId)`
             - **状态**：连通性检测通过，可以正常使用
             """
-        } else {
-            if Self.verbose {
-                if LLMAvailabilityChecker.verbose {
-                    LLMAvailabilityChecker.logger.warning("\(self.t)❌ 检测完成：\(providerId) / \(modelId) 不可用 - \(result.reason ?? "未知原因")")
-                }
-            }
+        case .unavailable(let failure):
             return """
             ## ❌ 模型不可用
 
-            - **供应商**：`\(result.providerId)`
-            - **模型**：`\(result.modelId)`
+            - **供应商**：`\(providerId)`
+            - **模型**：`\(modelId)`
             - **状态**：连通性检测未通过
-            - **原因**：\(result.reason ?? "未知")
+            - **原因**：\(failure.logSummary.isEmpty ? "未知" : failure.logSummary)
 
             ### 排查建议
 

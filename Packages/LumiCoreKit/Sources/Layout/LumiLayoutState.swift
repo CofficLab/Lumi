@@ -92,6 +92,11 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
     /// 注意：这是 pane 0（内容区）的高度，不是 pane 1（底部面板）的高度——它只是 NSSplitView 视角的"divider 在哪"。
     @Published private var bottomPanelDividers: [String: CGFloat] = [:]
 
+    /// 各视图容器的 panel column 宽度（= rail 所在 HSplitView 的 bounds.width = 整个左侧栏宽度）。
+    /// 由视图层（`SplitDividerPersistenceView`）在每次 didResize 时持续同步，
+    /// 仅用于"三栏宽度"日志中推算 middle = panelColumn - rail。不参与持久化、也不发通知。
+    private var panelColumnWidths: [String: CGFloat] = [:]
+
     /// 内置默认位置，作为未持久化时的回退值。
     private let defaultRailDivider: CGFloat
     private let defaultChatSectionDivider: CGFloat
@@ -146,6 +151,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         if Self.verbose {
             Self.logger.info("\(Self.t)railDivider[\(viewContainerID)] → \(clamped)")
         }
+        logThreeColumnWidths(for: viewContainerID)
         NotificationCenter.postRailDividerDidChange(containerID: viewContainerID, position: clamped)
     }
 
@@ -184,6 +190,7 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         if Self.verbose {
             Self.logger.info("\(Self.t)chatSectionDivider[\(viewContainerID).\(layout.persistenceKeySuffix)] → \(position)")
         }
+        logThreeColumnWidths(for: viewContainerID)
         NotificationCenter.postChatSectionDividerDidChange(
             containerID: viewContainerID,
             layout: layout.persistenceKeySuffix,
@@ -230,6 +237,63 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         layout: LumiChatSectionLayout
     ) -> String {
         "\(viewContainerID).\(layout.persistenceKeySuffix)"
+    }
+
+    // MARK: - Panel column 宽度（仅供"三栏宽度"日志使用，不参与持久化）
+
+    /// 同步指定视图容器的 panel column 宽度（= rail 所在 HSplitView 的 bounds.width）。
+    ///
+    /// 由视图层在 didResize 时调用，给"三栏宽度"日志提供 middle = panelColumn - rail 的推算依据。
+    /// 不发通知、不参与持久化；仅作日志快照。值 <= 0 时忽略。
+    public func setPanelColumnWidth(_ width: CGFloat, for viewContainerID: String) {
+        guard width > 0 else { return }
+        panelColumnWidths[viewContainerID] = width
+    }
+
+    /// 读取最近一次同步进来的 panel column 宽度，从未同步过则返回 nil。
+    public func panelColumnWidth(for viewContainerID: String) -> CGFloat? {
+        panelColumnWidths[viewContainerID]
+    }
+
+    // MARK: - 三栏宽度日志
+
+    /// 把"rail / middle / chat"三栏当前宽度打到日志。
+    ///
+    /// 调用时机：`setRailDivider` / `setChatSectionDivider` 在写完新值后。
+    /// - `rail` 直接读 `railDividers[viewContainerID]`。
+    /// - `middle` = `panelColumn - rail`，依赖视图层通过 `setPanelColumnWidth` 持续同步 panel column。
+    /// - `chatDivider` 列出该 viewContainerID 下所有已存储的 chat section divider（每个布局档位一份）。
+    ///   命名特意带 "Divider" 后缀——存的**是** A 的 divider 0 位置（即聊天区左边缘 x 坐标），
+    ///   **不是**聊天区宽度（宽度 = `A.bounds.width - divider`）。读日志时不要把这个值当宽度看。
+    ///   因为一个 view container 可能挂多个 chat section 档位（none / narrow / wide），
+    ///   没有"当前档位"概念，全部列出便于人工核对。
+    ///
+    /// 任一字段缺失时降级为 `n/a`，不全量跳过——保持日志稳定可 grep。
+    private func logThreeColumnWidths(for viewContainerID: String) {
+        let rail = railDividers[viewContainerID]
+        let panel = panelColumnWidths[viewContainerID]
+        let middle: CGFloat? = {
+            guard let rail, let panel else { return nil }
+            return max(0, panel - rail)
+        }()
+        let chatEntries = chatSectionDividers
+            .filter { $0.key.hasPrefix("\(viewContainerID).") }
+            .sorted { $0.key < $1.key }
+        let chatText: String
+        if chatEntries.isEmpty {
+            chatText = "n/a"
+        } else {
+            chatText = chatEntries.map { (k, v) -> String in
+                let suffix = k.replacingOccurrences(of: "\(viewContainerID).", with: "")
+                return "\(suffix)=\(String(format: "%.1f", v))"
+            }.joined(separator: ",")
+        }
+        let parts: [String] = [
+            rail.map { "rail=\(String(format: "%.1f", $0))" } ?? "rail=n/a",
+            middle.map { "middle=\(String(format: "%.1f", $0))" } ?? "middle=n/a",
+            "chatDivider=[\(chatText)]"
+        ]
+        Self.logger.info("\(Self.t)三栏宽度[\(viewContainerID)]: \(parts.joined(separator: ", "))")
     }
 
     // MARK: - LumiBottomPanelLayoutPresenting

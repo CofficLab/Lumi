@@ -8,7 +8,7 @@ import SwiftUI
 /// 用于 Model Selector 左侧栏的供应商列表。
 struct ProviderCard: View {
     @LumiTheme private var theme
-    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    @ObservedObject var availability: ModelAvailabilityState
 
     let provider: LumiLLMProviderInfo
     let isSelected: Bool
@@ -23,17 +23,13 @@ struct ProviderCard: View {
     }
 
     private var availableModelCount: Int {
-        provider.availableModels.filter { model in
-            let status = availabilityStore.status(providerId: provider.id, modelId: model)
-            return status == .available
-        }.count
+        availability.availableCount(for: provider)
     }
 
     private var isProviderAvailable: Bool {
         availableModelCount > 0
     }
 
-    /// 该供应商下所有模型在该供应商维度聚合的 dailyUsage。
     private var providerDailyUsage: [String: ModelDailyTokenSeries] {
         dailyUsage.filter { $0.value.providerID == provider.id }
     }
@@ -49,9 +45,7 @@ struct ProviderCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            // Header row: icon + name + active badge + count
             HStack(spacing: 8) {
-                // Icon with availability indicator
                 ZStack {
                     Circle()
                         .fill(theme.surface)
@@ -82,8 +76,6 @@ struct ProviderCard: View {
                 }
 
                 Spacer()
-
-
             }
             .padding(10)
             .background(cardBackground)

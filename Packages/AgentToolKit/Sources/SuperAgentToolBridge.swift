@@ -95,7 +95,8 @@ private extension SuperAgentToolBridge {
             toolCallId: context.toolCallID,
             toolName: context.toolName,
             currentProjectPath: context.currentProjectPath,
-            allowedDirectories: context.allowedDirectories
+            allowedDirectories: context.allowedDirectories,
+            verbosity: context.verbosity
         )
     }
 

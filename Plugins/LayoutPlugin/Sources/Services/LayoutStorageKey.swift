@@ -34,6 +34,9 @@ public enum LayoutStorageKey {
     /// 当前激活的视图容器 ID
     public static let activeViewContainerID = "activeViewContainerID"
 
+    /// 当前激活的视图容器图标（与 ID 分开存储）
+    public static let activeViewContainerIcon = "activeViewContainerIcon"
+
     /// 当前激活的侧边栏 Rail Tab ID
     public static let activeRailTabID = "selectedAgentSidebarTabId"
 

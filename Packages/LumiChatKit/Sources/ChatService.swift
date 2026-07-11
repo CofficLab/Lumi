@@ -711,26 +711,30 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                 }
 
                 if automationLevel(for: conversationID) == .build,
-                   let tool = toolService.tool(named: toolCall.name),
-                   let arguments = try? Self.decodeToolArguments(toolCall.arguments),
-                   tool.riskLevel(
-                       arguments: arguments,
-                       context: nil
-                   ).requiresPermission,
-                   !(await requestToolApproval(
-                       conversationID: conversationID,
-                       toolCall: toolCall,
-                       displayDescription: tool.displayDescription(
-                           arguments: arguments
-                       )
-                   )) {
-                    updateToolCallResult(
-                        LumiToolResult(content: "Tool execution was rejected by the user.", isError: true),
-                        toolCallID: toolCall.id,
-                        assistantMessageID: assistantMessage.id,
-                        conversationID: conversationID
-                    )
-                    continue
+                   let tool = toolService.tool(named: toolCall.name) {
+                    // 半截 JSON（流被截断等）时 decode 会抛错；用空字典兜底，
+                    // 让工具的 riskLevel 仍能对「无参数」状态做决策——
+                    // 不能因为参数解析失败就跳过审批门（否则高危工具会被静默执行）。
+                    let arguments = (try? Self.decodeToolArguments(toolCall.arguments)) ?? [:]
+                    if tool.riskLevel(
+                        arguments: arguments,
+                        context: nil
+                    ).requiresPermission,
+                       !(await requestToolApproval(
+                           conversationID: conversationID,
+                           toolCall: toolCall,
+                           displayDescription: tool.displayDescription(
+                               arguments: arguments
+                           )
+                       )) {
+                        updateToolCallResult(
+                            LumiToolResult(content: "Tool execution was rejected by the user.", isError: true),
+                            toolCallID: toolCall.id,
+                            assistantMessageID: assistantMessage.id,
+                            conversationID: conversationID
+                        )
+                        continue
+                    }
                 }
 
                 let start = Date()

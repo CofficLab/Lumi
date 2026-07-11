@@ -31,29 +31,3 @@ struct AvailabilityTransportDetailsPopoverContent: View {
         .fixedSize(horizontal: true, vertical: true)
     }
 }
-
-/// Compact status label with optional HTTP details popover for availability lists.
-struct AvailabilityFailureStatusLabel: View {
-    @LumiTheme private var theme
-
-    let failure: LumiLLMFailureDetail
-    @State private var isPresented = false
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(failure.availabilityDisplayText)
-                .font(.appCaption)
-                .foregroundColor(failure.reason == .unsupportedModel ? theme.textSecondary : .red)
-                .lineLimit(1)
-
-            if failure.hasTransportDiagnostics {
-                AvailabilityTransportDetailsTrigger {
-                    isPresented = true
-                }
-            }
-        }
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            AvailabilityTransportDetailsPopoverContent(failure: failure)
-        }
-    }
-}

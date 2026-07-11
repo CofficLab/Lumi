@@ -62,6 +62,10 @@ public final class StepFunProvider: OpenAICompatibleLumiProvider, SuperLog, @unc
         LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
+    override public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await AvailabilityService.checkAvailability(provider: self, model: model)
+    }
+
     public init() {
         super.init(
             configuration: LumiOpenAICompatibleProviderConfiguration(

@@ -41,6 +41,7 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(MiniMaxTokenPlanProvider.info.displayName.isEmpty == false)
         #expect(MiniMaxTokenPlanProvider.info.defaultModel == "MiniMax-M2.7")
         #expect(MiniMaxTokenPlanProvider.apiKeyHelpURL != nil)
+        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M3"))
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.7"))
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.7-highspeed"))
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.5"))
@@ -97,7 +98,7 @@ struct PluginLLMProviderMiniMaxTests {
 
     @Test func buildRequestUsesAnthropicCompatibleHeaders() {
         let provider = MiniMaxTokenPlanProvider()
-        let url = URL(string: "https://api.minimaxi.com/anthropic")!
+        let url = URL(string: "https://api.minimax.chat/anthropic/v1/messages")!
         let request = provider.buildRequest(url: url, apiKey: "minimax-test-key")
 
         #expect(request.value(forHTTPHeaderField: "x-api-key") == "minimax-test-key")

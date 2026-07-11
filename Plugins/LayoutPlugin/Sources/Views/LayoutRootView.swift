@@ -7,11 +7,12 @@ import Combine
 ///
 /// 挂载到 RootOverlay 上，负责：
 /// 1. 实例化时开始监听内核发出的布局变更事件
-/// 2. 视图 onAppear 时从磁盘恢复布局状态
+///
+/// 布局恢复由 `LayoutPlugin.lifecycle(.appDidLaunch)` 统一触发，
+/// 不在此处重复调用，避免双恢复点。
 struct LayoutRootView: View {
     let content: AnyView
     @StateObject private var listener: LayoutEventListener
-    @State private var hasRestored = false
 
     init(content: AnyView) {
         self.content = content
@@ -20,11 +21,6 @@ struct LayoutRootView: View {
 
     var body: some View {
         content
-            .onAppear {
-                guard !hasRestored else { return }
-                hasRestored = true
-                LayoutPersistenceCoordinator.shared.restore()
-            }
     }
 }
 

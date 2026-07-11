@@ -5,10 +5,12 @@ import SwiftUI
 public struct ToolCallRowMessageContext: Sendable {
     public let conversationId: UUID
     public let assistantMessageId: UUID
+    public let verbosityRawValue: String?
 
-    public init(conversationId: UUID, assistantMessageId: UUID) {
+    public init(conversationId: UUID, assistantMessageId: UUID, verbosityRawValue: String? = nil) {
         self.conversationId = conversationId
         self.assistantMessageId = assistantMessageId
+        self.verbosityRawValue = verbosityRawValue
     }
 }
 

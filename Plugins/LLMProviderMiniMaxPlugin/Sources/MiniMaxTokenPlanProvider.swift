@@ -26,6 +26,7 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
             description: LumiPluginLocalization.string("MiniMax Token Plan (Anthropic-compatible)", bundle: .module),
             defaultModel: "MiniMax-M2.7",
             availableModels: [
+                "MiniMax-M3",
                 "MiniMax-M2.7",
                 "MiniMax-M2.7-highspeed",
                 "MiniMax-M2.5",
@@ -33,6 +34,7 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
                 "MiniMax-Text-01"
             ],
             contextWindowSizes: [
+                "MiniMax-M3": 204_800,
                 "MiniMax-M2.7": 204_800,
                 "MiniMax-M2.7-highspeed": 204_800,
                 "MiniMax-M2.5": 204_800,
@@ -40,6 +42,7 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
                 "MiniMax-Text-01": 4_000_000
             ],
             modelCapabilities: [
+                "MiniMax-M3": .init(supportsVision: true, supportsTools: true),
                 "MiniMax-M2.7": .init(supportsVision: true, supportsTools: true),
                 "MiniMax-M2.7-highspeed": .init(supportsVision: true, supportsTools: true),
                 "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true),
@@ -55,7 +58,7 @@ public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @u
     public init() {
         super.init(
             configuration: LumiAnthropicCompatibleProviderConfiguration(
-                baseURL: "https://api.minimaxi.com/anthropic"
+                baseURL: "https://api.minimax.chat/anthropic/v1/messages"
             )
         )
     }

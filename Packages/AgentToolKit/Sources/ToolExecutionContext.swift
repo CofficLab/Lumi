@@ -18,6 +18,10 @@ public final class ToolExecutionContext: @unchecked Sendable {
     /// 工具执行时若路径不在此列表内，应提升风险等级
     public let allowedDirectories: [String]
 
+    /// 当前对话的详细程度（可选）
+    /// 工具可以根据此值决定输出的详细程度
+    public let verbosity: String?
+
     // MARK: - Path Sandbox
 
     /// 检查给定路径是否在允许的目录范围内。
@@ -53,13 +57,15 @@ public final class ToolExecutionContext: @unchecked Sendable {
         toolCallId: String,
         toolName: String,
         currentProjectPath: String? = nil,
-        allowedDirectories: [String] = []
+        allowedDirectories: [String] = [],
+        verbosity: String? = nil
     ) {
         self.conversationId = conversationId
         self.toolCallId = toolCallId
         self.toolName = toolName
         self.currentProjectPath = currentProjectPath
         self.allowedDirectories = allowedDirectories
+        self.verbosity = verbosity
     }
 
     public var isCancelled: Bool {

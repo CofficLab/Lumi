@@ -1,3 +1,4 @@
+
 import LumiChatKit
 import LumiCoreKit
 import os
@@ -50,10 +51,17 @@ public enum ModelSelectorPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        guard let chatService = context.resolve(LumiChatServicing.self) else {
+        // 工具要拿 `ChatService` 实例才能 `provider(forID:)`，所以这里强转。
+        // LumiCoreKit 里的 `LumiChatServicing` 协议还没暴露 provider 字典——
+        // 故意不暴露，避免其它子系统绕过 Provider 自己操作 Keychain。
+        guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
             return []
         }
-        return [SwitchModelTool(chatService: chatService)]
+        return [
+            SwitchModelTool(chatService: chatService),
+            CheckModelAvailabilityTool(chatService: chatService),
+            ListAvailableModelsTool(chatService: chatService),
+        ]
     }
 
     @MainActor

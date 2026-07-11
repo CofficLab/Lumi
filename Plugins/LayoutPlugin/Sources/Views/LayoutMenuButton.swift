@@ -32,15 +32,8 @@ public struct LayoutMenuButton: View {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: {
-                            let v = layoutState.chatSectionVisible
-                            print("📐 LayoutMenuButton: chatSectionVisible get → \(v), layoutState identity: \(ObjectIdentifier(layoutState))")
-                            return v
-                        },
-                        set: {
-                            print("📐 LayoutMenuButton: chatSectionVisible set → \($0)")
-                            layoutState.chatSectionVisible = $0
-                        }
+                        get: { layoutState.chatSectionVisible },
+                        set: { layoutState.chatSectionVisible = $0 }
                     ),
                     icon: "rectangle.rightthird.inset.filled",
                     title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)

@@ -1,4 +1,5 @@
 
+import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -6,7 +7,7 @@ import SwiftUI
 /// 供应商摘要卡片，显示在模型列表顶部，展示模型统计信息、刷新操作和状态消息
 struct ProviderSummaryCard: View {
     @LumiTheme private var theme
-    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+    @ObservedObject var availability: ModelAvailabilityState
 
     let provider: LumiLLMProviderInfo
     let isChecking: Bool
@@ -15,6 +16,14 @@ struct ProviderSummaryCard: View {
     let statusMessageColor: Color?
     var dailyUsage: [String: ModelDailyTokenSeries] = [:]
 
+    /// 用于内联配置 API Key 的供应商实例（可选）。
+    var providerInstance: (any LumiLLMProvider)? = nil
+    /// 保存 API Key 后触发的回调（用于可用性重检）。
+    var onAPIKeySaved: (() -> Void)? = nil
+
+    /// 用户主动触发的 "重配" 编辑状态。
+    @State private var isAPIKeyEditing: Bool = false
+
     // MARK: - Derived
 
     private var totalModelCount: Int {
@@ -22,10 +31,7 @@ struct ProviderSummaryCard: View {
     }
 
     private var availableModelCount: Int {
-        provider.availableModels.filter { model in
-            let status = availabilityStore.status(providerId: provider.id, modelId: model)
-            return status == .available
-        }.count
+        availability.availableCount(for: provider)
     }
 
     private var isProviderAvailable: Bool {
@@ -36,13 +42,28 @@ struct ProviderSummaryCard: View {
         totalModelCount - availableModelCount
     }
 
-    /// 该供应商下所有模型在该供应商维度聚合的 dailyUsage
     private var providerDailyUsage: [String: ModelDailyTokenSeries] {
         dailyUsage.filter { $0.value.providerID == provider.id }
     }
 
     private var hasDailyUsage: Bool {
         !providerDailyUsage.isEmpty && providerDailyUsage.values.contains { $0.hasData }
+    }
+
+    /// 当前是否处于「未配置 API Key」状态。
+    private var isMissingAPIKey: Bool {
+        guard let instance = providerInstance else { return false }
+        if provider.isLocal { return false }
+        return !instance.hasApiKey()
+    }
+
+    /// 当前是否处于「已配置 API Key，但模型检测失败」状态。
+    private var hasCheckedAndFailed: Bool {
+        guard let instance = providerInstance else { return false }
+        if provider.isLocal { return false }
+        guard instance.hasApiKey() else { return false }
+        guard let failure = availability.firstReconfigurableFailure(for: provider) else { return false }
+        return !failure.availabilityDisplayText.isEmpty
     }
 
     var body: some View {
@@ -74,7 +95,6 @@ struct ProviderSummaryCard: View {
 
                 // Refresh button and status badge
                 HStack(spacing: 12) {
-                    // Refresh Button
                     if isChecking {
                         ProgressView()
                             .scaleEffect(0.6)
@@ -90,13 +110,19 @@ struct ProviderSummaryCard: View {
                         .help("Re-check availability")
                     }
 
-                    // Status Badge (e.g., 7/9)
                     statusBadge
                 }
             }
 
-            // Optional status message (e.g., "API Key missing")
-            if let message = statusMessage, let color = statusMessageColor {
+            if isMissingAPIKey, let instance = providerInstance {
+                ProviderAPIKeyInputView(
+                    provider: provider,
+                    providerInstance: instance,
+                    onSaved: { onAPIKeySaved?() }
+                )
+            } else if hasCheckedAndFailed, let instance = providerInstance {
+                checkedFailedBlock(instance: instance)
+            } else if let message = statusMessage, let color = statusMessageColor {
                 Text(message)
                     .font(.system(size: 11))
                     .foregroundColor(color)
@@ -131,6 +157,64 @@ struct ProviderSummaryCard: View {
     }
 
     // MARK: - Components
+
+    @ViewBuilder
+    private func checkedFailedBlock(instance: any LumiLLMProvider) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.red)
+                    .padding(.top, 1)
+
+                Text(
+                    verbatim: availability.firstReconfigurableFailure(for: provider)?.availabilityDisplayText ?? ""
+                )
+                .font(.system(size: 11))
+                .foregroundColor(.red)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if !isAPIKeyEditing {
+                    Button {
+                        isAPIKeyEditing = true
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 10, weight: .medium))
+                            Text(
+                                verbatim: LumiPluginLocalization.string(
+                                    "Reconfigure",
+                                    bundle: .module
+                                )
+                            )
+                            .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(theme.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(
+                        LumiPluginLocalization.string(
+                            "Reconfigure API Key",
+                            bundle: .module
+                        )
+                    )
+                }
+            }
+
+            if isAPIKeyEditing {
+                ProviderAPIKeyInputView(
+                    provider: provider,
+                    providerInstance: instance,
+                    onSaved: {
+                        isAPIKeyEditing = false
+                        onAPIKeySaved?()
+                    },
+                    onCancel: { isAPIKeyEditing = false }
+                )
+            }
+        }
+    }
 
     @ViewBuilder
     private var statusBadge: some View {
