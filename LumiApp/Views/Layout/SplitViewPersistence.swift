@@ -189,6 +189,14 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     private var applyRetryCount = 0
     /// 正在调用 setPosition 应用初始位置。期间 will/did 一律跳过，避免被误认为“用户拖拽”。
     private var isApplyingInitialPosition = false
+    /// 首次成功 attach 后的额外 recheck 计数。
+    ///
+    /// 解决嵌套布局下 outer HSplitView 早于 inner HSplitView 出现的时序问题：
+    /// ghost 第一次 attach 时可能只有 outer 可用，挂错层后 viewDidMoveToWindow 不会再触发，
+    /// 只能靠 recheck 周期重新跑 `enclosingSplitView` 找到正确的 inner。
+    private var postAttachRecheckCount = 0
+    /// post-attach recheck 的最大次数。20 × 0.1s = 2s，覆盖 SwiftUI 嵌套视图构建的极端延迟。
+    private static let maxPostAttachRecheckCount = 20
 
     /// 上一次 didResize 观测到的稳定快照（整体尺寸 + divider 位置）。
     ///
@@ -225,6 +233,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         isApplyingInitialPosition = false
         lastObservedBoundsSize = nil
         lastObservedDividerPosition = nil
+        postAttachRecheckCount = 0
         if Self.verbose {
             Self.logger.info("\(self.t)config updated, role changed")
         }
@@ -251,6 +260,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             self.didResizeObserver = nil
         }
         observedSplitView = nil
+        postAttachRecheckCount = 0
     }
 
     // MARK: - 挂载
@@ -271,6 +281,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         }
         guard splitView !== observedSplitView else {
             applyInitialPositionIfPossible(in: splitView)
+            schedulePostAttachRecheck()
             return
         }
 
@@ -303,6 +314,25 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in self?.handleDidResize() }
+        }
+        schedulePostAttachRecheck()
+    }
+
+    /// 首次 attach 成功后继续 recheck 几次，应对 ghost attach 时嵌套 inner HSplitView
+    /// 还没创建的场景（外层先出现、内层后挂上去）。命中正确的层后即稳定。
+    private func schedulePostAttachRecheck() {
+        guard postAttachRecheckCount < Self.maxPostAttachRecheckCount else {
+            if Self.verbose {
+                Self.logger.info("\(self.t)post-attach recheck 上限 (\(Self.maxPostAttachRecheckCount)) 已达，停在当前 split view")
+            }
+            return
+        }
+        postAttachRecheckCount += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else { return }
+            // view 已从 window 摘下（dismantleNSView）就停
+            guard self.window != nil else { return }
+            self.attachIfPossible()
         }
     }
 
