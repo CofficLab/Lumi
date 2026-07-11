@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
-        .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
+        .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(url: "https://github.com/nookery/MagicDiffView", .branch("main")),

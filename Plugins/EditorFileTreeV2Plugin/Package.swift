@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(url: "https://github.com/nookery/Libgit2swift", .branch("main")),
+        .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
     ],
     targets: [
