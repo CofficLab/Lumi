@@ -84,6 +84,16 @@ enum SplitDividerRole {
             return false  // VSplitView：上下分栏，分隔线水平
         }
     }
+
+    /// 是否参与"rail / middle / chat"水平三栏宽度日志。
+    /// - `rail` / `chatSection`：是
+    /// - `bottomPanel`：否（影响的是垂直高度，不在三栏中）
+    var participatesInHorizontalThreeColumns: Bool {
+        switch self {
+        case .rail, .chatSection: return true
+        case .bottomPanel: return false
+        }
+    }
 }
 
 // MARK: - 视图包装
@@ -393,6 +403,16 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             return
         }
 
+        // 持续把 panel column 宽度同步给 layout state，供其"三栏宽度"日志推算 middle。
+        // 任何一次 didResize（窗口 resize / 拖 divider）都更新，保证下次日志拿到的是最新值。
+        // bottomPanel 不参与水平三栏，跳过。
+        if let id = currentViewContainerID, role.participatesInHorizontalThreeColumns {
+            let panelColumnWidth = computeCurrentPanelColumnWidth(in: splitView)
+            if panelColumnWidth > 0 {
+                layoutState.setPanelColumnWidth(panelColumnWidth, for: id)
+            }
+        }
+
         let currentBounds = splitView.bounds.size
         let currentPosition = dividerPosition(at: 0, in: splitView)
 
@@ -523,6 +543,31 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
 
     private func area(_ rect: NSRect) -> CGFloat {
         max(0, rect.width) * max(0, rect.height)
+    }
+
+    /// 提取当前 role 关联的视图容器 ID，用于把 panel column 宽度同步给 layout state。
+    private var currentViewContainerID: String? {
+        switch role {
+        case .rail(let id), .bottomPanel(let id), .chatSection(let id, _):
+            return id
+        }
+    }
+
+    /// 计算当前 split view 视角下的 panel column 宽度（= rail 所在 HSplitView 的总宽度）。
+    ///
+    /// - `rail` ghost 挂在 panel column 内部的 HSplitView（B）上 → `B.bounds.width` 就是 panel column。
+    /// - `chatSection` ghost 挂在 panel | chat 的外层 HSplitView（A）上 → `A.arrangedSubviews[0]` 是 panel column。
+    /// - `bottomPanel` 调到这里时上层 caller 应当已经过滤掉（`participatesInHorizontalThreeColumns == false`），返回 0 兜底。
+    private func computeCurrentPanelColumnWidth(in splitView: NSSplitView) -> CGFloat {
+        switch role {
+        case .rail:
+            return splitView.bounds.width
+        case .chatSection:
+            guard let firstPane = splitView.arrangedSubviews.first else { return 0 }
+            return firstPane.frame.width
+        case .bottomPanel:
+            return 0
+        }
     }
 
     /// 调试用：把 superview 链打印成 “view1 <- view2 <- view3” 形式。
