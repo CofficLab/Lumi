@@ -26,7 +26,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
 
     /// 订阅 `LogoRegistry.$bestItem`：插件贡献的 Logo 就绪后，
     /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
-    private var logoRegistryCancellable: AnyCancellable?
+    nonisolated(unsafe) private var logoRegistryCancellable: AnyCancellable?
 
     init(pluginService: PluginService) {
         if Self.verbose {
