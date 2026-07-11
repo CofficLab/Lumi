@@ -208,6 +208,71 @@ import Testing
         #expect(state.chatSectionDivider(for: "main", layout: .wide) == 360)
         #expect(state.bottomPanelDivider(for: "main") == 420)
     }
+
+    // MARK: - Panel column 宽度（仅供"三栏宽度"日志使用）
+
+    @MainActor
+    @Test func setPanelColumnWidthStoresAndReadsBack() {
+        let state = LumiLayoutState()
+        #expect(state.panelColumnWidth(for: "LumiEditor") == nil)
+        state.setPanelColumnWidth(800, for: "LumiEditor")
+        #expect(state.panelColumnWidth(for: "LumiEditor") == 800)
+    }
+
+    @MainActor
+    @Test func setPanelColumnWidthIgnoresNonPositiveValues() {
+        let state = LumiLayoutState()
+        state.setPanelColumnWidth(800, for: "LumiEditor")
+        state.setPanelColumnWidth(0, for: "LumiEditor")
+        state.setPanelColumnWidth(-10, for: "LumiEditor")
+        // 0 和负值不应覆盖已有有效值
+        #expect(state.panelColumnWidth(for: "LumiEditor") == 800)
+    }
+
+    @MainActor
+    @Test func setPanelColumnWidthIsolatesByViewContainerID() {
+        let state = LumiLayoutState()
+        state.setPanelColumnWidth(800, for: "LumiEditor")
+        state.setPanelColumnWidth(1200, for: "LumiAgent")
+        #expect(state.panelColumnWidth(for: "LumiEditor") == 800)
+        #expect(state.panelColumnWidth(for: "LumiAgent") == 1200)
+        #expect(state.panelColumnWidth(for: "missing") == nil)
+    }
+
+    @MainActor
+    @Test func setRailDividerCanDeriveMiddleFromPanelColumnWidth() {
+        let state = LumiLayoutState()
+        // 模拟视图层同步 panel column 宽度
+        state.setPanelColumnWidth(800, for: "LumiEditor")
+        state.setRailDivider(240, for: "LumiEditor")
+        // 推算 middle = panelColumn - rail = 800 - 240 = 560
+        #expect(state.railDivider(for: "LumiEditor") == 240)
+        #expect((state.panelColumnWidth(for: "LumiEditor") ?? 0) - state.railDivider(for: "LumiEditor") == 560)
+    }
+
+    @MainActor
+    @Test func setPanelColumnWidthDoesNotPostNotification() async {
+        let state = LumiLayoutState()
+        let counter = CounterBox()
+        // 监听所有 divider 通知，确保 setPanelColumnWidth 不会发出任何通知
+        let tokens: [NSObjectProtocol] = [
+            .railDividerDidChange,
+            .chatSectionDividerDidChange,
+            .bottomPanelDividerDidChange
+        ].map { name in
+            NotificationCenter.default.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { _ in counter.increment() }
+        }
+        defer { tokens.forEach { NotificationCenter.default.removeObserver($0) } }
+
+        state.setPanelColumnWidth(800, for: "LumiEditor")
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        #expect(counter.count == 0)
+    }
 }
 
 /// 线程安全的事件收集器，供测试在主队列回调中按顺序记录通知负载。
