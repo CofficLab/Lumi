@@ -21,11 +21,7 @@ import SwiftUI
 @MainActor
 public final class ModelAvailabilityState: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🛰"
-    public nonisolated static let verbose: Bool = true
-    public nonisolated static let logger = os.Logger(
-        subsystem: "com.coffic.lumi",
-        category: "plugin.model-selector.availability-state"
-    )
+    public nonisolated static let verbose: Bool = false
 
     /// providerID → modelID → 检查状态
     @Published public private(set) var states: [String: [String: ModelCheckState]] = [:]
@@ -97,7 +93,9 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("🛰 开始检查 \(provider.displayName) (\(provider.id))，共 \(provider.availableModels.count) 个模型")
+            ModelSelectorPlugin.logger.info(
+                "\(self.t)开始检查 \(provider.displayName) (\(provider.id))，共 \(provider.availableModels.count) 个模型"
+            )
         }
 
         // 串行调用，避免一次性把所有 provider 同时打爆上游。
@@ -111,7 +109,9 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
 
         let available = availableCount(for: provider)
         if Self.verbose {
-            Self.logger.info("🛰 检查完成 \(provider.displayName): \(available) / \(provider.availableModels.count) 可用")
+            ModelSelectorPlugin.logger.info(
+                "\(self.t)检查完成 \(provider.displayName): \(available) / \(provider.availableModels.count) 可用"
+            )
         }
     }
 

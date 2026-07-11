@@ -13,10 +13,6 @@ import SuperLogKit
 public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
-    public nonisolated static let logger = os.Logger(
-        subsystem: "com.coffic.lumi",
-        category: "plugin.model-selector.check-availability"
-    )
 
     public static let info = LumiAgentToolInfo(
         id: "check_model_availability",
@@ -66,7 +62,7 @@ public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("🔍 开始检测：\(providerId) / \(modelId)")
+            ModelSelectorPlugin.logger.info("\(self.t)开始检测：\(providerId) / \(modelId)")
         }
 
         guard let provider = chatService.provider(forID: providerId) else {
@@ -87,9 +83,9 @@ public struct CheckModelAvailabilityTool: LumiAgentTool, SuperLog {
         if Self.verbose {
             switch result {
             case .available:
-                Self.logger.info("✅ 检测完成：\(providerId) / \(modelId) 可用")
+                ModelSelectorPlugin.logger.info("\(self.t)检测完成：\(providerId) / \(modelId) 可用")
             case .unavailable(let failure):
-                Self.logger.warning("❌ 检测完成：\(providerId) / \(modelId) 不可用 - \(failure.logSummary)")
+                ModelSelectorPlugin.logger.warning("\(self.t)检测完成：\(providerId) / \(modelId) 不可用 - \(failure.logSummary)")
             }
         }
 

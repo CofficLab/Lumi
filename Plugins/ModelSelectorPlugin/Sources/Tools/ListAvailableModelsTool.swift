@@ -2,8 +2,8 @@
 import Foundation
 import LumiChatKit
 import LumiCoreKit
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// 列出可用 LLM 模型工具。
 ///
@@ -15,10 +15,6 @@ import os
 public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🤖"
     public nonisolated static let verbose: Bool = true
-    public nonisolated static let logger = os.Logger(
-        subsystem: "com.coffic.lumi",
-        category: "plugin.model-selector.list-available-models"
-    )
 
     public static let info = LumiAgentToolInfo(
         id: "list_available_models",
@@ -41,10 +37,10 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
             "properties": .object([
                 "providerId": .object([
                     "type": .string("string"),
-                    "description": .string("Optional, filter by provider ID (e.g., OpenAI, Anthropic)")
-                ])
+                    "description": .string("Optional, filter by provider ID (e.g., OpenAI, Anthropic)"),
+                ]),
             ]),
-            "required": .array([])
+            "required": .array([]),
         ])
     }
 
@@ -60,28 +56,28 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
 
         if Self.verbose {
             if let filter = providerFilter {
-                Self.logger.info("📋 查询可用模型，过滤供应商: \(filter)")
+                ModelSelectorPlugin.logger.info("\(self.t)查询可用模型，过滤供应商: \(filter)")
             } else {
-                Self.logger.info("📋 查询所有可用模型")
+                ModelSelectorPlugin.logger.info("\(self.t)查询所有可用模型")
             }
         }
 
         // ── 情况 1：没有任何注册的供应商 ──
         if allProviders.isEmpty {
             if Self.verbose {
-                Self.logger.warning("⚠️ 未注册任何 LLM 供应商")
+                ModelSelectorPlugin.logger.warning("\(self.t)未注册任何 LLM 供应商")
             }
             return """
-                ## ⚠️ 未注册任何 LLM 供应商
+            ## ⚠️ 未注册任何 LLM 供应商
 
-                当前应用未注册任何 LLM 供应商插件，无法使用 AI 功能。
+            当前应用未注册任何 LLM 供应商插件，无法使用 AI 功能。
 
-                可能的原因：
-                1. LLM 供应商插件未启用（请在设置中检查插件状态）
-                2. 应用尚未完成初始化
+            可能的原因：
+            1. LLM 供应商插件未启用（请在设置中检查插件状态）
+            2. 应用尚未完成初始化
 
-                请检查插件设置，确保至少启用了一个 LLM 供应商插件。
-                """
+            请检查插件设置，确保至少启用了一个 LLM 供应商插件。
+            """
         }
 
         // 按供应商过滤
@@ -93,16 +89,16 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
         if providers.isEmpty, let filter = providerFilter {
             let registeredIds = allProviders.map(\.id)
             if Self.verbose {
-                Self.logger.warning("⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
+                ModelSelectorPlugin.logger.warning("\(self.t)未找到供应商: \(filter)，已注册: \(registeredIds)")
             }
             return """
-                ## ❌ 未找到供应商：\(filter)
+            ## ❌ 未找到供应商：\(filter)
 
-                当前已注册的供应商：
-                \(registeredIds.map { "- `\($0)`" }.joined(separator: "\n"))
+            当前已注册的供应商：
+            \(registeredIds.map { "- `\($0)`" }.joined(separator: "\n"))
 
-                请检查供应商 ID 是否正确。
-                """
+            请检查供应商 ID 是否正确。
+            """
         }
 
         // ── 真实检测：每个 provider 调一次 checkAvailability ──
@@ -123,7 +119,7 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
                 switch result {
                 case .available:
                     providerPairs.append((model, true, nil))
-                case .unavailable(let failure):
+                case let .unavailable(failure):
                     let reason = failure.logSummary.isEmpty ? "未知原因" : failure.logSummary
                     providerPairs.append((model, false, reason))
                 }
@@ -162,27 +158,27 @@ public struct ListAvailableModelsTool: LumiAgentTool, SuperLog {
             }
 
             if Self.verbose {
-                Self.logger.warning("⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
+                ModelSelectorPlugin.logger.warning("\(self.t)有 \(allProviders.count) 个注册供应商，但无可用模型")
             }
 
             return """
-                ## ⚠️ 注册了 \(allProviders.count) 个 LLM 供应商，但没有可用模型
+            ## ⚠️ 注册了 \(allProviders.count) 个 LLM 供应商，但没有可用模型
 
-                已注册供应商：
-                \(providerSummaries.joined(separator: "\n"))
+            已注册供应商：
+            \(providerSummaries.joined(separator: "\n"))
 
-                可能的原因：
-                1. API Key 未配置（请在设置中为对应供应商填写 API Key）
-                2. API Key 已过期或无效
-                3. 网络连接异常，可用性检测未通过
+            可能的原因：
+            1. API Key 未配置（请在设置中为对应供应商填写 API Key）
+            2. API Key 已过期或无效
+            3. 网络连接异常，可用性检测未通过
 
-                请在设置中检查各供应商的 API Key 配置。
-                """
+            请在设置中检查各供应商的 API Key 配置。
+            """
         }
 
         // ── 情况 4：正常返回可用模型 ──
         if Self.verbose {
-            Self.logger.info("✅ 返回 \(totalAvailablePairs) 个可用模型对")
+            ModelSelectorPlugin.logger.info("\(self.t)返回 \(totalAvailablePairs) 个可用模型对")
         }
 
         return """
