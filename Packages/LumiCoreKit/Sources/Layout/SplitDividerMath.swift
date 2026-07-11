@@ -29,7 +29,7 @@ public struct DividerClamp: Equatable {
 ///
 /// 对应视图层 `handleDidResize` 中“本次 didResize 是什么”的状态机分支。
 /// 纯函数化后可在无 AppKit 环境下覆盖每一条分支与边界。
-public enum DividerDragClassification: Equatable {
+public enum DividerDragClassification: Equatable, CustomStringConvertible {
     /// 首次观测到稳定状态，只记录基线，不做任何判断（没有“上一次”可比）。
     case firstBaseline
     /// 整体尺寸变了 → 用户在缩放窗口/外层，不是拖 divider → 跳过。
@@ -40,6 +40,16 @@ public enum DividerDragClassification: Equatable {
     case suppressed
     /// 尺寸不变 + divider 位置真的变了 → 用户在拖 divider → 持久化。
     case dragConfirmed(position: CGFloat)
+
+    public var description: String {
+        switch self {
+        case .firstBaseline: return "firstBaseline"
+        case .windowResize: return "windowResize"
+        case .jitter: return "jitter"
+        case .suppressed: return "suppressed"
+        case .dragConfirmed(let position): return "dragConfirmed(\(position))"
+        }
+    }
 }
 
 /// 判定一次 didResize 属于哪一类事件。

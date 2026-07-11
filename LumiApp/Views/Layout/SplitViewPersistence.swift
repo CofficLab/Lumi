@@ -251,9 +251,9 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         observedSplitView = splitView
         hasAppliedInitialPosition = false
         applyRetryCount = 0
+        let splitID = ObjectIdentifier(splitView).hashValue
         if Self.verbose {
-            let id = ObjectIdentifier(splitView).hashValue
-            Self.logger.info("\(self.t)attached to split view, isVertical=\(splitView.isVertical), frame=\(splitView.frame.width)x\(splitView.frame.height), id=\(id)")
+            Self.logger.info("\(self.t)attached to split view, isVertical=\(splitView.isVertical), frame=\(splitView.frame.width)x\(splitView.frame.height), id=\(splitID)")
         }
         applyInitialPositionIfPossible(in: splitView)
 
