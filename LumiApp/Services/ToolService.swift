@@ -77,12 +77,18 @@ final class ToolService: LumiToolServicing, SuperLog {
             Self.logger.info("\(Self.t)执行工具: \(toolCall.name)")
         }
 
+        // 获取当前会话的详细程度
+        let verbosity = (LumiCore.chatService as? ChatService)?
+            .verbosity(for: conversationID)
+            .rawValue
+        
         let startedAt = Date()
         let context = LumiToolExecutionContext(
             conversationID: conversationID,
             toolCallID: toolCall.id,
             toolName: toolCall.name,
-            currentProjectPath: LumiCore.projectState?.currentProject?.path
+            currentProjectPath: LumiCore.projectState?.currentProject?.path,
+            verbosity: verbosity
         )
 
         do {
