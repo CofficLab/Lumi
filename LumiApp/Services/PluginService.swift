@@ -287,6 +287,13 @@ final class PluginService: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)设置插件 \(pluginId) -> \(enabled)")
         }
 
+        // 如果从启用变为禁用，先触发 willDisable 生命周期
+        if previousState && !enabled {
+            Task {
+                await plugin.lifecycle(.willDisable)
+            }
+        }
+
         enabledOverrides[pluginId] = enabled
         pluginEnabledStates[pluginId] = enabled
         settingsStore.saveEnabledOverrides(enabledOverrides)
