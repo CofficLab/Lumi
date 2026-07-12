@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.15.1</title>
-            <pubDate>Sat, 11 Jul 2026 17:18:42 +0000</pubDate>
-            <sparkle:version>244</sparkle:version>
-            <sparkle:shortVersionString>4.15.1</sparkle:shortVersionString>
+            <title>4.16.0</title>
+            <pubDate>Sun, 12 Jul 2026 16:46:18 +0000</pubDate>
+            <sparkle:version>245</sparkle:version>
+            <sparkle:shortVersionString>4.16.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.15.1</h2>
-<h3>Changes since v4.15.0</h3>
+            <description><![CDATA[<h2>Release v4.16.0</h2>
+<h3>Changes since v4.15.1</h3>
 <ul>
-<li>docs(sub-agent): finalize protocol-level sub-agent architecture design</li>
-<li>feat(ask-user): pass verbosity context through ToolCallRowMessageContext</li>
-<li>feat(ask-user): render AskUser messages based on VerbosityPlugin level</li>
-<li>feat(layout): log rail/middle/chat column widths on divider change</li>
-<li>feat(layout): tidy LayoutPlugin local store, storage keys, and root/menu views</li>
-<li>feat(lumiapp): sync panel column width to layout state on resize</li>
-<li>feat(plugin): fire didRegister and appDidLaunch lifecycle events for alwaysOn plugins</li>
-<li>fix: add missing LumiChatKit import in ToolService</li>
-<li>fix: resolve non-Sendable property access in MenuBarService deinit</li>
-<li>fix(chat): do not skip tool-approval gate on truncated JSON arguments</li>
-<li>fix(chat): resume tool-approval continuation on cancel to prevent deadlock</li>
-<li>fix(core-kit): protect localization catalog cache with OSAllocatedUnfairLock</li>
-<li>fix(git): add repository validation before libgit2 operations to prevent EXC_BREAKPOINT crash</li>
-<li>fix(layout): drop idealWidth on ChatSectionView to stop divider rollback</li>
-<li>fix(llm-provider): fix MiniMax API endpoint and add MiniMax-M3 model</li>
-<li>fix(llm-provider): replace fatalError in base classes with safe defaults for checkAvailability and providerStatus</li>
-<li>fix(lumiapp): disambiguate chatSection split view by picking outermost</li>
-<li>fix(lumiapp): post-attach recheck to handle nested split view creation order</li>
-<li>fix(menu-bar): subscribe to LogoRegistry. to show logo after plugin contributions ready</li>
-<li>i18n:  translate or localize content</li>
+<li>feat: implement tag-based tool filtering for sub-agents</li>
+<li>feat(activity-heatmap): add token usage line chart</li>
+<li>feat(agent-loop): recover from inline tool calls written to body text</li>
+<li>feat(conversation-fork): continue a stuck chat in a new conversation</li>
+<li>feat(core): add GitAccessCoordinator for libgit2 serialization</li>
+<li>feat(core): add LogoRegistry singleton and SubAgent plugin API</li>
+<li>feat(editor): add EditorNavigationContextMenuPlugin</li>
+<li>feat(plugins): add ConversationRecoveryPlugin and update i18n files</li>
+<li>fix: correct LumiToolTag naming in BugFixerAgent</li>
+<li>fix: resolve GitAsyncBridge crash and cross-plugin libgit2 race condition</li>
+<li>fix: show checking state instead of unavailable on model selector open</li>
+<li>fix(file-tree): serialize libgit2 calls via GitAccessCoordinator</li>
+<li>fix(i18n): AgentRAGPlugin localization cleanup</li>
+<li>fix(keychain): retry transient keychain failures instead of treating them as missing API keys</li>
+<li>fix(layout): restore persisted view container before first frame</li>
+<li>fix(logo): ensure plugin logo displays in settings window</li>
+<li>fix(logo): unify LogoRegistry singleton instance</li>
+<li>fix(plugin): invoke willDisable lifecycle when plugin is disabled</li>
+<li>fix(stepfun): remove codeIntelligence tag from SubAgent tool filters</li>
+<li>fix(SuperLogKit): use pthread API for safe QoS detection on Swift Concurrency threads</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.15.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.15.1/Lumi_4.15.1_x86_64.dmg" length="55560405" type="application/octet-stream" sparkle:edSignature="p12FAS/Ei8ZvA3Peuwn7TAk8+pZHK/wxnfD/J3d19TrUj/UsvRySDwQeJPeCv8mrgKoiggv3FqkA7kfJNUnQDA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.16.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.16.0/Lumi_4.16.0_x86_64.dmg" length="53340615" type="application/octet-stream" sparkle:edSignature="wAK50Bm9rlP7yJynIyfFueYDDhwR1rVXHV6CMjdMJcuMPkmqNclg5TRPJjgHXKCwYRYsF8CkyhjYNxBOwssBAw=="/>
         </item>
     </channel>
 </rss>
