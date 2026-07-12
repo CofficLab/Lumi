@@ -227,6 +227,22 @@ final class RootContainer: ObservableObject, SuperLog {
         toolService.registerTools(pluginService.agentTools(context: context))
         // 注册 built-in tools
         toolService.registerBuiltInTools(ChatService.builtInTools)
+        // 注册子 Agent delegate 工具（主 LLM 看到的是 delegate_<id>)
+        let subAgentDefinitions = pluginService.subAgents(context: context)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)子Agent定义数量: \(subAgentDefinitions.count)")
+            for definition in subAgentDefinitions {
+                Self.logger.info("\(Self.t)  - \(definition.id) (provider: \(definition.providerID), model: \(definition.modelID))")
+            }
+        }
+        let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
+            SubAgentDelegateTool(
+                definition: definition,
+                chatService: chatService,
+                toolService: toolService
+            )
+        }
+        toolService.appendTools(subAgentTools)
 
         let providers = pluginService.llmProviders(context: context)
         chatService.registerProviders(providers)
@@ -241,7 +257,7 @@ final class RootContainer: ObservableObject, SuperLog {
         )
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider")
+            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider, \(subAgentDefinitions.count) 个 SubAgent")
         }
     }
 }

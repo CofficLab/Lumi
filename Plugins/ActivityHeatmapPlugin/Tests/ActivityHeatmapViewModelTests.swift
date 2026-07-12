@@ -124,6 +124,59 @@ struct ActivityHeatmapViewModelTests {
         let day = ActivityDay(date: date, level: 2)
         #expect(day.id == date)
     }
+
+    // MARK: - buildTokenData (pure, nonisolated)
+
+    @Test("buildTokenData yields correct count and tokens for each day")
+    func tokenDataBasic() {
+        let cal = Calendar.current
+        let oldest = cal.startOfDay(for: Date())
+        let d0 = oldest
+        let d1 = cal.date(byAdding: .day, value: 1, to: oldest)!
+        let d2 = cal.date(byAdding: .day, value: 2, to: oldest)!
+
+        let tokenCounts: [Date: Int] = [d0: 100, d1: 500, d2: 0]
+
+        let result = ActivityHeatmapViewModel.buildTokenData(
+            tokenCounts: tokenCounts,
+            oldestDay: oldest,
+            days: 3
+        )
+
+        #expect(result.count == 3)
+        #expect(result[0].totalTokens == 100)
+        #expect(result[1].totalTokens == 500)
+        #expect(result[2].totalTokens == 0)
+    }
+
+    @Test("buildTokenData missing days default to 0 tokens")
+    func tokenDataMissingDays() {
+        let cal = Calendar.current
+        let oldest = cal.startOfDay(for: Date())
+        // Only provide token count for one day out of 5.
+        let d2 = cal.date(byAdding: .day, value: 2, to: oldest)!
+        let tokenCounts: [Date: Int] = [d2: 300]
+
+        let result = ActivityHeatmapViewModel.buildTokenData(
+            tokenCounts: tokenCounts,
+            oldestDay: oldest,
+            days: 5
+        )
+
+        #expect(result.count == 5)
+        #expect(result[0].totalTokens == 0)
+        #expect(result[1].totalTokens == 0)
+        #expect(result[2].totalTokens == 300)
+        #expect(result[3].totalTokens == 0)
+        #expect(result[4].totalTokens == 0)
+    }
+
+    @Test("ActivityDayToken uses its date as stable identity")
+    func activityDayTokenIdentity() {
+        let date = Calendar.current.startOfDay(for: Date())
+        let token = ActivityDayToken(date: date, totalTokens: 1000)
+        #expect(token.id == date)
+    }
 }
 
 @Suite("ActivityHeatmapViewModel load()", .serialized)
@@ -136,6 +189,7 @@ struct ActivityHeatmapViewModelLoadTests {
         await vm.load()
         #expect(vm.hasLoaded)
         #expect(vm.heatmapData.isEmpty)
+        #expect(vm.tokenData.isEmpty)
         #expect(vm.isLoading == false)
     }
 
@@ -150,5 +204,6 @@ struct ActivityHeatmapViewModelLoadTests {
         vm.period = .days90
         await vm.load()
         #expect(vm.heatmapData.isEmpty)
+        #expect(vm.tokenData.isEmpty)
     }
 }

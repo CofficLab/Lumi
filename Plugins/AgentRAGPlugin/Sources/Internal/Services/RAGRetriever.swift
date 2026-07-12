@@ -4,7 +4,7 @@ import os
 
 public struct RAGRetriever: SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.retriever")
 
     private let store: any RAGStore
@@ -103,9 +103,13 @@ public struct RAGRetriever: SuperLog {
         // 性能预警阈值：>3s 升级为 error 级（语义检索明显异常，可能 sqlite-vec 未启用或候选过多），
         // 200ms-3s 维持 warning（轻度偏慢），便于在日志里区分严重程度。
         if totalDuration > 3000 {
-            Self.logger.error("\(Self.t)🚨 retrieve 耗时严重过长：\(String(format: "%.2f", totalDuration))ms (>3000ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)🚨 retrieve 耗时严重过长：\(String(format: "%.2f", totalDuration))ms (>3000ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            }
         } else if totalDuration > 200 {
-            Self.logger.warning("\(Self.t)⚠️ retrieve 耗时偏长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)⚠️ retrieve 耗时偏长：\(String(format: "%.2f", totalDuration))ms (>200ms) [ANN=\(String(format: "%.0f", annDuration))ms, scoring=\(String(format: "%.0f", scoringDuration))ms, candidates=\(candidates.count)]")
+            }
         }
 
         let results = top.map {

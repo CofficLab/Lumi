@@ -19,7 +19,7 @@ import SuperLogKit
 @MainActor
 public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting, SuperLog {
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
     // MARK: - 当前激活视图容器

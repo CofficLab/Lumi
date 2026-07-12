@@ -20,6 +20,12 @@ final class MockHistoryQueryService: HistoryQueryService {
     /// Captures every `since` argument the service was queried with.
     private(set) var dailyMessageCountsRequests: [Date] = []
 
+    /// Day (local-midnight `Date`) → token count, returned verbatim by
+    /// `fetchDailyTokenCounts(since:)`.
+    var dailyTokenCounts: [Date: Int] = [:]
+    /// Captures every `since` argument the token query was queried with.
+    private(set) var dailyTokenCountsRequests: [Date] = []
+
     func fetchMessageCount() async -> Int {
         messageCount
     }
@@ -47,5 +53,10 @@ final class MockHistoryQueryService: HistoryQueryService {
     func fetchDailyMessageCounts(since: Date) async -> [Date: Int] {
         dailyMessageCountsRequests.append(since)
         return dailyMessageCounts
+    }
+
+    func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
+        dailyTokenCountsRequests.append(since)
+        return dailyTokenCounts
     }
 }

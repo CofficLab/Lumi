@@ -10,7 +10,7 @@ import os
 final class PluginService: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose = true  // 临时开启用于调试子Agent注册
+    nonisolated static let verbose = false
 
     let registeredPlugins: [any LumiPlugin.Type]
     @Published private(set) var enabledOverrides: [String: Bool]
@@ -341,10 +341,7 @@ final class PluginService: ObservableObject, SuperLog {
     /// Should be called after plugins are loaded and enabled.
     @MainActor
     func registerPluginContributions(context: LumiPluginContext) {
-        Self.logger.info("📝[PluginService.registerPluginContributions] registeredPlugins=\(self.registeredPlugins.count), enabledPlugins=\(self.enabledPlugins.count)")
-        
         let logoPlugins = enabledPlugins.filter { !$0.logoItems(context: context).isEmpty }
-        Self.logger.info("📝[PluginService.registerPluginContributions] 贡献 Logo 的插件: \(logoPlugins.map { $0.info.displayName })")
         
         registerLogoContributions(context: context)
     }

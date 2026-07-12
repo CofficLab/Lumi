@@ -28,4 +28,16 @@ extension ChatService: HistoryQueryService {
             ChatStore.dailyMessageCounts(container: container, since: since)
         }.value
     }
+
+    /// Runs the actual read **off the main actor**: the `Sendable` container is
+    /// captured into a detached task that builds a throwaway `ModelContext` and
+    /// joins message timestamps with metric token counts to produce per-day
+    /// token sums. The caller awaits from the main actor but the work never
+    /// blocks the UI. See `HistoryQueryService`.
+    public func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
+        let container = backgroundQueryContainer
+        return await Task.detached(priority: .userInitiated) {
+            ChatStore.dailyTokenCounts(container: container, since: since)
+        }.value
+    }
 }

@@ -53,6 +53,25 @@ struct ActivityHeatmapSettingsView: View {
                         }
                 }
             }
+
+            // Token usage line chart card
+            AppCard {
+                if viewModel.hasLoaded && viewModel.tokenData.isEmpty && !viewModel.isLoading {
+                    tokenEmptyState
+                } else if viewModel.tokenData.isEmpty {
+                    tokenLoadingView
+                } else {
+                    TokenLineChartView(data: viewModel.tokenData)
+                        .padding(16)
+                        .overlay(alignment: .topTrailing) {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(8)
+                            }
+                        }
+                }
+            }
         }
         .onChange(of: period) { _, newValue in
             // Explicit single load on range change (no VM didSet trigger).
@@ -66,6 +85,8 @@ struct ActivityHeatmapSettingsView: View {
             await viewModel.load()
         }
     }
+
+    // MARK: - Loading / Empty States
 
     private var loadingView: some View {
         VStack(spacing: 12) {
@@ -89,7 +110,32 @@ struct ActivityHeatmapSettingsView: View {
         }
         .padding(32)
     }
+
+    private var tokenLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text(LumiPluginLocalization.string("Loading token data…", bundle: .module))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
+    }
+
+    private var tokenEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+            Text(LumiPluginLocalization.string("No token data available yet.", bundle: .module))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(32)
+    }
 }
+
+// MARK: - Preview
 
 #Preview {
     ActivityHeatmapSettingsView(historyService: nil)

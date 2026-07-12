@@ -21,17 +21,13 @@ enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable {
     }
 }
 
-/// View model that fetches per-day message counts and builds a daily heatmap.
+/// View model that fetches per-day message counts and builds a daily heatmap,
+/// plus per-day token counts for a line chart.
 ///
 /// Performance notes:
-/// - The data fetch (`fetchDailyMessageCounts(since:)`) runs **off the main
-///   actor** (it is a `nonisolated` requirement on `HistoryQueryService`), so
-///   switching the time range never blocks the UI.
-/// - Previously this view loaded *every* message row (paginated, with full
-///   previews / thinking / token lookups done on the main actor) and only moved
-///   the final aggregation off-thread. Now the whole pipeline is O(days) of CPU
-///   on the main thread plus a single windowed, timestamp-only query in the
-///   background.
+/// - Both data fetches run **off the main actor** via `nonisolated` requirements
+///   on `HistoryQueryService`, so switching the time range never blocks the UI.
+/// - Sequential fetch avoids concurrent access issues with the shared service reference.
 /// - `loadGeneration` cancels stale loads: rapidly switching the period won't
 ///   let an older, slower response overwrite a newer one.
 @MainActor
@@ -44,6 +40,7 @@ final class ActivityHeatmapViewModel {
     // MARK: - State
 
     private(set) var heatmapData: [ActivityDay] = []
+    private(set) var tokenData: [ActivityDayToken] = []
     private(set) var isLoading = false
     private(set) var hasLoaded = false
     /// The selected period. The owning view drives reloads explicitly
@@ -82,16 +79,22 @@ final class ActivityHeatmapViewModel {
         // First day of the window (inclusive). Guarded by `days > 0`.
         guard days > 0,
               let oldestDay = cal.date(byAdding: .day, value: -(days - 1), to: today) else {
-            if isCurrent(generation) { heatmapData = [] }
+            if isCurrent(generation) {
+                heatmapData = []
+                tokenData = []
+            }
             return
         }
 
-        // Off-main-actor fetch: a single windowed, timestamp-only query.
+        // Off-main-actor sequential fetch: message counts then token counts.
+        // Avoids concurrent access issues with the shared service reference.
         let counts = await service.fetchDailyMessageCounts(since: oldestDay)
+        let tokenCounts = await service.fetchDailyTokenCounts(since: oldestDay)
         guard isCurrent(generation) else { return }
 
         // Cheap O(days) shaping on the main thread.
         heatmapData = Self.buildHeatmapData(counts: counts, oldestDay: oldestDay, days: days)
+        tokenData = Self.buildTokenData(tokenCounts: tokenCounts, oldestDay: oldestDay, days: days)
     }
 
     private func isCurrent(_ generation: Int) -> Bool {
@@ -127,6 +130,28 @@ final class ActivityHeatmapViewModel {
             let count = counts[date] ?? 0
             let level = min(4, Int(Double(count) / Double(maxCount) * 4.99))
             return ActivityDay(date: date, level: level)
+        }
+    }
+
+    // MARK: - Token data shaping
+
+    /// Builds the calendar of `days` days (`oldestDay` → today) with per-day
+    /// token totals for the line chart.
+    /// `nonisolated static` so it can be unit-tested without the main actor.
+    nonisolated static func buildTokenData(
+        tokenCounts: [Date: Int],
+        oldestDay: Date,
+        days: Int
+    ) -> [ActivityDayToken] {
+        let cal = Calendar.current
+        guard days > 0 else { return [] }
+
+        let calendarDays = (0..<days).compactMap {
+            cal.date(byAdding: .day, value: $0, to: oldestDay)
+        }
+
+        return calendarDays.map { date in
+            ActivityDayToken(date: date, totalTokens: tokenCounts[date] ?? 0)
         }
     }
 }

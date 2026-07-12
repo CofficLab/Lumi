@@ -443,6 +443,28 @@ struct ChatStore {
         return counts
     }
 
+    nonisolated static func dailyTokenCounts(
+        container: ModelContainer,
+        since: Date
+    ) -> [Date: Int] {
+        let bgCtx = ModelContext(container)
+        let cal = Calendar.current
+        let msgPred = #Predicate<ChatMessageEntity> { $0.timestamp >= since }
+        let msgDesc = FetchDescriptor<ChatMessageEntity>(predicate: msgPred)
+        guard let msgs = try? bgCtx.fetch(msgDesc) else { return [:] }
+        let tsByID = Dictionary(uniqueKeysWithValues: msgs.map { ($0.id, $0.timestamp) })
+        guard let metrics = try? bgCtx.fetch(FetchDescriptor<MessageMetricsEntity>()) else { return [:] }
+        var result: [Date: Int] = [:]
+        for m in metrics {
+            guard let total = m.totalTokens,
+                  let ts = tsByID[m.messageId],
+                  ts >= since else { continue }
+            let day = cal.startOfDay(for: ts)
+            result[day, default: 0] += total
+        }
+        return result
+    }
+
     func historyMessagePage(limit: Int, offset: Int) -> [HistoryMessageRow] {
         let safeLimit = max(limit, 1)
         let safeOffset = max(offset, 0)
