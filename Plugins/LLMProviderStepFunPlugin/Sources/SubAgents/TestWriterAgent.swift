@@ -46,7 +46,7 @@ enum TestWriterAgent {
 
             Write tests that are maintainable, readable, and provide confidence in the code.
             """,
-        requiredTags: [.fileSystem, .codeIntelligence, .git, .readOnly],
+        requiredTags: [.fileSystem, .git, .readOnly],
         excludedTags: [.destructive, .network, .sideEffect],
         excludedToolNames: ["git_commit", "git_push", "shell"],
         maxTurns: 12,

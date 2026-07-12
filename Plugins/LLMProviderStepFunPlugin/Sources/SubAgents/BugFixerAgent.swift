@@ -51,7 +51,7 @@ enum BugFixerAgent {
 
             Be methodical and thorough in your analysis.
             """,
-        requiredTags: [.fileSystem, .codeIntelligence, .git, .shell],
+        requiredTags: [.fileSystem, .git, .shell],
         excludedTags: [.network, .sideEffect],
         excludedToolNames: ["git_push"],
         maxTurns: 15,

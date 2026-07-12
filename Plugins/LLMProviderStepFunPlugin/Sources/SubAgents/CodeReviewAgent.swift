@@ -39,7 +39,7 @@ enum CodeReviewAgent {
 
             Be constructive and helpful. Explain the reasoning behind your suggestions.
             """,
-        requiredTags: [.codeIntelligence, .fileSystem, .git, .readOnly],
+        requiredTags: [.fileSystem, .git, .readOnly],
         excludedTags: [.destructive, .network, .sideEffect],
         excludedToolNames: ["git_commit", "git_push"],
         maxTurns: 10,

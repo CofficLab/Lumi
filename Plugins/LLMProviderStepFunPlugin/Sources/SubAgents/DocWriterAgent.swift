@@ -46,7 +46,7 @@ enum DocWriterAgent {
 
             Create documentation that is helpful for other developers to understand and use the code effectively.
             """,
-        requiredTags: [.fileSystem, .codeIntelligence, .git, .readOnly],
+        requiredTags: [.fileSystem, .git, .readOnly],
         excludedTags: [.destructive, .network, .sideEffect],
         excludedToolNames: ["git_commit", "git_push", "shell"],
         maxTurns: 10,
