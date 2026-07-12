@@ -33,6 +33,8 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     func selectProvider(id: String, model: String?)
     func selectProvider(id: String, model: String?, for conversationID: UUID?)
     func providerID(for conversationID: UUID?) -> String?
+    /// 根据 provider id 获取运行时实例（用于子 Agent 动态解析）。
+    func provider(forID id: String) -> (any LumiLLMProvider)?
     func modelName(for conversationID: UUID?) -> String?
     func setRoutingMode(_ mode: LumiModelRoutingMode)
     func language(for conversationID: UUID?) -> LumiConversationLanguage

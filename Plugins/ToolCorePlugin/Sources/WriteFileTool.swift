@@ -7,6 +7,7 @@ public struct WriteFileTool: LumiAgentTool {
         displayName: LumiPluginLocalization.string("Write File", bundle: .module),
         description: LumiPluginLocalization.string("Write UTF-8 text content to a file.", bundle: .module)
     )
+    public static let tags: Set<LumiToolTag> = [.fileSystem, .destructive]
 
     public init() {}
 

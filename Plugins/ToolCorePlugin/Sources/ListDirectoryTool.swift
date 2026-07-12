@@ -7,6 +7,7 @@ public struct ListDirectoryTool: LumiAgentTool {
         displayName: LumiPluginLocalization.string("List Directory", bundle: .module),
         description: LumiPluginLocalization.string("List files and directories at a given path. Useful for exploring the project structure.", bundle: .module)
     )
+    public static let tags: Set<LumiToolTag> = [.fileSystem, .readOnly, .fast]
 
     private let maxItems = 500
 

@@ -12,6 +12,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         displayName: "Git Branch",
         description: "List, create, or switch Git branches. Defaults to listing local branches when no action is specified."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .destructive]
 
     public init() {}
 

@@ -8,6 +8,7 @@ public struct ShellTool: LumiAgentTool {
         displayName: LumiPluginLocalization.string("Run Command", bundle: .module),
         description: LumiPluginLocalization.string("Execute a shell command in the terminal.", bundle: .module)
     )
+    public static let tags: Set<LumiToolTag> = [.shell, .destructive, .sideEffect]
 
     private static let highRiskCommands: Set<String> = [
         "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"

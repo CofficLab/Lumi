@@ -12,6 +12,7 @@ public struct GitStatusTool: LumiAgentTool, SuperLog {
         displayName: "Git Status",
         description: "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly, .fast]
 
     public init() {}
 

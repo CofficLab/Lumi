@@ -12,6 +12,7 @@ public struct GitShowTool: LumiAgentTool, SuperLog {
         displayName: "Git Show",
         description: "View detailed information of a specific commit, including author, date, changed files and stats."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly]
 
     public init() {}
 

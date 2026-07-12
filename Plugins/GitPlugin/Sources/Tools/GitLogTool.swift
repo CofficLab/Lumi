@@ -12,6 +12,7 @@ public struct GitLogTool: LumiAgentTool, SuperLog {
         displayName: "Git Log",
         description: "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly, .fast]
 
     public init() {}
 

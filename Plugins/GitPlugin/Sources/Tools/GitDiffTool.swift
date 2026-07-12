@@ -12,6 +12,7 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
         displayName: "Git Diff",
         description: "View code changes in a Git repository. Supports working tree changes and staged changes."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly, .fast]
 
     public init() {}
 
