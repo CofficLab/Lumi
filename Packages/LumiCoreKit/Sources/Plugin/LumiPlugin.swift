@@ -29,6 +29,9 @@ public protocol LumiPlugin {
     static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool]
 
     @MainActor
+    static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
+
+    @MainActor
     static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware]
 
     @MainActor
@@ -100,6 +103,7 @@ public enum LumiPluginLifecycle {
     case appDidLaunch     // 应用启动
     case projectDidOpen(path: String)  // 项目打开时
     case projectDidClose  // 项目关闭时
+    case willDisable      // 插件即将被禁用时
 }
 
 public extension LumiPlugin {
@@ -147,6 +151,11 @@ public extension LumiPlugin {
 
     @MainActor
     static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        []
+    }
+
+    @MainActor
+    static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
         []
     }
 

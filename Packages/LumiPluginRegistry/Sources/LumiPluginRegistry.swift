@@ -22,6 +22,7 @@ import CodeReviewPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationNewPlugin
+import ConversationForkPlugin
 import ConversationTimelinePlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
@@ -148,6 +149,19 @@ public enum LumiPluginRegistry {
         }
     }
 
+    /// 在 app 启动早期、首帧渲染之前同步触发布局状态恢复。
+    ///
+    /// 背景：原本 `LayoutPlugin.lifecycle(.appDidLaunch)`（通过 `PluginService.init` 的异步 Task 触发）
+    /// 会晚于 `AppLayoutView.onAppear` 执行，导致 `onAppear` 的默认选择先把 `containers[0]` 写入
+    /// `activeViewContainerID` 并落盘，覆盖了磁盘里的持久化值。此入口让 restore 提前到
+    /// `RootContainer.init` 同步阶段完成，确保首帧渲染前布局状态已是持久化值。
+    ///
+    /// restore 幂等：后续 `.appDidLaunch` 的二次调用为 no-op（普通属性 didSet 去重、divider 走无副作用的 restoreXxx）。
+    @MainActor
+    public static func restoreLayoutEarly() {
+        LayoutPlugin.lifecycle(.appDidLaunch)
+    }
+
     /// 触发项目打开生命周期事件
     public static func projectDidOpen(path: String) async {
         for plugin in plugins {
@@ -260,6 +274,7 @@ public enum LumiPluginRegistry {
         VerbosityPlugin.self,
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
+        ConversationForkPlugin.self,
 
         // MARK: - Editor Plugins
 

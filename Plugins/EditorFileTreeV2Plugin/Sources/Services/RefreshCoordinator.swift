@@ -3,6 +3,7 @@ import SuperLogKit
 import os
 import FileTreeKit
 import LibGit2Swift
+import LumiCoreKit
 
 /// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
 private final class WeakBox<T: AnyObject>: @unchecked Sendable {
@@ -137,7 +138,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             updateWatcher()
 
             // 检测是否为 Git 仓库并启动首次 Git 状态刷新
-            isGitRepo = EditorFileTreeV2Plugin.gitStatusEnabled && LibGit2.isGitRepository(at: path)
+            isGitRepo = EditorFileTreeV2Plugin.gitStatusEnabled && GitAccessCoordinator.performSync { LibGit2.isGitRepository(at: path) }
             if isGitRepo {
                 refreshGitStatus()
             }

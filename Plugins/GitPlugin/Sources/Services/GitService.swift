@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import LibGit2Swift
+import LumiCoreKit
 import os
 import SwiftUI
 
@@ -20,14 +21,9 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public nonisolated static let emoji = "🌿"
     public static let shared = GitService()
 
-    /// 串行队列，保护所有 LibGit2 操作不被并发执行。
-    /// libgit2 的 git_repository / git_index 等对象不是线程安全的，
-    /// 必须串行化所有调用。
-    private let gitQueue = DispatchQueue(label: "com.lumi.gitservice.libgit2", qos: .userInitiated)
-
     private init() {}
 
-    /// 在 gitQueue 上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
+    /// 在共享的 libgit2 串行队列上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
     ///
     /// 在调用 body 之前先验证路径是否为有效 Git 仓库，
     /// 避免 libgit2 C 层在无效仓库上触发 abort() 导致 EXC_BREAKPOINT 崩溃。
@@ -35,7 +31,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
         repoPath: String,
         body: @escaping @Sendable () throws -> T
     ) async throws -> T {
-        try await GitAsyncBridge.perform(on: gitQueue) {
+        try await GitAsyncBridge.perform(on: GitAccessCoordinator.queue) {
             guard LibGit2.isGitRepository(at: repoPath) else {
                 throw GitServiceError.repositoryNotGit(path: repoPath)
             }
@@ -212,7 +208,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 获取 commit 的变更文件列表（含精确变更类型）
     public func getCommitChangedFiles(path: String?, hash: String) throws -> [GitChangedFile] {
         let repoPath = Self.resolvePath(path)
-        return try gitQueue.sync {
+        return try GitAccessCoordinator.queue.sync {
             let diffFiles = try LibGit2.getCommitDiffFiles(atCommit: hash, at: repoPath)
             return diffFiles.map { file in
                 GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
@@ -266,7 +262,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Is Git Repository
 
     public func isGitRepository(at path: String) -> Bool {
-        gitQueue.sync {
+        GitAccessCoordinator.queue.sync {
             LibGit2.isGitRepository(at: path)
         }
     }
@@ -277,7 +273,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
     public func getUnpushedCommitHashes(path: String?) -> [String] {
         let repoPath = Self.resolvePath(path)
-        return gitQueue.sync {
+        return GitAccessCoordinator.queue.sync {
             do {
                 let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false)
                 return unpushedCommits.map { $0.hash }

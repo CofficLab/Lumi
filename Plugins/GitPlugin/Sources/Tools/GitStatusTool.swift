@@ -5,13 +5,14 @@ import SuperLogKit
 /// Git 状态工具
 public struct GitStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let info = LumiAgentToolInfo(
         id: "git_status",
         displayName: "Git Status",
         description: "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly, .fast]
 
     public init() {}
 

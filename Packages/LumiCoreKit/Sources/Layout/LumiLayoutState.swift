@@ -19,7 +19,7 @@ import SuperLogKit
 @MainActor
 public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting, SuperLog {
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
     // MARK: - 当前激活视图容器
@@ -81,6 +81,23 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         }
     }
     @Published private(set) public var bottomPanelFocusGeneration = 0
+
+    // MARK: - 恢复状态
+
+    /// 布局状态是否已完成从磁盘恢复。
+    ///
+    /// 启动早期由 `LayoutPersistenceCoordinator.restore()` 标记为 true（在 `RootContainer.init`
+    /// 同步阶段调用一次）。在此之前，UI 层的默认选择逻辑（`selectDefaultContainerIfNeeded`）
+    /// 应跳过写入 `activeViewContainerID`，避免首帧默认值覆盖即将恢复的持久化值。
+    ///
+    /// 默认 false：若极端情况下 restore 未走到 `markLayoutRestored()`，UI 会回退到
+    /// `selectedContainer` 的 `containers.first` 分支，仍可用，只是不恢复历史选择。
+    @Published public private(set) var isLayoutRestored: Bool = false
+
+    /// 标记布局恢复完成。由持久化协调器在 `restore()` 结束时调用一次。
+    public func markLayoutRestored() {
+        isLayoutRestored = true
+    }
 
     // MARK: - 分栏 divider 位置状态
 

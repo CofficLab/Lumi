@@ -117,6 +117,12 @@ final class PluginService: ObservableObject, SuperLog {
         }
     }
 
+    func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
+        enabledPlugins.flatMap { plugin in
+            plugin.subAgents(context: context)
+        }
+    }
+
     func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         enabledPlugins.flatMap { plugin in
             plugin.sendMiddlewares(context: context)
@@ -287,6 +293,13 @@ final class PluginService: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)设置插件 \(pluginId) -> \(enabled)")
         }
 
+        // 如果从启用变为禁用，先触发 willDisable 生命周期
+        if previousState && !enabled {
+            Task {
+                await plugin.lifecycle(.willDisable)
+            }
+        }
+
         enabledOverrides[pluginId] = enabled
         pluginEnabledStates[pluginId] = enabled
         settingsStore.saveEnabledOverrides(enabledOverrides)
@@ -328,10 +341,8 @@ final class PluginService: ObservableObject, SuperLog {
     /// Should be called after plugins are loaded and enabled.
     @MainActor
     func registerPluginContributions(context: LumiPluginContext) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)注册插件贡献")
-        }
-
+        let logoPlugins = enabledPlugins.filter { !$0.logoItems(context: context).isEmpty }
+        
         registerLogoContributions(context: context)
     }
 

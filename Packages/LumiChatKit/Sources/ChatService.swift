@@ -1,6 +1,7 @@
 import Foundation
 import LumiCoreKit
 import ModelRouterKit
+import SwiftData
 
 @MainActor
 public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
@@ -30,6 +31,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
     weak var toolService: (any LumiToolServicing)?
     let store: ChatStore
+    /// `Sendable` container captured at init for background, off-main-actor
+    /// history queries (see `fetchDailyMessageCounts(since:)`). Safe to share
+    /// across actors; per-call contexts are built on demand from it.
+    nonisolated internal let backgroundQueryContainer: ModelContainer
     let statusState = ConversationStatusState()
     var activeTasksByConversationID: [UUID: Task<Void, Never>] = [:]
     var sendingConversationIDs: Set<UUID> = []
@@ -42,6 +47,11 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     /// 不含首次调用，即总共最多调用 LLM `1 + emptyResponseMaxRetries` 次。
     let emptyResponseMaxRetries = 2
 
+    /// 正文内联工具调用（inline tool call）最大重试次数。
+    /// 模型把工具调用写进正文而非结构化 `toolCalls` 时，追加纠正消息后重试。
+    /// 不含首次调用，即总共最多调用 LLM `1 + inlineToolCallMaxRetries` 次。
+    let inlineToolCallMaxRetries = 1
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!
@@ -52,7 +62,9 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     // MARK: - Init
 
     public init(configuration: Configuration) {
-        self.store = ChatStore(configuration: configuration)
+        let store = ChatStore(configuration: configuration)
+        self.store = store
+        self.backgroundQueryContainer = store.sharedContainer
         let snapshot = store.load()
         self.conversations = snapshot.conversations
         self.messagesByConversationID = MessageManager.messagesByMergingToolResults(snapshot.messagesByConversationID)
@@ -554,6 +566,51 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         }
     }
 
+    // MARK: - Inline Tool Call Handling
+
+    /// 生成正文内联工具调用重试时注入给 LLM 的纠正消息。
+    ///
+    /// 以 `.system` 角色临时追加在消息列表末尾（不 append、不持久化），
+    /// 告诉模型上一次把工具调用写进了正文，应改用结构化 `tool_use` 接口输出。
+    static func inlineToolCallNudgeMessage(
+        conversationID: UUID,
+        language: LumiConversationLanguage
+    ) -> LumiChatMessage {
+        let content: String
+        switch language {
+        case .chinese:
+            content = "注意：你的上一次回复把工具调用以文本形式写进了正文，" +
+                "而非使用结构化的工具调用接口。这是错误的。" +
+                "请重新生成回复，通过工具调用接口（tool_use）发起工具调用，" +
+                "不要在正文中输出 <tool_call>、<function_calls>、JSON 工具调用块等格式。"
+        case .english:
+            content = "Note: Your previous response wrote tool calls as text in the body " +
+                "instead of using the structured tool-call interface. That is incorrect. " +
+                "Please regenerate your response and invoke tools via the tool_use interface; " +
+                "do not emit <tool_call>, <function_calls>, JSON tool-call blocks, etc. in the body."
+        }
+
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .system,
+            content: content,
+            metadata: ["lumi-nudge": "inline-tool-call-retry"]
+        )
+    }
+
+    /// 正文内联工具调用重试耗尽后展示给用户的 fallback 提示文案。
+    static func inlineToolCallFallbackMessage(language: LumiConversationLanguage) -> String {
+        switch language {
+        case .chinese:
+            return "抱歉，模型多次将工具调用写入正文而非结构化格式，未能正常执行。" +
+                "你可以尝试重新发送消息重试。"
+        case .english:
+            return "Sorry, the model repeatedly wrote tool calls into the response body " +
+                "instead of the structured format, so they could not be executed. " +
+                "Please try resending your message."
+        }
+    }
+
     /// 调用 LLM 生成 assistant 消息，遇到空响应时自动重试。
     ///
     /// - 首次调用使用原始 `baseMessages`。
@@ -616,6 +673,64 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         return finalMessage
     }
 
+    /// 检测到正文内联工具调用时，追加纠正消息后重试。
+    ///
+    /// 调用方应先通过 `makeAssistantMessageWithEmptyRetry` 拿到首条消息，
+    /// 若该消息 `hasInlineToolCallInBody`，再传入本方法从纠正重试开始——
+    /// 避免对同一条已判定为内联的消息重复请求。
+    ///
+    /// - 首次迭代复用传入的 `firstMessage`（不再请求 LLM）。
+    /// - 若仍含内联工具调用，注入纠正 nudge 后重调，最多重试 `inlineToolCallMaxRetries` 次。
+    /// - 重试过程中的消息**不** append、**不**持久化，避免污染对话历史。
+    /// - 重试耗尽后返回最后一条仍含内联工具调用的消息，由调用方决定 fallback 策略。
+    func makeAssistantMessageWithInlineToolCallRetry(
+        conversationID: UUID,
+        baseMessages: [LumiChatMessage],
+        firstMessage: LumiChatMessage,
+        imageAttachments: [LumiImageAttachment]
+    ) async throws -> LumiChatMessage {
+        // 首条消息不含内联工具调用 → 无需重试，直接返回。
+        guard firstMessage.hasInlineToolCallInBody else {
+            return firstMessage
+        }
+
+        let maxRetries = inlineToolCallMaxRetries
+        let conversationLanguage = language(for: conversationID)
+        var lastMessage = firstMessage
+
+        for attempt in 1 ... maxRetries {
+            try Task.checkCancellation()
+
+            // 注入纠正 nudge，追加在消息列表末尾
+            let messagesToSend = baseMessages + [
+                Self.inlineToolCallNudgeMessage(
+                    conversationID: conversationID,
+                    language: conversationLanguage
+                )
+            ]
+            statusState.setStatus(
+                conversationID: conversationID,
+                content: "检测到模型将工具调用写入正文，正在重试（\(attempt)/\(maxRetries)）..."
+            )
+            incrementRevision()
+
+            let message = try await makeAssistantMessage(
+                conversationID: conversationID,
+                messages: messagesToSend,
+                imageAttachments: imageAttachments
+            )
+            lastMessage = message
+
+            // 不再含内联工具调用，直接返回
+            if !message.hasInlineToolCallInBody {
+                return message
+            }
+        }
+
+        // 重试耗尽，返回最后一条仍含内联工具调用的消息（调用方处理 fallback）
+        return lastMessage
+    }
+
     // MARK: - Agent Loop Execution
 
     /// Executes the agent turn loop: send to LLM → evaluate checks → execute tools → repeat.
@@ -634,7 +749,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
             let preparedContext = await prepareSendContext(expandedMessages, conversationID: conversationID)
             let baseMessages = messagesWithConversationPreferences(preparedContext)
 
-            let assistantMessage = try await makeAssistantMessageWithEmptyRetry(
+            var assistantMessage = try await makeAssistantMessageWithEmptyRetry(
                 conversationID: conversationID,
                 baseMessages: baseMessages,
                 imageAttachments: imageAttachments
@@ -653,6 +768,31 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                 statusState.clearStatus(conversationID: conversationID)
                 incrementRevision()
                 return .failed
+            }
+
+            // 模型把工具调用写进了正文（而非结构化 toolCalls）→ 追加纠正消息后重试一次。
+            // 重试中的 nudge 不 append、不持久化；耗尽则注入用户可见 fallback，turn 以 failed 结束。
+            if assistantMessage.hasInlineToolCallInBody {
+                assistantMessage = try await makeAssistantMessageWithInlineToolCallRetry(
+                    conversationID: conversationID,
+                    baseMessages: baseMessages,
+                    firstMessage: assistantMessage,
+                    imageAttachments: imageAttachments
+                )
+
+                if assistantMessage.hasInlineToolCallInBody {
+                    let fallback = LumiChatMessage(
+                        conversationID: conversationID,
+                        role: .error,
+                        content: Self.inlineToolCallFallbackMessage(language: language(for: conversationID)),
+                        isError: true,
+                        metadata: ["lumi-inline-tool-call": "true"]
+                    )
+                    append(fallback)
+                    statusState.clearStatus(conversationID: conversationID)
+                    incrementRevision()
+                    return .failed
+                }
             }
 
             append(assistantMessage)

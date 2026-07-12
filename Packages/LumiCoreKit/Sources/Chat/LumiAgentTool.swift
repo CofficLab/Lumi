@@ -335,6 +335,11 @@ public final class LumiToolExecutionContext: @unchecked Sendable {
 public protocol LumiAgentTool: Sendable {
     static var info: LumiAgentToolInfo { get }
 
+    /// 此工具的特征标签。一个工具可声明多个标签（叠加语义）。
+    /// 子 Agent 通过 requiredTags / excludedTags 按标签过滤。
+    /// 默认值 []：工具必须显式声明才能被按标签过滤找到。
+    var tags: Set<LumiToolTag> { get }
+
     var name: String { get }
     var toolDescription: String { get }
     var inputSchema: LumiJSONValue { get }
@@ -352,6 +357,9 @@ public extension LumiAgentTool {
     var toolDescription: String {
         Self.info.description
     }
+
+    /// 默认无标签——工具必须显式声明 tags 才能被按标签过滤找到。
+    var tags: Set<LumiToolTag> { [] }
 
     func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
         .low
@@ -371,7 +379,6 @@ public protocol LumiToolServicing: AnyObject {
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
 }
 
-// MARK: - 工具参数便捷访问
 
 /// 从工具调用参数中按类型安全地提取值。
 ///
@@ -439,4 +446,3 @@ public extension [String: LumiJSONValue] {
         return values.compactMap(\.stringValue)
     }
 }
-

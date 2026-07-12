@@ -22,6 +22,7 @@ public struct BrowserAgentTool: LumiAgentTool, SuperLog {
             bundle: .module
         )
     )
+    public static let tags: Set<LumiToolTag> = [.network, .sideEffect]
 
     public init() {}
 

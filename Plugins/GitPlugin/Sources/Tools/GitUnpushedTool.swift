@@ -12,6 +12,7 @@ public struct GitUnpushedTool: LumiAgentTool, SuperLog {
         displayName: "Git Unpushed",
         description: "Check how many local commits have not been pushed to the remote repository."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .readOnly, .fast]
 
     public init() {}
 

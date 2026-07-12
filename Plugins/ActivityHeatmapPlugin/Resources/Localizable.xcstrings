@@ -69,6 +69,9 @@
         }
       }
     },
+    "Date" : {
+
+    },
     "Last 30 days" : {
       "localizations" : {
         "en" : {
@@ -374,6 +377,9 @@
           }
         }
       }
+    },
+    "Tokens" : {
+
     }
   },
   "version" : "1.1"

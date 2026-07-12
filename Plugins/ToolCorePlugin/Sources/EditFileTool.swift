@@ -8,6 +8,7 @@ public struct EditFileTool: LumiAgentTool {
         displayName: LumiPluginLocalization.string("Edit File", bundle: .module),
         description: LumiPluginLocalization.string("Perform exact string replacements in a file.", bundle: .module)
     )
+    public static let tags: Set<LumiToolTag> = [.fileSystem, .destructive]
 
     private let editor = WorkspaceFileEditor()
 

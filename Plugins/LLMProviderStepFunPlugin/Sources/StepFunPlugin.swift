@@ -30,4 +30,15 @@ public enum StepFunPlugin: LumiPlugin {
             RequestFailedRenderer.item,
         ]
     }
+
+    @MainActor
+    public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
+        [
+            GitCommitWriterAgent.definition,
+            CodeReviewAgent.definition,
+            TestWriterAgent.definition,
+            DocWriterAgent.definition,
+            BugFixerAgent.definition,
+        ]
+    }
 }

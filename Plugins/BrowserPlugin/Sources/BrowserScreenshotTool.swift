@@ -23,6 +23,7 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
             bundle: .module
         )
     )
+    public static let tags: Set<LumiToolTag> = [.network, .readOnly, .slow]
 
     public init() {}
 

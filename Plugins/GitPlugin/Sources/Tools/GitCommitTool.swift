@@ -12,6 +12,7 @@ public struct GitCommitTool: LumiAgentTool, SuperLog {
         displayName: "Git Commit",
         description: "Commit Git changes. Supports specifying commit message, adding specific files, or amending the last commit. Before committing, it's recommended to first examine recent commit history to determine the commit style for consistency. Important: Commit changes by topic, ensuring each commit contains only related logical changes. If changes involve multiple unrelated topics, split them into separate commits."
     )
+    public static let tags: Set<LumiToolTag> = [.git, .destructive, .requiresApproval]
 
     public init() {}
 

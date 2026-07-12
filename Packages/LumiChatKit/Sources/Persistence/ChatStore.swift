@@ -22,8 +22,16 @@ struct ChatStore {
         )
     }
 
-    private let container: ModelContainer
+    /// `ModelContainer` is `Sendable` on Apple platforms and safe to share across
+    /// actors. Marking it `nonisolated` lets background queries build their own
+    /// throwaway `ModelContext` off the main actor (see `dailyMessageCounts(since:)`).
+    nonisolated private let container: ModelContainer
     private let context: ModelContext
+
+    /// Accessible to callers that need to run read-only history queries on a
+    /// background context (off the main actor). Matches the per-call context
+    /// pattern used by `TaskStateManager` / `CacheManager`.
+    nonisolated var sharedContainer: ModelContainer { container }
     private let jsonEncoder = JSONEncoder()
     private let jsonDecoder = JSONDecoder()
 
@@ -401,6 +409,60 @@ struct ChatStore {
 
     func historyConversationCount() -> Int {
         (try? context.fetchCount(FetchDescriptor<Conversation>())) ?? 0
+    }
+
+    /// Lightweight, background-safe aggregation of message counts per day for all
+    /// days on or after `since`.
+    ///
+    /// This is a `static` taking the `Sendable` container, so it can be called from
+    /// any `nonisolated` context (off the main actor) — see
+    /// `ChatService.fetchDailyMessageCounts(since:)`. It builds a throwaway
+    /// `ModelContext` (the established pattern in `TaskStateManager`/`CacheManager`)
+    /// and performs a single windowed fetch that reads **only** `timestamp` — no
+    /// `content`, no thinking previews, no token lookups, no full-table helper
+    /// scans. This keeps the UI thread free even with thousands of messages.
+    nonisolated static func dailyMessageCounts(
+        container: ModelContainer,
+        since: Date
+    ) -> [Date: Int] {
+        let backgroundContext = ModelContext(container)
+        let calendar = Calendar.current
+
+        let predicate = #Predicate<ChatMessageEntity> { $0.timestamp >= since }
+        let descriptor = FetchDescriptor<ChatMessageEntity>(predicate: predicate)
+
+        guard let messages = try? backgroundContext.fetch(descriptor) else {
+            return [:]
+        }
+
+        var counts: [Date: Int] = [:]
+        for message in messages {
+            let day = calendar.startOfDay(for: message.timestamp)
+            counts[day, default: 0] += 1
+        }
+        return counts
+    }
+
+    nonisolated static func dailyTokenCounts(
+        container: ModelContainer,
+        since: Date
+    ) -> [Date: Int] {
+        let bgCtx = ModelContext(container)
+        let cal = Calendar.current
+        let msgPred = #Predicate<ChatMessageEntity> { $0.timestamp >= since }
+        let msgDesc = FetchDescriptor<ChatMessageEntity>(predicate: msgPred)
+        guard let msgs = try? bgCtx.fetch(msgDesc) else { return [:] }
+        let tsByID = Dictionary(uniqueKeysWithValues: msgs.map { ($0.id, $0.timestamp) })
+        guard let metrics = try? bgCtx.fetch(FetchDescriptor<MessageMetricsEntity>()) else { return [:] }
+        var result: [Date: Int] = [:]
+        for m in metrics {
+            guard let total = m.totalTokens,
+                  let ts = tsByID[m.messageId],
+                  ts >= since else { continue }
+            let day = cal.startOfDay(for: ts)
+            result[day, default: 0] += total
+        }
+        return result
     }
 
     func historyMessagePage(limit: Int, offset: Int) -> [HistoryMessageRow] {

@@ -42,6 +42,9 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
             break
         case .projectDidClose:
             break
+        case .willDisable:
+            // LayoutPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
+            break
         }
     }
 

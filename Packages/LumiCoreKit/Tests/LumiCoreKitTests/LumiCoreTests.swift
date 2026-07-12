@@ -218,6 +218,7 @@ import Testing
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
         func providerID(for conversationID: UUID?) -> String? { "zhipu" }
         func modelName(for conversationID: UUID?) -> String? { nil }
+        func provider(forID id: String) -> (any LumiLLMProvider)? { nil }
         func setRoutingMode(_ mode: LumiModelRoutingMode) {}
         func language(for conversationID: UUID?) -> LumiConversationLanguage { .english }
         func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}

@@ -14,6 +14,17 @@ final class MockHistoryQueryService: HistoryQueryService {
     var conversationPageRequests: [(limit: Int, offset: Int)] = []
     var messagePageDelayNanoseconds: UInt64 = 0
     var conversationPageDelayNanoseconds: UInt64 = 0
+    /// Day (local-midnight `Date`) → message count, returned verbatim by
+    /// `fetchDailyMessageCounts(since:)`.
+    var dailyMessageCounts: [Date: Int] = [:]
+    /// Captures every `since` argument the service was queried with.
+    private(set) var dailyMessageCountsRequests: [Date] = []
+
+    /// Day (local-midnight `Date`) → token count, returned verbatim by
+    /// `fetchDailyTokenCounts(since:)`.
+    var dailyTokenCounts: [Date: Int] = [:]
+    /// Captures every `since` argument the token query was queried with.
+    private(set) var dailyTokenCountsRequests: [Date] = []
 
     func fetchMessageCount() async -> Int {
         messageCount
@@ -37,5 +48,15 @@ final class MockHistoryQueryService: HistoryQueryService {
             try? await Task.sleep(nanoseconds: conversationPageDelayNanoseconds)
         }
         return conversationPages[offset] ?? []
+    }
+
+    func fetchDailyMessageCounts(since: Date) async -> [Date: Int] {
+        dailyMessageCountsRequests.append(since)
+        return dailyMessageCounts
+    }
+
+    func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
+        dailyTokenCountsRequests.append(since)
+        return dailyTokenCounts
     }
 }

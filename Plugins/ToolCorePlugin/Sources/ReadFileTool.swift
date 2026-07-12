@@ -17,6 +17,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
             bundle: .module
         )
     )
+    public static let tags: Set<LumiToolTag> = [.fileSystem, .readOnly, .fast]
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.read-file")
     public nonisolated static let emoji = "📄"
