@@ -22,6 +22,7 @@ import CodeReviewPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationNewPlugin
+import ConversationForkPlugin
 import ConversationTimelinePlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
@@ -260,6 +261,7 @@ public enum LumiPluginRegistry {
         VerbosityPlugin.self,
         ConversationListPlugin.self,
         ConversationNewPlugin.self,
+        ConversationForkPlugin.self,
 
         // MARK: - Editor Plugins
 
