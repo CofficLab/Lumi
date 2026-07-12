@@ -81,6 +81,9 @@
     "Folders" : {
 
     },
+    "Logo" : {
+
+    },
     "MLX local models require macOS 14 or later." : {
       "extractionState" : "stale",
       "localizations" : {

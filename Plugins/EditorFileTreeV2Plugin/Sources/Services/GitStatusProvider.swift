@@ -209,6 +209,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
             repoRootPath: repoRootPath,
             capturedAt: Date()
         )
+        }
     }
 
     // MARK: - Private
