@@ -1,6 +1,7 @@
 import Foundation
 import SuperLogKit
 import LibGit2Swift
+import LumiCoreKit
 import os
 
 // MARK: - Models
@@ -129,8 +130,10 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     /// - Parameter projectRootPath: 项目根目录的绝对路径
     /// - Returns: 快照，或 nil 表示查询失败
     public func captureSnapshot(projectRootPath: String) -> GitStatusSnapshot? {
-        // 1. 检测是否为 Git 仓库
-        guard LibGit2.isGitRepository(at: projectRootPath) else {
+        // 所有 libgit2 调用通过 GitAccessCoordinator 串行化，避免与其他插件并发访问
+        return GitAccessCoordinator.performSync {
+            // 1. 检测是否为 Git 仓库
+            guard LibGit2.isGitRepository(at: projectRootPath) else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)非 Git 仓库，返回空 snapshot：\(projectRootPath)")
             }
