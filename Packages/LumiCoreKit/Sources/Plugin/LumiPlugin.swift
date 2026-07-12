@@ -29,6 +29,9 @@ public protocol LumiPlugin {
     static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool]
 
     @MainActor
+    static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
+
+    @MainActor
     static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware]
 
     @MainActor
