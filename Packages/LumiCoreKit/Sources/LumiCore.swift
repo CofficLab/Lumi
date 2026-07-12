@@ -6,8 +6,8 @@ import SwiftUI
 public enum LumiCore {
     private static var configuration: LumiCoreConfiguration?
 
-    /// Logo 注册表
-    @MainActor public static let logoRegistry = LogoRegistry()
+    /// Logo 注册表（指向 `LogoRegistry.shared` 单例）
+    @MainActor public static var logoRegistry: LogoRegistry { .shared }
 
     /// 项目状态管理器
     @MainActor public static private(set) var projectState: LumiProjectState?

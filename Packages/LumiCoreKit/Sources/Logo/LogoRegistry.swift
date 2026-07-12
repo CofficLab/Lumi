@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 import SwiftUI
 
 /// Logo 注册表
@@ -7,12 +8,6 @@ import SwiftUI
 /// 无插件贡献时回退到内置的 Logo。
 @MainActor
 public final class LogoRegistry: ObservableObject {
-    /// 全局共享实例
-    public static let shared = LogoRegistry()
-    
-    /// 当前最高优先级的 Logo 项（已缓存，注册时刷新）
-    @Published public var bestItem: LogoItem?
-
     /// 批量注册 Logo 项，保留 order 最高的一项
     ///
     /// 直接同步赋值：整个类已标记 `@MainActor`，调用方也在主线程，
