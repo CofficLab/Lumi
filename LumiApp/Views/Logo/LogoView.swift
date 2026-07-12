@@ -2,6 +2,9 @@ import SwiftUI
 import LumiCoreKit
 
 /// A view that renders the highest-priority logo from the plugin registry.
+///
+/// If the winning `LumiCore.LogoItem` provides an overlay, it is stacked on top
+/// via `ZStack`. When no plugin contributes a logo, a SF Symbol fallback is rendered.
 struct LogoView: View {
     var scene: LogoScene = .general
 
