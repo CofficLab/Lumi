@@ -80,4 +80,15 @@ public protocol HistoryQueryService: AnyObject {
     func fetchMessagePage(limit: Int, offset: Int) async -> [HistoryMessageRow]
     func fetchConversationCount() async -> Int
     func fetchConversationPage(limit: Int, offset: Int) async -> [HistoryConversationRow]
+
+    /// Returns a dictionary mapping the start-of-day `Date` (local midnight) of each
+    /// day that has at least one message on or after `since`, to the number of
+    /// messages on that day.
+    ///
+    /// Implementations must perform the actual database read **off the main
+    /// actor** (e.g. via a detached task with a throwaway `ModelContext`), so
+    /// callers (e.g. the activity heatmap) never block the UI while reading
+    /// history. The query should only read `timestamp` and avoid any heavy
+    /// per-row work.
+    func fetchDailyMessageCounts(since: Date) async -> [Date: Int]
 }

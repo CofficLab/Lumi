@@ -33,20 +33,35 @@ struct ActivityHeatmapSettingsView: View {
 
             // Heatmap card
             AppCard {
-                if viewModel.isLoading {
-                    loadingView
-                } else if viewModel.hasLoaded && viewModel.heatmapData.isEmpty {
+                if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
                     emptyState
+                } else if viewModel.heatmapData.isEmpty {
+                    // First load, nothing to show yet → full placeholder.
+                    loadingView
                 } else {
+                    // Keep the previous heatmap visible while reloading on a range
+                    // switch: overlaying a subtle indicator is far less jarring
+                    // (and less janky) than swapping in a full ProgressView.
                     ActivityHeatmapView(data: viewModel.heatmapData)
                         .padding(16)
+                        .overlay(alignment: .topTrailing) {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(8)
+                            }
+                        }
                 }
             }
         }
         .onChange(of: period) { _, newValue in
+            // Explicit single load on range change (no VM didSet trigger).
+            guard viewModel.period != newValue else { return }
             viewModel.period = newValue
+            Task { await viewModel.load() }
         }
         .task {
+            // Single source of truth for the initial fetch.
             viewModel.period = period
             await viewModel.load()
         }

@@ -21,7 +21,19 @@ enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable {
     }
 }
 
-/// View model that fetches message history and aggregates into a daily heatmap.
+/// View model that fetches per-day message counts and builds a daily heatmap.
+///
+/// Performance notes:
+/// - The data fetch (`fetchDailyMessageCounts(since:)`) runs **off the main
+///   actor** (it is a `nonisolated` requirement on `HistoryQueryService`), so
+///   switching the time range never blocks the UI.
+/// - Previously this view loaded *every* message row (paginated, with full
+///   previews / thinking / token lookups done on the main actor) and only moved
+///   the final aggregation off-thread. Now the whole pipeline is O(days) of CPU
+///   on the main thread plus a single windowed, timestamp-only query in the
+///   background.
+/// - `loadGeneration` cancels stale loads: rapidly switching the period won't
+///   let an older, slower response overwrite a newer one.
 @MainActor
 @Observable
 final class ActivityHeatmapViewModel {
@@ -34,11 +46,14 @@ final class ActivityHeatmapViewModel {
     private(set) var heatmapData: [ActivityDay] = []
     private(set) var isLoading = false
     private(set) var hasLoaded = false
-    var period: ActivityHeatmapPeriod = .year {
-        didSet {
-            Task { await load() }
-        }
-    }
+    /// The selected period. The owning view drives reloads explicitly
+    /// (`onChange` → `load()`), which avoids the double-load that a `didSet`
+    /// trigger would cause during initial `.task` seeding.
+    var period: ActivityHeatmapPeriod = .year
+
+    /// Bumped on every `load()`; results are only applied if the generation is
+    /// still current, so a slow earlier request can't clobber a newer one.
+    private var loadGeneration = 0
 
     // MARK: - Init
 
@@ -53,71 +68,57 @@ final class ActivityHeatmapViewModel {
             hasLoaded = true
             return
         }
-        isLoading = true
-        defer { isLoading = false; hasLoaded = true }
 
-        let totalCount = await service.fetchMessageCount()
-        guard totalCount > 0 else {
-            heatmapData = []
+        let generation = { loadGeneration += 1; return loadGeneration }()
+        isLoading = true
+        defer {
+            if isCurrent(generation) { isLoading = false }
+            hasLoaded = true
+        }
+
+        let days = period.rawValue
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        // First day of the window (inclusive). Guarded by `days > 0`.
+        guard days > 0,
+              let oldestDay = cal.date(byAdding: .day, value: -(days - 1), to: today) else {
+            if isCurrent(generation) { heatmapData = [] }
             return
         }
 
-        let allMessages = await paginateMessages(service, total: totalCount)
+        // Off-main-actor fetch: a single windowed, timestamp-only query.
+        let counts = await service.fetchDailyMessageCounts(since: oldestDay)
+        guard isCurrent(generation) else { return }
 
-        // 聚合操作移到后台线程
-        let days = period.rawValue
-        let result = await Task.detached(priority: .userInitiated) {
-            Self.aggregateByDay(allMessages, days: days)
-        }.value
-
-        heatmapData = result
+        // Cheap O(days) shaping on the main thread.
+        heatmapData = Self.buildHeatmapData(counts: counts, oldestDay: oldestDay, days: days)
     }
 
-    // MARK: - Pagination
-
-    private func paginateMessages(
-        _ service: any HistoryQueryService,
-        total: Int
-    ) async -> [HistoryMessageRow] {
-        var result: [HistoryMessageRow] = []
-        var offset = 0
-        let pageSize = 500
-        while offset < total {
-            let page = await service.fetchMessagePage(limit: pageSize, offset: offset)
-            result.append(contentsOf: page)
-            offset += pageSize
-        }
-        return result
+    private func isCurrent(_ generation: Int) -> Bool {
+        generation == loadGeneration
     }
 
-    // MARK: - Aggregation
+    // MARK: - Heatmap shaping
 
-    /// 在后台线程执行的聚合方法
-    nonisolated private static func aggregateByDay(
-        _ messages: [HistoryMessageRow],
+    /// Builds the calendar of `days` days (`oldestDay` → today) and normalizes
+    /// each day's count against the window's max into levels 0–4.
+    /// `nonisolated static` so it can be unit-tested without the main actor.
+    nonisolated static func buildHeatmapData(
+        counts: [Date: Int],
+        oldestDay: Date,
         days: Int
     ) -> [ActivityDay] {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
         guard days > 0 else { return [] }
 
-        // Generate calendar of days (oldest → today).
-        guard let oldestDay = cal.date(byAdding: .day, value: -(days - 1), to: today) else {
-            return []
-        }
         let calendarDays = (0..<days).compactMap {
             cal.date(byAdding: .day, value: $0, to: oldestDay)
         }
 
-        // Count messages per day.
-        var counts: [Date: Int] = [:]
-        for msg in messages {
-            let day = cal.startOfDay(for: msg.timestamp)
-            counts[day, default: 0] += 1
-        }
-
-        // Normalize max count to 4 levels.
-        let maxCount = counts.values.max() ?? 0
+        // Normalize against the window's own max only. Counts outside the
+        // window (which the query normally excludes) must not skew the scale.
+        let windowCounts = calendarDays.compactMap { counts[$0] }
+        let maxCount = windowCounts.max() ?? 0
         guard maxCount > 0 else {
             return calendarDays.map { ActivityDay(date: $0, level: 0) }
         }

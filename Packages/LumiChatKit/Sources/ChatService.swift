@@ -1,6 +1,7 @@
 import Foundation
 import LumiCoreKit
 import ModelRouterKit
+import SwiftData
 
 @MainActor
 public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
@@ -30,6 +31,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
     weak var toolService: (any LumiToolServicing)?
     let store: ChatStore
+    /// `Sendable` container captured at init for background, off-main-actor
+    /// history queries (see `fetchDailyMessageCounts(since:)`). Safe to share
+    /// across actors; per-call contexts are built on demand from it.
+    nonisolated internal let backgroundQueryContainer: ModelContainer
     let statusState = ConversationStatusState()
     var activeTasksByConversationID: [UUID: Task<Void, Never>] = [:]
     var sendingConversationIDs: Set<UUID> = []
@@ -52,7 +57,9 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     // MARK: - Init
 
     public init(configuration: Configuration) {
-        self.store = ChatStore(configuration: configuration)
+        let store = ChatStore(configuration: configuration)
+        self.store = store
+        self.backgroundQueryContainer = store.sharedContainer
         let snapshot = store.load()
         self.conversations = snapshot.conversations
         self.messagesByConversationID = MessageManager.messagesByMergingToolResults(snapshot.messagesByConversationID)
