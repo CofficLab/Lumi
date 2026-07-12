@@ -132,7 +132,22 @@ public extension Thread {
     /// print("当前线程: \(qosDesc)") // 例如输出: "当前线程: [BG]"
     /// ```
     static var currentQosDescription: String {
-        current.qualityOfService.description(withName: false)
+        if Thread.isMainThread {
+            return QualityOfService.userInteractive.description(withName: false)
+        }
+        // Use pthread API to safely get QoS without relying on Thread.current,
+        // which may trap on Swift Concurrency cooperative pool threads.
+        var qosClass: qos_class_t = QOS_CLASS_UNSPECIFIED
+        var relativePriority: Int32 = 0
+        pthread_get_qos_class_np(pthread_self(), &qosClass, &relativePriority)
+        switch qosClass {
+        case QOS_CLASS_USER_INTERACTIVE: return QualityOfService.userInteractive.description(withName: false)
+        case QOS_CLASS_USER_INITIATED: return QualityOfService.userInitiated.description(withName: false)
+        case QOS_CLASS_DEFAULT: return QualityOfService.default.description(withName: false)
+        case QOS_CLASS_UTILITY: return QualityOfService.utility.description(withName: false)
+        case QOS_CLASS_BACKGROUND: return QualityOfService.background.description(withName: false)
+        default: return QualityOfService.default.description(withName: false)
+        }
     }
 }
 
