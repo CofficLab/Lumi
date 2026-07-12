@@ -181,6 +181,11 @@ struct AppLayoutView: View {
     }
 
     private func selectDefaultContainerIfNeeded(_ containers: [LumiViewContainerItem]) -> Void {
+        // 布局尚未从磁盘恢复时，不写默认选择——否则首帧默认值会覆盖即将恢复的持久化值。
+        // restore 通常已在 RootContainer.init 同步阶段完成（isLayoutRestored == true），
+        // 此守卫作防御性兜底，防止未来 restore 时序被改回异步后再次踩坑。
+        guard layoutState.isLayoutRestored else { return }
+
         guard !containers.isEmpty else {
             layoutState.activeViewContainerID = nil
             return

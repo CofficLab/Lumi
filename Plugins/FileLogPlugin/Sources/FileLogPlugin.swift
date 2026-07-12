@@ -36,6 +36,9 @@ public enum FileLogPlugin: LumiPlugin {
             bootstrapIfNeeded()
         case .projectDidOpen, .projectDidClose:
             break
+        case .willDisable:
+            // FileLogPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
+            break
         }
     }
 }

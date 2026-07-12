@@ -1,5 +1,6 @@
 import LumiChatKit
 import LumiCoreKit
+import LumiPluginRegistry
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -46,6 +47,13 @@ final class RootContainer: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
         }
+
+        // 启动早期同步恢复布局状态，确保首帧渲染前 activeViewContainerID 等已是持久化值。
+        // 必须早于 AppLayoutView.onAppear：否则 onAppear 会先把默认 containers[0] 写入
+        // activeViewContainerID 并经 LayoutEventListener 落盘，覆盖磁盘里的旧选择。
+        // 此时 LayoutEventListener 尚未实例化（首帧才建），restore 写入发出的通知无人接收，安全。
+        // 幂等：后续 PluginService.init → .appDidLaunch 会再调一次 restore，为 no-op。
+        LumiPluginRegistry.restoreLayoutEarly()
 
         self.pluginService = PluginService()
         if Self.verbose {
