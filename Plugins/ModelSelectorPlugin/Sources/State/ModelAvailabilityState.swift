@@ -27,7 +27,7 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
     @Published public private(set) var states: [String: [String: ModelCheckState]] = [:]
 
     /// 正在检查中的 provider id 集合，用于显示顶层的 spinner。
-    @Published public private(set) var checkingProviderIDs: Set<String> = []
+    @Published package var checkingProviderIDs: Set<String> = []
 
     public init() {}
 
@@ -66,7 +66,7 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
 
     // MARK: - Write helpers (used by check commands)
 
-    private func setState(providerId: String, modelId: String, _ value: ModelCheckState) {
+    package func setState(providerId: String, modelId: String, _ value: ModelCheckState) {
         var inner = states[providerId] ?? [:]
         inner[modelId] = value
         states[providerId] = inner
@@ -98,7 +98,7 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
             )
         }
 
-        // 串行调用，避免一次性把所有 provider 同时打爆上游。
+        // 串行调，避免一次性把所有 provider 同时打爆上游。
         // 后续如果需要并发，可以包成 TaskGroup，但 model selector 一次也就看十几个模型，串行够了。
         for model in provider.availableModels {
             let result = await providerInstance.checkAvailability(model: model)
@@ -133,5 +133,18 @@ public final class ModelAvailabilityState: ObservableObject, SuperLog {
     public func reset(_ providerId: String) {
         states[providerId] = nil
         checkingProviderIDs.remove(providerId)
+    }
+
+    /// 同步把所有 provider 的模型标到 `.checking`，并把 provider id 加入 `checkingProviderIDs`。
+    ///
+    /// 用于 view `onAppear` 时立即展示 "检查中"，而不是在异步 Task 里等 TaskGroup 调度到主 actor
+    /// 之后才开始标记——那会导致首帧渲染时 `states` 为空，显示成 "不可用"。
+    public func markAllPending(_ providers: [LumiLLMProviderInfo]) {
+        for provider in providers {
+            checkingProviderIDs.insert(provider.id)
+            for model in provider.availableModels {
+                setState(providerId: provider.id, modelId: model, ModelCheckState(phase: .checking))
+            }
+        }
     }
 }

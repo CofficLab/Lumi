@@ -34,8 +34,10 @@ struct ProviderSummaryCard: View {
         availability.availableCount(for: provider)
     }
 
+    /// 已检测完成、且至少有一个模型可用。
+    /// 注意：不包含检查中状态，检查中走单独的 UI 分支。
     private var isProviderAvailable: Bool {
-        availableModelCount > 0
+        !isChecking && availableModelCount > 0
     }
 
     private var unavailableCount: Int {
@@ -62,6 +64,7 @@ struct ProviderSummaryCard: View {
         guard let instance = providerInstance else { return false }
         if provider.isLocal { return false }
         guard instance.hasApiKey() else { return false }
+        guard !isChecking else { return false }
         guard let failure = availability.firstReconfigurableFailure(for: provider) else { return false }
         return !failure.availabilityDisplayText.isEmpty
     }
@@ -77,10 +80,7 @@ struct ProviderSummaryCard: View {
                     Image(systemName: provider.isLocal ? "cpu" : "cloud")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(iconColor)
-                    Circle()
-                        .fill(isProviderAvailable ? .green : .red)
-                        .frame(width: 10, height: 10)
-                        .offset(x: 10, y: 10)
+                    statusIndicator
                 }
 
                 // Provider info
@@ -216,9 +216,42 @@ struct ProviderSummaryCard: View {
         }
     }
 
+    /// 图标右下角的可用性指示点。
+    /// - 检查中：橙色，表示正在探测
+    /// - 已检查可用：绿色
+    /// - 已检查不可用：红色
+    @ViewBuilder
+    private var statusIndicator: some View {
+        if isChecking {
+            Circle()
+                .fill(.orange)
+                .frame(width: 10, height: 10)
+                .offset(x: 10, y: 10)
+        } else {
+            Circle()
+                .fill(isProviderAvailable ? .green : .red)
+                .frame(width: 10, height: 10)
+                .offset(x: 10, y: 10)
+        }
+    }
+
     @ViewBuilder
     private var statusBadge: some View {
-        if isProviderAvailable {
+        if isChecking {
+            HStack(spacing: 4) {
+                ProgressView()
+                    .scaleEffect(0.5)
+                Text("检查中")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.orange)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(.orange.opacity(0.12))
+            )
+        } else if isProviderAvailable {
             HStack(spacing: 4) {
                 Circle()
                     .fill(.green)
@@ -259,10 +292,16 @@ struct ProviderSummaryCard: View {
     }
 
     private var iconBackgroundColor: Color {
-        isProviderAvailable ? .green.opacity(0.15) : theme.textTertiary.opacity(0.15)
+        if isChecking {
+            return .orange.opacity(0.15)
+        }
+        return isProviderAvailable ? .green.opacity(0.15) : theme.textTertiary.opacity(0.15)
     }
 
     private var iconColor: Color {
-        isProviderAvailable ? .green : theme.textSecondary
+        if isChecking {
+            return .orange
+        }
+        return isProviderAvailable ? .green : theme.textSecondary
     }
 }

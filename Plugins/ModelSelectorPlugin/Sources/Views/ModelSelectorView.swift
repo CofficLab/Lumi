@@ -377,6 +377,10 @@ struct ModelSelectorView: View {
                 return (info, instance)
             }
         guard !items.isEmpty else { return }
+        
+        // 先同步标记所有模型为"检查中"状态，避免首帧渲染时显示成"不可用"
+        availability.markAllPending(items.map { $0.info })
+        
         Task { await availability.checkAll(items) }
     }
 }
