@@ -34,26 +34,11 @@ public enum StepFunPlugin: LumiPlugin {
     @MainActor
     public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
         [
-            LumiSubAgentDefinition(
-                id: "git-commit-writer",
-                displayName: "Git Commit Writer",
-                description: "Analyze git changes and create a commit. Pass what you want committed as the task.",
-                providerID: StepFunProvider.info.id,
-                modelID: "step-3.7-flash",
-                systemPrompt: """
-                    You are a git commit assistant. Steps:
-                    1. Call git_status to check working tree state.
-                    2. Call git_diff to review changes.
-                    3. Generate a Conventional Commits message.
-                    4. Call git_add to stage, then git_commit to commit.
-                    If nothing to commit, say so. Don't retry more than twice on failure.
-                    """,
-                requiredTags: [.git],
-                excludedTags: [.destructive],
-                excludedToolNames: ["git_push"],
-                maxTurns: 8,
-                iconName: "checkmark.seal"
-            )
+            GitCommitWriterAgent.definition,
+            CodeReviewAgent.definition,
+            TestWriterAgent.definition,
+            DocWriterAgent.definition,
+            BugFixerAgent.definition,
         ]
     }
 }
