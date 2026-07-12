@@ -231,7 +231,7 @@ public struct SubAgentLoopRunner {
 
             // Phase 1: 调 LLM（子 Agent 无 UI，onChunk 丢弃）
             let request = LumiLLMRequest(messages: messages, model: model, tools: tools)
-            let assistant: LumiChatMessage
+            var assistant: LumiChatMessage
             do {
                 assistant = try await provider.sendStreaming(request) { _ in }
             } catch {
@@ -242,6 +242,31 @@ public struct SubAgentLoopRunner {
                     error: error.localizedDescription
                 )
             }
+
+            // 子 Agent 同样检测正文内联工具调用，重试 1 次。
+            // 将首次（错误）回复与纠正 nudge 临时拼进请求列表，不写入主上下文。
+            if assistant.hasInlineToolCallInBody {
+                let nudge = LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .system,
+                    content: "Note: Your previous response wrote tool calls as text in the body " +
+                        "instead of using the structured tool-call interface. That is incorrect. " +
+                        "Please regenerate your response and invoke tools via the tool_use interface; " +
+                        "do not emit <tool_call>, <function_calls>, JSON tool-call blocks, etc. in the body.",
+                    metadata: ["lumi-nudge": "inline-tool-call-retry"]
+                )
+                let retriedRequest = LumiLLMRequest(
+                    messages: messages + [assistant, nudge],
+                    model: model,
+                    tools: tools
+                )
+                do {
+                    assistant = try await provider.sendStreaming(retriedRequest) { _ in }
+                } catch {
+                    // 重试本身失败 → 用原 assistant 继续（后续按无工具调用收尾）
+                }
+            }
+
             messages.append(assistant)
 
             // Phase 2: 无工具调用 → 收尾，返回最终文本

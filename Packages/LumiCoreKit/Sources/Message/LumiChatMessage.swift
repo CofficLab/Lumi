@@ -70,4 +70,18 @@ public extension LumiChatMessage {
         guard !hasToolCalls else { return false }
         return true
     }
+
+    /// 是否「模型把工具调用写进了正文而非结构化 `toolCalls`」。
+    ///
+    /// 某些模型会把工具调用以 `<tool_call>`、`<function_calls>`、JSON 块等格式
+    /// 写进 `content`，导致 `toolCalls` 为空、`AgentLoop` 误判「没有工具调用」而提前结束。
+    ///
+    /// 判定标准：`isError == false`、`toolCalls` 为空、且正文命中 `InlineToolCallDetector`。
+    /// 仅在确实没有结构化工具调用时才检测，避免对正常响应误判。
+    var hasInlineToolCallInBody: Bool {
+        guard !isError else { return false }
+        let hasStructuredToolCalls = toolCalls?.isEmpty == false
+        guard !hasStructuredToolCalls else { return false }
+        return InlineToolCallDetector.detected(in: content)
+    }
 }
