@@ -66,8 +66,11 @@ struct LumiCoreBootValidationTests {
             MockBootTool(toolName: "tool_c")
         ])
 
+        // 创建 LumiCore 实例
+        let core = LumiCore()
+
         // 直接调用校验逻辑，模拟 boot 阶段的行为
-        let tools = provider.agentTools(context: LumiCore.makePluginContext(
+        let tools = provider.agentTools(context: core.makePluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
         ))
@@ -84,7 +87,8 @@ struct LumiCoreBootValidationTests {
             MockBootTool(toolName: "duplicate_tool")  // 重复
         ])
 
-        let tools = provider.agentTools(context: LumiCore.makePluginContext(
+        let core = LumiCore()
+        let tools = provider.agentTools(context: core.makePluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
         ))
@@ -102,7 +106,8 @@ struct LumiCoreBootValidationTests {
             MockBootTool(toolName: duplicateName)
         ])
 
-        let tools = provider.agentTools(context: LumiCore.makePluginContext(
+        let core = LumiCore()
+        let tools = provider.agentTools(context: core.makePluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
         ))

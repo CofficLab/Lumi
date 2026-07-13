@@ -70,6 +70,9 @@ public struct ConversationItemView: View, SuperLog {
         }
         .contextMenu {
             Button(role: .destructive) {
+                if Self.verbose, ConversationListPlugin.verbose {
+                    ConversationListPlugin.logger.info("\(Self.t)🖱️ 右键菜单唤起：用户点击 Delete - \(conversation.displayTitle)")
+                }
                 showDeleteConfirmation = true
             } label: {
                 Label(LumiPluginLocalization.string("Delete Conversation", bundle: .module), systemImage: "trash")
@@ -78,6 +81,9 @@ public struct ConversationItemView: View, SuperLog {
         .alert(LumiPluginLocalization.string("Delete Conversation", bundle: .module), isPresented: $showDeleteConfirmation) {
             Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) { }
             Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
+                if Self.verbose && ConversationListPlugin.verbose {
+                    ConversationListPlugin.logger.info("\(Self.t)✅ Alert 确认：用户点击 Delete - \(conversation.displayTitle)")
+                }
                 onDelete()
             }
         } message: {

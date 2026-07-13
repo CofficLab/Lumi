@@ -27,6 +27,9 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
 
     public static let shared = ProjectsStore()
 
+    /// 可选的 LumiCore 实例引用，用于访问核心服务
+    public weak var lumiCore: (any LumiCoreAccessing)?
+
     @Published public private(set) var projects: [LumiProjectEntry]
     @Published public private(set) var currentProject: LumiProjectEntry? {
         didSet {
@@ -49,8 +52,9 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
 
     // MARK: - Init
 
-    public init(pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects")) {
-        self.settingsDirectory = pluginDirectory
+    public init(pluginDirectory: URL? = nil) {
+        let directory = pluginDirectory ?? ProjectsStore.defaultPluginDirectory
+        self.settingsDirectory = directory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
         self.projects = Self.loadProjects(from: settingsDirectory)
 
@@ -59,6 +63,17 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
 
         // 同步到 LumiCore
         syncToLumiCore()
+    }
+
+    /// 默认插件目录（用于单例初始化）
+    private static var defaultPluginDirectory: URL {
+        // 使用 FileManager 的临时目录作为 fallback
+        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/Projects")
+    }
+
+    /// 配置 LumiCore 实例
+    public func configure(lumiCore: (any LumiCoreAccessing)?) {
+        self.lumiCore = lumiCore
     }
 
     // MARK: - ProjectsStoring
@@ -82,10 +97,10 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
         save()
 
         // 同步到 LumiCore
-        LumiCore.projectState?.switchToProject(updatedProject)
+        lumiCore?.projectState?.switchToProject(updatedProject)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)switchToProject 调用完成, LumiCore.projectState.currentProject: \(LumiCore.projectState?.currentProject?.name ?? "nil")")
+            Self.logger.info("\(Self.t)switchToProject 调用完成, projectState.currentProject: \(self.lumiCore?.projectState?.currentProject?.name ?? "nil")")
         }
     }
 
@@ -133,7 +148,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
         guard !trimmed.isEmpty else {
             currentProject = nil
             save()
-            LumiCore.projectState?.clearCurrentProject()
+            lumiCore?.projectState?.clearCurrentProject()
             return
         }
 
@@ -165,7 +180,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
 
     /// 将所有项目同步到 LumiCore
     private func syncToLumiCore() {
-        guard let projectState = LumiCore.projectState else { return }
+        guard let projectState = lumiCore?.projectState else { return }
 
         // 写入项目列表
         for project in projects {

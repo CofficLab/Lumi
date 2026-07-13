@@ -1,33 +1,21 @@
 import Foundation
 
-public extension LumiCore {
-    // MARK: - Configuration
+// MARK: - Storage Helpers
 
-    /// 核心配置实例
-    private static var _configuration: LumiCoreConfiguration?
-
-    /// 配置存储根目录。
-    /// - Parameter dataRootDirectory: 数据根目录路径。
-    public static func configure(dataRootDirectory: URL) throws {
-        let directory = dataRootDirectory.standardizedFileURL
-        try FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        _configuration = LumiCoreConfiguration(dataRootDirectory: directory)
-    }
-
+extension LumiCore {
     /// 核心数据目录。
-    public static var coreDataDirectory: URL {
-        _directory(named: "Core", under: Self.dataRootDirectory!)
+    public var coreDataDirectory: URL {
+        Self._directory(named: "Core", under: dataRootDirectory!)
     }
 
     /// 插件数据目录。
     /// - Parameter pluginName: 插件名称。
     /// - Returns: 插件专属的数据目录路径。
-    public static func pluginDataDirectory(for pluginName: String) -> URL {
-        _directory(named: _sanitizeDirectoryName(pluginName, fallback: "Plugin"), under: dataRootDirectory!)
+    public func pluginDataDirectory(for pluginName: String) -> URL {
+        Self._directory(
+            named: Self._sanitizeDirectoryName(pluginName, fallback: "Plugin"),
+            under: dataRootDirectory!
+        )
     }
 
     // MARK: - Private Helpers

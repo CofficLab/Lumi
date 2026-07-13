@@ -4,7 +4,18 @@ import Foundation
 public final class ProviderSettingsStore {
     public static let shared = ProviderSettingsStore()
 
-    private let settingsURL: URL
+    /// 由 App 启动期（RootContainer）注入的 LumiCore 实例。
+    /// 注入后才会解析 settingsURL，因此 `configure` 必须在首次访问之前调用。
+    public func configure(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
+
+    private var lumiCore: LumiCoreAccessing?
+
+    private var settingsURL: URL? {
+        lumiCore?.pluginDataDirectory(for: "ProviderSettings")
+            .appendingPathComponent("settings.plist")
+    }
 
     private enum Keys {
         static let selectedRemoteProviderID = "App_SelectedRemoteProviderId"
@@ -13,10 +24,7 @@ public final class ProviderSettingsStore {
         static let localProviderModels = "App_LocalProviderModels"
     }
 
-    private init() {
-        let directory = LumiCore.pluginDataDirectory(for: "ProviderSettings")
-        self.settingsURL = directory.appendingPathComponent("settings.plist")
-    }
+    private init() {}
 
     public func loadSelectedRemoteProviderID() -> String? {
         string(forKey: Keys.selectedRemoteProviderID)
@@ -71,7 +79,8 @@ public final class ProviderSettingsStore {
     }
 
     private func dictionary() -> [String: Any] {
-        guard let data = try? Data(contentsOf: settingsURL),
+        guard let url = settingsURL,
+              let data = try? Data(contentsOf: url),
               let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
               let dictionary = plist as? [String: Any]
         else {
@@ -91,20 +100,22 @@ public final class ProviderSettingsStore {
     }
 
     private func persist(_ dictionary: [String: Any]) {
-        guard let data = try? PropertyListSerialization.data(
-            fromPropertyList: dictionary,
-            format: .xml,
-            options: 0
-        ) else {
+        guard let url = settingsURL,
+              let data = try? PropertyListSerialization.data(
+                fromPropertyList: dictionary,
+                format: .xml,
+                options: 0
+              )
+        else {
             return
         }
 
         do {
             try FileManager.default.createDirectory(
-                at: settingsURL.deletingLastPathComponent(),
+                at: url.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try data.write(to: settingsURL, options: .atomic)
+            try data.write(to: url, options: .atomic)
         } catch {
             assertionFailure("Failed to save provider settings: \(error)")
         }

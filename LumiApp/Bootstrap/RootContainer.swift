@@ -13,14 +13,7 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
-    /// 安全获取 ChatService，类型不匹配时提供清晰的错误信息。
-    static var checkedChatService: ChatService {
-        guard let service = LumiCore.chatService as? ChatService else {
-            fatalError("LumiCore.chatService 必须是 ChatService 类型。当前类型: \(String(describing: type(of: LumiCore.chatService)))。请确保 LumiCore.setupChatBootstrap 已正确调用。")
-        }
-        return service
-    }
-
+    let lumiCore: LumiCore
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
     let editorCoreService: EditorCoreService
@@ -64,11 +57,11 @@ final class RootContainer: ObservableObject, SuperLog {
         self.lumiUIService = LumiUIService(pluginService: pluginService)
         self.menuBarService = MenuBarService(pluginService: pluginService)
 
-        LumiCore.registerService(LumiCoreService.self, lumiCoreService)
-        LumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
-        LumiCore.registerService(LumiBottomPanelLayoutPresenting.self, LumiCore.layoutState ?? LumiLayoutState())
-        LumiCore.registerService(LumiThemeServicing.self, lumiUIService)
-        LumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
+        lumiCore.registerService(LumiCoreService.self, lumiCoreService)
+        lumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
+        lumiCore.registerService(LumiBottomPanelLayoutPresenting.self, lumiCore.layoutState ?? LumiLayoutState())
+        lumiCore.registerService(LumiThemeServicing.self, lumiUIService)
+        lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 
         self.lumiUIService.onThemesDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()

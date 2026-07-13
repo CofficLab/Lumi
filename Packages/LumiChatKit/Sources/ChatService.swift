@@ -7,6 +7,10 @@ import SwiftData
 public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
     public static weak var shared: ChatService?
 
+    // MARK: - Core Reference
+
+    public let lumiCore: (any LumiCoreAccessing)?
+
     // MARK: - Published State
 
     @Published public internal(set) var conversations: [LumiConversationSummary]
@@ -61,10 +65,11 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
     // MARK: - Init
 
-    public init(configuration: Configuration) {
+    public init(configuration: Configuration, lumiCore: (any LumiCoreAccessing)? = nil) {
         let store = ChatStore(configuration: configuration)
         self.store = store
         self.backgroundQueryContainer = store.sharedContainer
+        self.lumiCore = lumiCore
         let snapshot = store.load()
         self.conversations = snapshot.conversations
         self.messagesByConversationID = MessageManager.messagesByMergingToolResults(snapshot.messagesByConversationID)

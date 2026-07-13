@@ -1,24 +1,8 @@
 import Foundation
 
-public extension LumiCore {
-    // MARK: - Editor Service
+// MARK: - Editor Service
 
-    /// 编辑器服务（由外部通过 `LumiCore.boot(editorFactory:)` 工厂创建，自动注册到服务表）。
-    /// 使用 `AbstractEditorServicing` 抽象协议，避免 LumiCoreKit 反向依赖 EditorService（会成环）。
-    @MainActor public static private(set) var editorService: (any AbstractEditorServicing)?
-
-    // MARK: - Editor Bootstrap Factory
-
-    /// EditorBootstrap 工厂闭包类型。
-    ///
-    /// 接收 LumiAgentToolProviding（通常是 `PluginService`），返回具体的 `EditorService`。
-    /// 通过泛型 `Service` 保留具体类型信息，使 `LumiCore` 在 boot 内部既能注册抽象协议
-    /// （`AbstractEditorServicing`），也能注册具体类型（具体 `Service`）。
-    ///
-    /// 使用 `@escaping` 的工厂闭包请在调用点（`boot`、`bootstrapEditor`）的参数上显式标注。
-    public typealias EditorBootstrapFactory<Service: AbstractEditorServicing> =
-        @MainActor (any LumiAgentToolProviding) throws -> Service
-
+extension LumiCore {
     // MARK: - Editor Bootstrap
 
     /// 启动编辑器服务（泛型版本，由 `boot` 内部调用）。
@@ -31,8 +15,7 @@ public extension LumiCore {
     /// - Parameters:
     ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
     ///   - factory: 编辑器工厂闭包，由 LumiApp 提供。
-    @MainActor
-    static func bootstrapEditor<Service: AbstractEditorServicing>(
+    func bootstrapEditor<Service: AbstractEditorServicing>(
         provider: any LumiAgentToolProviding,
         factory: @escaping EditorBootstrapFactory<Service>
     ) throws {

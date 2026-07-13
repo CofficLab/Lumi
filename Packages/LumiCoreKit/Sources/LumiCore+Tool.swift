@@ -1,23 +1,19 @@
 import Foundation
 
-public extension LumiCore {
-    // MARK: - Built-in Tools
+// MARK: - Tool Service
 
-    /// 内置工具列表
-    static let builtInTools: [any LumiAgentTool] = [
-        NoOpTool(),
-        ConversationInfoTool(),
-    ]
+extension LumiCore {
+    // 注意：`builtInTools` 是 stored property，必须定义在主类里，不能放在 extension。
 
     // MARK: - Tool Service Bootstrap
 
     /// 初始化 `ToolService` 并注入运行环境。
-    static func bootstrapToolService(provider: any LumiAgentToolProviding) throws {
+    public func bootstrapToolService(provider: any LumiAgentToolProviding) throws {
         let toolService = ToolService()
         registerService(ToolService.self, toolService)
         registerService((any LumiToolServicing).self, toolService)
         // 注入环境，让 ToolService 能通过协议获取 verbosity / projectPath
-        toolService.environment = ToolServiceEnvironmentBridge()
+        toolService.environment = ToolServiceEnvironmentBridge(lumiCore: self)
 
         // 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
         try validateToolNameUniqueness(provider: provider)
@@ -38,7 +34,7 @@ public extension LumiCore {
     /// - Parameters:
     ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
     ///   - context: 当前的 `LumiPluginContext`
-    static func bootstrapToolContributions(
+    public func bootstrapToolContributions(
         provider: any LumiAgentToolProviding,
         context: LumiPluginContext
     ) {
@@ -87,7 +83,7 @@ public extension LumiCore {
     ///
     /// - Parameter provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
     /// - Throws: `LumiToolRegistrationError.duplicateNames` 当 `provider` 提供的工具名有重复。
-    static func validateToolNameUniqueness(
+    public func validateToolNameUniqueness(
         provider: any LumiAgentToolProviding
     ) throws {
         let bootContext = makePluginContext(

@@ -2,70 +2,106 @@ import Combine
 import Foundation
 import SwiftUI
 
+/// LumiCore 默认实现：`final class`，可实例化、可注入、可 mock。
+///
+/// - 所有公开 API 通过 `LumiCoreAccessing`（视图/插件常用）和 `LumiCoreBootstrapping`
+///   （启动期一次性 API）两个协议暴露。
+/// - 实例化后通过 SwiftUI `Environment(\.lumiCore)` 注入视图树，或直接持有引用。
+/// - 单测时可创建独立实例（多实例隔离），或 mock 实现 `LumiCoreAccessing` 协议。
+///
+/// ## 使用模式
+///
+/// **App 启动期**：
+/// ```swift
+/// let core = LumiCore()
+/// core.setupChatService { ChatService(...) }
+/// try core.boot(databaseDirectory: ..., provider: pluginService, editorFactory: ...)
+/// // 通过 .environment(\.lumiCore, core) 注入视图树
+/// ```
+///
+/// **单元测试**（多实例隔离）：
+/// ```swift
+/// let core1 = LumiCore()
+/// let core2 = LumiCore()
+/// // 两个实例互不影响，services / projectState / layoutState 完全隔离
+/// ```
 @MainActor
-public enum LumiCore {
-    private static var configuration: LumiCoreConfiguration?
-    
-    public static var dataRootDirectory: URL? = nil
+public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
+    // MARK: - State
 
-    /// Logo 注册表（指向 `LogoRegistry.shared` 单例）
-    @MainActor public static var logoRegistry: LogoRegistry { .shared }
+    public private(set) var dataRootDirectory: URL?
 
-    /// 项目状态管理器
-    @MainActor public private(set) static var projectState: LumiProjectState?
+    public var logoRegistry: LogoRegistry { .shared }
 
-    /// 布局状态管理器
-    @MainActor public private(set) static var layoutState: LumiLayoutState?
+    public private(set) var projectState: LumiProjectState?
 
-    /// 聊天服务（由外部通过 `setupChatService` 工厂创建，自动注册到服务表）
-    @MainActor public private(set) static var chatService: (any LumiChatServicing)?
+    public private(set) var layoutState: LumiLayoutState?
 
-    /// ChatService 工厂闭包类型
-    public typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
+    public private(set) var chatService: (any LumiChatServicing)?
 
-    /// ChatService 工厂，由 LumiApp 在启动时提供。
-    /// 提供后，LumiCore 在 boot() 时自动创建并注册到服务表。
-    private static var chatServiceFactory: ChatServiceFactory?
+    public internal(set) var editorService: (any AbstractEditorServicing)?
+
+    /// 内置工具列表（每个 LumiCore 实例独立持有，但内容全局不变）。
+    let builtInTools: [any LumiAgentTool] = [
+        NoOpTool(),
+        ConversationInfoTool(),
+    ]
+
+    // MARK: - Internal Storage
+
+    /// 核心配置实例（`configure` 后非空）。
+    private var _configuration: LumiCoreConfiguration?
+
+    /// ChatService 工厂，由外部在启动时提供；提供后，`boot()` 自动创建并注册。
+    private var chatServiceFactory: ChatServiceFactory?
+
+    /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
+    private var services: [ObjectIdentifier: Any] = [:]
+
+    /// 空构造器（用于单测场景：创建不依赖任何服务的空实例）。
+    public init() {}
+
+    // MARK: - Configuration
+
+    /// 配置存储根目录（创建物理目录）。
+    /// - Parameter dataRootDirectory: 数据根目录路径。
+    public func configure(dataRootDirectory: URL) throws {
+        let directory = dataRootDirectory.standardizedFileURL
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        // 同步设置 `dataRootDirectory` 公开属性，确保 `LumiCoreAccessing` 协议的实现契约一致
+        // （`pluginDataDirectory(for:)` / `coreDataDirectory` 依赖它不为 nil）。
+        self.dataRootDirectory = directory
+        _configuration = LumiCoreConfiguration(dataRootDirectory: directory)
+    }
+
+    // MARK: - ChatService Factory
 
     /// 设置 ChatService 工厂。
-    /// - Parameters:
-    ///   - factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
-    ///   - 应在 `LumiCore.boot()` 之前调用。
-    public static func setupChatService(_ factory: @escaping ChatServiceFactory) {
+    /// - Parameter factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
+    ///   应在 `boot()` 之前调用。
+    public func setupChatService(_ factory: @escaping ChatServiceFactory) {
         chatServiceFactory = factory
     }
 
     // MARK: - Service Registry
 
-    /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
-    @MainActor private static var services: [ObjectIdentifier: Any] = [:]
-
-    /// 注册一个服务实例，供 `LumiCore.makePluginContext` 自动注入。
-    /// - 应在 `RootContainer` 初始化完成后调用一次。
-    public static func registerService<T>(_ type: T.Type, _ instance: T) {
+    /// 注册一个服务实例，供 `makePluginContext` 自动注入。
+    /// 应在 `RootContainer` 初始化完成后调用一次。
+    public func registerService<T>(_ type: T.Type, _ instance: T) {
         services[ObjectIdentifier(type)] = instance
     }
 
     /// 从注册表解析已注册的服务实例。
-    public static func resolveService<T>(_ type: T.Type = T.self) -> T? {
+    public func resolveService<T>(_ type: T.Type = T.self) -> T? {
         services[ObjectIdentifier(type)] as? T
     }
 
-    // MARK: - Plugin Context Factory
-
-    /// 统一创建 `LumiPluginContext`。
-    /// 基础服务（如 `LumiChatServicing`、`LumiToolServicing` 等）由 `LumiCore` 自动注入。
-    /// App 层自定义服务可通过 `additionalDependencies` 手动注入。
-    /// - Parameters:
-    ///   - activeSectionID: 当前活跃区域 ID。
-    ///   - activeSectionTitle: 当前活跃区域标题。
-    ///   - chatSection: 聊天区布局配置。
-    ///   - showsRail: 是否显示侧边栏。
-    ///   - showsPanelChrome: 是否显示面板边框。
-    ///   - isChatSectionVisible: 聊天区是否可见。
-    ///   - additionalDependencies: 依赖注册回调，用于注入外部服务。
-    /// - Returns: 初始化完成的 `LumiPluginContext`。
-    public static func makePluginContext(
+    /// 带默认参数的便利方法（供 SwiftUI 视图等使用最常用参数子集）。
+    public func makePluginContext(
         activeSectionID: String,
         activeSectionTitle: String,
         chatSection: LumiChatSectionLayout = .none,
@@ -103,15 +139,16 @@ public enum LumiCore {
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
-            dependencies: dependencies
+            dependencies: dependencies,
+            lumiCore: self
         )
     }
 
-    // MARK: - 启动
+    // MARK: - Boot
 
     /// 启动 LumiCore。
     ///
-    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 `LumiCore` 会在工具服务就绪后
+    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 LumiCore 会在工具服务就绪后
     /// 自动调用工厂创建 `EditorService`，并同时注册抽象协议（`AbstractEditorServicing`）
     /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
     /// 单元测试、CLI 工具）。
@@ -120,14 +157,14 @@ public enum LumiCore {
     ///   - databaseDirectory: 数据根目录。
     ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
     ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
-    public static func boot<Service: AbstractEditorServicing>(
+    public func boot<Service: AbstractEditorServicing>(
         databaseDirectory: URL,
         provider: any LumiAgentToolProviding,
-        editorFactory: EditorBootstrapFactory<Service>? = nil
+        editorFactory: EditorBootstrapFactory<Service>?
     ) throws {
         projectState = LumiProjectState()
         layoutState = LumiLayoutState()
-        Self.dataRootDirectory = databaseDirectory
+        dataRootDirectory = databaseDirectory
 
         // 自动创建并注册 ChatService
         if let factory = chatServiceFactory {
@@ -139,7 +176,7 @@ public enum LumiCore {
             }
         }
 
-        try self.configure(dataRootDirectory: databaseDirectory)
+        try configure(dataRootDirectory: databaseDirectory)
 
         try bootstrapToolService(provider: provider)
 

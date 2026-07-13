@@ -2,56 +2,84 @@ import Foundation
 @testable import LumiCoreKit
 import Testing
 
-@Test func appConfigUsesConfiguredDataRootDirectory() async throws {
+// MARK: - LumiCore 实例化存储路径测试
+//
+// 重构说明：
+// - 旧测试通过 `AppConfig.configure(dataRootDirectory:)` 验证全局配置（已迁移至 `LumiCore` 实例）
+// - `LumiStorageMigration` 相关测试已删除——迁移逻辑在新版本中不再需要
+//   （参见 commit 9696785a2：「Remove LumiStorageMigration as migration is no longer needed」）
+// - 新测试直接验证 `LumiCore.configure(dataRootDirectory:)` 后 `pluginDataDirectory(for:)` 的行为
+
+@MainActor
+@Test func lumiCoreConfigureMakesPluginDataDirectoryUnderDataRoot() throws {
     let tempRoot = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AppConfigTests-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("LumiCoreStorage-\(UUID().uuidString)", isDirectory: true)
     let dataRoot = tempRoot.appendingPathComponent("db_debug_v4", isDirectory: true)
-    try FileManager.default.createDirectory(at: dataRoot, withIntermediateDirectories: true)
     defer {
-        AppConfig.resetForTesting()
         try? FileManager.default.removeItem(at: tempRoot)
     }
 
-    await MainActor.run {
-        AppConfig.configure(dataRootDirectory: dataRoot)
+    let core = LumiCore()
+    try core.configure(dataRootDirectory: dataRoot)
+
+    let pluginDirectory = core.pluginDataDirectory(for: "Memory")
+    #expect(pluginDirectory.lastPathComponent == "Memory")
+    #expect(pluginDirectory.deletingLastPathComponent().standardizedFileURL == dataRoot.standardizedFileURL)
+}
+
+@MainActor
+@Test func lumiCorePluginDataDirectorySanitizesPluginName() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LumiCoreStorage-\(UUID().uuidString)", isDirectory: true)
+    let dataRoot = tempRoot.appendingPathComponent("db_debug_v4", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: tempRoot)
     }
 
-    #expect(AppConfig.getDBFolderURL() == dataRoot.standardizedFileURL)
+    let core = LumiCore()
+    try core.configure(dataRootDirectory: dataRoot)
 
-    let pluginDirectory = AppConfig.getPluginDBFolderURL(pluginName: "Memory")
-    #expect(pluginDirectory.lastPathComponent == "Memory")
-    #expect(pluginDirectory.deletingLastPathComponent().lastPathComponent == "db_debug_v4")
+    // 含特殊字符的插件名会被清洗
+    let directory = core.pluginDataDirectory(for: "Projects Plugin!")
+    #expect(directory.lastPathComponent == "Projects_Plugin")
+    #expect(directory.deletingLastPathComponent().standardizedFileURL == dataRoot.standardizedFileURL)
 }
 
-@Test func storageMigrationMovesMisplacedPluginDirectoriesIntoDataRoot() throws {
+@MainActor
+@Test func lumiCoreCoreDataDirectoryLivesAlongsidePlugins() throws {
     let tempRoot = FileManager.default.temporaryDirectory
-        .appendingPathComponent("LumiStorageMigrationTests-\(UUID().uuidString)", isDirectory: true)
-    let appDirectory = tempRoot.appendingPathComponent("com.coffic.lumi", isDirectory: true)
-    let dataRoot = appDirectory.appendingPathComponent("db_debug_v4", isDirectory: true)
-    let misplacedPlugin = appDirectory.appendingPathComponent("LayoutPlugin", isDirectory: true)
-    let marker = misplacedPlugin.appendingPathComponent("settings.plist")
+        .appendingPathComponent("LumiCoreStorage-\(UUID().uuidString)", isDirectory: true)
+    let dataRoot = tempRoot.appendingPathComponent("db_debug_v4", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: tempRoot)
+    }
 
-    try FileManager.default.createDirectory(at: misplacedPlugin, withIntermediateDirectories: true)
-    try Data("{}".utf8).write(to: marker)
-    try FileManager.default.createDirectory(at: dataRoot, withIntermediateDirectories: true)
+    let core = LumiCore()
+    try core.configure(dataRootDirectory: dataRoot)
 
-    LumiStorageMigration.migrateMisplacedPluginDirectories(to: dataRoot)
-
-    #expect(!FileManager.default.fileExists(atPath: misplacedPlugin.path))
-    #expect(FileManager.default.fileExists(atPath: dataRoot.appendingPathComponent("LayoutPlugin/settings.plist").path))
+    #expect(core.coreDataDirectory.standardizedFileURL == dataRoot.appendingPathComponent("Core", isDirectory: true).standardizedFileURL)
 }
 
-@Test func storageMigrationSkipsVersionedDatabaseDirectories() throws {
-    let tempRoot = FileManager.default.temporaryDirectory
-        .appendingPathComponent("LumiStorageMigrationSkipTests-\(UUID().uuidString)", isDirectory: true)
-    let appDirectory = tempRoot.appendingPathComponent("com.coffic.lumi", isDirectory: true)
-    let dataRoot = appDirectory.appendingPathComponent("db_debug_v4", isDirectory: true)
-    let oldDatabase = appDirectory.appendingPathComponent("db_debug_v3", isDirectory: true)
+@MainActor
+@Test func lumiCoreInstancesAreIndependent() throws {
+    let tempRootA = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LumiCoreStorageA-\(UUID().uuidString)", isDirectory: true)
+    let tempRootB = FileManager.default.temporaryDirectory
+        .appendingPathComponent("LumiCoreStorageB-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: tempRootA)
+        try? FileManager.default.removeItem(at: tempRootB)
+    }
 
-    try FileManager.default.createDirectory(at: oldDatabase, withIntermediateDirectories: true)
-    try FileManager.default.createDirectory(at: dataRoot, withIntermediateDirectories: true)
+    let dataRootA = tempRootA.appendingPathComponent("db_debug_v4", isDirectory: true)
+    let dataRootB = tempRootB.appendingPathComponent("db_debug_v4", isDirectory: true)
 
-    LumiStorageMigration.migrateMisplacedPluginDirectories(to: dataRoot)
+    let coreA = LumiCore()
+    let coreB = LumiCore()
 
-    #expect(FileManager.default.fileExists(atPath: oldDatabase.path))
+    try coreA.configure(dataRootDirectory: dataRootA)
+    try coreB.configure(dataRootDirectory: dataRootB)
+
+    #expect(coreA.coreDataDirectory.standardizedFileURL == dataRootA.appendingPathComponent("Core", isDirectory: true).standardizedFileURL)
+    #expect(coreB.coreDataDirectory.standardizedFileURL == dataRootB.appendingPathComponent("Core", isDirectory: true).standardizedFileURL)
 }

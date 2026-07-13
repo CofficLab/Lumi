@@ -10,6 +10,7 @@ final class LumiCoreService: SuperLog {
     nonisolated static let emoji = "⚙️"
     nonisolated static let verbose = false
 
+    let lumiCore: LumiCore
     let dataRootDirectory: URL
     let coreDatabaseDirectory: URL
 
@@ -25,12 +26,15 @@ final class LumiCoreService: SuperLog {
         self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
-        // 设置 ChatService 工厂，LumiCore.boot() 时自动创建并注册
-        LumiCore.setupChatService { databaseDirectory in
-            ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+        // 创建 LumiCore 实例
+        self.lumiCore = LumiCore()
+
+        // 设置 ChatService 工厂，boot() 时自动创建并注册
+        lumiCore.setupChatService { [weak self] databaseDirectory in
+            ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: self?.lumiCore)
         }
 
-        try LumiCore.boot(
+        try lumiCore.boot(
             databaseDirectory: self.coreDatabaseDirectory,
             provider: provider,
             editorFactory: editorFactory
