@@ -33,7 +33,12 @@ public enum ConversationRecoveryPlugin: LumiPlugin {
                 order: 0, // 显示在最顶部
                 fillsRemainingHeight: false
             ) {
-                ConversationRecoveryChatSectionView(coordinator: coordinator)
+                ConversationRecoverySidebarView(
+                    conversationIdProvider: { coordinator.selectedConversationID },
+                    backgroundColorProvider: {
+                        LumiTheme.current.background.opacity(0.94)
+                    }
+                )
             }
         ]
     }
@@ -62,19 +67,5 @@ public enum ConversationRecoveryPlugin: LumiPlugin {
                 )
             )
         ]
-    }
-}
-
-private struct ConversationRecoveryChatSectionView: View {
-    @LumiTheme private var theme
-    @ObservedObject var coordinator: ChatSectionCoordinator
-
-    var body: some View {
-        ConversationRecoverySidebarView(
-            conversationIdProvider: { coordinator.selectedConversationID },
-            backgroundColorProvider: {
-                theme.background.opacity(0.94)
-            }
-        )
     }
 }
