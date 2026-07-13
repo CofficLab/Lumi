@@ -42,48 +42,34 @@ public struct TreeViewV2: View, SuperLog {
             if projectPath.isEmpty {
                 NoProjectView()
             } else {
-                VStack(spacing: 0) {
-                    FileTreeNSViewBridge(
-                        projectRootPath: projectPath,
-                        onSelect: { selectedURL in
-                            openProjectFile(selectedURL)
-                        },
-                        onExpansionChange: { relativePath, isExpanded in
-                            handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
-                        },
-                        onTreeMutation: {
-                            refreshTreeAfterMutation()
-                        },
-                        onCloseEditorTabs: { urls in
-                            editorContext.closeSessions(forURLs: urls)
-                        },
-                        onRenameEditorTab: { oldURL, newURL in
-                            editorContext.replaceSessionURL(from: oldURL, to: newURL)
-                        },
-                        onAddToConversation: { urls in
-                            editorContext.addToConversation(fileURLs: urls, windowId: nil)
-                        },
-                        flashTrigger: flashTrigger,
-                        onMiddleClick: { selectedURL in
-                            openProjectFile(selectedURL)
-                        },
-                        gitStatusSnapshot: coordinator.gitStatusSnapshot
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                    if showPackageDependencies {
-                        Divider()
-                            .opacity(0.35)
-
-                        PackageDependencySection(
-                            projectRootPath: projectPath,
-                            dependencies: packageStore.dependencies,
-                            isLoading: packageStore.isLoading,
-                            diagnostic: packageStore.diagnostic,
-                            onRetry: { packageStore.refresh() }
-                        )
-                    }
-                }
+                FileTreeNSViewBridge(
+                    projectRootPath: projectPath,
+                    onSelect: { selectedURL in
+                        openProjectFile(selectedURL)
+                    },
+                    onExpansionChange: { relativePath, isExpanded in
+                        handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
+                    },
+                    onTreeMutation: {
+                        refreshTreeAfterMutation()
+                    },
+                    onCloseEditorTabs: { urls in
+                        editorContext.closeSessions(forURLs: urls)
+                    },
+                    onRenameEditorTab: { oldURL, newURL in
+                        editorContext.replaceSessionURL(from: oldURL, to: newURL)
+                    },
+                    onAddToConversation: { urls in
+                        editorContext.addToConversation(fileURLs: urls, windowId: nil)
+                    },
+                    flashTrigger: flashTrigger,
+                    onMiddleClick: { selectedURL in
+                        openProjectFile(selectedURL)
+                    },
+                    gitStatusSnapshot: coordinator.gitStatusSnapshot,
+                    packageDependencies: showPackageDependencies ? packageStore.dependencies : []
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .environmentObject(selectionState)

@@ -14,7 +14,6 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     nonisolated static var verbose: Bool { EditorFileTreeV2Plugin.verbose }
     nonisolated static let logger = EditorFileTreeV2Plugin.logger
 
-    
     private let collectionView: NSCollectionView = {
         let cv = NSCollectionView()
         cv.translatesAutoresizingMaskIntoConstraints = false
@@ -23,20 +22,20 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         cv.backgroundColors = [.clear]
         return cv
     }()
-    
+
     private var dataSource: FileTreeDiffableDataSource!
     private let fileTreeDataSource = FileTreeDataSource()
     private var selectionState = SelectionState()
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
     private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
-    
+
     /// 文件选择回调
     var onSelect: ((URL) -> Void)?
-    
+
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?
-    
+
     /// 树结构变化回调
     var onTreeMutation: (() -> Void)?
 
@@ -60,15 +59,16 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var flashOpacity: Double = 0
 
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCellView")
-    
+    private static let packageCellIdentifier = NSUserInterfaceItemIdentifier("PackageDependencyNodeCellView")
+
     /// viewDidLoad 之前预存的根路径
     private var pendingProjectRoot: String?
-    
+
     override func loadView() {
         view = NSView()
         view.wantsLayer = true
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
@@ -88,14 +88,14 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             pendingProjectRoot = nil
         }
     }
-    
+
     private func setupCollectionView() {
         let layout = Self.makeLayout()
         collectionView.collectionViewLayout = layout
 
-        // 注册 cell 类以启用复用池。register(_:forItemWithIdentifier:) 会让
-        // makeItem 走类初始化路径（不查 nib），从而复用已创建的 cell，避免每次都 new。
+        // 注册 cell 类以启用复用池
         collectionView.register(FileTreeNodeCell.self, forItemWithIdentifier: Self.cellIdentifier)
+        collectionView.register(PackageDependencyNodeCell.self, forItemWithIdentifier: Self.packageCellIdentifier)
 
         // NSCollectionView 必须放在 NSScrollView 中才能滚动
         let scrollView = NSScrollView()
@@ -107,6 +107,9 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
         view.addSubview(scrollView)
 
+        // 启用拖放：支持文件 URL 拖出到输入框等目标，以及拖入目录 cell 移动文件
+        collectionView.registerForDraggedTypes([.fileURL])
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -114,50 +117,67 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
+
     private func setupDataSource() {
         dataSource = FileTreeDiffableDataSource(collectionView: collectionView) { [weak self] _, indexPath, item in
             guard let self = self else { return nil }
 
-            // 走复用池：命中已存在的 cell 就复用，不会每次都新建 cell + NSHostingView
-            let cell = self.collectionView.makeItem(
-                withIdentifier: Self.cellIdentifier,
-                for: indexPath
-            ) as? FileTreeNodeCell ?? FileTreeNodeCell()
+            switch item {
+            case .file(let fileItem):
+                let cell = self.collectionView.makeItem(
+                    withIdentifier: Self.cellIdentifier,
+                    for: indexPath
+                ) as? FileTreeNodeCell ?? FileTreeNodeCell()
 
-            let isSelected = self.selectionState.isSelected(item.url)
-            let isHovered = self.hoveredItemURL == item.url
-            let gitStatus = self.gitStatus(for: item.url)
-            let itemFlashOpacity: Double = (self.flashItemURL == item.url) ? self.flashOpacity : 0
+                let isSelected = self.selectionState.isSelected(fileItem.url)
+                let isHovered = self.hoveredItemURL == fileItem.url
+                let gitStatus = self.gitStatus(for: fileItem.url)
+                let itemFlashOpacity: Double = (self.flashItemURL == fileItem.url) ? self.flashOpacity : 0
 
-            cell.configure(
-                with: item,
-                isSelected: isSelected,
-                isHovered: isHovered,
-                gitStatus: gitStatus,
-                theme: self.theme,
-                flashOpacity: itemFlashOpacity
-            )
+                cell.configure(
+                    with: fileItem,
+                    isSelected: isSelected,
+                    isHovered: isHovered,
+                    gitStatus: gitStatus,
+                    theme: self.theme,
+                    flashOpacity: itemFlashOpacity
+                )
 
-            return cell
+                return cell
+
+            case .packageHeader, .packageDependency:
+                let cell = self.collectionView.makeItem(
+                    withIdentifier: Self.packageCellIdentifier,
+                    for: indexPath
+                ) as? PackageDependencyNodeCell ?? PackageDependencyNodeCell()
+
+                cell.configure(
+                    with: item,
+                    isSelected: false,
+                    isHovered: false,
+                    theme: self.theme
+                )
+
+                return cell
+            }
         }
 
         collectionView.delegate = self
         collectionView.dataSource = dataSource
     }
-    
+
     private func setupBindings() {
         fileTreeDataSource.onItemsChanged = { [weak self] items in
             guard let self = self else { return }
-            
-            var snapshot = NSDiffableDataSourceSnapshot<Section, FileTreeNodeItem>()
+
+            var snapshot = NSDiffableDataSourceSnapshot<Section, CollectionItem>()
             snapshot.appendSections([.main])
             snapshot.appendItems(items, toSection: .main)
-            
+
             self.dataSource.apply(snapshot, animatingDifferences: true)
         }
     }
-    
+
     private func setupTrackingArea() {
         trackingArea = NSTrackingArea(
             rect: .zero,
@@ -165,14 +185,13 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             owner: self,
             userInfo: nil
         )
-        
+
         if let trackingArea = trackingArea {
             view.addTrackingArea(trackingArea)
         }
     }
-    
+
     override func mouseMoved(with event: NSEvent) {
-        // 必须转换到 collectionView 的坐标系，与 layoutAttributesForItem 的 frame 保持一致。
         let point = collectionView.convert(event.locationInWindow, from: nil)
 
         var hitURL: URL?
@@ -182,19 +201,16 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
                 continue
             }
             if frame.contains(point) {
-                hitURL = item.url
+                if case .file(let fileItem) = item {
+                    hitURL = fileItem.url
+                }
                 break
             }
         }
 
-        // 没有变化就不做任何操作
         if hitURL == hoveredItemURL { return }
         hoveredItemURL = hitURL
 
-        // 直接遍历可见 cell 实例同步更新 hover 状态——不走 reloadItems（异步排期，
-        // 快速移动时多批次叠加会残留多个高亮）也不走 item(at:)（diffable data source
-        // 下查找不可靠会返回 nil）。visibleItems() 直接返回 cell 对象，一定能拿到。
-        // 一次遍历把所有可见 cell 同步到正确状态，既不漏亮也不残留。
         syncHoverState(hitURL: hitURL)
     }
 
@@ -204,17 +220,24 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         syncHoverState(hitURL: nil)
     }
 
-    /// 遍历所有可见 cell，把 hover 状态同步为「仅 hitURL 高亮」。
     private func syncHoverState(hitURL: URL?) {
-        for case let cell as FileTreeNodeCell in collectionView.visibleItems() {
-            guard let indexPath = collectionView.indexPath(for: cell),
-                  let item = dataSource.itemIdentifier(for: indexPath) else { continue }
-            cell.updateHovered(item.url == hitURL)
+        for cell in collectionView.visibleItems() {
+            guard let indexPath = collectionView.indexPath(for: cell) else { continue }
+            guard let item = dataSource.itemIdentifier(for: indexPath) else { continue }
+
+            switch (cell, item) {
+            case (let fileCell as FileTreeNodeCell, .file(let fileItem)):
+                fileCell.updateHovered(fileItem.url == hitURL)
+            case (let packageCell as PackageDependencyNodeCell, _):
+                packageCell.updateHovered(false)
+            default:
+                break
+            }
         }
     }
-    
+
     // MARK: - Public API
-    
+
     func setProjectRoot(_ path: String) {
         if isViewLoaded {
             if Self.verbose {
@@ -222,29 +245,30 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             }
             fileTreeDataSource.setProjectRoot(path)
         } else {
-            // viewDidLoad 之前，暂存路径
             pendingProjectRoot = path
             if Self.verbose {
                 Self.logger.info("\(Self.t)预存项目路径（待 viewDidLoad 后加载）：\(path)")
             }
         }
     }
-    
+
+    func setPackageDependencies(_ dependencies: [PackageDependency]) {
+        fileTreeDataSource.setPackageDependencies(dependencies)
+    }
+
     func reloadDirectory(at url: URL) {
         fileTreeDataSource.reloadDirectory(at: url)
     }
-    
+
     func fullRefresh() {
         fileTreeDataSource.fullRefresh()
     }
-    
+
     func updateGitStatus(_ snapshot: GitStatusSnapshot) {
         gitStatusSnapshot = snapshot
-        // 触发可见 cell 重绘以显示 Git 状态标记
         reloadVisibleItems()
     }
 
-    /// 触发指定路径的闪烁高亮动画
     func triggerFlash(path: String) {
         guard EditorFileTreeV2Plugin.flashHighlightEnabled else { return }
         let targetURL = URL(fileURLWithPath: path)
@@ -252,7 +276,6 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         flashOpacity = 0.25
         reloadVisibleItems()
 
-        // 延迟后淡出并清除闪烁状态
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(0.6 * 1_000_000_000))
             flashOpacity = 0
@@ -263,14 +286,12 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         }
     }
 
-    /// 重新加载可见 cell，用于 Git 状态更新和闪烁动画
     private func reloadVisibleItems() {
         let visibleItems = collectionView.indexPathsForVisibleItems()
         guard !visibleItems.isEmpty else { return }
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
-    /// 根据文件 URL 查询 Git 状态
     private func gitStatus(for url: URL) -> GitStatus? {
         guard !gitStatusSnapshot.isEmpty,
               !gitStatusSnapshot.repoRootPath.isEmpty else { return nil }
@@ -282,29 +303,29 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         return gitStatusSnapshot.statusForPath(relativePath)
             ?? gitStatusSnapshot.aggregateStatusForDirectory(relativePath)
     }
-    
+
     func getProjectRootPath() -> String {
         return fileTreeDataSource.projectRootPath
     }
-    
+
     // MARK: - Layout
-    
+
     static func makeLayout() -> NSCollectionViewLayout {
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .absolute(24)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        
+
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .absolute(24)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-        
+
         let section = NSCollectionLayoutSection(group: group)
         section.interGroupSpacing = 0
-        
+
         let layout = NSCollectionViewCompositionalLayout(section: section)
         return layout
     }
@@ -313,7 +334,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 // MARK: - NSCollectionViewDelegate
 
 extension FileTreeCollectionViewController: NSCollectionViewDelegate {
-    
+
     func collectionView(
         _ collectionView: NSCollectionView,
         didSelectItemsAt indexPaths: Set<IndexPath>
@@ -323,28 +344,34 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
 
+        // 只处理 file 类型的点击
+        guard case .file(let fileItem) = item else {
+            collectionView.deselectItems(at: indexPaths)
+            return
+        }
+
         let modifiers = ModifierFlags.currentClick
 
         selectionState.handleTap(
-            url: item.url,
-            isDirectory: item.isDirectory,
+            url: fileItem.url,
+            isDirectory: fileItem.isDirectory,
             modifiers: modifiers,
             onOpenFile: {
-                self.onSelect?(item.url)
+                self.onSelect?(fileItem.url)
             },
             onToggleExpand: {
-                self.fileTreeDataSource.toggleExpansion(at: item.url)
+                self.fileTreeDataSource.toggleExpansion(at: fileItem.url)
                 let relativePath = PathFormatter.expansionPath(
-                    for: item.url,
-                    projectRootPath: item.projectRootPath
+                    for: fileItem.url,
+                    projectRootPath: fileItem.projectRootPath
                 )
-                self.onExpansionChange?(relativePath, !item.isExpanded)
+                self.onExpansionChange?(relativePath, !fileItem.isExpanded)
             }
         )
 
         collectionView.deselectItems(at: indexPaths)
     }
-    
+
     func collectionView(
         _ collectionView: NSCollectionView,
         menuForItemsAt indexPaths: Set<IndexPath>
@@ -353,13 +380,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return nil
         }
-        return buildMenu(for: item.url, isDirectory: item.isDirectory)
+
+        guard case .file(let fileItem) = item else {
+            return nil
+        }
+
+        return buildMenu(for: fileItem.url, isDirectory: fileItem.isDirectory)
     }
 
-    /// 根据鼠标位置（window 坐标）构建右键菜单。
-    /// 供 hosting view 在 rightMouseDown 时调用——NSCollectionView 内部的命中测试
-    /// 在 NSHostingView 承载的 cell 上会失效（menuForItemsAt 不被调用），所以这里
-    /// 自己用 layoutAttributes 做命中测试，绕过该限制。
     func menuForItem(atWindowLocation location: NSPoint) -> NSMenu? {
         let point = collectionView.convert(location, from: nil)
         for indexPath in collectionView.indexPathsForVisibleItems() {
@@ -368,17 +396,18 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             }
             if frame.contains(point) {
                 guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
-                return buildMenu(for: item.url, isDirectory: item.isDirectory)
+                if case .file(let fileItem) = item {
+                    return buildMenu(for: fileItem.url, isDirectory: fileItem.isDirectory)
+                }
+                return nil
             }
         }
         return nil
     }
 
-    /// 构建指定节点 url 的右键菜单（顺序对齐 V1）。
     private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
         let menu = NSMenu()
 
-        // New File / New Folder（仅目录）
         if isDirectory {
             menu.addItem(menuItem(
                 title: LumiPluginLocalization.string("New File", bundle: .module),
@@ -393,7 +422,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             menu.addItem(.separator())
         }
 
-        // Rename
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Rename", bundle: .module),
             action: #selector(renameItem(_:)),
@@ -401,32 +429,27 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         ))
         menu.addItem(.separator())
 
-        // Add to Conversation
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Add to Conversation", bundle: .module),
             action: #selector(addToConversation(_:)),
             url: url
         ))
 
-        // Reveal in Finder
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
             action: #selector(revealInFinder(_:)),
             url: url
         ))
-        // Open in VS Code
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Open in VS Code", bundle: .module),
             action: #selector(openInVSCode(_:)),
             url: url
         ))
-        // Open in Terminal
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Open in Terminal", bundle: .module),
             action: #selector(openInTerminal(_:)),
             url: url
         ))
-        // Copy Path
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Copy Path", bundle: .module),
             action: #selector(copyPath(_:)),
@@ -435,7 +458,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
 
         menu.addItem(.separator())
 
-        // Move to Trash
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
             action: #selector(deleteItem(_:)),
@@ -445,14 +467,13 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         return menu
     }
 
-    /// 便捷构建菜单项，统一设置 target 与 representedObject。
     private func menuItem(title: String, action: Selector, url: URL) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.representedObject = url
         item.target = self
         return item
     }
-    
+
     // MARK: - Menu Actions
 
     @objc private func newFile(_ sender: NSMenuItem) {
@@ -514,7 +535,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             confirmButton: LumiPluginLocalization.string("Rename", bundle: .module)
         ) else { return }
 
-        // 名字没变就不操作
         guard newName != url.lastPathComponent else { return }
 
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
@@ -527,7 +547,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         if Self.verbose {
             Self.logger.info("\(Self.t)重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
         }
-        // 联动编辑器：关闭旧 tab，打开新路径
         onRenameEditorTab?(url, newURL)
         refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
         alert_success(LumiPluginLocalization.string("Rename", bundle: .module),
@@ -547,14 +566,13 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         if Self.verbose {
             Self.logger.info("\(Self.t)删除: \(url.path)")
         }
-        // 联动编辑器：关闭对应 tab
         onCloseEditorTabs?([url])
         selectionState.clearSelection()
         refreshAfterMutation(parentURL: url.deletingLastPathComponent())
         alert_success(LumiPluginLocalization.string("Moved to Trash", bundle: .module),
                       subtitle: url.lastPathComponent)
     }
-    
+
     @objc private func revealInFinder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.openInFinder(url)
@@ -586,33 +604,26 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
 
     // MARK: - File Operation Helpers
 
-    /// 确保目录处于展开状态（新建文件/文件夹后让新项立即可见）。
     private func ensureDirectoryExpanded(_ url: URL) {
-        guard let item = fileTreeDataSource.items.first(where: { $0.url == url }),
-              item.isDirectory, !item.isExpanded else { return }
+        guard let item = fileTreeDataSource.items.first(where: {
+            if case .file(let fileItem) = $0, fileItem.url == url { return true }
+            return false
+        }), case .file(let fileItem) = item,
+              fileItem.isDirectory, !fileItem.isExpanded else { return }
         fileTreeDataSource.toggleExpansion(at: url)
-        // 同步展开状态到持久化（与正常点击展开走同一路径）
         let relativePath = PathFormatter.expansionPath(
             for: url, projectRootPath: fileTreeDataSource.projectRootPath
         )
         onExpansionChange?(relativePath, true)
     }
 
-    /// 文件操作后刷新：通知 SwiftUI 层 + 精准重载父目录。
     private func refreshAfterMutation(parentURL: URL) {
         onTreeMutation?()
         fileTreeDataSource.reloadDirectory(at: parentURL)
     }
 
-
     // MARK: - Drag & Drop
 
-    /// 处理把外部文件拖放到目录 cell 的事件。
-    /// 委托给静态纯函数 `FileTreeDropProcessor.process` 拿到 (movedPairs, affectedParents)，
-    /// 再触发编辑器回调、目录刷新与「目标目录自动展开」。
-    ///
-    /// 暴露为 internal（而非 private）以便单元测试覆盖；外部仍只通过
-    /// NodeRowView 的 .dropDestination 闭包注入触发。
     func handleDropFiles(targetURL: URL, sourceURLs: [URL]) -> Bool {
         let result = FileTreeDropProcessor.process(
             enabled: EditorFileTreeV2Plugin.dragAndDropEnabled,
@@ -626,21 +637,87 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         case .rejected:
             return false
         case .moved(let pairs, let affectedParents):
-            // 联动编辑器 tab
             for (old, new) in pairs {
                 onRenameEditorTab?(old, new)
             }
 
-            // 通知 SwiftUI 层先收到一次 mutation 信号（与新建/重命名一致）
             onTreeMutation?()
 
             for parent in affectedParents {
                 fileTreeDataSource.reloadDirectory(at: parent)
             }
 
-            // 若目标目录原本是折叠状态，drop 后把它展开，新移入的项立即可见。
             ensureDirectoryExpanded(targetURL)
             return true
+        }
+    }
+
+    // MARK: - Drag & Drop (Source)
+
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        pasteboardWriterForItemAt item: NSCollectionViewItem
+    ) -> NSPasteboardWriting? {
+        guard let indexPath = collectionView.indexPath(for: item),
+              let collectionItem = dataSource.itemIdentifier(for: indexPath),
+              case .file(let fileItem) = collectionItem else {
+            return nil
+        }
+        return NSURL(fileURLWithPath: fileItem.url.path) as NSURL
+    }
+
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        validateDrop draggingInfo: NSDraggingInfo,
+        proposedIndexPath: AutoreleasingUnsafeMutablePointer<NSIndexPath>,
+        dropOperation proposedDropOperation: UnsafeMutablePointer<NSCollectionView.DropOperation>
+    ) -> NSDragOperation {
+        let indexPath = proposedIndexPath.pointee as IndexPath
+        guard let item = dataSource.itemIdentifier(for: indexPath),
+              case .file(let fileItem) = item,
+              fileItem.isDirectory else {
+            return []
+        }
+        proposedDropOperation.pointee = .on
+        return .move
+    }
+
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        acceptDrop draggingInfo: NSDraggingInfo,
+        index: Int,
+        dropOperation: NSCollectionView.DropOperation
+    ) -> Bool {
+        let indexPath = IndexPath(item: index, section: 0)
+        let pasteboard = draggingInfo.draggingPasteboard
+        guard let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
+              !urls.isEmpty else { return false }
+
+        guard let targetItem = dataSource.itemIdentifier(for: indexPath),
+              case .file(let targetFile) = targetItem,
+              targetFile.isDirectory else { return false }
+
+        return handleDropFiles(targetURL: targetFile.url, sourceURLs: urls)
+    }
+
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        draggingItemsFor indexPaths: [IndexPath]
+    ) -> [NSDraggingItem] {
+        indexPaths.compactMap { indexPath -> NSDraggingItem? in
+            guard let item = dataSource.itemIdentifier(for: indexPath),
+                  case .file(let fileItem) = item else { return nil }
+
+            let draggingItem = NSDraggingItem(
+                pasteboardWriter: NSURL(fileURLWithPath: fileItem.url.path) as NSURL
+            )
+
+            let preview = NSHostingView(
+                rootView: FileTreeDragPreview(fileURL: fileItem.url, isDirectory: fileItem.isDirectory)
+            )
+            draggingItem.setDraggingFrame(preview.bounds, contents: preview)
+
+            return draggingItem
         }
     }
 }
@@ -648,18 +725,18 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
 // MARK: - NSCollectionViewDataSource
 
 extension FileTreeCollectionViewController: NSCollectionViewDataSource {
-    
+
     func numberOfSections(in collectionView: NSCollectionView) -> Int {
         return 1
     }
-    
+
     func collectionView(
         _ collectionView: NSCollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
         return dataSource.snapshot().numberOfItems
     }
-    
+
     func collectionView(
         _ collectionView: NSCollectionView,
         itemForRepresentedObjectAt indexPath: IndexPath

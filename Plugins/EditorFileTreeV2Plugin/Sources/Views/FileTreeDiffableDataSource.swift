@@ -6,4 +6,4 @@ enum Section: Int, CaseIterable, Hashable {
 }
 
 /// 文件树 Diffable Data Source 类型别名
-typealias FileTreeDiffableDataSource = NSCollectionViewDiffableDataSource<Section, FileTreeNodeItem>
+typealias FileTreeDiffableDataSource = NSCollectionViewDiffableDataSource<Section, CollectionItem>
