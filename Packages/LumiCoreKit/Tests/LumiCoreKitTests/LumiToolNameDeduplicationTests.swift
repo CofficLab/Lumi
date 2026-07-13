@@ -81,7 +81,10 @@ struct LumiToolNameDeduplicationTests {
             }
 
             #expect(entries.count == 1)
-            let entry = try #require(entries.first)
+            guard let entry = entries.first else {
+                Issue.record("entries.first should not be nil")
+                return
+            }
             #expect(entry.name == "conversation_info")
             // `String(reflecting:)` 含模块名；至少能看到 mock 类型名。
             #expect(entry.owners.count == 2)

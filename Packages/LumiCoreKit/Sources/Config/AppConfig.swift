@@ -7,18 +7,6 @@ public enum AppConfig {
         configuredDataRootDirectory != nil
     }
 
-    @MainActor
-    public static func configure(dataRootDirectory: URL) {
-        let directory = dataRootDirectory.standardizedFileURL
-        try? FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true
-        )
-        configuredDataRootDirectory = directory
-        LumiCore.configure(dataRootDirectory: directory)
-        LumiStorageMigration.migrateMisplacedPluginDirectories(to: directory)
-    }
-
     /// 当前版本/环境下的插件数据根目录，例如 `.../com.coffic.lumi/db_debug_v4/`
     public static func getDBFolderURL() -> URL {
         if let configuredDataRootDirectory {
