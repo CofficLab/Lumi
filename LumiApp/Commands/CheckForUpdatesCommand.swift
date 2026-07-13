@@ -15,7 +15,7 @@ private struct CheckForUpdatesMenuItem: View {
 
     var body: some View {
         Button(String(localized: "Check for Updates...")) {
-            UpdateController.shared.checkForUpdates()
+            UpdateService.shared.checkForUpdates()
         }
         .disabled(!viewModel.canCheckForUpdates)
     }
@@ -30,8 +30,8 @@ private final class CheckForUpdatesViewModel: ObservableObject {
         // 确保 updater 已初始化，再订阅 canCheckForUpdates。
         // 之前此处仅做可选绑定，若 updater 尚未就绪（setupFeedURLIfNeeded 的
         // detached Task 还没回来），KVO 订阅永远不会创建，菜单项会一直灰色。
-        UpdateController.shared.ensureUpdaterInitialized()
-        if let updater = UpdateController.shared.updater {
+        UpdateService.shared.ensureUpdaterInitialized()
+        if let updater = UpdateService.shared.updater {
             cancellable = updater.publisher(for: \.canCheckForUpdates)
                 .receive(on: RunLoop.main)
                 .assign(to: \.canCheckForUpdates, on: self)

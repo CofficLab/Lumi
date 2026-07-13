@@ -19,20 +19,15 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
         themeRegistry: LumiUIThemeRegistry = .shared,
         selectionStoreDirectory: URL? = nil
     ) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)初始化 LumiUIService")
-        }
-
         self.themeRegistry = themeRegistry
         self.selectionStore = ThemeSelectionStore(
             pluginDirectory: selectionStoreDirectory ?? LumiCore.pluginDataDirectory(for: "LumiUI")
         )
-
+        reloadThemes(from: pluginService)
+        
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiUIService 初始化完成")
-            Self.logger.info("\(Self.t)重载主题")
         }
-        reloadThemes(from: pluginService)
     }
 
     var themes: [LumiUIThemeContribution] {
@@ -48,25 +43,13 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
     }
 
     func reloadThemes(from pluginService: PluginService) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)从插件服务重载主题贡献")
-        }
-
         let contributions = pluginService.themeContributions()
         let registryContributions = contributions.isEmpty ? [.builtInFallback()] : contributions
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)主题贡献数量: \(registryContributions.count)")
-        }
 
         do {
             try themeRegistry.replaceAll(registryContributions)
             restoreSavedThemeIfPossible()
             onThemesDidChange?()
-
-            if Self.verbose {
-                Self.logger.info("\(Self.t)✅ 主题重载完成")
-            }
         } catch {
             Self.logger.error("\(Self.t)主题重载失败: \(error.localizedDescription)")
             try? themeRegistry.replaceAll([.builtInFallback()])

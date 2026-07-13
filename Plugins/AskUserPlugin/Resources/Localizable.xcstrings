@@ -109,9 +109,6 @@
         }
       }
     },
-    "AskUserPlugin_Description" : {
-
-    },
     "AskUserPlugin_ToolDescriptionFallback" : {
       "comment" : "Display description fallback for ask_user tool",
       "extractionState" : "manual",

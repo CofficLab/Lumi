@@ -42,11 +42,6 @@ final class RootContainer: ObservableObject, SuperLog {
 
     /// Normal throwing initializer
     private init() throws {
-        self.lumiCoreService = LumiCoreService()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ LumiCoreService 初始化完成")
-        }
-
         // 启动早期同步恢复布局状态，确保首帧渲染前 activeViewContainerID 等已是持久化值。
         // 必须早于 AppLayoutView.onAppear：否则 onAppear 会先把默认 containers[0] 写入
         // activeViewContainerID 并经 LayoutEventListener 落盘，覆盖磁盘里的旧选择。
@@ -55,58 +50,47 @@ final class RootContainer: ObservableObject, SuperLog {
         LumiPluginRegistry.restoreLayoutEarly()
 
         self.pluginService = PluginService()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ PluginService 初始化完成")
-        }
 
-        // 通过 LumiCore 注入工厂启动编辑器（同 setupChatService 范式）。
-        // 注意：EditorCoreService 依赖 PluginService（启用态过滤），故必须在 pluginService 构造之后 bootstrap。
-        LumiCore.setupEditorBootstrap { [pluginService] in
-            EditorCoreService(
+        // Editor 工厂闭包捕获 pluginService；具体类型 EditorCoreService 已通过 LumiCore.boot
+        // 内部 bootstrapEditor 同时注册到 LumiCore 服务表（抽象 + 具体）。
+        // 注意：EditorCoreService 依赖 PluginService（启用态过滤），故必须先构造 pluginService。
+        let editorFactory: LumiCore.EditorBootstrapFactory<EditorCoreService> = { provider in
+            guard let pluginService = provider as? PluginService else {
+                fatalError("Editor factory 收到的 provider 不是 PluginService")
+            }
+            return EditorCoreService(
                 pluginService: pluginService,
                 persistenceRootURL: { AppConfig.getDBFolderURL() },
                 recentProjects: { [] }
             )
         }
-        LumiCore.bootstrapEditor()
-        // LumiCore 持有的是抽象 AbstractEditorServicing，强转回具体类型供本类的回调使用。
-        guard let editorService = LumiCore.editorService as? EditorCoreService else {
-            fatalError("LumiCore.editorService 必须是 EditorCoreService 类型。当前类型: \(String(describing: type(of: LumiCore.editorService)))。请确保 LumiCore.setupEditorBootstrap 已正确调用。")
+
+        self.lumiCoreService = try LumiCoreService(
+            provider: pluginService,
+            editorFactory: editorFactory
+        )
+
+        // 通过服务表解析具体类型 EditorCoreService（LumiCore.boot 已在内部注册）。
+        guard let editorService = LumiCore.resolveService(EditorCoreService.self) else {
+            fatalError("LumiCore 服务表中未找到 EditorCoreService，请确认 LumiCoreService.init 的 editorFactory 已正确传递。")
         }
         self.editorCoreService = editorService
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
-        }
 
         self.chatSectionCoordinator = ChatSectionCoordinator(
             chatService: Self.checkedChatService,
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ ChatSectionCoordinator 初始化完成")
-        }
 
         self.lumiUIService = LumiUIService(pluginService: pluginService)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ LumiUIService 初始化完成")
-        }
-
         self.menuBarService = MenuBarService(pluginService: pluginService)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ MenuBarService 初始化完成")
-        }
 
         // 注册核心服务到 LumiCore，供 makePluginContext 自动注入
+        // （注意：EditorCoreService / AbstractEditorServicing 已在 LumiCore.boot 中注册，无需重复）
         LumiCore.registerService(LumiCoreService.self, lumiCoreService)
-        LumiCore.registerService(LumiEditorServicing.self, editorCoreService)
         LumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
         LumiCore.registerService(LumiBottomPanelLayoutPresenting.self, LumiCore.layoutState ?? LumiLayoutState())
         LumiCore.registerService(LumiThemeServicing.self, lumiUIService)
         LumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ LumiCore 服务注册表初始化完成")
-        }
 
         self.lumiUIService.onThemesDidChange = { [weak self] in
             self?.editorCoreService.syncAppSyntaxThemes()
@@ -115,43 +99,26 @@ final class RootContainer: ObservableObject, SuperLog {
             self?.editorCoreService.syncAppSyntaxThemes()
         }
 
-        // 异步触发 UpdateController 的网络探测与延迟初始化，不阻塞主线程。
+        // 异步触发 UpdateService 的网络探测与延迟初始化，不阻塞主线程。
         // setupFeedURLIfNeeded 内部用 Task.detached 把网络请求放到后台线程，
         // 只有 Sparkle 必须在主线程的两步操作才会 hop 回 MainActor。
-        UpdateController.shared.setupFeedURLIfNeeded()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ UpdateController 启动完成")
-        }
+        UpdateService.shared.setupFeedURLIfNeeded()
 
         // 初始化聊天插件贡献（注册工具、LLM Provider 等）。
-        // 重复工具名等致命配置错误会抛到外层 catch，由 `RootContainer.shared` 捕获并以 CrashedView 展示。
-        try reloadChatPluginContributions()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 聊天插件贡献初始化完成")
-        }
+        // 注意：工具名称唯一性已在 LumiCore.boot() 阶段校验，此处不再抛出异常。
+        reloadChatPluginContributions()
 
-        // 布局状态由 LumiCore.layoutState 统一管理
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 布局状态已配置")
-        }
 
         // 初始化插件启用状态跟踪
         self.pluginService.initializePluginStates()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 插件状态初始化完成")
-        }
-
         self.pluginService.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
             }
-            // 运行期重载冲突已在启动期 CrashedView 展示过；此处仅记日志，避免重复打断用户。
-            do {
-                try self.reloadChatPluginContributions()
-            } catch {
-                Self.logger.error("\(Self.t)⚠️ 插件贡献重载失败: \(error.localizedDescription)")
-            }
+            // 运行期插件状态变更时重新注册工具贡献。
+            // 工具名称唯一性已在 boot 阶段校验，此处不会抛出异常。
+            self.reloadChatPluginContributions()
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
             self.editorCoreService.reinstallExtensions()
@@ -163,8 +130,6 @@ final class RootContainer: ObservableObject, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件生命周期变化: \(plugin.info.id) -> \(enabled ? "启用" : "禁用")")
             }
-            // 插件状态变化时通知相关服务清理资源
-            // 例如：清理 UI 缓存、通知编辑器重新加载等
         }
 
         if Self.verbose {
@@ -176,23 +141,16 @@ final class RootContainer: ObservableObject, SuperLog {
     /// Creates a minimal container that just holds the error for CrashedView.
     private init(error: Error) {
         self.initializationError = error
-        self.lumiCoreService = LumiCoreService()
+        self.lumiCoreService = LumiCoreService.fallbackStub()
         self.pluginService = PluginService()
         self.lumiUIService = LumiUIService(pluginService: PluginService())
         self.menuBarService = MenuBarService(pluginService: PluginService())
 
-        // These services are not used when initialization fails (CrashedView is shown).
-        // Use guarded initialization to avoid secondary crashes that would mask the original error.
-        do {
-            self.editorCoreService = try EditorCoreService(
+        self.editorCoreService = EditorCoreService(
                 pluginService: self.pluginService,
                 persistenceRootURL: { AppConfig.getDBFolderURL() },
                 recentProjects: { [] }
             )
-        } catch {
-            Self.logger.error("Fallback EditorCoreService init failed: \(error.localizedDescription)")
-            fatalError("Cannot create fallback EditorCoreService: \(error.localizedDescription)")
-        }
 
         guard let chatService = LumiCore.chatService as? ChatService else {
             Self.logger.error("LumiCore.chatService type mismatch in fallback container")
@@ -206,7 +164,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
     // MARK: - Chat Plugin Wiring
 
-    private func reloadChatPluginContributions() throws {
+    private func reloadChatPluginContributions() {
         guard let chatService = LumiCore.chatService as? ChatService else { return }
 
         if Self.verbose {
@@ -220,8 +178,8 @@ final class RootContainer: ObservableObject, SuperLog {
         )
 
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
-        // 重复工具名会沿调用栈向上抛 `LumiToolRegistrationError`，最终由 `init() throws` 接住。
-        try LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
+        // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
+        LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
 
         // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)

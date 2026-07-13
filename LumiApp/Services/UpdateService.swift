@@ -4,12 +4,12 @@ import os
 import Sparkle
 
 @MainActor
-final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
+final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
     nonisolated static let emoji = "⬆️"
     nonisolated static let verbose = false
 
-    static let shared = UpdateController()
+    static let shared = UpdateService()
 
     /// 延迟初始化 updaterController，避免在应用启动时阻塞主线程。
     /// Sparkle 的 SPUStandardUpdaterController 初始化涉及内部状态检查、
@@ -127,8 +127,8 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, SuperLog {
             await MainActor.run {
                 self.ensureUpdaterInitialized()
                 self.resolvedFeedURL = url
-                if UpdateController.verbose {
-                    Self.logger.info("\(UpdateController.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
+                if UpdateService.verbose {
+                    Self.logger.info("\(UpdateService.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
                 }
             }
         }
