@@ -603,6 +603,46 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         onTreeMutation?()
         fileTreeDataSource.reloadDirectory(at: parentURL)
     }
+
+
+    // MARK: - Drag & Drop
+
+    /// 处理把外部文件拖放到目录 cell 的事件。
+    /// 委托给静态纯函数 `FileTreeDropProcessor.process` 拿到 (movedPairs, affectedParents)，
+    /// 再触发编辑器回调、目录刷新与「目标目录自动展开」。
+    ///
+    /// 暴露为 internal（而非 private）以便单元测试覆盖；外部仍只通过
+    /// NodeRowView 的 .dropDestination 闭包注入触发。
+    func handleDropFiles(targetURL: URL, sourceURLs: [URL]) -> Bool {
+        let result = FileTreeDropProcessor.process(
+            enabled: EditorFileTreeV2Plugin.dragAndDropEnabled,
+            targetURL: targetURL,
+            sourceURLs: sourceURLs,
+            isTargetDirectory: FileTreeFacade.isDirectory,
+            moveItem: { FileTreeFacade.moveItem(from: $0, to: $1) }
+        )
+
+        switch result {
+        case .rejected:
+            return false
+        case .moved(let pairs, let affectedParents):
+            // 联动编辑器 tab
+            for (old, new) in pairs {
+                onRenameEditorTab?(old, new)
+            }
+
+            // 通知 SwiftUI 层先收到一次 mutation 信号（与新建/重命名一致）
+            onTreeMutation?()
+
+            for parent in affectedParents {
+                fileTreeDataSource.reloadDirectory(at: parent)
+            }
+
+            // 若目标目录原本是折叠状态，drop 后把它展开，新移入的项立即可见。
+            ensureDirectoryExpanded(targetURL)
+            return true
+        }
+    }
 }
 
 // MARK: - NSCollectionViewDataSource

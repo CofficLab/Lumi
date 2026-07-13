@@ -16,6 +16,9 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     /// 是否启用 Git 状态显示功能（禁用可提升文件树滚动性能）。
     public static let gitStatusEnabled: Bool = true
 
+    /// 是否启用文件树行拖拽和目录 drop target。
+    public static let dragAndDropEnabled: Bool = true
+
     /// 是否启用定位文件时的闪烁高亮。
     public static let flashHighlightEnabled: Bool = true
 

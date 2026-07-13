@@ -5,8 +5,7 @@ import Foundation
 
 /// In-memory file system reader for testing.
 /// Uses a dictionary `[URL: [URL]]` to describe directory contents.
-@MainActor
-final class MockFileSystemReader: FileSystemReading {
+final class MockFileSystemReader: FileSystemReading, @unchecked Sendable {
     private var directoryContents: [URL: [URL]] = [:]
     private var directoryFlags: Set<String> = []
     private var fileExistsResults: Set<String> = []
@@ -59,8 +58,7 @@ final class MockFileSystemReader: FileSystemReading {
 
 // MARK: - Mock ExpandedPathStore
 
-@MainActor
-final class MockExpandedPathStore: ExpandedPathStoring {
+final class MockExpandedPathStore: ExpandedPathStoring, @unchecked Sendable {
     private var paths: [String: Set<String>] = [:]
 
     init() {}
