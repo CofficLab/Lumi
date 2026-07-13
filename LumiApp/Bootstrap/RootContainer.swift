@@ -35,7 +35,6 @@ final class RootContainer: ObservableObject, SuperLog {
 
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
-    let toolService: ToolService
     let editorCoreService: EditorCoreService
     let chatSectionCoordinator: ChatSectionCoordinator
     let lumiUIService: LumiUIService
@@ -58,17 +57,6 @@ final class RootContainer: ObservableObject, SuperLog {
         self.pluginService = PluginService()
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ PluginService 初始化完成")
-        }
-
-        // ToolService 已由 LumiCore.boot() 自动创建并注册
-        guard let toolService = LumiCore.resolveService(ToolService.self) else {
-            fatalError("LumiCore.resolveService(ToolService.self) 返回 nil。请确保 LumiCore.boot() 已正确调用。")
-        }
-        self.toolService = toolService
-        // 设置环境，让 ToolService 能通过协议获取 verbosity 和 projectPath
-        self.toolService.environment = ToolServiceEnvironmentBridge()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ ToolService 已从 LumiCore 获取")
         }
 
         // 通过 LumiCore 注入工厂启动编辑器（同 setupChatService 范式）。
@@ -184,7 +172,6 @@ final class RootContainer: ObservableObject, SuperLog {
         self.initializationError = error
         self.lumiCoreService = LumiCoreService()
         self.pluginService = PluginService()
-        self.toolService = ToolService()
         self.lumiUIService = LumiUIService(pluginService: PluginService())
         self.menuBarService = MenuBarService(pluginService: PluginService())
 
@@ -220,41 +207,22 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)重载聊天插件贡献")
         }
 
+        // 构造 plugin context（LumiCore 会自动注入 chatService / toolService 等基础服务）
         let context = LumiCore.makePluginContext(
             activeSectionID: "chat.core",
-            activeSectionTitle: "Chat Core",
-            additionalDependencies: { dependencies in
-                dependencies.register((any LumiToolServicing).self, toolService)
-            }
+            activeSectionTitle: "Chat Core"
         )
 
-        // 准备工具列表
-        let pluginTools = pluginService.agentTools(context: context)
-        
-        // 创建子 Agent 工具
-        let subAgentDefinitions = pluginService.subAgents(context: context)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)子Agent定义数量: \(subAgentDefinitions.count)")
-            for definition in subAgentDefinitions {
-                Self.logger.info("\(Self.t)  - \(definition.id) (provider: \(definition.providerID), model: \(definition.modelID))")
-            }
-        }
-        let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
-            SubAgentDelegateTool(
-                definition: definition,
-                chatService: chatService,
-                toolService: toolService
-            )
-        }
-
-        // 使用 LumiCore 统一编排工具注册
-        LumiCore.bootstrapTools(pluginTools: pluginTools, subAgentTools: subAgentTools)
+        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）
+        LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
 
         // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)
         chatService.registerProviders(providers)
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
+
+        let subAgentCount = pluginService.subAgents(context: context).count
 
         NotificationCenter.default.post(
             name: .lumiLLMProvidersDidChange,
@@ -263,7 +231,7 @@ final class RootContainer: ObservableObject, SuperLog {
         )
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider, \(subAgentDefinitions.count) 个 SubAgent")
+            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider, \(subAgentCount) 个 SubAgent")
         }
     }
 }

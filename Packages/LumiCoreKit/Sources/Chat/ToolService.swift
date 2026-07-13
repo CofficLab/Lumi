@@ -12,8 +12,8 @@ public final class ToolService: LumiToolServicing {
     nonisolated public static let emoji = "🛠️"
     nonisolated public static let verbose = false
 
-    /// 运行时环境（由 App 层注入）
-    public weak var environment: (any ToolServiceEnvironment)?
+    /// 运行时环境（由 LumiCore 在启动时注入）
+    public var environment: (any ToolServiceEnvironment)?
 
     private(set) public var tools: [any LumiAgentTool] = []
     private var toolsByName: [String: any LumiAgentTool] = [:]

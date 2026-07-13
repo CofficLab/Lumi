@@ -7,7 +7,7 @@ import SwiftUI
 import os
 
 @MainActor
-final class PluginService: ObservableObject, SuperLog {
+final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false

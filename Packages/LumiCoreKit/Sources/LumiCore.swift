@@ -86,7 +86,8 @@ public enum LumiCore {
     // MARK: - Plugin Context Factory
 
     /// 统一创建 `LumiPluginContext`。
-    /// 外部服务（如 EditorService、LumiChatServicing 等）需要通过 `additionalDependencies` 手动注入。
+    /// 基础服务（如 `LumiChatServicing`、`LumiToolServicing` 等）由 `LumiCore` 自动注入。
+    /// App 层自定义服务可通过 `additionalDependencies` 手动注入。
     /// - Parameters:
     ///   - activeSectionID: 当前活跃区域 ID。
     ///   - activeSectionTitle: 当前活跃区域标题。
@@ -110,6 +111,9 @@ public enum LumiCore {
         // 基础服务自动注入（仅 LumiCoreKit 内部定义的服务）
         if let chat = resolveService((any LumiChatServicing).self) {
             dependencies.register((any LumiChatServicing).self, chat)
+        }
+        if let toolService = resolveService((any LumiToolServicing).self) {
+            dependencies.register((any LumiToolServicing).self, toolService)
         }
         if let history = resolveService((any HistoryQueryService).self) {
             dependencies.register((any HistoryQueryService).self, history)
@@ -153,43 +157,61 @@ public enum LumiCore {
             }
         }
 
-        // 初始化工具服务
-        bootstrapTools()
+        // 初始化工具服务（创建 + 注册 + 注入运行环境）
+        bootstrapToolService()
     }
 
-    /// 初始化工具服务
-    ///
-    /// 创建 `ToolService` 实例并注册到服务表。
-    private static func bootstrapTools() {
+    /// 初始化 `ToolService` 并注入运行环境。
+    private static func bootstrapToolService() {
         let toolService = ToolService()
         registerService(ToolService.self, toolService)
+        registerService((any LumiToolServicing).self, toolService)
+        // 注入环境，让 ToolService 能通过协议获取 verbosity / projectPath
+        toolService.environment = ToolServiceEnvironmentBridge()
     }
 
-    // MARK: - Tool Registration
+    // MARK: - Tool Contribution
 
-    /// 编排工具注册
+    /// 编排 Agent Tool 工具的注册与注入。
     ///
-    /// 将插件工具、内置工具和子 Agent 工具注册到 ToolService，并关联到 ChatService。
-    /// 通常在 App 层插件加载完成后调用。
+    /// 把 `provider` 提供的插件工具、内置工具和子 Agent 工具注册到 `ToolService`，
+    /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
+    /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
+    ///
+    /// 通常在 App 层插件加载完成后调用，重复调用是安全的。
     ///
     /// - Parameters:
-    ///   - pluginTools: 插件提供的工具列表
-    ///   - subAgentTools: 子 Agent delegate 工具列表
-    public static func bootstrapTools(
-        pluginTools: [any LumiAgentTool],
-        subAgentTools: [any LumiAgentTool]
+    ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
+    ///   - context: 当前的 `LumiPluginContext`
+    public static func bootstrapToolContributions(
+        provider: any LumiAgentToolProviding,
+        context: LumiPluginContext
     ) {
         guard let toolService = resolveService(ToolService.self) else {
             return
         }
 
-        // 注册插件工具
+        // 1. 收集插件工具
+        let pluginTools = provider.agentTools(context: context)
         toolService.registerTools(pluginTools)
-        // 注册内置工具
+
+        // 2. 注册内置工具（no_op / conversation_info）
         toolService.registerBuiltInTools(builtInTools)
-        // 追加子 Agent 工具
-        toolService.appendTools(subAgentTools)
-        // 注册到 ChatService
+
+        // 3. 收集子 Agent 定义并包装成 delegate 工具
+        let subAgentDefinitions = provider.subAgents(context: context)
+        if let chatService {
+            let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
+                SubAgentDelegateTool(
+                    definition: definition,
+                    chatService: chatService,
+                    toolService: toolService
+                )
+            }
+            toolService.appendTools(subAgentTools)
+        }
+
+        // 4. 关联到 ChatService
         chatService?.registerToolService(toolService)
     }
 
