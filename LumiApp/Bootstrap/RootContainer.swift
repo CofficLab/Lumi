@@ -60,9 +60,15 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ PluginService 初始化完成")
         }
 
-        self.toolService = ToolService()
+        // ToolService 已由 LumiCore.boot() 自动创建并注册
+        guard let toolService = LumiCore.resolveService(ToolService.self) else {
+            fatalError("LumiCore.resolveService(ToolService.self) 返回 nil。请确保 LumiCore.boot() 已正确调用。")
+        }
+        self.toolService = toolService
+        // 设置环境，让 ToolService 能通过协议获取 verbosity 和 projectPath
+        self.toolService.environment = ToolServiceEnvironmentBridge()
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ ToolService 初始化完成")
+            Self.logger.info("\(Self.t)✅ ToolService 已从 LumiCore 获取")
         }
 
         // 通过 LumiCore 注入工厂启动编辑器（同 setupChatService 范式）。
@@ -107,7 +113,6 @@ final class RootContainer: ObservableObject, SuperLog {
         LumiCore.registerService(LumiEditorServicing.self, editorCoreService)
         LumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
         LumiCore.registerService(LumiBottomPanelLayoutPresenting.self, LumiCore.layoutState ?? LumiLayoutState())
-        LumiCore.registerService(ToolService.self, toolService)
         LumiCore.registerService(LumiThemeServicing.self, lumiUIService)
         LumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 
@@ -223,11 +228,10 @@ final class RootContainer: ObservableObject, SuperLog {
             }
         )
 
-        // 注册插件提供的工具
-        toolService.registerTools(pluginService.agentTools(context: context))
-        // 注册 built-in tools
-        toolService.registerBuiltInTools(ChatService.builtInTools)
-        // 注册子 Agent delegate 工具（主 LLM 看到的是 delegate_<id>)
+        // 准备工具列表
+        let pluginTools = pluginService.agentTools(context: context)
+        
+        // 创建子 Agent 工具
         let subAgentDefinitions = pluginService.subAgents(context: context)
         if Self.verbose {
             Self.logger.info("\(Self.t)子Agent定义数量: \(subAgentDefinitions.count)")
@@ -242,13 +246,15 @@ final class RootContainer: ObservableObject, SuperLog {
                 toolService: toolService
             )
         }
-        toolService.appendTools(subAgentTools)
 
+        // 使用 LumiCore 统一编排工具注册
+        LumiCore.bootstrapTools(pluginTools: pluginTools, subAgentTools: subAgentTools)
+
+        // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)
         chatService.registerProviders(providers)
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
-        chatService.registerToolService(toolService)
 
         NotificationCenter.default.post(
             name: .lumiLLMProvidersDidChange,

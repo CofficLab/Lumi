@@ -152,6 +152,45 @@ public enum LumiCore {
                 registerService((any HistoryQueryService).self, history)
             }
         }
+
+        // 初始化工具服务
+        bootstrapTools()
+    }
+
+    /// 初始化工具服务
+    ///
+    /// 创建 `ToolService` 实例并注册到服务表。
+    private static func bootstrapTools() {
+        let toolService = ToolService()
+        registerService(ToolService.self, toolService)
+    }
+
+    // MARK: - Tool Registration
+
+    /// 编排工具注册
+    ///
+    /// 将插件工具、内置工具和子 Agent 工具注册到 ToolService，并关联到 ChatService。
+    /// 通常在 App 层插件加载完成后调用。
+    ///
+    /// - Parameters:
+    ///   - pluginTools: 插件提供的工具列表
+    ///   - subAgentTools: 子 Agent delegate 工具列表
+    public static func bootstrapTools(
+        pluginTools: [any LumiAgentTool],
+        subAgentTools: [any LumiAgentTool]
+    ) {
+        guard let toolService = resolveService(ToolService.self) else {
+            return
+        }
+
+        // 注册插件工具
+        toolService.registerTools(pluginTools)
+        // 注册内置工具
+        toolService.registerBuiltInTools(builtInTools)
+        // 追加子 Agent 工具
+        toolService.appendTools(subAgentTools)
+        // 注册到 ChatService
+        chatService?.registerToolService(toolService)
     }
 
     // MARK: - 配置

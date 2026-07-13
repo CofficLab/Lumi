@@ -1,18 +1,22 @@
 import Foundation
 
-/// 工具名去重校验
+/// 工具名称去重断言工具
+///
+/// 确保注册的工具列表中没有重名工具。
+/// 重复的工具名会导致工具调用歧义，在注册阶段应被拦截。
 public enum LumiToolNameDeduplication {
-    /// 校验并报错重复工具名
+    /// 断言工具列表中的名称唯一，重复时 fatalError。
     public static func assertUnique(tools: [any LumiAgentTool]) {
-        var seen: [String: (any LumiAgentTool)] = [:]
-
+        var seen = Set<String>()
+        var duplicates: Set<String> = []
         for tool in tools {
-            if let existing = seen[tool.name] {
-                let existingType = String(describing: type(of: existing))
-                let newType = String(describing: type(of: tool))
-                fatalError("Duplicate tool name '\(tool.name)': existing=\(existingType), new=\(newType)")
+            if !seen.insert(tool.name).inserted {
+                duplicates.insert(tool.name)
             }
-            seen[tool.name] = tool
+        }
+        if !duplicates.isEmpty {
+            let names = duplicates.sorted().joined(separator: ", ")
+            fatalError("工具名称重复: \(names)")
         }
     }
 }
