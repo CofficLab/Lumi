@@ -16,19 +16,20 @@ public protocol FileSystemReading: Sendable {
 /// 默认实现：委托给 FileManager + FileTreeFacade
 public final class DefaultFileSystemReader: FileSystemReading {
     public init() {}
-    
+
     public func contentsOfDirectory(at url: URL, includingPropertiesForKeys keys: [URLResourceKey], options: FileManager.DirectoryEnumerationOptions) throws -> [URL] {
+        // 不再使用 .skipsHiddenFiles，让隐藏文件（dotfiles）一并返回，类似 VSCode 文件树行为。
         try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: options)
     }
-    
+
     public func isDirectory(_ url: URL) -> Bool {
         FileTreeFacade.isDirectory(url)
     }
-    
+
     public func fileExists(atPath path: String) -> Bool {
         FileManager.default.fileExists(atPath: path)
     }
-    
+
     public func sortAndFilter(_ urls: [URL]) -> [URL] {
         FileTreeFacade.filterAndSortContents(urls)
     }
@@ -134,9 +135,10 @@ final class FileTreeDataSource: SuperLog {
         
         if isDirectory && isExpanded {
             do {
+                // 不再传 .skipsHiddenFiles，保持 VSCode 文件树行为：以点开头的隐藏文件也应展示。
                 let children = try fileSystemReader.contentsOfDirectory(
                     at: url, includingPropertiesForKeys: [.isDirectoryKey],
-                    options: [.skipsHiddenFiles]
+                    options: []
                 )
                 let sorted = fileSystemReader.sortAndFilter(children)
                 for childURL in sorted {

@@ -15,22 +15,26 @@ public enum FileTreeService {
 
     /// 读取目录内容（过滤并排序后返回）
     ///
+    /// 包含隐藏文件（dotfiles），类似 VSCode 文件树行为。
+    /// 仅过滤掉 `hiddenNames` 中指定的文件（默认为 `.DS_Store` 和 `.git`）。
+    ///
     /// 使用 `skipsSubdirectoryDescendants` 避免递归遍历子目录，
     /// 同时利用预取的 `isDirectoryKey` 资源值做排序，减少额外 I/O。
     /// - Parameters:
     ///   - url: 目录 URL
     ///   - hiddenNames: 需要过滤掉的文件名集合，默认为 `.DS_Store` 和 `.git`
-    /// - Returns: 过滤并排序后的子项 URL 列表
+    /// - Returns: 过滤并排序后的子项 URL 列表（包含隐藏文件）
     /// - Throws: 文件系统读取错误
     public static func loadContents(
         of url: URL,
         hiddenNames: Set<String> = defaultHiddenNames
     ) throws -> [URL] {
-        let contents = try FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: .skipsSubdirectoryDescendants
-        )
+        // 手动读取目录内容，包含隐藏文件（dotfiles）
+        let allNames = try FileManager.default.contentsOfDirectory(atPath: url.path)
+        let contents = allNames.map { name in
+            url.appendingPathComponent(name)
+        }
+
         // 预取目录属性，避免在排序时重复 I/O（O(n) -> O(1) 查询）
         var directoryInfo: [URL: Bool] = [:]
         for item in contents {
