@@ -23,12 +23,12 @@ public final class ToolService: LumiToolServicing {
     // MARK: - Registration
 
     /// 注册工具（覆盖已有同名工具）
-    public func registerTools(_ tools: [any LumiAgentTool]) {
+    public func registerTools(_ tools: [any LumiAgentTool]) throws {
         if Self.verbose {
             Self.logger.info("\(Self.emoji)注册 \(tools.count) 个工具")
         }
 
-        LumiToolNameDeduplication.assertUnique(tools: tools)
+        try LumiToolNameDeduplication.validateUnique(tools: tools)
 
         var uniqueTools: [String: any LumiAgentTool] = [:]
         for tool in tools {

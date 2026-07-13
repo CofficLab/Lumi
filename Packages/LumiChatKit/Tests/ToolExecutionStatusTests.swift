@@ -71,7 +71,7 @@ private final class SlowToolService: LumiToolServicing {
     private(set) var executeCount = 0
     var tools: [any LumiAgentTool] { [] }
 
-    func registerTools(_ tools: [any LumiAgentTool]) {}
+    func registerTools(_ tools: [any LumiAgentTool]) throws {}
 
     func tool(named name: String) -> (any LumiAgentTool)? { nil }
 

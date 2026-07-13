@@ -374,7 +374,7 @@ public extension LumiAgentTool {
 public protocol LumiToolServicing: AnyObject {
     var tools: [any LumiAgentTool] { get }
 
-    func registerTools(_ tools: [any LumiAgentTool])
+    func registerTools(_ tools: [any LumiAgentTool]) throws
     func tool(named name: String) -> (any LumiAgentTool)?
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
 }

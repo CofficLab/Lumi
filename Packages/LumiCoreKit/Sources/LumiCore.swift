@@ -186,14 +186,16 @@ public enum LumiCore {
     public static func bootstrapToolContributions(
         provider: any LumiAgentToolProviding,
         context: LumiPluginContext
-    ) {
+    ) throws {
         guard let toolService = resolveService(ToolService.self) else {
             return
         }
 
         // 1. 收集插件工具
         let pluginTools = provider.agentTools(context: context)
-        toolService.registerTools(pluginTools)
+        // 重复名视为致命配置错误：向上抛 `LumiToolRegistrationError`，
+        // 由 `RootContainer` 捕获并以 `CrashedView` 展示，避免运行时 fatalError 闪退。
+        try toolService.registerTools(pluginTools)
 
         // 2. 注册内置工具（no_op / conversation_info）
         toolService.registerBuiltInTools(builtInTools)

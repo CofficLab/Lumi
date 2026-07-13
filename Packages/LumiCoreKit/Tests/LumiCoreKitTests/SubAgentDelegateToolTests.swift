@@ -64,7 +64,7 @@ private final class SubAgentMockToolService: LumiToolServicing, @unchecked Senda
     }
 
     var tools: [any LumiAgentTool] { mockTools }
-    func registerTools(_ tools: [any LumiAgentTool]) {}
+    func registerTools(_ tools: [any LumiAgentTool]) throws {}
     func tool(named name: String) -> (any LumiAgentTool)? {
         mockTools.first { $0.name == name }
     }

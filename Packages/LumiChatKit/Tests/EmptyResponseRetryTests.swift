@@ -93,7 +93,7 @@ final class SequencedResponseMockProvider: LumiLLMProvider, @unchecked Sendable 
 final class NoOpToolService: LumiToolServicing {
     var tools: [any LumiAgentTool] { [NoOpTool()] }
 
-    func registerTools(_ tools: [any LumiAgentTool]) {}
+    func registerTools(_ tools: [any LumiAgentTool]) throws {}
 
     func tool(named name: String) -> (any LumiAgentTool)? {
         name == "noop" ? NoOpTool() : nil

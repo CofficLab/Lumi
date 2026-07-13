@@ -123,8 +123,9 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)✅ UpdateController 启动完成")
         }
 
-        // 初始化聊天插件贡献（注册工具、LLM Provider 等）
-        reloadChatPluginContributions()
+        // 初始化聊天插件贡献（注册工具、LLM Provider 等）。
+        // 重复工具名等致命配置错误会抛到外层 catch，由 `RootContainer.shared` 捕获并以 CrashedView 展示。
+        try reloadChatPluginContributions()
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 聊天插件贡献初始化完成")
         }
@@ -145,7 +146,12 @@ final class RootContainer: ObservableObject, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
             }
-            self.reloadChatPluginContributions()
+            // 运行期重载冲突已在启动期 CrashedView 展示过；此处仅记日志，避免重复打断用户。
+            do {
+                try self.reloadChatPluginContributions()
+            } catch {
+                Self.logger.error("\(Self.t)⚠️ 插件贡献重载失败: \(error.localizedDescription)")
+            }
             self.lumiUIService.reloadThemes(from: self.pluginService)
             self.menuBarService.refresh()
             self.editorCoreService.reinstallExtensions()
@@ -200,7 +206,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
     // MARK: - Chat Plugin Wiring
 
-    private func reloadChatPluginContributions() {
+    private func reloadChatPluginContributions() throws {
         guard let chatService = LumiCore.chatService as? ChatService else { return }
 
         if Self.verbose {
@@ -213,8 +219,9 @@ final class RootContainer: ObservableObject, SuperLog {
             activeSectionTitle: "Chat Core"
         )
 
-        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）
-        LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
+        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
+        // 重复工具名会沿调用栈向上抛 `LumiToolRegistrationError`，最终由 `init() throws` 接住。
+        try LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
 
         // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)

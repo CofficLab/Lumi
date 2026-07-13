@@ -160,7 +160,7 @@ private final class HighRiskToolService: LumiToolServicing {
     private let tool = HighRiskMockTool()
     var tools: [any LumiAgentTool] { [tool] }
 
-    func registerTools(_ tools: [any LumiAgentTool]) {}
+    func registerTools(_ tools: [any LumiAgentTool]) throws {}
 
     func tool(named name: String) -> (any LumiAgentTool)? {
         name == HighRiskMockTool.info.id ? tool : nil
