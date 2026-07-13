@@ -24,6 +24,7 @@ public enum AutoTaskPlugin: LumiPlugin {
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         bootstrapFromLumiCoreIfNeeded()
+        bootstrapTurnCheck { context.resolve(LumiChatServicing.self) }
         return [TaskContextChatMiddleware()]
     }
 

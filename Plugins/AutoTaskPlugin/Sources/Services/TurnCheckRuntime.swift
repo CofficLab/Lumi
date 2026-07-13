@@ -51,7 +51,16 @@ enum TurnCheckRuntime {
         let tasks = await manager.fetchTasks(conversationId: conversationIdStr)
         let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }
 
-        guard !activeTasks.isEmpty else { return }
+        guard !activeTasks.isEmpty else {
+            // All tasks completed — clean up so sidebar returns to clean state.
+            await manager.deleteAllForConversation(conversationIdStr)
+            NotificationCenter.default.post(
+                name: .taskDidChange,
+                object: nil,
+                userInfo: ["conversationId": conversationIdStr]
+            )
+            return
+        }
 
         let messages = chatService.messages(for: conversationID)
         let turnMessages = LumiAgentTurnDerivation.turnMessagesSinceLastUser(in: messages)
@@ -67,6 +76,13 @@ enum TurnCheckRuntime {
         // 本轮未推进任务：递增连续自动续聊计数，超过上限则停止，
         // 避免 LLM 卡住时无限空转（此时应交还给用户）。
         guard await manager.incrementContinuationCount(conversationId: conversationIdStr) != nil else {
+            // Max continuations reached — clean up stale tasks.
+            await manager.deleteAllForConversation(conversationIdStr)
+            NotificationCenter.default.post(
+                name: .taskDidChange,
+                object: nil,
+                userInfo: ["conversationId": conversationIdStr]
+            )
             return
         }
 
