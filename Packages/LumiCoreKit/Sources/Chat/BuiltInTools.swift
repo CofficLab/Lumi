@@ -90,11 +90,6 @@ public struct ConversationInfoTool: LumiAgentTool, @unchecked Sendable {
 }
 
 // MARK: - Built-in Tools Collection
-
-extension LumiCore {
-    /// 内置工具列表
-    public static let builtInTools: [any LumiAgentTool] = [
-        NoOpTool(),
-        ConversationInfoTool(),
-    ]
-}
+//
+// `LumiCore.builtInTools` 已迁移到 `LumiCore+Tool.swift`，本文件仅保留
+// `NoOpTool` / `ConversationInfoTool` 两个内置工具的实现。
