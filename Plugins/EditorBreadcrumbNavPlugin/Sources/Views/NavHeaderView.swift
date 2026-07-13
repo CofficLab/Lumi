@@ -10,13 +10,14 @@ import SwiftUI
 public struct NavHeaderView: View {
     @ObservedObject private var service: EditorService
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     private var isProjectSelected: Bool {
-        LumiCore.projectState?.currentProject != nil
+        lumiCore.projectState?.currentProject != nil
     }
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public init(service: EditorService) {

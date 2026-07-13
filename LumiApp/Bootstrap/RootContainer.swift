@@ -42,20 +42,25 @@ final class RootContainer: ObservableObject, SuperLog {
             editorFactory: editorFactory,
             dataRootDirectory: dataRootDirectory
         )
+        let lumiCore = lumiCoreService.lumiCore
+        self.lumiCore = lumiCore
 
         // 通过服务表解析具体类型 EditorCoreService（LumiCore.boot 已在内部注册）。
-        guard let editorService = LumiCore.resolveService(EditorCoreService.self) else {
+        guard let editorService = lumiCore.resolveService(EditorCoreService.self) else {
             fatalError("LumiCore 服务表中未找到 EditorCoreService，请确认 LumiCoreService.init 的 editorFactory 已正确传递。")
         }
         self.editorCoreService = editorService
+        // EditorCoreService 在 editorFactory 闭包里被创建时拿不到 lumiCore,
+        // 这里通过 configure 补上,让它能读 projectState。
+        editorService.configure(lumiCore: lumiCore)
 
         self.chatSectionCoordinator = ChatSectionCoordinator(
             chatService: Self.checkedChatService,
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
 
-        self.lumiUIService = LumiUIService(pluginService: pluginService)
-        self.menuBarService = MenuBarService(pluginService: pluginService)
+        self.lumiUIService = LumiUIService(pluginService: pluginService, lumiCore: lumiCore)
+        self.menuBarService = MenuBarService(pluginService: pluginService, lumiCore: lumiCore)
 
         lumiCore.registerService(LumiCoreService.self, lumiCoreService)
         lumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
@@ -105,21 +110,21 @@ final class RootContainer: ObservableObject, SuperLog {
     // MARK: - Chat Plugin Wiring
 
     private func reloadChatPluginContributions() {
-        guard let chatService = LumiCore.chatService as? ChatService else { return }
+        guard let chatService = lumiCore.chatService as? ChatService else { return }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)重载聊天插件贡献")
         }
 
         // 构造 plugin context（LumiCore 会自动注入 chatService / toolService 等基础服务）
-        let context = LumiCore.makePluginContext(
+        let context = lumiCore.makePluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core"
         )
 
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
         // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
-        LumiCore.bootstrapToolContributions(provider: pluginService, context: context)
+        lumiCore.bootstrapToolContributions(provider: pluginService, context: context)
 
         // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)

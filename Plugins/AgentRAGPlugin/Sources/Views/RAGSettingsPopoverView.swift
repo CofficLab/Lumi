@@ -5,6 +5,7 @@ import LumiCoreKit
 @MainActor
 struct RAGSettingsPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     /// 向量后端运行时信息：sqlite-vec 不可用时为 nil 或 .swiftCosine，需要提示用户
@@ -150,7 +151,7 @@ struct RAGSettingsPopoverView: View {
     // MARK: - Private
 
     private var trackedProjects: [RAGTrackedProjectPopover] {
-        let recent = LumiCore.projectState?.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) } ?? []
+        let recent = lumiCore.projectState?.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProjectPopover]
         if currentPath.isEmpty {

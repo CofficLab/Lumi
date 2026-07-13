@@ -33,6 +33,9 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 编辑器服务门面
     private var service: EditorService?
 
+    /// 核心服务访问（weak 防止循环引用）
+    private weak var lumiCore: (any LumiCoreAccessing)?
+
     /// Combine 订阅令牌
     private var cancellables = Set<AnyCancellable>()
 
@@ -52,7 +55,7 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 视图出现时的初始化逻辑
     public func handleAppear() {
         guard let panelService, let service else { return }
-        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
+        let projectPath = lumiCore?.projectState?.currentProject?.path ?? ""
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info(

@@ -77,9 +77,10 @@ private enum GitHubDesktopOpener {
 /// GitHub Desktop 打开状态栏视图
 public struct OpenInGitHubDesktopStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public var body: some View {
@@ -140,9 +141,10 @@ public struct OpenInGitHubDesktopStatusBarView: View {
 /// GitHub Desktop 打开详情视图（在 popover 中显示）
 public struct OpenInGitHubDesktopDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public var body: some View {

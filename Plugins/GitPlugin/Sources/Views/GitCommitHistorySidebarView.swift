@@ -11,15 +11,20 @@ import LumiUI
 /// 支持分页加载、切换项目时自动刷新。
 public struct GitCommitHistorySidebarView: View, SuperLog {
     @EnvironmentObject var gitVM: AppGitVM
-    @ObservedObject private var layoutState: LumiLayoutState
+    @EnvironmentObject private var lumiCore: LumiCore
+
+    // layoutState 从 lumiCore 获取
+    private var layoutState: LumiLayoutState {
+        lumiCore.layoutState ?? LumiLayoutState()
+    }
 
     public init() {
-        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+        // layoutState 将通过 EnvironmentObject 注入
     }
 
     /// 项目状态
     private var projectState: LumiProjectState? {
-        LumiCore.projectState
+        lumiCore.projectState
     }
 
     /// 当前项目路径

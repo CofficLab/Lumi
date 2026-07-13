@@ -3,7 +3,7 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct SettingsSceneContent: View {
+struct WindowSettings: View {
     @State private var container: RootContainer?
     @State private var initializationError: Error?
     @State private var isInitializing = true
@@ -25,6 +25,7 @@ struct SettingsSceneContent: View {
                     )
                     .ignoresSafeArea()
                 }
+                .environmentObject(container.lumiCore)
                 .background {
                     WindowAccessor { window in
                         window.configureForLumiMainChrome()

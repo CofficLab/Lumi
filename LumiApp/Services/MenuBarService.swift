@@ -13,6 +13,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     nonisolated(unsafe) static var verbose: Bool = false
 
     private let pluginService: PluginService
+    private let lumiCore: LumiCoreAccessing
     private var statusItem: NSStatusItem?
     private var hostingView: MenuBarHostingView<MenuBarIconView>?
     private var popover: NSPopover?
@@ -28,12 +29,13 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
     nonisolated(unsafe) private var logoRegistryCancellable: AnyCancellable?
 
-    init(pluginService: PluginService) {
+    init(pluginService: PluginService, lumiCore: LumiCoreAccessing) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 MenuBarService")
         }
 
         self.pluginService = pluginService
+        self.lumiCore = lumiCore
         super.init()
         observeSystemAppearanceChanges()
         observeThemeWindowSync()
@@ -276,7 +278,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     /// `dropFirst()` 跳过初始 nil（菜单栏还没创建，按钮状态 item 也是 nil，没必要重建）。
     /// `replaceMenuBarContent` 内部用 `statusItem?.button` 守护，未创建时直接 return，不会崩溃。
     private func observeLogoRegistry() {
-        logoRegistryCancellable = LumiCore.logoRegistry
+        logoRegistryCancellable = lumiCore.logoRegistry
             .$bestItem
             .dropFirst()
             .receive(on: DispatchQueue.main)

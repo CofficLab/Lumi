@@ -13,12 +13,13 @@ import UniformTypeIdentifiers
 public struct EditorPanelView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var service: EditorService
+    @Environment(\.lumiCore) private var lumiCore
 
     /// 便利访问
     private var editorState: EditorState { service.state }
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore?.projectState?.currentProject?.path ?? ""
     }
 
     private var projectRootPath: String? {

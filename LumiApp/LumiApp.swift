@@ -26,6 +26,7 @@ struct LumiApp: App {
         .defaultSize(width: AppBootstrap.defaultWindowSize.width, height: AppBootstrap.defaultWindowSize.height)
         .commands {
             AppCommands()
+            DebugCommand()
         }
 
         Window("设置", id: AppBootstrap.settingsWindowID) {

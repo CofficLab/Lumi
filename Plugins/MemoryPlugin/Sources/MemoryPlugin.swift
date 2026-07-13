@@ -20,13 +20,13 @@ public enum MemoryPlugin: LumiPlugin {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        Self.bootstrapFromLumiCoreIfNeeded()
+        Self.bootstrapFromLumiCoreIfNeeded(context: context)
         return [MemoryChatMiddleware()]
     }
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        Self.bootstrapFromLumiCoreIfNeeded()
+        Self.bootstrapFromLumiCoreIfNeeded(context: context)
         return [
             SaveMemoryTool(),
             RecallMemoryTool(),

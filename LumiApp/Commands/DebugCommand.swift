@@ -47,38 +47,34 @@ struct DebugCommand: Commands, SuperLog {
 
                 Divider()
 
+                // 使用 AppConfig.getDBFolderURL() 而非 LumiCore.dataRootDirectory：
+                // DebugCommand 是 SwiftUI Commands,无法直接拿到 @EnvironmentObject,
+                // 而 AppConfig 在 App 启动期就已配置好,等价于 LumiCore 的数据根目录。
                 Button("打开数据库目录") {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)打开数据库目录")
                     }
-                    Self.openURL(LumiCore.dataRootDirectory!)
+                    Self.openURL(AppConfig.getDBFolderURL())
                 }
             }
         #endif
     }
 
     private static func appSupportDirectory() -> URL {
-        let fileManager = FileManager.default
-        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            fatalError("Unable to resolve Application Support directory.")
-        }
-
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
-        let directory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
-        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-        return directory
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
     }
 
     private static func openURL(_ url: URL) {
-        NSWorkspace.shared.open(url)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     private static func showMissingDirectoryAlert(title: String, message: String) {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
-        alert.alertStyle = .critical
-        alert.addButton(withTitle: "好的")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "确定")
         alert.runModal()
     }
 }

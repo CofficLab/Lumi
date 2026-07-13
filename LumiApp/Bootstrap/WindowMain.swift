@@ -2,7 +2,7 @@ import LumiChatKit
 import LumiCoreKit
 import SwiftUI
 
-struct MainWindowSceneContent: View {
+struct WindowMain: View {
     @State private var container: RootContainer?
     @State private var initializationError: Error?
     @State private var isInitializing = true
@@ -25,6 +25,9 @@ struct MainWindowSceneContent: View {
                         chatSectionCoordinator: container.chatSectionCoordinator
                     )
                 }
+                // 把 LumiCore 注入到 SwiftUI 视图树,让 App + 插件视图通过
+                // @EnvironmentObject var lumiCore: LumiCore 访问核心状态
+                .environmentObject(container.lumiCore)
                 .background {
                     WindowAccessor { window in
                         window.configureForLumiMainChrome()
@@ -41,6 +44,9 @@ struct MainWindowSceneContent: View {
         do {
             let newContainer = try RootContainer()
             self.container = newContainer
+            // 把 LumiCore 注入到 OpenProjectHandler(单例),让外部
+            // `application(_:openFile:)` 路径也能切换项目。
+            OpenProjectHandler.shared.configure(lumiCore: newContainer.lumiCore)
         } catch {
             self.initializationError = error
         }

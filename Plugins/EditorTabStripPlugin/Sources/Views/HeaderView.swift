@@ -51,10 +51,10 @@ public struct HeaderView: View {
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: {
-                    LumiCore.projectState?.currentProject?.path ?? ""
+                    lumiCore?.projectState?.currentProject?.path ?? ""
                 },
                 openFile: { [weak service] url in
-                    let projectPath = LumiCore.projectState?.currentProject?.path
+                    let projectPath = lumiCore?.projectState?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)

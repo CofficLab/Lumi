@@ -63,9 +63,10 @@ private enum XcodeOpener {
 /// Xcode 打开状态栏视图
 public struct OpenInXcodeStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public var body: some View {
@@ -125,10 +126,11 @@ public struct OpenInXcodeStatusBarView: View {
 
 /// Xcode 打开详情视图（在 popover 中显示）
 public struct OpenInXcodeDetailView: View {
+    @EnvironmentObject private var lumiCore: LumiCore
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public var body: some View {

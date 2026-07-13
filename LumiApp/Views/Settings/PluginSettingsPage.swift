@@ -5,6 +5,7 @@ import SwiftUI
 
 struct PluginSettingsPage: View {
     @LumiTheme private var theme
+    @EnvironmentObject private var lumiCore: LumiCore
     @ObservedObject var pluginService: PluginService
     @ObservedObject var chatService: ChatService
     @State private var selectedCategory: LumiPluginCategory?
@@ -257,7 +258,7 @@ private struct PluginSettingsDetailView: View {
     }
 
     private var settingsContext: LumiPluginContext {
-        LumiCore.makePluginContext(
+        lumiCore.makePluginContext(
             activeSectionID: "settings.plugins",
             activeSectionTitle: "插件管理"
         )

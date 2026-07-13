@@ -49,6 +49,7 @@ enum SettingsSidebarItem: Identifiable {
 
 struct SettingsView: View {
     @LumiTheme private var theme
+    @EnvironmentObject private var lumiCore: LumiCore
     let pluginService: PluginService
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
@@ -64,7 +65,7 @@ struct SettingsView: View {
     }
 
     private var settingsPluginContext: LumiPluginContext {
-        LumiCore.makePluginContext(
+        lumiCore.makePluginContext(
             activeSectionID: "settings",
             activeSectionTitle: "设置",
             additionalDependencies: { dependencies in

@@ -75,12 +75,13 @@ private enum AntigravityOpener {
 /// Antigravity 打开状态栏视图
 public struct OpenInAntigravityStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     
 
     public var body: some View {
         Group {
-            if (LumiCore.projectState?.currentProject?.path ?? "").isEmpty {
+            if (lumiCore.projectState?.currentProject?.path ?? "").isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -127,8 +128,8 @@ public struct OpenInAntigravityStatusBarView: View {
     }
 
     private func openInAntigravity() {
-        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectState?.currentProject?.path ?? "")
         AntigravityOpener.open(url)
     }
 }
@@ -138,6 +139,7 @@ public struct OpenInAntigravityStatusBarView: View {
 /// Antigravity 打开详情视图（在 popover 中显示）
 public struct OpenInAntigravityDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     
 
@@ -176,7 +178,7 @@ public struct OpenInAntigravityDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(LumiCore.projectState?.currentProject?.path ?? "")
+                Text(lumiCore.projectState?.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -186,7 +188,7 @@ public struct OpenInAntigravityDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(LumiCore.projectState?.currentProject?.path ?? "", forType: .string)
+                    NSPasteboard.general.setString(lumiCore.projectState?.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -200,8 +202,8 @@ public struct OpenInAntigravityDetailView: View {
     }
 
     private func openInAntigravity() {
-        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectState?.currentProject?.path ?? "")
         AntigravityOpener.open(url)
     }
 }

@@ -13,9 +13,12 @@ import SwiftUI
 /// `LumiCoreBootstrapping` 协议。
 ///
 /// - Important: 实现必须为 class（`AnyObject`），因为协议内含可变状态；
+///
+/// 自 LumiCore 迁移到 `final class` 后,`LumiCoreAccessing` 继承 `ObservableObject`,
+/// 允许 SwiftUI 视图通过 `@EnvironmentObject` 完整观察内核状态变化。
 ///   所有访问必须在主线程（`@MainActor`）。
 @MainActor
-public protocol LumiCoreAccessing: AnyObject {
+public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     // MARK: - State
 
     /// 数据根目录（`boot` 后非空）。

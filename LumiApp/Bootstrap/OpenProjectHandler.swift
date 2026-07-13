@@ -11,7 +11,17 @@ final class OpenProjectHandler: SuperLog {
 
     static let shared = OpenProjectHandler()
 
+    /// 由 `WindowMain` 初始化后注入；未注入时 `requestOpen` 静默返回。
+    /// 保留可空,是因为 `OpenProjectHandler` 是单例,
+    /// 而 `LumiCore` 实例是 App 启动后期才创建。
+    private weak var lumiCore: LumiCore?
+
     private init() {}
+
+    /// 由 `WindowMain.initializeContainer` 在拿到 `RootContainer` 后调用。
+    func configure(lumiCore: LumiCore) {
+        self.lumiCore = lumiCore
+    }
 
     func requestOpen(path: String) {
         let normalized = Self.normalizePath(path)
@@ -25,13 +35,15 @@ final class OpenProjectHandler: SuperLog {
             return
         }
 
-        guard Self.verbose else {
-            LumiCore.projectState?.setCurrentProjectPath(normalized)
+        guard let projectState = lumiCore?.projectState else {
+            Self.logger.warning("\(Self.t)LumiCore 未就绪,无法切换项目: \(normalized)")
             return
         }
 
-        Self.logger.info("\(Self.t)外部打开项目: \(normalized)")
-        LumiCore.projectState?.setCurrentProjectPath(normalized)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)外部打开项目: \(normalized)")
+        }
+        projectState.setCurrentProjectPath(normalized)
     }
 
     private static func normalizePath(_ path: String) -> String {

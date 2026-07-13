@@ -13,6 +13,7 @@ public struct TreeViewV2: View, SuperLog {
     public nonisolated static var verbose: Bool { EditorFileTreeV2Plugin.verbose }
     nonisolated static let logger = EditorFileTreeV2Plugin.logger
 
+    @EnvironmentObject private var lumiCore: LumiCore
     @EnvironmentObject var editorContext: EditorContext
 
     /// 文件树多选状态
@@ -115,7 +116,7 @@ public struct TreeViewV2: View, SuperLog {
     // MARK: - Private Computed Properties
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     private var showPackageDependencies: Bool {

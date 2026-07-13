@@ -90,7 +90,7 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
         currentProject = updatedProject
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)currentProject 已更新: \(self.currentProject?.name ?? "nil"), 准备调用 LumiCore.projectState?.switchToProject")
+            Self.logger.info("\(Self.t)currentProject 已更新: \(self.currentProject?.name ?? "nil"), 准备调用 lumiCore.projectState?.switchToProject")
         }
 
         // 持久化

@@ -22,7 +22,7 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        let context = LumiCore.makePluginContext(
+        let context = container.lumiCore.makePluginContext(
             activeSectionID: "app.root",
             activeSectionTitle: "Lumi"
         )

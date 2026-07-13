@@ -9,6 +9,7 @@ import LumiUI
 /// - 项目路径变化（`onChange(of: currentProjectPath)`）
 /// - 从其他应用切回（`applicationDidBecomeActive`）
 public struct GitPluginStatusBarView: View {
+    @Environment(\.lumiCore) private var lumiCore
     @State private var branch: String?
 
     public var body: some View {
@@ -35,7 +36,7 @@ public struct GitPluginStatusBarView: View {
         .onAppear {
             refreshBranch()
         }
-        .onChange(of: LumiCore.projectState?.currentProject?.path) { _, _ in
+        .onChange(of: lumiCore?.projectState?.currentProject?.path) { _, _ in
             refreshBranch()
         }
         .onApplicationDidBecomeActive {
@@ -44,7 +45,7 @@ public struct GitPluginStatusBarView: View {
     }
 
     private func refreshBranch() {
-        let path = LumiCore.projectState?.currentProject?.path ?? ""
+        let path = lumiCore?.projectState?.currentProject?.path ?? ""
         guard !path.isEmpty else {
             branch = nil
             return

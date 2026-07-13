@@ -52,7 +52,12 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        [
+        // 注入 lumiCore 到 LayoutPersistenceCoordinator
+        if let lumiCore = context.lumiCore {
+            LayoutPersistenceCoordinator.shared.configure(lumiCore: lumiCore)
+        }
+
+        return [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in
                 LayoutRootView(content: content)
             }

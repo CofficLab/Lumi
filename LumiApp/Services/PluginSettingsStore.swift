@@ -5,7 +5,7 @@ import LumiCoreKit
 final class PluginSettingsStore {
     private let settingsURL: URL
 
-    init(directory: URL = LumiCore.pluginDataDirectory(for: "PluginService")) {
+    init(directory: URL = AppConfig.getPluginDBFolderURL("PluginService")) {
         self.settingsURL = directory.appendingPathComponent("plugin-settings.plist")
     }
 

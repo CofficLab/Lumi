@@ -29,15 +29,15 @@ import SwiftUI
 public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     // MARK: - State
 
-    public private(set) var dataRootDirectory: URL?
+    @Published public private(set) var dataRootDirectory: URL?
 
     public var logoRegistry: LogoRegistry { .shared }
 
-    public private(set) var projectState: LumiProjectState?
+    @Published public private(set) var projectState: LumiProjectState?
 
-    public private(set) var layoutState: LumiLayoutState?
+    @Published public private(set) var layoutState: LumiLayoutState?
 
-    public private(set) var chatService: (any LumiChatServicing)?
+    @Published public private(set) var chatService: (any LumiChatServicing)?
 
     public internal(set) var editorService: (any AbstractEditorServicing)?
 

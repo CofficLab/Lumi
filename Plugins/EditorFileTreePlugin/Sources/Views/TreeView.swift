@@ -12,10 +12,11 @@ public struct TreeView: View, SuperLog {
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     @EnvironmentObject var editorContext: EditorContext
+    @EnvironmentObject private var lumiCore: LumiCore
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = RefreshCoordinator()

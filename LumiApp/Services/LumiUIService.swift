@@ -16,12 +16,13 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
 
     init(
         pluginService: PluginService,
+        lumiCore: LumiCoreAccessing,
         themeRegistry: LumiUIThemeRegistry = .shared,
         selectionStoreDirectory: URL? = nil
     ) {
         self.themeRegistry = themeRegistry
         self.selectionStore = ThemeSelectionStore(
-            pluginDirectory: selectionStoreDirectory ?? LumiCore.pluginDataDirectory(for: "LumiUI")
+            pluginDirectory: selectionStoreDirectory ?? lumiCore.pluginDataDirectory(for: "LumiUI")
         )
         reloadThemes(from: pluginService)
         

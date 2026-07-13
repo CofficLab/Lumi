@@ -23,14 +23,14 @@ public enum AutoTaskPlugin: LumiPlugin {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded()
-        bootstrapTurnCheck { context.resolve(LumiChatServicing.self) }
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        bootstrapTurnCheck(chatServiceProvider: { context.resolve(LumiChatServicing.self) }, context: context)
         return [TaskContextChatMiddleware()]
     }
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapFromLumiCoreIfNeeded(context: context)
         return [
             CreateTaskTool(),
             AppendTaskTool(),

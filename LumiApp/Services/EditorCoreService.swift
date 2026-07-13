@@ -16,6 +16,9 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
 
     private let core: EditorCore
     private let themeRegistry: LumiUIThemeRegistry
+    /// 由 `RootContainer` 在拿到 `LumiCore` 实例后注入;
+    /// 注入前 `configureLifecycle` 走 `recentProjects()` 兜底。
+    private var lumiCore: LumiCoreAccessing?
 
     var editorService: EditorService { core.editorService }
     var extensionRegistry: EditorExtensionRegistry { core.extensionRegistry }
@@ -24,6 +27,15 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         get { core.currentProjectPathProvider }
         set { core.currentProjectPathProvider = newValue }
     }
+
+    /// 由 `RootContainer` 在拿到 `LumiCore` 实例后调用,
+    /// 把延迟注入的引用补上。`configureLifecycle` 已先于注入执行,
+    /// 但内部的 `provider` 闭包通过 `self?.lumiCore?.projectState` 读,
+    /// 所以这里只更新引用,不需要重跑配置。
+    func configure(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
+
 
     init(
         pluginService: PluginService,
@@ -146,8 +158,8 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
     ) {
         // 通过 LumiCore 获取项目列表
-        let provider: () -> [LumiProjectEntry] = {
-            LumiCore.projectState?.projects ?? recentProjects()
+        let provider: () -> [LumiProjectEntry] = { [weak self] in
+            self?.lumiCore?.projectState?.projects ?? recentProjects()
         }
 
         EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL

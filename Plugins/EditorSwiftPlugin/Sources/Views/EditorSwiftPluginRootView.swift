@@ -12,16 +12,17 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     public let content: Content
 
+    @Environment(\.lumiCore) private var lumiCore
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
     @StateObject private var windowScope = EditorSwiftWindowScope()
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore?.projectState?.currentProject?.path ?? ""
     }
 
     private var projects: [LumiProjectEntry] {
-        LumiCore.projectState?.projects ?? []
+        lumiCore?.projectState?.projects ?? []
     }
 
     enum PreloadStatus: Sendable {

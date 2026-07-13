@@ -59,7 +59,7 @@ public enum GitHubPlugin: LumiPlugin {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         bootstrapIfNeeded()
-        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
+        let projectPath = context.lumiCore?.projectState?.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).kb",

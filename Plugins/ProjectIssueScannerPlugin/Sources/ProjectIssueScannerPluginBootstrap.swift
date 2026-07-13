@@ -7,9 +7,11 @@ enum ProjectIssueScannerRuntimeBridge {
 
 @MainActor
 public extension ProjectIssueScannerPlugin {
-    static func bootstrapFromLumiCoreIfNeeded() {
+    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
-        ProjectIssueScannerRuntimeBridge.dataDirectory = LumiCore.pluginDataDirectory(for: "ProjectIssueScanner")
+        if let lumiCore = context.lumiCore {
+            ProjectIssueScannerRuntimeBridge.dataDirectory = lumiCore.pluginDataDirectory(for: "ProjectIssueScanner")
+        }
         didBootstrapFromLumiCore = true
     }
 }

@@ -6,6 +6,7 @@ import LumiCoreKit
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
@@ -186,7 +187,7 @@ extension RAGSettingsView {
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let projects = LumiCore.projectState?.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
+        let projects = lumiCore.projectState?.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]
         if currentPath.isEmpty {

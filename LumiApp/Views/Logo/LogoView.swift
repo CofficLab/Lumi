@@ -8,10 +8,13 @@ import LumiCoreKit
 struct LogoView: View {
     var scene: LogoScene = .general
 
-    @ObservedObject private var logoRegistry = LumiCore.logoRegistry
+    @EnvironmentObject private var lumiCore: LumiCore
 
     var body: some View {
-        if let item = logoRegistry.bestItem {
+        // logoRegistry 是 LumiCore 共享的全局单例,从一个 EnvironmentObject 派生。
+        // SwiftUI 通过对 lumiCore 的 objectWillChange 订阅来重绘,
+        // 而 logoRegistry 自身的 @Published 变化由 lumiCore 转播。
+        if let item = lumiCore.logoRegistry.bestItem {
             ZStack {
                 item.makeView(scene)
                 if let overlay = item.makeOverlay {

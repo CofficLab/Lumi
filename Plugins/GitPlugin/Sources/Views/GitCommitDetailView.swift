@@ -15,20 +15,25 @@ public struct GitCommitDetailView: View, SuperLog {
     // MARK: - 属性
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @EnvironmentObject private var lumiCore: LumiCore
 
     @EnvironmentObject var gitVM: AppGitVM
-    @ObservedObject private var layoutState: LumiLayoutState
+
+    // layoutState 从 lumiCore 获取
+    private var layoutState: LumiLayoutState {
+        lumiCore.layoutState ?? LumiLayoutState()
+    }
 
     public init() {
-        _layoutState = ObservedObject(initialValue: LumiCore.layoutState ?? LumiLayoutState())
+        // layoutState 将在 body 中通过 EnvironmentObject 获取
     }
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     private var currentProjectName: String {
-        LumiCore.projectState?.currentProject?.name ?? ""
+        lumiCore.projectState?.currentProject?.name ?? ""
     }
 
     /// 当前加载的 commit 详情
@@ -85,7 +90,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 loadingView
             } else if let error = errorMessage {
                 errorView(error)
-            } else if LumiCore.projectState?.currentProject != nil {
+            } else if lumiCore.projectState?.currentProject != nil {
                 noSelectionView
             } else {
                 noProjectView

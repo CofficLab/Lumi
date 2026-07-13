@@ -7,10 +7,12 @@ enum GitHubInsightRuntimeBridge {
 
 @MainActor
 public extension GitHubPlugin {
-    static func bootstrapFromLumiCoreIfNeeded() {
+    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
-        GitHubInsightRuntimeBridge.rootDirectory = LumiCore.pluginDataDirectory(for: "GitHubInsight")
-        didBootstrapFromLumiCore = true
+        if let core = context.lumiCore {
+            GitHubInsightRuntimeBridge.rootDirectory = core.pluginDataDirectory(for: "GitHubInsight")
+            didBootstrapFromLumiCore = true
+        }
     }
 }
 

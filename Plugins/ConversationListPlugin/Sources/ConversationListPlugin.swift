@@ -46,7 +46,7 @@ public enum ConversationListPlugin: LumiPlugin {
             ]
         }
 
-        let projectState = LumiCore.projectState
+        let projectState = context.lumiCore?.projectState
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).conversation-list",
@@ -84,7 +84,7 @@ public enum ConversationListPlugin: LumiPlugin {
             ]
         }
 
-        let projectState = LumiCore.projectState
+        let projectState = context.lumiCore?.projectState
 
         return [
             LumiPanelRailTabItem(
