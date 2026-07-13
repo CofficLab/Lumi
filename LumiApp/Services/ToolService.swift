@@ -17,14 +17,10 @@ final class ToolService: LumiToolServicing, SuperLog {
             Self.logger.info("\(Self.t)注册 \(tools.count) 个工具")
         }
 
-        var uniqueTools: [String: any LumiAgentTool] = [:]
+        LumiToolNameDeduplication.assertUnique(tools: tools)
 
+        var uniqueTools: [String: any LumiAgentTool] = [:]
         for tool in tools {
-            if let existing = uniqueTools[tool.name] {
-                let existingType = String(describing: type(of: existing))
-                let newType = String(describing: type(of: tool))
-                fatalError("Duplicate tool name '\(tool.name)': existing=\(existingType), new=\(newType)")
-            }
             uniqueTools[tool.name] = tool
         }
 
