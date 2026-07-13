@@ -9,7 +9,7 @@ public enum MiniMaxPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.llm-provider.minimax",
         displayName: LumiPluginLocalization.string("MiniMax", bundle: .module),
         description: LumiPluginLocalization.string(
-            "Contributes MiniMax TokenPlan models and MiniMax-specific chat error renderers.",
+            "Contributes MiniMax TokenPlan models, video generation tools, and MiniMax-specific chat error renderers.",
             bundle: .module
         ),
         order: 104
@@ -18,6 +18,11 @@ public enum MiniMaxPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         [MiniMaxTokenPlanProvider()]
+    }
+
+    @MainActor
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+        [MiniMaxVideoTool()]
     }
 
     @MainActor
