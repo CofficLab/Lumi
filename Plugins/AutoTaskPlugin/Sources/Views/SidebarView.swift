@@ -2,12 +2,12 @@ import SwiftUI
 import SuperLogKit
 import LumiCoreKit
 
-/// AutoTask 右侧栏视图
+/// 右侧栏视图
 ///
-/// 展示当前会话的任务列表，由 AutoTaskPlugin 通过 `addSidebarSections()` 注册。
+/// 展示当前会话的任务列表，由 Plugin 通过 `addSidebarSections()` 注册。
 /// 通过闭包参数获取当前会话 ID 和背景色，避免对 App 侧类型的直接依赖。
-public struct AutoTaskSidebarView: View {
-    @StateObject private var viewModel = AutoTaskSidebarViewModel()
+public struct SidebarView: View {
+    @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
 
     /// 获取当前会话 ID 的闭包（内部统一为 String?）
@@ -180,7 +180,7 @@ private struct TaskRowView: View {
             Spacer()
         }
         .padding(.horizontal, 8)
-        .frame(height: AutoTaskSidebarView.rowHeight)
+        .frame(height: SidebarView.rowHeight)
         .background(Color.orange.opacity(0.075))
         .overlay {
             RoundedRectangle(cornerRadius: 6)

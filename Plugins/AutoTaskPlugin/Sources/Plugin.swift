@@ -19,7 +19,7 @@ public enum AutoTaskPlugin: LumiPlugin {
     )
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
-    nonisolated(unsafe) public static var configuration: any AutoTaskConfiguration = DefaultAutoTaskConfiguration()
+    nonisolated(unsafe) public static var configuration: any Configuration = DefaultConfiguration()
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
@@ -49,18 +49,18 @@ public enum AutoTaskPlugin: LumiPlugin {
 
         return [
             LumiChatSectionItem(id: info.id, order: info.order) {
-                AutoTaskChatSectionView(coordinator: coordinator)
+                ChatSectionView(coordinator: coordinator)
             }
         ]
     }
 }
 
-private struct AutoTaskChatSectionView: View {
+private struct ChatSectionView: View {
     @LumiTheme private var theme
     @ObservedObject var coordinator: ChatSectionCoordinator
 
     var body: some View {
-        AutoTaskSidebarView(
+        SidebarView(
             conversationIdProvider: { coordinator.selectedConversationID },
             backgroundColorProvider: {
                 theme.background.opacity(0.94)
@@ -69,7 +69,7 @@ private struct AutoTaskChatSectionView: View {
     }
 }
 
-private struct DefaultAutoTaskConfiguration: AutoTaskConfiguration {
+private struct DefaultConfiguration: Configuration {
     func databaseDirectory() -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory

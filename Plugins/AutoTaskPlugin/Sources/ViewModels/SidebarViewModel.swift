@@ -4,7 +4,7 @@ import SwiftUI
 import SuperLogKit
 import LumiCoreKit
 
-private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
+private final class NotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?
 
     var hasObserver: Bool {
@@ -28,19 +28,19 @@ private final class AutoTaskNotificationObserverHolder: @unchecked Sendable {
     }
 }
 
-public protocol AutoTaskSidebarServicing: Sendable {
+public protocol SidebarServicing: Sendable {
     func fetchTasks(conversationId: String) async -> [TaskItem]
     func getProgressSummary(conversationId: String) async -> TaskProgressSummary
 }
 
-extension TaskStateManager: AutoTaskSidebarServicing {}
+extension TaskStateManager: SidebarServicing {}
 
-/// AutoTask 右侧栏视图模型
+/// 右侧栏视图模型
 ///
 /// 负责获取并展示当前会话的任务列表。
 /// 通过监听任务变更通知自动刷新 UI。
 @MainActor
-final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
+final public class SidebarViewModel: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📋"
     nonisolated public static let verbose = false
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.sidebar.vm")
@@ -50,11 +50,11 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
     @Published public var isLoading: Bool = false
 
     public var currentConversationId: String?
-    private nonisolated let notificationObserverHolder = AutoTaskNotificationObserverHolder()
-    private let service: any AutoTaskSidebarServicing
+    private nonisolated let notificationObserverHolder = NotificationObserverHolder()
+    private let service: any SidebarServicing
     private var refreshGeneration: Int = 0
 
-    public init(service: any AutoTaskSidebarServicing = TaskStateManager.shared) {
+    public init(service: any SidebarServicing = TaskStateManager.shared) {
         self.service = service
     }
 
@@ -86,10 +86,10 @@ final public class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
         // 首次绑定通知（仅一次）
         if !notificationObserverHolder.hasObserver {
             if Self.verbose {
-                Self.logger.info("\(Self.t)Registering autoTaskDidChange observer")
+                Self.logger.info("\(Self.t)Registering taskDidChange observer")
             }
             let observer = NotificationCenter.default.addObserver(
-                forName: .autoTaskDidChange,
+                forName: .taskDidChange,
                 object: nil,
                 queue: .main
             ) { [weak self] notification in

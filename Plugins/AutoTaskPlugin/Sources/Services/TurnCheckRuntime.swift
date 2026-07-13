@@ -10,7 +10,7 @@ import LumiCoreKit
 /// `LumiChatServicing.continueTurn(in:)`，在不写入任何用户消息的前提下重启一轮
 /// agent turn——既不进入消息列表、也不污染持久化历史，对用户完全无感。
 @MainActor
-enum AutoTaskTurnCheckRuntime {
+enum TurnCheckRuntime {
     private static var observer: NSObjectProtocol?
 
     static func start(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?) {

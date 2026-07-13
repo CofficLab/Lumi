@@ -10,6 +10,9 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
 
+    /// 可注入的状态管理器（用于测试）。nil 时使用全局共享实例。
+    public var manager: TaskStateManager?
+
     public static let info = LumiAgentToolInfo(
         id: "create_task",
         displayName: LumiPluginLocalization.string("Create Task", bundle: .module),
@@ -72,7 +75,7 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
             return LumiPluginLocalization.string("Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
         }
 
-        let manager = TaskStateManager.shared
+        let manager = manager ?? .shared
         let createdTasks: [TaskItem]
         do {
             createdTasks = try await manager.createTasks(conversationId: conversationId, items: items)
@@ -85,12 +88,12 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")
+            AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting taskDidChange for cid=\(conversationId.prefix(8))")
         }
 
         // 通知 UI 刷新
         NotificationCenter.default.post(
-            name: .autoTaskDidChange,
+            name: .taskDidChange,
             object: nil,
             userInfo: ["conversationId": conversationId]
         )

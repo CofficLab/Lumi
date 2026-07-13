@@ -6,7 +6,7 @@ public extension AutoTaskPlugin {
     static func bootstrapFromLumiCoreIfNeeded() {
         guard !didBootstrapFromLumiCore else { return }
 
-        configuration = LumiCoreAutoTaskConfiguration(
+        configuration = LumiCoreConfiguration(
             rootURL: LumiCore.pluginDataDirectory(for: "AutoTask")
         )
         didBootstrapFromLumiCore = true
@@ -14,13 +14,13 @@ public extension AutoTaskPlugin {
 
     static func bootstrapTurnCheck(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?) {
         bootstrapFromLumiCoreIfNeeded()
-        AutoTaskTurnCheckRuntime.start(chatServiceProvider: chatServiceProvider)
+        TurnCheckRuntime.start(chatServiceProvider: chatServiceProvider)
     }
 }
 
 private nonisolated(unsafe) var didBootstrapFromLumiCore = false
 
-private struct LumiCoreAutoTaskConfiguration: AutoTaskConfiguration {
+private struct LumiCoreConfiguration: Configuration {
     let rootURL: URL
 
     func databaseDirectory() -> URL {
