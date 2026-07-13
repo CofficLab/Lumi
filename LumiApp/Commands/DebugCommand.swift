@@ -51,7 +51,7 @@ struct DebugCommand: Commands, SuperLog {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)打开数据库目录")
                     }
-                    Self.openURL(LumiCore.dataRootDirectory)
+                    Self.openURL(LumiCore.dataRootDirectory!)
                 }
             }
         #endif

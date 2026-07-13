@@ -5,6 +5,8 @@ import SwiftUI
 @MainActor
 public enum LumiCore {
     private static var configuration: LumiCoreConfiguration?
+    
+    public static var dataRootDirectory: URL? = nil
 
     /// Logo 注册表（指向 `LogoRegistry.shared` 单例）
     @MainActor public static var logoRegistry: LogoRegistry { .shared }
@@ -125,6 +127,7 @@ public enum LumiCore {
     ) throws {
         projectState = LumiProjectState()
         layoutState = LumiLayoutState()
+        Self.dataRootDirectory = databaseDirectory
 
         // 自动创建并注册 ChatService
         if let factory = chatServiceFactory {

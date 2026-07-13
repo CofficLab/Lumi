@@ -14,6 +14,8 @@ public extension LumiCore {
     /// 接收 LumiAgentToolProviding（通常是 `PluginService`），返回具体的 `EditorService`。
     /// 通过泛型 `Service` 保留具体类型信息，使 `LumiCore` 在 boot 内部既能注册抽象协议
     /// （`AbstractEditorServicing`），也能注册具体类型（具体 `Service`）。
+    ///
+    /// 使用 `@escaping` 的工厂闭包请在调用点（`boot`、`bootstrapEditor`）的参数上显式标注。
     public typealias EditorBootstrapFactory<Service: AbstractEditorServicing> =
         @MainActor (any LumiAgentToolProviding) throws -> Service
 
@@ -32,7 +34,7 @@ public extension LumiCore {
     @MainActor
     static func bootstrapEditor<Service: AbstractEditorServicing>(
         provider: any LumiAgentToolProviding,
-        factory: EditorBootstrapFactory<Service>
+        factory: @escaping EditorBootstrapFactory<Service>
     ) throws {
         let service = try factory(provider)
         editorService = service

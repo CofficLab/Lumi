@@ -18,25 +18,16 @@ public extension LumiCore {
         _configuration = LumiCoreConfiguration(dataRootDirectory: directory)
     }
 
-    /// 存储根目录（必须先调用 `configure`）。
-    public static var dataRootDirectory: URL {
-        guard let _configuration else {
-            fatalError("LumiCore.configure(dataRootDirectory:) must be called before using LumiCore storage APIs.")
-        }
-
-        return _configuration.dataRootDirectory
-    }
-
     /// 核心数据目录。
     public static var coreDataDirectory: URL {
-        _directory(named: "Core", under: dataRootDirectory)
+        _directory(named: "Core", under: Self.dataRootDirectory!)
     }
 
     /// 插件数据目录。
     /// - Parameter pluginName: 插件名称。
     /// - Returns: 插件专属的数据目录路径。
     public static func pluginDataDirectory(for pluginName: String) -> URL {
-        _directory(named: _sanitizeDirectoryName(pluginName, fallback: "Plugin"), under: dataRootDirectory)
+        _directory(named: _sanitizeDirectoryName(pluginName, fallback: "Plugin"), under: dataRootDirectory!)
     }
 
     // MARK: - Private Helpers
