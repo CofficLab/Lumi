@@ -10,13 +10,13 @@ public enum LumiCore {
     @MainActor public static var logoRegistry: LogoRegistry { .shared }
 
     /// 项目状态管理器
-    @MainActor public static private(set) var projectState: LumiProjectState?
+    @MainActor public private(set) static var projectState: LumiProjectState?
 
     /// 布局状态管理器
-    @MainActor public static private(set) var layoutState: LumiLayoutState?
+    @MainActor public private(set) static var layoutState: LumiLayoutState?
 
     /// 聊天服务（由外部通过 `setupChatService` 工厂创建，自动注册到服务表）
-    @MainActor public static private(set) var chatService: (any LumiChatServicing)?
+    @MainActor public private(set) static var chatService: (any LumiChatServicing)?
 
     /// ChatService 工厂闭包类型
     public typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
@@ -31,40 +31,6 @@ public enum LumiCore {
     ///   - 应在 `LumiCore.boot()` 之前调用。
     public static func setupChatService(_ factory: @escaping ChatServiceFactory) {
         chatServiceFactory = factory
-    }
-
-    /// 编辑器服务（由外部通过 `setupEditorBootstrap` 工厂创建，自动注册到服务表）。
-    /// 使用 `AbstractEditorServicing` 抽象协议，避免 LumiCoreKit 反向依赖 EditorService（会成环）。
-    @MainActor public static private(set) var editorService: (any AbstractEditorServicing)?
-
-    /// EditorBootstrap 工厂闭包类型。
-    /// 返回抽象的 `AbstractEditorServicing`，具体 `LumiEditorServicing` 由 LumiApp 自行注册。
-    public typealias EditorBootstrapFactory = @MainActor () -> any AbstractEditorServicing
-
-    /// EditorBootstrap 工厂，由 LumiApp 在启动时提供。
-    /// 提供后，调用 `bootstrapEditor()` 时自动创建并注册到服务表。
-    /// 注意：与 ChatService 不同，此工厂**不在** `boot()` 中调用，因为编辑器启动依赖
-    /// `PluginService`（启用态过滤），而后者在 LumiCore.boot() 之后才构造完成。
-    private static var editorBootstrapFactory: EditorBootstrapFactory?
-
-    /// 设置 EditorBootstrap 工厂。
-    /// - Parameter factory: 工厂闭包，返回编辑器服务实例（遵循 `AbstractEditorServicing`）。
-    ///   应在依赖（如 PluginService）就绪后调用 `bootstrapEditor()`。
-    public static func setupEditorBootstrap(_ factory: @escaping EditorBootstrapFactory) {
-        editorBootstrapFactory = factory
-    }
-
-    /// 启动编辑器服务。
-    /// 调用工厂创建实例、存入 `editorService` 并注册到服务表。
-    /// 应在 `setupEditorBootstrap` 之后、且其依赖（如 PluginService）就绪时调用。
-    @MainActor
-    public static func bootstrapEditor() {
-        guard let factory = editorBootstrapFactory else { return }
-        let service = factory()
-        editorService = service
-        registerService((any AbstractEditorServicing).self, service)
-        // 清空工厂，避免重复 bootstrap
-        editorBootstrapFactory = nil
     }
 
     // MARK: - Service Registry
@@ -141,14 +107,27 @@ public enum LumiCore {
 
     // MARK: - 启动
 
-    /// 启动 LumiCore
-    /// 初始化所有核心模块
-    public static func boot(databaseDirectory: URL? = nil) {
+    /// 启动 LumiCore。
+    ///
+    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 `LumiCore` 会在工具服务就绪后
+    /// 自动调用工厂创建 `EditorService`，并同时注册抽象协议（`AbstractEditorServicing`）
+    /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
+    /// 单元测试、CLI 工具）。
+    ///
+    /// - Parameters:
+    ///   - databaseDirectory: 数据根目录。
+    ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
+    ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
+    public static func boot<Service: AbstractEditorServicing>(
+        databaseDirectory: URL,
+        provider: any LumiAgentToolProviding,
+        editorFactory: EditorBootstrapFactory<Service>? = nil
+    ) throws {
         projectState = LumiProjectState()
         layoutState = LumiLayoutState()
 
         // 自动创建并注册 ChatService
-        if let databaseDirectory, let factory = chatServiceFactory {
+        if let factory = chatServiceFactory {
             chatService = factory(databaseDirectory)
             registerService((any LumiChatServicing).self, chatService!)
             // ChatService 通常也实现 HistoryQueryService
@@ -157,110 +136,13 @@ public enum LumiCore {
             }
         }
 
-        // 初始化工具服务（创建 + 注册 + 注入运行环境）
-        bootstrapToolService()
-    }
+        try self.configure(dataRootDirectory: databaseDirectory)
 
-    /// 初始化 `ToolService` 并注入运行环境。
-    private static func bootstrapToolService() {
-        let toolService = ToolService()
-        registerService(ToolService.self, toolService)
-        registerService((any LumiToolServicing).self, toolService)
-        // 注入环境，让 ToolService 能通过协议获取 verbosity / projectPath
-        toolService.environment = ToolServiceEnvironmentBridge()
-    }
+        try bootstrapToolService(provider: provider)
 
-    // MARK: - Tool Contribution
-
-    /// 编排 Agent Tool 工具的注册与注入。
-    ///
-    /// 把 `provider` 提供的插件工具、内置工具和子 Agent 工具注册到 `ToolService`，
-    /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
-    /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
-    ///
-    /// 通常在 App 层插件加载完成后调用，重复调用是安全的。
-    ///
-    /// - Parameters:
-    ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
-    ///   - context: 当前的 `LumiPluginContext`
-    public static func bootstrapToolContributions(
-        provider: any LumiAgentToolProviding,
-        context: LumiPluginContext
-    ) throws {
-        guard let toolService = resolveService(ToolService.self) else {
-            return
+        // 自动创建并注册 EditorService（仅当提供了 editorFactory）
+        if let editorFactory {
+            try bootstrapEditor(provider: provider, factory: editorFactory)
         }
-
-        // 1. 收集插件工具
-        let pluginTools = provider.agentTools(context: context)
-        // 重复名视为致命配置错误：向上抛 `LumiToolRegistrationError`，
-        // 由 `RootContainer` 捕获并以 `CrashedView` 展示，避免运行时 fatalError 闪退。
-        try toolService.registerTools(pluginTools)
-
-        // 2. 注册内置工具（no_op / conversation_info）
-        toolService.registerBuiltInTools(builtInTools)
-
-        // 3. 收集子 Agent 定义并包装成 delegate 工具
-        let subAgentDefinitions = provider.subAgents(context: context)
-        if let chatService {
-            let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
-                SubAgentDelegateTool(
-                    definition: definition,
-                    chatService: chatService,
-                    toolService: toolService
-                )
-            }
-            toolService.appendTools(subAgentTools)
-        }
-
-        // 4. 关联到 ChatService
-        chatService?.registerToolService(toolService)
-    }
-
-    // MARK: - 配置
-
-    public static func configure(dataRootDirectory: URL) {
-        let directory = dataRootDirectory.standardizedFileURL
-        try? FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        configuration = LumiCoreConfiguration(dataRootDirectory: directory)
-    }
-
-    public static var dataRootDirectory: URL {
-        guard let configuration else {
-            fatalError("LumiCore.configure(dataRootDirectory:) must be called before using LumiCore storage APIs.")
-        }
-
-        return configuration.dataRootDirectory
-    }
-
-    public static var coreDataDirectory: URL {
-        directory(named: "Core", under: dataRootDirectory)
-    }
-
-    public static func pluginDataDirectory(for pluginName: String) -> URL {
-        directory(named: sanitizeDirectoryName(pluginName, fallback: "Plugin"), under: dataRootDirectory)
-    }
-
-    private static func directory(named name: String, under root: URL) -> URL {
-        let directory = root.appendingPathComponent(name, isDirectory: true)
-        try? FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        return directory
-    }
-
-    private static func sanitizeDirectoryName(_ name: String, fallback: String) -> String {
-        let sanitized = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { !$0.isEmpty }
-            .joined(separator: "_")
-
-        return sanitized.isEmpty ? fallback : sanitized
     }
 }
