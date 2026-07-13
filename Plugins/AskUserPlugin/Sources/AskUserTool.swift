@@ -98,16 +98,53 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
             return Self.errorResult(message: "question is required and cannot be empty")
         }
 
-        // 解析选项
-        var options: [String] = ["是", "否"]
-        if let optionsArray = arguments["options"]?.value as? [String], !optionsArray.isEmpty {
-            options = optionsArray
+        let options = Self.resolvedOptions(arguments)
+        let allowFreeInput = Self.resolvedAllowFreeInput(arguments)
+
+        logInvocation(
+            question: question,
+            options: options,
+            allowFreeInput: allowFreeInput
+        )
+
+        let pendingResponse = Self.buildPendingResponse(
+            context: context,
+            question: question,
+            options: options,
+            allowFreeInput: allowFreeInput
+        )
+
+        let payload = try Self.encodePendingPayload(pendingResponse)
+        return "\(Self.pendingPrefix)\n\(payload)"
+    }
+
+    /// 解析并归一化 `options` 参数。
+    ///
+    /// 仅当 `options` 是非空字符串数组时才使用；
+    /// 其他情况（缺失、非数组、为空数组）都回退到 `Self.defaultOptions`。
+    static func resolvedOptions(_ arguments: [String: ToolArgument]) -> [String] {
+        guard let raw = arguments["options"]?.value else {
+            return defaultOptions
         }
+        guard let array = raw as? [String], !array.isEmpty else {
+            return defaultOptions
+        }
+        return array
+    }
 
-        let allowFreeInput = arguments["allow_free_input"]?.value as? Bool ?? false
+    /// 解析 `allow_free_input` 参数；缺失或非 Bool 时默认为 `false`。
+    static func resolvedAllowFreeInput(_ arguments: [String: ToolArgument]) -> Bool {
+        (arguments["allow_free_input"]?.value as? Bool) ?? false
+    }
 
-        // 构建等待响应的 JSON（渲染器用这个 JSON 显示选择界面）
-        let pendingResponse = AskUserPendingResponse(
+    /// 构建 `AskUserPendingResponse`，集中所有字段归一化逻辑（verbosity 默认值等）。
+    static func buildPendingResponse(
+        context: ToolExecutionContext,
+        question: String,
+        options: [String],
+        allowFreeInput: Bool
+    ) -> AskUserPendingResponse {
+        AskUserPendingResponse(
             toolCallId: context.toolCallId,
             question: question,
             options: options,
@@ -115,32 +152,55 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
             conversationId: context.conversationId.uuidString,
             verbosity: context.verbosity ?? "standard"
         )
+    }
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        let jsonData = try encoder.encode(pendingResponse)
-        let jsonString = String(decoding: jsonData, as: UTF8.self)
+    /// 将 `AskUserPendingResponse` 编码为 pretty-printed JSON 字符串。
+    ///
+    /// 与 `AskUserPendingResponse.init` + `JSONEncoder` 路径完全等价，
+    /// 单独暴露便于精确断言和单元测试。
+    static func encodePendingPayload(_ response: AskUserPendingResponse) throws -> String {
+        let data = try jsonEncoder.encode(response)
+        return String(decoding: data, as: UTF8.self)
+    }
 
-        if Self.verbose {
-            Self.logger.info("\(Self.t) AskUser tool called: \(question) with options: \(options)")
-        }
+    /// 将 `AskUserErrorResponse` 编码为 JSON 字符串。
+    static func encodeErrorPayload(_ response: AskUserErrorResponse) throws -> String {
+        let data = try jsonEncoder.encode(response)
+        return String(decoding: data, as: UTF8.self)
+    }
 
-        // 立即返回 pending 标记 + JSON。
-        // ToolCallExecutor 会识别前缀并设置 awaitingUserResponse = true，
-        // AgentTurnService 据此暂停循环。
-        return "\(Self.pendingPrefix)\n\(jsonString)"
+    /// 输出 verbose 日志（仅在 `Self.verbose == true` 时）。
+    ///
+    /// 提取为单独方法便于子类覆盖以注入测试断言。
+    func logInvocation(question: String, options: [String], allowFreeInput: Bool) {
+        guard Self.verbose else { return }
+        Self.logger.info(
+            "\(Self.t) AskUser tool called: \(question) options=\(options) freeInput=\(allowFreeInput)"
+        )
     }
 
     static func errorResult(message: String) -> String {
         let error = AskUserErrorResponse(error: message)
-        let encoder = JSONEncoder()
+        let payload: String
         do {
-            let jsonData = try encoder.encode(error)
-            return "\(LumiAskUserMarkers.errorPrefix)\n\(String(decoding: jsonData, as: UTF8.self))"
+            payload = try Self.encodeErrorPayload(error)
         } catch {
-            return "\(LumiAskUserMarkers.errorPrefix)\n{\"error\":\"Failed to encode ask_user error response\"}"
+            payload = "{\"error\":\"Failed to encode ask_user error response\"}"
         }
+        return "\(LumiAskUserMarkers.errorPrefix)\n\(payload)"
     }
+
+    // MARK: - Constants
+
+    /// 当用户没有提供 `options` 参数（或提供非法值）时使用的默认选项。
+    static let defaultOptions: [String] = ["是", "否"]
+
+    /// 所有 JSON 编解码共享一个 encoder，配置为 pretty-printed 以便人工检查日志。
+    private static let jsonEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        return encoder
+    }()
 }
 
 // MARK: - Response Models

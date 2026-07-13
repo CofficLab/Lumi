@@ -45,10 +45,18 @@ public struct AskUserRowRenderer: ToolCallRowRenderer {
         }
     }
 
-    private func parsePendingResponse(from content: String) -> AskUserPendingResponse? {
-        guard content.hasPrefix("__ASK_USER_PENDING__") else { return nil }
-        let jsonString = content.dropFirst("__ASK_USER_PENDING__\n".count)
+    /// 从 `toolCall.result.content` 中解析 `AskUserPendingResponse`。
+    ///
+    /// 暴露为 `static` 是为了在没有 `ToolCall` 的单元测试里也能直接复用。
+    static func parsePendingResponse(from content: String) -> AskUserPendingResponse? {
+        guard content.hasPrefix(LumiAskUserMarkers.pendingPrefix) else { return nil }
+        let header = "\(LumiAskUserMarkers.pendingPrefix)\n"
+        let jsonString = content.dropFirst(header.count)
         guard let jsonData = jsonString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(AskUserPendingResponse.self, from: jsonData)
+    }
+
+    private func parsePendingResponse(from content: String) -> AskUserPendingResponse? {
+        Self.parsePendingResponse(from: content)
     }
 }
