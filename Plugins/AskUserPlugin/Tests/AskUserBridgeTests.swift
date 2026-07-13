@@ -10,16 +10,13 @@ import Testing
     @Test func resumeHandlerCanBeSet() {
         // Given
         let bridge = AskUserBridge.shared
-        var handlerCalled = false
-        
+
         // When
-        bridge.resumeHandler = { _, _, _ in
-            handlerCalled = true
-        }
-        
+        bridge.resumeHandler = { _, _, _ in }
+
         // Then
         #expect(bridge.resumeHandler != nil)
-        
+
         // Cleanup
         bridge.resumeHandler = nil
     }
@@ -106,7 +103,8 @@ import Testing
     
     @Test func sharedInstanceExists() {
         // Given & When & Then
-        #expect(AskUserBridge.shared != nil)
+        // AskUserBridge.shared 是非可选值，这里只断言它能被取到，避免 `!= nil` 警告。
+        _ = AskUserBridge.shared
     }
     
     @Test func sharedInstanceIsSameObject() {
