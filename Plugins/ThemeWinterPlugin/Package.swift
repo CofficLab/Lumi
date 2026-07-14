@@ -23,6 +23,7 @@ let package = Package(
             name: "ThemeWinterPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI")
             ],
             path: "Sources",
