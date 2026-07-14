@@ -28,9 +28,3 @@ public enum LumiLLMProviderSupportLocalization {
             ?? string("Request failed", locale: locale)
     }
 }
-
-extension LumiLLMProviderSupportError {
-    func localizedDescription(locale: Locale) -> String {
-        LumiLLMFailureDetailResolver.resolve(from: self, locale: locale).summary
-    }
-}
