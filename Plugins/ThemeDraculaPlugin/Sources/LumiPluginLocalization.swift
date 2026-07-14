@@ -1,7 +1,7 @@
 import Foundation
 import LumiLocalizationKit
 
-/// Runtime localization for ThemeWinterPlugin bundle.
+/// Runtime localization for ThemeDraculaPlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {
