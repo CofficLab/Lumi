@@ -177,28 +177,9 @@ public enum LumiPluginRegistry {
     }
 
     public static let plugins: [any LumiPlugin.Type] = [
-        // MARK: - Theme Plugins
+        // MARK: - Theme Plugins (from extension)
 
-        FileLogPlugin.self,
-        LayoutPlugin.self,
-        ThemeLumiPlugin.self,
-        ThemeMidnightPlugin.self,
-        ThemeSkyPlugin.self,
-        ThemeAuroraPlugin.self,
-        ThemeNebulaPlugin.self,
-        ThemeVoidPlugin.self,
-        ThemeSpringPlugin.self,
-        ThemeSummerPlugin.self,
-        ThemeAutumnPlugin.self,
-        ThemeWinterPlugin.self,
-        ThemeGithubPlugin.self,
-        ThemeOrchardPlugin.self,
-        ThemeMountainPlugin.self,
-        ThemeVscodePlugin.self,
-        ThemeRiverPlugin.self,
-        ThemeOneDarkPlugin.self,
-        ThemeDraculaPlugin.self,
-        ThemeStatusBarPlugin.self,
+        themePlugins,
 
         // MARK: - Chat Plugins
 
@@ -276,48 +257,9 @@ public enum LumiPluginRegistry {
         ConversationNewPlugin.self,
         ConversationForkPlugin.self,
 
-        // MARK: - Editor Plugins
+        // MARK: - Editor Plugins (from extension)
 
-        EditorPanelPlugin.self,
-        EditorSwiftPlugin.self,
-        // EditorSwiftEditorPlugin 是真正注册 Swift 语法 grammar / LSP 的类型（遵循
-        // LumiEditorExtensionRegistering）；EditorSwiftPlugin 仅负责 scheme 工具栏等集成。
-        // 两者 id 不同（EditorSwift / EditorSwiftIntegration），不会重复登记。
-        EditorSwiftEditorPlugin.self,
-        EditorBreadcrumbHeaderPlugin.self,
-        StripHeaderPlugin.self,
-        EditorStickySymbolBarHeaderPlugin.self,
-        EditorProblemsPanelPlugin.self,
-        EditorReferencesPanelPlugin.self,
-        EditorSearchPanelPlugin.self,
-        EditorSymbolsPanelPlugin.self,
-        EditorCallHierarchyPanelPlugin.self,
-        EditorPreviewBottomPanelPlugin.self,
-        EditorTerminalPanelPlugin.self,
-        EditorFileTreePanelPlugin.self,
-        EditorFileTreeV2Plugin.self,
-        EditorOutlinePanelPlugin.self,
-        AutoTaskPlugin.self,
-        GitHubPlugin.self,
-        IdleTimePlugin.self,
-        ProjectIssueScannerPlugin.self,
-        AgentTurnNotificationPlugin.self,
-        ProjectsPlugin.self,
-        WebSearchPlugin.self,
-        WebFetchPlugin.self,
-        GitPlugin.self,
-        AskUserPlugin.self,
-        CaffeinatePlugin.self,
-        BrowserPlugin.self,
-        ProjectOverviewPlugin.self,
-        ShowImagePlugin.self,
-        MultiAgentPlugin.self,
-        DatabaseManagerPlugin.self,
-        CodeReviewPlugin.self,
-        DelayMessagePlugin.self,
-        AppIconDesignerPlugin.self,
-        DisplayControlPlugin.self,
-        CADDesignerPlugin.self,
+        editorPlugins,
 
         // MARK: - Logo Plugins
 
@@ -325,7 +267,7 @@ public enum LumiPluginRegistry {
         LogoCofficPlugin.self,
 
         // MARK: - Others
-        
+
         VideoConverterPlugin.self,
         DownloadPlugin.self,
         DocxReadPlugin.self,
