@@ -20,7 +20,7 @@ let package = Package(
     targets: [
         .target(
             name: "GitHubKit",
-            dependencies: ["HttpKit"],
+            dependencies: ["HttpKit", .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit")],
             path: "Sources",
             resources: [
                 .process("../Resources")
