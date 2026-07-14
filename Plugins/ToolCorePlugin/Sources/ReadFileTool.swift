@@ -1,5 +1,5 @@
 import AppKit
-import MagicLog
+import SuperLogKit
 import Foundation
 import LumiCoreKit
 import WorkspaceFileKit

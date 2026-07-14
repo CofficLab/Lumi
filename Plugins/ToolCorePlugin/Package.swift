@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/ShellKit"),
+        .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/WorkspaceFileKit"),
     ],
     targets: [
