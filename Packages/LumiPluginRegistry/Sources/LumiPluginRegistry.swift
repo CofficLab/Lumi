@@ -181,56 +181,19 @@ public enum LumiPluginRegistry {
 
         themePlugins,
 
-        // MARK: - Chat Plugins
+        // MARK: - Chat Plugins (from extension)
 
-        OnboardingPlugin.self,
-        QuickFileSearchPlugin.self,
-        QuickLauncherPlugin.self,
-        AppUpdateStatusBarPlugin.self,
-        DeviceInfoPlugin.self,
-        NetworkManagerPlugin.self,
-        HostsManagerPlugin.self,
-        MenuBarManagerPlugin.self,
-        ChatPanelPlugin.self,
-        MessageListPlugin.self,
-        ChatAttachmentSectionPlugin.self,
-        ChatPendingSectionPlugin.self,
-        ChatComposerSectionPlugin.self,
-        ModelSelectorPlugin.self,
+        chatPlugins,
 
-        // MARK: - LLM Providers
+        // MARK: - LLM Providers (from extension)
 
-        OpenAIPlugin.self,
-        ZhipuPlugin.self,
-        AiRouterPlugin.self,
-        AliyunPlugin.self,
-        AnthropicPlugin.self,
-        DeepSeekPlugin.self,
-        FeifeimiaoPlugin.self,
-        FlyMuxPlugin.self,
-        FreeModelPlugin.self,
-        HappyCodePlugin.self,
-        HyperAPIPlugin.self,
-        LPgptPlugin.self,
-        MegaLLMPlugin.self,
-        MiniMaxPlugin.self,
-        OpenRouterPlugin.self,
-        XiaomiPlugin.self,
-        XybbzPlugin.self,
-        SublyxPlugin.self,
-        StepFunPlugin.self,
-        CodexLumiPlugin.self,
-        MLXLumiPlugin.self,
+        llmProviderPlugins,
 
-        // MARK: - Open In Plugins
+        // MARK: - Open In Plugins (from extension)
 
-        AgentOpenInAntigravityPlugin.self,
-        AgentOpenInCursorPlugin.self,
-        AgentOpenInXcodePlugin.self,
-        AgentOpenRemotePlugin.self,
-        AgentOpenInGitHubDesktopPlugin.self,
-        AgentOpenInFinderPlugin.self,
-        AgentOpenInGitOKPlugin.self,
+        openInPlugins,
+
+        // MARK: - Core Tools
 
         TerminalPlugin.self,
         FontConfigPlugin.self,
@@ -246,16 +209,9 @@ public enum LumiPluginRegistry {
         RAGPlugin.self,
         AgentTempStoragePlugin.self,
 
-        // MARK: - Conversation Plugins
+        // MARK: - Conversation Plugins (from extension)
 
-        ConversationTitlePlugin.self,
-        ConversationTimelinePlugin.self,
-        ConversationLanguagePlugin.self,
-        ChatModePlugin.self,
-        VerbosityPlugin.self,
-        ConversationListPlugin.self,
-        ConversationNewPlugin.self,
-        ConversationForkPlugin.self,
+        conversationPlugins,
 
         // MARK: - Editor Plugins (from extension)
 
