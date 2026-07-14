@@ -13,6 +13,16 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
+    /// Safe accessor for `ChatService` from a given `LumiCore` instance.
+    /// `LumiCore` is now an instantiable class (no longer a singleton),
+    /// so callers must pass the instance they want to resolve from.
+    static func checkedChatService(_ lumiCore: LumiCore) -> ChatService {
+        guard let service = lumiCore.chatService as? ChatService else {
+            fatalError("LumiCore.chatService must be ChatService. Got: \(String(describing: type(of: lumiCore.chatService))). Check LumiCoreService.setupChatService.")
+        }
+        return service
+    }
+
     let lumiCore: LumiCore
     let lumiCoreService: LumiCoreService
     let pluginService: PluginService
@@ -55,7 +65,7 @@ final class RootContainer: ObservableObject, SuperLog {
         editorService.configure(lumiCore: lumiCore)
 
         self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: Self.checkedChatService,
+            chatService: Self.checkedChatService(lumiCore),
             databaseDirectory: lumiCoreService.coreDatabaseDirectory
         )
 
@@ -81,11 +91,15 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // 初始化插件启用状态跟踪
         self.pluginService.initializePluginStates()
-        self.pluginService.onEnabledPluginsChanged = { [weak self] in
+        // 回调挂到 LumiPluginRegistry（PluginService.init 里已经注册的 UI 刷新回调会被覆盖，
+        // 所以这里手动补一次 objectWillChange.send()，保证 SwiftUI 依然能收到刷新信号）。
+        LumiPluginRegistry.onEnabledPluginsChanged = { [weak self] in
             guard let self else { return }
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
             }
+            // 补回 PluginService.init 里设置的 UI 刷新职责
+            self.pluginService.objectWillChange.send()
             // 运行期插件状态变更时重新注册工具贡献。
             // 工具名称唯一性已在 boot 阶段校验，此处不会抛出异常。
             self.reloadChatPluginContributions()
@@ -95,7 +109,7 @@ final class RootContainer: ObservableObject, SuperLog {
         }
 
         // 连接插件生命周期回调，处理启用/禁用时的资源清理
-        self.pluginService.onPluginLifecycleChange = { [weak self] (plugin, enabled) in
+        LumiPluginRegistry.onPluginLifecycleChange = { [weak self] (plugin, enabled) in
             guard self != nil else { return }
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件生命周期变化: \(plugin.info.id) -> \(enabled ? "启用" : "禁用")")

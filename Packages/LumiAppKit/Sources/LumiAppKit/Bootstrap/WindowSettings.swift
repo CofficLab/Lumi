@@ -3,12 +3,14 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-struct WindowSettings: View {
+public struct WindowSettings: View {
     @State private var container: RootContainer?
     @State private var initializationError: Error?
     @State private var isInitializing = true
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         contentView
             .task {
                 await initializeContainer()
@@ -28,7 +30,7 @@ struct WindowSettings: View {
                 SettingsView(
                     pluginService: container.pluginService,
                     lumiUIService: container.lumiUIService,
-                    chatService: RootContainer.checkedChatService
+                    chatService: RootContainer.checkedChatService(container.lumiCore)
                 )
                 .ignoresSafeArea()
             }

@@ -1,7 +1,9 @@
 import SwiftUI
 
-struct AppCommands: Commands {
-    var body: some Commands {
+public struct AppCommands: Commands {
+    public init() {}
+
+    public var body: some Commands {
         SidebarCommands()
         ChatCommands()
         DebugCommand()

@@ -4,12 +4,14 @@ import SuperLogKit
 import SwiftUI
 import os
 
-struct DebugCommand: Commands, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "command.debug")
-    nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+public struct DebugCommand: Commands, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "command.debug")
+    public nonisolated static let emoji = "🔧"
+    public nonisolated static let verbose = false
 
-    var body: some Commands {
+    public init() {}
+
+    public var body: some Commands {
         #if os(macOS)
             CommandMenu("调试") {
                 Button("打开 App Support 目录") {

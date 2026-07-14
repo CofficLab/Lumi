@@ -1,9 +1,9 @@
 import Foundation
 
-enum AppBootstrap {
-    static let appName = "Lumi"
-    static let mainWindowID = "lumi.main"
-    static let settingsWindowID = "lumi.settings"
-    static let defaultWindowSize = CGSize(width: 1100, height: 760)
-    static let defaultSettingsWindowSize = CGSize(width: 780, height: 600)
+public enum AppBootstrap {
+    public static let appName = "Lumi"
+    public static let mainWindowID = "lumi.main"
+    public static let settingsWindowID = "lumi.settings"
+    public static let defaultWindowSize = CGSize(width: 1100, height: 760)
+    public static let defaultSettingsWindowSize = CGSize(width: 780, height: 600)
 }

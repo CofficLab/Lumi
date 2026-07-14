@@ -12,7 +12,7 @@ import os
 /// - ObservableObject 支持（UI 刷新）
 /// - 协议实现（LumiAgentToolProviding、LumiLLMProviderSettingsContributing）
 @MainActor
-final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding {
+final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, LumiLLMProviderSettingsContributing {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false

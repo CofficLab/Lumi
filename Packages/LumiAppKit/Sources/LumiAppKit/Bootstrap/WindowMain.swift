@@ -2,12 +2,14 @@ import LumiChatKit
 import LumiCoreKit
 import SwiftUI
 
-struct WindowMain: View {
+public struct WindowMain: View {
     @State private var container: RootContainer?
     @State private var initializationError: Error?
     @State private var isInitializing = true
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         Group {
             if isInitializing {
                 ProgressView("正在初始化...")
@@ -21,7 +23,7 @@ struct WindowMain: View {
                         pluginService: container.pluginService,
                         editorCoreService: container.editorCoreService,
                         lumiUIService: container.lumiUIService,
-                        chatService: RootContainer.checkedChatService,
+                        chatService: RootContainer.checkedChatService(container.lumiCore),
                         chatSectionCoordinator: container.chatSectionCoordinator
                     )
                 }

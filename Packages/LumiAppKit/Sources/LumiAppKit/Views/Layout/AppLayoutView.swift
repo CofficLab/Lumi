@@ -27,10 +27,13 @@ struct AppLayoutView: View {
         self.chatSectionCoordinator = chatSectionCoordinator
     }
 
+    /// 优先使用 boot() 之后的 layoutState;未就绪时退化到 fresh 实例。
+    /// LumiCore 本身是 ObservableObject,layoutState 变化会触发 body 重绘。
+    private var layoutState: LumiLayoutState {
+        lumiCore.layoutState ?? LumiLayoutState()
+    }
+
     var body: some View {
-        // 优先使用 boot() 之后的 layoutState;未就绪时退化到 fresh 实例。
-        // LumiCore 本身是 ObservableObject,layoutState 变化会触发 body 重绘。
-        let layoutState = lumiCore.layoutState ?? LumiLayoutState()
         let containers = pluginService.viewContainers(context: basePluginContext())
         let selectedContainer = selectedContainer(from: containers)
         let activeID = selectedContainer?.id ?? "main"

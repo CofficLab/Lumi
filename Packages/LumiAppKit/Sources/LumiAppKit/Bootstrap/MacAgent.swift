@@ -7,19 +7,19 @@ import os
 
 /// macOS 应用代理：处理外部打开项目（Dock 拖拽、`open -a Lumi`、URL Scheme 等）
 @MainActor
-final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLog {
+public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.mac-agent")
-    nonisolated static let emoji = "🍎"
+    nonisolated public static let emoji = "🍎"
     nonisolated static let verbose = false
 
-    @Published var pendingOpenPath: String?
+    @Published public var pendingOpenPath: String?
 
-    func applicationWillFinishLaunching(_ notification: Notification) {
+    public func applicationWillFinishLaunching(_ notification: Notification) {
         // 使用 application(_:openFile:) / application(_:open:) 接收路径，
         // 避免拦截 kAEOpenDocuments 导致 SwiftUI WindowGroup 冷启动不创建窗口。
     }
 
-    func application(_ application: NSApplication, open urls: [URL]) {
+    public func application(_ application: NSApplication, open urls: [URL]) {
         guard Self.verbose else { return }
         Self.logger.info("\(self.t)接收 \(urls.count) 个 URL 请求")
         for url in urls {
@@ -33,7 +33,7 @@ final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLo
         activateMainWindow()
     }
 
-    func application(_ application: NSApplication, openFile filename: String) -> Bool {
+    public func application(_ application: NSApplication, openFile filename: String) -> Bool {
         guard Self.verbose else { return true }
         Self.logger.info("\(self.t)接收文件打开请求: \(filename)")
         let path = (filename as NSString).standardizingPath

@@ -220,6 +220,7 @@ struct PluginSettingsPage: View {
 
 private struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
+    @EnvironmentObject private var lumiCore: LumiCore
     let row: PluginSettingsRowModel
     @ObservedObject var pluginService: PluginService
     @ObservedObject var chatService: ChatService

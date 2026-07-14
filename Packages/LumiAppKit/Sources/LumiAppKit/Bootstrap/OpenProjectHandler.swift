@@ -4,12 +4,12 @@ import SuperLogKit
 import os
 
 @MainActor
-final class OpenProjectHandler: SuperLog {
+public final class OpenProjectHandler: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.open-project")
-    nonisolated static let emoji = "📂"
+    nonisolated public static let emoji = "📂"
     nonisolated static let verbose = false
 
-    static let shared = OpenProjectHandler()
+    public static let shared = OpenProjectHandler()
 
     /// 由 `WindowMain` 初始化后注入；未注入时 `requestOpen` 静默返回。
     /// 保留可空,是因为 `OpenProjectHandler` 是单例,
@@ -19,11 +19,11 @@ final class OpenProjectHandler: SuperLog {
     private init() {}
 
     /// 由 `WindowMain.initializeContainer` 在拿到 `RootContainer` 后调用。
-    func configure(lumiCore: LumiCore) {
+    public func configure(lumiCore: LumiCore) {
         self.lumiCore = lumiCore
     }
 
-    func requestOpen(path: String) {
+    public func requestOpen(path: String) {
         let normalized = Self.normalizePath(path)
         guard !normalized.isEmpty else {
             Self.logger.warning("\(Self.t)路径为空或无效: \(path)")
