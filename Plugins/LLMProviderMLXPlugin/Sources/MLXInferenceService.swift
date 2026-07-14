@@ -4,6 +4,10 @@ import AgentToolKit
 import Combine
 import MLXLLM
 @preconcurrency import MLXLMCommon
+import MLXHuggingFace
+// `#huggingFaceTokenizerLoader()` expands into code that references
+// `Tokenizers.AutoTokenizer` — Tokenizers must be imported at the call site.
+import Tokenizers
 import os
 
 /// MLX 推理服务
@@ -68,7 +72,13 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         }
 
         do {
-            let container = try await loadModelContainer(from: modelDir)
+            // mlx-swift-lm 3.x requires an explicit `TokenizerLoader`.
+            // `#huggingFaceTokenizerLoader()` adapts `Tokenizers.AutoTokenizer`
+            // to load tokenizers from a local model directory.
+            let container = try await loadModelContainer(
+                from: modelDir,
+                using: #huggingFaceTokenizerLoader()
+            )
             self.modelContainer = container
 
             updateState(.ready)

@@ -22,6 +22,18 @@ let package = Package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
             branch: "main"
         ),
+        // swift-transformers 1.3.x is broken against swift-jinja 2.4.x
+        // (Config.jinjaValue passes [String: Value] where ObjectKey is expected).
+        // Pin to 1.2.1 to match the rest of the Lumi workspace (Package.resolved).
+        .package(
+            url: "https://github.com/huggingface/swift-transformers",
+            .upToNextMinor(from: "1.2.1")
+        ),
+        // Pin jinja so swift-transformers' `from: "2.0.0"` constraint doesn't pull 2.4.0.
+        .package(
+            url: "https://github.com/huggingface/swift-jinja.git",
+            .upToNextMinor(from: "2.3.6")
+        ),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/DownloadKit"),
     ],
@@ -34,6 +46,8 @@ let package = Package(
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
+                .product(name: "MLXHuggingFace", package: "mlx-swift-lm"),
+                .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),
             ],
