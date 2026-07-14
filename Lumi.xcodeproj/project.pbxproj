@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0BA53AF130066CF900CADEEB /* LumiAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA53AF030066CF900CADEEB /* LumiAppKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		SPK1000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPK1000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -239,7 +239,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				SPK1000000000000000002 /* Sparkle in Frameworks */,
+				0BA53AF130066CF900CADEEB /* LumiAppKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,7 +280,7 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				SPK1000000000000000001 /* Sparkle */,
+				0BA53AF030066CF900CADEEB /* LumiAppKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -314,7 +314,7 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -585,22 +585,17 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.9.1;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiAppKit;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		SPK1000000000000000001 /* Sparkle */ = {
+		0BA53AF030066CF900CADEEB /* LumiAppKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
+			productName = LumiAppKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
