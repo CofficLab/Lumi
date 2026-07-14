@@ -1,4 +1,6 @@
 // MARK: - Open In Plugins Imports
+import Foundation
+import LumiCoreKit
 import OpenInAntigravityPlugin
 import OpenInCursorPlugin
 import OpenInFinderPlugin

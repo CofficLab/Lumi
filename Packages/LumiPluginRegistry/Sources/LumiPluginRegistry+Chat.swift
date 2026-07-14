@@ -1,4 +1,6 @@
 // MARK: - Chat Plugins Imports
+import Foundation
+import LumiCoreKit
 import OnboardingPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin

@@ -1,4 +1,6 @@
 // MARK: - LLM Provider Plugins Imports
+import Foundation
+import LumiCoreKit
 import LLMProviderAiRouterPlugin
 import LLMProviderAliyunPlugin
 import LLMProviderAnthropicPlugin

@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import SwiftUI
 import os
 
 extension LumiPluginRegistry {

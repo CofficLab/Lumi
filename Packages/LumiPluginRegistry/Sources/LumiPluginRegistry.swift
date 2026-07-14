@@ -196,67 +196,38 @@ public enum LumiPluginRegistry {
             .sorted { $0.id < $1.id }
     }
 
-    public static let plugins: [any LumiPlugin.Type] = [
-        // MARK: - Theme Plugins (from extension)
+    public static let plugins: [any LumiPlugin.Type] =
+        themePlugins +
+        chatPlugins +
+        llmProviderPlugins +
+        openInPlugins +
+        [
+            // MARK: - Core Tools
+            TerminalPlugin.self,
+            FontConfigPlugin.self,
+            AppLoadedPluginsPlugin.self,
+            ToolCorePlugin.self,
+            MessageRendererPlugin.self,
+            MemoryPlugin.self,
+            AgentRulesPlugin.self,
+            SkillPlugin.self,
+            RequestLogPlugin.self,
+            HistoryDBStatusBarPlugin.self,
+            ActivityHeatmapPlugin.self,
+            RAGPlugin.self,
+            AgentTempStoragePlugin.self,
 
-        themePlugins,
-
-        // MARK: - Chat Plugins (from extension)
-
-        chatPlugins,
-
-        // MARK: - LLM Providers (from extension)
-
-        llmProviderPlugins,
-
-        // MARK: - Open In Plugins (from extension)
-
-        openInPlugins,
-
-        // MARK: - Core Tools
-
-        TerminalPlugin.self,
-        FontConfigPlugin.self,
-        AppLoadedPluginsPlugin.self,
-        ToolCorePlugin.self,
-        MessageRendererPlugin.self,
-        MemoryPlugin.self,
-        AgentRulesPlugin.self,
-        SkillPlugin.self,
-        RequestLogPlugin.self,
-        HistoryDBStatusBarPlugin.self,
-        ActivityHeatmapPlugin.self,
-        RAGPlugin.self,
-        AgentTempStoragePlugin.self,
-
-        // MARK: - Conversation Plugins (from extension)
-
-        conversationPlugins,
-
-        // MARK: - Editor Plugins (from extension)
-
-        editorPlugins,
-
-        // MARK: - Logo Plugins
-
-        LogoSmartLightPlugin.self,
-        LogoCofficPlugin.self,
-
-        // MARK: - Others
-
-        VideoConverterPlugin.self,
-        DownloadPlugin.self,
-        DocxReadPlugin.self,
-        PortManagerPlugin.self,
-        AppManagerPlugin.self,
-        DockerManagerPlugin.self,
-        DiskManagerPlugin.self,
-        AppStoreConnectPlugin.self,
-        BrewManagerPlugin.self,
-        RClickPlugin.self,
-        NettoPlugin.self,
-        RegistryManagerPlugin.self,
-        ClipboardManagerPlugin.self,
-        InputPlugin.self,
-    ]
+            // MARK: - Logo Plugins
+            LogoSmartLightPlugin.self,
+            LogoCofficPlugin.self,
+        ] +
+        [
+            // MARK: - Others
+            VideoConverterPlugin.self,
+            DownloadPlugin.self,
+            DocxReadPlugin.self,
+            PortManagerPlugin.self,
+        ] +
+        conversationPlugins +
+        editorPlugins
 }

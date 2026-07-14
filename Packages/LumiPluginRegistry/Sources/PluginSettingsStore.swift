@@ -4,6 +4,15 @@ import Foundation
 public final class PluginSettingsStore {
     private let settingsURL: URL
 
+    public convenience init() {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!
+        let directory = appSupport.appendingPathComponent("Lumi")
+        self.init(directory: directory)
+    }
+
     public init(directory: URL) {
         self.settingsURL = directory.appendingPathComponent("plugin-settings.plist")
     }

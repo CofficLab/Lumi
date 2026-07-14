@@ -1,4 +1,6 @@
 // MARK: - Theme Plugins Imports
+import Foundation
+import LumiCoreKit
 import ActivityHeatmapPlugin
 import FileLogPlugin
 import LayoutPlugin

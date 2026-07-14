@@ -1,10 +1,14 @@
 // MARK: - Conversation Plugins Imports
+import Foundation
+import LumiCoreKit
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationNewPlugin
 import ConversationForkPlugin
 import ConversationTimelinePlugin
 import ConversationTitlePlugin
+import ChatModePlugin
+import VerbosityPlugin
 
 // MARK: - Conversation Plugins Extension
 

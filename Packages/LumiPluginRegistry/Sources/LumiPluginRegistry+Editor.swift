@@ -4,11 +4,14 @@ import BrowserPlugin
 import CADDesignerPlugin
 import CaffeinatePlugin
 import CodeReviewPlugin
+import Foundation
+import LumiCoreKit
 import AgentDelayMessagePlugin
 import DisplayControlPlugin
 import EditorCallHierarchyPlugin
 import EditorFileTreePlugin
 import EditorFileTreeV2Plugin
+import EditorBreadcrumbNavPlugin
 import EditorOutlinePlugin
 import EditorPanelPlugin
 import EditorPreviewPlugin
@@ -82,7 +85,7 @@ extension LumiPluginRegistry {
         ProjectOverviewPlugin.self,
         ShowImagePlugin.self,
         CodeReviewPlugin.self,
-        AgentDelayMessagePlugin.self,
+        DelayMessagePlugin.self,
         DisplayControlPlugin.self,
         CADDesignerPlugin.self,
     ]
