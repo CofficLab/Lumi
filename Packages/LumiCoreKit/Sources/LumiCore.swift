@@ -41,12 +41,6 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     public internal(set) var editorService: (any AbstractEditorServicing)?
 
-    /// 内置工具列表
-    let builtInTools: [any LumiAgentTool] = [
-        NoOpTool(),
-        ConversationInfoTool(),
-    ]
-
     // MARK: - Internal Storage
 
     /// ChatService 工厂，由外部在启动时提供；提供后，`boot()` 自动创建并注册。

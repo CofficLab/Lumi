@@ -3,8 +3,6 @@ import Foundation
 // MARK: - Tool Service
 
 extension LumiCore {
-    // 注意：`builtInTools` 是 stored property，必须定义在主类里，不能放在 extension。
-
     // MARK: - Tool Service Bootstrap
 
     /// 初始化 `ToolService` 并注入运行环境。
@@ -54,7 +52,8 @@ extension LumiCore {
         }
 
         // 2. 注册内置工具（no_op / conversation_info）
-        toolService.registerBuiltInTools(builtInTools)
+        // 内置工具定义在 ChatService.builtInTools，因为它们与对话业务紧密相关
+        toolService.registerBuiltInTools(chatService?.builtInTools ?? [])
 
         // 3. 收集子 Agent 定义并包装成 delegate 工具
         let subAgentDefinitions = provider.subAgents(context: context)
