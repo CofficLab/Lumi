@@ -41,16 +41,13 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     public internal(set) var editorService: (any AbstractEditorServicing)?
 
-    /// 内置工具列表（每个 LumiCore 实例独立持有，但内容全局不变）。
+    /// 内置工具列表
     let builtInTools: [any LumiAgentTool] = [
         NoOpTool(),
         ConversationInfoTool(),
     ]
 
     // MARK: - Internal Storage
-
-    /// 核心配置实例（`configure` 后非空）。
-    private var _configuration: LumiCoreConfiguration?
 
     /// ChatService 工厂，由外部在启动时提供；提供后，`boot()` 自动创建并注册。
     private var chatServiceFactory: ChatServiceFactory?
@@ -72,10 +69,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
             withIntermediateDirectories: true,
             attributes: nil
         )
-        // 同步设置 `dataRootDirectory` 公开属性，确保 `LumiCoreAccessing` 协议的实现契约一致
-        // （`pluginDataDirectory(for:)` / `coreDataDirectory` 依赖它不为 nil）。
         self.dataRootDirectory = directory
-        _configuration = LumiCoreConfiguration(dataRootDirectory: directory)
     }
 
     // MARK: - ChatService Factory
