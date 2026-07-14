@@ -34,7 +34,8 @@ extension LumiCore {
     ///   - context: 当前的 `LumiPluginContext`
     public func bootstrapToolContributions(
         provider: any LumiAgentToolProviding,
-        context: LumiPluginContext
+        context: LumiPluginContext,
+        builtInTools: [any LumiAgentTool]
     ) {
         guard let toolService = resolveService(ToolService.self) else {
             return
@@ -52,8 +53,8 @@ extension LumiCore {
         }
 
         // 2. 注册内置工具（no_op / conversation_info）
-        // 内置工具定义在 ChatService.builtInTools，因为它们与对话业务紧密相关
-        toolService.registerBuiltInTools(chatService?.builtInTools ?? [])
+        // 内置工具由调用方（LumiChatKit）提供，因为它们与对话业务紧密相关
+        toolService.registerBuiltInTools(builtInTools)
 
         // 3. 收集子 Agent 定义并包装成 delegate 工具
         let subAgentDefinitions = provider.subAgents(context: context)

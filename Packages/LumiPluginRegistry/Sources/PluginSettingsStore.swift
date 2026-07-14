@@ -1,15 +1,14 @@
 import Foundation
-import LumiCoreKit
 
 @MainActor
-final class PluginSettingsStore {
+public final class PluginSettingsStore {
     private let settingsURL: URL
 
-    init(directory: URL = AppConfig.getPluginDBFolderURL("PluginService")) {
+    public init(directory: URL) {
         self.settingsURL = directory.appendingPathComponent("plugin-settings.plist")
     }
 
-    func loadEnabledOverrides() -> [String: Bool] {
+    public func loadEnabledOverrides() -> [String: Bool] {
         guard let data = try? Data(contentsOf: settingsURL),
               let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
               let dictionary = plist as? [String: Bool]
@@ -20,7 +19,7 @@ final class PluginSettingsStore {
         return dictionary
     }
 
-    func saveEnabledOverrides(_ overrides: [String: Bool]) {
+    public func saveEnabledOverrides(_ overrides: [String: Bool]) {
         guard let data = try? PropertyListSerialization.data(
             fromPropertyList: overrides,
             format: .xml,

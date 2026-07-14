@@ -6,242 +6,164 @@ import SuperLogKit
 import SwiftUI
 import os
 
+/// 插件服务 - App 层的 ObservableObject 适配器
+///
+/// 实际逻辑委托给 LumiPluginRegistry，本类仅负责：
+/// - ObservableObject 支持（UI 刷新）
+/// - 协议实现（LumiAgentToolProviding、LumiLLMProviderSettingsContributing）
 @MainActor
 final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false
 
-    let registeredPlugins: [any LumiPlugin.Type]
-    @Published private(set) var enabledOverrides: [String: Bool]
-    var onEnabledPluginsChanged: (() -> Void)?
-    var onPluginLifecycleChange: ((any LumiPlugin.Type, Bool) -> Void)?
-    private let settingsStore: PluginSettingsStore
-
-    /// 跟踪插件的启用状态
-    private var pluginEnabledStates: [String: Bool] = [:]
-
-    init(settingsStore: PluginSettingsStore = PluginSettingsStore()) {
+    init() {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 PluginService")
         }
 
-        self.settingsStore = settingsStore
-        self.enabledOverrides = settingsStore.loadEnabledOverrides()
-        self.registeredPlugins = LumiPluginRegistry.plugins
-            .filter { $0.policy.shouldRegister }
-            .sorted { $0.info.order < $1.info.order }
+        // 初始化状态管理器
+        LumiPluginRegistry.initializeStateManager()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 \(self.registeredPlugins.count) 个插件")
+            Self.logger.info("\(Self.t)已注册 \(LumiPluginRegistry.registeredPlugins.count) 个插件")
         }
 
-        // 统一触发插件生命周期事件：先 .didRegister，再 .appDidLaunch。
-        // 让所有 alwaysOn 插件（如 FileLogPlugin）在 PluginService 初始化阶段
-        // 完成自启动，避免宿主各处显式调用具体插件。
+        // 设置回调，触发 UI 刷新
+        LumiPluginRegistry.onEnabledPluginsChanged = { [weak self] in
+            self?.objectWillChange.send()
+        }
+
+        // 统一触发插件生命周期事件
         Task { @MainActor in
             await LumiPluginRegistry.registerAll()
             await LumiPluginRegistry.appDidLaunch()
         }
     }
 
+    // MARK: - 委托到 LumiPluginRegistry
+
     var plugins: [any LumiPlugin.Type] {
-        registeredPlugins
+        LumiPluginRegistry.registeredPlugins
     }
 
     var enabledPlugins: [any LumiPlugin.Type] {
-        registeredPlugins.filter { isPluginEnabled($0) }
+        LumiPluginRegistry.enabledPlugins
     }
 
-    /// 获取支持编辑器扩展的插件列表
     var editorExtensionPlugins: [any LumiPlugin.Type] {
-        registeredPlugins.filter { plugin in
-            // 检查插件是否提供了编辑器扩展方法
-            // 这里我们简化为检查 policy，因为提供编辑器扩展的插件应该有相应的 policy
-            let hasExtension = plugin.policy == .alwaysOn || plugin.policy == .optIn || plugin.policy == .optOut
-            return hasExtension
-        }
+        LumiPluginRegistry.editorExtensionPlugins
     }
 
     var enabledEditorExtensionPluginIDs: Set<String> {
-        Set(
-            editorExtensionPlugins
-                .filter { isPluginEnabled($0) }
-                .map { $0.info.id }
-        )
+        LumiPluginRegistry.enabledEditorExtensionPluginIDs
     }
 
+    func isPluginEnabled(_ plugin: any LumiPlugin.Type) -> Bool {
+        LumiPluginRegistry.isPluginEnabled(plugin)
+    }
+
+    func eligibility(for plugin: any LumiPlugin.Type) -> LumiPluginEligibility {
+        LumiPluginRegistry.eligibility(for: plugin)
+    }
+
+    func setPlugin(_ plugin: any LumiPlugin.Type, enabled: Bool) {
+        LumiPluginRegistry.setPlugin(plugin, enabled: enabled)
+        objectWillChange.send()
+    }
+
+    func getPluginEnabledState(_ plugin: any LumiPlugin.Type) -> Bool {
+        LumiPluginRegistry.getPluginEnabledState(plugin)
+    }
+
+    func initializePluginStates() {
+        LumiPluginRegistry.initializePluginStates()
+    }
+
+    // MARK: - 聚合方法（委托）
+
     func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        enabledPlugins.flatMap { plugin in
-            plugin.titleToolbarItems(context: context)
-        }
+        LumiPluginRegistry.titleToolbarItems(context: context)
     }
 
     func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        enabledPlugins.flatMap { plugin in
-            plugin.statusBarItems(context: context)
-        }
+        LumiPluginRegistry.statusBarItems(context: context)
     }
 
     func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        enabledPlugins.flatMap { plugin in
-            plugin.viewContainers(context: context)
-        }
+        LumiPluginRegistry.viewContainers(context: context)
     }
 
     func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
-        enabledPlugins
-            .flatMap { plugin in
-                plugin.menuBarContentItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.menuBarContentItems(context: context)
     }
 
     func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        enabledPlugins
-            .flatMap { plugin in
-                plugin.menuBarPopupItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.menuBarPopupItems(context: context)
     }
 
     func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        enabledPlugins.flatMap { plugin in
-            plugin.llmProviders(context: context)
-        }
+        LumiPluginRegistry.llmProviders(context: context)
     }
 
     func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        enabledPlugins.flatMap { plugin in
-            plugin.agentTools(context: context)
-        }
+        LumiPluginRegistry.agentTools(context: context)
     }
 
     func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
-        enabledPlugins.flatMap { plugin in
-            plugin.subAgents(context: context)
-        }
+        LumiPluginRegistry.subAgents(context: context)
     }
 
     func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        enabledPlugins.flatMap { plugin in
-            plugin.sendMiddlewares(context: context)
-        }
+        LumiPluginRegistry.sendMiddlewares(context: context)
     }
 
     func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        enabledPlugins
-            .flatMap { plugin in
-                plugin.messageRenderers(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.messageRenderers(context: context)
     }
 
     func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        enabledPlugins
-            .flatMap { plugin in
-                plugin.rootOverlays(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.rootOverlays(context: context)
     }
 
     func onboardingPages(context: LumiPluginContext) -> [OnboardingPageView] {
-        enabledPlugins.flatMap { plugin in
-            plugin.onboardingPages(context: context).map { view in
-                OnboardingPageView(order: plugin.info.order, view: view)
-            }
-        }.sorted { $0.order < $1.order }
+        LumiPluginRegistry.onboardingPages(context: context)
     }
 
     func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.chatSectionItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.chatSectionItems(context: context)
     }
 
     func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
-        guard context.supportsChatSection else { return content }
-        return enabledPlugins.reduce(content) { wrapped, plugin in
-            plugin.chatSectionRootWrapper(context: context, content: wrapped)
-        }
+        LumiPluginRegistry.chatSectionRootWrapper(context: context, content: content)
     }
 
     func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.chatSectionToolbarItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.chatSectionToolbarItems(context: context)
     }
 
     func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.chatSectionToolbarBarItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.chatSectionToolbarBarItems(context: context)
     }
 
     func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.chatSectionHeaderItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.chatSectionHeaderItems(context: context)
     }
 
     func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.panelHeaderItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.panelHeaderItems(context: context)
     }
 
     func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome else { return [] }
-        return enabledPlugins
-            .flatMap { plugin in
-                plugin.panelBottomTabItems(context: context)
-            }
-            .sorted { $0.order < $1.order }
+        LumiPluginRegistry.panelBottomTabItems(context: context)
     }
 
     func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail else { return [] }
+        LumiPluginRegistry.panelRailTabItems(context: context)
+    }
 
-        var items = enabledPlugins.flatMap { plugin in
-            plugin.panelRailTabItems(context: context)
-        }
-
-        if context.showsPanelChrome,
-           let editor = context.resolve(LumiEditorServicing.self) {
-            let service = editor.editorService
-            if let languageId = service.editing.detectedLanguage?.tsName,
-               let registration = editor.extensionRegistry.railOutlineRegistration(for: languageId),
-               !items.contains(where: { $0.id == registration.tabID }) {
-                items.append(
-                    LumiPanelRailTabItem(
-                        id: registration.tabID,
-                        order: 90,
-                        title: registration.title,
-                        systemImage: registration.systemImage,
-                        content: {
-                            registration.makeView()
-                        }
-                    )
-                )
-            }
-        }
-
-        return items.sorted { $0.order < $1.order }
+    func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+        LumiPluginRegistry.llmProviderSettingsViews(context: context)
     }
 
     func themeContributions() -> [LumiUIThemeContribution] {
@@ -265,104 +187,13 @@ final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding {
         }
     }
 
-    func eligibility(for plugin: any LumiPlugin.Type) -> LumiPluginEligibility {
-        LumiPluginEligibility(
-            policy: plugin.policy,
-            userEnabled: userEnabledValue(for: plugin)
-        )
-    }
-
-    func isPluginEnabled(_ plugin: any LumiPlugin.Type) -> Bool {
-        eligibility(for: plugin).isEligible
-    }
-
-    func setPlugin(_ plugin: any LumiPlugin.Type, enabled: Bool) {
-        guard plugin.policy.isConfigurable else {
-            if Self.verbose {
-                Self.logger.warning("\(Self.t)插件 \(plugin.info.id) 不可配置")
-            }
-
-            return
-        }
-
-        let pluginId = plugin.info.id
-
-        let previousState = pluginEnabledStates[pluginId] ?? isPluginEnabled(plugin)
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)设置插件 \(pluginId) -> \(enabled)")
-        }
-
-        // 如果从启用变为禁用，先触发 willDisable 生命周期
-        if previousState && !enabled {
-            Task {
-                await plugin.lifecycle(.willDisable)
-            }
-        }
-
-        enabledOverrides[pluginId] = enabled
-        pluginEnabledStates[pluginId] = enabled
-        settingsStore.saveEnabledOverrides(enabledOverrides)
-        onEnabledPluginsChanged?()
-
-        objectWillChange.send()
-
-        // 如果状态实际发生变化，触发生命周期回调
-        if previousState != enabled {
-            onPluginLifecycleChange?(plugin, enabled)
-        }
-    }
-
-    /// 获取插件的当前启用状态
-    func getPluginEnabledState(_ plugin: any LumiPlugin.Type) -> Bool {
-        pluginEnabledStates[plugin.info.id] ?? isPluginEnabled(plugin)
-    }
-
-    /// 初始化时记录所有插件的初始状态
-    func initializePluginStates() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)初始化插件状态")
-        }
-
-        for plugin in registeredPlugins {
-            pluginEnabledStates[plugin.info.id] = isPluginEnabled(plugin)
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 插件状态初始化完成")
-        }
-    }
-
-    private func userEnabledValue(for plugin: any LumiPlugin.Type) -> Bool {
-        enabledOverrides[plugin.info.id] ?? plugin.policy.enabledByDefault
-    }
-
-    /// Registers all plugin contributions with the appropriate registries.
-    /// Should be called after plugins are loaded and enabled.
-    @MainActor
     func registerPluginContributions(context: LumiPluginContext) {
-        let logoPlugins = enabledPlugins.filter { !$0.logoItems(context: context).isEmpty }
-        
-        registerLogoContributions(context: context)
-    }
-
-    private func registerLogoContributions(context: LumiPluginContext) {
-        let allItems = enabledPlugins.flatMap { plugin in
-            plugin.logoItems(context: context)
-        }
+        let allItems = LumiPluginRegistry.logoItems(context: context)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
 
         LogoRegistry.shared.register(allItems)
-    }
-}
-
-extension PluginService: LumiLLMProviderSettingsContributing {
-    func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
-        enabledPlugins.flatMap { plugin in
-            plugin.llmProviderSettingsViews(context: context)
-        }
     }
 }

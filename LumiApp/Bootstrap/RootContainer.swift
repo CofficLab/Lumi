@@ -124,7 +124,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
         // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
-        lumiCore.bootstrapToolContributions(provider: pluginService, context: context)
+        lumiCore.bootstrapToolContributions(provider: pluginService, context: context, builtInTools: ChatService.builtInTools)
 
         // 注册其他贡献
         let providers = pluginService.llmProviders(context: context)

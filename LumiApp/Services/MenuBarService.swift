@@ -2,9 +2,9 @@ import AppKit
 import Combine
 import LumiCoreKit
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 @MainActor
 final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
@@ -22,12 +22,12 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     private let contentRefreshInterval: TimeInterval = 1.0
     private var windowAppearanceObservation: NSKeyValueObservation?
     private var buttonWindowObservation: NSKeyValueObservation?
-    nonisolated(unsafe) private var systemThemeObserver: NSObjectProtocol?
-    nonisolated(unsafe) private var themeSyncObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var systemThemeObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var themeSyncObserver: NSObjectProtocol?
 
     /// 订阅 `LogoRegistry.$bestItem`：插件贡献的 Logo 就绪后，
     /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
-    nonisolated(unsafe) private var logoRegistryCancellable: AnyCancellable?
+    private nonisolated(unsafe) var logoRegistryCancellable: AnyCancellable?
 
     init(pluginService: PluginService, lumiCore: LumiCoreAccessing) {
         if Self.verbose {
@@ -255,7 +255,6 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
             }
         }
     }
-
 
     /// 订阅 `LumiCore.logoRegistry.$bestItem`。
     ///

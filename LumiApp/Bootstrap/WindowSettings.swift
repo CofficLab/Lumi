@@ -9,34 +9,37 @@ struct WindowSettings: View {
     @State private var isInitializing = true
 
     var body: some View {
-        Group {
-            if isInitializing {
-                ProgressView("正在初始化...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .windowBackgroundColor))
-            } else if let error = initializationError {
-                CrashedView(error: error)
-            } else if let container = container {
-                RootView(container: container, appliesRootOverlays: false) {
-                    SettingsView(
-                        pluginService: container.pluginService,
-                        lumiUIService: container.lumiUIService,
-                        chatService: RootContainer.checkedChatService
-                    )
-                    .ignoresSafeArea()
-                }
-                .environmentObject(container.lumiCore)
-                .background {
-                    WindowAccessor { window in
-                        window.configureForLumiMainChrome()
-                    }
-                    ThemeWindowAppearanceBridge()
-                }
+        contentView
+            .task {
+                await initializeContainer()
+            }
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        if isInitializing {
+            ProgressView("正在初始化...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .windowBackgroundColor))
+        } else if let error = initializationError {
+            CrashedView(error: error)
+        } else if let container = container {
+            RootView(container: container, appliesRootOverlays: false) {
+                SettingsView(
+                    pluginService: container.pluginService,
+                    lumiUIService: container.lumiUIService,
+                    chatService: RootContainer.checkedChatService
+                )
                 .ignoresSafeArea()
             }
-        }
-        .task {
-            await initializeContainer()
+            .environmentObject(container.lumiCore)
+            .background {
+                WindowAccessor { window in
+                    window.configureForLumiMainChrome()
+                }
+                ThemeWindowAppearanceBridge()
+            }
+            .ignoresSafeArea()
         }
     }
 

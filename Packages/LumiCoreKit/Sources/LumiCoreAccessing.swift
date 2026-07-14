@@ -125,7 +125,8 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
     func bootstrapToolContributions(
         provider: any LumiAgentToolProviding,
-        context: LumiPluginContext
+        context: LumiPluginContext,
+        builtInTools: [any LumiAgentTool]
     )
 
     /// 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
