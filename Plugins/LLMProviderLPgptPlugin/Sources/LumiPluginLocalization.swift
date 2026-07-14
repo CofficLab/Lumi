@@ -1,8 +1,16 @@
 import Foundation
 import LumiLocalizationKit
 
+/// Runtime localization for LLMProviderLPgptPlugin bundle.
+///
+/// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {
-    static func string(_ key: String, bundle: Bundle, locale: Locale = .current) -> String {
-        LumiLocalization.string(key, bundle: bundle, locale: locale)
+    static func string(
+        _ key: String,
+        bundle: Bundle,
+        table: String = "Localizable",
+        locale: Locale = .current
+    ) -> String {
+        LumiLocalization.string(key, bundle: bundle, table: table, locale: locale)
     }
 }

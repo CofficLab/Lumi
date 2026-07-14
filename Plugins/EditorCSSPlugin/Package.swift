@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-css.git", branch: "master"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(url: "https://github.com/tree-sitter/tree-sitter-css.git", branch: "master"),
     ],
     targets: [
         .target(
@@ -31,7 +31,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "TreeSitterCSS", package: "tree-sitter-css"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "TreeSitterCSS", package: "tree-sitter-css"),
                 "TreeSitterCSSScannerFix",
             ],
             path: "Sources",

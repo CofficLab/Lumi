@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -25,6 +26,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
@@ -39,7 +41,7 @@ let package = Package(
                 "AskUserPlugin",
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Tests"
         ),
     ]

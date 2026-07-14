@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
@@ -24,7 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
             resources: [
@@ -36,7 +36,7 @@ let package = Package(
             dependencies: [
                 "ChatModePlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Tests"
         )
     ]

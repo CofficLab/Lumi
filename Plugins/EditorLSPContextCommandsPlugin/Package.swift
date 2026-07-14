@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
@@ -24,7 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [

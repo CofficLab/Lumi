@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
         .package(path: "../../Packages/LumiCoreKit"),
-    ],
+        .package(path: "../../Packages/LumiLocalizationKit"),    ],
     targets: [
         .target(
             name: "LSPDocumentHighlightEditorPlugin",
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LSPServiceEditorPlugin", package: "LSPServiceEditorPlugin"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
