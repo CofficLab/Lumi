@@ -7,14 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = CDX1000000000000000001 /* LLMProviderCodexPlugin */; };
-		EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */; };
 		ESV1000000000000000002 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = ESV1000000000000000001 /* EditorService */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
 		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
 		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
-		MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = MLX1000000000000000001 /* LLMProviderMLXPlugin */; };
 		SPK1000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPK1000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +21,187 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F5459B023006316000B552EC /* Exceptions for "Plugins" folder in "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ActivityHeatmapPlugin,
+				AgentDelayMessagePlugin,
+				AgentRAGPlugin,
+				AgentRulesPlugin,
+				AgentTempStoragePlugin,
+				AgentTurnNotificationPlugin,
+				AppIconDesignerPlugin,
+				AppLoadedPluginsPlugin,
+				AppManagerPlugin,
+				AppStoreConnectPlugin,
+				AppUpdateStatusBarPlugin,
+				AskUserPlugin,
+				AutoTaskPlugin,
+				BrewManagerPlugin,
+				BrowserPlugin,
+				CADDesignerPlugin,
+				CaffeinatePlugin,
+				ChatModePlugin,
+				ChatPanelPlugin,
+				ClipboardManagerPlugin,
+				CodeReviewPlugin,
+				ConversationForkPlugin,
+				ConversationLanguagePlugin,
+				ConversationListPlugin,
+				ConversationNewPlugin,
+				ConversationTimelinePlugin,
+				ConversationTitlePlugin,
+				DatabaseManagerPlugin,
+				DeviceInfoPlugin,
+				DiskManagerPlugin,
+				DisplayControlPlugin,
+				DockerManagerPlugin,
+				DocxReadPlugin,
+				DownloadPlugin,
+				EditorBreadcrumbNavPlugin,
+				EditorCallHierarchyPlugin,
+				EditorFileTreePlugin,
+				EditorFileTreeV2Plugin,
+				EditorOutlinePlugin,
+				EditorPanelPlugin,
+				EditorPreviewPlugin,
+				EditorProblemsPlugin,
+				EditorReferencesPlugin,
+				EditorSearchPlugin,
+				EditorStickySymbolBarPlugin,
+				EditorSwiftPlugin,
+				EditorSymbolsPlugin,
+				EditorTabStripPlugin,
+				EditorTerminalPlugin,
+				FileLogPlugin,
+				FontConfigPlugin,
+				GitHubPlugin,
+				GitPlugin,
+				HistoryDBStatusBarPlugin,
+				HostsManagerPlugin,
+				IdleTimePlugin,
+				InputPlugin,
+				LayoutPlugin,
+				LLMProviderAiRouterPlugin,
+				LLMProviderAliyunPlugin,
+				LLMProviderAnthropicPlugin,
+				LLMProviderCodexPlugin,
+				LLMProviderDeepSeekPlugin,
+				LLMProviderFeifeimiaoPlugin,
+				LLMProviderFlyMuxPlugin,
+				LLMProviderFreeModelPlugin,
+				LLMProviderHappyCodePlugin,
+				LLMProviderHyperAPIPlugin,
+				LLMProviderLPgptPlugin,
+				LLMProviderMegaLLMPlugin,
+				LLMProviderMiniMaxPlugin,
+				LLMProviderMLXPlugin,
+				LLMProviderOpenAIPlugin,
+				LLMProviderOpenRouterPlugin,
+				LLMProviderStepFunPlugin,
+				LLMProviderSublyxPlugin,
+				LLMProviderXiaomiPlugin,
+				LLMProviderXybbzPlugin,
+				LLMProviderZhipuPlugin,
+				LogoCofficPlugin,
+				LogoSmartLightPlugin,
+				MemoryPlugin,
+				MenuBarManagerPlugin,
+				MessageListPlugin,
+				MessageRendererPlugin,
+				ModelSelectorPlugin,
+				MultiAgentPlugin,
+				NettoPlugin,
+				NetworkManagerPlugin,
+				OnboardingPlugin,
+				OpenInAntigravityPlugin,
+				OpenInCursorPlugin,
+				OpenInFinderPlugin,
+				OpenInGitHubDesktopPlugin,
+				OpenInGitOKPlugin,
+				OpenInXcodePlugin,
+				OpenRemotePlugin,
+				PortManagerPlugin,
+				ProjectIssueScannerPlugin,
+				ProjectOverviewPlugin,
+				ProjectsPlugin,
+				QuickFileSearchPlugin,
+				QuickLauncherPlugin,
+				RClickPlugin,
+				RegistryManagerPlugin,
+				RequestLogPlugin,
+				ShowImagePlugin,
+				SkillPlugin,
+				TerminalPlugin,
+				ThemeAuroraPlugin,
+				ThemeAutumnPlugin,
+				ThemeDraculaPlugin,
+				ThemeGithubPlugin,
+				ThemeLumiPlugin,
+				ThemeMidnightPlugin,
+				ThemeMountainPlugin,
+				ThemeNebulaPlugin,
+				ThemeOneDarkPlugin,
+				ThemeOrchardPlugin,
+				ThemeRiverPlugin,
+				ThemeSkyPlugin,
+				ThemeSpringPlugin,
+				ThemeStatusBarPlugin,
+				ThemeSummerPlugin,
+				ThemeVoidPlugin,
+				ThemeVscodePlugin,
+				ThemeWinterPlugin,
+				ToolCorePlugin,
+				VerbosityPlugin,
+				VideoConverterPlugin,
+				WebFetchPlugin,
+				WebSearchPlugin,
+			);
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
+		};
+		F5459B293006316F00B552EC /* Exceptions for "Packages" folder in "Lumi" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AgentToolKit,
+				DiskManagerKit,
+				DownloadKit,
+				EditorChatInputKit,
+				EditorKernel,
+				EditorLanguageRuntime,
+				EditorService,
+				EditorSource,
+				EditorTextView,
+				FileTreeKit,
+				GitBranchMonitorKit,
+				GitHubKit,
+				HTMLPreviewKit,
+				HttpKit,
+				LLMKit,
+				LLMProviderKit,
+				LumiChatKit,
+				LumiCoreKit,
+				LumiLLMProviderSupport,
+				LumiLocalizationKit,
+				LumiPluginRegistry,
+				LumiPreviewKit,
+				LumiUI,
+				MarkdownKit,
+				MCPKit,
+				ModelRouterKit,
+				OpenInKit,
+				ProjectProfileKit,
+				RAGKit,
+				ShellKit,
+				StringCatalogKit,
+				SuperLogKit,
+				TerminalCoreKit,
+				WebFetchKit,
+				WorkspaceFileKit,
+				XcodeKit,
+				XcodeProjectGen,
+			);
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
+		};
 		F5F4E1E82F3ACC6600C76EA0 /* Exceptions for "LumiApp" folder in "Lumi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -34,6 +212,22 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F5459B013006315F00B552EC /* Plugins */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F5459B023006316000B552EC /* Exceptions for "Plugins" folder in "Lumi" target */,
+			);
+			path = Plugins;
+			sourceTree = "<group>";
+		};
+		F5459B283006316F00B552EC /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F5459B293006316F00B552EC /* Exceptions for "Packages" folder in "Lumi" target */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -50,12 +244,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				ESV1000000000000000002 /* EditorService in Frameworks */,
-				EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */,
 				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
 				LUI1000000000000000002 /* LumiUI in Frameworks */,
 				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
-				MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */,
-				CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */,
 				SPK1000000000000000002 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,6 +257,8 @@
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
+				F5459B283006316F00B552EC /* Packages */,
+				F5459B013006315F00B552EC /* Plugins */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
@@ -89,17 +282,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				F5459B013006315F00B552EC /* Plugins */,
+				F5459B283006316F00B552EC /* Packages */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 			);
 			name = Lumi;
 			packageProductDependencies = (
 				ESV1000000000000000001 /* EditorService */,
-				EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */,
 				LCK1000000000000000001 /* LumiChatKit */,
 				LUI1000000000000000001 /* LumiUI */,
 				LPR1000000000000000001 /* LumiPluginRegistry */,
-				MLX1000000000000000001 /* LLMProviderMLXPlugin */,
-				CDX1000000000000000001 /* LLMProviderCodexPlugin */,
 				SPK1000000000000000001 /* Sparkle */,
 			);
 			productName = Lumi;
@@ -135,12 +327,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
-				EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */,
 				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
 				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
-				MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */,
-				CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */,
 				SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -413,14 +602,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/LLMProviderCodexPlugin;
-		};
-		EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/EditorMultiCursorCommandsPlugin;
-		};
 		ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorService;
@@ -437,10 +618,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
 		};
-		MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/LLMProviderMLXPlugin;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -455,16 +632,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */;
-			productName = LLMProviderCodexPlugin;
-		};
-		EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */;
-			productName = EditorMultiCursorCommandsPlugin;
-		};
 		ESV1000000000000000001 /* EditorService */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */;
@@ -484,11 +651,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
 			productName = LumiUI;
-		};
-		MLX1000000000000000001 /* LLMProviderMLXPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */;
-			productName = LLMProviderMLXPlugin;
 		};
 		SPK1000000000000000001 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
