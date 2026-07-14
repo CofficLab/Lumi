@@ -1,0 +1,17 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/*/.build/
+Packages/*/.swiftpm/
+
+# SPM 解析锁
+# 通常不提交到仓库;若需固定依赖版本可由团队约定决定
+# Package.resolved
+
+# macOS
+.DS_Store
+
+# Xcode
+*.xcodeproj/
+xcuserdata/
+DerivedData/
