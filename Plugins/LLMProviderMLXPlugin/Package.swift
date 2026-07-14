@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/AgentToolKit"),
@@ -30,7 +30,7 @@ let package = Package(
             name: "LLMProviderMLXPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),

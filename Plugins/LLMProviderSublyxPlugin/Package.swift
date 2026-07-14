@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "LLMProviderSublyxPlugin",
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
@@ -38,7 +38,7 @@ let package = Package(
             dependencies: [
                 "LLMProviderSublyxPlugin",
                 .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
             ],
             path: "Tests"

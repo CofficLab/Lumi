@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
     ],
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "LLMProviderStepFunPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
