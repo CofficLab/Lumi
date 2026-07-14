@@ -7,11 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		ESV1000000000000000002 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = ESV1000000000000000001 /* EditorService */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
-		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
-		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
 		SPK1000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPK1000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -243,10 +239,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ESV1000000000000000002 /* EditorService in Frameworks */,
-				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
-				LUI1000000000000000002 /* LumiUI in Frameworks */,
-				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
 				SPK1000000000000000002 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -288,10 +280,6 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				ESV1000000000000000001 /* EditorService */,
-				LCK1000000000000000001 /* LumiChatKit */,
-				LUI1000000000000000001 /* LumiUI */,
-				LPR1000000000000000001 /* LumiPluginRegistry */,
 				SPK1000000000000000001 /* Sparkle */,
 			);
 			productName = Lumi;
@@ -326,10 +314,6 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
-				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
-				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
-				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
 				SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -601,25 +585,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/EditorService;
-		};
-		LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiChatKit;
-		};
-		LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiPluginRegistry;
-		};
-		LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiUI;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -632,26 +597,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		ESV1000000000000000001 /* EditorService */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */;
-			productName = EditorService;
-		};
-		LCK1000000000000000001 /* LumiChatKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */;
-			productName = LumiChatKit;
-		};
-		LPR1000000000000000001 /* LumiPluginRegistry */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */;
-			productName = LumiPluginRegistry;
-		};
-		LUI1000000000000000001 /* LumiUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
-			productName = LumiUI;
-		};
 		SPK1000000000000000001 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
