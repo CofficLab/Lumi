@@ -30,6 +30,7 @@ let package = Package(
             name: "MarkdownKitCore",
             dependencies: [
                 .product(name: "Markdown", package: "swift-markdown")
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: ".",
             exclude: [
@@ -50,6 +51,7 @@ let package = Package(
             dependencies: [
                 "MarkdownKitCore",
                 .product(name: "BeautifulMermaid", package: "beautiful-mermaid-swift")
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: ".",
             exclude: [

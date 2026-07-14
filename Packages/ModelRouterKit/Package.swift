@@ -13,9 +13,15 @@ let package = Package(
             targets: ["ModelRouterKit"]
         ),
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
     targets: [
         .target(
             name: "ModelRouterKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")

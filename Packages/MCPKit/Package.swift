@@ -14,7 +14,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../HttpKit"),
+        .package(path: "../LumiLocalizationKit"),
         .package(path: "../SuperLogKit"),
+        .package(path: "../LumiLocalizationKit"),
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", exact: "0.12.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
     ],
@@ -24,8 +26,11 @@ let package = Package(
             dependencies: [
                 "HttpKit",
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "MCP", package: "swift-sdk"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [

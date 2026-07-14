@@ -19,6 +19,7 @@ let package = Package(
             name: "EditorLanguageRuntime",
             dependencies: [
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [

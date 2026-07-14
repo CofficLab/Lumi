@@ -13,9 +13,16 @@ let package = Package(
             targets: ["RAGKit"]
         ),
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
+
     targets: [
         .target(
             name: "RAGKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")

@@ -13,9 +13,16 @@ let package = Package(
             targets: ["ProjectProfileKit"]
         ),
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
+
     targets: [
         .target(
             name: "ProjectProfileKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")

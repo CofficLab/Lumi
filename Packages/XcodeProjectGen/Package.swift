@@ -21,6 +21,7 @@ let package = Package(
             name: "XcodeProjectGen",
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [

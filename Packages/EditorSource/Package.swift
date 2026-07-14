@@ -18,7 +18,9 @@ let package = Package(
             path: "../EditorTextView"
         ),
         .package(path: "../EditorLanguageRuntime"),
+        .package(path: "../LumiLocalizationKit"),
         .package(path: "../SuperLogKit"),
+        .package(path: "../LumiLocalizationKit"),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.8.2"
@@ -31,6 +33,7 @@ let package = Package(
                 "EditorTextView",
                 "EditorLanguageRuntime",
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 "TextFormation",
             ],
             path: "Sources",

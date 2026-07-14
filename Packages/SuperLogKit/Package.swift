@@ -24,6 +24,7 @@ let package = Package(
         .testTarget(
             name: "SuperLogKitTests",
             dependencies: ["SuperLogKit"],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             path: "Tests"
         )
     ]

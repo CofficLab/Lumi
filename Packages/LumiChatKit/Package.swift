@@ -15,16 +15,22 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiLocalizationKit"),
         .package(path: "../ModelRouterKit"),
+        .package(path: "../LumiLocalizationKit"),
         .package(path: "../EditorChatInputKit")
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
             name: "LumiChatKit",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "ModelRouterKit", package: "ModelRouterKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [

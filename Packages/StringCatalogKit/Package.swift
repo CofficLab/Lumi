@@ -13,9 +13,16 @@ let package = Package(
             targets: ["StringCatalogKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
+
     targets: [
         .target(
             name: "StringCatalogKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")
