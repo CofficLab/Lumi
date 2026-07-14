@@ -11,16 +11,18 @@ let package = Package(
         .library(
             name: "LumiCoreKit",
             targets: ["LumiCoreKit"]
-        )
+        ),
     ],
     dependencies: [
         .package(path: "../SuperLogKit"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
             name: "LumiCoreKit",
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [
