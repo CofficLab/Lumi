@@ -1,10 +1,16 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
+import LumiLocalizationKit
 
+/// Runtime localization for LumiLLMProviderSupport bundle.
+///
+/// Provides localization lookup scoped to LumiLLMProviderSupport by delegating
+/// to `LumiLocalizationKit`. New code should prefer `LumiLocalization.string(...)`
+/// directly; this wrapper exists for backward compatibility with existing
+/// call sites.
 public enum LumiLLMProviderSupportLocalization {
     static func string(_ key: String, locale: Locale = .current) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+        LumiLocalization.string(key, bundle: .module, locale: locale)
     }
 
     static func format(_ key: String, locale: Locale = .current, _ arguments: CVarArg...) -> String {
