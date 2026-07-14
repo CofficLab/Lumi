@@ -1,5 +1,4 @@
 import EditorTextView
-import EditorMultiCursorCommandsPlugin
 import Foundation
 import EditorService
 import LumiCoreKit
@@ -181,8 +180,8 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
             EditorBuiltinSyntaxThemes.registerAppThemes(themeRegistry.themes, into: registry)
         }
-        EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
-            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+        EditorSettingsLifecycle.registerMultiCursorTextView = { _, _ in
+            // EditorMultiCursorCommandsPlugin 已弃用,多光标输入暂不安装。
         }
 
         if Self.verbose {

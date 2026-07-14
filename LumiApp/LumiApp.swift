@@ -1,3 +1,4 @@
+import LumiAppKit
 import SwiftUI
 
 @main
