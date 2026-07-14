@@ -13,9 +13,15 @@ let package = Package(
             targets: ["SuperLogKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
     targets: [
         .target(
             name: "SuperLogKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources")
@@ -24,7 +30,6 @@ let package = Package(
         .testTarget(
             name: "SuperLogKitTests",
             dependencies: ["SuperLogKit"],
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             path: "Tests"
         )
     ]

@@ -23,7 +23,7 @@ let package = Package(
             name: "AgentToolKit",
             dependencies: [
                 "SuperLogKit",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit")
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: ".",

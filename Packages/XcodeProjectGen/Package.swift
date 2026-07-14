@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/tuist/XcodeProj", from: "9.11.0"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(

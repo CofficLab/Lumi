@@ -14,14 +14,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../SuperLogKit")
+        .package(path: "../SuperLogKit"),
         .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
             name: "DiskManagerKit",
             dependencies: [
-                .product(name: "SuperLogKit", package: "SuperLogKit")
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: ".",

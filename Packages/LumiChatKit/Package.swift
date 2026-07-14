@@ -17,9 +17,7 @@ let package = Package(
         .package(path: "../LumiCoreKit"),
         .package(path: "../LumiLocalizationKit"),
         .package(path: "../ModelRouterKit"),
-        .package(path: "../LumiLocalizationKit"),
-        .package(path: "../EditorChatInputKit")
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../EditorChatInputKit"),
     ],
     targets: [
         .target(
@@ -28,9 +26,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "ModelRouterKit", package: "ModelRouterKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "EditorChatInputKit", package: "EditorChatInputKit"),
             ],
             path: "Sources",
             resources: [

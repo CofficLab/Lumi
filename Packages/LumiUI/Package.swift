@@ -13,7 +13,9 @@ let package = Package(
             targets: ["LumiUI"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
     targets: [
         .target(
             name: "LumiUI",
