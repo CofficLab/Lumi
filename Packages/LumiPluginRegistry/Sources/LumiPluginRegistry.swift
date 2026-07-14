@@ -176,6 +176,26 @@ public enum LumiPluginRegistry {
         }
     }
 
+    /// 检测所有已注册插件是否有 ID 重复。
+    ///
+    /// 返回：如果存在重复，返回 [(id: String, plugins: [any LumiPlugin.Type])]；否则返回空数组。
+    /// 注意：这是一个调试/开发辅助函数，建议在应用启动时调用一次进行校验。
+    public static func detectDuplicatePluginIDs() -> [(id: String, plugins: [any LumiPlugin.Type])] {
+        var idToPlugins: [String: [any LumiPlugin.Type]] = [:]
+
+        // 收集所有插件的 ID
+        for plugin in plugins {
+            let pluginID = plugin.info.id
+            idToPlugins[pluginID, default: []].append(plugin)
+        }
+
+        // 过滤出重复的 ID
+        return idToPlugins
+            .filter { $0.value.count > 1 }
+            .map { (id: $0.key, plugins: $0.value) }
+            .sorted { $0.id < $1.id }
+    }
+
     public static let plugins: [any LumiPlugin.Type] = [
         // MARK: - Theme Plugins (from extension)
 
