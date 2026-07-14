@@ -18,46 +18,6 @@ public enum EditorSymbolsPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
-            return []
-        }
-
-        return [
-            LumiPanelBottomTabItem(
-                id: "editor-bottom-symbols",
-                order: info.order,
-                title: LumiPluginLocalization.string("Symbols", bundle: .module),
-                systemImage: iconName
-            ) {
-                BottomEditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)
-            }
-        ]
-    }
-
-    @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
-            return []
-        }
-
-        return [
-            LumiPanelRailTabItem(
-                id: "symbols",
-                order: railTabOrder,
-                title: LumiPluginLocalization.string("Symbols", bundle: .module),
-                systemImage: "number"
-            ) {
-                BottomEditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)
-            }
-        ]
-    }
-
-    @MainActor
     public static func aboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
