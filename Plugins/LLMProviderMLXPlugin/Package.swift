@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.1
 import PackageDescription
 
 let package = Package(
@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
-            revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
+            branch: "main"
         ),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/DownloadKit"),
