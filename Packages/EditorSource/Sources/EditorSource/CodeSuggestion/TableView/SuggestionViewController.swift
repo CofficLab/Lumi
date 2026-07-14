@@ -211,10 +211,7 @@ class SuggestionViewController: NSViewController {
         scrollViewHeightConstraint?.isActive = true
 
         view.updateConstraintsForSubtreeIfNeeded()
-        // 延迟布局避免递归
-        DispatchQueue.main.async { [weak self] in
-            self?.view.layoutSubtreeIfNeeded()
-        }
+        view.layoutSubtreeIfNeeded()
 
         let newSize = NSSize(width: newWidth, height: newHeight)
         preferredContentSize = newSize
