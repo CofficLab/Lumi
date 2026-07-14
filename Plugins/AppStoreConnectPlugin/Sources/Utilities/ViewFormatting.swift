@@ -1,10 +1,10 @@
 import Foundation
-import LumiCoreKit
+import LumiLocalizationKit
 
 enum ViewFormatting {
     static func formatDateTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = LumiPluginLocalization.preferredLocale()
+        formatter.locale = LumiLocalization.preferredLocale()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

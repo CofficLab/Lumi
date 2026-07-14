@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../LSPCallHierarchyEditorPlugin"),
         .package(path: "../LSPWorkspaceSymbolEditorPlugin"),
     ],
@@ -26,7 +26,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LSPCallHierarchyEditorPlugin", package: "LSPCallHierarchyEditorPlugin"),
                 .product(name: "LSPWorkspaceSymbolEditorPlugin", package: "LSPWorkspaceSymbolEditorPlugin"),
             ],

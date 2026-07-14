@@ -16,14 +16,14 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-    ],
+        .package(path: "../../Packages/LumiLocalizationKit"),    ],
     targets: [
         .target(
             name: "EditorSampleDecorationPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

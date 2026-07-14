@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", branch: "master"),
@@ -43,7 +43,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
