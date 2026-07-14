@@ -6,7 +6,7 @@ struct LumiApp: App {
 
     var body: some Scene {
         WindowGroup(AppBootstrap.appName, id: AppBootstrap.mainWindowID) {
-            MainWindow()
+            WindowMain()
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
                     OpenProjectHandler.shared.requestOpen(path: path)
