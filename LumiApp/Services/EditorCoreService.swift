@@ -179,10 +179,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
         }
         EditorSettingsLifecycle.registerEditorThemeContributors = { [themeRegistry] registry in
             EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
-            AppEditorSyntaxThemeRegistrar.sync(
-                contributions: themeRegistry.themes,
-                into: registry
-            )
+            EditorBuiltinSyntaxThemes.registerAppThemes(themeRegistry.themes, into: registry)
         }
         EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
