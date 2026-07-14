@@ -13,10 +13,8 @@ let package = Package(
             targets: ["EditorPanelPlugin"]
         )
     ],
-    dependencies: [        .package(path: "../../Packages/EditorService"),
-        .package(path: "../LSPDocumentHighlightEditorPlugin"),
-        .package(path: "../LSPRealtimeSignalsPlugin"),
-        .package(path: "../LSPSignatureHelpEditorPlugin"),
+    dependencies: [
+        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
@@ -32,10 +30,8 @@ let package = Package(
     targets: [
         .target(
             name: "EditorPanelPlugin",
-            dependencies: [                .product(name: "EditorService", package: "EditorService"),
-                .product(name: "LSPDocumentHighlightEditorPlugin", package: "LSPDocumentHighlightEditorPlugin"),
-                .product(name: "LSPRealtimeSignalsPlugin", package: "LSPRealtimeSignalsPlugin"),
-                .product(name: "LSPSignatureHelpEditorPlugin", package: "LSPSignatureHelpEditorPlugin"),
+            dependencies: [
+                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "EditorTerminalPlugin", package: "EditorTerminalPlugin"),
                 .product(name: "EditorPreviewPlugin", package: "EditorPreviewPlugin"),
                 .product(name: "EditorStickySymbolBarPlugin", package: "EditorStickySymbolBarPlugin"),

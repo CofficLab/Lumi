@@ -1,8 +1,11 @@
 import Foundation
 import EditorService
-import LSPDocumentHighlightEditorPlugin
-import LSPRealtimeSignalsPlugin
 import SwiftUI
+
+/// 编辑器协调器集合 —— `SourceEditorView` 在各初始化步骤之间流转的快照。
+///
+/// `SourceEditorView` 用 `@State` 保存每个协调器实例，并通过
+/// `SourceEditorViewBridge` 在 view 生命周期里初始化和更新它们。
 public struct SourceEditorCoordinatorSet {
     public var textCoordinator: EditorCoordinator?
     public var cursorCoordinator: CursorCoordinator?
@@ -10,10 +13,11 @@ public struct SourceEditorCoordinatorSet {
     public var contextMenuCoordinator: ContextMenuCoordinator?
     public var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     public var semanticTokenHighlightProvider: (any HighlightProviding)?
-    public var documentHighlightProvider: DocumentHighlightHighlightAdapter?
+    public var documentHighlightProvider: (any HighlightProviding)?
     public var hoverCoordinator: HoverEditorCoordinator?
 }
 
+/// 维护 `SourceEditorView` 与 `EditorService` 之间的协调器实例化逻辑。
 @MainActor
 public struct SourceEditorViewBridge {
     public func initializeCoordinators(
@@ -39,11 +43,6 @@ public struct SourceEditorViewBridge {
             next.semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
             next.semanticTokenHighlightProvider = semanticTokenProvider as? any HighlightProviding
         }
-        if next.documentHighlightProvider == nil, let highlightProvider = state.documentHighlightProvider as? DocumentHighlightProvider {
-            next.documentHighlightProvider = DocumentHighlightHighlightAdapter(
-                provider: highlightProvider
-            )
-        }
         if next.hoverCoordinator == nil {
             next.hoverCoordinator = HoverEditorCoordinator(state: state)
         }
@@ -56,7 +55,7 @@ public struct SourceEditorViewBridge {
         jumpDelegate: EditorJumpToDefinitionDelegate,
         treeSitterClient: TreeSitterClient,
         textCoordinator: EditorCoordinator?,
-        completionDelegate: inout LSPCompletionDelegate
+        completionDelegate: LSPCompletionDelegate
     ) {
         jumpDelegate.textStorage = state.content
         jumpDelegate.treeSitterClient = treeSitterClient

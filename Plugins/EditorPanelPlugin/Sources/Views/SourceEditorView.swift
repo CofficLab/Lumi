@@ -1,9 +1,6 @@
 import SwiftUI
 import SuperLogKit
 import EditorService
-import LSPDocumentHighlightEditorPlugin
-import LSPRealtimeSignalsPlugin
-import LSPSignatureHelpEditorPlugin
 import LumiCoreKit
 import LumiUI
 
@@ -30,7 +27,7 @@ public struct SourceEditorView: View, SuperLog {
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
     @State private var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     @State private var semanticTokenHighlightProvider: (any HighlightProviding)?
-    @State private var documentHighlightProvider: DocumentHighlightHighlightAdapter?
+    @State private var documentHighlightProvider: (any HighlightProviding)?
     @State private var hoverCoordinator: HoverEditorCoordinator?
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
@@ -332,7 +329,7 @@ public struct SourceEditorView: View, SuperLog {
             jumpDelegate: jumpDelegate,
             treeSitterClient: treeSitterClient,
             textCoordinator: textCoordinator,
-            completionDelegate: &completionDelegate
+            completionDelegate: completionDelegate
         )
     }
     
