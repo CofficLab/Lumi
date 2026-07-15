@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
-            branch: "main"
+            .upToNextMajor(from: "3.31.4")
         ),
         // swift-transformers 1.3.x is broken against swift-jinja 2.4.x
         // (Config.jinjaValue passes [String: Value] where ObjectKey is expected).
