@@ -1,6 +1,6 @@
 import Foundation
 
-/// Agent Turn 结束原因（插件管线与通知层共用）。
+/// Agent Turn 结束原因
 public enum TurnEndReason: Sendable, Equatable {
   case completed
   case failed(String)
@@ -9,7 +9,7 @@ public enum TurnEndReason: Sendable, Equatable {
   case cancelled
 }
 
-/// `LumiChatKit` turn 结束原因（与 `TurnEndReason` 对齐，供通知与 outcome 使用）。
+/// `LumiChatKit` turn 结束原因
 public enum LumiTurnEndReason: String, Sendable, Equatable, Codable {
   case completed
   case failed

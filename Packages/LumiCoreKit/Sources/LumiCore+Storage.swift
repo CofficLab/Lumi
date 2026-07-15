@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Storage Helpers
-
 extension LumiCore {
     /// 核心数据目录。
     public var coreDataDirectory: URL {

@@ -1,10 +1,6 @@
 import Foundation
 
-// MARK: - Editor Service
-
 extension LumiCore {
-    // MARK: - Editor Bootstrap
-
     /// 启动编辑器服务（泛型版本，由 `boot` 内部调用）。
     ///
     /// - 接收 `EditorBootstrapFactory<Service>` 创建具体实例；
