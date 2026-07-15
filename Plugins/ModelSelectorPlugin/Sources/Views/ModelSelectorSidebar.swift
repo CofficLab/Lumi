@@ -14,8 +14,8 @@ struct ModelSelectorSidebar: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            quickTabButton(tab: .current, icon: "scope", title: "Current Provider")
             quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: "Frequent")
+            quickTabButton(tab: .current, icon: "scope", title: "Current Provider")
             quickTabButton(tab: .fast, icon: "bolt.fill", title: "Fast")
             quickTabButton(tab: .auto, icon: "wand.and.sparkles", title: "Auto")
 

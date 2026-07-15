@@ -153,7 +153,7 @@ public struct GitCommitDetailView: View, SuperLog {
     private var workingStateContent: some View {
         VStack(spacing: 0) {
             // Commit 输入区域（顶部）
-            GitCommitInputView(onCommitSuccess: {
+            GitCommitInputView(lumiCore: lumiCore, onCommitSuccess: {
                 loadWorkingState()
             })
 

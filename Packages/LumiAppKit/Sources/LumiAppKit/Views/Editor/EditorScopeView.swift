@@ -5,7 +5,7 @@ import LumiUI
 import SwiftUI
 
 struct EditorScopeView<Content: View>: View {
-    @Environment(\.lumiCore) private var lumiCore
+    @ObservedObject private var lumiCore: LumiCore
     @StateObject private var themeVM = AppThemeVM.shared
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @StateObject private var editorContext: EditorContext
@@ -14,9 +14,11 @@ struct EditorScopeView<Content: View>: View {
     private let content: Content
 
     init(
+        lumiCore: LumiCore,
         editor: any LumiEditorServicing,
         @ViewBuilder content: () -> Content
     ) {
+        self._lumiCore = ObservedObject(wrappedValue: lumiCore)
         _editorContext = StateObject(
             wrappedValue: EditorContext(service: editor.editorService, themeVM: .shared)
         )
@@ -34,7 +36,7 @@ struct EditorScopeView<Content: View>: View {
             }
             .onAppear {
                 editor.currentProjectPathProvider = {
-                    lumiCore?.projectState?.currentProject?.path ?? ""
+                    lumiCore.projectState?.currentProject?.path ?? ""
                 }
                 EditorRuntimeBridge.configure(editor: editor)
                 syncEditorTheme()

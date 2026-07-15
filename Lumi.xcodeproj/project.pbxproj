@@ -163,7 +163,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "\"${SRCROOT}/scripts/embed-inline-preview-host.sh\"\n";
+			shellScript = "\"${SRCROOT}/Packages/LumiPreviewKit/scripts/embed-inline-preview-host.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

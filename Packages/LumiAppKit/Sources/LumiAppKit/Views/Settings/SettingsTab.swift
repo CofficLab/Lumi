@@ -11,10 +11,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: String(localized: "General", bundle: .module)
-        case .appearance: String(localized: "Appearance", bundle: .module)
-        case .plugins: String(localized: "Plugins", bundle: .module)
-        case .about: String(localized: "About", bundle: .module)
+        case .general: LumiLocalization.string("General", bundle: .module)
+        case .appearance: LumiLocalization.string("Appearance", bundle: .module)
+        case .plugins: LumiLocalization.string("Plugins", bundle: .module)
+        case .about: LumiLocalization.string("About", bundle: .module)
         }
     }
 

@@ -229,5 +229,6 @@ public enum LumiPluginRegistry {
             PortManagerPlugin.self,
         ] +
         conversationPlugins +
+        [LayoutPlugin.self] +
         editorPlugins
 }

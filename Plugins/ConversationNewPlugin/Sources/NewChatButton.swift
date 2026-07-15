@@ -6,17 +6,18 @@ import SwiftUI
 public struct NewChatButton: View {
     let chatService: any LumiChatServicing
     let projectState: LumiProjectState?
-
-    @Environment(\.lumiCore) private var lumiCore
+    let lumiCore: (any LumiCoreAccessing)?
 
     @State private var localStore: LocalStore?
 
     public init(
         chatService: any LumiChatServicing,
-        projectState: LumiProjectState? = nil
+        projectState: LumiProjectState? = nil,
+        lumiCore: (any LumiCoreAccessing)? = nil
     ) {
         self.chatService = chatService
         self.projectState = projectState
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {

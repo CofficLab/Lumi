@@ -1,5 +1,6 @@
 
 import LumiCoreKit
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
@@ -144,16 +145,24 @@ struct ModelCard: View {
         HStack(spacing: 6) {
             if let capabilities {
                 capabilityBadge(
-                    title: capabilities.supportsVision ? "Image" : "Text",
+                    title: capabilities.supportsVision
+                        ? LumiPluginLocalization.string("Image", bundle: .module)
+                        : LumiPluginLocalization.string("Text", bundle: .module),
                     systemImage: capabilities.supportsVision ? "photo" : "text.bubble"
                 )
 
                 if capabilities.supportsTools {
-                    capabilityBadge(title: "Tools", systemImage: "wrench.and.screwdriver")
+                    capabilityBadge(
+                        title: LumiPluginLocalization.string("Tools", bundle: .module),
+                        systemImage: "wrench.and.screwdriver"
+                    )
                 }
 
                 if capabilities.supportsTTS {
-                    capabilityBadge(title: "TTS", systemImage: "waveform")
+                    capabilityBadge(
+                        title: LumiPluginLocalization.string("TTS", bundle: .module),
+                        systemImage: "waveform"
+                    )
                 }
             } else {
                 AppTag(provider.displayName)

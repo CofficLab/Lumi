@@ -79,12 +79,12 @@ struct AppearanceSettingsPage: View {
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label(
-                String(format: String(localized: "%lld 个主题", bundle: .module), themes.count),
+                String(format: LumiLocalization.string("%lld 个主题", bundle: .module), themes.count),
                 systemImage: "paintbrush"
             )
             if let activeID = registry.selectedThemeId,
                let active = themes.first(where: { $0.id == activeID }) {
-                Text(String(format: String(localized: "当前：%@", bundle: .module), active.displayName))
+                Text(String(format: LumiLocalization.string("当前：%@", bundle: .module), active.displayName))
             }
             Spacer()
         }
@@ -95,7 +95,7 @@ struct AppearanceSettingsPage: View {
     private var themeListPane: some View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
-                AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(String(localized: "搜索主题", bundle: .module)))
+                AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiLocalization.string("搜索主题", bundle: .module)))
             }
             .padding(12)
 
@@ -108,7 +108,7 @@ struct AppearanceSettingsPage: View {
                     }
 
                     if filteredThemes.isEmpty {
-                        AppEmptyState(icon: "magnifyingglass", title: String(localized: "未找到主题", bundle: .module))
+                        AppEmptyState(icon: "magnifyingglass", title: LumiLocalization.string("未找到主题", bundle: .module))
                             .padding(.vertical, 32)
                     }
                 }
@@ -168,7 +168,7 @@ struct AppearanceSettingsPage: View {
                 }
             )
         } else {
-            AppEmptyState(icon: "paintbrush", title: String(localized: "选择一个主题", bundle: .module))
+            AppEmptyState(icon: "paintbrush", title: LumiLocalization.string("选择一个主题", bundle: .module))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .appSurface(style: .panel, cornerRadius: 0)
         }
@@ -230,9 +230,9 @@ private struct ThemeSettingsDetailView: View {
         }
         .overlay(alignment: .topTrailing) {
             if isActive {
-                AppTag(String(localized: "使用中", bundle: .module), style: .accent)
+                AppTag(LumiLocalization.string("使用中", bundle: .module), style: .accent)
             } else {
-                AppButton(String(localized: "使用此主题", bundle: .module), systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
+                AppButton(LumiLocalization.string("使用此主题", bundle: .module), systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
             }
         }
     }
@@ -240,11 +240,11 @@ private struct ThemeSettingsDetailView: View {
     private var appearanceLabel: String {
         switch contribution.appearanceKind {
         case .dark:
-            return String(localized: "深色主题", bundle: .module)
+            return LumiLocalization.string("深色主题", bundle: .module)
         case .light:
-            return String(localized: "浅色主题", bundle: .module)
+            return LumiLocalization.string("浅色主题", bundle: .module)
         case .system:
-            return String(localized: "跟随系统外观", bundle: .module)
+            return LumiLocalization.string("跟随系统外观", bundle: .module)
         }
     }
 }
@@ -254,44 +254,44 @@ private struct ThemeComponentPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            AppSettingsSection(title: String(localized: "组件预览", bundle: .module), subtitle: String(localized: "常见 UI 组件在此主题下的样式", bundle: .module), spacing: 12) {
+            AppSettingsSection(title: LumiLocalization.string("组件预览", bundle: .module), subtitle: LumiLocalization.string("常见 UI 组件在此主题下的样式", bundle: .module), spacing: 12) {
                 VStack(alignment: .leading, spacing: 18) {
-                    previewGroup(title: Text(String(localized: "文字", bundle: .module))) {
+                    previewGroup(title: Text(LumiLocalization.string("文字", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(String(localized: "主要文字 Primary", bundle: .module))
+                            Text(LumiLocalization.string("主要文字 Primary", bundle: .module))
                                 .font(.appBody)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(String(localized: "次要文字 Secondary", bundle: .module))
+                            Text(LumiLocalization.string("次要文字 Secondary", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
-                            Text(String(localized: "辅助文字 Tertiary", bundle: .module))
+                            Text(LumiLocalization.string("辅助文字 Tertiary", bundle: .module))
                                 .font(.appMicro)
                                 .foregroundStyle(theme.textTertiary)
                         }
                     }
 
-                    previewGroup(title: Text(String(localized: "按钮", bundle: .module))) {
+                    previewGroup(title: Text(LumiLocalization.string("按钮", bundle: .module))) {
                         HStack(spacing: 8) {
-                            previewButton(Text(String(localized: "Primary", bundle: .module)), background: theme.primary, foreground: .white)
-                            previewButton(Text(String(localized: "Secondary", bundle: .module)), background: theme.surface, foreground: theme.textPrimary, border: theme.divider)
-                            previewButton(Text(String(localized: "Destructive", bundle: .module)), background: theme.error.opacity(0.15), foreground: theme.error)
+                            previewButton(Text(LumiLocalization.string("Primary", bundle: .module)), background: theme.primary, foreground: .white)
+                            previewButton(Text(LumiLocalization.string("Secondary", bundle: .module)), background: theme.surface, foreground: theme.textPrimary, border: theme.divider)
+                            previewButton(Text(LumiLocalization.string("Destructive", bundle: .module)), background: theme.error.opacity(0.15), foreground: theme.error)
                         }
                     }
 
-                    previewGroup(title: Text(String(localized: "标签", bundle: .module))) {
+                    previewGroup(title: Text(LumiLocalization.string("标签", bundle: .module))) {
                         HStack(spacing: 8) {
-                            previewTag(Text(String(localized: "Accent", bundle: .module)), background: theme.primary.opacity(0.15), foreground: theme.primary)
-                            previewTag(Text(String(localized: "Subtle", bundle: .module)), background: theme.elevatedSurface, foreground: theme.textSecondary)
-                            previewTag(Text(String(localized: "Success", bundle: .module)), background: theme.success.opacity(0.15), foreground: theme.success)
+                            previewTag(Text(LumiLocalization.string("Accent", bundle: .module)), background: theme.primary.opacity(0.15), foreground: theme.primary)
+                            previewTag(Text(LumiLocalization.string("Subtle", bundle: .module)), background: theme.elevatedSurface, foreground: theme.textSecondary)
+                            previewTag(Text(LumiLocalization.string("Success", bundle: .module)), background: theme.success.opacity(0.15), foreground: theme.success)
                         }
                     }
 
-                    previewGroup(title: Text(String(localized: "卡片", bundle: .module))) {
+                    previewGroup(title: Text(LumiLocalization.string("卡片", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "卡片标题", bundle: .module))
+                            Text(LumiLocalization.string("卡片标题", bundle: .module))
                                 .font(.appBodyEmphasized)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(String(localized: "这是卡片中的说明文字，用于展示表面色与层级。", bundle: .module))
+                            Text(LumiLocalization.string("这是卡片中的说明文字，用于展示表面色与层级。", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
                         }
@@ -305,12 +305,12 @@ private struct ThemeComponentPreview: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
 
-                    previewGroup(title: Text(String(localized: "色板", bundle: .module))) {
+                    previewGroup(title: Text(LumiLocalization.string("色板", bundle: .module))) {
                         HStack(spacing: 10) {
-                            colorSwatch(Text(String(localized: "Primary", bundle: .module)), color: theme.primary)
-                            colorSwatch(Text(String(localized: "Success", bundle: .module)), color: theme.success)
-                            colorSwatch(Text(String(localized: "Warning", bundle: .module)), color: theme.warning)
-                            colorSwatch(Text(String(localized: "Error", bundle: .module)), color: theme.error)
+                            colorSwatch(Text(LumiLocalization.string("Primary", bundle: .module)), color: theme.primary)
+                            colorSwatch(Text(LumiLocalization.string("Success", bundle: .module)), color: theme.success)
+                            colorSwatch(Text(LumiLocalization.string("Warning", bundle: .module)), color: theme.warning)
+                            colorSwatch(Text(LumiLocalization.string("Error", bundle: .module)), color: theme.error)
                         }
                     }
                 }

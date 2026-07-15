@@ -123,7 +123,7 @@ public struct GitPluginPopoverView: View {
     }
 
     private var commitInput: some View {
-        GitCommitInputView(style: .compact) {
+        GitCommitInputView(lumiCore: lumiCore, style: .compact) {
             Task { await refreshAll() }
         }
     }

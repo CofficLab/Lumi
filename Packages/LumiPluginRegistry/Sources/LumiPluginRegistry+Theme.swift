@@ -33,7 +33,6 @@ extension LumiPluginRegistry {
         // MARK: - Core
 
         FileLogPlugin.self,
-        LayoutPlugin.self,
 
         // MARK: - Themes
 

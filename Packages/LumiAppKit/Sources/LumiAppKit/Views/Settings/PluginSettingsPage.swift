@@ -110,10 +110,10 @@ struct PluginSettingsPage: View {
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label(
-                String(format: String(localized: "%lld 个插件", bundle: .module), pluginRows.count),
+                String(format: LumiLocalization.string("%lld 个插件", bundle: .module), pluginRows.count),
                 systemImage: "puzzlepiece.extension"
             )
-            Text(String(format: String(localized: "%lld enabled", bundle: .module), enabledCount))
+            Text(String(format: LumiLocalization.string("%lld enabled", bundle: .module), enabledCount))
             Spacer()
         }
         .font(.appCaption)
@@ -138,7 +138,7 @@ struct PluginSettingsPage: View {
                     }
 
                     if filteredRows.isEmpty {
-                        AppEmptyState(icon: "magnifyingglass", title: String(localized: "未找到插件", bundle: .module))
+                        AppEmptyState(icon: "magnifyingglass", title: LumiLocalization.string("未找到插件", bundle: .module))
                             .padding(.vertical, 32)
                     }
                 }
@@ -152,7 +152,7 @@ struct PluginSettingsPage: View {
     private var categoryTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                categoryTab(String(localized: "全部", bundle: .module), systemImage: "square.grid.2x2", isSelected: selectedCategory == nil) {
+                categoryTab(LumiLocalization.string("全部", bundle: .module), systemImage: "square.grid.2x2", isSelected: selectedCategory == nil) {
                     selectedCategory = nil
                 }
 
@@ -227,7 +227,7 @@ struct PluginSettingsPage: View {
                 chatService: chatService
             )
         } else {
-            AppEmptyState(icon: "puzzlepiece.extension", title: String(localized: "选择一个插件", bundle: .module))
+            AppEmptyState(icon: "puzzlepiece.extension", title: LumiLocalization.string("选择一个插件", bundle: .module))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -267,7 +267,7 @@ private struct PluginSettingsDetailView: View {
         } else {
             AppEmptyState(
                 icon: "puzzlepiece.extension",
-                title: String(localized: "该插件暂未提供设置页面。", bundle: .module)
+                title: LumiLocalization.string("该插件暂未提供设置页面。", bundle: .module)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -276,7 +276,7 @@ private struct PluginSettingsDetailView: View {
     private var settingsContext: LumiPluginContext {
         lumiCore.makePluginContext(
             activeSectionID: "settings.plugins",
-            activeSectionTitle: String(localized: "插件管理", bundle: .module)
+            activeSectionTitle: LumiLocalization.string("插件管理", bundle: .module)
         )
     }
 
@@ -313,7 +313,7 @@ private struct PluginSettingsDetailView: View {
     private var enableToggle: some View {
         if row.policy.isConfigurable {
             AppSettingsToggleRow(
-                String(localized: "启用", bundle: .module),
+                LumiLocalization.string("启用", bundle: .module),
                 isOn: Binding(
                     get: { pluginService.isPluginEnabled(row.plugin) },
                     set: { pluginService.setPlugin(row.plugin, enabled: $0) }
@@ -322,7 +322,7 @@ private struct PluginSettingsDetailView: View {
             .frame(maxWidth: 140)
         } else {
             AppTag(
-                row.policy == .alwaysOn ? String(localized: "Always On", bundle: .module) : String(localized: "Disabled", bundle: .module),
+                row.policy == .alwaysOn ? LumiLocalization.string("Always On", bundle: .module) : LumiLocalization.string("Disabled", bundle: .module),
                 systemImage: row.policy == .alwaysOn ? "lock.fill" : "slash.circle"
             )
         }

@@ -1,14 +1,16 @@
 import LumiCoreKit
 import os
+import SuperLogKit
 
-public enum StepFunPlugin: LumiPlugin {
+public enum StepFunPlugin: LumiPlugin, SuperLog {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .llmProvider
     public static let iconName = "sparkles"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.stepfun")
-    /// 详细日志开关。默认关闭；遇到子 Agent 注册异常时可临时打开以诊断 gate 拒绝原因。
-    public static var verbose: Bool { false }
+    public nonisolated static let emoji = "🌟"
+    /// 详细日志开关。打开后会在子 Agent 注册、Provider 可用性检查等关键节点写入日志。
+    public static var verbose: Bool { true }
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.stepfun",
         displayName: LumiPluginLocalization.string("StepFun StepPlan", bundle: .module),
@@ -35,22 +37,33 @@ public enum StepFunPlugin: LumiPlugin {
 
     @MainActor
     public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
+        if Self.verbose {
+            logger.info("\(Self.t)开始注册子 Agent")
+        }
+
         // Provider 可用性 gate：所有子 Agent 都绑定 StepFunProvider 模型推理。
         // 若该 Provider 当前不可用（如未配置 API Key、套餐过期、运行时被禁用），
         // 主 LLM 调 delegate_* 后会在每次调用时才拿到 "Provider not available" 错误，
         // 既浪费 token 又污染上下文。这里在注册期直接 gate，返回空数组
         // 让主 LLM 看不到这些工具，退化到手动串普通工具链。
         guard isStepFunProviderAvailable(context: context) else {
+            if Self.verbose {
+                logger.info("\(Self.t)Provider 不可用，跳过所有子 Agent 注册")
+            }
             return []
         }
 
-        return [
+        let agents = [
             GitCommitWriterAgent.definition,
             CodeReviewAgent.definition,
             TestWriterAgent.definition,
             DocWriterAgent.definition,
             BugFixerAgent.definition,
         ]
+        if Self.verbose {
+            logger.info("\(Self.t)子 Agent 注册完成，共 \(agents.count) 个：\(agents.map(\.id).joined(separator: ", "))")
+        }
+        return agents
     }
 
     /// 检查 StepFunProvider 当前是否可用。
@@ -60,6 +73,9 @@ public enum StepFunPlugin: LumiPlugin {
     /// 这样 API Key 缺失、套餐过期、平台不兼容等情况都会自动跳过子 Agent 注册。
     @MainActor
     private static func isStepFunProviderAvailable(context: LumiPluginContext) -> Bool {
+        if Self.verbose {
+            logger.info("\(Self.t)检查 StepFunProvider 可用性")
+        }
         guard let chatService = context.resolve((any LumiChatServicing).self) else {
             // 没有 ChatService 时（极早期阶段）保守返回 false，避免注册了用不了
             Self.logSkip(reason: "no ChatService in plugin context")
@@ -74,6 +90,9 @@ public enum StepFunPlugin: LumiPlugin {
                 reason: "StepFunProvider blocking status [\(status.level)] — \(status.message)"
             )
             return false
+        }
+        if Self.verbose {
+            logger.info("\(Self.t)StepFunProvider 可用，允许注册子 Agent")
         }
         return true
     }

@@ -44,3 +44,27 @@ Tests cover build planning, compilers, preview scanning, host process behavior, 
 ## Host integration
 
 The host app should handle editor UI, plugin wiring, and user interactions. Keep preview planning, compilation, host messages, and runtime coordination in this package.
+
+## Embedding the Preview Host Binary
+
+This package ships a `scripts/embed-inline-preview-host.sh` build script that compiles `LumiPreviewHostApp` and embeds it into the host app bundle at `Contents/Helpers/LumiPreviewHostApp`.
+
+**To add it to your Xcode project:**
+
+1. Select the **Lumi** target → **Build Phases**
+2. Click **+** → **New Run Script Phase**
+3. Name it `Embed Inline Preview Host`
+4. Set the script to:
+
+   ```
+   "${SRCROOT}/Packages/LumiPreviewKit/scripts/embed-inline-preview-host.sh"
+   ```
+
+5. Drag the new phase **after** the `Resources` phase
+6. In the phase settings, add this to **Output Files**:
+
+   ```
+   $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp
+   ```
+
+7. Check **Run script: Based on dependency analysis** so it only re-runs when needed
