@@ -4,10 +4,6 @@ import AgentToolKit
 import Combine
 import MLXLLM
 @preconcurrency import MLXLMCommon
-import MLXHuggingFace
-// `#huggingFaceTokenizerLoader()` expands into code that references
-// `Tokenizers.AutoTokenizer` — Tokenizers must be imported at the call site.
-import Tokenizers
 import os
 
 /// MLX 推理服务
@@ -43,7 +39,9 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
 
     public init() {
         if Self.verbose {
-            Self.logger.info("\(self.t) MLX 推理服务已初始化")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) MLX 推理服务已初始化")
+            }
         }
     }
 
@@ -72,18 +70,14 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         }
 
         do {
-            // mlx-swift-lm 3.x requires an explicit `TokenizerLoader`.
-            // `#huggingFaceTokenizerLoader()` adapts `Tokenizers.AutoTokenizer`
-            // to load tokenizers from a local model directory.
-            let container = try await loadModelContainer(
-                from: modelDir,
-                using: #huggingFaceTokenizerLoader()
-            )
-            self.modelContainer = container
+            let configuration = ModelConfiguration(directory: modelDir)
+            self.modelContainer = try await loadModelContainer(configuration: configuration)
 
             updateState(.ready)
             if Self.verbose {
-                Self.logger.info("\(self.t) 模型加载成功：\(id)")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) 模型加载成功：\(id)")
+                }
             }
         } catch {
             updateState(.error(error.localizedDescription))
@@ -104,7 +98,9 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("\(self.t) 模型已卸载")
+            if Self.verbose {
+                            Self.logger.info("\(self.t) 模型已卸载")
+            }
         }
     }
 
@@ -129,11 +125,13 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
                     return
                 }
 
-                self.updateState(.generating)
+                await self.updateState(.generating)
                 self.tokensPerSecond = 0
 
                 if Self.verbose {
-                    Self.logger.info("\(self.t) 流式连接已建立，开始接收数据...")
+                    if Self.verbose {
+                                            Self.logger.info("\(self.t) 流式连接已建立，开始接收数据...")
+                    }
                 }
 
                 do {
@@ -180,37 +178,23 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
                     for await result in generateStream {
                         try Task.checkCancellation()
 
-                        switch result {
-                        case .chunk(let text):
+                        if let text = result.chunk {
                             continuation.yield(.text(text))
                             tokenCount += 1
-                        case .toolCall(let call):
-                            let argumentsJSON: String
-                            if let data = try? JSONSerialization.data(
-                                withJSONObject: call.function.arguments.mapValues { $0.anyValue }
-                            ),
-                               let str = String(data: data, encoding: .utf8) {
-                                argumentsJSON = str
-                            } else {
-                                argumentsJSON = "{}"
-                            }
+                        }
+                        if let toolCall = result.toolCall {
                             let mlxToolCall = MLXToolCall(
-                                id: call.id ?? UUID().uuidString,
-                                name: call.function.name,
-                                arguments: argumentsJSON
+                                id: UUID().uuidString,
+                                name: toolCall.function.name,
+                                arguments: (try? JSONSerialization.data(withJSONObject: toolCall.function.arguments.mapValues { $0.anyValue })).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
                             )
                             continuation.yield(.toolCall(mlxToolCall))
-                        case .info(let info):
-                            // Use final info to update tokens/s if elapsed > 0
-                            if info.generateTime > 0 {
-                                self.tokensPerSecond = info.tokensPerSecond
-                            }
                         }
                     }
 
-                    // Calculate tok/s from local counter if info didn't provide it
+                    // Calculate tok/s
                     let elapsed = Date().timeIntervalSince(startTime)
-                    if elapsed > 0 && tokenCount > 0 && self.tokensPerSecond == 0 {
+                    if elapsed > 0 {
                         self.tokensPerSecond = Double(tokenCount) / elapsed
                     }
 
@@ -250,6 +234,49 @@ public final class MLXInferenceService: ObservableObject, SuperLog {
 
     private func updateState(_ newState: LLMState) {
         self.state = newState
+    }
+
+    private func loadModelContainer(configuration: ModelConfiguration) async throws -> ModelContainer {
+        // Try VLM first (for models with vision support), then fall back to LLM
+        // The global loadModelContainer function tries MLXVLM first internally
+        do {
+            if Self.verbose {
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) 尝试加载 VLM 模型...")
+                }
+            }
+            let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
+                // Progress callback - can be used for loading UI
+            }
+            if Self.verbose {
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) VLM 模型加载成功")
+                }
+            }
+            return container
+        } catch {
+            if Self.verbose {
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) VLM 加载失败，尝试 LLM: \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Fallback to LLM
+        if Self.verbose {
+            if Self.verbose {
+                            Self.logger.info("\(self.t) 尝试加载 LLM 模型...")
+            }
+        }
+        let container = try await MLXLMCommon.loadModelContainer(configuration: configuration) { progress in
+            // Progress callback
+        }
+        if Self.verbose {
+            if Self.verbose {
+                            Self.logger.info("\(self.t) LLM 模型加载成功")
+            }
+        }
+        return container
     }
 }
 

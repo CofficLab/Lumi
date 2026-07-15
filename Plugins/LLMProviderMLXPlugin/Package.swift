@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -14,25 +14,18 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
-            .upToNextMajor(from: "3.31.4")
-        ),
-        // swift-transformers 1.3.x is broken against swift-jinja 2.4.x
-        // (Config.jinjaValue passes [String: Value] where ObjectKey is expected).
-        // Pin to 1.2.1 to match the rest of the Lumi workspace (Package.resolved).
-        .package(
-            url: "https://github.com/huggingface/swift-transformers",
-            .upToNextMinor(from: "1.2.1")
-        ),
-        // Pin jinja so swift-transformers' `from: "2.0.0"` constraint doesn't pull 2.4.0.
-        .package(
-            url: "https://github.com/huggingface/swift-jinja.git",
-            .upToNextMinor(from: "2.3.6")
+            // Pin to the revision that last shipped a successful build of Lumi
+            // (v4.16.0). Newer 3.x tags add an MLXHuggingFaceMacros macro target
+            // that pulls swift-syntax and fails to register before
+            // MLXHuggingFace consumes it on Xcode 26.3.
+            revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
         ),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/DownloadKit"),
@@ -42,12 +35,11 @@ let package = Package(
             name: "LLMProviderMLXPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
-                .product(name: "MLXHuggingFace", package: "mlx-swift-lm"),
-                .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),
             ],
