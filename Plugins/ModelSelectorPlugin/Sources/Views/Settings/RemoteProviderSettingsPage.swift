@@ -96,8 +96,8 @@ struct RemoteProviderSettingsPage: View {
 
     private var headerStats: some View {
         HStack(spacing: 10) {
-            Label("\(remoteProviders.count) 个云端供应商", systemImage: "cloud")
-            Text("\(selectedProvider?.availableModels.count ?? 0) 个模型")
+            Label(String(format: LumiPluginLocalization.string("%lld cloud providers", bundle: .module), remoteProviders.count), systemImage: "cloud")
+            Text(verbatim: String(format: LumiPluginLocalization.string("%lld models", bundle: .module), selectedProvider?.availableModels.count ?? 0))
             Spacer()
         }
         .font(.appCaption)
@@ -107,7 +107,7 @@ struct RemoteProviderSettingsPage: View {
     private var providerSidebar: some View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
-                AppSearchBar(text: $searchText, placeholder: "搜索供应商")
+                AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
             }
             .padding(12)
 
@@ -227,7 +227,7 @@ struct RemoteProviderSettingsPage: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("打开供应商页面")
+            .help(LumiPluginLocalization.string("Open provider page", bundle: .module))
         }
     }
 

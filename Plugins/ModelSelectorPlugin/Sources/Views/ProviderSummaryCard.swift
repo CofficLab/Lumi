@@ -111,7 +111,7 @@ struct ProviderSummaryCard: View {
                                 .foregroundColor(theme.textSecondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Re-check availability")
+                        .help(LumiPluginLocalization.string("Re-check availability", bundle: .module))
                     }
 
                     statusBadge
@@ -245,7 +245,7 @@ struct ProviderSummaryCard: View {
             HStack(spacing: 4) {
                 ProgressView()
                     .scaleEffect(0.5)
-                Text("检查中")
+                Text(verbatim: LumiPluginLocalization.string("Checking", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.orange)
             }
@@ -275,7 +275,7 @@ struct ProviderSummaryCard: View {
                 Circle()
                     .fill(theme.textTertiary)
                     .frame(width: 6, height: 6)
-                Text("不可用")
+                Text(verbatim: LumiPluginLocalization.string("Unavailable", bundle: .module))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(theme.textTertiary)
             }
