@@ -9,7 +9,27 @@ enum GitCommitWriterAgent {
     static let definition = LumiSubAgentDefinition(
         id: "git-commit-writer",
         displayName: "Git Commit Writer",
-        description: "Analyze git changes and create a commit. Pass what you want committed as the task.",
+        description: """
+        PREFER this tool whenever the user asks to commit, save, or "git commit" their current changes.
+
+        This tool delegates to an expert sub-agent that autonomously:
+        1. Inspects the working tree (staged + unstaged changes)
+        2. Generates a Conventional Commits message based on the diff
+        3. Stages the right files and executes the commit
+
+        Do NOT manually chain git_status + git_diff + git_add + git_commit yourself — \
+        the sub-agent does this end-to-end with better commit message quality and fewer tokens.
+
+        Examples of when to use this tool:
+        - "帮我提交一下当前的改动" / "commit 一下"
+        - "Save these changes with a proper commit message"
+        - "Commit the auth refactor; mention the breaking API change in the body"
+        - "git commit 这次新增的 login 功能"
+
+        Pass the task as a natural-language sentence including WHY (e.g. \
+        "commit the new login flow refactor, mention breaking API change in body"), \
+        not just WHAT. The sub-agent will figure out WHAT to stage based on the diff.
+        """,
         providerID: "stepfun",
         modelID: "step-3.7-flash",
         systemPrompt: """

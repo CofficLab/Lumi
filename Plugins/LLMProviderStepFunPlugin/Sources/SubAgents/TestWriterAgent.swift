@@ -9,7 +9,32 @@ enum TestWriterAgent {
     static let definition = LumiSubAgentDefinition(
         id: "test-writer",
         displayName: "Test Writer",
-        description: "Write unit tests for code. Provide the file path or describe what needs testing.",
+        description: """
+        PREFER this tool whenever the user asks to "write tests", "add unit tests", \
+        "add test cases", or "test this code/function/module".
+
+        This tool delegates to an expert sub-agent that autonomously:
+        1. Reads the target source file(s) to understand the public API and contracts
+        2. Identifies edge cases, boundary conditions, and error scenarios
+        3. Writes a complete Swift Testing test file following project conventions \
+        (@Test attributes, naming conventions, appropriate #expect / #require)
+        4. Saves the test file at the conventional location
+
+        Do NOT try to write tests manually by chaining read_file + write_file yourself — \
+        the sub-agent knows Swift Testing conventions, project structure, and produces \
+        a complete, well-organized test file in one delegation.
+
+        Examples of when to use this tool:
+        - "给 UserService 写个单元测试"
+        - "Add unit tests for the new login function"
+        - "Help me cover this module with tests"
+        - "为这个 ViewModel 加几个 test case"
+
+        Pass the task as a file path OR a short description of what needs testing. \
+        Include any context about the test environment, mocks needed, or specific \
+        scenarios to cover (e.g. "write tests for the new auth flow, cover happy path, \
+        expired token, and missing API key").
+        """,
         providerID: "stepfun",
         modelID: "step-3.7-flash",
         systemPrompt: """

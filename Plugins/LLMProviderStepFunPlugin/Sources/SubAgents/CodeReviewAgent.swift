@@ -9,7 +9,30 @@ enum CodeReviewAgent {
     static let definition = LumiSubAgentDefinition(
         id: "code-reviewer",
         displayName: "Code Reviewer",
-        description: "Review code for quality, best practices, and potential issues",
+        description: """
+        PREFER this tool whenever the user asks for a "code review", "review my code", \
+        "check the quality" of recent changes, or "is there any issue with this code".
+
+        This tool delegates to an expert senior-reviewer sub-agent that autonomously:
+        1. Reads the relevant files (or diff range you specify) using read-only tools
+        2. Analyzes for code quality, bugs, performance, security, and Swift best practices
+        3. Produces a structured review with Critical / Warning / Suggestion categories \
+        and concrete improvement examples
+
+        Do NOT try to review by reading files yourself and listing issues — the sub-agent \
+        enforces a consistent review checklist (force unwraps, error handling, naming, \
+        memory management, API design) and produces a higher-quality report in one delegation.
+
+        Examples of when to use this tool:
+        - "帮我 review 一下最近的改动"
+        - "Code review this PR / this file"
+        - "Check if there are any bugs in this module"
+        - "看看这段代码有没有什么问题"
+
+        Pass the task as a file path, diff range, or "the recent uncommitted changes". \
+        Include any focus areas if applicable (e.g. "review this PR focused on concurrency \
+        and error handling" or "check this new API for breaking changes").
+        """,
         providerID: "stepfun",
         modelID: "step-3.7-flash",
         systemPrompt: """
