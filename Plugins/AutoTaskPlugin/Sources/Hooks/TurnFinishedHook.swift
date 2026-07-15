@@ -3,52 +3,22 @@ import LumiCoreKit
 
 /// Turn 结束后检查未完成任务，并在需要时无感地自动续聊。
 ///
-/// 仅响应 `lumiTurnFinished` 且 `reason == .completed` 的事件；
-/// 供应商故障等失败 Turn 由 `LumiChatKit` 标记为 `.failed`，不会触发自动续聊。
-///
 /// 与旧实现的区别：续聊不再以用户消息形式入队，而是调用
 /// `LumiChatServicing.continueTurn(in:)`，在不写入任何用户消息的前提下重启一轮
 /// agent turn——既不进入消息列表、也不污染持久化历史，对用户完全无感。
 @MainActor
-enum TurnCheckRuntime {
-    private static var observer: NSObjectProtocol?
+enum TurnFinishedHook {
+    // MARK: - Plugin Hook Entry Point
 
-    static func start(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?) {
-        guard observer == nil else { return }
-
-        observer = NotificationCenter.default.addObserver(
-            forName: .lumiTurnFinished,
-            object: nil,
-            queue: .main
-        ) { notification in
-            guard let conversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID else {
-                return
-            }
-            guard let reason = LumiTurnEndReason(notificationUserInfo: notification.userInfo),
-                  reason.allowsAutomaticContinuation
-            else {
-                return
-            }
-            Task { @MainActor in
-                await handleSuccessfulTurnCompleted(
-                    conversationID: conversationID,
-                    chatServiceProvider: chatServiceProvider
-                )
-            }
-        }
-    }
-
-    private static func handleSuccessfulTurnCompleted(
+    /// 插件钩子入口：当 agent turn 结束时被内核调用
+    static func handleTurnFinished(
         conversationID: UUID,
-        chatServiceProvider: @MainActor () -> (any LumiChatServicing)?
+        chatService: any LumiChatServicing
     ) async {
-        guard let chatService = chatServiceProvider() else {
-            return
-        }
-
         guard let manager = AutoTaskPlugin.manager else {
             return
         }
+
         let conversationIdStr = conversationID.uuidString
         let tasks = await manager.fetchTasks(conversationId: conversationIdStr)
         let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }

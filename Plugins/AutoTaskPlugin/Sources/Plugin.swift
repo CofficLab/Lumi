@@ -60,12 +60,30 @@ public enum AutoTaskPlugin: LumiPlugin {
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         bootstrapFromLumiCoreIfNeeded(context: context)
-        bootstrapTurnCheck(chatServiceProvider: { context.resolve(LumiChatServicing.self) }, context: context)
         guard let manager else {
             Self.logger.warning("sendMiddlewares: manager 未初始化，返回空中间件列表")
             return []
         }
         return [TaskContextChatMiddleware(manager: manager)]
+    }
+
+    @MainActor
+    public static func onTurnFinished(
+        context: LumiPluginContext,
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) async {
+        // 仅响应成功完成的 turn
+        guard reason == .completed else { return }
+
+        guard let chatService = context.resolve(LumiChatServicing.self) else {
+            return
+        }
+
+        await TurnFinishedHook.handleTurnFinished(
+            conversationID: conversationID,
+            chatService: chatService
+        )
     }
 
     @MainActor
@@ -109,12 +127,6 @@ public enum AutoTaskPlugin: LumiPlugin {
             rootURL: context.lumiCore?.pluginDataDirectory(for: dataDirectoryName) ?? URL(fileURLWithPath: NSTemporaryDirectory())
         )
         didBootstrapFromLumiCore = true
-    }
-
-    @MainActor
-    static func bootstrapTurnCheck(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?, context: LumiPluginContext) {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        TurnCheckRuntime.start(chatServiceProvider: chatServiceProvider)
     }
 }
 

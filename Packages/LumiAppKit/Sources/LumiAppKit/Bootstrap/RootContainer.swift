@@ -142,6 +142,11 @@ final class RootContainer: ObservableObject, SuperLog {
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
 
+        // 设置 Turn Finished Hook，将内核级钩子连接到插件服务
+        chatService.turnFinishedHook = { [weak pluginService] conversationID, reason in
+            await pluginService?.onTurnFinished(conversationID: conversationID, reason: reason)
+        }
+
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
         // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
         // 此时 chatService.providersByID 已包含所有 provider，subAgents 内部可以查到对应实例。
