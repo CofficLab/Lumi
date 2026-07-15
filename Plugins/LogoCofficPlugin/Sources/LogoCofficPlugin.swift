@@ -15,7 +15,7 @@ public enum LogoCofficPlugin: LumiPlugin {
         [
             LogoItem(
                 id: info.id,
-                order: 100,
+                order: info.order,
                 makeView: { scene in
                     CofficLogoView(scene: scene)
                 }

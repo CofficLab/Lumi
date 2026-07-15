@@ -5,7 +5,7 @@ import SwiftUI
 enum HttpErrorRenderer {
     static let item = LumiMessageRendererItem(
         id: "stepfun-http-error",
-        order: 240,
+        order: info.order + 230,
         canRender: { message in
             StepFunRenderKind.matchesOtherHttpError(message)
         },

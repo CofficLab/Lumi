@@ -36,16 +36,17 @@ public enum ConversationTitlePlugin: LumiPlugin {
         }
 
         // ChatSectionCoordinator 不可用时显示错误按钮
+        // header 排在 info.order + 4，介于 info.order (77) 和顶部 error 区域 (95/96) 之间。
         guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
             return [
-                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: 81) {
+                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: info.order + 4) {
                     ChatSectionCoordinatorErrorButton()
                 }
             ]
         }
 
         return [
-            LumiChatSectionHeaderItem(id: "\(info.id).header", order: 81) {
+            LumiChatSectionHeaderItem(id: "\(info.id).header", order: info.order + 4) {
                 ConversationTitleSectionView(coordinator: coordinator)
             }
         ]

@@ -15,7 +15,7 @@ public enum LogoSmartLightPlugin: LumiPlugin {
         [
             LogoItem(
                 id: info.id,
-                order: 200,
+                order: info.order,
                 makeView: { scene in
                     SmartLightLogoView(scene: scene)
                 }

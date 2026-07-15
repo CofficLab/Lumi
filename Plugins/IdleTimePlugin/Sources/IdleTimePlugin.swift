@@ -48,7 +48,7 @@ public enum IdleTimePlugin: LumiPlugin {
             context.lumiCore?.projectState?.currentProject?.path ?? ""
         }
         return [
-            LumiRootOverlayItem(id: "\(info.id).observer", order: 96) { content in
+            LumiRootOverlayItem(id: "\(info.id).observer", order: info.order) { content in
                 IdleTimeRootObserver(projectPathProvider: projectPathProvider, content: content)
             }
         ]

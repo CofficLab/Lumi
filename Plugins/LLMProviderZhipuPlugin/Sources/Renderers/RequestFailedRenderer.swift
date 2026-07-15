@@ -3,7 +3,7 @@ import LumiCoreKit
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-request-failed",
-        order: 210,
+        order: info.order + 200,
         canRender: { message in
             ZhipuRenderKind.matches(renderKind: ZhipuRenderKind.requestFailed, message: message)
         },

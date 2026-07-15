@@ -5,7 +5,7 @@ import SwiftUI
 enum SublyxApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "sublyx-api-key-missing",
-        order: 210,
+        order: info.order + 200,
         canRender: { message in
             SublyxRenderKind.matchesApiKeyMissing(message)
         },
