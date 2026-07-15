@@ -95,6 +95,7 @@ struct AppLayoutView: View {
                             showRail: showRail,
                             railTabs: railTabs,
                             layoutState: layoutState,
+                            lumiCore: lumiCore,
                             editor: editorCoreService
                         )
                         .layoutPriority(isRailOnlyPanel ? 0 : 1)
@@ -128,6 +129,7 @@ struct AppLayoutView: View {
                         showRail: showRail,
                         railTabs: railTabs,
                         layoutState: layoutState,
+                        lumiCore: lumiCore,
                         editor: editorCoreService
                     )
                 }

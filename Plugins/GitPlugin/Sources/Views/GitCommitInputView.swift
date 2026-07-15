@@ -7,8 +7,7 @@ import LumiUI
 /// 提供手动输入 commit message 或 AI 自动生成的功能。
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 public struct GitCommitInputView: View {
-    /// 可选的 LumiCore 实例
-    @Environment(\.lumiCore) private var lumiCore
+    @ObservedObject var lumiCore: LumiCore
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
@@ -38,7 +37,12 @@ public struct GitCommitInputView: View {
         case error
     }
 
-    public init(style: Style = .panel, onCommitSuccess: (() -> Void)? = nil) {
+    public init(
+        lumiCore: LumiCore,
+        style: Style = .panel,
+        onCommitSuccess: (() -> Void)? = nil
+    ) {
+        self._lumiCore = ObservedObject(wrappedValue: lumiCore)
         self.style = style
         self.onCommitSuccess = onCommitSuccess
     }
@@ -195,7 +199,7 @@ public struct GitCommitInputView: View {
 
     /// AI 生成 commit message
     private func generateAICommitMessage() async {
-        let path = lumiCore?.projectState?.currentProject?.path ?? ""
+        let path = lumiCore.projectState?.currentProject?.path ?? ""
         guard !path.isEmpty else { return }
 
         guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
@@ -244,7 +248,7 @@ public struct GitCommitInputView: View {
 
     /// 执行 commit
     private func performCommit() async {
-        let path = lumiCore?.projectState?.currentProject?.path ?? ""
+        let path = lumiCore.projectState?.currentProject?.path ?? ""
         guard !path.isEmpty, canCommit else { return }
 
         let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -12,6 +12,7 @@ struct PanelColumnView: View {
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
     @ObservedObject var layoutState: LumiLayoutState
+    let lumiCore: LumiCore
     let editor: any LumiEditorServicing
 
     private var viewContainerID: String {
@@ -35,7 +36,7 @@ struct PanelColumnView: View {
         }
 
         if showRail || showsPanelChrome {
-            EditorScopeView(editor: editor) {
+            EditorScopeView(lumiCore: lumiCore, editor: editor) {
                 column
             }
             .modifier(PanelChromeCommandHandler(layoutState: layoutState))
