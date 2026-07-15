@@ -1,8 +1,8 @@
 import AppKit
 import LumiCoreKit
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 public struct DebugCommand: Commands, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "command.debug")
@@ -12,54 +12,56 @@ public struct DebugCommand: Commands, SuperLog {
     public init() {}
 
     public var body: some Commands {
-        #if os(macOS)
-            CommandMenu("调试") {
-                Button("打开 App Support 目录") {
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)打开 App Support 目录")
-                    }
-                    Self.openURL(Self.appSupportDirectory())
+        CommandMenu("调试") {
+            Button("打开 App Support 目录") {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)打开 App Support 目录")
                 }
-
-                Button("打开容器目录") {
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)打开容器目录")
-                    }
-                    guard let directory = FileManager.default.containerURL(
-                        forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
-                    ) else {
-                        Self.showMissingDirectoryAlert(title: "打开容器目录出错", message: "容器目录不存在")
-                        return
-                    }
-
-                    Self.openURL(directory)
-                }
-
-                Button("打开文档目录") {
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)打开文档目录")
-                    }
-                    guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-                        Self.showMissingDirectoryAlert(title: "打开文档目录出错", message: "文档目录不存在")
-                        return
-                    }
-
-                    Self.openURL(directory)
-                }
-
-                Divider()
-
-                // 使用 AppConfig.getDBFolderURL() 而非 LumiCore.dataRootDirectory：
-                // DebugCommand 是 SwiftUI Commands,无法直接拿到 @EnvironmentObject,
-                // 而 AppConfig 在 App 启动期就已配置好,等价于 LumiCore 的数据根目录。
-                Button("打开数据库目录") {
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)打开数据库目录")
-                    }
-                    Self.openURL(AppConfig.getDBFolderURL())
-                }
+                Self.openURL(Self.appSupportDirectory())
             }
-        #endif
+
+            Button("打开容器目录") {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)打开容器目录")
+                }
+                guard let directory = FileManager.default.containerURL(
+                    forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
+                ) else {
+                    Self.showMissingDirectoryAlert(title: "打开容器目录出错", message: "容器目录不存在")
+                    return
+                }
+
+                Self.openURL(directory)
+            }
+
+            Button("打开文档目录") {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)打开文档目录")
+                }
+                guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                    Self.showMissingDirectoryAlert(title: "打开文档目录出错", message: "文档目录不存在")
+                    return
+                }
+
+                Self.openURL(directory)
+            }
+
+            Divider()
+
+            // 使用 StorageService.makeDataRootDirectory() 而非 LumiCore.dataRootDirectory：
+            // DebugCommand 是 SwiftUI Commands,无法直接拿到 @EnvironmentObject,
+            // 而 StorageService 是纯静态路径计算,等价于 v4.16.0 那个指向
+            // `<AppSupport>/<bundleID>/db_<env>_v<major>/` 的 LumiCore.dataRootDirectory。
+            // 注:重构后 LumiCore.dataRootDirectory 指向 `Core/` 子目录本身,
+            // AppConfig.getDBFolderURL() 又因 AppConfig.configure 被移除而退化为
+            // 单纯的 bundleID 目录,两者都不再等价于历史"数据库目录"的含义。
+            Button("打开数据库目录") {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)打开数据库目录")
+                }
+                Self.openURL(StorageService.makeDataRootDirectory())
+            }
+        }
     }
 
     private static func appSupportDirectory() -> URL {
