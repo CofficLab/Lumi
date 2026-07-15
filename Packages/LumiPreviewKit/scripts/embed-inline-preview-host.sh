@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PACKAGE_DIR="$ROOT_DIR/Packages/LumiPreviewKit"
+PACKAGE_DIR="$ROOT_DIR"
 SCRATCH_DIR="${DERIVED_FILE_DIR:-$ROOT_DIR/.build}/LumiPreviewHostApp"
 CONFIGURATION_NAME="${CONFIGURATION:-Debug}"
 
@@ -30,7 +30,7 @@ HELPERS_DIR="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers"
 DESTINATION="$HELPERS_DIR/LumiPreviewHostApp"
 
 if [[ ! -x "$HELPER_BINARY" ]]; then
-  echo "error: Inline preview host helper was not built at $HELPER_BINARY"
+  echo "Error: Inline preview host helper was not built at $HELPER_BINARY"
   exit 1
 fi
 
