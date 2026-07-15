@@ -1,8 +1,8 @@
 import Foundation
 
 enum ModelSelectorTab: Equatable {
-    case current
     case frequent
+    case current
     case fast
     case auto
     case all
