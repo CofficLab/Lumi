@@ -8,7 +8,6 @@ public enum EditorSymbolsPanelPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "list.bullet.rectangle"
-    private static let railTabOrder = 13
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-symbols",

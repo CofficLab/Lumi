@@ -56,7 +56,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: SwiftBuildPanelIDs.bottomTab,
-                order: 90,
+                order: info.order,
                 title: LumiPluginLocalization.string("Build", bundle: .module),
                 systemImage: "play.fill"
             ) {

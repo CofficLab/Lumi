@@ -108,7 +108,7 @@ import Testing
         static let policy = LumiPluginPolicy.alwaysOn
         static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
             guard context.showsPanelChrome else { return [] }
-            return [LumiPanelHeaderItem(id: "header", order: 70) { Text("Header") }]
+            return [LumiPanelHeaderItem(id: "header") { Text("Header") }]
         }
     }
 
@@ -124,7 +124,7 @@ import Testing
 }
 
 @MainActor
-@Test func panelBottomTabItemsSortByOrder() {
+@Test func panelBottomTabItemsCreatedByPlugin() {
     struct FirstBottomPlugin: LumiPlugin {
         static let info = LumiPluginInfo(id: "first-bottom", displayName: "First", description: "", order: 0)
         static let policy = LumiPluginPolicy.alwaysOn
@@ -132,7 +132,6 @@ import Testing
             [
                 LumiPanelBottomTabItem(
                     id: "first",
-                    order: 0,
                     title: "First",
                     systemImage: "1.circle"
                 ) { Text("First") }
@@ -147,7 +146,6 @@ import Testing
             [
                 LumiPanelBottomTabItem(
                     id: "second",
-                    order: 1,
                     title: "Second",
                     systemImage: "2.circle"
                 ) { Text("Second") }
@@ -164,9 +162,8 @@ import Testing
     let plugins: [any LumiPlugin.Type] = [SecondBottomPlugin.self, FirstBottomPlugin.self]
     let items = plugins
         .flatMap { $0.panelBottomTabItems(context: context) }
-        .sorted { $0.order < $1.order }
 
-    #expect(items.map(\.id) == ["first", "second"])
+    #expect(items.map(\.id) == ["second", "first"])
 }
 
 @MainActor

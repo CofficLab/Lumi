@@ -7,14 +7,13 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
     public static let policy: LumiPluginPolicy = .alwaysOn
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
-    public static let iconName = "arrow.triangle.branch"
-    private static let railTabOrder = 11
+    public static let iconName = "doc.on.doc"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-references",
         displayName: LumiPluginLocalization.string("Editor References", bundle: .module),
         description: LumiPluginLocalization.string("References panel in the editor rail and bottom area.", bundle: .module),
-        order: 1
+        order: 3
     )
 
     @MainActor
@@ -48,7 +47,7 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "references",
-                order: railTabOrder,
+                order: info.order,
                 title: LumiPluginLocalization.string("References", bundle: .module),
                 systemImage: iconName
             ) {
