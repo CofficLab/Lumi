@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
@@ -16,19 +17,19 @@ struct AboutSettingsPage: View {
 
                 AppSettingSection(title: "Lumi", titleAlignment: .leading) {
                     VStack(spacing: 0) {
-                        AppSettingRow(title: "名称", description: bundleInfo.name, icon: "app") {
+                        AppSettingRow(title: String(localized: "Name", bundle: .module), description: bundleInfo.name, icon: "app") {
                             EmptyView()
                         }
                         Divider()
                             .padding(.vertical, 8)
-                        AppSettingRow(title: "Bundle ID", description: bundleInfo.bundleIdentifier, icon: "number") {
+                        AppSettingRow(title: String(localized: "Bundle ID", bundle: .module), description: bundleInfo.bundleIdentifier, icon: "number") {
                             EmptyView()
                         }
                         Divider()
                             .padding(.vertical, 8)
                         AppSettingRow(
-                            title: "版本",
-                            description: bundleInfo.version ?? "未设置",
+                            title: String(localized: "Version", bundle: .module),
+                            description: bundleInfo.version ?? String(localized: "Not Set", bundle: .module),
                             icon: "info.circle"
                         ) {
                             EmptyView()
@@ -36,8 +37,8 @@ struct AboutSettingsPage: View {
                         Divider()
                             .padding(.vertical, 8)
                         AppSettingRow(
-                            title: "构建",
-                            description: bundleInfo.build ?? "未设置",
+                            title: String(localized: "Build", bundle: .module),
+                            description: bundleInfo.build ?? String(localized: "Not Set", bundle: .module),
                             icon: "hammer"
                         ) {
                             EmptyView()

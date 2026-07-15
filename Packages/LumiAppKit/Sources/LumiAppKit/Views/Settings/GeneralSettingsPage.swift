@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
@@ -6,13 +7,13 @@ struct GeneralSettingsPage: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
-                AppSettingSection(title: "新手引导", titleAlignment: .leading) {
+                AppSettingSection(title: String(localized: "Onboarding", bundle: .module), titleAlignment: .leading) {
                     AppSettingRow(
-                        title: "重新查看新手引导",
-                        description: "再次打开首次使用引导流程",
+                        title: String(localized: "Replay Onboarding", bundle: .module),
+                        description: String(localized: "Replay the first-run onboarding flow.", bundle: .module),
                         icon: "graduationcap"
                     ) {
-                        AppButton("开始", systemImage: "arrow.right", style: .secondary, size: .small) {
+                        AppButton(String(localized: "Start", bundle: .module), systemImage: "arrow.right", style: .secondary, size: .small) {
                             NotificationCenter.default.post(
                                 name: .lumiShowOnboarding,
                                 object: nil,
