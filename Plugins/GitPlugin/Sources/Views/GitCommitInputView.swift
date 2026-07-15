@@ -7,7 +7,7 @@ import LumiUI
 /// 提供手动输入 commit message 或 AI 自动生成的功能。
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 public struct GitCommitInputView: View {
-    @ObservedObject var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
@@ -38,11 +38,11 @@ public struct GitCommitInputView: View {
     }
 
     public init(
-        lumiCore: LumiCore,
+        lumiCore: LumiCoreAccessing,
         style: Style = .panel,
         onCommitSuccess: (() -> Void)? = nil
     ) {
-        self._lumiCore = ObservedObject(wrappedValue: lumiCore)
+        self.lumiCore = lumiCore
         self.style = style
         self.onCommitSuccess = onCommitSuccess
     }
@@ -281,7 +281,7 @@ public struct GitCommitInputView: View {
 // MARK: - Preview
 
 #Preview {
-    GitCommitInputView()
+    GitCommitInputView(lumiCore: LumiCore())
         .inRootView()
         .frame(width: 600)
 }

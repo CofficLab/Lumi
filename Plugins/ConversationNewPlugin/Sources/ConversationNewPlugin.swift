@@ -34,7 +34,8 @@ public enum ConversationNewPlugin: LumiPlugin {
             ) {
                 NewChatButton(
                     chatService: chatService,
-                    projectState: projectState
+                    projectState: projectState,
+                    lumiCore: context.lumiCore
                 )
             }
         ]
