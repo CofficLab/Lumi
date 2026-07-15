@@ -225,6 +225,9 @@ jobs:
             echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
             rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
 
+            # Log xcodebuild output to a file so the full failure context is preserved.
+            ARCHIVE_LOG="./temp/archive-${arch}.log"
+            set +e
             xcodebuild archive \
               -project ${{ env.SCHEME }}.xcodeproj \
               -scheme ${{ env.SCHEME }} \
@@ -241,7 +244,18 @@ jobs:
               CODE_SIGNING_REQUIRED=NO \
               AD_HOC_CODE_SIGNING_ALLOWED=YES \
               ARCHS="$arch" \
-              ONLY_ACTIVE_ARCH=NO
+              ONLY_ACTIVE_ARCH=NO > "$ARCHIVE_LOG" 2>&1
+            ARCHIVE_EXIT=$?
+            set -e
+
+            if [ $ARCHIVE_EXIT -ne 0 ]; then
+              echo "❌ Archive failed for $arch (exit $ARCHIVE_EXIT); tailing log:"
+              tail -200 "$ARCHIVE_LOG" || true
+              echo ""
+              echo "--- error / failure lines ---"
+              grep -E "(error:|FAILED|BUILD FAILED|Cannot find)" "$ARCHIVE_LOG" | head -60 || true
+              exit 1
+            fi
 
             FIRST_ARCH=false
           done
