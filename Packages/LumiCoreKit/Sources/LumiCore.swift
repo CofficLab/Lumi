@@ -15,7 +15,7 @@ import SwiftUI
 /// ```swift
 /// let core = LumiCore()
 /// core.setupChatService { ChatService(...) }
-/// try core.boot(databaseDirectory: ..., provider: pluginService, editorFactory: ...)
+/// try core.boot(dataRootDirectory: ..., provider: pluginService, editorFactory: ...)
 /// // 通过 .environment(\.lumiCore, core) 注入视图树
 /// ```
 ///
@@ -189,6 +189,13 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
     /// 单元测试、CLI 工具）。
     ///
+    /// `dataRootDirectory` 是 LumiAppKit 决定并传入的数据根父目录（例如
+    /// `<AppSupport>/<bundleID>/db_debug_v4/`）。LumiCore 负责在其下创建 `Core/` 子目录
+    /// 作为核心数据库的物理位置，并把该子目录作为参数喂给 `ChatServiceFactory`。
+    /// `LumiCore.dataRootDirectory` 始终是传入的父目录本身（而非 `Core/` 子目录），
+    /// 这样 `coreDataDirectory` / `pluginDataDirectory(for:)` 的相对路径计算才能落
+    /// 到历史一致的位置。
+    ///
     /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 通过
     /// `registerBuiltInTools(_:)` 注入 `ToolService` 的内置工具。传入后启动期校验
     /// 就会把"plugin 工具 + 内置工具 + sub-agent 工具"的并集一起查重，跨来源的
@@ -196,31 +203,45 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// （通常是 `LumiCoreService` → `RootContainer`）用 `CrashedView` 优雅降级。
     ///
     /// - Parameters:
-    ///   - databaseDirectory: 数据根目录。
+    ///   - dataRootDirectory: 数据根父目录（例如 `db_debug_v4/`），由 LumiAppKit 决定。
     ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
     ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
     ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
     public func boot<Service: AbstractEditorServicing>(
-        databaseDirectory: URL,
+        dataRootDirectory: URL,
         provider: any LumiAgentToolProviding,
         builtInTools: [any LumiAgentTool] = [],
         editorFactory: EditorBootstrapFactory<Service>?
     ) throws {
         projectState = LumiProjectState()
         layoutState = LumiLayoutState()
-        dataRootDirectory = databaseDirectory
 
-        // 自动创建并注册 ChatService
+        // 物化 data root，并在其下创建 Core 子目录作为核心数据库的物理位置。
+        // LumiCore 内部约定：core DB 始终位于 <dataRootDirectory>/Core/，调用方
+        // 只需要提供 dataRootDirectory 本身。
+        let standardizedRoot = dataRootDirectory.standardizedFileURL
+        try FileManager.default.createDirectory(
+            at: standardizedRoot,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        let coreDatabaseDirectory = standardizedRoot.appendingPathComponent("Core", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: coreDatabaseDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        self.dataRootDirectory = standardizedRoot
+
+        // 自动创建并注册 ChatService（喂 core 子目录）
         if let factory = chatServiceFactory {
-            chatService = factory(databaseDirectory)
+            chatService = factory(coreDatabaseDirectory)
             registerService((any LumiChatServicing).self, chatService!)
             // ChatService 通常也实现 HistoryQueryService
             if let history = chatService as? any HistoryQueryService {
                 registerService((any HistoryQueryService).self, history)
             }
         }
-
-        try configure(dataRootDirectory: databaseDirectory)
 
         try bootstrapToolService(provider: provider, builtInTools: builtInTools)
 

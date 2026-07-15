@@ -155,18 +155,23 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
     /// 单元测试、CLI 工具）。
     ///
+    /// `dataRootDirectory` 是 LumiAppKit 决定并传入的数据根父目录，LumiCore 负责
+    /// 在其下物化 `Core/` 子目录作为核心数据库的物理位置。`dataRootDirectory` 始终
+    /// 是父目录本身（而非 `Core/` 子目录），以保证 `coreDataDirectory` /
+    /// `pluginDataDirectory(for:)` 的相对路径计算与历史一致。
+    ///
     /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
     /// 内置工具（如 `ChatService.builtInTools`）。传入后启动期校验就把 plugin 工具、
     /// 内置工具、sub-agent delegate 工具的并集一起查重，跨来源的命名冲突在 boot
     /// 阶段就会以 `LumiToolRegistrationError` 抛出。
     ///
     /// - Parameters:
-    ///   - databaseDirectory: 数据根目录。
+    ///   - dataRootDirectory: 数据根父目录，由 LumiAppKit 决定。
     ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
     ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
     ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
     func boot<Service: AbstractEditorServicing>(
-        databaseDirectory: URL,
+        dataRootDirectory: URL,
         provider: any LumiAgentToolProviding,
         builtInTools: [any LumiAgentTool],
         editorFactory: EditorBootstrapFactory<Service>?
