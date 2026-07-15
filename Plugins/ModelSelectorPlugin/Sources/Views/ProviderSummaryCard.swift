@@ -59,12 +59,16 @@ struct ProviderSummaryCard: View {
         return !instance.hasApiKey()
     }
 
-    /// 当前是否处于「已配置 API Key，但模型检测失败」状态。
+    /// 当前是否处于「已配置 API Key，但所有模型检测都失败」状态。
+    /// 只要有一个模型可用，就不在供应商层面显示错误红字，
+    /// 失败信息只在对应模型卡片上逐条展示。
     private var hasCheckedAndFailed: Bool {
         guard let instance = providerInstance else { return false }
         if provider.isLocal { return false }
         guard instance.hasApiKey() else { return false }
         guard !isChecking else { return false }
+        // 关键：必须全部模型都不可用，才在供应商级别显示错误
+        guard availableModelCount == 0 else { return false }
         guard let failure = availability.firstReconfigurableFailure(for: provider) else { return false }
         return !failure.availabilityDisplayText.isEmpty
     }
