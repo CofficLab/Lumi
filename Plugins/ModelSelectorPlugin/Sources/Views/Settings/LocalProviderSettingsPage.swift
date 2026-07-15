@@ -87,7 +87,7 @@ struct LocalProviderSettingsPage: View {
 
     private var headerStats: some View {
         HStack(spacing: 10) {
-            Label(verbatim: String(format: LumiPluginLocalization.string("%lld local providers", bundle: .module), localProviders.count), systemImage: "desktopcomputer")
+            Label(String(format: LumiPluginLocalization.string("%lld local providers", bundle: .module), localProviders.count), systemImage: "desktopcomputer")
             Text(verbatim: String(format: LumiPluginLocalization.string("%lld models", bundle: .module), selectedProvider?.availableModels.count ?? 0))
             Spacer()
         }
