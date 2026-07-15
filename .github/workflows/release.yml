@@ -225,48 +225,25 @@ jobs:
             echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
             rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
 
-            # Build without xcpretty on first arch to see full output
-            if [ "$FIRST_ARCH" = "true" ]; then
-              echo "📋 Building first arch without xcpretty for debugging..."
-              xcodebuild archive \
-                -project ${{ env.SCHEME }}.xcodeproj \
-                -scheme ${{ env.SCHEME }} \
-                -destination "${{ env.DESTINATION }}" \
-                -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-                -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
-                -configuration Release \
-                -skipPackagePluginValidation \
-                -skipPackageUpdates \
-                CODE_SIGN_STYLE=Manual \
-                CODE_SIGN_IDENTITY="-" \
-                DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-                PROVISIONING_PROFILE_SPECIFIER="" \
-                CODE_SIGNING_REQUIRED=NO \
-                AD_HOC_CODE_SIGNING_ALLOWED=YES \
-                ARCHS="$arch" \
-                ONLY_ACTIVE_ARCH=NO \
-                | tee /tmp/xcodebuild.log
-              FIRST_ARCH=false
-            else
-              xcodebuild archive \
-                -project ${{ env.SCHEME }}.xcodeproj \
-                -scheme ${{ env.SCHEME }} \
-                -destination "${{ env.DESTINATION }}" \
-                -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-                -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
-                -configuration Release \
-                -skipPackagePluginValidation \
-                -skipPackageUpdates \
-                CODE_SIGN_STYLE=Manual \
-                CODE_SIGN_IDENTITY="-" \
-                DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-                PROVISIONING_PROFILE_SPECIFIER="" \
-                CODE_SIGNING_REQUIRED=NO \
-                AD_HOC_CODE_SIGNING_ALLOWED=YES \
-                ARCHS="$arch" \
-                ONLY_ACTIVE_ARCH=NO \
-                | xcpretty
-            fi
+            xcodebuild archive \
+              -project ${{ env.SCHEME }}.xcodeproj \
+              -scheme ${{ env.SCHEME }} \
+              -destination "${{ env.DESTINATION }}" \
+              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+              -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="-" \
+              DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
+              PROVISIONING_PROFILE_SPECIFIER="" \
+              CODE_SIGNING_REQUIRED=NO \
+              AD_HOC_CODE_SIGNING_ALLOWED=YES \
+              ARCHS="$arch" \
+              ONLY_ACTIVE_ARCH=NO \
+              | xcpretty
+
+            FIRST_ARCH=false
           done
 
       - name: Codesign App
