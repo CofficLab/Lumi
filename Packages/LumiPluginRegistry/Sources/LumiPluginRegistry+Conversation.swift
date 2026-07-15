@@ -27,8 +27,8 @@ extension LumiPluginRegistry {
 
         // MARK: - List & Actions
 
-        ConversationListPlugin.self,
         ConversationNewPlugin.self,
+        ConversationListPlugin.self,
         ConversationForkPlugin.self,
     ]
 }
