@@ -33,9 +33,13 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     public var logoRegistry: LogoRegistry { .shared }
 
-    @Published public private(set) var projectState: LumiProjectState?
+    @Published public private(set) var projectState: LumiProjectState? {
+        didSet { subscribeToChild(projectState, into: &projectStateSubscription) }
+    }
 
-    @Published public private(set) var layoutState: LumiLayoutState?
+    @Published public private(set) var layoutState: LumiLayoutState? {
+        didSet { subscribeToChild(layoutState, into: &layoutStateSubscription) }
+    }
 
     @Published public private(set) var chatService: (any LumiChatServicing)?
 
@@ -49,8 +53,52 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
     private var services: [ObjectIdentifier: Any] = [:]
 
+    /// 内部 `ObservableObject` 子状态（`projectState` / `layoutState`）的
+    /// `objectWillChange` 转发订阅。把它们的变更信号桥接到 `LumiCore.objectWillChange`，
+    /// 这样用 `@ObservedObject var lumiCore: LumiCore` 的 SwiftUI 视图（如 `AppLayoutView`）
+    /// 才能在子状态变更时收到刷新信号——否则只观察 `LumiCore` 的 @Published 是收不到的
+    /// （`@Published` 只会在引用本身重新赋值时 fire，子状态的属性变化不穿透）。
+    ///
+    /// 注意：`chatService` 类型是 `any LumiChatServicing`，存在类型的关联类型会被擦除成
+    /// `any Publisher`，`sink` 不可用，因此暂不做转发。`chatService` 在视图层通常以
+    /// `let` 注入（见 `AppLayoutView`），不通过 `@ObservedObject` 监听，所以不会触发
+    /// "UI 不刷新" 的同款问题；需要时可在 `LumiChatServicing` 实现里手动 `objectWillChange.send()`。
+    private var projectStateSubscription: AnyCancellable?
+    private var layoutStateSubscription: AnyCancellable?
+
+    /// 订阅具体类型的子 `ObservableObject`（`LumiProjectState` / `LumiLayoutState`）的
+    /// `objectWillChange`，转发到本实例的 `objectWillChange`。
+    /// - Parameters:
+    ///   - child: 子状态实例（nil 时清空旧订阅，避免对已释放对象持有强引用）。
+    ///   - subscription: 用于保存订阅句柄的 `inout` 引用，保证同一时间最多一份活跃订阅。
+    private func subscribeToChild<T: ObservableObject>(
+        _ child: T?,
+        into subscription: inout AnyCancellable?
+    ) {
+        guard let child else {
+            subscription = nil
+            return
+        }
+        subscription = child.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+    }
+
     /// 空构造器（用于单测场景：创建不依赖任何服务的空实例）。
     public init() {}
+
+    // MARK: - Test-only injection
+
+    #if DEBUG
+    /// 仅 DEBUG 编译下可见的内部状态注入器，用于单元测试验证 `objectWillChange` 转发链。
+    /// 运行时不会暴露（release build 中直接消失），无 ABI 影响。
+    internal func _testInject(layoutState: LumiLayoutState?) {
+        self.layoutState = layoutState
+    }
+    internal func _testInject(projectState: LumiProjectState?) {
+        self.projectState = projectState
+    }
+    #endif
 
     // MARK: - Configuration
 

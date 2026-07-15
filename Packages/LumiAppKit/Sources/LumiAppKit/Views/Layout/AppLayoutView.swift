@@ -30,7 +30,12 @@ struct AppLayoutView: View {
     }
 
     /// 优先使用 boot() 之后的 layoutState;未就绪时退化到 fresh 实例。
-    /// LumiCore 本身是 ObservableObject,layoutState 变化会触发 body 重绘。
+    ///
+    /// 刷新链路：`LumiLayoutState` 内部属性变化 → `LumiLayoutState.objectWillChange` →
+    /// `LumiCore` 中 `subscribeToChild` 的订阅转发 → `LumiCore.objectWillChange` →
+    /// 本视图 `@ObservedObject` 监听 → body 重绘。所以点 activity bar 切换 view container
+    /// 时右侧内容会同步刷新。如果未来 LumiCore 不再转发，body 会停在旧值上，需在
+    /// `LumiCore` 侧的转发逻辑上修。
     private var layoutState: LumiLayoutState {
         lumiCore.layoutState ?? LumiLayoutState()
     }
