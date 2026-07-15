@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.16.0</title>
-            <pubDate>Sun, 12 Jul 2026 16:46:18 +0000</pubDate>
-            <sparkle:version>245</sparkle:version>
-            <sparkle:shortVersionString>4.16.0</sparkle:shortVersionString>
+            <title>4.17.0</title>
+            <pubDate>Wed, 15 Jul 2026 14:18:10 +0000</pubDate>
+            <sparkle:version>246</sparkle:version>
+            <sparkle:shortVersionString>4.17.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.16.0</h2>
-<h3>Changes since v4.15.1</h3>
+            <description><![CDATA[<h2>Release v4.17.0</h2>
+<h3>Changes since v4.16.0</h3>
 <ul>
-<li>feat: implement tag-based tool filtering for sub-agents</li>
-<li>feat(activity-heatmap): add token usage line chart</li>
-<li>feat(agent-loop): recover from inline tool calls written to body text</li>
-<li>feat(conversation-fork): continue a stuck chat in a new conversation</li>
-<li>feat(core): add GitAccessCoordinator for libgit2 serialization</li>
-<li>feat(core): add LogoRegistry singleton and SubAgent plugin API</li>
-<li>feat(editor): add EditorNavigationContextMenuPlugin</li>
-<li>feat(plugins): add ConversationRecoveryPlugin and update i18n files</li>
-<li>fix: correct LumiToolTag naming in BugFixerAgent</li>
-<li>fix: resolve GitAsyncBridge crash and cross-plugin libgit2 race condition</li>
-<li>fix: show checking state instead of unavailable on model selector open</li>
-<li>fix(file-tree): serialize libgit2 calls via GitAccessCoordinator</li>
-<li>fix(i18n): AgentRAGPlugin localization cleanup</li>
-<li>fix(keychain): retry transient keychain failures instead of treating them as missing API keys</li>
-<li>fix(layout): restore persisted view container before first frame</li>
-<li>fix(logo): ensure plugin logo displays in settings window</li>
-<li>fix(logo): unify LogoRegistry singleton instance</li>
-<li>fix(plugin): invoke willDisable lifecycle when plugin is disabled</li>
-<li>fix(stepfun): remove codeIntelligence tag from SubAgent tool filters</li>
-<li>fix(SuperLogKit): use pthread API for safe QoS detection on Swift Concurrency threads</li>
+<li>bugfix:  fix a bug</li>
+<li>docs(AskUserPlugin): add coverage matrix and architecture overview to README</li>
+<li>docs(LumiAppKit): add README and .gitignore</li>
+<li>feat: add EditorPanel plugin localization support</li>
+<li>feat(auto-task-plugin): clean up completed tasks and stop auto-continuation at limit</li>
+<li>feat(core): unify boot with provider-driven tool validation and editor bootstrap</li>
+<li>feat(editor-file-tree-v2): unify file tree and package dependencies into one collection view</li>
+<li>feat(EditorCallHierarchy,EditorReferences,EditorStickySymbolBar): add i18n and Tests placeholder</li>
+<li>feat(EditorOutlinePlugin): add i18n and Tests placeholder</li>
+<li>feat(EditorSearchPlugin): add i18n and Tests placeholder</li>
+<li>feat(EditorTerminalPlugin): add i18n and Tests placeholder</li>
+<li>feat(file-tree-v2): display hidden files (dotfiles) like VSCode</li>
+<li>feat(file-tree-v2): restore drag and drop support</li>
+<li>feat(i18n): add table parameter to LumiPluginLocalization in Aliyun and Zhipu plugins</li>
+<li>feat(i18n): extract plugin localization into LumiLocalizationKit package</li>
+<li>feat(llm-provider-status): add isBlocking + StepFun sub-agent gate</li>
+<li>feat(LumiAppKit): add theme-related localization strings</li>
+<li>feat(LumiAppKit): extract reusable logic from LumiApp into facade package</li>
+<li>feat(LumiAppKit): localize commands and settings views via LumiLocalizationKit</li>
+<li>feat(LumiCoreKit): add LumiCoreKitResources</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.16.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.16.0/Lumi_4.16.0_x86_64.dmg" length="53340615" type="application/octet-stream" sparkle:edSignature="wAK50Bm9rlP7yJynIyfFueYDDhwR1rVXHV6CMjdMJcuMPkmqNclg5TRPJjgHXKCwYRYsF8CkyhjYNxBOwssBAw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.17.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.17.0/Lumi_4.17.0_x86_64.dmg" length="44602516" type="application/octet-stream" sparkle:edSignature="2EfFqFjU9qmoccD+qv8GStgSonxeFzYb61zZXCxL4NP1otFhNi5HyqKy91LkH2u1YzlxTzXxim7/JCtmWQ7TCg=="/>
         </item>
     </channel>
 </rss>
