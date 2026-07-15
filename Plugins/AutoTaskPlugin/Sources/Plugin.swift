@@ -73,17 +73,7 @@ public enum AutoTaskPlugin: LumiPlugin {
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
-        // 仅响应成功完成的 turn
-        guard reason == .completed else { return }
-
-        guard let chatService = context.resolve(LumiChatServicing.self) else {
-            return
-        }
-
-        await TurnFinishedHook.handleTurnFinished(
-            conversationID: conversationID,
-            chatService: chatService
-        )
+        await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
     }
 
     @MainActor

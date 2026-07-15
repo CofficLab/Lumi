@@ -2,16 +2,25 @@ import Foundation
 import LumiCoreKit
 
 /// Turn 结束后检查未完成任务，并在需要时无感地自动续聊。
-///
-/// 与旧实现的区别：续聊不再以用户消息形式入队，而是调用
-/// `LumiChatServicing.continueTurn(in:)`，在不写入任何用户消息的前提下重启一轮
-/// agent turn——既不进入消息列表、也不污染持久化历史，对用户完全无感。
 @MainActor
 enum TurnFinishedHook {
-    // MARK: - Plugin Hook Entry Point
-
     /// 插件钩子入口：当 agent turn 结束时被内核调用
-    static func handleTurnFinished(
+    static func handle(
+        context: LumiPluginContext,
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) async {
+        // 仅响应成功完成的 turn
+        guard reason == .completed else { return }
+
+        guard let chatService = context.resolve(LumiChatServicing.self) else {
+            return
+        }
+
+        await checkAndContinue(conversationID: conversationID, chatService: chatService)
+    }
+
+    private static func checkAndContinue(
         conversationID: UUID,
         chatService: any LumiChatServicing
     ) async {
@@ -24,13 +33,7 @@ enum TurnFinishedHook {
         let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }
 
         guard !activeTasks.isEmpty else {
-            // All tasks completed — clean up so sidebar returns to clean state.
-            await manager.deleteAllForConversation(conversationIdStr)
-            NotificationCenter.default.post(
-                name: .taskDidChange,
-                object: nil,
-                userInfo: ["conversationId": conversationIdStr]
-            )
+            await cleanupCompletedTasks(manager: manager, conversationId: conversationIdStr)
             return
         }
 
@@ -38,29 +41,35 @@ enum TurnFinishedHook {
         let turnMessages = LumiAgentTurnDerivation.turnMessagesSinceLastUser(in: messages)
         let didUpdateTaskThisTurn = LumiAgentTurnDerivation.assistantCalledTool(named: "update_task", in: turnMessages)
 
-        // 本轮 Agent 主动调用了 `update_task`，说明它在正常推进任务：
-        // 解除「连续空转」戒备，重新给足续聊预算，无需介入。
         if didUpdateTaskThisTurn {
             await manager.resetContinuationCount(conversationId: conversationIdStr)
             return
         }
 
-        // 本轮未推进任务：递增连续自动续聊计数，超过上限则停止，
-        // 避免 LLM 卡住时无限空转（此时应交还给用户）。
         guard await manager.incrementContinuationCount(conversationId: conversationIdStr) != nil else {
-            // Max continuations reached — clean up stale tasks.
-            await manager.deleteAllForConversation(conversationIdStr)
-            NotificationCenter.default.post(
-                name: .taskDidChange,
-                object: nil,
-                userInfo: ["conversationId": conversationIdStr]
-            )
+            await cleanupStaleTasks(manager: manager, conversationId: conversationIdStr)
             return
         }
 
-        // 标记本轮为无感自动续聊，让 TaskContextChatMiddleware 注入更强的
-        // 「立即继续推进」system prompt；随后不写任何消息直接重启一轮。
         await manager.markContinuation(conversationId: conversationIdStr)
         chatService.continueTurn(in: conversationID)
+    }
+
+    private static func cleanupCompletedTasks(manager: TaskStateManager, conversationId: String) async {
+        await manager.deleteAllForConversation(conversationId)
+        NotificationCenter.default.post(
+            name: .taskDidChange,
+            object: nil,
+            userInfo: ["conversationId": conversationId]
+        )
+    }
+
+    private static func cleanupStaleTasks(manager: TaskStateManager, conversationId: String) async {
+        await manager.deleteAllForConversation(conversationId)
+        NotificationCenter.default.post(
+            name: .taskDidChange,
+            object: nil,
+            userInfo: ["conversationId": conversationId]
+        )
     }
 }
