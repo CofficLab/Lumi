@@ -209,6 +209,18 @@ jobs:
           set -o pipefail
           mkdir -p ./temp
 
+          # Verify SPM packages are resolved
+          if [ ! -d "${{ env.DERIVED_DATA_PATH }}/SourcePackages/checkouts" ]; then
+            echo "❌ SPM checkouts not found in DerivedData, re-resolving..."
+            xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
+              -scheme ${{ env.SCHEME }} \
+              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+              -resolvePackageDependencies \
+              -skipPackagePluginValidation
+          fi
+          echo "✅ SPM checkouts: $(ls ${{ env.DERIVED_DATA_PATH }}/SourcePackages/checkouts | wc -l | tr -d ' ') packages"
+
+          FIRST_ARCH=true
           for arch in ${{ env.RELEASE_ARCHS }}; do
             echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
             rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
@@ -221,7 +233,6 @@ jobs:
               -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
               -configuration Release \
               -skipPackagePluginValidation \
-              -skipPackageUpdates \
               CODE_SIGN_STYLE=Manual \
               CODE_SIGN_IDENTITY="-" \
               DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
@@ -231,6 +242,8 @@ jobs:
               ARCHS="$arch" \
               ONLY_ACTIVE_ARCH=NO \
               | xcpretty
+
+            FIRST_ARCH=false
           done
 
       - name: Codesign App
