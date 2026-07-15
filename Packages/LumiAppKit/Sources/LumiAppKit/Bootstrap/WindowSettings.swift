@@ -28,13 +28,13 @@ public struct WindowSettings: View {
         } else if let container = container {
             RootView(container: container, appliesRootOverlays: false) {
                 SettingsView(
+                    lumiCore: container.lumiCore,
                     pluginService: container.pluginService,
                     lumiUIService: container.lumiUIService,
                     chatService: RootContainer.checkedChatService(container.lumiCore)
                 )
                 .ignoresSafeArea()
             }
-            .environmentObject(container.lumiCore)
             .background {
                 WindowAccessor { window in
                     window.configureForLumiMainChrome()

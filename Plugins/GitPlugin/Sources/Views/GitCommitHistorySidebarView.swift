@@ -10,16 +10,17 @@ import LumiUI
 /// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
 public struct GitCommitHistorySidebarView: View, SuperLog {
-    @EnvironmentObject var gitVM: AppGitVM
-    @EnvironmentObject private var lumiCore: LumiCore
+    @ObservedObject var gitVM: AppGitVM
+    let lumiCore: LumiCoreAccessing
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
         lumiCore.layoutState ?? LumiLayoutState()
     }
 
-    public init() {
-        // layoutState 将通过 EnvironmentObject 注入
+    public init(lumiCore: LumiCoreAccessing, gitVM: AppGitVM) {
+        self.lumiCore = lumiCore
+        self.gitVM = gitVM
     }
 
     /// 项目状态
@@ -463,7 +464,7 @@ extension GitService {
 // MARK: - Preview
 
 #Preview {
-    GitCommitHistorySidebarView()
+    GitCommitHistorySidebarView(lumiCore: PreviewGitSupport.lumiCore, gitVM: PreviewGitSupport.gitVM)
         .inRootView()
         .frame(width: 250, height: 400)
 }

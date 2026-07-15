@@ -9,14 +9,22 @@ import LumiUI
 /// - 项目路径变化（`onChange(of: currentProjectPath)`）
 /// - 从其他应用切回（`applicationDidBecomeActive`）
 public struct GitPluginStatusBarView: View {
-    @Environment(\.lumiCore) private var lumiCore
+    let lumiCore: LumiCoreAccessing
     @State private var branch: String?
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
+
+    private var currentProjectPath: String {
+        lumiCore.projectState?.currentProject?.path ?? ""
+    }
 
     public var body: some View {
         Group {
             if let branch {
                 StatusBarHoverContainer(
-                    detailView: GitPluginPopoverView(),
+                    detailView: GitPluginPopoverView(lumiCore: lumiCore),
                     popoverWidth: 920,
                     id: "git-status"
                 ) {
@@ -36,7 +44,7 @@ public struct GitPluginStatusBarView: View {
         .onAppear {
             refreshBranch()
         }
-        .onChange(of: lumiCore?.projectState?.currentProject?.path) { _, _ in
+        .onChange(of: currentProjectPath) { _, _ in
             refreshBranch()
         }
         .onApplicationDidBecomeActive {
@@ -45,7 +53,7 @@ public struct GitPluginStatusBarView: View {
     }
 
     private func refreshBranch() {
-        let path = lumiCore?.projectState?.currentProject?.path ?? ""
+        let path = currentProjectPath
         guard !path.isEmpty else {
             branch = nil
             return
@@ -58,12 +66,4 @@ public struct GitPluginStatusBarView: View {
             }
         }
     }
-}
-
-// MARK: - 预览
-
-#Preview("Git Branch Status Bar") {
-    GitPluginStatusBarView()
-        .frame(height: 30)
-        .inRootView()
 }

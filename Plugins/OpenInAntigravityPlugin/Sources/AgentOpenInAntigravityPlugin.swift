@@ -21,14 +21,15 @@ public enum AgentOpenInAntigravityPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInAntigravityStatusBarView()
+                    OpenInAntigravityStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]
@@ -75,7 +76,11 @@ private enum AntigravityOpener {
 /// Antigravity 打开状态栏视图
 public struct OpenInAntigravityStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     
 
@@ -92,7 +97,7 @@ public struct OpenInAntigravityStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInAntigravityDetailView(),
+            detailView: OpenInAntigravityDetailView(lumiCore: lumiCore),
             id: "open-in-antigravity-status"
         ) {
             Button(action: {
@@ -139,7 +144,11 @@ public struct OpenInAntigravityStatusBarView: View {
 /// Antigravity 打开详情视图（在 popover 中显示）
 public struct OpenInAntigravityDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     
 

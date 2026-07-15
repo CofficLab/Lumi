@@ -49,7 +49,7 @@ enum SettingsSidebarItem: Identifiable {
 
 struct SettingsView: View {
     @LumiTheme private var theme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCore
     let pluginService: PluginService
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
@@ -138,7 +138,7 @@ struct SettingsView: View {
     private var sidebar: some View {
         AppSettingsSidebarContainer(width: 220) {
             VStack(alignment: .leading, spacing: 10) {
-                SettingsSidebarHeaderView()
+                SettingsSidebarHeaderView(lumiCore: lumiCore)
 
                 AppSettingsDivider()
 
@@ -172,7 +172,7 @@ struct SettingsView: View {
         case .core(.appearance):
             AppearanceSettingsPage(lumiUIService: lumiUIService)
         case .core(.plugins):
-            PluginSettingsPage(pluginService: pluginService, chatService: chatService)
+            PluginSettingsPage(lumiCore: lumiCore, pluginService: pluginService, chatService: chatService)
         case .core(.about):
             AboutPage()
         case .plugin(_, _, _, let content):

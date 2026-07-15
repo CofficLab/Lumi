@@ -31,14 +31,15 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInGitHubDesktopStatusBarView()
+                    OpenInGitHubDesktopStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]
@@ -77,7 +78,11 @@ private enum GitHubDesktopOpener {
 /// GitHub Desktop 打开状态栏视图
 public struct OpenInGitHubDesktopStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     private var currentProjectPath: String {
         lumiCore.projectState?.currentProject?.path ?? ""
@@ -96,7 +101,7 @@ public struct OpenInGitHubDesktopStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInGitHubDesktopDetailView(),
+            detailView: OpenInGitHubDesktopDetailView(lumiCore: lumiCore),
             id: "open-in-github-desktop-status"
         ) {
             Button(action: {
@@ -141,7 +146,11 @@ public struct OpenInGitHubDesktopStatusBarView: View {
 /// GitHub Desktop 打开详情视图（在 popover 中显示）
 public struct OpenInGitHubDesktopDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     private var currentProjectPath: String {
         lumiCore.projectState?.currentProject?.path ?? ""

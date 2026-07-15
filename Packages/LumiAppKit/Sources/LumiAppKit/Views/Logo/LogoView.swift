@@ -6,12 +6,16 @@ import LumiCoreKit
 /// If the winning `LumiCore.LogoItem` provides an overlay, it is stacked on top
 /// via `ZStack`. When no plugin contributes a logo, a SF Symbol fallback is rendered.
 struct LogoView: View {
-    var scene: LogoScene = .general
+    let scene: LogoScene
+    let lumiCore: LumiCoreAccessing
 
-    @EnvironmentObject private var lumiCore: LumiCore
+    init(scene: LogoScene = .general, lumiCore: LumiCoreAccessing) {
+        self.scene = scene
+        self.lumiCore = lumiCore
+    }
 
     var body: some View {
-        // logoRegistry 是 LumiCore 共享的全局单例,从一个 EnvironmentObject 派生。
+        // logoRegistry 是 LumiCore 共享的全局单例,从传入的 lumiCore 实例获取。
         // SwiftUI 通过对 lumiCore 的 objectWillChange 订阅来重绘,
         // 而 logoRegistry 自身的 @Published 变化由 lumiCore 转播。
         if let item = lumiCore.logoRegistry.bestItem {

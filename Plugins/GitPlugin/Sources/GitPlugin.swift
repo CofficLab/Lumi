@@ -92,13 +92,14 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         // 不再依赖注入，直接从 LumiCore 获取项目路径
+        guard let lumiCore = context.lumiCore else { return [] }
         return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName
             ) {
-                GitPanelHostView()
+                GitPanelHostView(lumiCore: lumiCore)
             }
         ]
     }
@@ -106,6 +107,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
         guard context.activeSectionID == info.id else { return [] }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         return [
             LumiStatusBarItem(
@@ -114,7 +116,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {
-                    GitPluginStatusBarView()
+                    GitPluginStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]
@@ -122,9 +124,10 @@ public enum GitPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+        guard let lumiCore = context.lumiCore else { return [] }
         return [
             LumiRootOverlayItem(id: "\(info.id).commit-history", order: info.order) { content in
-                GitPanelRootOverlay(content: content)
+                GitPanelRootOverlay(lumiCore: lumiCore, content: content)
             }
         ]
     }

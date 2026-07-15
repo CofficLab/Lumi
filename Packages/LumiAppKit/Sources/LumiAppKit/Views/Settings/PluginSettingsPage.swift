@@ -5,13 +5,23 @@ import SwiftUI
 
 struct PluginSettingsPage: View {
     @LumiTheme private var theme
-    @EnvironmentObject private var lumiCore: LumiCore
+    @ObservedObject var lumiCore: LumiCore
     @ObservedObject var pluginService: PluginService
     @ObservedObject var chatService: ChatService
     @State private var selectedCategory: LumiPluginCategory?
     @State private var selectedPluginID: String?
     @State private var searchText = ""
 
+
+    init(
+        lumiCore: LumiCore,
+        pluginService: PluginService,
+        chatService: ChatService
+    ) {
+        self.lumiCore = lumiCore
+        self.pluginService = pluginService
+        self.chatService = chatService
+    }
     private var pluginRows: [PluginSettingsRowModel] {
         pluginService.plugins
             .filter { $0.policy != .alwaysOn }
@@ -207,6 +217,7 @@ struct PluginSettingsPage: View {
     private var pluginDetailPane: some View {
         if let selectedRow {
             PluginSettingsDetailView(
+                lumiCore: lumiCore,
                 row: selectedRow,
                 pluginService: pluginService,
                 chatService: chatService
@@ -220,7 +231,7 @@ struct PluginSettingsPage: View {
 
 private struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCore
     let row: PluginSettingsRowModel
     @ObservedObject var pluginService: PluginService
     @ObservedObject var chatService: ChatService

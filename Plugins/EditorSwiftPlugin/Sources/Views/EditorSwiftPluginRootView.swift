@@ -12,17 +12,22 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
 
     public let content: Content
 
-    @Environment(\.lumiCore) private var lumiCore
+    let lumiCore: LumiCoreAccessing
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
     @StateObject private var windowScope = EditorSwiftWindowScope()
 
     private var currentProjectPath: String {
-        lumiCore?.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     private var projects: [LumiProjectEntry] {
-        lumiCore?.projectState?.projects ?? []
+        lumiCore.projectState?.projects ?? []
+    }
+
+    public init(lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {
+        self.lumiCore = lumiCore
+        self.content = content()
     }
 
     enum PreloadStatus: Sendable {
@@ -184,5 +189,7 @@ private struct WindowScopeRegistration: NSViewRepresentable {
 
 
 #Preview("RootView Wrapper") {
-    EditorSwiftPluginRootView(content: Text(verbatim: LumiPluginLocalization.string("Content View", bundle: .module)).padding())
+    EditorSwiftPluginRootView(lumiCore: PreviewEditorSwiftSupport.lumiCore) {
+        Text(verbatim: LumiPluginLocalization.string("Content View", bundle: .module)).padding()
+    }
 }

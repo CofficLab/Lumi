@@ -91,7 +91,7 @@ public enum ScannerState: Equatable, Sendable {
 ///
 /// 显示当前未解决问题数量的图标，点击展开 Popover 查看详情。
 public struct ProjectIssueScannerStatusBarView: View {
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
     @StateObject private var viewModel = ProjectIssueScannerViewModel()
 
     /// 模型偏好（从 UserDefaults 加载）
@@ -99,6 +99,10 @@ public struct ProjectIssueScannerStatusBarView: View {
 
     private var currentProjectPath: String {
         lumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {

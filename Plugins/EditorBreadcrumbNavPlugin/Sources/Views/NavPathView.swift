@@ -8,7 +8,7 @@ import SwiftUI
 /// 面包屑路径视图
 public struct NavPathView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
     @ObservedObject private var service: EditorService
 
     public let fileURL: URL
@@ -17,9 +17,10 @@ public struct NavPathView: View {
         lumiCore.projectState?.currentProject?.path ?? ""
     }
 
-    public init(fileURL: URL, service: EditorService) {
+    public init(fileURL: URL, service: EditorService, lumiCore: LumiCoreAccessing) {
         self.fileURL = fileURL
         self.service = service
+        self.lumiCore = lumiCore
     }
 
     /// 面包屑路径段列表

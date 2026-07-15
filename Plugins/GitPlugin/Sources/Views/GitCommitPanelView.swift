@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import LumiCoreKit
 
 /// Git 提交面板视图：左侧历史列表 + 右侧详情
 ///
@@ -7,19 +8,21 @@ import LumiUI
 /// 左栏显示提交历史列表（含工作状态入口），
 /// 右栏显示选中 commit 的详情、变更文件和 diff。
 public struct GitCommitPanelView: View {
+    let lumiCore: LumiCoreAccessing
+    @ObservedObject var gitVM: AppGitVM
+
+    public init(lumiCore: LumiCoreAccessing, gitVM: AppGitVM) {
+        self.lumiCore = lumiCore
+        self.gitVM = gitVM
+    }
+
     public var body: some View {
         HSplitView {
             // 左栏：提交历史列表
-            GitCommitHistorySidebarView()
+            GitCommitHistorySidebarView(lumiCore: lumiCore, gitVM: gitVM)
 
             // 右栏：详情视图
-            GitCommitDetailView()
+            GitCommitDetailView(lumiCore: lumiCore, gitVM: gitVM)
         }
     }
-}
-
-#Preview {
-    GitCommitPanelView()
-        .inRootView()
-        .frame(width: 900, height: 600)
 }

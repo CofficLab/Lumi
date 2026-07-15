@@ -147,7 +147,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     }
 
     private func makeMenuBarIconView(items: [LumiMenuBarContentItem]) -> MenuBarIconView {
-        MenuBarIconView(contentItems: items)
+        MenuBarIconView(contentItems: items, lumiCore: lumiCore)
     }
 
     private func replaceMenuBarContent() {

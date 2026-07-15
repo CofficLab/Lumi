@@ -35,14 +35,15 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInGitOKStatusBarView()
+                    OpenInGitOKStatusBarView(lumiCore: lumiCore)
                 }
             ),
         ]
@@ -68,12 +69,16 @@ public enum AgentOpenInGitOKPlugin: LumiPlugin, SuperLog {
 /// GitOK 打开状态栏视图
 public struct OpenInGitOKStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
 
     @State private var isGitOKInstalled: Bool = false
 
     private var currentProjectPath: String {
         lumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {
@@ -92,7 +97,7 @@ public struct OpenInGitOKStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInGitOKDetailView(),
+            detailView: OpenInGitOKDetailView(lumiCore: lumiCore),
             id: "open-in-gitok-status"
         ) {
             Button(action: {
@@ -142,9 +147,13 @@ public struct OpenInGitOKStatusBarView: View {
 /// GitOK 打开详情视图（在 popover 中显示）
 public struct OpenInGitOKDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
 
     @State private var isGitOKInstalled: Bool = false
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {

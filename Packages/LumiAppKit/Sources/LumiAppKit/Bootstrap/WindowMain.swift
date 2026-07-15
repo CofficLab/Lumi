@@ -20,6 +20,7 @@ public struct WindowMain: View {
             } else if let container = container {
                 RootView(container: container) {
                     AppLayoutView(
+                        lumiCore: container.lumiCore,
                         pluginService: container.pluginService,
                         editorCoreService: container.editorCoreService,
                         lumiUIService: container.lumiUIService,
@@ -27,9 +28,6 @@ public struct WindowMain: View {
                         chatSectionCoordinator: container.chatSectionCoordinator
                     )
                 }
-                // 把 LumiCore 注入到 SwiftUI 视图树,让 App + 插件视图通过
-                // @EnvironmentObject var lumiCore: LumiCore 访问核心状态
-                .environmentObject(container.lumiCore)
                 .background {
                     WindowAccessor { window in
                         window.configureForLumiMainChrome()

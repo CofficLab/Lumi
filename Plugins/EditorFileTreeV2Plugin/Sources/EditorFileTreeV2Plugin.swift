@@ -38,6 +38,7 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     @MainActor
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsRail else { return [] }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         return [
             LumiPanelRailTabItem(
@@ -46,7 +47,7 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
                 title: LumiPluginLocalization.string("Explorer V2", bundle: .module),
                 systemImage: iconName
             ) {
-                TreeViewV2()
+                TreeViewV2(lumiCore: lumiCore)
             }
         ]
     }

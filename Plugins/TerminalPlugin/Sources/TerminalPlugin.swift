@@ -22,8 +22,10 @@ public enum TerminalPlugin: LumiPlugin {
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName
-            ) {
-                TerminalMainView()
+            ) { [lumiCore = context.lumiCore] in
+                if let lumiCore = lumiCore {
+                    TerminalMainView(lumiCore: lumiCore)
+                }
             }
         ]
     }

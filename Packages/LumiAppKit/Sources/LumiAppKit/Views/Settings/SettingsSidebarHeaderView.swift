@@ -1,7 +1,9 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct SettingsSidebarHeaderView: View {
+    let lumiCore: LumiCoreAccessing
     private let appInfo = AppBundleInfo()
 
     var body: some View {
@@ -14,7 +16,7 @@ struct SettingsSidebarHeaderView: View {
         ) {
             HStack {
                 Spacer()
-                LogoView(scene: .about)
+                LogoView(scene: .about, lumiCore: lumiCore)
                     .frame(width: 64, height: 64)
                 Spacer()
             }

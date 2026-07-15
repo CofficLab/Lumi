@@ -13,8 +13,8 @@ public struct TreeViewV2: View, SuperLog {
     public nonisolated static var verbose: Bool { EditorFileTreeV2Plugin.verbose }
     nonisolated static let logger = EditorFileTreeV2Plugin.logger
 
-    @EnvironmentObject private var lumiCore: LumiCore
     @EnvironmentObject var editorContext: EditorContext
+    let lumiCore: LumiCoreAccessing
 
     /// 文件树多选状态
     @StateObject private var selectionState = SelectionState()
@@ -34,7 +34,9 @@ public struct TreeViewV2: View, SuperLog {
     /// 打开文件任务
     @State private var openFileTask: Task<Void, Never>?
 
-    public init() {}
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         let projectPath = currentProjectPath

@@ -6,8 +6,8 @@ import LumiCoreKit
 ///
 /// 监听 commit 选中事件，自动激活当前面板。
 public struct GitCommitHistoryRootOverlay<Content: View>: View {
-    @EnvironmentObject private var gitVM: AppGitVM
-    @EnvironmentObject private var lumiCore: LumiCore
+    @ObservedObject var gitVM: AppGitVM
+    let lumiCore: LumiCoreAccessing
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
@@ -16,9 +16,10 @@ public struct GitCommitHistoryRootOverlay<Content: View>: View {
 
     public let content: Content
 
-    public init(_ content: Content) {
-        self.content = content
-        // layoutState 将通过 EnvironmentObject 注入
+    public init(gitVM: AppGitVM, lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {
+        self.gitVM = gitVM
+        self.lumiCore = lumiCore
+        self.content = content()
     }
 
     public var body: some View {

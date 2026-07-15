@@ -6,10 +6,14 @@ import TerminalCoreKit
 
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: any LumiCoreAccessing
 
     /// 使用全局单例，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
     @ObservedObject private var viewModel = TerminalTabsViewModel.shared
+
+    public init(lumiCore: any LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     private var indexedSessions: [(offset: Int, session: TerminalSession)] {
         viewModel.sessions.enumerated().map { (offset: $0.offset, session: $0.element) }

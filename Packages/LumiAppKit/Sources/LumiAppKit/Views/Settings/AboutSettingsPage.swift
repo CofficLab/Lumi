@@ -1,13 +1,15 @@
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct AboutSettingsPage: View {
+    let lumiCore: LumiCoreAccessing
     private let bundleInfo = AppBundleInfo()
 
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
-                LogoView(scene: .about)
+                LogoView(scene: .about, lumiCore: lumiCore)
                     .frame(width: 72, height: 72)
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 8)

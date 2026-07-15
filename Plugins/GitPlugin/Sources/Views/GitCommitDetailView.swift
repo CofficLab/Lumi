@@ -15,17 +15,18 @@ public struct GitCommitDetailView: View, SuperLog {
     // MARK: - 属性
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
 
-    @EnvironmentObject var gitVM: AppGitVM
+    @ObservedObject var gitVM: AppGitVM
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
         lumiCore.layoutState ?? LumiLayoutState()
     }
 
-    public init() {
-        // layoutState 将在 body 中通过 EnvironmentObject 获取
+    public init(lumiCore: LumiCoreAccessing, gitVM: AppGitVM) {
+        self.lumiCore = lumiCore
+        self.gitVM = gitVM
     }
 
     private var currentProjectPath: String {
@@ -864,7 +865,7 @@ private struct FlowLayout: Layout {
 // MARK: - 预览
 
 #Preview("GitCommitDetail") {
-    GitCommitDetailView()
+    GitCommitDetailView(lumiCore: PreviewGitSupport.lumiCore, gitVM: PreviewGitSupport.gitVM)
         .inRootView()
         .frame(width: 700, height: 600)
 }

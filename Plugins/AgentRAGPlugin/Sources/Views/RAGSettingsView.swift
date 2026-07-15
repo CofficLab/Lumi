@@ -6,7 +6,7 @@ import LumiCoreKit
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
@@ -14,7 +14,9 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var loadError: String?
 
 
-    public init() {}
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
 
     public var body: some View {

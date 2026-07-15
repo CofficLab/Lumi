@@ -5,7 +5,7 @@ import LumiCoreKit
 @MainActor
 struct RAGSettingsPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     /// 向量后端运行时信息：sqlite-vec 不可用时为 nil 或 .swiftCosine，需要提示用户
@@ -13,6 +13,10 @@ struct RAGSettingsPopoverView: View {
     @State private var runtimeInfo: RAGRuntimeInfo?
     /// 状态加载失败时的错误提示
     @State private var loadError: String?
+
+    init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     var body: some View {
         StatusBarPopoverScaffold(

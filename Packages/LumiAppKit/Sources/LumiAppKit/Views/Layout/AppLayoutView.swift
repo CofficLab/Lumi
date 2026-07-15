@@ -6,7 +6,7 @@ import SwiftUI
 
 struct AppLayoutView: View {
     @LumiTheme private var theme
-    @EnvironmentObject private var lumiCore: LumiCore
+    @ObservedObject var lumiCore: LumiCore
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
     let lumiUIService: LumiUIService
@@ -14,12 +14,14 @@ struct AppLayoutView: View {
     let chatSectionCoordinator: ChatSectionCoordinator
 
     init(
+        lumiCore: LumiCore,
         pluginService: PluginService,
         editorCoreService: EditorCoreService,
         lumiUIService: LumiUIService,
         chatService: ChatService,
         chatSectionCoordinator: ChatSectionCoordinator
     ) {
+        self.lumiCore = lumiCore
         self.pluginService = pluginService
         self.editorCoreService = editorCoreService
         self.lumiUIService = lumiUIService

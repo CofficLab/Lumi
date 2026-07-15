@@ -19,14 +19,15 @@ public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
     @MainActor
     public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
         guard context.showsPanelChrome,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
+              let service = context.resolve(LumiEditorServicing.self)?.editorService,
+              let lumiCore = context.lumiCore
         else {
             return []
         }
 
         return [
             LumiPanelHeaderItem(id: info.id, order: info.order) {
-                NavHeaderView(service: service)
+                NavHeaderView(service: service, lumiCore: lumiCore)
             }
         ]
     }

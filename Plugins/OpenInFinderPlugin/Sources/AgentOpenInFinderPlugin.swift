@@ -19,14 +19,15 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInFinderStatusBarView()
+                    OpenInFinderStatusBarView(lumiCore: lumiCore)
                 }
             ),
         ]
@@ -52,7 +53,11 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 /// Finder 打开状态栏视图
 public struct OpenInFinderStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         Group {
@@ -67,7 +72,7 @@ public struct OpenInFinderStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInFinderDetailView(),
+            detailView: OpenInFinderDetailView(lumiCore: lumiCore),
             id: "open-in-finder-status"
         ) {
             Button(action: {
@@ -112,7 +117,11 @@ public struct OpenInFinderStatusBarView: View {
 /// Finder 打开详情视图（在 popover 中显示）
 public struct OpenInFinderDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @EnvironmentObject private var lumiCore: LumiCore
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
