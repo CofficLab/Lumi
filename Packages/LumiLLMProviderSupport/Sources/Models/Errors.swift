@@ -110,7 +110,8 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         // 检测重复的工具名，避免供应商返回 "Tool names must be unique." 错误。
-        LumiToolNameDeduplication.assertUnique(tools: request.tools)
+        // 重复时抛出 LumiToolRegistrationError，由聊天发送流程捕获并以错误消息呈现。
+        try LumiToolNameDeduplication.assertUnique(tools: request.tools)
 
         let body = try adapter.buildStreamingRequestBody(
             messages: LumiLLMRequestMessages.preparedForProvider(request),

@@ -8,8 +8,9 @@ import Foundation
 /// - Note: 提供两种调用风格：
 ///   - `validateUnique(tools:)` 抛出 `LumiToolRegistrationError`，供启动期与
 ///     业务注册流程使用，错误可被 `RootContainer` 等上游捕获并以 `CrashedView` 优雅降级。
-///   - `assertUnique(tools:)` 是 `validateUnique` 的 `try!` 包装，失败时 `fatalError`，
-///     仅用于工具内部自治场景或单元测试。
+///   - `assertUnique(tools:)` 是 `validateUnique` 的 `throws` 透传包装，
+///     行为与 `validateUnique` 一致：失败时抛出 `LumiToolRegistrationError`。
+///     旧实现是 `try!` + `fatalError`，现统一为抛错路径，让运行时失败也走 `CrashedView`。
 public enum LumiToolNameDeduplication {
     /// 校验工具列表中的名称唯一，重复时抛出 `LumiToolRegistrationError`。
     ///
@@ -34,15 +35,14 @@ public enum LumiToolNameDeduplication {
         }
     }
 
-    /// 断言工具列表中的名称唯一，重复时 fatalError。
+    /// 断言工具列表中的名称唯一，重复时抛出 `LumiToolRegistrationError`。
     ///
-    /// 内部委托给 `validateUnique(tools:)`，失败时 `try!` 触发 fatalError。
-    /// 业务路径请优先使用 `validateUnique(tools:)` 以便优雅降级。
-    public static func assertUnique(tools: [any LumiAgentTool]) {
-        do {
-            try validateUnique(tools: tools)
-        } catch {
-            fatalError("\(error.localizedDescription)")
-        }
+    /// 内部委托给 `validateUnique(tools:)`，失败时把错误向外抛出，由调用方
+    /// （如 `RootContainer` / LLM 请求发送流程）统一捕获并以 `CrashedView` 优雅降级。
+    ///
+    /// 历史实现是 `try!` + `fatalError`，为了让运行时重复注册也能落到 `CrashedView`
+    /// 而非直接闪退，这里统一改为 `throws` 透传。命名保留是为了兼容既有调用点。
+    public static func assertUnique(tools: [any LumiAgentTool]) throws {
+        try validateUnique(tools: tools)
     }
 }
