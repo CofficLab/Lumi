@@ -1,3 +1,5 @@
+import Foundation
+
 public enum ProjectsStoreError: LocalizedError {
     case pathDoesNotExist(String)
     case pathIsNotDirectory(String)
