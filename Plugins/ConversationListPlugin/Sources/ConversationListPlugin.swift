@@ -75,7 +75,6 @@ public enum ConversationListPlugin: LumiPlugin {
             return [
                 LumiPanelRailTabItem(
                     id: "chats-error",
-                    order: 0,
                     title: LumiPluginLocalization.string("Chats", bundle: .module),
                     systemImage: "message.fill"
                 ) {
@@ -89,7 +88,6 @@ public enum ConversationListPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "chats",
-                order: 0,
                 title: LumiPluginLocalization.string("Chats", bundle: .module),
                 systemImage: "message.fill"
             ) {

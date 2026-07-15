@@ -8,7 +8,6 @@ public enum EditorSearchPanelPlugin: LumiPlugin {
     public static let stage: LumiPluginStage = .beta
     public static let category: LumiPluginCategory = .development
     public static let iconName = "magnifyingglass"
-    private static let railTabOrder = 12
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-search",
@@ -28,7 +27,6 @@ public enum EditorSearchPanelPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-search",
-                order: info.order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: iconName
             ) {
@@ -48,7 +46,6 @@ public enum EditorSearchPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "search",
-                order: railTabOrder,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: iconName
             ) {

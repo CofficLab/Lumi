@@ -217,17 +217,20 @@ extension LumiPluginRegistry {
 
     public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
         guard context.showsPanelChrome else { return [] }
-        return enabledPlugins.flatMap { $0.panelHeaderItems(context: context) }
+        let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
+        return plugins.flatMap { $0.panelHeaderItems(context: context) }
     }
 
     public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome else { return [] }
-        return enabledPlugins.flatMap { $0.panelBottomTabItems(context: context) }
+        let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
+        return plugins.flatMap { $0.panelBottomTabItems(context: context) }
     }
 
     public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
         guard context.showsRail else { return [] }
-        return enabledPlugins.flatMap { $0.panelRailTabItems(context: context) }
+        let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
+        return plugins.flatMap { $0.panelRailTabItems(context: context) }
     }
 
     public static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {

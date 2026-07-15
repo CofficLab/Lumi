@@ -28,14 +28,14 @@ public enum StripHeaderPlugin: LumiPlugin {
         // LumiEditorServicing 不可用时显示错误视图
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else {
             return [
-                LumiPanelHeaderItem(id: "\(info.id).error", order: info.order) {
+                LumiPanelHeaderItem(id: "\(info.id).error") {
                     StripHeaderErrorView(pluginName: info.displayName)
                 }
             ]
         }
 
         return [
-            LumiPanelHeaderItem(id: info.id, order: info.order) {
+            LumiPanelHeaderItem(id: info.id) {
                 HeaderView(service: service, lumiCore: lumiCore)
             }
         ]
