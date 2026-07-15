@@ -5,6 +5,14 @@ import os
 import SuperLogKit
 
 /// 项目视图模型，持有状态并暴露 Intent 给视图。
+/// 
+/// 职责：
+/// - 从 Store 加载初始状态
+/// - 持有 @Published 状态供视图观察
+/// - 暴露 Intent 方法供视图调用
+/// - 调用 Store 持久化数据
+/// 
+/// 注意：ViewModel 不直接与 LumiCore 交互，同步逻辑由 ProjectsSyncCoordinator 负责。
 @MainActor
 public final class ProjectsViewModel: ObservableObject, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.viewmodel")
@@ -25,48 +33,22 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     // MARK: - Dependencies
 
     private let store: ProjectsStore
-    private weak var lumiCore: (any LumiCoreAccessing)?
 
     // MARK: - Init
 
-    public init(store: ProjectsStore, lumiCore: (any LumiCoreAccessing)? = nil) {
+    public init(store: ProjectsStore) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)ProjectsViewModel 初始化开始")
+            Self.logger.info("\(Self.t)初始化开始")
         }
 
         self.store = store
-        self.lumiCore = lumiCore
 
         // 从 Store 加载初始状态
         self.projects = store.loadProjects()
         self.currentProject = store.loadCurrentProject(from: projects)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)加载项目数量: \(self.projects.count), 当前项目: \(self.currentProject?.name ?? "nil")")
-        }
-
-        // 同步到 LumiCore
-        syncToLumiCore()
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)ProjectsViewModel 初始化完成")
-        }
-    }
-
-    // MARK: - Sync to LumiCore
-
-    /// 将当前状态同步到 LumiCore
-    private func syncToLumiCore() {
-        guard let projectState = lumiCore?.projectState else { return }
-
-        // 写入项目列表
-        for project in projects {
-            projectState.addProject(project)
-        }
-
-        // 写入当前项目
-        if let current = currentProject {
-            projectState.switchToProject(current)
+            Self.logger.info("\(Self.t)初始化完成, 项目数量: \(self.projects.count), 当前项目: \(self.currentProject?.name ?? "nil")")
         }
     }
 
@@ -75,7 +57,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 选中项目：更新状态并持久化
     public func select(_ project: LumiProjectEntry) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)select 被调用: \(project.name) @ \(project.path)")
+            Self.logger.info("\(Self.t)select: \(project.name) @ \(project.path)")
         }
 
         let updatedProjects = store.selectProject(project, in: projects)
@@ -86,14 +68,15 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
         // 持久化
         store.save(projects: projects, currentProject: currentProject)
-
-        // 同步到 LumiCore
-        lumiCore?.projectState?.switchToProject(updatedProject)
     }
 
     /// 添加项目
     @discardableResult
     public func add(path: String, select shouldSelect: Bool = false) throws -> LumiProjectEntry {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)add: \(path), select: \(shouldSelect)")
+        }
+
         let project = try store.add(path: path, to: projects)
 
         if shouldSelect {
@@ -104,7 +87,6 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
                 currentProject = projects.first
             }
             store.save(projects: projects, currentProject: currentProject)
-            syncToLumiCore()
         }
 
         return project
@@ -112,6 +94,10 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     /// 移除项目
     public func remove(_ project: LumiProjectEntry) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)remove: \(project.name) @ \(project.path)")
+        }
+
         self.projects = store.removeProject(project, from: projects)
 
         if currentProject?.path == project.path {
@@ -119,18 +105,20 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
 
         store.save(projects: projects, currentProject: currentProject)
-        syncToLumiCore()
     }
 
     /// 设置当前项目路径
     public func setCurrentProjectPath(_ path: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setCurrentProjectPath: \(path)")
+        }
+
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
             currentProject = nil
             store.save(projects: projects, currentProject: currentProject)
-            lumiCore?.projectState?.clearCurrentProject()
             return
         }
 
