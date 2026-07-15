@@ -18,25 +18,69 @@ public enum AutoTaskPlugin: LumiPlugin {
         order: 90
     )
 
+    /// 插件数据存储的子目录名称
+    public static let dataDirectoryName = "AutoTask"
+
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
     nonisolated(unsafe) public static var configuration: any Configuration = DefaultConfiguration()
+
+    // MARK: - Lifecycle Managed Instances
+
+    /// 由插件生命周期管理的状态管理器实例。
+    ///
+    /// - `lifecycle(.didRegister)` 时创建并注入数据库目录
+    /// - `lifecycle(.willDisable)` 时置空释放
+    ///
+    /// 调用方应通过此属性访问（而非构造新的 manager），保证单实例。
+    @MainActor
+    public static var manager: TaskStateManager?
+
+    @MainActor
+    public static func lifecycle(_ event: LumiPluginLifecycle) {
+        switch event {
+        case .didRegister:
+            // 优先使用 LumiCore 提供的目录；缺失时降级到 tmp。
+            let directory = LumiCore.current?.pluginDataDirectory(for: dataDirectoryName)
+                ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
+            Self.manager = TaskStateManager(databaseRootURL: directory)
+
+        case .appDidLaunch:
+            // 已注册则无需重复初始化；未注册时（如单元测试或外部手动初始化）
+            // 不在此处兜底，避免出现隐式全局状态。
+            break
+
+        case .willDisable:
+            Self.manager = nil
+
+        default:
+            break
+        }
+    }
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         bootstrapTurnCheck(chatServiceProvider: { context.resolve(LumiChatServicing.self) }, context: context)
-        return [TaskContextChatMiddleware()]
+        guard let manager else {
+            Self.logger.warning("sendMiddlewares: manager 未初始化，返回空中间件列表")
+            return []
+        }
+        return [TaskContextChatMiddleware(manager: manager)]
     }
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         bootstrapFromLumiCoreIfNeeded(context: context)
+        guard let manager else {
+            Self.logger.warning("agentTools: manager 未初始化，返回空工具列表")
+            return []
+        }
         return [
-            CreateTaskTool(),
-            AppendTaskTool(),
-            UpdateTaskTool(),
-            ListTasksTool(),
-            CheckProgressTool(),
+            CreateTaskTool(manager: manager),
+            AppendTaskTool(manager: manager),
+            UpdateTaskTool(manager: manager),
+            ListTasksTool(manager: manager),
+            CheckProgressTool(manager: manager),
         ]
     }
 
@@ -54,6 +98,52 @@ public enum AutoTaskPlugin: LumiPlugin {
             }
         ]
     }
+
+    // MARK: - Bootstrap
+
+    @MainActor
+    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+        guard !didBootstrapFromLumiCore else { return }
+
+        configuration = LumiCoreConfiguration(
+            rootURL: context.lumiCore?.pluginDataDirectory(for: dataDirectoryName) ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        )
+        didBootstrapFromLumiCore = true
+    }
+
+    @MainActor
+    static func bootstrapTurnCheck(chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?, context: LumiPluginContext) {
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        TurnCheckRuntime.start(chatServiceProvider: chatServiceProvider)
+    }
+}
+
+// MARK: - Private
+
+private nonisolated(unsafe) var didBootstrapFromLumiCore = false
+
+/// 配置协议：解耦插件与 App 侧存储路径。
+public protocol Configuration: Sendable {
+    /// 插件数据库目录 URL
+    func databaseDirectory() -> URL
+}
+
+private struct LumiCoreConfiguration: Configuration {
+    let rootURL: URL
+
+    func databaseDirectory() -> URL {
+        rootURL
+    }
+}
+
+private struct DefaultConfiguration: Configuration {
+    func databaseDirectory() -> URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+        return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent("db", isDirectory: true)
+    }
 }
 
 private struct ChatSectionView: View {
@@ -67,15 +157,5 @@ private struct ChatSectionView: View {
                 theme.background.opacity(0.94)
             }
         )
-    }
-}
-
-private struct DefaultConfiguration: Configuration {
-    func databaseDirectory() -> URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
-        return appSupport.appendingPathComponent(bundleID, isDirectory: true)
-            .appendingPathComponent("db", isDirectory: true)
     }
 }

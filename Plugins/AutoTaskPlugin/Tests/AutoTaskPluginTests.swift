@@ -20,11 +20,12 @@ struct AutoTaskPluginTests {
 
     @MainActor
     @Test("plugin registers task tools and middleware")
-    func pluginContributions() {
-        // LumiCore must be configured for bootstrapFromLumiCoreIfNeeded()
+    func pluginContributions() async {
+        // 使用临时目录初始化 manager
         let tmpDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("auto-task-plugin-test-\(UUID().uuidString)", isDirectory: true)
-        LumiCore.configure(dataRootDirectory: tmpDir)
+        try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        AutoTaskPlugin.manager = TaskStateManager(databaseRootURL: tmpDir)
 
         let context = LumiPluginContext(activeSectionID: "com.coffic.lumi.plugin.chat-panel", activeSectionTitle: "Chat")
         let tools = AutoTaskPlugin.agentTools(context: context)
@@ -69,9 +70,14 @@ struct AutoTaskPluginTests {
     #expect(empty.isEmpty)
 }
 
-@Test func testToolSchemasAndRiskLevels() {
+@Test func testToolSchemasAndRiskLevels() async throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("tool-schema-test-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    let tempManager = TaskStateManager(databaseRootURL: tempRoot)
+
     // CreateTaskTool schema
-    let createSchema = CreateTaskTool().inputSchema
+    let createSchema = CreateTaskTool(manager: tempManager).inputSchema
     if case .object(let props) = createSchema,
        case .array(let required) = props["required"],
        case .string(let req0) = required.first {
@@ -81,7 +87,7 @@ struct AutoTaskPluginTests {
     }
 
     // AppendTaskTool schema
-    let appendSchema = AppendTaskTool().inputSchema
+    let appendSchema = AppendTaskTool(manager: tempManager).inputSchema
     if case .object(let props) = appendSchema,
        case .array(let required) = props["required"],
        case .string(let req0) = required.first {
@@ -91,7 +97,7 @@ struct AutoTaskPluginTests {
     }
 
     // UpdateTaskTool schema
-    let updateSchema = UpdateTaskTool().inputSchema
+    let updateSchema = UpdateTaskTool(manager: tempManager).inputSchema
     if case .object(let props) = updateSchema,
        case .array(let required) = props["required"] {
         let reqStrings = required.compactMap { v -> String? in
@@ -104,11 +110,11 @@ struct AutoTaskPluginTests {
         Issue.record("update_task schema missing required fields")
     }
 
-    #expect(CreateTaskTool().riskLevel(arguments: [:], context: nil) == .low)
-    #expect(AppendTaskTool().riskLevel(arguments: [:], context: nil) == .low)
-    #expect(UpdateTaskTool().riskLevel(arguments: [:], context: nil) == .low)
-    #expect(ListTasksTool().riskLevel(arguments: [:], context: nil) == .low)
-    #expect(CheckProgressTool().riskLevel(arguments: [:], context: nil) == .low)
+    #expect(CreateTaskTool(manager: tempManager).riskLevel(arguments: [:], context: nil) == .low)
+    #expect(AppendTaskTool(manager: tempManager).riskLevel(arguments: [:], context: nil) == .low)
+    #expect(UpdateTaskTool(manager: tempManager).riskLevel(arguments: [:], context: nil) == .low)
+    #expect(ListTasksTool(manager: tempManager).riskLevel(arguments: [:], context: nil) == .low)
+    #expect(CheckProgressTool(manager: tempManager).riskLevel(arguments: [:], context: nil) == .low)
 }
 
 @Test func testCreateTasksClampsToConversationLimit() async throws {
@@ -321,8 +327,8 @@ struct ToolExecuteTests {
 
     @Test("UpdateTaskTool: missing task_id returns error")
     func updateTaskMissingTaskId() async throws {
-        var tool = UpdateTaskTool()
-        tool.manager = try await Self.makeManager()
+        let manager = try await Self.makeManager()
+        let tool = UpdateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["status": .string("completed")],
             context: Self.makeContext()
@@ -333,8 +339,8 @@ struct ToolExecuteTests {
 
     @Test("UpdateTaskTool: missing status returns error")
     func updateTaskMissingStatus() async throws {
-        var tool = UpdateTaskTool()
-        tool.manager = try await Self.makeManager()
+        let manager = try await Self.makeManager()
+        let tool = UpdateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["task_id": .string("some-id")],
             context: Self.makeContext()
@@ -344,8 +350,8 @@ struct ToolExecuteTests {
 
     @Test("UpdateTaskTool: invalid status returns error")
     func updateTaskInvalidStatus() async throws {
-        var tool = UpdateTaskTool()
-        tool.manager = try await Self.makeManager()
+        let manager = try await Self.makeManager()
+        let tool = UpdateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["task_id": .string("some-id"), "status": .string("invalid")],
             context: Self.makeContext()
@@ -359,8 +365,7 @@ struct ToolExecuteTests {
         let convID = UUID()
         let task = try await manager.createTask(conversationId: convID.uuidString, title: "Task A", order: 1)
 
-        var tool = UpdateTaskTool()
-        tool.manager = manager
+        let tool = UpdateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["task_id": .string(task.id), "status": .string("completed")],
             context: Self.makeContext(conversationID: convID)
@@ -380,8 +385,7 @@ struct ToolExecuteTests {
         let task1 = try await manager.createTask(conversationId: convID.uuidString, title: "First", order: 1)
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Second", order: 2)
 
-        var tool = UpdateTaskTool()
-        tool.manager = manager
+        let tool = UpdateTaskTool(manager: manager)
         _ = try await tool.execute(
             arguments: ["task_id": .string(task1.id), "status": .string("completed")],
             context: Self.makeContext(conversationID: convID)
@@ -400,8 +404,7 @@ struct ToolExecuteTests {
         let task1 = try await manager.createTask(conversationId: convID.uuidString, title: "First", order: 1)
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Second", order: 2)
 
-        var tool = UpdateTaskTool()
-        tool.manager = manager
+        let tool = UpdateTaskTool(manager: manager)
         _ = try await tool.execute(
             arguments: ["task_id": .string(task1.id), "status": .string("skipped")],
             context: Self.makeContext(conversationID: convID)
@@ -417,8 +420,8 @@ struct ToolExecuteTests {
 
     @Test("CreateTaskTool: missing tasks array returns error")
     func createTaskMissingTasks() async throws {
-        var tool = CreateTaskTool()
-        tool.manager = try await Self.makeManager()
+        let manager = try await Self.makeManager()
+        let tool = CreateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: [:],
             context: Self.makeContext()
@@ -430,8 +433,8 @@ struct ToolExecuteTests {
 
     @Test("CreateTaskTool: empty tasks array returns error")
     func createTaskEmptyTasks() async throws {
-        var tool = CreateTaskTool()
-        tool.manager = try await Self.makeManager()
+        let manager = try await Self.makeManager()
+        let tool = CreateTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["tasks": .array([])],
             context: Self.makeContext()
@@ -444,8 +447,7 @@ struct ToolExecuteTests {
     func createTaskValid() async throws {
         let manager = try await Self.makeManager()
         let convID = UUID()
-        var tool = CreateTaskTool()
-        tool.manager = manager
+        let tool = CreateTaskTool(manager: manager)
 
         let taskData: [String: LumiJSONValue] = [
             "title": .string("Build feature"),
@@ -472,8 +474,7 @@ struct ToolExecuteTests {
         let convID = UUID()
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Existing", order: 1)
 
-        var tool = AppendTaskTool()
-        tool.manager = manager
+        let tool = AppendTaskTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["tasks": .array([.object(["title": .string("New task")])])],
             context: Self.makeContext(conversationID: convID)
@@ -495,8 +496,7 @@ struct ToolExecuteTests {
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Task A", order: 1)
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Task B", order: 2)
 
-        var tool = ListTasksTool()
-        tool.manager = manager
+        let tool = ListTasksTool(manager: manager)
         let result = try await tool.execute(
             arguments: [:],
             context: Self.makeContext(conversationID: convID)
@@ -521,8 +521,7 @@ struct ToolExecuteTests {
         _ = try await manager.updateTaskStatus(id: tasks[0].id, status: TaskItem.TaskStatus.completed)
 
         // Verify the tool can be called with status filter (output is localized)
-        var tool = ListTasksTool()
-        tool.manager = manager
+        let tool = ListTasksTool(manager: manager)
         let result = try await tool.execute(
             arguments: ["status": .string("completed")],
             context: Self.makeContext(conversationID: convID)
@@ -533,8 +532,7 @@ struct ToolExecuteTests {
     @Test("ListTasksTool: returns message when no tasks")
     func listTasksEmpty() async throws {
         let manager = try await Self.makeManager()
-        var tool = ListTasksTool()
-        tool.manager = manager
+        let tool = ListTasksTool(manager: manager)
         let result = try await tool.execute(
             arguments: [:],
             context: Self.makeContext()
@@ -551,8 +549,7 @@ struct ToolExecuteTests {
         let convID = UUID()
         _ = try await manager.createTask(conversationId: convID.uuidString, title: "Work", order: 1)
 
-        var tool = CheckProgressTool()
-        tool.manager = manager
+        let tool = CheckProgressTool(manager: manager)
         let result = try await tool.execute(
             arguments: [:],
             context: Self.makeContext(conversationID: convID)
@@ -563,8 +560,7 @@ struct ToolExecuteTests {
     @Test("CheckProgressTool: returns message when no tasks")
     func checkProgressEmpty() async throws {
         let manager = try await Self.makeManager()
-        var tool = CheckProgressTool()
-        tool.manager = manager
+        let tool = CheckProgressTool(manager: manager)
         let result = try await tool.execute(
             arguments: [:],
             context: Self.makeContext()

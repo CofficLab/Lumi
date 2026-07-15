@@ -54,8 +54,10 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
     private let service: any SidebarServicing
     private var refreshGeneration: Int = 0
 
-    public init(service: any SidebarServicing = TaskStateManager.shared) {
-        self.service = service
+    public init(service: (any SidebarServicing)? = nil) {
+        // 默认从插件的 lifecycle-managed manager 取；
+        // 调用方可在测试或特殊场景下传入自定义实现。
+        self.service = service ?? AutoTaskPlugin.manager ?? DefaultSidebarService()
     }
 
     deinit {
@@ -194,5 +196,14 @@ extension TaskDisplayItem {
         self.detail = task.detail
         self.status = task.status
         self.order = task.order
+    }
+}
+
+/// 默认空实现：当 `AutoTaskPlugin.manager` 未初始化时使用，
+/// 保证 ViewModel 在 manager 缺失时仍可构造（仅返回空数据）。
+private struct DefaultSidebarService: SidebarServicing {
+    func fetchTasks(conversationId: String) async -> [TaskItem] { [] }
+    func getProgressSummary(conversationId: String) async -> TaskProgressSummary {
+        TaskProgressSummary(total: 0, completed: 0, inProgress: 0, pending: 0, skipped: 0)
     }
 }

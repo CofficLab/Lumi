@@ -46,7 +46,9 @@ enum TurnCheckRuntime {
             return
         }
 
-        let manager = TaskStateManager.shared
+        guard let manager = AutoTaskPlugin.manager else {
+            return
+        }
         let conversationIdStr = conversationID.uuidString
         let tasks = await manager.fetchTasks(conversationId: conversationIdStr)
         let activeTasks = tasks.filter { $0.status == .inProgress || $0.status == .pending }

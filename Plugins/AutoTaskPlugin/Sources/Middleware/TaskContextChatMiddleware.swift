@@ -6,7 +6,7 @@ import os
 struct TaskContextChatMiddleware: LumiSendMiddleware {
     private let manager: TaskStateManager
 
-    init(manager: TaskStateManager = .shared) {
+    init(manager: TaskStateManager) {
         self.manager = manager
     }
 
