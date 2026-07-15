@@ -79,12 +79,12 @@ struct AppearanceSettingsPage: View {
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label(
-                String(localized: "%lld 个主题", bundle: .module, arguments: themes.count),
+                String(format: String(localized: "%lld 个主题", bundle: .module), themes.count),
                 systemImage: "paintbrush"
             )
             if let activeID = registry.selectedThemeId,
                let active = themes.first(where: { $0.id == activeID }) {
-                Text(String(localized: "当前：%@", bundle: .module, arguments: active.displayName))
+                Text(String(format: String(localized: "当前：%@", bundle: .module), active.displayName))
             }
             Spacer()
         }
@@ -108,7 +108,7 @@ struct AppearanceSettingsPage: View {
                     }
 
                     if filteredThemes.isEmpty {
-                        AppEmptyState(icon: "magnifyingglass", title: Text(String(localized: "未找到主题", bundle: .module)))
+                        AppEmptyState(icon: "magnifyingglass", title: String(localized: "未找到主题", bundle: .module))
                             .padding(.vertical, 32)
                     }
                 }
@@ -168,7 +168,7 @@ struct AppearanceSettingsPage: View {
                 }
             )
         } else {
-            AppEmptyState(icon: "paintbrush", title: Text(String(localized: "选择一个主题", bundle: .module)))
+            AppEmptyState(icon: "paintbrush", title: String(localized: "选择一个主题", bundle: .module))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .appSurface(style: .panel, cornerRadius: 0)
         }
@@ -230,9 +230,9 @@ private struct ThemeSettingsDetailView: View {
         }
         .overlay(alignment: .topTrailing) {
             if isActive {
-                AppTag(Text(String(localized: "使用中", bundle: .module)), style: .accent)
+                AppTag(String(localized: "使用中", bundle: .module), style: .accent)
             } else {
-                AppButton(Text(String(localized: "使用此主题", bundle: .module)), systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
+                AppButton(String(localized: "使用此主题", bundle: .module), systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
             }
         }
     }
@@ -254,17 +254,17 @@ private struct ThemeComponentPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            AppSettingsSection(title: Text(String(localized: "组件预览", bundle: .module)), subtitle: Text(String(localized: "常见 UI 组件在此主题下的样式", bundle: .module)), spacing: 12) {
+            AppSettingsSection(title: String(localized: "组件预览", bundle: .module), subtitle: String(localized: "常见 UI 组件在此主题下的样式", bundle: .module), spacing: 12) {
                 VStack(alignment: .leading, spacing: 18) {
                     previewGroup(title: Text(String(localized: "文字", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(Text(String(localized: "主要文字 Primary", bundle: .module)))
+                            Text(String(localized: "主要文字 Primary", bundle: .module))
                                 .font(.appBody)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(Text(String(localized: "次要文字 Secondary", bundle: .module)))
+                            Text(String(localized: "次要文字 Secondary", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
-                            Text(Text(String(localized: "辅助文字 Tertiary", bundle: .module)))
+                            Text(String(localized: "辅助文字 Tertiary", bundle: .module))
                                 .font(.appMicro)
                                 .foregroundStyle(theme.textTertiary)
                         }
@@ -288,10 +288,10 @@ private struct ThemeComponentPreview: View {
 
                     previewGroup(title: Text(String(localized: "卡片", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(Text(String(localized: "卡片标题", bundle: .module)))
+                            Text(String(localized: "卡片标题", bundle: .module))
                                 .font(.appBodyEmphasized)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(Text(String(localized: "这是卡片中的说明文字，用于展示表面色与层级。", bundle: .module)))
+                            Text(String(localized: "这是卡片中的说明文字，用于展示表面色与层级。", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
                         }

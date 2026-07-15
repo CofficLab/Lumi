@@ -123,7 +123,7 @@ struct PluginSettingsPage: View {
     private var pluginListPane: some View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
-                AppSearchBar(text: $searchText, placeholder: String(localized: "搜索插件", bundle: .module))
+                AppSearchBar(text: $searchText, placeholder: "搜索插件")
 
                 categoryTabs
             }
