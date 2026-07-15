@@ -233,6 +233,7 @@ jobs:
               -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
               -configuration Release \
               -skipPackagePluginValidation \
+              -skipPackageSignatureValidation \
               CODE_SIGN_STYLE=Manual \
               CODE_SIGN_IDENTITY="-" \
               DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
