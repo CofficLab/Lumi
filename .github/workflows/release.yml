@@ -240,8 +240,7 @@ jobs:
               CODE_SIGNING_REQUIRED=NO \
               AD_HOC_CODE_SIGNING_ALLOWED=YES \
               ARCHS="$arch" \
-              ONLY_ACTIVE_ARCH=NO \
-              | xcpretty
+              ONLY_ACTIVE_ARCH=NO
 
             FIRST_ARCH=false
           done
