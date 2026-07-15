@@ -57,7 +57,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     let inlineToolCallMaxRetries = 1
 
     /// Agent turn 结束后的插件钩子回调
-    var turnFinishedHook: ((UUID, LumiTurnEndReason) async -> Void)?
+    public var turnFinishedHook: ((UUID, LumiTurnEndReason) async -> Void)?
 
     // MARK: - Delegates
 
