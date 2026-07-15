@@ -8,7 +8,7 @@ public struct LayoutMenuButton: View {
     static let usesBorderlessMenuLabel = false
 
     @LumiTheme private var theme
-    @EnvironmentObject private var lumiCore: LumiCore
+    @ObservedObject private var lumiCore: LumiCore
     @State private var isPopoverPresented = false
 
     // layoutState 从 lumiCore 获取
@@ -16,8 +16,8 @@ public struct LayoutMenuButton: View {
         lumiCore.layoutState ?? LumiLayoutState()
     }
 
-    public init() {
-        // layoutState 将通过 EnvironmentObject 注入
+    public init(lumiCore: LumiCore) {
+        self._lumiCore = ObservedObject(wrappedValue: lumiCore)
     }
 
     public var body: some View {

@@ -66,13 +66,16 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        [
+        guard let lumiCore = context.lumiCore as? LumiCore else {
+            return []
+        }
+        return [
             LumiTitleToolbarItem(
                 id: "\(info.id).layout-menu",
                 title: LumiPluginLocalization.string("Layout", bundle: .module),
                 placement: .trailing
             ) {
-                LayoutMenuButton()
+                LayoutMenuButton(lumiCore: lumiCore)
             }
         ]
     }
