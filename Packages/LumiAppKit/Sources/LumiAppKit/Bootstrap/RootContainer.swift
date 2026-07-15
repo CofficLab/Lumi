@@ -42,7 +42,6 @@ final class RootContainer: ObservableObject, SuperLog {
             }
             return EditorCoreService(
                 pluginService: pluginService,
-                persistenceRootURL: { AppConfig.getDBFolderURL() },
                 recentProjects: { [] }
             )
         }

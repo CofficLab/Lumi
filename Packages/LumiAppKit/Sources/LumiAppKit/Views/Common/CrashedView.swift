@@ -89,7 +89,7 @@ struct CrashedView: View {
                 GroupBox {
                     makeKeyValueItem(
                         key: String(localized: "App Support"),
-                        value: AppConfig.getDBFolderURL().path(percentEncoded: false)
+                        value: StorageService.makeDataRootDirectory().path(percentEncoded: false)
                     )
                 }
             }, header: { makeTitle("Folders") })

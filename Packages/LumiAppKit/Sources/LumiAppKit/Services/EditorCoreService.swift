@@ -28,17 +28,28 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     }
 
     /// 由 `RootContainer` 在拿到 `LumiCore` 实例后调用,
-    /// 把延迟注入的引用补上。`configureLifecycle` 已先于注入执行,
-    /// 但内部的 `provider` 闭包通过 `self?.lumiCore?.projectState` 读,
-    /// 所以这里只更新引用,不需要重跑配置。
+    /// 把延迟注入的引用补上,并把 `EditorSettingsLifecycle.hostPersistenceRootURL`
+    /// 切到 LumiCore 的 `dataRootDirectory`（即 v4.16.0 之前 `AppConfig.getDBFolderURL()`
+    /// 所指的位置）。
+    ///
+    /// `configureLifecycle` 在 init 时已先于注入执行，但内部的 `provider` 闭包通过
+    /// `self?.lumiCore?.projectState` 读，所以这里只更新引用 + 切换 persistence URL，
+    /// 不需要重跑配置。
     func configure(lumiCore: LumiCoreAccessing) {
         self.lumiCore = lumiCore
+        EditorSettingsLifecycle.hostPersistenceRootURL = { [weak lumiCore] in
+            lumiCore?.dataRootDirectory ?? Self.fallbackPersistenceRootURL
+        }
+    }
+
+    private static var fallbackPersistenceRootURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
     }
 
 
     init(
         pluginService: PluginService,
-        persistenceRootURL: @escaping @Sendable () -> URL,
         themeRegistry: LumiUIThemeRegistry = .shared,
         recentProjects: @escaping @Sendable () -> [LumiProjectEntry] = { [] }
     ) {
@@ -68,7 +79,6 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             Self.logger.info("\(Self.t)配置生命周期")
         }
         configureLifecycle(
-            persistenceRootURL: persistenceRootURL,
             recentProjects: recentProjects
         )
 
@@ -153,7 +163,6 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     }
 
     private func configureLifecycle(
-        persistenceRootURL: @escaping @Sendable () -> URL,
         recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
     ) {
         // 通过 LumiCore 获取项目列表
@@ -161,7 +170,9 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             self?.lumiCore?.projectState?.projects ?? recentProjects()
         }
 
-        EditorSettingsLifecycle.hostPersistenceRootURL = persistenceRootURL
+        // `hostPersistenceRootURL` 在 init 阶段尚无 LumiCore 实例，配置 `configure(lumiCore:)`
+        // 后才会切到 LumiCore.dataRootDirectory 之上。期间若有 keybinding/config 读取，
+        // 走 `bindingsFileURL` 的 `applicationSupportURL` 兜底分支。
         EditorSettingsLifecycle.onReinstallPlugins = { [weak self] registry in
             Task { @MainActor in
                 guard let self else { return }
