@@ -17,19 +17,19 @@ struct AboutSettingsPage: View {
 
                 AppSettingSection(title: "Lumi", titleAlignment: .leading) {
                     VStack(spacing: 0) {
-                        AppSettingRow(title: String(localized: "Name", bundle: .module), description: bundleInfo.name, icon: "app") {
+                        AppSettingRow(title: LumiLocalization.string("Name", bundle: .module), description: bundleInfo.name, icon: "app") {
                             EmptyView()
                         }
                         Divider()
                             .padding(.vertical, 8)
-                        AppSettingRow(title: String(localized: "Bundle ID", bundle: .module), description: bundleInfo.bundleIdentifier, icon: "number") {
+                        AppSettingRow(title: LumiLocalization.string("Bundle ID", bundle: .module), description: bundleInfo.bundleIdentifier, icon: "number") {
                             EmptyView()
                         }
                         Divider()
                             .padding(.vertical, 8)
                         AppSettingRow(
-                            title: String(localized: "Version", bundle: .module),
-                            description: bundleInfo.version ?? String(localized: "Not Set", bundle: .module),
+                            title: LumiLocalization.string("Version", bundle: .module),
+                            description: bundleInfo.version ?? LumiLocalization.string("Not Set", bundle: .module),
                             icon: "info.circle"
                         ) {
                             EmptyView()
@@ -37,8 +37,8 @@ struct AboutSettingsPage: View {
                         Divider()
                             .padding(.vertical, 8)
                         AppSettingRow(
-                            title: String(localized: "Build", bundle: .module),
-                            description: bundleInfo.build ?? String(localized: "Not Set", bundle: .module),
+                            title: LumiLocalization.string("Build", bundle: .module),
+                            description: bundleInfo.build ?? LumiLocalization.string("Not Set", bundle: .module),
                             icon: "hammer"
                         ) {
                             EmptyView()
