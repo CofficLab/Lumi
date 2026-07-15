@@ -1,3 +1,4 @@
+import LumiLocalizationKit
 import AppKit
 import LumiCoreKit
 import os
@@ -12,15 +13,15 @@ public struct DebugCommand: Commands, SuperLog {
     public init() {}
 
     public var body: some Commands {
-        CommandMenu("调试") {
-            Button("打开 App Support 目录") {
+        CommandMenu(String(localized: "调试", bundle: .module)) {
+            Button(String(localized: "打开 App Support 目录", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开 App Support 目录")
                 }
                 Self.openURL(Self.appSupportDirectory())
             }
 
-            Button("打开容器目录") {
+            Button(String(localized: "打开容器目录", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开容器目录")
                 }
@@ -34,7 +35,7 @@ public struct DebugCommand: Commands, SuperLog {
                 Self.openURL(directory)
             }
 
-            Button("打开文档目录") {
+            Button(String(localized: "打开文档目录", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开文档目录")
                 }
@@ -55,7 +56,7 @@ public struct DebugCommand: Commands, SuperLog {
             // 注:重构后 LumiCore.dataRootDirectory 指向 `Core/` 子目录本身,
             // AppConfig.getDBFolderURL() 又因 AppConfig.configure 被移除而退化为
             // 单纯的 bundleID 目录,两者都不再等价于历史"数据库目录"的含义。
-            Button("打开数据库目录") {
+            Button(String(localized: "打开数据库目录", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开数据库目录")
                 }

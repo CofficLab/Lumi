@@ -11,7 +11,7 @@ struct WindowCommand: Commands, SuperLog {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
-            Button("新建窗口") {
+            Button(String(localized: "新建窗口", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)新建窗口")
                 }

@@ -11,7 +11,7 @@ struct SettingsCommand: Commands, SuperLog {
 
     var body: some Commands {
         CommandGroup(after: .appInfo) {
-            Button("设置...") {
+            Button(String(localized: "设置...", bundle: .module)) {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开设置窗口")
                 }
