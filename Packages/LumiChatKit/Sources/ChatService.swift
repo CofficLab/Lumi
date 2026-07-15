@@ -56,6 +56,9 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     /// 不含首次调用，即总共最多调用 LLM `1 + inlineToolCallMaxRetries` 次。
     let inlineToolCallMaxRetries = 1
 
+    /// Agent turn 结束后的插件钩子回调
+    var turnFinishedHook: ((UUID, LumiTurnEndReason) async -> Void)?
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!

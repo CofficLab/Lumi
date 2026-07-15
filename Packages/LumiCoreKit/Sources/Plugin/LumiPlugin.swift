@@ -85,6 +85,18 @@ public protocol LumiPlugin {
     @MainActor
     static func lifecycle(_ event: LumiPluginLifecycle)
 
+    /// Agent Turn 结束后钩子（可选实现）
+    ///
+    /// 当一次 agent turn 结束时被调用，无论 turn 是成功完成、失败还是被取消。
+    /// 适合用于清理状态、检查任务进度、触发自动续聊等场景。
+    ///
+    /// - Parameters:
+    ///   - context: 插件上下文
+    ///   - conversationID: 会话 ID
+    ///   - reason: turn 结束原因
+    @MainActor
+    static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async
+
     // MARK: - Editor Extension (Optional)
 
     /// 注册编辑器扩展（语言支持、LSP 等）。可选实现。
@@ -243,6 +255,11 @@ public extension LumiPlugin {
 
     @MainActor
     static func lifecycle(_ event: LumiPluginLifecycle) {}
+
+    // MARK: - Turn Finished Hook Default Implementation
+
+    @MainActor
+    static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {}
 
     // MARK: - Editor Extension Default Implementations
 

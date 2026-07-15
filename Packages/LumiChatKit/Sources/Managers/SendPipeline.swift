@@ -388,6 +388,11 @@ final class SendPipeline {
             object: nil,
             userInfo: userInfo
         )
+
+        // 调用插件的 turn finished 钩子（异步）
+        Task { @MainActor [weak service] in
+            await service?.turnFinishedHook?(conversationID, reason)
+        }
     }
 
     func appendTurnCompletedMarker(conversationID: UUID) {

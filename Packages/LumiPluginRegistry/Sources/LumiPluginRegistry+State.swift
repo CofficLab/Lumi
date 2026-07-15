@@ -240,4 +240,11 @@ extension LumiPluginRegistry {
     public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
         enabledPlugins.flatMap { $0.logoItems(context: context) }
     }
+
+    /// 通知所有插件 agent turn 已结束
+    public static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
+        for plugin in enabledPlugins {
+            await plugin.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
+        }
+    }
 }
