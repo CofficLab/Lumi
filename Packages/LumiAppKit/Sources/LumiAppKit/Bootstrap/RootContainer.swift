@@ -144,7 +144,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // 设置 Turn Finished Hook，将内核级钩子连接到插件服务
         chatService.turnFinishedHook = { [weak pluginService] conversationID, reason in
-            await pluginService?.onTurnFinished(conversationID: conversationID, reason: reason)
+            await pluginService?.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
         }
 
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。

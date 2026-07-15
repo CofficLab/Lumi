@@ -197,9 +197,9 @@ final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, L
         LogoRegistry.shared.register(allItems)
     }
 
-    func onTurnFinished(conversationID: UUID, reason: LumiTurnEndReason) async {
+    func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
         await LumiPluginRegistry.onTurnFinished(
-            context: createPluginContext(),
+            context: context,
             conversationID: conversationID,
             reason: reason
         )
