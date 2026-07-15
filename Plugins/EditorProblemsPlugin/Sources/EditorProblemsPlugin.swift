@@ -27,6 +27,7 @@ public enum EditorProblemsPanelPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-problems",
+                order: info.order,
                 title: LumiPluginLocalization.string("Problems", bundle: .module),
                 systemImage: iconName
             ) {
@@ -46,6 +47,7 @@ public enum EditorProblemsPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "problems",
+                order: info.order,
                 title: LumiPluginLocalization.string("Problems", bundle: .module),
                 systemImage: iconName
             ) {

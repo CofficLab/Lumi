@@ -26,10 +26,11 @@ public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-call-hierarchy",
+                order: info.order,
                 title: LumiPluginLocalization.string("Call Hierarchy", bundle: .module),
                 systemImage: iconName
             ) {
-                CallHierarchyPanelView(service: service)
+                BottomEditorCallHierarchyPanelView(service: service)
             }
         ]
     }
@@ -42,10 +43,11 @@ public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "call-hierarchy",
+                order: info.order,
                 title: LumiPluginLocalization.string("Call Hierarchy", bundle: .module),
                 systemImage: iconName
             ) {
-                CallHierarchyPanelView(service: service)
+                BottomEditorCallHierarchyPanelView(service: service)
             }
         ]
     }

@@ -27,10 +27,11 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-references",
+                order: info.order,
                 title: LumiPluginLocalization.string("References", bundle: .module),
                 systemImage: iconName
             ) {
-                BottomEditorReferencesPanelView(service: service, showsHeader: false)
+                BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
             }
         ]
     }
@@ -46,10 +47,11 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "references",
+                order: info.order,
                 title: LumiPluginLocalization.string("References", bundle: .module),
                 systemImage: iconName
             ) {
-                BottomEditorReferencesPanelView(service: service, showsHeader: false)
+                BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
             }
         ]
     }

@@ -21,15 +21,16 @@ public enum EditorPreviewBottomPanelPlugin: LumiPlugin {
     @MainActor
     public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome else { return [] }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-preview",
+                order: info.order,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: iconName
             ) {
-                PreviewPanelView(service: service)
+                EditorPreviewDetailView(lumiCore: lumiCore)
             }
         ]
     }

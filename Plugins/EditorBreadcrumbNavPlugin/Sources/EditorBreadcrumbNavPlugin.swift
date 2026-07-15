@@ -24,10 +24,11 @@ public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
             return []
         }
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         return [
             LumiPanelHeaderItem(id: info.id) {
-                BreadcrumbHeaderView(service: service)
+                NavHeaderView(service: service, lumiCore: lumiCore)
             }
         ]
     }

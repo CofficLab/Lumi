@@ -27,6 +27,7 @@ public enum EditorSearchPanelPlugin: LumiPlugin {
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-search",
+                order: info.order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: iconName
             ) {
@@ -46,6 +47,7 @@ public enum EditorSearchPanelPlugin: LumiPlugin {
         return [
             LumiPanelRailTabItem(
                 id: "search",
+                order: info.order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: iconName
             ) {

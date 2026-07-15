@@ -1,4 +1,3 @@
-import EditorService
 import LumiCoreKit
 import LumiUI
 import SwiftUI
@@ -21,15 +20,15 @@ public enum EditorTerminalPanelPlugin: LumiPlugin {
     @MainActor
     public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome else { return [] }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
 
         return [
             LumiPanelBottomTabItem(
                 id: "editor-bottom-terminal",
+                order: info.order,
                 title: LumiPluginLocalization.string("Terminal", bundle: .module),
                 systemImage: iconName
             ) {
-                TerminalPanelView(service: service)
+                EditorBottomTerminalPanelView()
             }
         ]
     }

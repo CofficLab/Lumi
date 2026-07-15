@@ -27,7 +27,7 @@ public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
 
         return [
             LumiPanelHeaderItem(id: info.id) {
-                StickySymbolBarView(service: service)
+                EditorStickySymbolBarHeaderView(service: service)
             }
         ]
     }
