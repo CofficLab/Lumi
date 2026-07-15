@@ -3,7 +3,7 @@ import LumiCoreKit
 enum HttpErrorRenderer {
     static let item = LumiMessageRendererItem(
         id: "minimax-http-error",
-        order: info.order + 200,
+        order: MiniMaxPlugin.info.order + 200,
         canRender: { message in
             MiniMaxRenderKind.matchesOtherHttpError(message)
         },

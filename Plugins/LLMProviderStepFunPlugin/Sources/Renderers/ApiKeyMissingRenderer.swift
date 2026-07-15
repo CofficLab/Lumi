@@ -5,7 +5,7 @@ import SwiftUI
 enum ApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "stepfun-api-key-missing",
-        order: info.order + 200,
+        order: StepFunPlugin.info.order + 200,
         canRender: { message in
             StepFunRenderKind.matchesApiKeyMissing(message)
         },

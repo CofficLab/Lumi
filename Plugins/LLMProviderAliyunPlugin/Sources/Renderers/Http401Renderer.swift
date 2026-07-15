@@ -3,7 +3,7 @@ import LumiCoreKit
 enum Http401Renderer {
     static let item = LumiMessageRendererItem(
         id: "aliyun-http-401",
-        order: info.order + 200,
+        order: AliyunPlugin.info.order + 200,
         canRender: { message in
             AliyunRenderKind.matchesHttp(statusCode: 401, message: message)
         },

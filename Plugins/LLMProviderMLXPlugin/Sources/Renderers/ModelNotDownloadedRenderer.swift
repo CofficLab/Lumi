@@ -9,7 +9,7 @@ enum ModelNotDownloadedRenderer {
     static let item = LumiMessageRendererItem(
         id: "mlx-model-not-downloaded",
         // 高于核心错误渲染器（order 300），确保优先匹配。
-        order: info.order + 215,
+        order: MLXLumiPlugin.info.order + 215,
         canRender: { message in
             MLXRenderKind.matchesModelNotDownloaded(message)
         },

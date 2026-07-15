@@ -3,7 +3,7 @@ import LumiCoreKit
 enum HttpErrorRenderer {
     static let item = LumiMessageRendererItem(
         id: "aliyun-http-error",
-        order: info.order + 200,
+        order: AliyunPlugin.info.order + 200,
         canRender: { message in
             AliyunRenderKind.matchesOtherHttpError(message)
         },

@@ -5,7 +5,7 @@ import SwiftUI
 enum Http403Renderer {
     static let item = LumiMessageRendererItem(
         id: "stepfun-http-403",
-        order: info.order + 220,
+        order: StepFunPlugin.info.order + 220,
         canRender: { message in
             StepFunRenderKind.matchesHttp(statusCode: 403, message: message)
         },

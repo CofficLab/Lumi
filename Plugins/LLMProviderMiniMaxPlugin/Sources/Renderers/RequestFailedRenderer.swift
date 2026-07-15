@@ -3,7 +3,7 @@ import LumiCoreKit
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(
         id: "minimax-request-failed",
-        order: info.order + 200,
+        order: MiniMaxPlugin.info.order + 200,
         canRender: { message in
             MiniMaxRenderKind.matches(renderKind: MiniMaxRenderKind.requestFailed, message: message)
         },

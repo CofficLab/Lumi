@@ -5,7 +5,7 @@ import SwiftUI
 enum ApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-api-key-missing",
-        order: info.order + 200,
+        order: ZhipuPlugin.info.order + 200,
         canRender: { message in
             ZhipuRenderKind.matchesApiKeyMissing(message)
         },
