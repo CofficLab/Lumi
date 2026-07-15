@@ -8,6 +8,8 @@ struct AddProjectTool: LumiAgentTool {
         description: LumiPluginLocalization.string("Add an existing local directory to the projects list without switching the current project.", bundle: .module)
     )
 
+    init() {}
+
     var inputSchema: LumiJSONValue {
         .object([
             "type": .string("object"),
@@ -39,17 +41,19 @@ struct AddProjectTool: LumiAgentTool {
         }
 
         return await MainActor.run {
+            guard let viewModel = ProjectsPlugin.viewModel else {
+                return "Error: Projects view model is not available."
+            }
             do {
-                let store = ProjectsStore.shared
-                let project = try store.add(path: path, select: false)
-                return Self.successMessage(project: project, projects: store.projects)
+                let project = try viewModel.add(path: path, select: false)
+                return Self.successMessage(project: project, projects: viewModel.projects)
             } catch {
                 return "Error: \(error.localizedDescription)"
             }
         }
     }
 
-    private static func successMessage(project: LumiProject, projects: [LumiProject]) -> String {
+    private static func successMessage(project: LumiProjectEntry, projects: [LumiProjectEntry]) -> String {
         var output = """
         Successfully added project.
 
