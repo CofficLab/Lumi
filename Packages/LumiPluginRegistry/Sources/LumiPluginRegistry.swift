@@ -86,7 +86,6 @@ import MenuBarManagerPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import ModelSelectorPlugin
-import MultiAgentPlugin
 import NettoPlugin
 import NetworkManagerPlugin
 import OnboardingPlugin

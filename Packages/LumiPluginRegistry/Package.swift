@@ -102,7 +102,6 @@ let package = Package(
         .package(path: "../../Plugins/MessageListPlugin"),
         .package(path: "../../Plugins/MessageRendererPlugin"),
         .package(path: "../../Plugins/ModelSelectorPlugin"),
-        .package(path: "../../Plugins/MultiAgentPlugin"),
         .package(path: "../../Plugins/NettoPlugin"),
         .package(path: "../../Plugins/NetworkManagerPlugin"),
         .package(path: "../../Plugins/OnboardingPlugin"),
