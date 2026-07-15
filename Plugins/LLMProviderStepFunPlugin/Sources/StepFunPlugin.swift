@@ -59,6 +59,7 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
             TestWriterAgent.definition,
             DocWriterAgent.definition,
             BugFixerAgent.definition,
+            XcodeBuildAgent.definition,
         ]
         if Self.verbose {
             logger.info("\(Self.t)子 Agent 注册完成，共 \(agents.count) 个：\(agents.map(\.id).joined(separator: ", "))")
