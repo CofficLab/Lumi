@@ -241,7 +241,6 @@ let package = Package(
                 .product(name: "MessageListPlugin", package: "MessageListPlugin"),
                 .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
                 .product(name: "ModelSelectorPlugin", package: "ModelSelectorPlugin"),
-                .product(name: "MultiAgentPlugin", package: "MultiAgentPlugin"),
                 .product(name: "NettoPlugin", package: "NettoPlugin"),
                 .product(name: "NetworkManagerPlugin", package: "NetworkManagerPlugin"),
                 .product(name: "OnboardingPlugin", package: "OnboardingPlugin"),
