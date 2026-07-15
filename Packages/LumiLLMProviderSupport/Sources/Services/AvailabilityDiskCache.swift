@@ -6,7 +6,7 @@ import LumiCoreKit
 /// 为所有 LLM Provider 插件提供可复用的 5 分钟磁盘缓存。
 /// 缓存以 JSON 格式存储在插件的专属数据目录中。
 ///
-/// 存储路径: `AppConfig.getPluginDBFolderURL(pluginName:) / availability_cache.json`
+/// 存储路径: `<LumiCore.dataRootDirectory>/<pluginName>/availability_cache.json`
 ///
 /// 使用示例:
 /// ```swift
@@ -45,7 +45,8 @@ public final class AvailabilityDiskCache: @unchecked Sendable {
             label: "com.cofficlab.lumi.\(pluginName).availability.cache",
             qos: .utility
         )
-        self.pluginDirectory = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
+        self.pluginDirectory = lumiCorePluginDataDirectory(for: pluginName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
         self.storeFileURL = pluginDirectory.appendingPathComponent("availability_cache.json")
     }
 

@@ -27,6 +27,18 @@ import SwiftUI
 /// ```
 @MainActor
 public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
+    // MARK: - Active Instance
+
+    /// 当前活跃的 `LumiCore` 实例，供无法接收 `LumiPluginContext` 的静态代码（例如
+    /// `static let shared = XxxLocalStore()` 这类单例）解析存储路径。
+    ///
+    /// 由 `LumiCoreService` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
+    /// `LumiCore` 实例在跑（参见 `final class` 文档中的"单实例 App，多实例单测"约定），
+    /// 所以静态指针在这里是安全的——它指向"当前活跃"那个实例，而不是一个独立的全局对象。
+    /// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`current` 是
+    /// 给静态单例的兜底。
+    public nonisolated(unsafe) static var current: (any LumiCoreAccessing)?
+
     // MARK: - State
 
     @Published public private(set) var dataRootDirectory: URL?
@@ -250,4 +262,63 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
             try bootstrapEditor(provider: provider, factory: editorFactory)
         }
     }
+}
+
+// MARK: - Plugin Path Helpers (nonisolated)
+
+/// 当前活跃的 `LumiCore` 实例，供无法接收 `LumiPluginContext` 的静态代码（例如
+/// `static let shared = XxxLocalStore()` 这类单例）解析存储路径。
+///
+/// 由 `LumiCoreService` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
+/// `LumiCore` 实例在跑（参见 `final class` 文档中的"单实例 App，多实例单测"约定），
+/// 所以这里的静态指针是安全的——它指向"当前活跃"那个实例，而不是一个独立的全局对象。
+/// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`currentLumiCore`
+/// 是给静态单例的兜底。
+///
+/// 之所以提到 `@MainActor` `LumiCore` 类外面做成模块级 `nonisolated`，是因为 plugin 侧
+/// `static let shared = ...` 类的单例初始化往往发生在非 MainActor 上下文（例如 `actor`
+/// 的 init、非 MainActor 的 `static let`），需要这个值 `nonisolated` 才能在那些上下文
+/// 里读得到。`LumiCore` 上的同名 `current` 是给 MainActor 上下文的快速别名。
+public nonisolated(unsafe) var currentLumiCore: (any LumiCoreAccessing)?
+
+/// `currentLumiCore` 尚未被设置时（boot 之前/单测未注入）的 fallback 数据根路径。
+///
+/// 历史上 `AppConfig.getDBFolderURL()` 在未配置时退化为 `<AppSupport>/<bundleID>/`；
+/// 这里保留同样的行为，让 plugin 在 `currentLumiCore` 为 nil 时仍能写到一个合理的
+/// 目录，而不是 NPE / 写进 temp。
+///
+/// 同上，提到模块级 `nonisolated` 是为了让非 MainActor 上下文也能读得到。
+public nonisolated(unsafe) var lumiCoreFallbackDataRootDirectory: URL = {
+    let fileManager = FileManager.default
+    let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+    let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+    return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+}()
+
+/// `currentLumiCoreDataRootDirectory` 的 nonisolated 镜像。
+///
+/// 之所以单独维护一份：plugin 侧的 `static let shared = ...` 单例 init 经常发生在
+/// 非 MainActor 上下文（actor init、非 MainActor `static let`），读 `currentLumiCore`
+/// 是 nonisolated 的没问题，但顺着协议 `LumiCoreAccessing.dataRootDirectory` 走就会撞
+/// 到 `@MainActor` 隔离。所以这里把 boot 后的 data root 缓存到模块级变量，
+/// 由 `LumiCoreService` 在 `currentLumiCore` 写入后一并刷新。
+///
+/// 仍然是单一事实源（`LumiCore.dataRootDirectory`），这里只是它的 nonisolated 镜像。
+public nonisolated(unsafe) var currentLumiCoreDataRootDirectory: URL?
+
+/// `LumiCoreAccessing.pluginDataDirectory(for:)` 的 nonisolated 镜像。
+///
+/// 同上，plugin 单例 init 经常在非 MainActor 上下文，需要一个不走协议、纯 URL 计算的
+/// 入口。`pluginName` 的清洗规则与 `LumiCore._sanitizeDirectoryName` 一致（字母数字保留，
+/// 其余字符替换为 `_`），保证两条路径计算出同一个目录。
+public nonisolated func lumiCorePluginDataDirectory(for pluginName: String) -> URL {
+    let dataRoot = currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory
+    let sanitized = pluginName
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .components(separatedBy: CharacterSet.alphanumerics.inverted)
+        .filter { !$0.isEmpty }
+        .joined(separator: "_")
+    let directoryName = sanitized.isEmpty ? "Plugin" : sanitized
+    return dataRoot.appendingPathComponent(directoryName, isDirectory: true)
 }

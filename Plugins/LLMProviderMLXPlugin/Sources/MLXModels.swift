@@ -83,7 +83,8 @@ public enum MLXModels {
     }
 
     private static var cacheRootDirectory: URL {
-        AppConfig.getPluginDBFolderURL(pluginName: "LLMProviderMLX")
+        lumiCorePluginDataDirectory(for: "LLMProviderMLX")
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("LLMProviderMLX", isDirectory: true)
     }
 
     private static func cachePathComponents(for modelId: String) -> [String] {

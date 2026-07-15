@@ -3,7 +3,7 @@ import LumiCoreKit
 
 /// Persists App Store Connect plugin preferences.
 ///
-/// Storage: `AppConfig.getDBFolderURL()/AppStoreConnectPlugin/settings.plist`
+/// Storage: `<LumiCore.dataRootDirectory>/AppStoreConnectPlugin/settings.plist`
 final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
     static let shared = AppStoreConnectPluginLocalStore()
 
@@ -13,7 +13,7 @@ final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
     private let settingsFileURL: URL
 
     init(pluginDirectory: URL? = nil) {
-        let root = pluginDirectory ?? AppConfig.getDBFolderURL()
+        let root = pluginDirectory ?? (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
             .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")

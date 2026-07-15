@@ -7,7 +7,7 @@ import Foundation
 public protocol RAGConfiguration: Sendable {
     /// 插件数据库目录 URL
     ///
-    /// 替代 `AppConfig.getPluginDBFolderURL(pluginName:)` 的调用。
+    /// 替代 `currentLumiCore?.pluginDataDirectory(for:)` 的调用。
     func pluginDatabaseDirectory() -> URL
 
     /// 是否启用详细日志

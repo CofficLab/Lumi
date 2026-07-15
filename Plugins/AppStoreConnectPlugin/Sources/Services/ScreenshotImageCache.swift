@@ -18,7 +18,8 @@ enum ScreenshotImageCacheError: LocalizedError {
 
 actor ScreenshotImageCache {
     static let shared: ScreenshotImageCache = {
-        let root = AppConfig.getPluginDBFolderURL(pluginName: ScreenshotCacheConfiguration.pluginName)
+        let root = (lumiCorePluginDataDirectory(for: ScreenshotCacheConfiguration.pluginName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(ScreenshotCacheConfiguration.pluginName, isDirectory: true))
             .appendingPathComponent(ScreenshotCacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ScreenshotImageCache(rootDirectory: root)
     }()

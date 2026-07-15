@@ -37,7 +37,8 @@ actor TempFileStorageService {
     private let filesDirectory: URL
 
     private init() {
-        let pluginDir = AppConfig.getPluginDBFolderURL(pluginName: "AgentTempStorage")
+        let pluginDir = lumiCorePluginDataDirectory(for: "AgentTempStorage")
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("AgentTempStorage", isDirectory: true)
         filesDirectory = pluginDir.appendingPathComponent("files", isDirectory: true)
         try? FileManager.default.createDirectory(at: filesDirectory, withIntermediateDirectories: true)
     }

@@ -12,7 +12,7 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     private let corruptSettingsFileURL: URL
 
     public convenience init() {
-        self.init(settingsDirectory: AppConfig.getDBFolderURL()
+        self.init(settingsDirectory: (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
             .appendingPathComponent("InputPlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
@@ -105,7 +105,8 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     }
 
     private func readLegacyObject(forKey key: String) -> Any? {
-        let legacyDir = AppConfig.getDBFolderURL().appendingPathComponent("app_settings", isDirectory: true)
+        let legacyDir = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+            .appendingPathComponent("app_settings", isDirectory: true)
         let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
         guard fileManager.fileExists(atPath: legacyFile.path),
               let data = try? Data(contentsOf: legacyFile),

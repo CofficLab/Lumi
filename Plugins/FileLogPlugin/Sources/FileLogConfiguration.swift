@@ -7,6 +7,7 @@ public protocol FileLogConfiguration: Sendable {
 
 struct DefaultFileLogConfiguration: FileLogConfiguration {
     func logsDirectory() -> URL {
-        AppConfig.getPluginDBFolderURL(pluginName: "FileLog")
+        lumiCorePluginDataDirectory(for: "FileLog")
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("FileLog", isDirectory: true)
     }
 }
