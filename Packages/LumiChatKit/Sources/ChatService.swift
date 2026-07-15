@@ -116,7 +116,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     ]
 
     public var agentTools: [any LumiAgentTool] {
-        Self.builtInTools + (toolService?.tools ?? [])
+        // 优先返回 `toolService` 已注册的完整工具列表（包含 plugin 工具 + 已被
+        // `registerBuiltInTools` 注入的内置工具）。仅在 `toolService` 尚未就绪时
+        // 退回到 `builtInTools`，避免与 `toolService` 重复拼装造成同名工具出现两次。
+        toolService?.tools ?? Self.builtInTools
     }
 
     public func registerToolService(_ toolService: (any LumiToolServicing)?) {

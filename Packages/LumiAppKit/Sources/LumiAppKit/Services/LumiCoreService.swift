@@ -37,6 +37,7 @@ final class LumiCoreService: SuperLog {
         try lumiCore.boot(
             databaseDirectory: self.coreDatabaseDirectory,
             provider: provider,
+            builtInTools: ChatService.builtInTools,
             editorFactory: editorFactory
         )
 

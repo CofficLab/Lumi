@@ -189,13 +189,21 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
     /// 单元测试、CLI 工具）。
     ///
+    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 通过
+    /// `registerBuiltInTools(_:)` 注入 `ToolService` 的内置工具。传入后启动期校验
+    /// 就会把"plugin 工具 + 内置工具 + sub-agent 工具"的并集一起查重，跨来源的
+    /// 命名冲突在 boot 阶段就会以 `LumiToolRegistrationError` 抛出，调用方
+    /// （通常是 `LumiCoreService` → `RootContainer`）用 `CrashedView` 优雅降级。
+    ///
     /// - Parameters:
     ///   - databaseDirectory: 数据根目录。
     ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
+    ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
     ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
     public func boot<Service: AbstractEditorServicing>(
         databaseDirectory: URL,
         provider: any LumiAgentToolProviding,
+        builtInTools: [any LumiAgentTool] = [],
         editorFactory: EditorBootstrapFactory<Service>?
     ) throws {
         projectState = LumiProjectState()
@@ -214,7 +222,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
         try configure(dataRootDirectory: databaseDirectory)
 
-        try bootstrapToolService(provider: provider)
+        try bootstrapToolService(provider: provider, builtInTools: builtInTools)
 
         // 自动创建并注册 EditorService（仅当提供了 editorFactory）
         if let editorFactory {

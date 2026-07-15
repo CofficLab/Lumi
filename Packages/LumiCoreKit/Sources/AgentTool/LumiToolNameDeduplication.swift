@@ -17,11 +17,22 @@ public enum LumiToolNameDeduplication {
     /// 抛出的错误携带每个重复名对应的所有"主人"类型（`String(reflecting:)` 含模块路径），
     /// 调用方可直接用 `localizedDescription` 展示给用户。
     public static func validateUnique(tools: [any LumiAgentTool]) throws {
-        // 记录每个 name 出现过的工具类型列表
+        let entries = tools.map { tool in
+            ValidateEntry(name: tool.name, owner: String(reflecting: type(of: tool)))
+        }
+        try validateUnique(entries: entries)
+    }
+
+    /// 校验一组已经预先组装好的 `(name, owner)` 列表。
+    ///
+    /// 用于"尚未实例化、但名字已知"的工具源（如 `SubAgentDelegateTool` 的
+    /// `delegate_<id>` 命名约定），让启动期校验不必为了凑 `LumiAgentTool` 协议
+    /// 而构建空壳实例。`owner` 推荐带上来源标签（如 `"<built-in>.NoOpTool"`、
+    /// `"SubAgentDelegateTool[reviewer]"`），错误信息会直接展示给用户。
+    public static func validateUnique(entries: [ValidateEntry]) throws {
         var ownersByName: [String: [String]] = [:]
-        for tool in tools {
-            let owner = String(reflecting: type(of: tool))
-            ownersByName[tool.name, default: []].append(owner)
+        for entry in entries {
+            ownersByName[entry.name, default: []].append(entry.owner)
         }
 
         // 收集出现 >=2 次的 name
@@ -32,6 +43,18 @@ public enum LumiToolNameDeduplication {
 
         if !duplicates.isEmpty {
             throw LumiToolRegistrationError.duplicateNames(duplicates)
+        }
+    }
+
+    /// 单条待校验的工具名称条目。`name` 为对外暴露的工具名；`owner` 为来源标签，
+    /// 错误信息中会原样展示。
+    public struct ValidateEntry: Sendable, Equatable {
+        public let name: String
+        public let owner: String
+
+        public init(name: String, owner: String) {
+            self.name = name
+            self.owner = owner
         }
     }
 

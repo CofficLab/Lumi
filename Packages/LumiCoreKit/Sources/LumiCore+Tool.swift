@@ -6,7 +6,15 @@ extension LumiCore {
     // MARK: - Tool Service Bootstrap
 
     /// 初始化 `ToolService` 并注入运行环境。
-    public func bootstrapToolService(provider: any LumiAgentToolProviding) throws {
+    ///
+    /// `builtInTools` 是 LumiCore 之外、运行期一定会注入 `ToolService` 的内置工具
+    /// （例如 `ChatService.builtInTools`）。把它们也纳入启动期校验，确保 boot 阶段
+    /// 就能拦截"plugin 工具 ↔ 内置工具"、"内置工具 ↔ sub-agent delegate 工具"等
+    /// 跨来源的命名冲突，而不是等到聊天发消息时再被 `assertUnique` 拦下。
+    public func bootstrapToolService(
+        provider: any LumiAgentToolProviding,
+        builtInTools: [any LumiAgentTool] = []
+    ) throws {
         let toolService = ToolService()
         registerService(ToolService.self, toolService)
         registerService((any LumiToolServicing).self, toolService)
@@ -14,7 +22,7 @@ extension LumiCore {
         toolService.environment = ToolServiceEnvironmentBridge(lumiCore: self)
 
         // 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
-        try validateToolNameUniqueness(provider: provider)
+        try validateToolNameUniqueness(provider: provider, builtInTools: builtInTools)
     }
 
     // MARK: - Tool Contributions
@@ -77,21 +85,52 @@ extension LumiCore {
 
     /// 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
     ///
-    /// 构造一个最小可用的 PluginContext（chatService / toolService 已就绪），
-    /// 拉取当前启用的工具列表，复用 `LumiToolNameDeduplication.validateUnique` 的
-    /// 语义抛错。检测到重复时调用方应捕获并以 `CrashedView` 等方式优雅降级。
+    /// 校验的是 `ToolService` 在 bootstrap 结束后**最终**累积的工具集：
+    /// plugin 工具 + 内置工具 + sub-agent delegate 工具。这三者共同决定了
+    /// 聊天时 `LumiLLMRequest.tools` 的内容，必须提前到 boot 阶段一并校验。
     ///
-    /// - Parameter provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
-    /// - Throws: `LumiToolRegistrationError.duplicateNames` 当 `provider` 提供的工具名有重复。
+    /// - Parameters:
+    ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
+    ///   - builtInTools: 运行期会由 `registerBuiltInTools(_:)` 注入的内置工具
+    ///     （例如 `ChatService.builtInTools`）。不在 `provider` 提供的范围内。
+    /// - Throws: `LumiToolRegistrationError.duplicateNames` 当合并后的工具名有重复。
     public func validateToolNameUniqueness(
-        provider: any LumiAgentToolProviding
+        provider: any LumiAgentToolProviding,
+        builtInTools: [any LumiAgentTool] = []
     ) throws {
         let bootContext = makePluginContext(
             activeSectionID: "lumi.boot",
             activeSectionTitle: "Lumi Boot"
         )
+
+        // 1. plugin 工具：来源是 `provider.agentTools(context:)`，owner 是真实类型
+        let pluginEntries = provider.agentTools(context: bootContext).map { tool in
+            LumiToolNameDeduplication.ValidateEntry(
+                name: tool.name,
+                owner: String(reflecting: type(of: tool))
+            )
+        }
+
+        // 2. 内置工具：来源是 `builtInTools` 参数，owner 加 `<built-in>.` 前缀以区分
+        let builtInEntries = builtInTools.map { tool in
+            LumiToolNameDeduplication.ValidateEntry(
+                name: tool.name,
+                owner: "<built-in>.\(String(reflecting: type(of: tool)))"
+            )
+        }
+
+        // 3. sub-agent delegate 工具：name = "delegate_<definition.id>"，来源与 plugin 工具平级
+        //    这里直接根据定义拼装名称，无需构造完整的 `SubAgentDelegateTool` 实例
+        //    （实例化需要 chatService / toolService，会污染 boot 阶段的依赖图）
+        let subAgentEntries = provider.subAgents(context: bootContext).map { definition in
+            LumiToolNameDeduplication.ValidateEntry(
+                name: "delegate_\(definition.id)",
+                owner: "SubAgentDelegateTool[\(definition.id)]"
+            )
+        }
+
         try LumiToolNameDeduplication.validateUnique(
-            tools: provider.agentTools(context: bootContext)
+            entries: pluginEntries + builtInEntries + subAgentEntries
         )
     }
 }
