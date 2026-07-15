@@ -87,8 +87,8 @@ struct LocalProviderSettingsPage: View {
 
     private var headerStats: some View {
         HStack(spacing: 10) {
-            Label("\(localProviders.count) 个本地供应商", systemImage: "desktopcomputer")
-            Text("\(selectedProvider?.availableModels.count ?? 0) 个模型")
+            Label(String(format: LumiPluginLocalization.string("%lld local providers", bundle: .module), localProviders.count), systemImage: "desktopcomputer")
+            Text(verbatim: String(format: LumiPluginLocalization.string("%lld models", bundle: .module), selectedProvider?.availableModels.count ?? 0))
             Spacer()
         }
         .font(.appCaption)
@@ -98,7 +98,7 @@ struct LocalProviderSettingsPage: View {
     private var providerListPane: some View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
-                AppSearchBar(text: $searchText, placeholder: "搜索供应商")
+                AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
             }
             .padding(12)
 

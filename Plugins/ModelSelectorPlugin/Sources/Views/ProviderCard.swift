@@ -1,5 +1,6 @@
 
 import LumiCoreKit
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
@@ -65,7 +66,7 @@ struct ProviderCard: View {
                     .lineLimit(1)
 
                 if isActive {
-                    Text(verbatim: "Active")
+                    Text(verbatim: LumiPluginLocalization.string("Active", bundle: .module))
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundColor(theme.primary)
                         .padding(.horizontal, 4)

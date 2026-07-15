@@ -13,7 +13,7 @@ struct ModelSelectorView: View {
     let conversationID: UUID?
     let onClose: () -> Void
 
-    @State private var selectedTab: ModelSelectorTab = .current
+    @State private var selectedTab: ModelSelectorTab = .frequent
     @State private var searchText = ""
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
     @State private var fastModels: [ModelFastModelEntry] = []
