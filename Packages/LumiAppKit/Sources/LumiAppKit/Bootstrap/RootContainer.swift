@@ -129,23 +129,26 @@ final class RootContainer: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)重载聊天插件贡献")
         }
 
-        // 构造 plugin context（LumiCore 会自动注入 chatService / toolService 等基础服务）
+
+        // 构造 plugin context
         let context = lumiCore.makePluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core"
         )
 
-        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
-        // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
-        lumiCore.bootstrapToolContributions(provider: pluginService, context: context, builtInTools: ChatService.builtInTools)
-
-        // 注册其他贡献
+        // 注册 LLM Providers 到其他贡献（必须先注册，让 bootstrapToolContributions 里的 subAgents 能查到 provider）
         let providers = pluginService.llmProviders(context: context)
         chatService.registerProviders(providers)
         chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
         chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
 
-        let subAgentCount = pluginService.subAgents(context: context).count
+        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
+        // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
+        // 此时 chatService.providersByID 已包含所有 provider，subAgents 内部可以查到对应实例。
+        lumiCore.bootstrapToolContributions(provider: pluginService, context: context, builtInTools: ChatService.builtInTools)
+
+        // bootstrapToolContributions 内部已调用 provider.subAgents(context:) 并 appendTools(subAgentDelegateTools)
+        // 这里再次调用只是为了取 count 用于日志
 
         NotificationCenter.default.post(
             name: .lumiLLMProvidersDidChange,
@@ -154,7 +157,7 @@ final class RootContainer: ObservableObject, SuperLog {
         )
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider, \(subAgentCount) 个 SubAgent")
+            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider")
         }
     }
 }
