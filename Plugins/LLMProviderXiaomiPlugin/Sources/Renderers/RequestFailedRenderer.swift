@@ -4,7 +4,7 @@ import LumiCoreKit
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(
         id: "xiaomi-request-failed",
-        order: info.order + 200,
+        order: XiaomiPlugin.info.order + 200,
         canRender: { message in
             XiaomiRenderKind.matches(renderKind: XiaomiRenderKind.requestFailed, message: message)
         },

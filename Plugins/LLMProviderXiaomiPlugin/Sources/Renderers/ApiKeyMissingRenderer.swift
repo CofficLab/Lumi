@@ -4,7 +4,7 @@ import LumiCoreKit
 enum ApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "xiaomi-api-key-missing",
-        order: info.order + 200,
+        order: XiaomiPlugin.info.order + 200,
         canRender: { message in
             XiaomiRenderKind.matchesApiKeyMissing(message)
         },
