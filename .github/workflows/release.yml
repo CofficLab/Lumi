@@ -191,18 +191,12 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Cache SPM Packages
-        id: spm-cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ env.DERIVED_DATA_PATH }}/SourcePackages
-          key: ${{ runner.os }}-xcode-26.3-spm-${{ hashFiles('Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-26.3-spm-
-
       - name: Resolve SPM Dependencies
-        if: steps.spm-cache.outputs.cache-hit != 'true'
         run: |
+          # Clean DerivedData first to avoid any cached dirty state
+          rm -rf "${{ env.DERIVED_DATA_PATH }}/SourcePackages"
+          mkdir -p "${{ env.DERIVED_DATA_PATH }}/SourcePackages"
+
           xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
             -scheme ${{ env.SCHEME }} \
             -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
