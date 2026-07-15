@@ -8,6 +8,8 @@ struct GetCurrentProjectTool: LumiAgentTool {
         description: LumiPluginLocalization.string("Get the currently selected project name and path. Returns empty status if no project is selected.", bundle: .module)
     )
 
+    init() {}
+
     var inputSchema: LumiJSONValue {
         .object([
             "type": .string("object"),
@@ -25,9 +27,8 @@ struct GetCurrentProjectTool: LumiAgentTool {
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         await MainActor.run {
-            let store = ProjectsStore.shared
-
-            guard let project = store.currentProject else {
+            guard let viewModel = ProjectsPlugin.viewModel,
+                  let project = viewModel.currentProject else {
                 return """
                 ## Current Project Status
 

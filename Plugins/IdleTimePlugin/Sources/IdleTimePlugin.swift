@@ -17,7 +17,7 @@ public enum IdleTimePlugin: LumiPlugin {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapFromLumiCoreIfNeeded(context: context)
         return [IdleTimeChatMiddleware()]
     }
 
@@ -27,7 +27,7 @@ public enum IdleTimePlugin: LumiPlugin {
             return []
         }
 
-        let projectPath = LumiCore.projectState?.currentProject?.path ?? ""
+        let projectPath = context.lumiCore?.projectState?.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).status",
@@ -43,9 +43,9 @@ public enum IdleTimePlugin: LumiPlugin {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapFromLumiCoreIfNeeded(context: context)
         let projectPathProvider = {
-            LumiCore.projectState?.currentProject?.path ?? ""
+            context.lumiCore?.projectState?.currentProject?.path ?? ""
         }
         return [
             LumiRootOverlayItem(id: "\(info.id).observer", order: 96) { content in

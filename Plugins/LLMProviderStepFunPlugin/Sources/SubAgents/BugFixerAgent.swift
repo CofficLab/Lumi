@@ -9,7 +9,32 @@ enum BugFixerAgent {
     static let definition = LumiSubAgentDefinition(
         id: "bug-fixer",
         displayName: "Bug Fixer",
-        description: "Analyze and fix bugs in code. Provide the error message, stack trace, or describe the unexpected behavior.",
+        description: """
+        PREFER this tool whenever the user reports a bug, crash, error, or unexpected \
+        behavior — e.g. "this crashes", "throws an error", "wrong output", "doesn't work", \
+        "fix this bug", "帮我修一下这个 bug".
+
+        This tool delegates to an expert debugging sub-agent that autonomously:
+        1. Reads the error message, stack trace, or behavior description you provide
+        2. Locates the relevant source files and traces the root cause (off-by-one, \
+        nil-handling, race conditions, logic errors, type mismatches, etc.)
+        3. Applies a focused fix via edit_file and explains why it works
+
+        Do NOT try to debug by yourself using shell + read_file loops — the sub-agent \
+        follows a structured root-cause workflow (symptoms → analysis → fix → verification) \
+        and produces a definitive diagnosis + fix in one delegation.
+
+        Examples of when to use this tool:
+        - "Fix this crash: NSInvalidArgumentException ..."
+        - "The login flow returns nil when credentials are expired — fix it"
+        - "帮我修这个 bug：返回值错了"
+        - "为什么这个函数在 empty input 时崩溃？"
+
+        Pass the task as an error message, stack trace, or a description of the \
+        unexpected behavior. Include repro steps and expected vs. actual behavior \
+        when possible (e.g. "calling parseDate('2024-13-01') crashes; should return nil"). \
+        The sub-agent may also run shell / tests to verify the fix.
+        """,
         providerID: "stepfun",
         modelID: "step-3.7-flash",
         systemPrompt: """

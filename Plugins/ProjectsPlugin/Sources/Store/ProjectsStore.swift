@@ -1,40 +1,15 @@
-import Combine
 import Foundation
 import LumiCoreKit
-import SuperLogKit
 import os
+import SuperLogKit
 
-// MARK: - Store Protocol
-
+/// 纯数据存取层，专注于项目的持久化存储。
+/// 不包含任何状态管理逻辑，所有数据通过方法参数传入/返回。
 @MainActor
-public protocol ProjectsStoring: AnyObject {
-    var projects: [LumiProjectEntry] { get }
-    var currentProject: LumiProjectEntry? { get }
-
-    func select(_ project: LumiProjectEntry)
-    @discardableResult
-    func add(path: String, select: Bool) throws -> LumiProjectEntry
-    func remove(_ project: LumiProjectEntry)
-}
-
-// MARK: - Store
-
-@MainActor
-public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
+public final class ProjectsStore: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
     public nonisolated static let emoji = "📁"
-    public static var verbose = false
-
-    public static let shared = ProjectsStore()
-
-    @Published public private(set) var projects: [LumiProjectEntry]
-    @Published public private(set) var currentProject: LumiProjectEntry? {
-        didSet {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)currentProject 变化: \(oldValue?.name ?? "nil") → \(self.currentProject?.name ?? "nil")")
-            }
-        }
-    }
+    public static var verbose = true
 
     // MARK: - Constants
 
@@ -49,48 +24,79 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
 
     // MARK: - Init
 
-    public init(pluginDirectory: URL = LumiCore.pluginDataDirectory(for: "Projects")) {
-        self.settingsDirectory = pluginDirectory
+    public init(pluginDirectory: URL? = nil) {
+        let directory = pluginDirectory ?? ProjectsStore.defaultPluginDirectory
+        self.settingsDirectory = directory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
-        self.projects = Self.loadProjects(from: settingsDirectory)
 
-        let currentPath = Self.loadCurrentProjectPath(from: settingsDirectory)
-        self.currentProject = projects.first { $0.path == currentPath } ?? projects.first
-
-        // 同步到 LumiCore
-        syncToLumiCore()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)初始化完成, settingsDirectory: \(self.settingsDirectory.path)")
+        }
     }
 
-    // MARK: - ProjectsStoring
+    /// 默认插件目录
+    private static var defaultPluginDirectory: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/Projects")
+    }
 
-    public func select(_ project: LumiProjectEntry) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)select 被调用: \(project.name) @ \(project.path)")
-        }
+    // MARK: - Load
 
+    /// 加载所有项目
+    public func loadProjects() -> [LumiProjectEntry] {
+        Self.loadProjects(from: settingsDirectory)
+    }
+
+    /// 加载当前项目路径
+    public func loadCurrentProjectPath() -> String? {
+        Self.loadCurrentProjectPath(from: settingsDirectory)
+    }
+
+    /// 加载当前项目（从项目列表中查找）
+    public func loadCurrentProject(from projects: [LumiProjectEntry]) -> LumiProjectEntry? {
+        let currentPath = loadCurrentProjectPath()
+        return projects.first { $0.path == currentPath } ?? projects.first
+    }
+
+    // MARK: - Save
+
+    /// 保存所有项目和当前项目
+    public func save(projects: [LumiProjectEntry], currentProject: LumiProjectEntry?) {
+        try? FileManager.default.createDirectory(
+            at: settingsDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        Self.write(projects, to: projectsFileURL)
+        Self.write(currentProject?.path, to: currentProjectFileURL)
+    }
+
+    /// 添加项目到列表，返回更新后的列表
+    public func addProject(_ project: LumiProjectEntry, to projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
+        var updated = projects
+        updated.removeAll { $0.path == project.path }
+        updated.insert(project, at: 0)
+        return Array(updated.prefix(Self.maxProjectsCount))
+    }
+
+    /// 从项目列表中移除项目，返回更新后的列表
+    public func removeProject(_ project: LumiProjectEntry, from projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
+        var updated = projects
+        updated.removeAll { $0.path == project.path }
+        return updated
+    }
+
+    /// 选中项目：将项目移到列表顶部，返回更新后的列表
+    public func selectProject(_ project: LumiProjectEntry, in projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
         let updatedProject = LumiProjectEntry(name: project.name, path: project.path)
-        projects.removeAll { $0.path == updatedProject.path }
-        projects.insert(updatedProject, at: 0)
-        projects = Array(projects.prefix(Self.maxProjectsCount))
-        currentProject = updatedProject
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)currentProject 已更新: \(self.currentProject?.name ?? "nil"), 准备调用 LumiCore.projectState?.switchToProject")
-        }
-
-        // 持久化
-        save()
-
-        // 同步到 LumiCore
-        LumiCore.projectState?.switchToProject(updatedProject)
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)switchToProject 调用完成, LumiCore.projectState.currentProject: \(LumiCore.projectState?.currentProject?.name ?? "nil")")
-        }
+        var updated = projects
+        updated.removeAll { $0.path == updatedProject.path }
+        updated.insert(updatedProject, at: 0)
+        return Array(updated.prefix(Self.maxProjectsCount))
     }
 
+    /// 通过路径添加项目
     @discardableResult
-    public func add(path: String, select shouldSelect: Bool = false) throws -> LumiProjectEntry {
+    public func add(path: String, to projects: [LumiProjectEntry]) throws -> LumiProjectEntry {
         let expandedPath = (path as NSString).expandingTildeInPath
         let url = URL(fileURLWithPath: expandedPath)
             .resolvingSymlinksInPath()
@@ -105,82 +111,11 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
             throw ProjectsStoreError.pathIsNotDirectory(url.path)
         }
 
-        let project = LumiProjectEntry(name: url.lastPathComponent, path: url.path)
-        if shouldSelect {
-            select(project)
-        } else {
-            add(project)
-        }
-
-        return project
+        return LumiProjectEntry(name: url.lastPathComponent, path: url.path)
     }
 
-    public func remove(_ project: LumiProjectEntry) {
-        projects.removeAll { $0.path == project.path }
-
-        if currentProject?.path == project.path {
-            currentProject = projects.first
-        }
-
-        save()
-        syncToLumiCore()
-    }
-
-    public func setCurrentProjectPath(_ path: String, reason: String = "") {
-        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // 空/空白路径 → "无项目"态
-        guard !trimmed.isEmpty else {
-            currentProject = nil
-            save()
-            LumiCore.projectState?.clearCurrentProject()
-            return
-        }
-
-        // 标准化路径
-        let normalized = Self.normalizedPath(trimmed)
-
-        if let existing = projects.first(where: { $0.path == normalized }) ?? projects.first(where: { $0.path == trimmed }) {
-            select(existing)
-            return
-        }
-
-        // 项目不在列表中：构造条目并选中
-        let entry = LumiProjectEntry(name: Self.directoryName(for: normalized), path: normalized)
-        select(entry)
-    }
-
-    /// 便捷方法：通过路径添加项目
-    @discardableResult
-    public func addProject(path: String, select shouldSelect: Bool = false) throws -> LumiProjectEntry {
-        try add(path: path, select: shouldSelect)
-    }
-
-    /// 便捷方法：通过 URL 添加并选项目
-    public func addProject(url: URL) {
-        _ = try? add(path: url.path, select: true)
-    }
-
-    // MARK: - Sync to LumiCore
-
-    /// 将所有项目同步到 LumiCore
-    private func syncToLumiCore() {
-        guard let projectState = LumiCore.projectState else { return }
-
-        // 写入项目列表
-        for project in projects {
-            projectState.addProject(project)
-        }
-
-        // 写入当前项目
-        if let current = currentProject {
-            projectState.switchToProject(current)
-        }
-    }
-
-    // MARK: - Private
-
-    private static func normalizedPath(_ path: String) -> String {
+    /// 标准化路径
+    public static func normalizedPath(_ path: String) -> String {
         let expanded = (path as NSString).expandingTildeInPath
         let url = URL(fileURLWithPath: expanded)
             .resolvingSymlinksInPath()
@@ -188,35 +123,13 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
         return url.path
     }
 
-    private static func directoryName(for path: String) -> String {
+    /// 获取目录名称
+    public static func directoryName(for path: String) -> String {
         let name = URL(fileURLWithPath: path).lastPathComponent
         return name.isEmpty ? path : name
     }
 
-    private func add(_ project: LumiProjectEntry) {
-        projects.removeAll { $0.path == project.path }
-        projects.insert(project, at: 0)
-        projects = Array(projects.prefix(Self.maxProjectsCount))
-
-        if currentProject == nil {
-            currentProject = projects.first
-        }
-
-        save()
-        syncToLumiCore()
-    }
-
-    // MARK: - Persistence
-
-    private func save() {
-        try? FileManager.default.createDirectory(
-            at: settingsDirectory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        Self.write(projects, to: projectsFileURL)
-        Self.write(currentProject?.path, to: currentProjectFileURL)
-    }
+    // MARK: - Private
 
     private var projectsFileURL: URL {
         settingsDirectory.appendingPathComponent(Self.projectsFileName, isDirectory: false)
@@ -268,22 +181,6 @@ public final class ProjectsStore: ObservableObject, ProjectsStoring, SuperLog {
             }
         } catch {
             try? FileManager.default.removeItem(at: temporaryURL)
-        }
-    }
-}
-
-// MARK: - Errors
-
-public enum ProjectsStoreError: LocalizedError {
-    case pathDoesNotExist(String)
-    case pathIsNotDirectory(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .pathDoesNotExist(let path):
-            "Path does not exist: \(path)"
-        case .pathIsNotDirectory(let path):
-            "Path is not a directory: \(path)"
         }
     }
 }

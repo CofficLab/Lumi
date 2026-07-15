@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/ShellKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "ProjectOverviewPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
             ],
             path: "Sources",

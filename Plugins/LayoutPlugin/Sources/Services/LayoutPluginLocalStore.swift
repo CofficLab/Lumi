@@ -9,7 +9,7 @@ import LumiCoreKit
 /// - Agent 模式 Detail 视图 ID
 /// - 分栏布局宽度比例（SplitView 各列的比例）
 ///
-/// 存储位置：AppConfig.getDBFolderURL()/LayoutPlugin/settings.plist
+/// 存储位置：<LumiCore.dataRootDirectory>/LayoutPlugin/settings.plist
 public final class LayoutPluginLocalStore: @unchecked Sendable {
 
     // MARK: - Singleton
@@ -27,7 +27,7 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     // MARK: - Initialization
 
     convenience private init() {
-        let root = AppConfig.getDBFolderURL()
+        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
             .appendingPathComponent("LayoutPlugin", isDirectory: true)
         self.init(pluginDirectory: root)
     }

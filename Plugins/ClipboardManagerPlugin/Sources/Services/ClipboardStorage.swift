@@ -4,7 +4,7 @@ import SuperLogKit
 /// 剪贴板存储
 ///
 /// 使用 ClipboardHistoryManager (SwiftData) 进行持久化存储
-/// 存储位置：AppConfig.getDBFolderURL()/ClipboardManager/history.sqlite
+/// 存储位置：<LumiCore.dataRootDirectory>/ClipboardManager/history.sqlite
 public actor ClipboardStorage: SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true

@@ -16,14 +16,14 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-    ],
+        .package(path: "../../Packages/LumiLocalizationKit"),    ],
     targets: [
         .target(
             name: "ConversationLanguagePlugin",
             dependencies: [
                 .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

@@ -19,14 +19,15 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInXcodeStatusBarView()
+                    OpenInXcodeStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]
@@ -63,9 +64,14 @@ private enum XcodeOpener {
 /// Xcode 打开状态栏视图
 public struct OpenInXcodeStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let lumiCore: LumiCoreAccessing
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {
@@ -81,7 +87,7 @@ public struct OpenInXcodeStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInXcodeDetailView(),
+            detailView: OpenInXcodeDetailView(lumiCore: lumiCore),
             id: "open-in-xcode-status"
         ) {
             Button(action: {
@@ -125,10 +131,15 @@ public struct OpenInXcodeStatusBarView: View {
 
 /// Xcode 打开详情视图（在 popover 中显示）
 public struct OpenInXcodeDetailView: View {
+    let lumiCore: LumiCoreAccessing
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {

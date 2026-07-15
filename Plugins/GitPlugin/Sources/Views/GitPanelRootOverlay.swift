@@ -2,10 +2,17 @@ import LumiCoreKit
 import SwiftUI
 
 struct GitPanelRootOverlay<Content: View>: View {
+    let lumiCore: LumiCoreAccessing
     let content: Content
 
     var body: some View {
-        content
-            .environmentObject(GitRuntimeBridge.gitVM)
+        let gitVM = GitRuntimeBridge.gitVM
+        GitCommitHistoryRootOverlay(
+            gitVM: gitVM,
+            lumiCore: lumiCore
+        ) {
+            content
+        }
+        .environmentObject(gitVM)
     }
 }

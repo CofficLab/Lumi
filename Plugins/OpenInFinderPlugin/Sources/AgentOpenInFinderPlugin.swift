@@ -19,14 +19,15 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
+        guard let lumiCore = context.lumiCore else { return [] }
+        return [
             LumiStatusBarItem(
                 id: info.id,
                 title: info.displayName,
                 systemImage: iconName,
                 placement: .leading,
                 statusBarView: {
-                    OpenInFinderStatusBarView()
+                    OpenInFinderStatusBarView(lumiCore: lumiCore)
                 }
             ),
         ]
@@ -52,10 +53,15 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
 /// Finder 打开状态栏视图
 public struct OpenInFinderStatusBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         Group {
-            if (LumiCore.projectState?.currentProject?.path ?? "").isEmpty {
+            if (lumiCore.projectState?.currentProject?.path ?? "").isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -66,7 +72,7 @@ public struct OpenInFinderStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInFinderDetailView(),
+            detailView: OpenInFinderDetailView(lumiCore: lumiCore),
             id: "open-in-finder-status"
         ) {
             Button(action: {
@@ -100,8 +106,8 @@ public struct OpenInFinderStatusBarView: View {
     }
 
     private func openInFinder() {
-        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectState?.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }
@@ -111,6 +117,11 @@ public struct OpenInFinderStatusBarView: View {
 /// Finder 打开详情视图（在 popover 中显示）
 public struct OpenInFinderDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let lumiCore: LumiCoreAccessing
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -147,7 +158,7 @@ public struct OpenInFinderDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(LumiCore.projectState?.currentProject?.path ?? "")
+                Text(lumiCore.projectState?.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -157,7 +168,7 @@ public struct OpenInFinderDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(LumiCore.projectState?.currentProject?.path ?? "", forType: .string)
+                    NSPasteboard.general.setString(lumiCore.projectState?.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -171,8 +182,8 @@ public struct OpenInFinderDetailView: View {
     }
 
     private func openInFinder() {
-        guard let path = LumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: LumiCore.projectState?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectState?.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectState?.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }

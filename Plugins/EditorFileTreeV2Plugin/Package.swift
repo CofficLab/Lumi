@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/FileTreeKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "FileTreeKit", package: "FileTreeKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
             ],
@@ -44,7 +44,7 @@ let package = Package(
             dependencies: [
                 "EditorFileTreeV2Plugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Tests"
         )

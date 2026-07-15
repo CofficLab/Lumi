@@ -3,7 +3,7 @@ import XcodeKit
 
 /// EditorSwiftPlugin storage paths for build server metadata and Xcode DerivedData.
 ///
-/// Layout: `AppConfig.getPluginDBFolderURL(pluginName: "EditorSwiftPlugin")/<workspace-hash>/`
+/// Layout: `<LumiCore.dataRootDirectory>/EditorSwiftPlugin/<workspace-hash>/`
 public enum EditorSwiftStorage {
     public static let pluginName = EditorSwiftBuildServerStore.pluginDirectoryName
 

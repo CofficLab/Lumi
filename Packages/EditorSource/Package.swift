@@ -5,7 +5,6 @@ import PackageDescription
 
 let package = Package(
     name: "EditorSource",
-    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
@@ -18,7 +17,6 @@ let package = Package(
             path: "../EditorTextView"
         ),
         .package(path: "../EditorLanguageRuntime"),
-        .package(path: "../SuperLogKit"),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.8.2"
@@ -30,13 +28,11 @@ let package = Package(
             dependencies: [
                 "EditorTextView",
                 "EditorLanguageRuntime",
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 "TextFormation",
             ],
             path: "Sources",
             resources: [
-                .process("EditorSource/Symbols.xcassets"),
-                .process("../Resources/Localizable.xcstrings")
+                .process("EditorSource/Symbols.xcassets")
             ]
         ),
         .testTarget(

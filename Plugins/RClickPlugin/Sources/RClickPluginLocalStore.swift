@@ -6,7 +6,7 @@ import SuperLogKit
 /// RClickPlugin 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。
-/// 存储位置：AppConfig.getDBFolderURL()/RClickPlugin/settings.plist
+/// 存储位置：<LumiCore.dataRootDirectory>/RClickPlugin/settings.plist
 public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick.local-store")
     
@@ -25,7 +25,7 @@ public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     // MARK: - Initialization
     
     public convenience init() {
-        let root = AppConfig.getDBFolderURL()
+        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
             .appendingPathComponent("RClickPlugin", isDirectory: true)
         self.init(pluginDirectory: root)
     }

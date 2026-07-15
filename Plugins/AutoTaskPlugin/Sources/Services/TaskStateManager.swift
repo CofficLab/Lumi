@@ -28,7 +28,7 @@ public actor TaskStateManager: SuperLog {
 
     /// 内存态（非持久化）：标记某会话即将进入一次无感自动续聊轮次。
     ///
-    /// 由 `AutoTaskTurnCheckRuntime` 在触发续聊前置位，由
+    /// 由 `TurnCheckRuntime` 在触发续聊前置位，由
     /// `TaskContextChatMiddleware` 在注入该轮 system prompt 时消费，
     /// 消费即清除，避免后续普通轮次误判。
     private var pendingContinuationConversationIDs: Set<String> = []

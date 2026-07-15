@@ -9,7 +9,32 @@ enum DocWriterAgent {
     static let definition = LumiSubAgentDefinition(
         id: "doc-writer",
         displayName: "Doc Writer",
-        description: "Generate documentation for code. Provide the file path or describe what needs documentation.",
+        description: """
+        PREFER this tool whenever the user asks to "write docs", "add documentation", \
+        "document this code/module/API", or "generate a README".
+
+        This tool delegates to an expert technical-writing sub-agent that autonomously:
+        1. Reads the target source file(s) to understand purpose, public APIs, parameters, \
+        return values, and error conditions
+        2. Generates the appropriate form of documentation — inline /// doc comments, \
+        API reference docs, README files, or usage guides
+        3. Edits / creates files at the conventional location
+
+        Do NOT try to write docs manually by chaining read_file + edit_file yourself — \
+        the sub-agent knows Swift /// doc-comment conventions, structured parameter \
+        sections (Parameters / Returns / Throws), and produces consistent, idiomatic \
+        documentation in one delegation.
+
+        Examples of when to use this tool:
+        - "帮我给 UserService 加文档注释"
+        - "Add /// documentation to all public APIs in this file"
+        - "Write a README for this module"
+        - "Document this public API with parameters and error cases"
+
+        Pass the task as a file path OR a description of what to document. \
+        Include any preferences (e.g. "document the auth flow with focus on edge cases", \
+        "add /// comments to all public methods, include usage examples for each one").
+        """,
         providerID: "stepfun",
         modelID: "step-3.7-flash",
         systemPrompt: """

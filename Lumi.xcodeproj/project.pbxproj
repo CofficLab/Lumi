@@ -7,15 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = CDX1000000000000000001 /* LLMProviderCodexPlugin */; };
-		EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */; };
-		ESV1000000000000000002 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = ESV1000000000000000001 /* EditorService */; };
+		0BBD822E30067A13005CCD05 /* LumiAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBD822D30067A13005CCD05 /* LumiAppKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		LCK1000000000000000002 /* LumiChatKit in Frameworks */ = {isa = PBXBuildFile; productRef = LCK1000000000000000001 /* LumiChatKit */; };
-		LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */ = {isa = PBXBuildFile; productRef = LPR1000000000000000001 /* LumiPluginRegistry */; };
-		LUI1000000000000000002 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = LUI1000000000000000001 /* LumiUI */; };
-		MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = MLX1000000000000000001 /* LLMProviderMLXPlugin */; };
-		SPK1000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPK1000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,26 +42,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ESV1000000000000000002 /* EditorService in Frameworks */,
-				EMC1000000000000000002 /* EditorMultiCursorCommandsPlugin in Frameworks */,
-				LCK1000000000000000002 /* LumiChatKit in Frameworks */,
-				LUI1000000000000000002 /* LumiUI in Frameworks */,
-				LPR1000000000000000002 /* LumiPluginRegistry in Frameworks */,
-				MLX1000000000000000002 /* LLMProviderMLXPlugin in Frameworks */,
-				CDX1000000000000000002 /* LLMProviderCodexPlugin in Frameworks */,
-				SPK1000000000000000002 /* Sparkle in Frameworks */,
+				0BBD822E30067A13005CCD05 /* LumiAppKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BBD822C30067A13005CCD05 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
+				0BBD822C30067A13005CCD05 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -93,14 +87,7 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				ESV1000000000000000001 /* EditorService */,
-				EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */,
-				LCK1000000000000000001 /* LumiChatKit */,
-				LUI1000000000000000001 /* LumiUI */,
-				LPR1000000000000000001 /* LumiPluginRegistry */,
-				MLX1000000000000000001 /* LLMProviderMLXPlugin */,
-				CDX1000000000000000001 /* LLMProviderCodexPlugin */,
-				SPK1000000000000000001 /* Sparkle */,
+				0BBD822D30067A13005CCD05 /* LumiAppKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -134,14 +121,7 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
-				EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */,
-				LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */,
-				LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
-				LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */,
-				MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */,
-				CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */,
-				SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -413,87 +393,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */ = {
+		0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/LLMProviderCodexPlugin;
-		};
-		EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/EditorMultiCursorCommandsPlugin;
-		};
-		ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/EditorService;
-		};
-		LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiChatKit;
-		};
-		LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiPluginRegistry;
-		};
-		LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiUI;
-		};
-		MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/LLMProviderMLXPlugin;
+			relativePath = Packages/LumiAppKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.9.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		CDX1000000000000000001 /* LLMProviderCodexPlugin */ = {
+		0BBD822D30067A13005CCD05 /* LumiAppKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CDX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderCodexPlugin" */;
-			productName = LLMProviderCodexPlugin;
-		};
-		EMC1000000000000000001 /* EditorMultiCursorCommandsPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EMC1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/EditorMultiCursorCommandsPlugin" */;
-			productName = EditorMultiCursorCommandsPlugin;
-		};
-		ESV1000000000000000001 /* EditorService */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = ESV1000000000000000003 /* XCLocalSwiftPackageReference "Packages/EditorService" */;
-			productName = EditorService;
-		};
-		LCK1000000000000000001 /* LumiChatKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LCK1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiChatKit" */;
-			productName = LumiChatKit;
-		};
-		LPR1000000000000000001 /* LumiPluginRegistry */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LPR1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiPluginRegistry" */;
-			productName = LumiPluginRegistry;
-		};
-		LUI1000000000000000001 /* LumiUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LUI1000000000000000003 /* XCLocalSwiftPackageReference "Packages/LumiUI" */;
-			productName = LumiUI;
-		};
-		MLX1000000000000000001 /* LLMProviderMLXPlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = MLX1000000000000000003 /* XCLocalSwiftPackageReference "Plugins/LLMProviderMLXPlugin" */;
-			productName = LLMProviderMLXPlugin;
-		};
-		SPK1000000000000000001 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = SPK1000000000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
+			package = 0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */;
+			productName = LumiAppKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

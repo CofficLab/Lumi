@@ -77,17 +77,18 @@ extension ConversationListView {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(conversations, id: \.id) { conversation in
-                        AppListRow(
-                            isSelected: localSelectedConversationId == conversation.id,
-                            action: {
-                                localSelectedConversationId = conversation.id
-                            }
-                        ) {
+                        // 用 onTapGesture 触发选中，绕过 AppListRow 内置 Button 对右键的吞吃，
+                        // 让 ConversationItemView 上的 .contextMenu 在 macOS 上能正常弹出。
+                        AppListRow(isSelected: localSelectedConversationId == conversation.id) {
                             ConversationItemView(
                                 conversation: conversation,
                                 onDelete: { handleDelete(conversation) },
                                 isProcessing: context.isConversationProcessing(conversation.id)
                             )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                localSelectedConversationId = conversation.id
+                            }
                         }
                         .onAppear {
                             handleRowAppear(conversation)
@@ -160,6 +161,10 @@ extension ConversationListView {
         }
 
         _ = context.deleteConversation(id: conversation.id)
+
+        if Self.verbose && ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.info("\(self.t)🗑️ 删除完成：\(conversation.displayTitle) - 剩余 \(conversations.count) 条")
+        }
     }
 
     private func performInitialLoadIfNeeded() {

@@ -13,11 +13,23 @@ final class LayoutPersistenceCoordinator: SuperLog {
     nonisolated static let verbose = LayoutPlugin.verbose
     static let shared = LayoutPersistenceCoordinator()
 
+    /// 内核实例引用，用于获取 layoutState
+    // MARK: - Configuration
+
+    // 使用 LumiCoreAccessing 协议而非具体 LumiCore 类型，
+    // 使协调器与内核实现解耦，也便于单元测试时传入 mock。
+    private weak var lumiCore: (any LumiCoreAccessing)?
+
     private init() {}
+
+    /// 配置内核实例
+    func configure(lumiCore: any LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     /// 从磁盘恢复布局状态到内核
     func restore() {
-        guard let state = LumiCore.layoutState else {
+        guard let state = lumiCore?.layoutState else {
             if Self.verbose {
                 LayoutPlugin.logger.warning("\(self.t)LumiCore.layoutState 未初始化，跳过恢复")
             }

@@ -4,11 +4,11 @@ import SwiftUI
 
 struct ProjectControlView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @ObservedObject private var store: ProjectsStore
+    @ObservedObject private var viewModel: ProjectsViewModel
     @State private var isPopoverPresented = false
 
-    init(store: ProjectsStore) {
-        self.store = store
+    init(viewModel: ProjectsViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -19,7 +19,7 @@ struct ProjectControlView: View {
                 Image(systemName: "folder")
                     .font(.system(size: 12, weight: .semibold))
 
-                Text(store.currentProject?.name ?? "Projects")
+                Text(viewModel.currentProject?.name ?? "Projects")
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
             }
@@ -31,7 +31,7 @@ struct ProjectControlView: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ProjectsPopoverView(store: store)
+            ProjectsPopoverView(viewModel: viewModel)
         }
     }
 }

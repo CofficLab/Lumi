@@ -362,7 +362,7 @@ public struct MLXLocalProviderSettingsView: View, SuperLog {
     private func unloadModel() async {
         actionError = nil
         errorModelId = nil
-        await inferenceService.unloadModel()
+        inferenceService.unloadModel()
     }
 
     @MainActor
@@ -372,7 +372,7 @@ public struct MLXLocalProviderSettingsView: View, SuperLog {
 
         // 如果模型正在使用，先卸载
         if inferenceService.currentModelId == modelID {
-            await inferenceService.unloadModel()
+            inferenceService.unloadModel()
         }
 
         do {

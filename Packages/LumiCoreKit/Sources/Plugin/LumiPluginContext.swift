@@ -28,6 +28,8 @@ public struct LumiPluginContext {
     /// Whether the chat section is currently rendered in the app layout.
     public let isChatSectionVisible: Bool
     public let dependencies: LumiPluginDependencies
+    /// 可选的 LumiCore 实例，供插件访问核心服务
+    public let lumiCore: (any LumiCoreAccessing)?
 
     /// Whether the active view container is configured to host a chat section.
     public var supportsChatSection: Bool {
@@ -52,7 +54,8 @@ public struct LumiPluginContext {
         showsRail: Bool = false,
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil,
-        dependencies: LumiPluginDependencies = LumiPluginDependencies()
+        dependencies: LumiPluginDependencies = LumiPluginDependencies(),
+        lumiCore: (any LumiCoreAccessing)? = nil
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
@@ -61,6 +64,7 @@ public struct LumiPluginContext {
         self.showsPanelChrome = showsPanelChrome
         self.isChatSectionVisible = isChatSectionVisible ?? chatSection.isVisible
         self.dependencies = dependencies
+        self.lumiCore = lumiCore
     }
 
     public func resolve<T>(_ type: T.Type = T.self) -> T? {
@@ -79,7 +83,8 @@ public struct LumiPluginContext {
             showsRail: showsRail,
             showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
-            dependencies: dependencies
+            dependencies: dependencies,
+            lumiCore: lumiCore
         )
     }
 

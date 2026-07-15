@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Symbols" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -36,6 +37,7 @@
       }
     },
     "Workspace Symbols" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -70,6 +72,7 @@
       }
     },
     "Workspace Symbols (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,6 +107,7 @@
       }
     },
     "Workspace symbols not available" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

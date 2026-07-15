@@ -12,10 +12,11 @@ public struct TreeView: View, SuperLog {
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     @EnvironmentObject var editorContext: EditorContext
+    let lumiCore: LumiCoreAccessing
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = RefreshCoordinator()
@@ -32,7 +33,9 @@ public struct TreeView: View, SuperLog {
     /// 闪烁高亮触发器：当此值变化时，匹配路径的节点会闪烁
     @State private var flashTrigger: (path: String, id: UUID)?
 
-    public init() {}
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
 
     /// 打开文件任务，连续点击时取消较早的请求，避免乱序完成。
     @State private var openFileTask: Task<Void, Never>?
@@ -234,7 +237,7 @@ public struct TreeView: View, SuperLog {
 // MARK: - Preview
 
 #Preview {
-    TreeView()
+    TreeView(lumiCore: PreviewEditorFileTreeSupport.lumiCore)
         .inRootView()
         .frame(width: 250, height: 400)
 }

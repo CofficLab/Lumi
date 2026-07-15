@@ -8,7 +8,8 @@ enum EditorSwiftBuildServerStore {
     private static let legacyPluginDirectoryName = "EditorXcodePlugin"
 
     static func makeStore() -> XcodeBuildServerStore {
-        let pluginDirectory = AppConfig.getPluginDBFolderURL(pluginName: pluginDirectoryName)
+        let pluginDirectory = lumiCorePluginDataDirectory(for: pluginDirectoryName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginDirectoryName, isDirectory: true)
         migrateLegacyStorageIfNeeded(to: pluginDirectory)
         try? FileManager.default.createDirectory(
             at: pluginDirectory,
@@ -22,7 +23,7 @@ enum EditorSwiftBuildServerStore {
     }
 
     private static func migrateLegacyStorageIfNeeded(to pluginDirectory: URL) {
-        let dataRoot = AppConfig.getDBFolderURL()
+        let dataRoot = currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory
         let appDirectory = dataRoot.deletingLastPathComponent()
         let legacyCandidates = [
             appDirectory.appendingPathComponent(legacyPluginDirectoryName, isDirectory: true),

@@ -6,10 +6,14 @@ public enum RAGPluginRuntime {
         FileManager.default.temporaryDirectory.appendingPathComponent("Lumi-RAGPlugin", isDirectory: true)
     }
 
-    /// 当前项目路径，从内核 `LumiCore.projectState` 获取。
+    /// 内核引用，由 bootstrapRuntime(context:) 设置。
+    @MainActor
+    public static var lumiCore: (any LumiCoreAccessing)?
+
+    /// 当前项目路径，从内核 `lumiCore.projectState` 获取。
     @MainActor
     public static var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore?.projectState?.currentProject?.path ?? ""
     }
 
     /// 当前项目名称，从路径推导。

@@ -19,7 +19,7 @@ public enum ProjectIssueScannerPlugin: LumiPlugin {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded()
+        bootstrapFromLumiCoreIfNeeded(context: context)
         return [IssueHintChatMiddleware()]
     }
 

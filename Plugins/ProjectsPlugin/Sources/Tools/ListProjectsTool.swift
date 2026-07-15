@@ -8,6 +8,8 @@ struct ListProjectsTool: LumiAgentTool {
         description: LumiPluginLocalization.string("List saved projects with project names, paths, and last used times.", bundle: .module)
     )
 
+    init() {}
+
     private let maxLimit = 500
 
     var inputSchema: LumiJSONValue {
@@ -34,8 +36,10 @@ struct ListProjectsTool: LumiAgentTool {
         let limit = min(arguments["limit"]?.intValue ?? 5, maxLimit)
 
         return await MainActor.run {
-            let store = ProjectsStore.shared
-            let projects = Array(store.projects.prefix(limit))
+            guard let viewModel = ProjectsPlugin.viewModel else {
+                return "Error: Projects view model is not available."
+            }
+            let projects = Array(viewModel.projects.prefix(limit))
 
             guard !projects.isEmpty else {
                 return "No projects found."
@@ -44,7 +48,7 @@ struct ListProjectsTool: LumiAgentTool {
             var output = "## Projects\n\n"
             for (index, project) in projects.enumerated() {
                 output += "\(index + 1). **\(project.name)**"
-                if store.currentProject?.path == project.path {
+                if viewModel.currentProject?.path == project.path {
                     output += " (current)"
                 }
                 output += "\n"

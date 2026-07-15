@@ -7,7 +7,12 @@ import MagicDiffView
 /// Git 状态栏弹出面板
 public struct GitPluginPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let lumiCore: LumiCoreAccessing
 
+
+    public init(lumiCore: LumiCoreAccessing) {
+        self.lumiCore = lumiCore
+    }
     @State private var branches: [GitBranch] = []
     @State private var commits: [GitCommitLog] = []
     @State private var uncommittedFiles: [GitChangedFile] = []
@@ -32,7 +37,7 @@ public struct GitPluginPopoverView: View {
     private let commitPageSize = 25
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
     public var body: some View {

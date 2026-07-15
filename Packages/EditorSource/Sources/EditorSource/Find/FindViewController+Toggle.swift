@@ -32,8 +32,7 @@ extension FindViewController {
         findPanel.isHidden = false
         findPanelVerticalConstraint.constant = resolvedTopPadding - viewModel.panelHeight
 
-        // 使用 needsLayout 代替 layoutSubtreeIfNeeded 避免递归布局
-        view.needsLayout = true
+        view.layoutSubtreeIfNeeded()
 
         // Perform the animation
         conditionalAnimated(animated) {
@@ -108,8 +107,7 @@ extension FindViewController {
             animatable()
 
             view.updateConstraints()
-            // 移除 layoutSubtreeIfNeeded，让隐式动画自动处理布局
-            view.needsLayout = true
+            view.layoutSubtreeIfNeeded()
         } completionHandler: {
             onComplete()
         }

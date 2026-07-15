@@ -43,7 +43,7 @@ extension RAGAutoIndexOverlay {
         autoEnsureTask = Task { [currentPath] in
             let candidatePaths = await Task.detached(priority: .utility) {
                 let recentPaths = await MainActor.run {
-                    LumiCore.projectState?.projects.map(\.path) ?? []
+                    RAGPluginRuntime.lumiCore?.projectState?.projects.map(\.path) ?? []
                 }
                 return Self.uniqueNonEmptyPaths([currentPath] + recentPaths)
                     .filter { Self.isExistingDirectory(path: $0) }

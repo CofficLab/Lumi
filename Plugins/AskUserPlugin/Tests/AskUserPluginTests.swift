@@ -45,21 +45,21 @@ import Testing
 
 @Suite @MainActor struct AskUserPluginAgentToolsTests {
     
-    @Test func agentToolsReturnsOneTool() async {
+    @Test func agentToolsReturnsOneTool() {
         let context = LumiPluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
         )
-        let tools = await AskUserPlugin.agentTools(context: context)
+        let tools = AskUserPlugin.agentTools(context: context)
         #expect(tools.count == 1)
     }
-    
-    @Test func agentToolsReturnsAskUserTool() async {
+
+    @Test func agentToolsReturnsAskUserTool() {
         let context = LumiPluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
         )
-        let tools = await AskUserPlugin.agentTools(context: context)
+        let tools = AskUserPlugin.agentTools(context: context)
         #expect(tools.first?.name == "ask_user")
     }
 }

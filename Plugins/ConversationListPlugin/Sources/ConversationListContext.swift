@@ -12,17 +12,20 @@ public final class ConversationListContext: ObservableObject {
     private let chatService: ChatService
     private let projectPathStore: LumiProjectState?
     private let projectStore: LumiProjectState?
+    private weak var lumiCore: LumiCore?
     private var conversationSnapshots: [UUID: Date] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     public init(
         chatService: ChatService,
         projectPathStore: LumiProjectState? = nil,
-        projectStore: LumiProjectState? = nil
+        projectStore: LumiProjectState? = nil,
+        lumiCore: LumiCore? = nil
     ) {
         self.chatService = chatService
         self.projectPathStore = projectPathStore
         self.projectStore = projectStore
+        self.lumiCore = lumiCore
 
         conversationSnapshots = Dictionary(
             uniqueKeysWithValues: chatService.conversations.map { ($0.id, $0.updatedAt) }
@@ -50,7 +53,7 @@ public final class ConversationListContext: ObservableObject {
     }
 
     public func databaseDirectory() -> URL {
-        LumiCore.coreDataDirectory
+        lumiCore?.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory())
     }
 
     public func fetchConversationsPage(limit: Int, offset: Int) -> [ConversationListItem] {

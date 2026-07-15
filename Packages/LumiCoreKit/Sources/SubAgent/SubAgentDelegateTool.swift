@@ -39,7 +39,15 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
             "properties": .object([
                 "task": .object([
                     "type": .string("string"),
-                    "description": .string("The task for the sub-agent to perform")
+                    "description": .string(
+                        "A natural-language description of WHAT to do and WHY. " +
+                        "The sub-agent is a specialist that will autonomously plan and execute " +
+                        "the task using its own toolset. Be specific about the goal and any constraints " +
+                        "(e.g. \"commit the auth refactor and mention the breaking API change in the message\", " +
+                        "\"write tests for the new login flow covering happy path and invalid credentials\"). " +
+                        "Pass enough context — the sub-agent cannot see your full conversation unless you " +
+                        "include the relevant details here."
+                    )
                 ])
             ]),
             "required": .array([.string("task")])

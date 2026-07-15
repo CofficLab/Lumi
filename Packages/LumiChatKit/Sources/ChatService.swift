@@ -7,6 +7,10 @@ import SwiftData
 public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
     public static weak var shared: ChatService?
 
+    // MARK: - Core Reference
+
+    public let lumiCore: (any LumiCoreAccessing)?
+
     // MARK: - Published State
 
     @Published public internal(set) var conversations: [LumiConversationSummary]
@@ -61,10 +65,11 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
     // MARK: - Init
 
-    public init(configuration: Configuration) {
+    public init(configuration: Configuration, lumiCore: (any LumiCoreAccessing)? = nil) {
         let store = ChatStore(configuration: configuration)
         self.store = store
         self.backgroundQueryContainer = store.sharedContainer
+        self.lumiCore = lumiCore
         let snapshot = store.load()
         self.conversations = snapshot.conversations
         self.messagesByConversationID = MessageManager.messagesByMergingToolResults(snapshot.messagesByConversationID)
@@ -111,7 +116,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     ]
 
     public var agentTools: [any LumiAgentTool] {
-        Self.builtInTools + (toolService?.tools ?? [])
+        // 优先返回 `toolService` 已注册的完整工具列表（包含 plugin 工具 + 已被
+        // `registerBuiltInTools` 注入的内置工具）。仅在 `toolService` 尚未就绪时
+        // 退回到 `builtInTools`，避免与 `toolService` 重复拼装造成同名工具出现两次。
+        toolService?.tools ?? Self.builtInTools
     }
 
     public func registerToolService(_ toolService: (any LumiToolServicing)?) {

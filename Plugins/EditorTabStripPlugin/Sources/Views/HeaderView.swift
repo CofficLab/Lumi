@@ -11,6 +11,7 @@ public struct HeaderView: View {
 
     // MARK: - 属性
 
+    let lumiCore: LumiCoreAccessing
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var draggedTabSessionID: UUID?
     @ObservedObject private var service: EditorService
@@ -19,11 +20,12 @@ public struct HeaderView: View {
     @StateObject private var coordinator = StripCoordinator()
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
-    public init(service: EditorService) {
+    public init(service: EditorService, lumiCore: LumiCoreAccessing) {
         self._service = ObservedObject(wrappedValue: service)
+        self.lumiCore = lumiCore
     }
 
     // ⚠️ sessionStore 用于 StripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
@@ -50,10 +52,10 @@ public struct HeaderView: View {
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: {
-                    LumiCore.projectState?.currentProject?.path ?? ""
+                    lumiCore.projectState?.currentProject?.path ?? ""
                 },
                 openFile: { [weak service] url in
-                    let projectPath = LumiCore.projectState?.currentProject?.path
+                    let projectPath = lumiCore.projectState?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)
@@ -76,7 +78,7 @@ public struct HeaderView: View {
                 newPath: newPath,
                 sessionStore: sessionStore,
                 openFile: { [weak service] url in
-                    let projectPath = LumiCore.projectState?.currentProject?.path
+                    let projectPath = lumiCore.projectState?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)

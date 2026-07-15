@@ -4,7 +4,7 @@ import LumiPreviewKit
 
 /// EditorPreview 插件专属存储根目录与相关预览构建路径。
 ///
-/// 存储位置：`LumiCoreKit.AppConfig.getPluginDBFolderURL(pluginName: "EditorPreviewPlugin")/`
+/// 存储位置：`<LumiCore.dataRootDirectory>/EditorPreviewPlugin/`
 public enum EditorPreviewStorage {
     public struct CacheSummary: Equatable, Sendable {
         public let fileCount: Int
@@ -38,7 +38,8 @@ public enum EditorPreviewStorage {
         installLock.lock()
         defer { installLock.unlock() }
 
-        let root = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
+        let root = lumiCorePluginDataDirectory(for: pluginName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         if !didInstall {
             didInstall = true
@@ -60,7 +61,8 @@ public enum EditorPreviewStorage {
 
     public static var rootDirectory: URL {
         installIfNeeded()
-        return AppConfig.getPluginDBFolderURL(pluginName: pluginName)
+        return lumiCorePluginDataDirectory(for: pluginName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
     }
 
     public static var inlineBuilderWorkspaceDirectory: URL {

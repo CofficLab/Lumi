@@ -176,169 +176,58 @@ public enum LumiPluginRegistry {
         }
     }
 
-    public static let plugins: [any LumiPlugin.Type] = [
-        // MARK: - Theme Plugins
+    /// 检测所有已注册插件是否有 ID 重复。
+    ///
+    /// 返回：如果存在重复，返回 [(id: String, plugins: [any LumiPlugin.Type])]；否则返回空数组。
+    /// 注意：这是一个调试/开发辅助函数，建议在应用启动时调用一次进行校验。
+    public static func detectDuplicatePluginIDs() -> [(id: String, plugins: [any LumiPlugin.Type])] {
+        var idToPlugins: [String: [any LumiPlugin.Type]] = [:]
 
-        FileLogPlugin.self,
-        LayoutPlugin.self,
-        ThemeLumiPlugin.self,
-        ThemeMidnightPlugin.self,
-        ThemeSkyPlugin.self,
-        ThemeAuroraPlugin.self,
-        ThemeNebulaPlugin.self,
-        ThemeVoidPlugin.self,
-        ThemeSpringPlugin.self,
-        ThemeSummerPlugin.self,
-        ThemeAutumnPlugin.self,
-        ThemeWinterPlugin.self,
-        ThemeGithubPlugin.self,
-        ThemeOrchardPlugin.self,
-        ThemeMountainPlugin.self,
-        ThemeVscodePlugin.self,
-        ThemeRiverPlugin.self,
-        ThemeOneDarkPlugin.self,
-        ThemeDraculaPlugin.self,
-        ThemeStatusBarPlugin.self,
+        // 收集所有插件的 ID
+        for plugin in plugins {
+            let pluginID = plugin.info.id
+            idToPlugins[pluginID, default: []].append(plugin)
+        }
 
-        // MARK: - Chat Plugins
+        // 过滤出重复的 ID
+        return idToPlugins
+            .filter { $0.value.count > 1 }
+            .map { (id: $0.key, plugins: $0.value) }
+            .sorted { $0.id < $1.id }
+    }
 
-        OnboardingPlugin.self,
-        QuickFileSearchPlugin.self,
-        QuickLauncherPlugin.self,
-        AppUpdateStatusBarPlugin.self,
-        DeviceInfoPlugin.self,
-        NetworkManagerPlugin.self,
-        HostsManagerPlugin.self,
-        MenuBarManagerPlugin.self,
-        ChatPanelPlugin.self,
-        MessageListPlugin.self,
-        ChatAttachmentSectionPlugin.self,
-        ChatPendingSectionPlugin.self,
-        ChatComposerSectionPlugin.self,
-        ModelSelectorPlugin.self,
+    public static let plugins: [any LumiPlugin.Type] =
+        themePlugins +
+        chatPlugins +
+        llmProviderPlugins +
+        openInPlugins +
+        [
+            // MARK: - Core Tools
+            TerminalPlugin.self,
+            FontConfigPlugin.self,
+            AppLoadedPluginsPlugin.self,
+            ToolCorePlugin.self,
+            MessageRendererPlugin.self,
+            MemoryPlugin.self,
+            AgentRulesPlugin.self,
+            SkillPlugin.self,
+            RequestLogPlugin.self,
+            HistoryDBStatusBarPlugin.self,
+            ActivityHeatmapPlugin.self,
+            RAGPlugin.self,
+            AgentTempStoragePlugin.self,
 
-        // MARK: - LLM Providers
-
-        OpenAIPlugin.self,
-        ZhipuPlugin.self,
-        AiRouterPlugin.self,
-        AliyunPlugin.self,
-        AnthropicPlugin.self,
-        DeepSeekPlugin.self,
-        FeifeimiaoPlugin.self,
-        FlyMuxPlugin.self,
-        FreeModelPlugin.self,
-        HappyCodePlugin.self,
-        HyperAPIPlugin.self,
-        LPgptPlugin.self,
-        MegaLLMPlugin.self,
-        MiniMaxPlugin.self,
-        OpenRouterPlugin.self,
-        XiaomiPlugin.self,
-        XybbzPlugin.self,
-        SublyxPlugin.self,
-        StepFunPlugin.self,
-        CodexLumiPlugin.self,
-        MLXLumiPlugin.self,
-
-        // MARK: - Open In Plugins
-
-        AgentOpenInAntigravityPlugin.self,
-        AgentOpenInCursorPlugin.self,
-        AgentOpenInXcodePlugin.self,
-        AgentOpenRemotePlugin.self,
-        AgentOpenInGitHubDesktopPlugin.self,
-        AgentOpenInFinderPlugin.self,
-        AgentOpenInGitOKPlugin.self,
-
-        TerminalPlugin.self,
-        FontConfigPlugin.self,
-        AppLoadedPluginsPlugin.self,
-        ToolCorePlugin.self,
-        MessageRendererPlugin.self,
-        MemoryPlugin.self,
-        AgentRulesPlugin.self,
-        SkillPlugin.self,
-        RequestLogPlugin.self,
-        HistoryDBStatusBarPlugin.self,
-        ActivityHeatmapPlugin.self,
-        RAGPlugin.self,
-        AgentTempStoragePlugin.self,
-
-        // MARK: - Conversation Plugins
-
-        ConversationTitlePlugin.self,
-        ConversationTimelinePlugin.self,
-        ConversationLanguagePlugin.self,
-        ChatModePlugin.self,
-        VerbosityPlugin.self,
-        ConversationListPlugin.self,
-        ConversationNewPlugin.self,
-        ConversationForkPlugin.self,
-
-        // MARK: - Editor Plugins
-
-        EditorPanelPlugin.self,
-        EditorSwiftPlugin.self,
-        // EditorSwiftEditorPlugin 是真正注册 Swift 语法 grammar / LSP 的类型（遵循
-        // LumiEditorExtensionRegistering）；EditorSwiftPlugin 仅负责 scheme 工具栏等集成。
-        // 两者 id 不同（EditorSwift / EditorSwiftIntegration），不会重复登记。
-        EditorSwiftEditorPlugin.self,
-        EditorBreadcrumbHeaderPlugin.self,
-        StripHeaderPlugin.self,
-        EditorStickySymbolBarHeaderPlugin.self,
-        EditorProblemsPanelPlugin.self,
-        EditorReferencesPanelPlugin.self,
-        EditorSearchPanelPlugin.self,
-        EditorSymbolsPanelPlugin.self,
-        EditorCallHierarchyPanelPlugin.self,
-        EditorPreviewBottomPanelPlugin.self,
-        EditorTerminalPanelPlugin.self,
-        EditorFileTreePanelPlugin.self,
-        EditorFileTreeV2Plugin.self,
-        EditorOutlinePanelPlugin.self,
-        AutoTaskPlugin.self,
-        GitHubPlugin.self,
-        IdleTimePlugin.self,
-        ProjectIssueScannerPlugin.self,
-        AgentTurnNotificationPlugin.self,
-        ProjectsPlugin.self,
-        WebSearchPlugin.self,
-        WebFetchPlugin.self,
-        GitPlugin.self,
-        AskUserPlugin.self,
-        CaffeinatePlugin.self,
-        BrowserPlugin.self,
-        ProjectOverviewPlugin.self,
-        ShowImagePlugin.self,
-        MultiAgentPlugin.self,
-        DatabaseManagerPlugin.self,
-        CodeReviewPlugin.self,
-        DelayMessagePlugin.self,
-        AppIconDesignerPlugin.self,
-        DisplayControlPlugin.self,
-        CADDesignerPlugin.self,
-
-        // MARK: - Logo Plugins
-
-        LogoSmartLightPlugin.self,
-        LogoCofficPlugin.self,
-
-        // MARK: - Others
-        
-        VideoConverterPlugin.self,
-        DownloadPlugin.self,
-        DocxReadPlugin.self,
-        PortManagerPlugin.self,
-        AppManagerPlugin.self,
-        DockerManagerPlugin.self,
-        DiskManagerPlugin.self,
-        AppStoreConnectPlugin.self,
-        BrewManagerPlugin.self,
-        RClickPlugin.self,
-        NettoPlugin.self,
-        RegistryManagerPlugin.self,
-        ClipboardManagerPlugin.self,
-        InputPlugin.self,
-    ]
+            // MARK: - Logo Plugins
+            LogoSmartLightPlugin.self,
+            LogoCofficPlugin.self,
+        ] +
+        [
+            // MARK: - Others
+            VideoConverterPlugin.self,
+            DownloadPlugin.self,
+            DocxReadPlugin.self,
+            PortManagerPlugin.self,
+        ] +
+        conversationPlugins +
+        editorPlugins
 }

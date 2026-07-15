@@ -3,7 +3,7 @@ import LumiCoreKit
 
 /// AgentTempStorage 插件本地存储
 ///
-/// 存储位置：`AppConfig.getPluginDBFolderURL(pluginName: "AgentTempStorage")/settings.plist`
+/// 存储位置：<LumiCore.dataRootDirectory>/AgentTempStorage/settings.plist
 final class AgentTempStoragePluginLocalStore: @unchecked Sendable {
     static let shared = AgentTempStoragePluginLocalStore()
 
@@ -15,7 +15,8 @@ final class AgentTempStoragePluginLocalStore: @unchecked Sendable {
     private let settingsFileURL: URL
 
     private init() {
-        let root = AppConfig.getPluginDBFolderURL(pluginName: "AgentTempStorage")
+        let root = lumiCorePluginDataDirectory(for: "AgentTempStorage")
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("AgentTempStorage", isDirectory: true)
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)

@@ -9,7 +9,7 @@ import SuperLogKit
 struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
     private static let verbose = EditorFileTreeV2Plugin.verbose
-    public nonisolated static let emoji: String = "🌲"
+    public nonisolated static let emoji: String = ""
 
     let projectRootPath: String
     let onSelect: (URL) -> Void
@@ -21,6 +21,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     let flashTrigger: (path: String, id: UUID)?
     let onMiddleClick: ((URL) -> Void)?
     let gitStatusSnapshot: GitStatusSnapshot
+    let packageDependencies: [PackageDependency]
 
     func makeNSView(context: Context) -> NSView {
         if Self.verbose {
@@ -33,6 +34,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         }
 
         viewController.setProjectRoot(projectRootPath)
+        viewController.setPackageDependencies(packageDependencies)
         viewController.onSelect = onSelect
         viewController.onExpansionChange = onExpansionChange
         viewController.onTreeMutation = onTreeMutation
@@ -42,7 +44,6 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         viewController.onMiddleClick = onMiddleClick
         viewController.gitStatusSnapshot = gitStatusSnapshot
 
-        // 强引用持有 viewController，防止被释放
         context.coordinator.viewController = viewController
         if Self.verbose {
             Self.logger.info("\(Self.t)💾 ViewController 已保存到 Coordinator")
@@ -67,7 +68,6 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
             return
         }
 
-        // 检查项目路径是否变化
         if viewController.getProjectRootPath() != projectRootPath {
             if Self.verbose {
                 Self.logger.info("\(Self.t)📂 项目路径变化, 重新设置: \(self.projectRootPath)")
@@ -75,10 +75,10 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
             viewController.setProjectRoot(projectRootPath)
         }
 
-        // 更新 Git 状态快照
+        viewController.setPackageDependencies(packageDependencies)
+
         viewController.gitStatusSnapshot = gitStatusSnapshot
 
-        // 更新闪烁触发
         if let flashTrigger, !flashTrigger.path.isEmpty {
             viewController.triggerFlash(path: flashTrigger.path)
         }

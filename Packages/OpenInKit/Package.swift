@@ -13,9 +13,16 @@ let package = Package(
             targets: ["OpenInKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
+
     targets: [
         .target(
             name: "OpenInKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

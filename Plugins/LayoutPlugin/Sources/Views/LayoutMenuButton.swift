@@ -8,13 +8,16 @@ public struct LayoutMenuButton: View {
     static let usesBorderlessMenuLabel = false
 
     @LumiTheme private var theme
-    @ObservedObject private var layoutState: LumiLayoutState
+    @EnvironmentObject private var lumiCore: LumiCore
     @State private var isPopoverPresented = false
 
+    // layoutState 从 lumiCore 获取
+    private var layoutState: LumiLayoutState {
+        lumiCore.layoutState ?? LumiLayoutState()
+    }
+
     public init() {
-        self._layoutState = ObservedObject(
-            initialValue: LumiCore.layoutState ?? LumiLayoutState()
-        )
+        // layoutState 将通过 EnvironmentObject 注入
     }
 
     public var body: some View {
@@ -43,7 +46,7 @@ public struct LayoutMenuButton: View {
                     .padding(.vertical, 4)
 
                 LayoutPopoverToggle(
-                    isOn: $layoutState.bottomPanelVisible,
+                    isOn: Binding(get: { layoutState.bottomPanelVisible }, set: { layoutState.bottomPanelVisible = $0 }),
                     icon: "rectangle.inset.filled",
                     title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
                 )

@@ -7,6 +7,8 @@ public struct NewChatButton: View {
     let chatService: any LumiChatServicing
     let projectState: LumiProjectState?
 
+    @Environment(\.lumiCore) private var lumiCore
+
     @State private var localStore: LocalStore?
 
     public init(
@@ -56,7 +58,7 @@ public struct NewChatButton: View {
         if let localStore {
             return localStore
         }
-        let store = LocalStore(databaseDirectory: LumiCore.coreDataDirectory)
+        let store = LocalStore(databaseDirectory: lumiCore?.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory()))
         localStore = store
         return store
     }

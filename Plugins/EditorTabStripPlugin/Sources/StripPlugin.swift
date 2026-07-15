@@ -23,6 +23,7 @@ public enum StripHeaderPlugin: LumiPlugin {
         guard context.showsPanelChrome else {
             return []
         }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         // LumiEditorServicing 不可用时显示错误视图
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else {
@@ -35,7 +36,7 @@ public enum StripHeaderPlugin: LumiPlugin {
 
         return [
             LumiPanelHeaderItem(id: info.id, order: info.order) {
-                HeaderView(service: service)
+                HeaderView(service: service, lumiCore: lumiCore)
             }
         ]
     }

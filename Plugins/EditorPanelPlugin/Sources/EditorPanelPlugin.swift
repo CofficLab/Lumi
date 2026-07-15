@@ -26,6 +26,9 @@ public enum EditorPanelPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+        guard let lumiCore = context.lumiCore else {
+            return []
+        }
         return [
             LumiViewContainerItem(
                 id: info.id,
@@ -35,7 +38,7 @@ public enum EditorPanelPlugin: LumiPlugin {
                 showsRail: true,
                 showsPanelChrome: true
             ) {
-                EditorPanelHostView()
+                EditorPanelHostView(lumiCore: lumiCore)
             }
         ]
     }

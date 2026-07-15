@@ -26,7 +26,8 @@ public struct EditorPreviewDetailView: View, SuperLog {
     public nonisolated static let emoji = "👁"
     public nonisolated static let verbose: Bool = false
 
-    // 使用 LumiCore.projectState 替代已移除的 WindowProjectVM
+    // 使用 lumiCore.projectState 替代已移除的 WindowProjectVM
+    private let lumiCore: any LumiCoreAccessing
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
     private let pluginContext: PluginContext
@@ -39,14 +40,15 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var docPreviewWebView: WKWebView?
 
     @MainActor
-    public init(context: PluginContext, viewModel: EditorPreviewViewModel? = nil) {
+    public init(lumiCore: any LumiCoreAccessing, context: PluginContext, viewModel: EditorPreviewViewModel? = nil) {
+        self.lumiCore = lumiCore
         self.pluginContext = context
         self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel(context: context)
     }
 
     @MainActor
-    public init(viewModel: EditorPreviewViewModel? = nil) {
-        self.init(context: PluginContext(), viewModel: viewModel)
+    public init(lumiCore: any LumiCoreAccessing, viewModel: EditorPreviewViewModel? = nil) {
+        self.init(lumiCore: lumiCore, context: PluginContext(), viewModel: viewModel)
     }
 
     private var editorService: EditorService? {
@@ -264,7 +266,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .buttonStyle(.borderless)
             .disabled(
                 isCleaningProjectStringCatalogs ||
-                (LumiCore.projectState?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                (lumiCore.projectState?.currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
@@ -712,7 +714,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func cleanProjectStringCatalogs() {
         guard !isCleaningProjectStringCatalogs else { return }
-        let projectRootPath = LumiCore.projectState?.currentProject?.path ?? "".trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectRootPath = (lumiCore.projectState?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
             alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return

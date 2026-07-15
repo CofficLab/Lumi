@@ -1,4 +1,5 @@
 import Foundation
+import LumiLocalizationKit
 
 public struct LumiLLMProviderStatus: Equatable, Sendable {
     public enum Level: Equatable, Sendable {
@@ -14,12 +15,28 @@ public struct LumiLLMProviderStatus: Equatable, Sendable {
         self.message = message
         self.level = level
     }
+
+    /// 是否为「阻塞级」状态：应当阻止依赖该 Provider 的功能（如子 Agent、相关 UI 工具）注册/暴露。
+    ///
+    /// - `nil` → 不阻塞（Provider 健康）。
+    /// - `.info` → 不阻塞（仅作通知，不影响 Provider 实际可用性）。
+    /// - `.warning` → **阻塞**（通常是 API Key 未配置、套餐过期等「能跑但跑不了」的情况，
+    ///   调用方应拦截，避免把工具暴露给 LLM 后每次都失败）。
+    /// - `.error` → **阻塞**（Provider 完全不可用，如 MLX 在 Intel Mac）。
+    public var isBlocking: Bool {
+        switch level {
+        case .info:
+            return false
+        case .warning, .error:
+            return true
+        }
+    }
 }
 
 public enum LumiLLMProviderStatusSupport {
     public static func missingAPIKeyStatus(providerName: String) -> LumiLLMProviderStatus {
         LumiLLMProviderStatus(
-            message: LumiPluginLocalization.string("API Key not configured", bundle: .module),
+            message: LumiLocalization.string("API Key not configured", bundle: .module),
             level: .warning
         )
     }

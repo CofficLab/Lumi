@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "EditorLanguageRuntime",
     defaultLocalization: "en",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(
             name: "EditorLanguageRuntime",
@@ -13,12 +13,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.9.0"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
             name: "EditorLanguageRuntime",
             dependencies: [
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources",
             resources: [

@@ -15,14 +15,16 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SuperLogKit"),
-        .package(path: "../LumiCoreKit")
+        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LumiCoreKit"),
     ],
     targets: [
         .target(
             name: "AgentToolKit",
             dependencies: [
                 "SuperLogKit",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit")
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

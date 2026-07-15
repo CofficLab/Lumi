@@ -14,15 +14,27 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/HttpKit"),
+        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderCodexPlugin",
             dependencies: [
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             exclude: [

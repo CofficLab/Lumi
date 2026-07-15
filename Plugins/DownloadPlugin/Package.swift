@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/DownloadKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/DownloadKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "DownloadPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "DownloadKit", package: "DownloadKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "DownloadKit", package: "DownloadKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

@@ -8,7 +8,8 @@ import LumiCoreKit
 /// - Network: on miss or `networkOnly` fetch policy
 final class ConnectAPICache: @unchecked Sendable {
     static let shared: ConnectAPICache = {
-        let root = AppConfig.getPluginDBFolderURL(pluginName: ConnectAPICacheConfiguration.pluginName)
+        let root = (lumiCorePluginDataDirectory(for: ConnectAPICacheConfiguration.pluginName)
+            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(ConnectAPICacheConfiguration.pluginName, isDirectory: true))
             .appendingPathComponent(ConnectAPICacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ConnectAPICache(rootDirectory: root)
     }()

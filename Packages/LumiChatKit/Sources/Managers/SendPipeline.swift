@@ -234,7 +234,7 @@ final class SendPipeline {
         var context = LumiSendContext(
             conversationID: conversationID,
             messages: messages,
-            currentProjectPath: LumiCore.projectState?.currentProject?.path ?? "",
+            currentProjectPath: service.lumiCore?.projectState?.currentProject?.path ?? "",
             conversationTitle: service.conversations.first(where: { $0.id == conversationID })?.title ?? "",
             conversationLanguage: service.language(for: conversationID)
         )
@@ -370,6 +370,10 @@ final class SendPipeline {
     }
 
     func finishTurn(conversationID: UUID, reason: LumiTurnEndReason) {
+        // 必须在发通知前清除旧任务条目，否则通过 `lumiTurnFinished` 触发的
+        // `continueTurn` 会因 guard `activeTasksByConversationID != nil` 而被静默拒绝。
+        service?.activeTasksByConversationID[conversationID] = nil
+
         if reason == .completed {
             appendTurnCompletedMarker(conversationID: conversationID)
             return

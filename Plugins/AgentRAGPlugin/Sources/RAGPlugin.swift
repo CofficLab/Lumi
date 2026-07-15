@@ -44,6 +44,7 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
         guard context.isChatSectionVisible else {
             return []
         }
+        guard let lumiCore = context.lumiCore else { return [] }
 
         return [
             LumiStatusBarItem(
@@ -52,7 +53,7 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
                 systemImage: iconName,
                 placement: .trailing,
                 statusBarView: {
-                    RAGStatusBarView()
+                    RAGStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]

@@ -13,9 +13,16 @@ let package = Package(
             targets: ["HTMLPreviewKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../LumiLocalizationKit"),
+    ],
+
     targets: [
         .target(
             name: "HTMLPreviewKit",
+            dependencies: [
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

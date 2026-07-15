@@ -10,17 +10,19 @@ import SwiftUI
 public struct NavHeaderView: View {
     @ObservedObject private var service: EditorService
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    let lumiCore: LumiCoreAccessing
 
     private var isProjectSelected: Bool {
-        LumiCore.projectState?.currentProject != nil
+        lumiCore.projectState?.currentProject != nil
     }
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
     }
 
-    public init(service: EditorService) {
+    public init(service: EditorService, lumiCore: LumiCoreAccessing) {
         self.service = service
+        self.lumiCore = lumiCore
     }
 
     public var body: some View {
@@ -49,7 +51,7 @@ public struct NavHeaderView: View {
 
     @ViewBuilder
     private func breadcrumbPath(fileURL: URL) -> some View {
-        NavPathView(fileURL: fileURL, service: service)
+        NavPathView(fileURL: fileURL, service: service, lumiCore: lumiCore)
     }
 
     private func isFileInCurrentProject(_ fileURL: URL) -> Bool {

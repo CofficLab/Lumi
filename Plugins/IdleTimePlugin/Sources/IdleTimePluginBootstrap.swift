@@ -3,10 +3,12 @@ import LumiCoreKit
 
 @MainActor
 public extension IdleTimePlugin {
-    static func bootstrapFromLumiCoreIfNeeded() {
+    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
-        IdleTimeRuntimeBridge.directoryURL = LumiCore.pluginDataDirectory(for: "IdleTime")
-        didBootstrapFromLumiCore = true
+        if let core = context.lumiCore {
+            IdleTimeRuntimeBridge.directoryURL = core.pluginDataDirectory(for: "IdleTime")
+            didBootstrapFromLumiCore = true
+        }
     }
 }
 

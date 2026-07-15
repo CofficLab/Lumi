@@ -5,13 +5,19 @@ import LumiCoreKit
 ///
 /// 职责：提供插件根视图包装，并保持项目上下文可从 LumiCoreKit 注入。
 public struct ProjectIssueScannerRoot<Content: View>: View {
+    let lumiCore: LumiCoreAccessing
     public let content: Content
 
     /// 模型偏好（从 UserDefaults 加载）
     @State private var modelPreference: ScannerModelPreference = ScannerModelPreference.load()
 
     private var currentProjectPath: String {
-        LumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectState?.currentProject?.path ?? ""
+    }
+
+    public init(lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {
+        self.lumiCore = lumiCore
+        self.content = content()
     }
 
     public var body: some View {

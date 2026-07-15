@@ -145,7 +145,7 @@ struct AutoTaskContinuationMiddlewareTests {
             items: [(title: "未完成任务", detail: nil)]
         )
 
-        // 标记本轮为续聊（模拟 AutoTaskTurnCheckRuntime 触发前的置位）
+        // 标记本轮为续聊（模拟 TurnCheckRuntime 触发前的置位）
         await manager.markContinuation(conversationId: convIdStr)
 
         let middleware = TaskContextChatMiddleware(manager: manager)

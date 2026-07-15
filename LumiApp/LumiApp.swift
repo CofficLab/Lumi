@@ -1,3 +1,4 @@
+import LumiAppKit
 import SwiftUI
 
 @main
@@ -6,7 +7,7 @@ struct LumiApp: App {
 
     var body: some Scene {
         WindowGroup(AppBootstrap.appName, id: AppBootstrap.mainWindowID) {
-            MainWindowSceneContent()
+            WindowMain()
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
                     OpenProjectHandler.shared.requestOpen(path: path)
@@ -29,7 +30,7 @@ struct LumiApp: App {
         }
 
         Window("设置", id: AppBootstrap.settingsWindowID) {
-            SettingsSceneContent()
+            WindowSettings()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

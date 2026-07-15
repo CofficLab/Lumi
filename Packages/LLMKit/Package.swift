@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "HttpKit", path: "../HttpKit"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(

@@ -3,7 +3,7 @@ import LumiCoreKit
 
 @MainActor
 public extension MemoryPlugin {
-    static func bootstrapFromLumiCoreIfNeeded() {
+    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
 
         let defaultRoot = MemoryPluginConfig.default.memoryRootURL.standardizedFileURL
@@ -12,9 +12,11 @@ public extension MemoryPlugin {
             return
         }
 
-        MemoryPlugin.config = MemoryPluginConfig(
-            memoryRootURL: LumiCore.pluginDataDirectory(for: "Memory")
-        )
+        if let lumiCore = context.lumiCore {
+            MemoryPlugin.config = MemoryPluginConfig(
+                memoryRootURL: lumiCore.pluginDataDirectory(for: "Memory")
+            )
+        }
         didBootstrapFromLumiCore = true
     }
 }

@@ -15,13 +15,13 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-    ],
+        .package(path: "../../Packages/LumiLocalizationKit"),    ],
     targets: [
         .target(
             name: "OnboardingPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

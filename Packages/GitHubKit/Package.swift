@@ -15,11 +15,12 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../HttpKit"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
             name: "GitHubKit",
-            dependencies: ["HttpKit"],
+            dependencies: ["HttpKit", .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit")],
             path: "Sources",
             resources: [
                 .process("../Resources")
