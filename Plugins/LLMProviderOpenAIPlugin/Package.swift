@@ -16,7 +16,6 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LLMProviderKit"),
         .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport")
     ],
@@ -26,7 +25,6 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LLMProviderKit", package: "LLMProviderKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport")
             ],

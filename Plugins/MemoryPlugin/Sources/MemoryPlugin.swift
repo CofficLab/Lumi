@@ -3,17 +3,17 @@ import LumiCoreKit
 
 /// Memory Plugin：持久化记忆系统。
 public enum MemoryPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "brain.head.profile"
     public static var verbose: Bool { false }
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.memory",
         displayName: PluginMemoryLocalization.string("Memory"),
         description: PluginMemoryLocalization.string("Persistent memory system for cross-session context"),
-        order: 15
+        order: 15,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "brain.head.profile",
     )
 
     nonisolated(unsafe) public static var config: MemoryPluginConfig = .default

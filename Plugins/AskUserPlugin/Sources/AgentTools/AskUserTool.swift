@@ -43,10 +43,19 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
     public func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "向用户提问并等待回答。可用于确认操作、获取选择等。当需要用户决策时使用此工具，不要自己假设用户意图。"
+            return """
+            向用户提问并等待回答。支持三种模式：
+            1. 是/否确认：只传 question，用于简单的二元决策
+            2. 多选项选择：传 question + options，用于从多个方案中选择
+            3. 自由输入：传 question + allow_free_input: true，用于收集用户文本
+            当需要用户决策时使用此工具，不要自己假设用户意图。
+            """
         case .english:
             return """
-            Ask the user a question and wait for their response. Use this to confirm actions or get user preferences. \
+            Ask the user a question and wait for their response. Supports three modes:
+            1. Yes/No confirmation: only pass question, for simple binary decisions
+            2. Multiple choice: pass question + options, for selecting from multiple options
+            3. Free input: pass question + allow_free_input: true, for collecting user text
             When you need user decision, use this tool instead of assuming user intent.
             """
         }
@@ -66,8 +75,8 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
                     "type": "array",
                     "items": ["type": "string"],
                     "description": language == .chinese
-                        ? "可选的选项列表（如：[\"是\", \"否\"]），默认为是/否"
-                        : "List of options for user to choose (e.g.: [\"Yes\", \"No\"]), defaults to Yes/No",
+                        ? "可选的选项列表（如：[\"方案A\", \"方案B\", \"方案C\"]），默认为是/否。当问题不是简单的是/否确认时，必须提供此参数。"
+                        : "List of options for user to choose (e.g.: [\"OptionA\", \"OptionB\", \"OptionC\"]), defaults to Yes/No. Must be provided when the question is not a simple yes/no confirmation.",
                 ],
                 "allow_free_input": [
                     "type": "boolean",
@@ -96,6 +105,14 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
 
         guard let question = arguments["question"]?.value as? String, !question.isEmpty else {
             return Self.errorResult(message: "question is required and cannot be empty")
+        }
+
+        // 检测是否是多选场景但没传 options
+        let hasOptions = arguments["options"]?.value != nil
+        if !hasOptions && Self.looksLikeMultipleChoice(question) {
+            return Self.errorResult(
+                message: "Your question appears to require multiple options, but the options parameter was not provided. Please provide an options list."
+            )
         }
 
         let options = Self.resolvedOptions(arguments)
@@ -201,6 +218,23 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
         encoder.outputFormatting = .prettyPrinted
         return encoder
     }()
+}
+
+// MARK: - Multiple Choice Detection
+
+extension AskUserTool {
+    /// 检测 question 是否看起来像多选场景
+    ///
+    /// 当 question 包含选择类关键词（如"哪个"、"哪些"、"选择"等）时返回 true。
+    /// 用于在 options 缺失时给出纠错提示，避免默默回退到是/否。
+    static func looksLikeMultipleChoice(_ question: String) -> Bool {
+        let chineseKeywords = ["哪个", "哪些", "哪一个", "哪一", "选择", "方案", "选项", "模式"]
+        let englishKeywords = ["which", "choose", "select", "option", "pick"]
+
+        let lowercased = question.lowercased()
+        return chineseKeywords.contains { question.contains($0) }
+            || englishKeywords.contains { lowercased.contains($0) }
+    }
 }
 
 // MARK: - Response Models

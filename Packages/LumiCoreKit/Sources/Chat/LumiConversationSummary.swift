@@ -67,17 +67,6 @@ public enum LumiResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepre
             "包含完整推理和上下文"
         }
     }
-
-    public var systemPromptFragment: String {
-        switch self {
-        case .brief:
-            "Be concise. Provide only the essential answer without explanation."
-        case .standard:
-            "Use a balanced level of detail. Include the answer, key reasoning, and necessary steps without excessive background."
-        case .detailed:
-            "Be thorough. Include reasoning steps, relevant context, and potential caveats."
-        }
-    }
 }
 
 public enum LumiConversationLanguage: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
@@ -126,15 +115,6 @@ public enum LumiConversationLanguage: CaseIterable, Codable, Identifiable, RawRe
 
     public var iconName: String {
         "character.book.closed"
-    }
-
-    public var systemPromptFragment: String {
-        switch self {
-        case .chinese:
-            "Respond in Chinese unless the user explicitly asks for another language."
-        case .english:
-            "Respond in English unless the user explicitly asks for another language."
-        }
     }
 }
 
@@ -212,17 +192,6 @@ public enum LumiAutomationLevel: CaseIterable, Codable, Identifiable, RawReprese
             false
         case .build, .autonomous:
             true
-        }
-    }
-
-    public var systemPromptFragment: String {
-        switch self {
-        case .chat:
-            "A1 chat mode: do not use tools. Answer conversationally and ask before any action."
-        case .build:
-            "A2 build mode: use available tools when helpful, but avoid destructive or high-risk actions unless explicitly approved."
-        case .autonomous:
-            "A3 autonomous mode: use available tools proactively and continue until the user's task is handled. Avoid destructive actions unless explicitly requested."
         }
     }
 }

@@ -4,17 +4,17 @@ import SwiftUI
 import os
 
 public enum RegistryManagerPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "arrow.triangle.2.circlepath"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.registry-manager")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.registry-manager",
         displayName: LumiPluginLocalization.string("Registry Manager", bundle: .module),
         description: LumiPluginLocalization.string("Manage Lumi registries", bundle: .module),
-        order: 80
+        order: 80,
+        category: .system,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "arrow.triangle.2.circlepath",
     )
 
     @MainActor
@@ -31,7 +31,7 @@ public enum RegistryManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(RegistryManagerAboutView())
     }
 

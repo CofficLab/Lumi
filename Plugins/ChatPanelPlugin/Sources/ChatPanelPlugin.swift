@@ -4,15 +4,15 @@ import LumiUI
 import SwiftUI
 
 public enum ChatPanelPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "bubble.left.and.bubble.right.fill"
     public static let info = LumiPluginInfo(
         id: ChatPanelSection.id,
         displayName: LumiPluginLocalization.string("Chat", bundle: .module),
         description: LumiPluginLocalization.string("Chat surface with conversation rail", bundle: .module),
-        order: 78
+        order: 78,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "bubble.left.and.bubble.right.fill",
     )
 
     @MainActor

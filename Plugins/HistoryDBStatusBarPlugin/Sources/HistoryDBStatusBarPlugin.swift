@@ -8,12 +8,12 @@ public enum HistoryDBStatusBarPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.history-db-status-bar",
         displayName: LumiPluginLocalization.string("History Database Browser", bundle: .module),
         description: LumiPluginLocalization.string("Browse message and conversation history in status bar popover", bundle: .module),
-        order: 98
+        order: 98,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "tablecells",
     )
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "tablecells"
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {

@@ -14,6 +14,10 @@ final class LumiCoreService: SuperLog {
     let dataRootDirectory: URL
     let coreDatabaseDirectory: URL
 
+    /// 工具/子 Agent 贡献源（App 层的 PluginService）。保留引用以便运行期
+    /// 插件启用状态变化时由 App 层重新触发 `bootstrapToolContributions`。
+    private let provider: any LumiAgentToolProviding
+
     init<Service: AbstractEditorServicing>(
         provider: any LumiAgentToolProviding,
         editorFactory: @escaping LumiCore.EditorBootstrapFactory<Service>,
@@ -25,6 +29,7 @@ final class LumiCoreService: SuperLog {
 
         self.dataRootDirectory = dataRootDirectory
         self.coreDatabaseDirectory = StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
+        self.provider = provider
 
         // 创建 LumiCore 实例
         self.lumiCore = LumiCore()
@@ -58,5 +63,25 @@ final class LumiCoreService: SuperLog {
         LumiCore.current = lumiCore
         currentLumiCore = lumiCore
         currentLumiCoreDataRootDirectory = lumiCore.dataRootDirectory
+
+        // boot 完成后编排工具贡献：把插件工具 / 内置工具 / 子 Agent 工具注册进 ToolService，
+        // 并把 ToolService 关联到 ChatService。LLM Provider / 中间件 / 渲染器等 Chat 维度
+        // 的贡献由 ChatService.applyPluginContributions 处理（由 RootContainer 在本方法
+        // 返回后调用）。工具名唯一性已在 boot 阶段校验，此处直接注册。
+        bootstrapToolContributions()
+    }
+
+    /// 重新编排工具贡献。运行期插件启用状态变化时由 App 层调用，
+    /// 让新启用插件贡献的工具 / 子 Agent 进入 ToolService。
+    func bootstrapToolContributions() {
+        let context = lumiCore.makePluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core"
+        )
+        lumiCore.bootstrapToolContributions(
+            provider: provider,
+            context: context,
+            builtInTools: ChatService.builtInTools
+        )
     }
 }

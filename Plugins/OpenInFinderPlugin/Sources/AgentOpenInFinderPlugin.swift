@@ -5,16 +5,16 @@ import SwiftUI
 
 /// 在 Finder 中打开项目插件
 public enum AgentOpenInFinderPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "folder"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-finder",
         displayName: LumiPluginLocalization.string("Open in Finder", bundle: .module),
         description: LumiPluginLocalization.string("Open current project in Finder", bundle: .module),
-        order: 96
+        order: 96,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "folder",
     )
 
     @MainActor
@@ -34,7 +34,7 @@ public enum AgentOpenInFinderPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

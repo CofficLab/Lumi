@@ -1,6 +1,6 @@
 import Foundation
 import LumiCoreKit
-import WorkspaceFileKit
+import FileSystemKit
 
 public struct EditFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(

@@ -12,16 +12,16 @@ public enum QuickFileSearchBridge {
 ///
 /// 功能：通过 Cmd+P 快捷键触发悬浮文件搜索框，快速定位和选择项目中的文件
 public enum QuickFileSearchPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "magnifyingglass"
 
     public static let info = LumiPluginInfo(
         id: "QuickFileSearch",
         displayName: LumiPluginLocalization.string("Quick File Search", bundle: .module),
         description: LumiPluginLocalization.string("Fast file search with Cmd+P", bundle: .module),
-        order: 50
+        order: 50,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "magnifyingglass",
     )
 
     @MainActor
@@ -47,7 +47,7 @@ public enum QuickFileSearchPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         let projectPath = context.lumiCore?.projectState?.currentProject?.path ?? ""
         return AnyView(QuickFileSearchSettingsView(projectPath: projectPath))
     }

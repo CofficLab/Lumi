@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 @testable import ModelSelectorPlugin
 

@@ -4,7 +4,7 @@ import LumiCoreKit
 enum HttpErrorRenderer {
     static let item = LumiMessageRendererItem(
         id: "xiaomi-http-error",
-        order: 210,
+        order: XiaomiPlugin.info.order + 200,
         canRender: { message in
             XiaomiRenderKind.matchesOtherHttpError(message)
         },

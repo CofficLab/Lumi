@@ -7,14 +7,13 @@ import os
 ///
 /// 通过 SwiftData 管理任务的增删改查。
 /// 使用 Actor 模式确保线程安全，参考 `CacheManager` 模板。
+///
+/// 生命周期由 `AutoTaskPlugin` 在 `lifecycle(.didRegister)` 中初始化，
+/// 不再是全局单例。测试可通过 `init(databaseRootURL:)` 传入临时目录。
 public actor TaskStateManager: SuperLog {
     nonisolated public static let emoji = "📋"
     nonisolated public static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "autotask.state-manager")
-
-    // MARK: - Singleton
-
-    public static let shared = TaskStateManager()
 
     // MARK: - Properties
 
@@ -28,7 +27,7 @@ public actor TaskStateManager: SuperLog {
 
     /// 内存态（非持久化）：标记某会话即将进入一次无感自动续聊轮次。
     ///
-    /// 由 `TurnCheckRuntime` 在触发续聊前置位，由
+    /// 由 `TurnFinishedHook` 在触发续聊前置位，由
     /// `TaskContextChatMiddleware` 在注入该轮 system prompt 时消费，
     /// 消费即清除，避免后续普通轮次误判。
     private var pendingContinuationConversationIDs: Set<String> = []
@@ -41,11 +40,7 @@ public actor TaskStateManager: SuperLog {
 
     // MARK: - Initialization
 
-    private init() {
-        self.container = Self.makeContainer(databaseRootURL: AutoTaskPlugin.configuration.databaseDirectory())
-    }
-
-    init(databaseRootURL: URL) {
+    public init(databaseRootURL: URL) {
         self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
     }
 
@@ -455,6 +450,7 @@ public actor TaskStateManager: SuperLog {
     @discardableResult
     func deleteAllForConversation(_ conversationId: String) -> Bool {
         let context = ModelContext(container)
+
         do {
             try deleteAllForConversation(conversationId, context: context)
             return true
@@ -479,6 +475,7 @@ public actor TaskStateManager: SuperLog {
         for task in tasks {
             context.delete(task)
         }
+
         if saveImmediately {
             try context.save()
         }

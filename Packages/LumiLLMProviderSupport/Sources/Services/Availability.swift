@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LLMProviderKit
+import LLMKit
 import LumiCoreKit
 
 public enum LumiOpenAICompatibleAvailability {

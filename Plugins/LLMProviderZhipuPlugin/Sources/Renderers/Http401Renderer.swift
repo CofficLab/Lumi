@@ -3,7 +3,7 @@ import LumiCoreKit
 enum Http401Renderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-http-401",
-        order: 210,
+        order: ZhipuPlugin.info.order + 200,
         canRender: { message in
             ZhipuRenderKind.matchesHttp(statusCode: 401, message: message)
         },

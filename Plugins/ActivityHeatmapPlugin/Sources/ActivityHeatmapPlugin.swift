@@ -7,21 +7,12 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.activity-heatmap",
         displayName: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
         description: LumiPluginLocalization.string("Show conversation activity heatmap in settings", bundle: .module),
-        order: 60
+        order: 60,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "chart.bar.fill",
     )
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "chart.bar.fill"
-
-    @MainActor
-    public static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
-        guard let historyService = context.resolve((any HistoryQueryService).self) else {
-            return []
-        }
-
-        return [AnyView(ActivityHeatmapSettingsView(historyService: historyService))]
-    }
 
     @MainActor
     public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
@@ -38,5 +29,29 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
                 ActivityHeatmapSettingsView(historyService: historyService)
             }
         ]
+    }
+
+    @MainActor
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 12) {
+                Text(verbatim: LumiPluginLocalization.string(
+                    "Activity Heatmap 会把你与 Lumi 的协作对话绘制成日历热力图，让你一眼看到哪些日子活跃、哪些时段是高峰。",
+                    bundle: .module
+                ))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+
+                Divider()
+
+                Label(
+                    LumiPluginLocalization.string("数据来源：本地对话历史", bundle: .module),
+                    systemImage: "lock.shield"
+                )
+                .font(.appMicro)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        )
     }
 }

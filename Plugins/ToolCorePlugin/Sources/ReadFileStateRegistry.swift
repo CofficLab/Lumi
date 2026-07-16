@@ -1,5 +1,5 @@
 import Foundation
-import WorkspaceFileKit
+import FileSystemKit
 
 /// 进程级「已读取文件」状态注册表。
 ///

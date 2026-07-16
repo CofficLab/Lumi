@@ -3,16 +3,16 @@ import LumiUI
 import SwiftUI
 
 public enum IdleTimePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "moon.zzz"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.idle-time",
         displayName: LumiPluginLocalization.string("Idle Time", bundle: .module),
         description: LumiPluginLocalization.string("Infer rest windows for background scheduling", bundle: .module),
-        order: 96
+        order: 96,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "moon.zzz",
     )
 
     @MainActor
@@ -48,14 +48,14 @@ public enum IdleTimePlugin: LumiPlugin {
             context.lumiCore?.projectState?.currentProject?.path ?? ""
         }
         return [
-            LumiRootOverlayItem(id: "\(info.id).observer", order: 96) { content in
+            LumiRootOverlayItem(id: "\(info.id).observer", order: info.order) { content in
                 IdleTimeRootObserver(projectPathProvider: projectPathProvider, content: content)
             }
         ]
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

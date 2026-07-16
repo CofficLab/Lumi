@@ -5,7 +5,7 @@ import SwiftUI
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(
         id: "stepfun-request-failed",
-        order: 250,
+        order: StepFunPlugin.info.order + 240,
         canRender: { message in
             StepFunRenderKind.matches(renderKind: StepFunRenderKind.requestFailed, message: message)
         },

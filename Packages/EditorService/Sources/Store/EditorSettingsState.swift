@@ -1,6 +1,7 @@
 import Combine
 import CoreGraphics
 import Foundation
+import EditorKernel
 
 /// 编辑器设置的作用域选择枚举
 /// 定义了三种设置作用域：全局、工作区、语言特定
@@ -65,6 +66,12 @@ public final class EditorSettingsState: ObservableObject {
     
     /// 保存时是否自动在文件末尾添加换行符
     @Published var insertFinalNewlineOnSave: Bool = true { didSet { persistIfNeeded() } }
+
+    /// 自动保存模式（对齐 VS Code 的 files.autoSave）
+    @Published var autoSaveMode: EditorAutoSaveMode = .off { didSet { persistIfNeeded() } }
+
+    /// 自动保存延迟（秒，仅在 afterDelay 模式下生效）
+    @Published var autoSaveDelay: Double = 1.0 { didSet { persistIfNeeded() } }
 
     // MARK: - 作用域选择相关属性
     
@@ -208,6 +215,8 @@ public final class EditorSettingsState: ObservableObject {
         fixAllOnSave = snapshot.fixAllOnSave
         trimTrailingWhitespaceOnSave = snapshot.trimTrailingWhitespaceOnSave
         insertFinalNewlineOnSave = snapshot.insertFinalNewlineOnSave
+        autoSaveMode = snapshot.autoSaveMode
+        autoSaveDelay = snapshot.autoSaveDelay
         
         // 恢复作用域特定的覆盖设置
         restoreScopedOverrideDraft()
@@ -232,7 +241,9 @@ public final class EditorSettingsState: ObservableObject {
             showMinimap: showMinimap,
             showGutter: showGutter,
             showFoldingRibbon: showFoldingRibbon,
-            currentThemeId: baseSnapshot.currentThemeId
+            currentThemeId: baseSnapshot.currentThemeId,
+            autoSaveMode: autoSaveMode,
+            autoSaveDelay: autoSaveDelay
         )
     }
 

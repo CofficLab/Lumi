@@ -6,16 +6,14 @@ import Testing
 @MainActor
 @Test func chatSectionItemsSortByOrder() {
     struct FirstPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10, policy: .alwaysOn)
         static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
             [LumiChatSectionItem(id: "first", order: 10) { Text("First") }]
         }
     }
 
     struct SecondPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20, policy: .alwaysOn)
         static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
             [LumiChatSectionItem(id: "second", order: 20) { Text("Second") }]
         }
@@ -38,16 +36,14 @@ import Testing
 @MainActor
 @Test func chatSectionToolbarBarItemsSortByOrder() {
     struct FirstPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10, policy: .alwaysOn)
         static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
             [LumiChatSectionToolbarBarItem(id: "first", order: 10) { Text("First") }]
         }
     }
 
     struct SecondPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20, policy: .alwaysOn)
         static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
             [LumiChatSectionToolbarBarItem(id: "second", order: 20) { Text("Second") }]
         }
@@ -71,16 +67,14 @@ import Testing
 @MainActor
 @Test func chatSectionHeaderItemsSortByOrder() {
     struct FirstPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "first", displayName: "First", description: "", order: 10, policy: .alwaysOn)
         static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
             [LumiChatSectionHeaderItem(id: "first", order: 10) { Text("First") }]
         }
     }
 
     struct SecondPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "second", displayName: "Second", description: "", order: 20, policy: .alwaysOn)
         static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
             [LumiChatSectionHeaderItem(id: "second", order: 20) { Text("Second") }]
         }
@@ -104,8 +98,7 @@ import Testing
 @MainActor
 @Test func panelHeaderItemsRespectShowsPanelChromeGuard() {
     struct HeaderPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "header", displayName: "Header", description: "", order: 70)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "header", displayName: "Header", description: "", order: 70, policy: .alwaysOn)
         static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
             guard context.showsPanelChrome else { return [] }
             return [LumiPanelHeaderItem(id: "header") { Text("Header") }]
@@ -126,12 +119,12 @@ import Testing
 @MainActor
 @Test func panelBottomTabItemsCreatedByPlugin() {
     struct FirstBottomPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "first-bottom", displayName: "First", description: "", order: 0)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "first-bottom", displayName: "First", description: "", order: 0, policy: .alwaysOn)
         static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
             [
                 LumiPanelBottomTabItem(
                     id: "first",
+                    order: 0,
                     title: "First",
                     systemImage: "1.circle"
                 ) { Text("First") }
@@ -140,12 +133,12 @@ import Testing
     }
 
     struct SecondBottomPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(id: "second-bottom", displayName: "Second", description: "", order: 1)
-        static let policy = LumiPluginPolicy.alwaysOn
+        static let info = LumiPluginInfo(id: "second-bottom", displayName: "Second", description: "", order: 1, policy: .alwaysOn)
         static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
             [
                 LumiPanelBottomTabItem(
                     id: "second",
+                    order: 1,
                     title: "Second",
                     systemImage: "2.circle"
                 ) { Text("Second") }

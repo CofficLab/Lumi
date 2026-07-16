@@ -5,10 +5,6 @@ import SwiftUI
 
 /// Sends a system notification when an agent turn completes.
 public enum AgentTurnNotificationPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "bell.badge"
 
     public static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -19,7 +15,11 @@ public enum AgentTurnNotificationPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.turn-notification",
         displayName: LumiPluginLocalization.string("Turn Notification", bundle: .module),
         description: LumiPluginLocalization.string("Send a system notification when an Agent turn finishes.", bundle: .module),
-        order: 99
+        order: 99,
+        category: .agent,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "bell.badge",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum AgentTurnNotificationPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

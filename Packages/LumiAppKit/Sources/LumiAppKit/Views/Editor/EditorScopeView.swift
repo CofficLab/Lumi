@@ -31,6 +31,7 @@ struct EditorScopeView<Content: View>: View {
             .environmentObject(themeVM)
             .environmentObject(editorContext)
             .environmentObject(editor.editorService)
+            .focusedSceneValue(\.activeEditorService, editor.editorService)
             .background {
                 WindowToolbarSuppressor()
             }

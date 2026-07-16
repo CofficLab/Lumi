@@ -9,10 +9,6 @@ import os
 
 /// 防休眠插件：阻止系统休眠，支持定时和手动控制
 public enum CaffeinatePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "bolt"
     public static var verbose: Bool { false }
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
 
@@ -22,7 +18,11 @@ public enum CaffeinatePlugin: LumiPlugin {
         id: "Caffeinate",
         displayName: PluginCaffeinateLocalization.string("Anti-Sleep"),
         description: PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control"),
-        order: 7
+        order: 7,
+        category: .system,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "bolt",
     )
 
     public static var id: String { info.id }
@@ -34,7 +34,8 @@ public enum CaffeinatePlugin: LumiPlugin {
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
         [
-            LumiMenuBarPopupItem(id: "\(info.id).popup", order: -1) {
+            // 排到菜单栏 popup 列表最末：固定为 Int.max，与插件 info.order 解耦。
+            LumiMenuBarPopupItem(id: "\(info.id).popup", order: .max) {
                 CaffeinateMenuBarPopupView()
             }
         ]
@@ -51,17 +52,8 @@ public enum CaffeinatePlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(CaffeinateAboutView())
     }
 
 }

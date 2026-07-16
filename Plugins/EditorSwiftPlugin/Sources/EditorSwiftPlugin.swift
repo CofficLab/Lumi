@@ -6,10 +6,6 @@ import SuperLogKit
 
 /// Swift / Xcode 集成插件：scheme 工具栏与 Agent 工具。
 public enum EditorSwiftPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "swift"
 
     /// Code Editor 面板 section id（与 `EditorPanelPlugin.info.id` 一致）。
     private static let editorPanelSectionID = "LumiEditor"
@@ -18,7 +14,11 @@ public enum EditorSwiftPlugin: LumiPlugin {
         id: "EditorSwiftIntegration",
         displayName: LumiPluginLocalization.string("Swift Integration", bundle: .module),
         description: LumiPluginLocalization.string("Provides scheme toolbar, Xcode project integration, and Swift agent tools.", bundle: .module),
-        order: 5
+        order: 5,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "swift",
     )
 
     @MainActor
@@ -79,7 +79,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     @MainActor
     private static func configureBuildOutputPresentation(context: LumiPluginContext) {
         guard context.showsPanelChrome,
-              let presenter = context.resolve(LumiBottomPanelLayoutPresenting.self)
+              let layoutState = context.lumiCore?.layoutState
         else {
             return
         }
@@ -87,7 +87,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
         let tabID = SwiftBuildPanelIDs.bottomTab
         let viewContainerID = context.activeSectionID
         EditorSwiftWindowScopeRegistry.activeBuildRunManager.onPresentOutput = {
-            presenter.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
+            layoutState.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
         }
     }
 }

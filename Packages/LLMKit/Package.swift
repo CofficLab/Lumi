@@ -22,10 +22,11 @@ let package = Package(
             name: "LLMKit",
             dependencies: [
                 "HttpKit",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
-            path: "Sources",
+            path: "Sources/LLMKit",
             resources: [
-                .process("../Resources")
+                .process("Resources")
             ]
         ),
         .testTarget(

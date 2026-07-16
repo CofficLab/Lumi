@@ -5,16 +5,16 @@ import SwiftUI
 
 /// 在 Xcode 中打开项目插件
 public enum AgentOpenInXcodePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "hammer"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-xcode",
         displayName: LumiPluginLocalization.string("Open in Xcode", bundle: .module),
         description: LumiPluginLocalization.string("Displays a button in the header to open the current project in Xcode", bundle: .module),
-        order: 95
+        order: 95,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "hammer",
     )
 
     @MainActor
@@ -34,7 +34,7 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

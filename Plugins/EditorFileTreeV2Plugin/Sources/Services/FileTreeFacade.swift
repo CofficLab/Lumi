@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import AppKit
-import FileTreeKit
+import FileSystemKit
 
 /// Editor Rail 文件树文件服务
 /// 负责处理文件相关的无状态逻辑：图标、名称、过滤、排序等

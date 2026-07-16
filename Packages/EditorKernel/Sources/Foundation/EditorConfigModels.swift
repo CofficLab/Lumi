@@ -131,6 +131,8 @@ public struct EditorConfigSnapshot: Equatable {
     public var showGutter: Bool
     public var showFoldingRibbon: Bool
     public var currentThemeId: String
+    public var autoSaveMode: EditorAutoSaveMode
+    public var autoSaveDelay: Double
 
     public init(
         fontSize: Double,
@@ -145,7 +147,9 @@ public struct EditorConfigSnapshot: Equatable {
         showMinimap: Bool,
         showGutter: Bool,
         showFoldingRibbon: Bool,
-        currentThemeId: String
+        currentThemeId: String,
+        autoSaveMode: EditorAutoSaveMode = .off,
+        autoSaveDelay: Double = 1.0
     ) {
         self.fontSize = fontSize
         self.tabWidth = tabWidth
@@ -160,5 +164,7 @@ public struct EditorConfigSnapshot: Equatable {
         self.showGutter = showGutter
         self.showFoldingRibbon = showFoldingRibbon
         self.currentThemeId = currentThemeId
+        self.autoSaveMode = autoSaveMode
+        self.autoSaveDelay = autoSaveDelay
     }
 }

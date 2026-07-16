@@ -9,19 +9,19 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
 
     public nonisolated static let emoji = "🛜"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
-    public static let iconName = "network"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.network-manager",
         displayName: LumiPluginLocalization.string("Network Monitor", bundle: .module),
         description: LumiPluginLocalization.string("Real-time monitoring of network speed, traffic, and connection status", bundle: .module),
-        order: 30
+        order: 30,
+        category: .system,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "network",
     )
-    public static let category: LumiPluginCategory = .system
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
@@ -80,17 +80,8 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
         ]
     }
 
-        @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    @MainActor
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(NetworkManagerAboutView())
     }
 }

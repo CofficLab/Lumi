@@ -8,16 +8,16 @@ import SwiftUI
 /// 作为 package 化试点，插件适配层只负责把 `WebFetchTool` 注册到 Lumi 插件系统；
 /// 实际网页抓取能力由 `WebFetchKit` 承载。
 public enum WebFetchPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "globe"
 
     public static let info = LumiPluginInfo(
         id: "WebFetch",
         displayName: PluginWebFetchLocalization.string("Web Fetch"),
         description: PluginWebFetchLocalization.string("提供网页抓取和内容提取功能，支持 HTML 转 Markdown。"),
-        order: 100
+        order: 100,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "globe",
     )
 
     public static var id: String { info.id }
@@ -30,7 +30,7 @@ public enum WebFetchPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

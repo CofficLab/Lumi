@@ -3,7 +3,7 @@ import LumiCoreKit
 enum Http401Renderer {
     static let item = LumiMessageRendererItem(
         id: "minimax-http-401",
-        order: 210,
+        order: MiniMaxPlugin.info.order + 200,
         canRender: { message in
             MiniMaxRenderKind.matchesHttp(statusCode: 401, message: message)
         },

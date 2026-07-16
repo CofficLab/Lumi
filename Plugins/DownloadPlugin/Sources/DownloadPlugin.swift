@@ -9,16 +9,16 @@ import SuperLogKit
 /// 提供一组下载相关的 Agent 工具，支持 HTTP/HTTPS 文件下载、
 /// 批量下载、断点续传、进度追踪和任务管理。
 public enum DownloadPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "arrow.down.circle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.download-agent",
         displayName: LumiPluginLocalization.string("Download Agent", bundle: .module),
         description: LumiPluginLocalization.string("File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management.", bundle: .module),
-        order: 92
+        order: 92,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "arrow.down.circle",
     )
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.download-agent")

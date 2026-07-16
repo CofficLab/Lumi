@@ -1,14 +1,13 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LLMProviderKit
 import LumiCoreKit
 
 public typealias LumiOpenAICompatibleProviderConfiguration = OpenAICompatibleProviderConfiguration
 public typealias LumiAnthropicCompatibleProviderConfiguration = AnthropicCompatibleProviderConfiguration
 
 private enum LumiLLMRequestMessages {
-    static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMProviderKit.ChatMessage] {
+    static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMKit.ChatMessage] {
         LumiVisionMessageSupport.preparedMessages(for: request)
     }
 }

@@ -4,10 +4,6 @@ import SwiftUI
 
 /// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.
 public enum ConversationTitlePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "character.cursor.ibeam"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.conversation-title",
@@ -16,7 +12,11 @@ public enum ConversationTitlePlugin: LumiPlugin {
             "Automatically generate conversation titles from the first user message",
             bundle: .module
         ),
-        order: 77
+        order: 77,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "character.cursor.ibeam",
     )
 
     static var verbose: Bool { false }
@@ -36,16 +36,17 @@ public enum ConversationTitlePlugin: LumiPlugin {
         }
 
         // ChatSectionCoordinator 不可用时显示错误按钮
+        // header 排在 info.order + 4，介于 info.order (77) 和顶部 error 区域 (95/96) 之间。
         guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
             return [
-                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: 81) {
+                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: info.order + 4) {
                     ChatSectionCoordinatorErrorButton()
                 }
             ]
         }
 
         return [
-            LumiChatSectionHeaderItem(id: "\(info.id).header", order: 81) {
+            LumiChatSectionHeaderItem(id: "\(info.id).header", order: info.order + 4) {
                 ConversationTitleSectionView(coordinator: coordinator)
             }
         ]

@@ -92,42 +92,54 @@ struct LumiAgentTurnDerivationTests {
         #expect(LumiTurnEndReason.completed.allowsAutomaticContinuation == true)
     }
 
-    @Test("agent turn lifecycle posts structured notifications")
+    @Test("postTurnFinished is a no-op; turn notifications are owned by LumiChatKit.SendPipeline")
     @MainActor
     func agentTurnLifecycleNotifications() async {
+        // 阶段 0 重构后：turn 结束通知（`.lumiTurnFinished` / `.lumiTurnCompleted`）
+        // 统一由 `LumiChatKit.SendPipeline` 唯一发送，`AgentTurnLifecycle.postTurnFinished`
+        // 退化为 no-op（仅保留签名以兼容插件 legacy 默认闭包）。此测试固化该契约：
+        // 调用它不得触发任何 turn 通知。
         let conversationID = UUID()
-        var finishedReason: LumiTurnEndReason?
-        var completedFired = false
+        var anyTurnFired = false
 
         let finishedObserver = NotificationCenter.default.addObserver(
             forName: .lumiTurnFinished,
             object: nil,
             queue: .main
-        ) { notification in
-            finishedReason = LumiTurnEndReason(notificationUserInfo: notification.userInfo)
-        }
+        ) { _ in anyTurnFired = true }
         let completedObserver = NotificationCenter.default.addObserver(
             forName: .lumiTurnCompleted,
             object: nil,
             queue: .main
-        ) { _ in
-            completedFired = true
-        }
+        ) { _ in anyTurnFired = true }
         defer {
             NotificationCenter.default.removeObserver(finishedObserver)
             NotificationCenter.default.removeObserver(completedObserver)
         }
 
         AgentTurnLifecycle.postTurnFinished(conversationID: conversationID, reason: .failed("503"))
-        await Task.yield()
-        #expect(finishedReason == .failed)
-        #expect(completedFired == false)
-
-        completedFired = false
         AgentTurnLifecycle.postTurnFinished(conversationID: conversationID, reason: .completed)
         await Task.yield()
-        #expect(finishedReason == .completed)
-        #expect(completedFired == true)
+
+        #expect(anyTurnFired == false)
+    }
+
+    @Test("LumiTurnEndReason reconstructs from notification userInfo")
+    @MainActor
+    func turnEndReasonRoundTripsThroughUserInfo() {
+        // 订阅方（如 AgentTurnNotificationPlugin）依赖 `LumiTurnEndReason(notificationUserInfo:)`
+        // 从 `.lumiTurnFinished` 的 userInfo 重建原因；这是 SendPipeline 作为唯一发送方
+        // 时仍需保持的契约。
+        for reason in [LumiTurnEndReason.completed, .failed, .userRejection,
+                       .awaitingUserResponse, .cancelled] {
+            let userInfo: [AnyHashable: Any] = [
+                LumiMessageSavedNotification.conversationIDKey: UUID(),
+                LumiTurnFinishedNotification.reasonKey: reason.rawValue,
+            ]
+            #expect(LumiTurnEndReason(notificationUserInfo: userInfo) == reason)
+        }
+        #expect(LumiTurnEndReason(notificationUserInfo: nil) == nil)
+        #expect(LumiTurnEndReason(notificationUserInfo: [:]) == nil)
     }
 }
 

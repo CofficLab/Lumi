@@ -15,9 +15,9 @@ extension Notification.Name {
     /// userInfo: ["railTabID": String]
     public static let activeRailTabIDDidChange = Notification.Name("ActiveRailTabIDDidChange")
 
-    /// 底部面板 Tab 已变更
+    /// 底部面板 Tab 已变更（按 ViewContainer 分别记录）
     /// object: nil
-    /// userInfo: ["bottomTabID": String]
+    /// userInfo: ["containerID": String, "bottomTabID": String]
     public static let activeBottomTabIDDidChange = Notification.Name("ActiveBottomTabIDDidChange")
 
     /// 底部面板可见性已变更
@@ -65,11 +65,11 @@ extension NotificationCenter {
         )
     }
 
-    public static func postActiveBottomTabIDDidChange(bottomTabID: String) {
+    public static func postActiveBottomTabIDDidChange(containerID: String, bottomTabID: String) {
         NotificationCenter.default.post(
             name: .activeBottomTabIDDidChange,
             object: nil,
-            userInfo: ["bottomTabID": bottomTabID]
+            userInfo: ["containerID": containerID, "bottomTabID": bottomTabID]
         )
     }
 
@@ -137,11 +137,13 @@ public extension View {
         }
     }
 
-    /// 监听底部面板 Tab 变更
-    func onActiveBottomTabIDDidChange(perform action: @escaping (String) -> Void) -> some View {
+    /// 监听底部面板 Tab 变更（containerID, bottomTabID）
+    func onActiveBottomTabIDDidChange(perform action: @escaping (String, String) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .activeBottomTabIDDidChange)) { notification in
-            guard let bottomTabID = notification.userInfo?["bottomTabID"] as? String else { return }
-            action(bottomTabID)
+            guard let containerID = notification.userInfo?["containerID"] as? String,
+                  let bottomTabID = notification.userInfo?["bottomTabID"] as? String
+            else { return }
+            action(containerID, bottomTabID)
         }
     }
 

@@ -6,16 +6,16 @@ import SwiftUI
 public enum DiskManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "internaldrive"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.disk-manager",
         displayName: LumiPluginLocalization.string("Disk Manager", bundle: .module),
         description: LumiPluginLocalization.string("Inspect local disk capacity and usage.", bundle: .module),
-        order: 44
+        order: 44,
+        category: .system,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "internaldrive",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum DiskManagerPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)
