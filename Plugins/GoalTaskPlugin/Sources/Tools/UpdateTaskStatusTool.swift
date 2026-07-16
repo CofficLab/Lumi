@@ -9,9 +9,7 @@ import SuperLogKit
 public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
-    
-    public let manager: GoalStateManager
-    
+
     public static let info = LumiAgentToolInfo(
         id: "update_task_status",
         displayName: "Update Task Status",
@@ -21,14 +19,12 @@ public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
         - "failed": Task encountered an unrecoverable error
         - "skipped": Task is no longer needed
         - "in_progress": Task is currently being worked on
-        
+
         When you update a task's status, the parent goal's status will be automatically recalculated.
         """
     )
-    
-    public init(manager: GoalStateManager) {
-        self.manager = manager
-    }
+
+    public init() {}
     
     public var inputSchema: LumiJSONValue {
         .object([
@@ -74,8 +70,10 @@ public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
         
         let result = arguments["result"]?.anyValue as? String
         let errorMessage = arguments["error_message"]?.anyValue as? String
-        
-        let manager = self.manager
+
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            return "Error: goal task manager is not initialized"
+        }
         
         let updateResult: (task: GoalTask, goal: Goal)
         do {

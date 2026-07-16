@@ -8,9 +8,7 @@ import SuperLogKit
 public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "➕"
     public nonisolated static let verbose: Bool = true
-    
-    public let manager: GoalStateManager
-    
+
     public static let info = LumiAgentToolInfo(
         id: "add_tasks_to_goal",
         displayName: "Add Tasks To Goal",
@@ -18,10 +16,8 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
         Add new tasks to an existing goal. Use this when you discover additional steps needed during execution.
         """
     )
-    
-    public init(manager: GoalStateManager) {
-        self.manager = manager
-    }
+
+    public init() {}
     
     public var inputSchema: LumiJSONValue {
         .object([
@@ -94,7 +90,9 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
             return "Error: no valid tasks found"
         }
         
-        let manager = self.manager
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            return "Error: goal task manager is not initialized"
+        }
         
         let createdTasks: [GoalTask]
         do {

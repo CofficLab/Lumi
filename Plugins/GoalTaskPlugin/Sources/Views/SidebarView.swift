@@ -344,7 +344,7 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
     /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
     @MainActor
     private var manager: GoalStateManager? {
-        let manager = GoalTaskPlugin.manager
+        let manager = GoalTaskPlugin.currentManager()
         Self.logger.info("\(Self.t)manager accessed: \(manager != nil ? "available" : "nil")")
         return manager
     }

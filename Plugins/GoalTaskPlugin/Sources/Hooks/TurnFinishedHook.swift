@@ -24,7 +24,7 @@ enum TurnFinishedHook {
         conversationID: UUID,
         chatService: any LumiChatServicing
     ) async {
-        guard let manager = GoalTaskPlugin.manager else {
+        guard let manager = await GoalTaskPlugin.currentManager() else {
             return
         }
 

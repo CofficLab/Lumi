@@ -9,9 +9,7 @@ import SuperLogKit
 public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🎯"
     public nonisolated static let verbose: Bool = true
-    
-    public let manager: GoalStateManager
-    
+
     public static let info = LumiAgentToolInfo(
         id: "update_goal_status",
         displayName: "Update Goal Status",
@@ -19,19 +17,17 @@ public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
         Manually update a goal's status. Use this when:
         - You discover the goal is unachievable (set to "blocked" or "failed")
         - You need to ask the user for clarification before continuing
-        
+
         **Important:** When you set status to "blocked", you MUST:
         1. Provide a clear reason in "blocked_reason"
         2. Optionally suggest actions in "suggested_actions"
         3. Stop executing tasks and wait for user input
-        
+
         The user will see a notification and can decide how to proceed.
         """
     )
-    
-    public init(manager: GoalStateManager) {
-        self.manager = manager
-    }
+
+    public init() {}
     
     public var inputSchema: LumiJSONValue {
         .object([
@@ -86,7 +82,9 @@ public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
         let failureReason = arguments["failure_reason"]?.anyValue as? String
         let suggestedActions = arguments["suggested_actions"]?.anyValue as? [String]
         
-        let manager = self.manager
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            return "Error: goal task manager is not initialized"
+        }
         
         let goal: Goal
         do {

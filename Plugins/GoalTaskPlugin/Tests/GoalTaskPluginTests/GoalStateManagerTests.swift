@@ -46,7 +46,7 @@ struct GoalStateManagerTests {
             ]
         )
         
-        let updateResult = try await manager.updateTaskStatus(
+        let updateResult = try await manager.updateGoalTaskStatus(
             id: result.tasks[0].id,
             status: .completed,
             result: "Done"
@@ -107,5 +107,28 @@ struct GoalStateManagerTests {
         
         let goals = await manager.fetchGoals(conversationId: "test-conv-4")
         #expect(goals.count == 2)
+    }
+
+    /// 回归测试：create 之后立即 fetch 必须读到刚写入的 Goal。
+    /// 历史上 Sidebar 读取 0 的根因是"工具写入的 manager 实例与 Sidebar 读取的实例不同"
+    /// （指向不同数据库文件）。这里用同一 manager 覆盖核心路径：写入后立即查询必须非空。
+    @Test("Create then immediately fetch returns the goal")
+    func testCreateThenFetchImmediately() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = GoalStateManager(databaseRootURL: tempDir)
+
+        let cid = "577967FE-1812-4278-8752-D0E72ED9B567"
+        _ = try await manager.createGoal(
+            conversationId: cid,
+            title: "添加「项目仪表盘」功能",
+            description: nil,
+            successCriteria: nil,
+            tasks: (1...6).map { _ in (title: "Task", description: nil, executionContext: nil, parallelGroup: nil) }
+        )
+
+        let fetched = await manager.fetchGoals(conversationId: cid)
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.title == "添加「项目仪表盘」功能")
     }
 }

@@ -9,10 +9,7 @@ import SuperLogKit
 public struct CreateGoalTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🎯"
     public nonisolated static let verbose: Bool = true
-    
-    /// 由插件注入的状态管理器
-    public let manager: GoalStateManager
-    
+
     public static let info = LumiAgentToolInfo(
         id: "create_goal",
         displayName: "Create Goal",
@@ -22,16 +19,14 @@ public struct CreateGoalTool: LumiAgentTool, SuperLog {
         - The work may span multiple conversation turns
         - You want to track progress systematically
         - You want to identify parallel execution opportunities
-        
+
         The goal represents the overall objective (with optional success criteria), and each task is a concrete step. Tasks can be grouped into parallel groups for concurrent execution.
-        
+
         After creating a goal, start working on the first task (or first parallel group) immediately.
         """
     )
-    
-    public init(manager: GoalStateManager) {
-        self.manager = manager
-    }
+
+    public init() {}
     
     public var inputSchema: LumiJSONValue {
         .object([
@@ -122,7 +117,9 @@ public struct CreateGoalTool: LumiAgentTool, SuperLog {
             return "Error: no valid tasks found"
         }
         
-        let manager = self.manager
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            return "Error: goal task manager is not initialized"
+        }
         
         // 创建 Goal
         let result: (goal: Goal, tasks: [GoalTask])

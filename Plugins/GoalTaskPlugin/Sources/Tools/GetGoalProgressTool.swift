@@ -8,9 +8,7 @@ import SuperLogKit
 public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
     public nonisolated static let verbose: Bool = true
-    
-    public let manager: GoalStateManager
-    
+
     public static let info = LumiAgentToolInfo(
         id: "get_goal_progress",
         displayName: "Get Goal Progress",
@@ -18,10 +16,8 @@ public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
         Query the current progress and details of a specific goal, including all its tasks and their statuses.
         """
     )
-    
-    public init(manager: GoalStateManager) {
-        self.manager = manager
-    }
+
+    public init() {}
     
     public var inputSchema: LumiJSONValue {
         .object([
@@ -47,8 +43,10 @@ public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
             return "Error: goal_id is required"
         }
         
-        let manager = self.manager
-        
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            return "Error: goal task manager is not initialized"
+        }
+
         guard let goal = await manager.fetchGoal(id: goalId) else {
             return "Error: goal not found"
         }

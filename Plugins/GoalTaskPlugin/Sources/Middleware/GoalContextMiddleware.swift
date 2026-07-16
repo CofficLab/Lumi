@@ -4,18 +4,24 @@ import os
 
 /// GoalTask 中间件：在每轮对话中注入当前 Goal 的进度信息
 struct GoalContextMiddleware: LumiSendMiddleware {
-    private let manager: GoalStateManager
     private let promptService: PromptService
-    
-    init(manager: GoalStateManager, promptService: PromptService = PromptService()) {
-        self.manager = manager
+
+    init(promptService: PromptService = PromptService()) {
         self.promptService = promptService
     }
-    
+
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {
         var updated = context
         let conversationId = context.conversationID.uuidString
-        
+
+        guard let manager = await GoalTaskPlugin.currentManager() else {
+            // manager 尚未初始化：按"无 Goal"处理，注入创建提示
+            updated.systemPromptFragments.append(
+                promptService.buildNoGoalsPrompt(language: context.conversationLanguage)
+            )
+            return updated
+        }
+
         // 获取当前会话的所有 Goals
         let goals = await manager.fetchGoals(conversationId: conversationId)
         
