@@ -3,42 +3,37 @@ import SuperLogKit
 import LumiCoreKit
 
 /// 右侧栏视图 - 展示当前会话的 Goals 和 Tasks
-public struct SidebarView: View, SuperLog {
-    public nonisolated static let emoji = "🎯"
-    public nonisolated static let verbose = true
-    public static let logger = GoalTaskPlugin.logger
-    
+public struct SidebarView: View {
     @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
-    
-    /// 获取当前会话 ID 的闭包（返回 String）
-    private let conversationIdProvider: () -> String
-    
+
+    /// 获取当前会话 ID 的闭包（内部统一为 String?）
+    private let conversationIdProvider: () -> String?
+
     /// 获取背景色的闭包
     private let backgroundColorProvider: () -> Color
-    
+
     private static let headerHeight: CGFloat = 44
     private static let maxGoalListHeight: CGFloat = 200
-    
+
     /// 是否有可见的 Goals
     private var hasVisibleGoals: Bool {
         !viewModel.goals.isEmpty
     }
-    
+
     public init(
         conversationIdProvider: @escaping () -> UUID?,
         backgroundColorProvider: @escaping () -> Color = { Color.clear }
     ) {
-        self.conversationIdProvider = { conversationIdProvider()?.uuidString ?? "" }
+        self.conversationIdProvider = { conversationIdProvider()?.uuidString }
         self.backgroundColorProvider = backgroundColorProvider
     }
-    
+
     public var body: some View {
-        Self.logger.info("\(Self.t)body: hasVisibleGoals=\(hasVisibleGoals), goalsCount=\(viewModel.goals.count)")
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             if hasVisibleGoals {
                 headerView
-                
+
                 if isCollapsed {
                     EmptyView()
                 } else if viewModel.isLoading {
@@ -50,45 +45,54 @@ public struct SidebarView: View, SuperLog {
                 }
             }
         }
-        .frame(height: hasVisibleGoals ? sidebarHeight : 0, alignment: .top)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(height: hasVisibleGoals ? sidebarHeight : 0)
         .frame(maxWidth: .infinity, alignment: .top)
-        .frame(minWidth: hasVisibleGoals ? 280 : 0, idealWidth: hasVisibleGoals ? 360 : 0)
-        .frame(minHeight: 1)  // 关键：保证视图高度至少为 1pt，SwiftUI 才会触发 onAppear
+        .frame(minWidth: hasVisibleGoals ? 240 : 0, idealWidth: hasVisibleGoals ? 320 : 0)
         .background {
             if hasVisibleGoals {
                 backgroundColorProvider()
                     .opacity(0.82)
             }
         }
-        .onAppear {
-            Self.logger.info("\(Self.t)onAppear: starting initial refresh")
-            Task {
-                await viewModel.refresh(conversationId: conversationIdProvider())
+        .overlay {
+            if hasVisibleGoals {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.orange.opacity(0.16))
+                        .frame(height: 1)
+                    Spacer(minLength: 0)
+                    Rectangle()
+                        .fill(Color.orange.opacity(0.12))
+                        .frame(height: 1)
+                }
             }
         }
-        .onChange(of: conversationIdProvider()) { _, newValue in
-            Self.logger.info("\(Self.t)onChange: conversationId changed to \(newValue)")
-            Task {
-                await viewModel.refresh(conversationId: newValue)
-            }
+        .task(id: conversationIdProvider()) {
+            await viewModel.refresh(conversationId: conversationIdProvider())
         }
+        .onDisappear {
+            viewModel.removeObserver()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Goals & Tasks")
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         HStack {
             Label("Goals & Tasks", systemImage: "target")
                 .font(.headline)
-            
+
             Spacer()
-            
+
             if let summary = viewModel.overallSummary {
-                Text("\(summary.completedGoals)/\(summary.totalGoals)")
+                Text("\(summary.completedGoals)/\(summary.totalGoals) (\(summary.completionPercent)%)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            
+
             Button {
                 Task { await viewModel.forceRefresh() }
             } label: {
@@ -96,7 +100,8 @@ public struct SidebarView: View, SuperLog {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            
+            .help("Refresh")
+
             Button {
                 withAnimation(.easeInOut(duration: 0.16)) {
                     isCollapsed.toggle()
@@ -106,13 +111,14 @@ public struct SidebarView: View, SuperLog {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
+            .help(isCollapsed ? "Expand" : "Collapse")
         }
         .padding(.horizontal, 12)
         .frame(height: Self.headerHeight)
     }
-    
+
     // MARK: - Goal List
-    
+
     private var goalListView: some View {
         ScrollView {
             VStack(spacing: 8) {
@@ -125,14 +131,14 @@ public struct SidebarView: View, SuperLog {
         }
         .frame(height: goalListHeight)
     }
-    
+
     private var goalListHeight: CGFloat {
         let totalHeight = viewModel.goals.reduce(CGFloat(0)) { acc, goal in
             acc + goal.estimatedHeight(taskCount: viewModel.tasksByGoalId[goal.id]?.count ?? 0)
         }
         return min(totalHeight, Self.maxGoalListHeight)
     }
-    
+
     private var sidebarHeight: CGFloat {
         guard hasVisibleGoals else { return 0 }
         if isCollapsed {
@@ -150,27 +156,28 @@ public struct SidebarView: View, SuperLog {
 private struct GoalCardView: View {
     let displayItem: GoalDisplayItem
     let tasks: [GoalTaskDisplayItem]
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // Goal Header
             HStack(spacing: 6) {
                 Image(systemName: statusIcon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(statusColor)
-                    .frame(width: 16)
-                
+                    .frame(width: 14)
+
                 Text(displayItem.title)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                
+                    .truncationMode(.tail)
+
                 Spacer()
-                
+
                 Text("\(completedCount)/\(tasks.count)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            
+
             // Blocked reason
             if displayItem.status == .blocked, let reason = displayItem.blockedReason {
                 Text("⚠️ \(reason)")
@@ -178,10 +185,10 @@ private struct GoalCardView: View {
                     .foregroundStyle(.orange)
                     .lineLimit(2)
             }
-            
+
             // Tasks
             if !tasks.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(tasks.prefix(5)) { task in
                         TaskRowView(displayItem: task)
                     }
@@ -194,14 +201,14 @@ private struct GoalCardView: View {
             }
         }
         .padding(8)
-        .background(Color.orange.opacity(0.05))
+        .background(Color.orange.opacity(0.075))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(statusColor.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.12), lineWidth: 1)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
-    
+
     private var statusIcon: String {
         switch displayItem.status {
         case .pending: return "circle"
@@ -212,7 +219,7 @@ private struct GoalCardView: View {
         case .skipped: return "forward.circle"
         }
     }
-    
+
     private var statusColor: Color {
         switch displayItem.status {
         case .pending: return .secondary
@@ -223,7 +230,7 @@ private struct GoalCardView: View {
         case .skipped: return .gray
         }
     }
-    
+
     private var completedCount: Int {
         tasks.filter { $0.status == .completed || $0.status == .skipped }.count
     }
@@ -233,29 +240,37 @@ private struct GoalCardView: View {
 
 private struct TaskRowView: View {
     let displayItem: GoalTaskDisplayItem
-    
+
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             Image(systemName: statusIcon)
-                .font(.system(size: 9))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(statusColor)
                 .frame(width: 12)
-            
+
             Text(displayItem.title)
-                .font(.caption2)
+                .font(.caption)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            
+
             if let group = displayItem.parallelGroup {
                 Text("[\(group)]")
                     .font(.system(size: 9))
                     .foregroundStyle(.tertiary)
             }
-            
+
             Spacer()
         }
+        .padding(.horizontal, 6)
+        .frame(height: 22)
+        .background(Color.orange.opacity(0.06))
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(Color.orange.opacity(0.1), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
-    
+
     private var statusIcon: String {
         switch displayItem.status {
         case .pending: return "circle"
@@ -265,7 +280,7 @@ private struct TaskRowView: View {
         case .skipped: return "forward.circle"
         }
     }
-    
+
     private var statusColor: Color {
         switch displayItem.status {
         case .pending: return .secondary
@@ -295,10 +310,12 @@ public struct GoalDisplayItem: Identifiable, Equatable {
     
     /// 估算高度
     public func estimatedHeight(taskCount: Int) -> CGFloat {
-        let baseHeight: CGFloat = 50
+        let baseHeight: CGFloat = 48
         let blockedExtra: CGFloat = (status == .blocked && blockedReason != nil) ? 20 : 0
-        let taskHeight: CGFloat = CGFloat(min(taskCount, 5)) * 16 + 8
-        return baseHeight + blockedExtra + taskHeight + 16
+        let visibleTasks = min(taskCount, 5)
+        let taskHeight: CGFloat = CGFloat(visibleTasks) * 22 + CGFloat(max(0, visibleTasks - 1)) * 4
+        let overflowExtra: CGFloat = taskCount > 5 ? 16 : 0
+        return baseHeight + blockedExtra + taskHeight + overflowExtra + 16
     }
 }
 
@@ -322,59 +339,40 @@ public struct GoalTaskDisplayItem: Identifiable, Equatable {
 public struct OverallSummary {
     public let totalGoals: Int
     public let completedGoals: Int
+
+    /// 完成百分比 (0-100)
+    public var completionPercent: Int {
+        guard totalGoals > 0 else { return 0 }
+        return Int(Double(completedGoals) / Double(totalGoals) * 100)
+    }
 }
 
 // MARK: - ViewModel
 
 @MainActor
-final public class SidebarViewModel: ObservableObject, SuperLog {
-    nonisolated public static let emoji = "🎯"
-    nonisolated public static let verbose = false
-    public static let logger = GoalTaskPlugin.logger
-    
+final public class SidebarViewModel: ObservableObject {
     @Published public var goals: [GoalDisplayItem] = []
     @Published public var tasksByGoalId: [String: [GoalTaskDisplayItem]] = [:]
     @Published public var overallSummary: OverallSummary?
     @Published public var isLoading: Bool = false
-    
+
     public var currentConversationId: String?
     private nonisolated let notificationObserverHolder = NotificationObserverHolder()
-    private let initialConversationId: String?
-    
+
+    public init() {}
+
     /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
     @MainActor
     private var manager: GoalStateManager? {
-        let manager = GoalTaskPlugin.currentManager()
-        Self.logger.info("\(Self.t)manager accessed: \(manager != nil ? "available" : "nil")")
-        return manager
+        GoalTaskPlugin.currentManager()
     }
-    
-    public init(conversationId: String? = nil) {
-        self.initialConversationId = conversationId
-        Self.logger.info("\(Self.t)init: conversationId=\(conversationId ?? "nil")")
-        
-        // Start loading immediately, don't rely on SwiftUI onAppear
-        if let conversationId {
-            Self.logger.info("\(Self.t)init: starting initial refresh for conversationId=\(conversationId)")
-            Task { @MainActor in
-                await self.refresh(conversationId: conversationId)
-            }
-        }
-    }
-    
+
     public func removeObserver() {
         notificationObserverHolder.remove()
     }
-    
-    public func refresh(conversationId: UUID?) async {
-        let cidString = conversationId?.uuidString
-        await refresh(conversationId: cidString)
-    }
-    
+
     public func refresh(conversationId: String?) async {
-        Self.logger.info("\(Self.t)refresh: called with conversationId=\(conversationId ?? "nil")")
         guard let conversationId else {
-            Self.logger.info("\(Self.t)refresh: conversationId is nil, clearing goals")
             goals = []
             tasksByGoalId = [:]
             overallSummary = nil
@@ -382,13 +380,12 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
             isLoading = false
             return
         }
-        
+
         currentConversationId = conversationId
         isLoading = true
-        
+
         // 首次绑定通知
         if !notificationObserverHolder.hasObserver {
-            Self.logger.info("\(Self.t)refresh: binding notification observer")
             let observer = NotificationCenter.default.addObserver(
                 forName: .goalDidChange,
                 object: nil,
@@ -398,55 +395,39 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     if let changedCid, changedCid == self.currentConversationId {
-                        Self.logger.info("\(Self.t)notification: goalDidChange for conversationId=\(changedCid)")
                         await self.reloadFromDB()
                     }
                 }
             }
             notificationObserverHolder.set(observer)
         }
-        
+
         await reloadFromDB()
         isLoading = false
-        Self.logger.info("\(Self.t)refresh: completed, loaded \(self.goals.count) goals")
     }
-    
+
     public func forceRefresh() async {
         await reloadFromDB()
     }
-    
+
     private func reloadFromDB() async {
-        Self.logger.info("\(Self.t)reloadFromDB: started")
-        guard let cid = currentConversationId else {
-            Self.logger.info("\(Self.t)reloadFromDB: currentConversationId is nil, returning")
-            return
-        }
-        Self.logger.info("\(Self.t)reloadFromDB: currentConversationId=\(cid)")
-        
-        guard let manager else {
-            Self.logger.info("\(Self.t)reloadFromDB: manager is nil, returning")
-            return
-        }
-        Self.logger.info("\(Self.t)reloadFromDB: manager is available, fetching goals...")
-        
+        guard let cid = currentConversationId,
+              let manager
+        else { return }
+
         let fetchedGoals = await manager.fetchGoals(conversationId: cid)
-        Self.logger.info("\(Self.t)reloadFromDB: fetched \(fetchedGoals.count) goals from database")
-        
+
         var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
         for goal in fetchedGoals {
-            Self.logger.info("\(Self.t)reloadFromDB: fetching tasks for goal \(goal.id)")
             let tasks = await manager.fetchTasks(goalId: goal.id)
-            Self.logger.info("\(Self.t)reloadFromDB: fetched \(tasks.count) tasks for goal \(goal.id)")
             tasksMap[goal.id] = tasks.map { GoalTaskDisplayItem(from: $0) }
         }
-        
+
         goals = fetchedGoals.map { GoalDisplayItem(from: $0) }
         tasksByGoalId = tasksMap
-        Self.logger.info("\(Self.t)reloadFromDB: updated goals array to \(self.self.goals.count) items")
-        
+
         let completed = fetchedGoals.filter { $0.status == .completed }.count
         overallSummary = OverallSummary(totalGoals: fetchedGoals.count, completedGoals: completed)
-        Self.logger.info("\(Self.t)reloadFromDB: completed, total=\(fetchedGoals.count), completed=\(completed)")
     }
 }
 
