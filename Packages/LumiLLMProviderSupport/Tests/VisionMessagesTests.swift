@@ -1,5 +1,5 @@
 import XCTest
-import LLMProviderKit
+import LLMKit
 import LumiCoreKit
 @testable import LumiLLMProviderSupport
 

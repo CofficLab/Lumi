@@ -1,7 +1,6 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LLMProviderKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -107,7 +106,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         let body: [String: Any]
         do {
             body = try adapter.buildRequestBody(
-                messages: [LLMProviderKit.ChatMessage(role: .user, content: "ping")],
+                messages: [LLMKit.ChatMessage(role: .user, content: "ping")],
                 model: model,
                 tools: nil,
                 systemPrompt: ""
@@ -133,18 +132,18 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
-    private static func convertMessage(_ message: LumiChatMessage) -> LLMProviderKit.ChatMessage {
-        LLMProviderKit.ChatMessage(
+    private static func convertMessage(_ message: LumiChatMessage) -> LLMKit.ChatMessage {
+        LLMKit.ChatMessage(
             role: convertRole(message.role),
             content: message.content,
             toolCalls: message.toolCalls?.map {
-                LLMProviderKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+                LLMKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             toolCallID: message.toolCallID
         )
     }
 
-    private static func convertRole(_ role: LumiChatMessageRole) -> LLMProviderKit.MessageRole {
+    private static func convertRole(_ role: LumiChatMessageRole) -> LLMKit.MessageRole {
         switch role {
         case .system:
             .system

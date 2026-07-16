@@ -2,36 +2,36 @@
 import PackageDescription
 
 let package = Package(
-    name: "LLMKit",
+    name: "FileSystemKit",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .library(
-            name: "LLMKit",
-            targets: ["LLMKit"]
+            name: "FileSystemKit",
+            targets: ["FileSystemKit"]
         ),
     ],
     dependencies: [
-        .package(name: "HttpKit", path: "../HttpKit"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
-            name: "LLMKit",
+            name: "FileSystemKit",
             dependencies: [
-                "HttpKit",
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
-            path: "Sources/LLMKit",
+            path: "Sources/FileSystemKit",
             resources: [
                 .process("Resources")
             ]
         ),
         .testTarget(
-            name: "LLMKitTests",
-            dependencies: ["LLMKit"],
+            name: "FileSystemKitTests",
+            dependencies: ["FileSystemKit"],
             path: "Tests"
         ),
     ]

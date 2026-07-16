@@ -1,6 +1,6 @@
 import Foundation
 import LumiCoreKit
-import ModelRouterKit
+import LLMKit
 
 /// Manages LLM provider registration, model selection, and routing.
 @MainActor

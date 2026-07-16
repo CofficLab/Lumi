@@ -1,6 +1,6 @@
 import Foundation
 import LumiCoreKit
-import ModelRouterKit
+import LLMKit
 import SwiftData
 
 @MainActor
