@@ -1059,6 +1059,13 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                     continue
                 }
 
+                // 跳过尚未回答的 `ask_user` pending 占位内容：它不是真实的工具产出，
+                // 不应作为 tool 消息进入下游 LLM 上下文（等用户回答后由
+                // `resumeAfterAskUser` 写入真实答案再展开）。
+                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                    continue
+                }
+
                 var metadata: [String: String] = [:]
                 // 将工具产出的图片注入 tool 消息，复用与用户附图相同的视觉通道。
                 // 下游 LumiVisionMessageSupport.convert 会从该 metadata 还原 MessageImage，
