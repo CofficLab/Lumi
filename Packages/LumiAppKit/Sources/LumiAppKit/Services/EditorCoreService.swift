@@ -84,6 +84,13 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
 
         core.reinstallExtensions()
 
+        // 订阅系统外观（浅色/深色）变化：外观切换时把对应的编辑器语法主题同步给编辑器。
+        // 原先由 RootContainer 接线，现在收回到 EditorCoreService 自管——它本来就持有
+        // themeRegistry 且是 syncAppSyntaxThemes 的拥有者。
+        themeRegistry.onSystemAppearanceDidChange = { [weak self] in
+            self?.syncAppSyntaxThemes()
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
         }

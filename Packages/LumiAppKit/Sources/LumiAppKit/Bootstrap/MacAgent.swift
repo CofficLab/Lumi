@@ -20,6 +20,13 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
         // 避免拦截 kAEOpenDocuments 导致 SwiftUI WindowGroup 冷启动不创建窗口。
     }
 
+    /// 应用启动完成：触发一次应用级启动副作用。
+    /// 更新 feed 探测原本在 RootContainer.init 里，但它是"应用级一次性"动作，
+    /// 归到应用代理的生命周期里更合理（与 applicationWillTerminate/resignActive 同类）。
+    public func applicationDidFinishLaunching(_ notification: Notification) {
+        UpdateService.shared.setupFeedURLIfNeeded()
+    }
+
     public func application(_ application: NSApplication, open urls: [URL]) {
         guard Self.verbose else { return }
         Self.logger.info("\(self.t)接收 \(urls.count) 个 URL 请求")

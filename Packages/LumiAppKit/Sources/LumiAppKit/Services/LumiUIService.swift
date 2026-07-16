@@ -69,6 +69,17 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
         onThemesDidChange?()
     }
 
+    /// 把"主题变更"信号接到编辑器语法主题同步。
+    ///
+    /// 原先由 RootContainer 直接赋值 `onThemesDidChange`，现在收回到一个命名清晰的
+    /// 接线方法：LumiUIService 负责告诉"谁关心主题变化"。`EditorCoreService` 不被
+    /// LumiUIService 强持有（仅以弱引用进入闭包），避免循环。
+    func connectEditorThemeSync(_ editorCoreService: EditorCoreService) {
+        onThemesDidChange = { [weak editorCoreService] in
+            editorCoreService?.syncAppSyntaxThemes()
+        }
+    }
+
     private func restoreSavedThemeIfPossible() {
         guard let savedThemeID = selectionStore.loadSelectedThemeID(),
               themeRegistry.themes.contains(where: { $0.id == savedThemeID })
