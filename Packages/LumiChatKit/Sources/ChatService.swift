@@ -452,9 +452,9 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         let verbosity = verbosity(for: conversationID)
 
         var fragments = [
-            lang.systemPromptFragment,
-            automation.systemPromptFragment,
-            verbosity.systemPromptFragment
+            LumiConversationPromptDefaults.fragment(for: lang),
+            LumiConversationPromptDefaults.fragment(for: automation),
+            LumiConversationPromptDefaults.fragment(for: verbosity)
         ]
         fragments.append(contentsOf: context.systemPromptFragments)
 
