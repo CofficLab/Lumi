@@ -299,12 +299,12 @@ private struct TaskRowView: View {
 
 extension Goal.GoalStatus {
     /// 是否为终态（不再会有后续推进）。
-    /// blocked 也算终态：需要用户介入，不再自动续推，侧栏可隐藏。
+    /// 注意：blocked 不算终态——它需要用户介入，侧栏应保持可见以提示用户。
     var isTerminal: Bool {
         switch self {
-        case .completed, .failed, .skipped, .blocked:
+        case .completed, .failed, .skipped:
             return true
-        case .pending, .inProgress:
+        case .pending, .inProgress, .blocked:
             return false
         }
     }

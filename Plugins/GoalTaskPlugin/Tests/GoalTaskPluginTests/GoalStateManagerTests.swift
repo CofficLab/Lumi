@@ -131,4 +131,71 @@ struct GoalStateManagerTests {
         #expect(fetched.count == 1)
         #expect(fetched.first?.title == "添加「项目仪表盘」功能")
     }
+
+    /// 回归测试：所有 Goal 到达终态后，侧栏应判定为无可展示工作（hasActiveWork == false），
+    /// 即使数据尚未被 TurnFinishedHook 清理。对应「完成时 UI 不消失」的修复。
+    @MainActor
+    @Test("Sidebar hides when all goals reach terminal state")
+    func testSidebarHidesWhenAllDone() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let cid = "conv-done"
+
+        // 一个 Goal，其唯一 Task 先建为 in_progress
+        let created = try await manager.createGoal(
+            conversationId: cid,
+            title: "Done goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Only task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        // 完成 Task → Goal 自动推导为 completed
+        _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
+
+        let vm = SidebarViewModel()
+        vm.goals = (await manager.fetchGoals(conversationId: cid)).map { GoalDisplayItem(from: $0) }
+        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
+        for goal in await manager.fetchGoals(conversationId: cid) {
+            tasksMap[goal.id] = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
+        }
+        vm.tasksByGoalId = tasksMap
+
+        // 数据仍在 DB（尚未被 hook 清理），但全部到终态 → 应隐藏
+        #expect(vm.goals.isEmpty == false)
+        #expect(vm.hasActiveWork == false)
+    }
+
+    /// 回归测试：存在未完成工作时侧栏保持可见。
+    @MainActor
+    @Test("Sidebar visible when work is in progress")
+    func testSidebarVisibleWhenInProgress() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let cid = "conv-active"
+
+        let created = try await manager.createGoal(
+            conversationId: cid,
+            title: "Active goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [
+                (title: "T1", description: nil, executionContext: nil, parallelGroup: nil),
+                (title: "T2", description: nil, executionContext: nil, parallelGroup: nil)
+            ]
+        )
+        // 只完成第一个 Task，第二个仍 pending
+        _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
+
+        let vm = SidebarViewModel()
+        vm.goals = (await manager.fetchGoals(conversationId: cid)).map { GoalDisplayItem(from: $0) }
+        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
+        for goal in await manager.fetchGoals(conversationId: cid) {
+            tasksMap[goal.id] = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
+        }
+        vm.tasksByGoalId = tasksMap
+
+        #expect(vm.hasActiveWork == true)
+    }
 }
