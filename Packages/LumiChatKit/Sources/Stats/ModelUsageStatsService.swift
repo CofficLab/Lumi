@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 
 /// 一条「快速模型」记录, 用于快速模型榜。
 public struct ModelFastModelEntry: Sendable, Equatable {

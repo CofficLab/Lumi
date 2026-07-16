@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LumiCoreKit
+@testable import LumiChatKit
 
 @Suite struct TokenCountFormatTests {
 

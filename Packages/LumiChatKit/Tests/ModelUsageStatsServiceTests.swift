@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-@testable import LumiCoreKit
+import LumiCoreKit
+@testable import LumiChatKit
 
 @Suite struct ModelUsageStatsServiceTests {
     private var calendar: Calendar {
