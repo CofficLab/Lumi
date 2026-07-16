@@ -31,7 +31,15 @@ final class RootContainer: ObservableObject, SuperLog {
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
 
-    /// Normal throwing initializer
+    /// 初始化所有服务并启动 LumiCore。
+    ///
+    /// 职责严格限定为：按依赖顺序实例化各服务 → 注册进 LumiCore 服务表 → 触发启动。
+    /// 不再包含插件贡献注册算法、主题/更新副作用、运行期事件处理逻辑——这些已各归其位：
+    /// - Chat 维度贡献（providers/middlewares/renderers/hook）→ `ChatService.applyPluginContributions`
+    /// - 工具维度贡献 → `LumiCoreService.bootstrapToolContributions`
+    /// - 主题同步 → `LumiUIService.connectEditorThemeSync` / `EditorCoreService` 自订阅读系统外观
+    /// - 更新 feed 探测 → `MacAgent.applicationDidFinishLaunching`
+    /// - 运行期插件状态变化 → `wirePluginStateObservers()` 仅做一行转发
     init() throws {
         LumiPluginRegistry.restoreLayoutEarly()
         self.pluginService = PluginService()
@@ -46,6 +54,7 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         }
 
+        // 启动 LumiCore：内部创建 ChatService、注册 EditorCoreService、编排工具贡献。
         self.lumiCoreService = try LumiCoreService(
             provider: pluginService,
             editorFactory: editorFactory,
@@ -71,107 +80,70 @@ final class RootContainer: ObservableObject, SuperLog {
         self.lumiUIService = LumiUIService(pluginService: pluginService, lumiCore: lumiCore)
         self.menuBarService = MenuBarService(pluginService: pluginService, lumiCore: lumiCore)
 
+        // 注册进服务表
         lumiCore.registerService(LumiCoreService.self, lumiCoreService)
         lumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
         lumiCore.registerService(LumiThemeServicing.self, lumiUIService)
         lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 
-        self.lumiUIService.onThemesDidChange = { [weak self] in
-            self?.editorCoreService.syncAppSyntaxThemes()
-        }
-        LumiUIThemeRegistry.shared.onSystemAppearanceDidChange = { [weak self] in
-            self?.editorCoreService.syncAppSyntaxThemes()
-        }
-
-        UpdateService.shared.setupFeedURLIfNeeded()
-        reloadChatPluginContributions()
-
-
-        // 初始化插件启用状态跟踪
-        self.pluginService.initializePluginStates()
-        // 回调挂到 LumiPluginRegistry（PluginService.init 里已经注册的 UI 刷新回调会被覆盖，
-        // 所以这里手动补一次 objectWillChange.send()，保证 SwiftUI 依然能收到刷新信号）。
-        LumiPluginRegistry.onEnabledPluginsChanged = { [weak self] in
-            guard let self else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
-            }
-            // 补回 PluginService.init 里设置的 UI 刷新职责
-            self.pluginService.objectWillChange.send()
-            // 运行期插件状态变更时重新注册工具贡献。
-            // 工具名称唯一性已在 boot 阶段校验，此处不会抛出异常。
-            self.reloadChatPluginContributions()
-            self.lumiUIService.reloadThemes(from: self.pluginService)
-            self.menuBarService.refresh()
-            self.editorCoreService.reinstallExtensions()
-        }
-
-        // 连接插件生命周期回调，处理启用/禁用时的资源清理
-        LumiPluginRegistry.onPluginLifecycleChange = { [weak self] (plugin, enabled) in
-            guard self != nil else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)插件生命周期变化: \(plugin.info.id) -> \(enabled ? "启用" : "禁用")")
-            }
-        }
+        // —— 启动期接线（纯转发，不含业务算法）——
+        // 主题变更 → 编辑器语法主题同步
+        lumiUIService.connectEditorThemeSync(editorCoreService)
+        // 应用 Chat 维度的插件贡献（providers/middlewares/renderers/turn hook + tool execution hook）
+        Self.checkedChatService(lumiCore).applyPluginContributions(
+            from: pluginService,
+            toolExecutionHook: makeToolExecutionHook()
+        )
+        // 运行期插件 enable/disable 协调
+        wirePluginStateObservers()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🎉 RootContainer 初始化完成")
         }
     }
 
-    // MARK: - Chat Plugin Wiring
+    // MARK: - Plugin State Wiring
 
-    private func reloadChatPluginContributions() {
-        guard let chatService = lumiCore.chatService as? ChatService else { return }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)重载聊天插件贡献")
-        }
-
-
-        // 构造 plugin context
-        let context = lumiCore.makePluginContext(
-            activeSectionID: "chat.core",
-            activeSectionTitle: "Chat Core"
-        )
-
-        // 注册 LLM Providers 到其他贡献（必须先注册，让 bootstrapToolContributions 里的 subAgents 能查到 provider）
-        let providers = pluginService.llmProviders(context: context)
-        chatService.registerProviders(providers)
-        chatService.registerMiddlewares(pluginService.sendMiddlewares(context: context))
-        chatService.registerMessageRenderers(pluginService.messageRenderers(context: context))
-
-        // 设置 Turn Finished Hook，将内核级钩子连接到插件服务
-        chatService.turnFinishedHook = { [weak pluginService] conversationID, reason in
-            await pluginService?.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
-        }
-
-        // 设置 Tool Execution Hook，让插件能在工具执行后决定是否暂停 Agent 循环（如 ask_user）。
-        // LumiChatKit 不直接依赖插件注册表，经此闭包反向桥接。
-        chatService.toolExecutionHook = { toolName, result, conversationID in
+    /// 构造工具执行钩子闭包：把工具执行结果转发给插件注册表，由插件决定是否暂停
+    /// Agent 循环（如 ask_user 等待用户回答）。
+    ///
+    /// 这是 App 层对 `LumiPluginRegistry` 的反向桥接——`LumiChatKit` 不直接依赖插件注册表，
+    /// 经此闭包注入。见 `ChatService.toolExecutionHook` 字段注释。
+    private func makeToolExecutionHook() -> (String, String, UUID) async -> Bool {
+        { toolName, result, conversationID in
             await LumiPluginRegistry.dispatchToolExecution(
                 toolName: toolName,
                 result: result,
                 conversationID: conversationID
             )
         }
+    }
 
-        // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
-        // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
-        // 此时 chatService.providersByID 已包含所有 provider，subAgents 内部可以查到对应实例。
-        lumiCore.bootstrapToolContributions(provider: pluginService, context: context, builtInTools: ChatService.builtInTools)
-
-        // bootstrapToolContributions 内部已调用 provider.subAgents(context:) 并 appendTools(subAgentDelegateTools)
-        // 这里再次调用只是为了取 count 用于日志
-
-        NotificationCenter.default.post(
-            name: .lumiLLMProvidersDidChange,
-            object: nil,
-            userInfo: nil
-        )
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 聊天插件贡献重载完成: \(providers.count) 个 LLM Provider")
+    /// 订阅插件启用状态变化，把"插件集合变了"这个跨服务协调信号分发给各服务。
+    ///
+    /// 这里只做一行一行的转发：通知每个关心的服务重新加载自己的那部分。
+    /// `onEnabledPluginsChanged` 是 `LumiPluginRegistry` 的单一静态闭包槽，
+    /// 会覆盖 `PluginService.init` 里设置的纯 UI 刷新回调，因此第一行手动补发
+    /// `objectWillChange` 以保持 SwiftUI 刷新。
+    private func wirePluginStateObservers() {
+        LumiPluginRegistry.onEnabledPluginsChanged = { [weak self] in
+            guard let self else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)插件启用状态变化，刷新相关服务")
+            }
+            // 1. 补回 PluginService.init 被覆盖的 UI 刷新职责
+            pluginService.objectWillChange.send()
+            // 2. 重新应用 Chat 维度贡献（providers/middlewares/renderers/hook）
+            Self.checkedChatService(lumiCore).applyPluginContributions(
+                from: pluginService,
+                toolExecutionHook: makeToolExecutionHook()
+            )
+            // 3. 重新编排工具贡献（插件工具 / 子 Agent 工具）
+            lumiCoreService.bootstrapToolContributions()
+            // 4. 各 UI/编辑器服务自刷新
+            lumiUIService.reloadThemes(from: pluginService)
+            menuBarService.refresh()
+            editorCoreService.reinstallExtensions()
         }
     }
 }
