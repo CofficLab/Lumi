@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.17.0</title>
-            <pubDate>Wed, 15 Jul 2026 14:18:06 +0000</pubDate>
-            <sparkle:version>246</sparkle:version>
-            <sparkle:shortVersionString>4.17.0</sparkle:shortVersionString>
+            <title>4.18.0</title>
+            <pubDate>Thu, 16 Jul 2026 16:48:22 +0000</pubDate>
+            <sparkle:version>247</sparkle:version>
+            <sparkle:shortVersionString>4.18.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.17.0</h2>
-<h3>Changes since v4.16.0</h3>
+            <description><![CDATA[<h2>Release v4.18.0</h2>
+<h3>Changes since v4.17.0</h3>
 <ul>
-<li>bugfix:  fix a bug</li>
-<li>docs(AskUserPlugin): add coverage matrix and architecture overview to README</li>
-<li>docs(LumiAppKit): add README and .gitignore</li>
-<li>feat: add EditorPanel plugin localization support</li>
-<li>feat(auto-task-plugin): clean up completed tasks and stop auto-continuation at limit</li>
-<li>feat(core): unify boot with provider-driven tool validation and editor bootstrap</li>
-<li>feat(editor-file-tree-v2): unify file tree and package dependencies into one collection view</li>
-<li>feat(EditorCallHierarchy,EditorReferences,EditorStickySymbolBar): add i18n and Tests placeholder</li>
-<li>feat(EditorOutlinePlugin): add i18n and Tests placeholder</li>
-<li>feat(EditorSearchPlugin): add i18n and Tests placeholder</li>
-<li>feat(EditorTerminalPlugin): add i18n and Tests placeholder</li>
-<li>feat(file-tree-v2): display hidden files (dotfiles) like VSCode</li>
-<li>feat(file-tree-v2): restore drag and drop support</li>
-<li>feat(i18n): add table parameter to LumiPluginLocalization in Aliyun and Zhipu plugins</li>
-<li>feat(i18n): extract plugin localization into LumiLocalizationKit package</li>
-<li>feat(llm-provider-status): add isBlocking + StepFun sub-agent gate</li>
-<li>feat(LumiAppKit): add theme-related localization strings</li>
-<li>feat(LumiAppKit): extract reusable logic from LumiApp into facade package</li>
-<li>feat(LumiAppKit): localize commands and settings views via LumiLocalizationKit</li>
-<li>feat(LumiCoreKit): add LumiCoreKitResources</li>
+<li>docs: add LumiCoreKit/LumiChatKit layered architecture refactor proposal</li>
+<li>docs(editor-chat): add README and .gitignore for EditorChatPlugin</li>
+<li>feat: add ConversationTurnDurationPlugin for chat toolbar</li>
+<li>feat: add GoalTaskPlugin for goal-oriented task management</li>
+<li>feat: add turn finished hook for GoalTaskPlugin auto-continuation</li>
+<li>feat: Enhance GoalTask prompt system and sidebar display logic</li>
+<li>feat: register GoalTaskPlugin in plugin registry</li>
+<li>feat(auto-task): add user perspective to continuation prompts</li>
+<li>feat(core): add onTurnFinished hook for plugins</li>
+<li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
+<li>feat(editor): add auto-save modes and improve save workflow</li>
+<li>feat(LumiCoreKit): add LumiProviderState for provider/model selection and availability runtime state</li>
+<li>feat(memory): encourage proactive memory saving via prompt improvements</li>
+<li>feat(plugin): Add pluginAboutView protocol hook for plugin about page</li>
+<li>feat(plugins): fix aboutView method name and add comprehensive AboutViews</li>
+<li>fix: add missing defaultBottomTabID static constant in LumiLayoutState</li>
+<li>fix: add missing EditorKernel import in EditorFileService</li>
+<li>fix: correct MiniMax video query task API endpoint path</li>
+<li>fix: improve logging for debugging sidebar reload issues</li>
+<li>fix(ask-user): guard against missing options for multi-choice questions</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.17.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.18.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.17.0/Lumi_4.17.0_arm64.dmg" length="40879026" type="application/octet-stream" sparkle:edSignature="g4irE0JSwt7ikoJw8J779xaQChF0uv3WPwTA5rC/9/scNcp8zjO2BZYt1UXLEUewYFqw6WBWsey/PwZlvYKKCg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.18.0/Lumi_4.18.0_arm64.dmg" length="42676940" type="application/octet-stream" sparkle:edSignature="GNgjGKADzZ6+E5BxELjCJXOTJQcCacJRMD5XGcwG8OnhZul6yvj0NmVbqv/fV+C7g3F7Hq8r6Omq9yusZel3AQ=="/>
         </item>
     </channel>
 </rss>
