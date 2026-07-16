@@ -3,7 +3,11 @@ import SuperLogKit
 import LumiCoreKit
 
 /// 右侧栏视图 - 展示当前会话的 Goals 和 Tasks
-public struct SidebarView: View {
+public struct SidebarView: View, SuperLog {
+    public nonisolated static let emoji = "🎯"
+    public nonisolated static let verbose = true
+    public static let logger = GoalTaskPlugin.logger
+    
     @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
     
@@ -30,7 +34,8 @@ public struct SidebarView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 0) {
+        Self.logger.info("\(Self.t)body: hasVisibleGoals=\(hasVisibleGoals), goalsCount=\(viewModel.goals.count)")
+        return VStack(spacing: 0) {
             if hasVisibleGoals {
                 headerView
                 
@@ -45,21 +50,27 @@ public struct SidebarView: View {
                 }
             }
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(height: hasVisibleGoals ? sidebarHeight : 0)
+        .frame(height: hasVisibleGoals ? sidebarHeight : 0, alignment: .top)
         .frame(maxWidth: .infinity, alignment: .top)
         .frame(minWidth: hasVisibleGoals ? 280 : 0, idealWidth: hasVisibleGoals ? 360 : 0)
+        .frame(minHeight: 1)  // 关键：保证视图高度至少为 1pt，SwiftUI 才会触发 onAppear
         .background {
             if hasVisibleGoals {
                 backgroundColorProvider()
                     .opacity(0.82)
             }
         }
-        .task(id: conversationIdProvider()) {
-            await viewModel.refresh(conversationId: conversationIdProvider())
+        .onAppear {
+            Self.logger.info("\(Self.t)onAppear: starting initial refresh")
+            Task {
+                await viewModel.refresh(conversationId: conversationIdProvider())
+            }
         }
-        .onDisappear {
-            viewModel.removeObserver()
+        .onChange(of: conversationIdProvider()) { _, newValue in
+            Self.logger.info("\(Self.t)onChange: conversationId changed to \(newValue)")
+            Task {
+                await viewModel.refresh(conversationId: newValue)
+            }
         }
     }
     
@@ -327,10 +338,27 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
     
     public var currentConversationId: String?
     private nonisolated let notificationObserverHolder = NotificationObserverHolder()
-    private let manager: GoalStateManager?
+    private let initialConversationId: String?
     
-    public init(manager: GoalStateManager? = nil) {
-        self.manager = manager ?? GoalTaskPlugin.manager
+    /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
+    @MainActor
+    private var manager: GoalStateManager? {
+        let manager = GoalTaskPlugin.manager
+        Self.logger.info("\(Self.t)manager accessed: \(manager != nil ? "available" : "nil")")
+        return manager
+    }
+    
+    public init(conversationId: String? = nil) {
+        self.initialConversationId = conversationId
+        Self.logger.info("\(Self.t)init: conversationId=\(conversationId ?? "nil")")
+        
+        // Start loading immediately, don't rely on SwiftUI onAppear
+        if let conversationId {
+            Self.logger.info("\(Self.t)init: starting initial refresh for conversationId=\(conversationId)")
+            Task { @MainActor in
+                await self.refresh(conversationId: conversationId)
+            }
+        }
     }
     
     public func removeObserver() {
@@ -343,7 +371,9 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
     }
     
     public func refresh(conversationId: String?) async {
+        Self.logger.info("\(Self.t)refresh: called with conversationId=\(conversationId ?? "nil")")
         guard let conversationId else {
+            Self.logger.info("\(Self.t)refresh: conversationId is nil, clearing goals")
             goals = []
             tasksByGoalId = [:]
             overallSummary = nil
@@ -357,6 +387,7 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
         
         // 首次绑定通知
         if !notificationObserverHolder.hasObserver {
+            Self.logger.info("\(Self.t)refresh: binding notification observer")
             let observer = NotificationCenter.default.addObserver(
                 forName: .goalDidChange,
                 object: nil,
@@ -366,6 +397,7 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     if let changedCid, changedCid == self.currentConversationId {
+                        Self.logger.info("\(Self.t)notification: goalDidChange for conversationId=\(changedCid)")
                         await self.reloadFromDB()
                     }
                 }
@@ -375,6 +407,7 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
         
         await reloadFromDB()
         isLoading = false
+        Self.logger.info("\(Self.t)refresh: completed, loaded \(goals.count) goals")
     }
     
     public func forceRefresh() async {
