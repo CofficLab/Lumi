@@ -115,4 +115,28 @@ public enum ConversationListPlugin: LumiPlugin {
             SetConversationProjectLumiTool(chatService: chatService),
         ]
     }
+
+    @MainActor
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 12) {
+                Text(verbatim: LumiPluginLocalization.string(
+                    "会话列表插件会在工具栏右侧展示一个对话历史入口，支持快速搜索、新建、删除和按项目过滤会话。",
+                    bundle: .module
+                ))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+
+                Divider()
+
+                Label(
+                    LumiPluginLocalization.string("策略：始终启用，无法关闭", bundle: .module),
+                    systemImage: "lock.fill"
+                )
+                .font(.appMicro)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        )
+    }
 }
