@@ -2,14 +2,20 @@ import LumiCoreKit
 import LumiUI
 import SwiftUI
 
-/// Layout menu for toggling layout visibility.
+/// 工具栏右上角的「布局」入口按钮。
+///
+/// 使用 `AppIconButton` 渲染，与「开启新会话」「会话列表」等工具栏按钮共享
+/// 视觉语言：圆角胶囊背景、统一的 icon + 文字排版、统一的 hover / active 反馈。
+/// 点击后弹出 Popover，用于切换「右侧栏」「底部面板」的显隐。
 public struct LayoutMenuButton: View {
-    /// Borderless `Menu` labels ignore icon `foregroundStyle` on macOS and keep system primary.
-    static let usesBorderlessMenuLabel = false
-
     @LumiTheme private var theme
     @ObservedObject private var lumiCore: LumiCore
     @State private var isPopoverPresented = false
+
+    /// 当两个面板都可见时，按钮处于 active 态
+    private var isAnyPanelVisible: Bool {
+        layoutState.chatSectionVisible || layoutState.bottomPanelVisible
+    }
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
@@ -21,16 +27,13 @@ public struct LayoutMenuButton: View {
     }
 
     public var body: some View {
-        Button {
+        AppIconButton(
+            systemImage: "sidebar.leading",
+            label: LumiPluginLocalization.string("Layout", bundle: .module),
+            isActive: isPopoverPresented || isAnyPanelVisible
+        ) {
             isPopoverPresented.toggle()
-        } label: {
-            Image(systemName: "sidebar.leading")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Self.iconForegroundColor(theme: theme))
-                .frame(width: 22, height: 22)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
@@ -59,13 +62,7 @@ public struct LayoutMenuButton: View {
                 ThemeWindowAppearanceBridge()
             }
         }
-        .frame(width: 22, height: 22)
-        .fixedSize()
         .help(LumiPluginLocalization.string("Layout", bundle: .module))
-    }
-
-    static func iconForegroundColor(theme: any LumiUITheme) -> Color {
-        theme.textPrimary
     }
 }
 
@@ -80,23 +77,13 @@ private struct LayoutPopoverToggle: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(LayoutMenuButton.popoverLabelForegroundColor(theme: theme))
+                    .foregroundColor(theme.textPrimary)
 
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(LayoutMenuButton.popoverLabelForegroundColor(theme: theme))
+                    .foregroundColor(theme.textPrimary)
             }
         }
         .toggleStyle(.checkbox)
-    }
-}
-
-extension LayoutMenuButton {
-    static func popoverLabelForegroundColor(theme: any LumiUITheme) -> Color {
-        theme.textPrimary
-    }
-
-    static func popoverBackgroundColor(theme: any LumiUITheme) -> Color {
-        theme.appPopoverBackground
     }
 }
