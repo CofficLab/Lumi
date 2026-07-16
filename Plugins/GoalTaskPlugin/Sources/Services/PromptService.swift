@@ -27,34 +27,62 @@ public final class PromptService: @unchecked Sendable {
         case .english:
             return """
             ## 🎯 Goal Tracking Available
-            
-            This conversation doesn't have any active goals. When the user asks you to do something complex that requires multiple steps, consider using `create_goal` to break it down into trackable tasks.
-            
-            Goals help you:
-            - Track progress systematically
-            - Handle blockers explicitly when you encounter issues
-            - Execute tasks in parallel when possible
-            
-            Use `create_goal` when:
-            - The task has 2+ steps
-            - Steps may take multiple turns to complete
-            - You need to coordinate parallel work
+
+            No active goals in this conversation. Consider using `create_goal` when the user's request is complex.
+
+            **Create a goal when:**
+            - Refactoring across 3+ files
+            - Implementing a feature with multiple sub-tasks
+            - Debugging a multi-step issue
+            - Any work likely spanning multiple turns
+
+            **Skip goal when:**
+            - Single-file simple edits
+            - Answering questions / explaining code
+            - User just asking "how to" do something
+
+            **Available tools:** `create_goal`, `update_task_status`, `add_tasks_to_goal`, `update_goal_status`, `get_goal_progress`
             """
         case .chinese:
             return """
             ## 🎯 目标追踪可用
-            
-            当前对话没有进行中的目标。当用户要求你执行需要多个步骤的复杂任务时，考虑使用 `create_goal` 将其分解为可追踪的任务。
-            
-            目标管理帮助你：
-            - 系统化追踪进度
-            - 遇到问题时明确标记阻塞
-            - 可能时并行执行任务
-            
-            在以下情况使用 `create_goal`：
-            - 任务有 2 个或以上步骤
-            - 步骤可能需要多轮对话完成
-            - 需要协调并行工作
+
+            当前对话没有进行中的目标。当用户的请求较复杂时，考虑使用 `create_goal`。
+
+            **适合创建目标：**
+            - 跨 3 个以上文件的重构
+            - 实现包含多个子任务的功能
+            - 需要多步排查的 bug 修复
+            - 可能需要多轮对话才能完成的工作
+
+            **不需要目标：**
+            - 单文件的简单修改
+            - 回答问题 / 解释代码
+            - 用户只是在问"怎么做"
+
+            **可用工具：** `create_goal`、`update_task_status`、`add_tasks_to_goal`、`update_goal_status`、`get_goal_progress`
+            """
+        }
+    }
+    
+    /// 生成所有 Goals 已完成时的提示词
+    public func buildGoalsCompletedPrompt(completedCount: Int, language: LumiConversationLanguage) -> String {
+        switch language {
+        case .english:
+            return """
+            ## 🎯 All Goals Completed
+
+            All \(completedCount) goal(s) in this conversation have been completed. If the user has a new complex request, continue using `create_goal` as needed.
+
+            **Available tools:** `create_goal`, `update_task_status`, `add_tasks_to_goal`, `update_goal_status`, `get_goal_progress`
+            """
+        case .chinese:
+            return """
+            ## 🎯 所有目标已完成
+
+            本轮对话的 \(completedCount) 个目标已全部完成。如果用户有新的复杂请求，继续使用 `create_goal` 即可。
+
+            **可用工具：** `create_goal`、`update_task_status`、`add_tasks_to_goal`、`update_goal_status`、`get_goal_progress`
             """
         }
     }

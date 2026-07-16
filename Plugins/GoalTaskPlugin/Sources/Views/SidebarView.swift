@@ -17,8 +17,11 @@ public struct SidebarView: View {
     private static let maxGoalListHeight: CGFloat = 200
 
     /// 是否有可见的 Goals
+    ///
+    /// 与 AutoTask 的 `isAllDone` 对齐：只要有未到终态的 Goal（或其下还有 pending/inProgress 的 Task），
+    /// 就继续展示；全部完成/失败/跳过后立即隐藏——不依赖 TurnFinishedHook 的数据清理时序。
     private var hasVisibleGoals: Bool {
-        !viewModel.goals.isEmpty
+        viewModel.hasActiveWork
     }
 
     public init(
@@ -294,6 +297,31 @@ private struct TaskRowView: View {
 
 // MARK: - Display Items
 
+extension Goal.GoalStatus {
+    /// 是否为终态（不再会有后续推进）。
+    /// blocked 也算终态：需要用户介入，不再自动续推，侧栏可隐藏。
+    var isTerminal: Bool {
+        switch self {
+        case .completed, .failed, .skipped, .blocked:
+            return true
+        case .pending, .inProgress:
+            return false
+        }
+    }
+}
+
+extension GoalTask.TaskStatus {
+    /// 是否为终态。
+    var isTerminal: Bool {
+        switch self {
+        case .completed, .failed, .skipped:
+            return true
+        case .pending, .inProgress:
+            return false
+        }
+    }
+}
+
 /// Goal 展示用模型（不直接暴露 SwiftData 模型到 View）
 public struct GoalDisplayItem: Identifiable, Equatable {
     public let id: String
@@ -360,6 +388,23 @@ final public class SidebarViewModel: ObservableObject {
     private nonisolated let notificationObserverHolder = NotificationObserverHolder()
 
     public init() {}
+
+    /// 是否还有进行中的工作（需要展示侧栏）。
+    ///
+    /// 与 AutoTask 的 `isAllDone` 取反语义一致：只要存在未到终态的 Goal，
+    /// 或任一 Task 仍为 pending/inProgress，就返回 true。
+    /// 全部到达终态后返回 false，侧栏立即隐藏——不依赖数据被删除。
+    public var hasActiveWork: Bool {
+        guard !goals.isEmpty else { return false }
+        return goals.contains { goal in
+            if goal.status.isTerminal {
+                // 终态 Goal：确认其下没有残留的进行中任务
+                let tasks = tasksByGoalId[goal.id] ?? []
+                return tasks.contains { !$0.status.isTerminal }
+            }
+            return true
+        }
+    }
 
     /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
     @MainActor

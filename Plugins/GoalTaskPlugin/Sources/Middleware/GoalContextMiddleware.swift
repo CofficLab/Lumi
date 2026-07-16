@@ -37,11 +37,16 @@ struct GoalContextMiddleware: LumiSendMiddleware {
         let isContinuation = await manager.consumeContinuation(conversationId: conversationId)
         
         // 注入每个活跃 Goal 的进度
+        var completedCount = 0
+        var hasActiveGoal = false
+        
         for goal in goals {
-            // 跳过已完成的 Goal
             if goal.status == .completed || goal.status == .skipped {
+                completedCount += 1
                 continue
             }
+            
+            hasActiveGoal = true
             
             let tasks = await manager.fetchTasks(goalId: goal.id)
             var goalPrompt = promptService.buildGoalProgressPrompt(
@@ -57,6 +62,16 @@ struct GoalContextMiddleware: LumiSendMiddleware {
             }
             
             updated.systemPromptFragments.append(goalPrompt)
+        }
+        
+        // 所有 goals 都已完成/跳过时，注入完成提示
+        if !hasActiveGoal && completedCount > 0 {
+            updated.systemPromptFragments.append(
+                promptService.buildGoalsCompletedPrompt(
+                    completedCount: completedCount,
+                    language: context.conversationLanguage
+                )
+            )
         }
         
         return updated
