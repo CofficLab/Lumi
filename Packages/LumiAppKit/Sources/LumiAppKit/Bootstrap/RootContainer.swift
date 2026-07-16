@@ -147,6 +147,16 @@ final class RootContainer: ObservableObject, SuperLog {
             await pluginService?.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
         }
 
+        // 设置 Tool Execution Hook，让插件能在工具执行后决定是否暂停 Agent 循环（如 ask_user）。
+        // LumiChatKit 不直接依赖插件注册表，经此闭包反向桥接。
+        chatService.toolExecutionHook = { toolName, result, conversationID in
+            await LumiPluginRegistry.dispatchToolExecution(
+                toolName: toolName,
+                result: result,
+                conversationID: conversationID
+            )
+        }
+
         // 委托 LumiCore 完成工具注册 + ChatService 注入（App 层不接触任何 ToolService 细节）。
         // 工具名称唯一性已在 boot 阶段校验，此处直接注册。
         // 此时 chatService.providersByID 已包含所有 provider，subAgents 内部可以查到对应实例。

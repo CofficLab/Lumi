@@ -120,6 +120,29 @@ public protocol LumiPlugin {
     static func configureEditorRuntime(_ context: PluginRuntimeContext) async
 }
 
+// MARK: - Tool Execution Hook
+
+/// 允许插件在工具执行后介入处理。
+///
+/// 实现此协议的插件可以在工具执行完成后检查结果，
+/// 并根据需要暂停 Agent 循环等待用户输入（例如 ask_user 等待用户回答）。
+@MainActor
+public protocol LumiToolExecutionHook {
+    /// 工具执行完成后调用
+    ///
+    /// - Parameters:
+    ///   - toolName: 工具名称
+    ///   - result: 工具执行结果内容
+    ///   - conversationID: 会话 ID
+    /// - Returns: 是否需要暂停 Agent 循环等待用户输入。返回 `true` 后内核会
+    ///   把 turn 结束原因设为 `.awaitingUserResponse`。
+    static func handleToolResult(
+        toolName: String,
+        result: String,
+        conversationID: UUID
+    ) async -> Bool
+}
+
 // MARK: - Lifecycle Event
 
 public enum LumiPluginLifecycle {

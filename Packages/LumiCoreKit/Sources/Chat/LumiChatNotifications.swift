@@ -14,6 +14,12 @@ public enum LumiTurnFinishedNotification {
     public static let reasonKey = "reason"
 }
 
+public enum LumiAskUserNotification {
+    public static let conversationIDKey = "conversationID"
+    public static let toolCallIDKey = "toolCallID"
+    public static let answerKey = "answer"
+}
+
 public extension Notification.Name {
     static let lumiFocusChatInput = Notification.Name("lumi.focusChatInput")
     static let lumiSendChatMessage = Notification.Name("lumi.sendChatMessage")
@@ -25,6 +31,8 @@ public extension Notification.Name {
     static let lumiTurnFinished = Notification.Name("lumi.turnFinished")
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
     static let lumiResendMessage = Notification.Name("lumi.resendMessage")
+    /// AskUser 用户已回答，需要恢复 Agent 循环
+    static let lumiAskUserDidAnswer = Notification.Name("lumi.askUserDidAnswer")
 }
 
 public extension LumiTurnEndReason {

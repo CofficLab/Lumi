@@ -4,7 +4,7 @@ import ModelRouterKit
 import SwiftData
 
 @MainActor
-public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
+public final class ChatService: ObservableObject, LumiChatServicing {
     public static weak var shared: ChatService?
 
     // MARK: - Core Reference
@@ -59,6 +59,16 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     /// Agent turn 结束后的插件钩子回调
     public var turnFinishedHook: ((UUID, LumiTurnEndReason) async -> Void)?
 
+    /// 工具执行后的插件钩子回调
+    ///
+    /// 在每次工具执行完成后、决定是否继续 Agent 循环之前调用。
+    /// 返回 `true` 表示需要暂停循环等待用户输入（如 ask_user）。
+    /// 由 App 层（RootContainer）注入，避免 LumiChatKit 反向依赖插件注册表。
+    public var toolExecutionHook: ((String, String, UUID) async -> Bool)?
+
+    /// AskUser 通知观察者
+    private var askUserObserver: NSObjectProtocol?
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!
@@ -88,6 +98,33 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         self.sendPipeline = SendPipeline(service: self)
 
         Self.shared = self
+        
+        // 监听 AskUser 回答通知
+        setupAskUserNotificationObserver()
+    }
+    
+    /// 设置 AskUser 通知观察者
+    private func setupAskUserNotificationObserver() {
+        askUserObserver = NotificationCenter.default.addObserver(
+            forName: .lumiAskUserDidAnswer,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            
+            let userInfo = notification.userInfo ?? [:]
+            guard let conversationIdStr = userInfo[LumiAskUserNotification.conversationIDKey] as? String,
+                  let conversationID = UUID(uuidString: conversationIdStr),
+                  let toolCallID = userInfo[LumiAskUserNotification.toolCallIDKey] as? String,
+                  let answer = userInfo[LumiAskUserNotification.answerKey] as? String
+            else {
+                return
+            }
+            
+            Task { @MainActor in
+                await self.resumeAfterAskUser(conversationID: conversationID, toolCallID: toolCallID, answer: answer)
+            }
+        }
     }
 
     // MARK: - Registration
@@ -929,7 +966,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                     conversationID: conversationID
                 )
 
-                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                // 调用插件工具执行钩子，让插件决定是否需要暂停（如 ask_user 等待用户回答）。
+                // 钩子由 App 层注入，避免 LumiChatKit 反向依赖插件注册表。
+                if let toolExecutionHook,
+                   await toolExecutionHook(toolCall.name, result.content, conversationID) {
                     statusState.setStatus(conversationID: conversationID, content: "等待您的选择…")
                     incrementRevision()
                     return .awaitingUserResponse
@@ -945,8 +985,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
             containingToolCallID: toolCallID,
             in: messages(for: conversationID)
         ),
-        let result = toolCall.result,
-        LumiAskUserMarkers.isPendingResponse(result.content)
+        let result = toolCall.result
         else {
             return
         }
@@ -1016,9 +1055,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
             }
 
             for toolCall in toolCalls {
-                guard let result = toolCall.result,
-                      !LumiAskUserMarkers.isPendingResponse(result.content)
-                else {
+                guard let result = toolCall.result else {
                     continue
                 }
 
