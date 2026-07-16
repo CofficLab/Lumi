@@ -73,7 +73,6 @@ final class RootContainer: ObservableObject, SuperLog {
 
         lumiCore.registerService(LumiCoreService.self, lumiCoreService)
         lumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
-        lumiCore.registerService(LumiBottomPanelLayoutPresenting.self, lumiCore.layoutState ?? LumiLayoutState())
         lumiCore.registerService(LumiThemeServicing.self, lumiUIService)
         lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 

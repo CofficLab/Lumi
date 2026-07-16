@@ -79,7 +79,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     @MainActor
     private static func configureBuildOutputPresentation(context: LumiPluginContext) {
         guard context.showsPanelChrome,
-              let presenter = context.resolve(LumiBottomPanelLayoutPresenting.self)
+              let layoutState = context.lumiCore?.layoutState
         else {
             return
         }
@@ -87,7 +87,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
         let tabID = SwiftBuildPanelIDs.bottomTab
         let viewContainerID = context.activeSectionID
         EditorSwiftWindowScopeRegistry.activeBuildRunManager.onPresentOutput = {
-            presenter.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
+            layoutState.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
         }
     }
 }

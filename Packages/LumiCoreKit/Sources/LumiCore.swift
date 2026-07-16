@@ -170,9 +170,6 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         if let history = resolveService((any HistoryQueryService).self) {
             dependencies.register((any HistoryQueryService).self, history)
         }
-        if let presenter = resolveService(LumiBottomPanelLayoutPresenting.self) {
-            dependencies.register(LumiBottomPanelLayoutPresenting.self, presenter)
-        }
         if let providerSettings = resolveService((any LumiLLMProviderSettingsContributing).self) {
             dependencies.register((any LumiLLMProviderSettingsContributing).self, providerSettings)
         }
