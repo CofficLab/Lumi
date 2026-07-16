@@ -3,16 +3,16 @@ import LumiCoreKit
 import SwiftUI
 
 public enum ChatPendingSectionPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "clock"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-pending-section",
         displayName: LumiPluginLocalization.string("Chat Pending Messages", bundle: .module),
         description: LumiPluginLocalization.string("Queued chat messages above the composer.", bundle: .module),
-        order: 95
+        order: 95,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "clock"
     )
 
     @MainActor
@@ -23,10 +23,6 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
 }
 
 public enum ChatAttachmentSectionPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "paperclip"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-attachment-section",
@@ -53,16 +49,15 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
 }
 
 public enum ChatComposerSectionPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "keyboard"
-
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-composer-section",
         displayName: LumiPluginLocalization.string("Chat Composer", bundle: .module),
         description: LumiPluginLocalization.string("Chat input area with editor and command suggestions.", bundle: .module),
-        order: 96
+        order: 96,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "keyboard"
     )
 
     @MainActor

@@ -6,16 +6,16 @@ import SwiftUI
 
 /// AutoTask 插件：任务拆解、进度跟踪与 Agent 自动推进。
 public enum AutoTaskPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "checklist"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.auto-task",
         displayName: LumiPluginLocalization.string("Auto Task", bundle: .module),
         description: LumiPluginLocalization.string("Break down complex goals into trackable tasks and drive Agent auto-progress.", bundle: .module),
-        order: 90
+        order: 90,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "checklist",
     )
 
     /// 插件数据存储的子目录名称

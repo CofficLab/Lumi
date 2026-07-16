@@ -5,16 +5,16 @@ import SwiftUI
 ///
 /// 在标题栏右侧提供新建对话按钮（NewChatButton）。
 public enum ConversationNewPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "bubble.left.and.bubble.right"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.conversation-new",
         displayName: LumiPluginLocalization.string("New Chat Button", bundle: .module),
         description: LumiPluginLocalization.string("Create new chat from header", bundle: .module),
-        order: 60
+        order: 60,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "bubble.left.and.bubble.right",
     )
 
     @MainActor

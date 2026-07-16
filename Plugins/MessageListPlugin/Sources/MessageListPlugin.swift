@@ -4,16 +4,16 @@ import LumiUI
 import SwiftUI
 
 public enum MessageListPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "text.bubble.fill"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.chat-messages-section",
         displayName: LumiPluginLocalization.string("Chat Messages", bundle: .module),
         description: LumiPluginLocalization.string("Agent chat messages timeline in the right ChatSection.", bundle: .module),
-        order: 82
+        order: 82,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "text.bubble.fill",
     )
 
     @MainActor

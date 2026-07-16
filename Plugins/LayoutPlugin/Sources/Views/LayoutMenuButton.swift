@@ -12,11 +12,6 @@ public struct LayoutMenuButton: View {
     @ObservedObject private var lumiCore: LumiCore
     @State private var isPopoverPresented = false
 
-    /// 当两个面板都可见时，按钮处于 active 态
-    private var isAnyPanelVisible: Bool {
-        layoutState.chatSectionVisible || layoutState.bottomPanelVisible
-    }
-
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
         lumiCore.layoutState ?? LumiLayoutState()
@@ -30,7 +25,7 @@ public struct LayoutMenuButton: View {
         AppIconButton(
             systemImage: "sidebar.leading",
             label: LumiPluginLocalization.string("Layout", bundle: .module),
-            isActive: isPopoverPresented || isAnyPanelVisible
+            isActive: isPopoverPresented
         ) {
             isPopoverPresented.toggle()
         }

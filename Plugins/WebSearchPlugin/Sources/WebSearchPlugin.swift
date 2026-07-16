@@ -9,16 +9,16 @@ import SwiftUI
 /// 主要用于满足阿里云 Qwen 系列模型对 Function Calling 的限制要求：
 /// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
 public enum WebSearchPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "magnifyingglass"
 
     public static let info = LumiPluginInfo(
         id: "WebSearch",
         displayName: PluginWebSearchLocalization.string("Web Search"),
         description: PluginWebSearchLocalization.string("提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。"),
-        order: 101
+        order: 101,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "magnifyingglass",
     )
 
     public static var id: String { info.id }

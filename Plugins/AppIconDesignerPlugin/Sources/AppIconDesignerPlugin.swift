@@ -3,10 +3,6 @@ import LumiUI
 import SwiftUI
 
 public enum AppIconDesignerPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "app.dashed"
 
     public static let info = LumiPluginInfo(
         id: "AppIconDesigner",
@@ -14,7 +10,11 @@ public enum AppIconDesignerPlugin: LumiPlugin {
         description: AppIconDesignerLocalization.string(
             "Design vector app icons with manual drawing tools, layer controls, and Xcode icon set export."
         ),
-        order: 79
+        order: 79,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "app.dashed",
     )
 
     @MainActor

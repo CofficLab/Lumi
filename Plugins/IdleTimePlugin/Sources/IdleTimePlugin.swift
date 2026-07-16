@@ -3,16 +3,16 @@ import LumiUI
 import SwiftUI
 
 public enum IdleTimePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "moon.zzz"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.idle-time",
         displayName: LumiPluginLocalization.string("Idle Time", bundle: .module),
         description: LumiPluginLocalization.string("Infer rest windows for background scheduling", bundle: .module),
-        order: 96
+        order: 96,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "moon.zzz",
     )
 
     @MainActor

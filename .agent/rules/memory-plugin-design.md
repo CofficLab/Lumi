@@ -430,24 +430,25 @@ struct RecallMemoryTool: SuperAgentTool {
 
 ### 5.6 MemoryPlugin 主入口
 
+> ⚠️ **2026-07 更新**：从这一版起，`LumiPlugin` 的 `category` / `policy` / `stage` / `iconName`
+> 全部合并到 `LumiPluginInfo` 初始化参数里，不再单独写 `static let`。详见
+> `LumiPlugin.swift` 与 `LumiPluginInfo.swift` 协议说明。
+
 ```swift
-actor MemoryPlugin: SuperPlugin, SuperLog {
-    nonisolated static let emoji = "🧠"
-    nonisolated static let verbose: Bool = false
-
-    static let id = "Memory"
-    static let displayName = String(localized: "Memory", table: "Memory")
-    static let description = String(localized: "持久化记忆系统", table: "Memory")
-    static let iconName = "brain.head.profile"
-    static var category: PluginCategory { .agent }
-    static var order: Int { 15 }  // 在 AgentContextSync 之后
-    static let enable: Bool = true
-    static let isConfigurable: Bool = true  // 用户可关闭
-
-    static let shared = MemoryPlugin()
+public enum MemoryPlugin: LumiPlugin {
+    public static let info = LumiPluginInfo(
+        id: "com.coffic.lumi.plugin.memory",
+        displayName: LumiPluginLocalization.string("Memory", bundle: .module),
+        description: LumiPluginLocalization.string("持久化记忆系统", bundle: .module),
+        order: 15,                  // 在 AgentContextSync 之后
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "brain.head.profile"
+    )
 
     @MainActor
-    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         [
             SaveMemoryTool(),
             RecallMemoryTool(),
@@ -457,11 +458,20 @@ actor MemoryPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func sendMiddlewares() -> [AnySuperSendMiddleware] {
-        [AnySuperSendMiddleware(MemorySendMiddleware())]
+    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+        [AnyLumiSendMiddleware(MemorySendMiddleware())]
     }
 }
 ```
+
+字段说明：
+- `id` —— 唯一标识，bundle id 风格
+- `displayName` / `description` —— 已本地化字符串
+- `order` —— 排序权重，必须派生自 `Self.info.order`（参见「插件 UI 项 order 规范」）
+- `category` —— 分类（agent / theme / development / ...）
+- `policy` —— 启用策略（`.alwaysOn` / `.optIn` / `.optOut`）
+- `stage` —— 开发阶段（dev / alpha / beta / stable / deprecated）
+- `iconName` —— SF Symbols 名称
 
 ---
 

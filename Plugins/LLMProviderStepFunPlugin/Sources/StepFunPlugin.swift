@@ -3,10 +3,6 @@ import os
 import SuperLogKit
 
 public enum StepFunPlugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .llmProvider
-    public static let iconName = "sparkles"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.stepfun")
     public nonisolated static let emoji = "🌟"
     /// 详细日志开关。打开后会在子 Agent 注册、Provider 可用性检查等关键节点写入日志。
@@ -15,7 +11,11 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
         id: "com.coffic.lumi.plugin.llm-provider.stepfun",
         displayName: LumiPluginLocalization.string("StepFun StepPlan", bundle: .module),
         description: LumiPluginLocalization.string("Contributes StepFun StepPlan models to Lumi Chat.", bundle: .module),
-        order: 93
+        order: 93,
+        category: .llmProvider,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "sparkles",
     )
 
     @MainActor

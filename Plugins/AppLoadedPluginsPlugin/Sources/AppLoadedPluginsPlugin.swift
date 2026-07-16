@@ -18,10 +18,6 @@ public struct LoadedPluginInfo: Identifiable, Sendable {
 }
 
 public enum AppLoadedPluginsPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "puzzlepiece.extension"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-loaded-plugins")
 
     nonisolated(unsafe) public static var pluginProvider: @MainActor () -> [LoadedPluginInfo] = { [] }
@@ -30,7 +26,11 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.app-loaded-plugins",
         displayName: PluginAppLoadedPluginsLocalization.string("App Plugins"),
         description: PluginAppLoadedPluginsLocalization.string("Show loaded app plugins in status bar"),
-        order: 79
+        order: 79,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "puzzlepiece.extension",
     )
 
     @MainActor

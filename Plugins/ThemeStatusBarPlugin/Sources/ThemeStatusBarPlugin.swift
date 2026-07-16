@@ -2,14 +2,14 @@ import LumiCoreKit
 import LumiUI
 
 public enum ThemeStatusBarPlugin: LumiPlugin {
-    public static let category: LumiPluginCategory = .theme
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme-status-bar",
         displayName: LumiPluginLocalization.string("Theme Status Bar", bundle: .module),
         description: LumiPluginLocalization.string("Adds a status bar theme switcher.", bundle: .module),
-        order: 76
+        order: 76,
+        category: .theme,
+        policy: .alwaysOn,
+        stage: .beta,
     )
 
     @MainActor

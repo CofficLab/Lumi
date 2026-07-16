@@ -7,10 +7,6 @@ import SwiftUI
 /// 参考文档 `docs/cad-designer-plugin-proposal.md`。提供 3D 视口、组件库、BOM、
 /// 切割优化、项目保存/加载，以及一组 AgentTool 供 AI 用自然语言操控设计。
 public enum CADDesignerPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "cube.transparent.fill"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.cad-designer",
@@ -18,7 +14,11 @@ public enum CADDesignerPlugin: LumiPlugin {
         description: CADDesignerLocalization.string(
             "Design aluminum profile frames with 3D preview, BOM, and cut optimization."
         ),
-        order: 80
+        order: 80,
+        category: .general,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "cube.transparent.fill",
     )
 
     @MainActor

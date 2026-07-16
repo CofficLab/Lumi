@@ -7,12 +7,12 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.activity-heatmap",
         displayName: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
         description: LumiPluginLocalization.string("Show conversation activity heatmap in settings", bundle: .module),
-        order: 60
+        order: 60,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "chart.bar.fill",
     )
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "chart.bar.fill"
 
     @MainActor
     public static func addSettingsView(context: LumiPluginContext) -> [AnyView] {

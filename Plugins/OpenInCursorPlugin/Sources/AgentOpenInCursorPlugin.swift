@@ -6,17 +6,17 @@ import os
 
 /// 在 Cursor 中打开项目插件
 public enum AgentOpenInCursorPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "chevron.left.forwardslash.chevron.right"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-in-cursor")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-cursor",
         displayName: LumiPluginLocalization.string("Open in Cursor", bundle: .module),
         description: LumiPluginLocalization.string("Open current project in Cursor editor", bundle: .module),
-        order: 82
+        order: 82,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "chevron.left.forwardslash.chevron.right",
     )
 
     @MainActor

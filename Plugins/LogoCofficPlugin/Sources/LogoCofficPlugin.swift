@@ -5,11 +5,11 @@ public enum LogoCofficPlugin: LumiPlugin {
         id: "com.lumi.plugin.logo-coffic",
         displayName: LumiPluginLocalization.string("Coffic Logo", bundle: .module),
         description: LumiPluginLocalization.string("Coffee cup themed animated logo", bundle: .module),
-        order: 100
+        order: 100,
+        policy: .alwaysOn,
+        stage: .beta,
     )
 
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
 
     public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
         [

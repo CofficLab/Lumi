@@ -4,10 +4,6 @@ import SwiftUI
 
 /// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.
 public enum ConversationTitlePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "character.cursor.ibeam"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.conversation-title",
@@ -16,7 +12,11 @@ public enum ConversationTitlePlugin: LumiPlugin {
             "Automatically generate conversation titles from the first user message",
             bundle: .module
         ),
-        order: 77
+        order: 77,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "character.cursor.ibeam",
     )
 
     static var verbose: Bool { false }

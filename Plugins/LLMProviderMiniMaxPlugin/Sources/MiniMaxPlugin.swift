@@ -1,10 +1,6 @@
 import LumiCoreKit
 
 public enum MiniMaxPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .llmProvider
-    public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.minimax",
         displayName: LumiPluginLocalization.string("MiniMax", bundle: .module),
@@ -12,7 +8,11 @@ public enum MiniMaxPlugin: LumiPlugin {
             "Contributes MiniMax TokenPlan models, video generation tools, and MiniMax-specific chat error renderers.",
             bundle: .module
         ),
-        order: 104
+        order: 104,
+        category: .llmProvider,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "sparkles",
     )
 
     @MainActor

@@ -11,17 +11,17 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🛜"
     public nonisolated static let verbose: Bool = true
 
-    public static let iconName = "network"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.network-manager",
         displayName: LumiPluginLocalization.string("Network Monitor", bundle: .module),
         description: LumiPluginLocalization.string("Real-time monitoring of network speed, traffic, and connection status", bundle: .module),
-        order: 30
+        order: 30,
+        category: .system,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "network",
     )
-    public static let category: LumiPluginCategory = .system
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {

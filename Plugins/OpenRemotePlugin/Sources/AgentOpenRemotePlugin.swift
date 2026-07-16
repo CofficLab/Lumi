@@ -11,17 +11,17 @@ import ShellKit
 ///
 /// 在 Agent 模式的状态栏添加一个图标，点击后在浏览器中打开当前项目的远程仓库地址。
 public enum AgentOpenRemotePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "safari"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-remote",
         displayName: LumiPluginLocalization.string("Open Remote Repository", bundle: .module),
         description: LumiPluginLocalization.string("Displays a button in the header to open the current project's remote repository in browser", bundle: .module),
-        order: 90
+        order: 90,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "safari",
     )
 
     @MainActor

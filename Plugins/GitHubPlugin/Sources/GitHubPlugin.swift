@@ -6,10 +6,6 @@ import SwiftUI
 
 /// GitHub 插件：CLI 检测、生态洞察 + GitHub API 远程操作。
 public enum GitHubPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "network"
 
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -22,7 +18,11 @@ public enum GitHubPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.github",
         displayName: GitHubPluginLocalization.string("GitHub"),
         description: GitHubPluginLocalization.string("GitHub CLI detection, ecosystem insight, local knowledge base, and GitHub API tools."),
-        order: 16
+        order: 16,
+        category: .development,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "network",
     )
 
     // MARK: - Insight Features

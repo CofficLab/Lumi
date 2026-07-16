@@ -5,10 +5,6 @@ import SwiftUI
 import SuperLogKit
 
 public enum DatabaseManagerPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "server.rack"
     public static let verbose: Bool = true
 
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.database-manager")
@@ -17,7 +13,11 @@ public enum DatabaseManagerPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.database-manager",
         displayName: LumiPluginLocalization.string("Database", bundle: .module),
         description: LumiPluginLocalization.string("Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module),
-        order: 50
+        order: 50,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "server.rack",
     )
 
     @MainActor

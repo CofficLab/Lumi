@@ -3,7 +3,7 @@ import Foundation
 /// 插件开发阶段
 ///
 /// 表示插件的成熟度和稳定性级别。
-public enum LumiPluginStage: String, Sendable, CaseIterable, Comparable {
+public enum LumiPluginStage: String, Sendable, Codable, CaseIterable, Comparable {
     /// 内部开发阶段，功能可能不完整或不稳定
     case dev
     

@@ -5,10 +5,6 @@ import os
 import SwiftUI
 
 public enum ModelSelectorPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "globe"
     public static let verbose: Bool = true
     public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
 
@@ -16,7 +12,11 @@ public enum ModelSelectorPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.model-selector",
         displayName: LumiPluginLocalization.string("Model Selector", bundle: .module),
         description: LumiPluginLocalization.string("Select LLM provider and model", bundle: .module),
-        order: 82
+        order: 82,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "globe",
     )
 
     @MainActor

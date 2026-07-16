@@ -9,10 +9,6 @@ import os
 /// 为 Agent 提供隔离的临时文件目录，支持写入、读取与列举；
 /// 超过保留期限（默认 7 天）的文件会自动清理。
 public enum AgentTempStoragePlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "doc.badge.clock"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-temp-storage")
 
     public static let info = LumiPluginInfo(
@@ -21,7 +17,11 @@ public enum AgentTempStoragePlugin: LumiPlugin {
         description: PluginAgentTempStorageLocalization.string(
             "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
         ),
-        order: 18
+        order: 18,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "doc.badge.clock",
     )
 
     @MainActor

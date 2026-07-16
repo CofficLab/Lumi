@@ -17,16 +17,16 @@ import SwiftUI
 ///
 /// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
 public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "desktopcomputer"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-github-desktop",
         displayName: LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module),
         description: LumiPluginLocalization.string("Open current project in GitHub Desktop", bundle: .module),
-        order: 97
+        order: 97,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "desktopcomputer",
     )
 
     @MainActor

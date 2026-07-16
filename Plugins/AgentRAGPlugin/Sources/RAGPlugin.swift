@@ -6,10 +6,6 @@ import os
 
 /// RAG 插件：检索增强生成。
 public enum RAGPlugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "doc.text.magnifyingglass"
     public nonisolated static let emoji = "🔎"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
     public nonisolated static let verbose = false
@@ -18,7 +14,11 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
         id: "com.coffic.lumi.plugin.rag",
         displayName: LumiPluginLocalization.string("RAG", bundle: .module),
         description: LumiPluginLocalization.string("Retrieval-Augmented Generation", bundle: .module),
-        order: 200
+        order: 200,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "doc.text.magnifyingglass",
     )
 
     @MainActor

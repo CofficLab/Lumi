@@ -126,9 +126,17 @@ public static let info = LumiPluginInfo(
     id: "com.coffic.lumi.plugin.example",
     displayName: "Example",
     description: "...",
-    order: 82  // 插件级别基准值
+    order: 82,                  // 插件级别基准值
+    category: .general,
+    policy: .optIn,
+    stage: .beta,
+    iconName: "puzzlepiece.extension"
 )
 ```
+
+> 同样的语义适用于 `category` / `policy` / `stage` / `iconName`：它们**也是 `LumiPluginInfo` 的字段**，
+> 插件作者只需要在 `info` 初始化参数里写具体值，不要在外层单独声明 `static let category` / `static let policy` 等。
+> （详见 `LumiPlugin.swift` / `LumiPluginInfo.swift` 协议说明。）
 
 ---
 

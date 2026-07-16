@@ -4,16 +4,16 @@ import LumiUI
 import SwiftUI
 
 public enum EditorProblemsPanelPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "exclamationmark.triangle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-problems",
         displayName: LumiPluginLocalization.string("Editor Problems", bundle: .module),
         description: LumiPluginLocalization.string("Problems panel in the editor rail and bottom area.", bundle: .module),
-        order: 1
+        order: 1,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "exclamationmark.triangle",
     )
 
     @MainActor

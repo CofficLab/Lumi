@@ -11,13 +11,13 @@ public enum ToolCorePlugin: LumiPlugin {
         id: "ToolCore",
         displayName: LumiPluginLocalization.string("Tool Core", bundle: .module),
         description: LumiPluginLocalization.string("提供 Lumi 的基础工具（文件/命令）。", bundle: .module),
-        order: 0
+        order: 0,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "wrench.and.screwdriver",
     )
 
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "wrench.and.screwdriver"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
 
     @MainActor

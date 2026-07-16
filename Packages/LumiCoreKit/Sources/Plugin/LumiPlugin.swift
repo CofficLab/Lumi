@@ -2,10 +2,6 @@ import SwiftUI
 
 public protocol LumiPlugin {
     static var info: LumiPluginInfo { get }
-    static var policy: LumiPluginPolicy { get }
-    static var category: LumiPluginCategory { get }
-    static var stage: LumiPluginStage { get }
-    static var iconName: String { get }
 
     @MainActor
     static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem]
@@ -119,16 +115,24 @@ public enum LumiPluginLifecycle {
 }
 
 public extension LumiPlugin {
+    /// 插件分类，派生自 `info.category`
     static var category: LumiPluginCategory {
-        .general
+        info.category
     }
 
+    /// 启用策略，派生自 `info.policy`
+    static var policy: LumiPluginPolicy {
+        info.policy
+    }
+
+    /// 开发阶段，派生自 `info.stage`
     static var stage: LumiPluginStage {
-        .beta
+        info.stage
     }
 
+    /// SF Symbols 图标名称，派生自 `info.iconName`
     static var iconName: String {
-        "puzzlepiece.extension"
+        info.iconName
     }
 
     @MainActor

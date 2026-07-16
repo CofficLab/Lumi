@@ -6,13 +6,13 @@ public enum MessageRendererPlugin: LumiPlugin {
         id: "CoreMessageRenderer",
         displayName: LumiPluginLocalization.string("核心消息渲染器", bundle: .module),
         description: LumiPluginLocalization.string("提供内置消息类型的渲染支持", bundle: .module),
-        order: 10
+        order: 10,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "paintbrush.fill",
     )
 
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "paintbrush.fill"
 
     @MainActor
     public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
