@@ -74,9 +74,17 @@ public enum GitHubPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
+    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
         bootstrapIfNeeded()
-        return [AnyView(GitHubPluginSettingsView())]
+        return [
+            LumiSettingsTabItem(
+                id: info.id,
+                title: info.displayName,
+                systemImage: iconName
+            ) {
+                GitHubPluginSettingsView()
+            }
+        ]
     }
 
     @MainActor
