@@ -124,6 +124,7 @@ import Testing
             [
                 LumiPanelBottomTabItem(
                     id: "first",
+                    order: 0,
                     title: "First",
                     systemImage: "1.circle"
                 ) { Text("First") }
@@ -137,6 +138,7 @@ import Testing
             [
                 LumiPanelBottomTabItem(
                     id: "second",
+                    order: 1,
                     title: "Second",
                     systemImage: "2.circle"
                 ) { Text("Second") }

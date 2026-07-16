@@ -383,6 +383,7 @@ final class SendPipeline {
             LumiMessageSavedNotification.conversationIDKey: conversationID,
             LumiTurnFinishedNotification.reasonKey: reason.rawValue,
         ]
+        // 唯一发送方：`.lumiTurnFinished`（非完成路径）。turn 结束通知统一由 SendPipeline 发送。
         NotificationCenter.default.post(
             name: .lumiTurnFinished,
             object: nil,
@@ -414,11 +415,13 @@ final class SendPipeline {
             LumiMessageSavedNotification.conversationIDKey: conversationID,
             LumiTurnFinishedNotification.reasonKey: LumiTurnEndReason.completed.rawValue,
         ]
+        // 唯一发送方：`.lumiTurnCompleted`（完成路径）。
         NotificationCenter.default.post(
             name: .lumiTurnCompleted,
             object: nil,
             userInfo: userInfo
         )
+        // 唯一发送方：`.lumiTurnFinished`（完成路径，与上面 .lumiTurnCompleted 配对发送）。
         NotificationCenter.default.post(
             name: .lumiTurnFinished,
             object: nil,
