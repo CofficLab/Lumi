@@ -52,17 +52,8 @@ public enum CaffeinatePlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(CaffeinateAboutView())
     }
 
 }

@@ -80,17 +80,8 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
         ]
     }
 
-        @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    @MainActor
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(NetworkManagerAboutView())
     }
 }
