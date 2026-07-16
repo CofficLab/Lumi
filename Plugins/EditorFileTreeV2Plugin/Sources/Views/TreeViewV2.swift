@@ -70,7 +70,9 @@ public struct TreeViewV2: View, SuperLog {
                         openProjectFile(selectedURL)
                     },
                     gitStatusSnapshot: coordinator.gitStatusSnapshot,
-                    packageDependencies: showPackageDependencies ? packageStore.dependencies : []
+                    packageDependencies: showPackageDependencies ? packageStore.dependencies : [],
+                    targetedRefreshToken: coordinator.targetedRefreshToken,
+                    changedDirectoryPaths: coordinator.changedDirectoryPaths
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
