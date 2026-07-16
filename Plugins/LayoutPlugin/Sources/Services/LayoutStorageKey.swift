@@ -29,6 +29,13 @@ public enum LayoutStorageKey {
         "Layout.Position.\(viewContainerID).BottomPanel.0"
     }
 
+    /// 指定视图容器的底部面板选中 tab。
+    /// 与 divider 不同，tab 无"分隔条序号"概念，因此不带 `.0` 后缀；
+    /// key 形如 `Layout.Position.LumiEditor.BottomTab`。
+    public static func bottomTabID(viewContainerID: String) -> String {
+        "Layout.Position.\(viewContainerID).BottomTab"
+    }
+
     // MARK: - 状态相关
 
     /// 当前激活的视图容器 ID
@@ -40,8 +47,9 @@ public enum LayoutStorageKey {
     /// 当前激活的侧边栏 Rail Tab ID
     public static let activeRailTabID = "selectedAgentSidebarTabId"
 
-    /// 当前激活的底部面板 Tab ID
-    public static let activeBottomTabID = "activeBottomTabID"
+    /// v1 历史遗留：当时底部面板 tab 是全局标量，存在此顶层 key 下。
+    /// v2 起改为 per-container（见 `bottomTabID(viewContainerID:)`），启动时由迁移逻辑读出后清除此 key。
+    public static let legacyActiveBottomTabID = "activeBottomTabID"
 
     /// 底部面板可见性
     public static let bottomPanelVisible = "bottomPanelVisible"
