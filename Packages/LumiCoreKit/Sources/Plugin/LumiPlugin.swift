@@ -39,6 +39,22 @@ public protocol LumiPlugin {
     @MainActor
     static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem]
 
+    /// 插件在“设置 → 插件”管理面板右侧的「关于」详情。
+    ///
+    /// 与 `addSettingsView` 的语义区别：
+    /// - `addSettingsView`：插件向外部设置容器贡献内容
+    ///   （聚合到其他设置页，例如 LLM 设置、模型选择）。
+    /// - `pluginAboutView`：插件**关于自己**的描述，**只**展示在
+    ///   「设置 → 插件 → 选中此插件」时的右侧详情面板。
+    ///
+    /// 推荐内容：长描述、README/文档链接、版本号、作者、数据来源、隐私说明等
+    /// "看广告"信息。**不要**放功能开关与可配置项——那些请通过 `addSettingsTabs`
+    /// 单独成为设置面板的一项。
+    ///
+    /// 默认实现返回 `nil`，详情面板会展示"该插件未提供详细信息"的占位。
+    @MainActor
+    static func pluginAboutView(context: LumiPluginContext) -> AnyView?
+
     @MainActor
     static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem]
 
@@ -188,6 +204,11 @@ public extension LumiPlugin {
     @MainActor
     static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
         []
+    }
+
+    @MainActor
+    static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        nil
     }
 
     @MainActor

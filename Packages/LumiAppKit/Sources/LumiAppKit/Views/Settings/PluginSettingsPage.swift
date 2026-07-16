@@ -259,15 +259,16 @@ private struct PluginSettingsDetailView: View {
 
     @ViewBuilder
     private var pluginSettingsContent: some View {
-        let settingsViews = row.plugin.addSettingsView(context: settingsContext)
-        if !settingsViews.isEmpty {
-            ForEach(Array(settingsViews.enumerated()), id: \.offset) { _, view in
-                view
-            }
+        if let about = row.plugin.pluginAboutView(context: settingsContext) {
+            about
         } else {
             AppEmptyState(
-                icon: "puzzlepiece.extension",
-                title: LumiLocalization.string("该插件暂未提供设置页面。", bundle: .module)
+                icon: "info.circle",
+                title: LumiLocalization.string("该插件未提供详细信息", bundle: .module),
+                description: LumiLocalization.string(
+                    "插件作者可以实现 pluginAboutView 来丰富此页面。",
+                    bundle: .module
+                )
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
