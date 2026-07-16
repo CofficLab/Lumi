@@ -52,6 +52,7 @@ import FileLogPlugin
 import FontConfigPlugin
 import GitHubPlugin
 import GitPlugin
+import GoalTaskPlugin
 import HistoryDBStatusBarPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
@@ -215,6 +216,7 @@ public enum LumiPluginRegistry {
             ActivityHeatmapPlugin.self,
             RAGPlugin.self,
             AgentTempStoragePlugin.self,
+            GoalTaskPlugin.self,
 
             // MARK: - Logo Plugins
             LogoSmartLightPlugin.self,
