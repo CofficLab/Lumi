@@ -72,6 +72,9 @@ public final class LumiLayoutState: ObservableObject, SuperLog {
     }
     @Published private(set) public var bottomPanelFocusGeneration = 0
 
+    /// 底部面板 tab 的全局默认值（未被显式选择过的容器回退到此值）。
+    public static let defaultBottomTabID = "editor-bottom-problems"
+
     // MARK: - 恢复状态
 
     /// 布局状态是否已完成从磁盘恢复。
