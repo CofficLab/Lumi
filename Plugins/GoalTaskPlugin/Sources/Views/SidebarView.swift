@@ -330,6 +330,7 @@ public struct OverallSummary {
 final public class SidebarViewModel: ObservableObject, SuperLog {
     nonisolated public static let emoji = "🎯"
     nonisolated public static let verbose = false
+    public static let logger = GoalTaskPlugin.logger
     
     @Published public var goals: [GoalDisplayItem] = []
     @Published public var tasksByGoalId: [String: [GoalTaskDisplayItem]] = [:]
@@ -407,7 +408,7 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
         
         await reloadFromDB()
         isLoading = false
-        Self.logger.info("\(Self.t)refresh: completed, loaded \(goals.count) goals")
+        Self.logger.info("\(Self.t)refresh: completed, loaded \(self.goals.count) goals")
     }
     
     public func forceRefresh() async {
@@ -415,20 +416,37 @@ final public class SidebarViewModel: ObservableObject, SuperLog {
     }
     
     private func reloadFromDB() async {
-        guard let cid = currentConversationId, let manager else { return }
+        Self.logger.info("\(Self.t)reloadFromDB: started")
+        guard let cid = currentConversationId else {
+            Self.logger.info("\(Self.t)reloadFromDB: currentConversationId is nil, returning")
+            return
+        }
+        Self.logger.info("\(Self.t)reloadFromDB: currentConversationId=\(cid)")
+        
+        guard let manager else {
+            Self.logger.info("\(Self.t)reloadFromDB: manager is nil, returning")
+            return
+        }
+        Self.logger.info("\(Self.t)reloadFromDB: manager is available, fetching goals...")
         
         let fetchedGoals = await manager.fetchGoals(conversationId: cid)
+        Self.logger.info("\(Self.t)reloadFromDB: fetched \(fetchedGoals.count) goals from database")
+        
         var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
         for goal in fetchedGoals {
+            Self.logger.info("\(Self.t)reloadFromDB: fetching tasks for goal \(goal.id)")
             let tasks = await manager.fetchTasks(goalId: goal.id)
+            Self.logger.info("\(Self.t)reloadFromDB: fetched \(tasks.count) tasks for goal \(goal.id)")
             tasksMap[goal.id] = tasks.map { GoalTaskDisplayItem(from: $0) }
         }
         
         goals = fetchedGoals.map { GoalDisplayItem(from: $0) }
         tasksByGoalId = tasksMap
+        Self.logger.info("\(Self.t)reloadFromDB: updated goals array to \(self.self.goals.count) items")
         
         let completed = fetchedGoals.filter { $0.status == .completed }.count
         overallSummary = OverallSummary(totalGoals: fetchedGoals.count, completedGoals: completed)
+        Self.logger.info("\(Self.t)reloadFromDB: completed, total=\(fetchedGoals.count), completed=\(completed)")
     }
 }
 
