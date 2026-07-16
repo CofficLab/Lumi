@@ -9,6 +9,7 @@ import LumiCoreKit
 import AgentDelayMessagePlugin
 import DisplayControlPlugin
 import EditorCallHierarchyPlugin
+import EditorChatPlugin
 import EditorFileTreePlugin
 import EditorFileTreeV2Plugin
 import EditorBreadcrumbNavPlugin
@@ -51,6 +52,7 @@ extension LumiPluginRegistry {
         // LumiEditorExtensionRegistering）；EditorSwiftPlugin 仅负责 scheme 工具栏等集成。
         // 两者 id 不同（EditorSwift / EditorSwiftIntegration），不会重复登记。
         EditorSwiftEditorPlugin.self,
+        EditorChatPlugin.self,
 
         // MARK: - Editor Panels
 
