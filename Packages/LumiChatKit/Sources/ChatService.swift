@@ -69,6 +69,10 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     /// AskUser 通知观察者
     private var askUserObserver: NSObjectProtocol?
 
+    /// 插件贡献源（由 App 层注入，通常是 `PluginService`）。
+    /// 持有它以便 turn 结束时回调、运行期插件状态变化时重新应用贡献。
+    private var contributionProvider: (any LumiChatContributionProviding)?
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!
@@ -168,6 +172,58 @@ public final class ChatService: ObservableObject, LumiChatServicing {
 
     public func registerTurnChecks(_ checks: [any LumiAgentTurnCheck]) {
         self.turnChecks = checks
+    }
+
+    /// 应用插件贡献（LLM Provider / 中间件 / 渲染器 / turn 结束钩子）。
+    ///
+    /// 把原先散落在 App 层 `RootContainer.reloadChatPluginContributions` 的注册逻辑
+    /// 收回到 ChatService 内部：ChatService 通过 `LumiChatContributionProviding`
+    /// 协议直接向贡献源拉取并注册，不再需要 App 层逐个调用 register*。
+    ///
+    /// `toolExecutionHook` 仍由 App 层注入——它是 App 层对 `LumiPluginRegistry`
+    /// 的反向桥接（决定工具执行后是否暂停 Agent 循环，如 ask_user），不属于"贡献物"，
+    /// 因此不进协议，保留为闭包注入。见 `toolExecutionHook` 字段注释。
+    public func applyPluginContributions(
+        from provider: any LumiChatContributionProviding,
+        toolExecutionHook: ((String, String, UUID) async -> Bool)? = nil
+    ) {
+        self.contributionProvider = provider
+        let context = makeChatPluginContext()
+        registerProviders(provider.llmProviders(context: context))
+        registerMiddlewares(provider.sendMiddlewares(context: context))
+        registerMessageRenderers(provider.messageRenderers(context: context))
+        turnFinishedHook = { [weak self, weak provider] conversationID, reason in
+            // 每次回调重建 context：贡献源可能在运行期变化（插件启用/禁用），
+            // 回调发生时拉取最新快照，而不是复用注册时的陈旧 context。
+            guard let self, let provider else { return }
+            await provider.onTurnFinished(
+                context: self.makeChatPluginContext(),
+                conversationID: conversationID,
+                reason: reason
+            )
+        }
+        self.toolExecutionHook = toolExecutionHook
+    }
+
+    /// 构造 Chat 作用域的插件上下文快照。
+    private func makeChatPluginContext() -> LumiPluginContext {
+        if let lumiCore {
+            // 走协议签名需显式传全部参数（协议方法无默认值）。
+            return lumiCore.makePluginContext(
+                activeSectionID: "chat.core",
+                activeSectionTitle: "Chat Core",
+                chatSection: .none,
+                showsRail: false,
+                showsPanelChrome: false,
+                isChatSectionVisible: nil,
+                additionalDependencies: { _ in }
+            )
+        }
+        // lumiCore 理论上必非空（由 LumiCoreService 工厂注入），此分支仅作防御兜底。
+        return LumiPluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core"
+        )
     }
 
     // MARK: - Conversation Lifecycle (delegated)
