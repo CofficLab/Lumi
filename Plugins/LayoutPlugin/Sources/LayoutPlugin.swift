@@ -11,10 +11,6 @@ import os
 /// 内核只提供状态和发出事件，不感知插件存在。
 /// 插件通过 `NotificationCenter` 监听事件并执行持久化。
 public enum LayoutPlugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "sidebar.left"
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     public nonisolated static let emoji = "📐"
     public nonisolated static let verbose = false
@@ -23,7 +19,11 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
         id: "com.coffic.lumi.plugin.layout",
         displayName: LumiPluginLocalization.string("Layout Persistence", bundle: .module),
         description: LumiPluginLocalization.string("Persist and restore layout state across app launches", bundle: .module),
-        order: 99
+        order: 99,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "sidebar.left",
     )
 
     // MARK: - LumiPlugin Lifecycle

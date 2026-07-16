@@ -3,16 +3,16 @@ import LumiUI
 import SwiftUI
 
 public enum TerminalPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "terminal"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.terminal",
         displayName: LumiPluginLocalization.string("Terminal", bundle: .module),
         description: LumiPluginLocalization.string("Native interactive terminal powered by SwiftTerm", bundle: .module),
-        order: 90
+        order: 90,
+        category: .development,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "terminal",
     )
 
     @MainActor
@@ -31,7 +31,7 @@ public enum TerminalPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

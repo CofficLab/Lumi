@@ -6,16 +6,16 @@ import SwiftUI
 public enum DockerManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "shippingbox"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.docker-manager",
         displayName: PluginDockerManagerLocalization.string("Docker"),
         description: PluginDockerManagerLocalization.string("Local Docker image management and monitoring"),
-        order: 50
+        order: 50,
+        category: .development,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "shippingbox",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum DockerManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(DockerManagerAboutView())
     }
 

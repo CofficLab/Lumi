@@ -10,16 +10,16 @@ public enum AppManagerPlugin: LumiPlugin {
         currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory
     }
 
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "apps.ipad"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.app-manager",
         displayName: PluginAppManagerLocalization.string("App Manager"),
         description: PluginAppManagerLocalization.string("Browse installed macOS applications."),
-        order: 42
+        order: 42,
+        category: .system,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "apps.ipad",
     )
 
     @MainActor
@@ -36,7 +36,7 @@ public enum AppManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(AppManagerAboutView())
     }
 

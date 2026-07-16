@@ -137,6 +137,7 @@ final class MessageManager {
     // MARK: - Notifications
 
     func postMessageSavedNotification(for message: LumiChatMessage) {
+        // 唯一发送方：`.lumiMessageSaved`。
         NotificationCenter.default.post(
             name: .lumiMessageSaved,
             object: nil,

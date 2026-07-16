@@ -62,11 +62,14 @@ final class LayoutEventListener: ObservableObject {
 
         NotificationCenter.default.publisher(for: .activeBottomTabIDDidChange)
             .sink { notification in
-                guard let bottomTabID = notification.userInfo?["bottomTabID"] as? String else { return }
+                guard let containerID = notification.userInfo?["containerID"] as? String,
+                      let bottomTabID = notification.userInfo?["bottomTabID"] as? String
+                else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeBottomTabID → \(bottomTabID)")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)事件: activeBottomTabID[\(containerID)] → \(bottomTabID)")
                 }
-                store.set(bottomTabID, forKey: LayoutStorageKey.activeBottomTabID)
+                let key = LayoutStorageKey.bottomTabID(viewContainerID: containerID)
+                store.saveBottomTabID(bottomTabID, forKey: key)
             }
             .store(in: &cancellables)
 

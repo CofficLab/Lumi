@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LLMProviderKit
+import LLMKit
 
 public struct ReviewEngine: Sendable {
     public let config: LLMConfig

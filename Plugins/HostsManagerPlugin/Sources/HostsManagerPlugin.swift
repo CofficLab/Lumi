@@ -6,16 +6,16 @@ import SwiftUI
 public enum HostsManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "list.bullet.rectangle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.hosts-manager",
         displayName: LumiPluginLocalization.string("Hosts Manager", bundle: .module),
         description: LumiPluginLocalization.string("Manage system hosts file configuration", bundle: .module),
-        order: 21
+        order: 21,
+        category: .system,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "list.bullet.rectangle",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum HostsManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(HostsManagerAboutView())
     }
 

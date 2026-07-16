@@ -50,10 +50,25 @@ final class LayoutPersistenceCoordinator: SuperLog {
             state.activeRailTabID = tabId
             restored.append("activeRailTabID=\(tabId)")
         }
-        if let bottomTabId = store.string(forKey: LayoutStorageKey.activeBottomTabID) {
-            state.activeBottomTabID = bottomTabId
-            restored.append("activeBottomTabID=\(bottomTabId)")
+
+        // Per-container bottom tab IDs (v2)
+        let bottomTabIDs = store.loadBottomTabIDs()
+        if !bottomTabIDs.isEmpty {
+            for (containerID, tabID) in bottomTabIDs {
+                state.restoreActiveBottomTabID(tabID, for: containerID)
+                restored.append("activeBottomTabID[\(containerID)]=\(tabID)")
+            }
         }
+
+        // Legacy migration: v1 stored a single global activeBottomTabID.
+        // If no per-container data exists yet, carry the legacy value over
+        // so every container falls back to the user's last choice.
+        if bottomTabIDs.isEmpty, let legacyTabID = store.loadActiveBottomTabID() {
+            state.restoreLegacyBottomTabID(legacyTabID)
+            store.remove(forKey: LayoutStorageKey.legacyActiveBottomTabID)
+            restored.append("activeBottomTabID[legacy]=\(legacyTabID)")
+        }
+
         if let visible = store.loadBottomPanelVisible() {
             state.bottomPanelVisible = visible
             restored.append("bottomPanelVisible=\(visible)")

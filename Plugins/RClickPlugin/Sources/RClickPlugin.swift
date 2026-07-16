@@ -6,16 +6,16 @@ import SwiftUI
 public enum RClickPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "cursorarrow.click.2"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.rclick",
         displayName: LumiPluginLocalization.string("Right Click", bundle: .module),
         description: LumiPluginLocalization.string("Customize Finder right-click menu actions", bundle: .module),
-        order: 50
+        order: 50,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "cursorarrow.click.2",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum RClickPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

@@ -41,6 +41,12 @@ public enum CollectionItem: Hashable {
             hasher.combine(item)
         }
     }
+
+    /// 若为 `.file` 则返回其节点，否则返回 nil。便于上层对文件节点字段的统一解包访问。
+    public var fileItem: FileTreeNodeItem? {
+        if case .file(let item) = self { return item }
+        return nil
+    }
 }
 
 // MARK: - PackageHeaderItem

@@ -1,7 +1,8 @@
 import Foundation
+import LumiChatKit
 import LumiCoreKit
 
-/// 格式化逻辑已上移至 `LumiCoreKit.TokenCountFormat`, 这里保留旧名以减少调用点改动。
+/// 格式化逻辑现位于 `LumiChatKit.TokenCountFormat`, 这里保留旧名以减少调用点改动。
 enum ModelSelectorFormatService {
     static func tps(_ tps: Double) -> String {
         TokenCountFormat.tps(tps)

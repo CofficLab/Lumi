@@ -30,9 +30,9 @@ struct PanelBottomView: View {
         AppTabBar(
             tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
             selectedTab: Binding(
-                get: { layoutState.activeBottomTabID },
+                get: { layoutState.activeBottomTabID(for: viewContainerID) },
                 set: { newValue in
-                    layoutState.activeBottomTabID = newValue
+                    layoutState.setActiveBottomTabID(newValue, for: viewContainerID)
                 }
             )
         )
@@ -43,7 +43,8 @@ struct PanelBottomView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        if let tab = tabs.first(where: { $0.id == layoutState.activeBottomTabID }) ?? tabs.first {
+        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
+        if let tab = tabs.first(where: { $0.id == selectedID }) ?? tabs.first {
             tab.makeView()
                 .id(tab.id)
         } else {
@@ -53,11 +54,10 @@ struct PanelBottomView: View {
 
     private func ensureValidSelection() {
         guard !tabs.isEmpty else { return }
-
-        if tabs.contains(where: { $0.id == layoutState.activeBottomTabID }) {
+        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
+        if tabs.contains(where: { $0.id == selectedID }) {
             return
         }
-
-        layoutState.activeBottomTabID = tabs[0].id
+        layoutState.setActiveBottomTabID(tabs[0].id, for: viewContainerID)
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LLMProviderKit
+import LLMKit
 
 public enum CodeReviewRuntime {
     public typealias MessageSender = @Sendable ([ChatMessage], LLMConfig) async throws -> ChatMessage

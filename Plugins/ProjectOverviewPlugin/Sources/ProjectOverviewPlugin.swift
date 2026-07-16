@@ -7,10 +7,6 @@ import os
 ///
 /// 提供 Agent 工具，返回项目类型、顶层结构、Git 信息、清单文件、README 预览和关键文件。
 public enum ProjectOverviewPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "doc.text.magnifyingglass"
     public static var verbose: Bool { false }
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-overview")
 
@@ -18,7 +14,11 @@ public enum ProjectOverviewPlugin: LumiPlugin {
         id: "ProjectOverview",
         displayName: PluginProjectOverviewLocalization.string("Project Overview"),
         description: PluginProjectOverviewLocalization.string("Provides project overview tool, returning project type, top-level structure, Git information, and key files."),
-        order: 14
+        order: 14,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "doc.text.magnifyingglass",
     )
 
     public static var id: String { info.id }

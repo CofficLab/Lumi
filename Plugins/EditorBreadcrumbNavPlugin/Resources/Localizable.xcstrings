@@ -1,74 +1,76 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Editor Breadcrumb": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor Breadcrumb"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Editor Breadcrumb" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Breadcrumb"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor Breadcrumb"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Breadcrumb"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor Breadcrumb"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Breadcrumb"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor Breadcrumb"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Breadcrumb"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor Breadcrumb"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Breadcrumb"
           }
         }
       }
     },
-    "File path breadcrumb navigation below editor tabs.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File path breadcrumb navigation below editor tabs."
+    "File path breadcrumb navigation below editor tabs." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File path breadcrumb navigation below editor tabs."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File path breadcrumb navigation below editor tabs."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File path breadcrumb navigation below editor tabs."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File path breadcrumb navigation below editor tabs."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File path breadcrumb navigation below editor tabs."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File path breadcrumb navigation below editor tabs."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File path breadcrumb navigation below editor tabs."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File path breadcrumb navigation below editor tabs."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File path breadcrumb navigation below editor tabs."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

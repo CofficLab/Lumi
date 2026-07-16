@@ -64,78 +64,54 @@ import Testing
     }
 }
 
-// MARK: - Configure Ask User Resume Tests
+// MARK: - Tool Execution Hook Tests
+//
+// `handleToolResult` 是 AskUserPlugin 实现 LumiToolExecutionHook 的入口。
+// 内核（ChatService）在每次工具执行后会询问插件是否需要暂停 Agent 循环。
+// AskUserPlugin 仅对 ask_user 工具的 pending 结果返回 true。
 
-@Suite(.serialized) @MainActor struct AskUserPluginConfigureResumeTests {
-    
-    @Test func configureAskUserResumeSetsBridgeHandler() {
-        // Given
-        let mockResumer = MockAskUserResuming()
-        
-        // When
-        AskUserPlugin.configureAskUserResume(mockResumer)
-        
-        // Then
-        #expect(AskUserBridge.shared.resumeHandler != nil)
-        
-        // Cleanup
-        AskUserBridge.shared.resumeHandler = nil
-    }
-    
-    @Test func configureAskUserResumeHandlerCallsResumer() async throws {
-        // Given
-        let mockResumer = MockAskUserResuming()
-        AskUserPlugin.configureAskUserResume(mockResumer)
-        
-        let conversationId = UUID().uuidString
-        let toolCallId = "test-tool-call"
-        let answer = "Yes"
-        
-        // When
-        AskUserBridge.shared.resume(conversationId: conversationId, toolCallId: toolCallId, answer: answer)
-        
-        // Wait for async Task to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        
-        // Then
-        #expect(mockResumer.lastConversationID?.uuidString == conversationId)
-        #expect(mockResumer.lastToolCallID == toolCallId)
-        #expect(mockResumer.lastAnswer == answer)
-        
-        // Cleanup
-        AskUserBridge.shared.resumeHandler = nil
-    }
-    
-    @Test func configureAskUserResumeIgnoresInvalidUUID() async throws {
-        // Given
-        let mockResumer = MockAskUserResuming()
-        AskUserPlugin.configureAskUserResume(mockResumer)
-        
-        // When - invalid UUID string
-        AskUserBridge.shared.resume(conversationId: "not-a-valid-uuid", toolCallId: "test-tool-call", answer: "Yes")
-        
-        // Wait for async Task to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        
-        // Then - resumer should not be called
-        #expect(mockResumer.lastConversationID == nil)
-        
-        // Cleanup
-        AskUserBridge.shared.resumeHandler = nil
-    }
-}
+@Suite @MainActor struct AskUserPluginHandleToolResultTests {
 
-// MARK: - Mock Resumer
+    @Test func pausesForPendingAskUserResult() async {
+        // ask_user 工具返回 pending 内容时，需要暂停等待用户回答
+        let pending = "\(LumiAskUserMarkers.pendingPrefix)\n{\"question\":\"?\"}"
+        let pause = await AskUserPlugin.handleToolResult(
+            toolName: "ask_user",
+            result: pending,
+            conversationID: UUID()
+        )
+        #expect(pause == true)
+    }
 
-@MainActor
-private final class MockAskUserResuming: LumiAskUserResuming {
-    var lastConversationID: UUID?
-    var lastToolCallID: String?
-    var lastAnswer: String?
-    
-    func resumeAfterAskUser(conversationID: UUID, toolCallID: String, answer: String) async {
-        lastConversationID = conversationID
-        lastToolCallID = toolCallID
-        lastAnswer = answer
+    @Test func doesNotPauseForOtherTools() async {
+        // 非 ask_user 工具一律不处理
+        let pending = "\(LumiAskUserMarkers.pendingPrefix)\n{}"
+        let pause = await AskUserPlugin.handleToolResult(
+            toolName: "other_tool",
+            result: pending,
+            conversationID: UUID()
+        )
+        #expect(pause == false)
+    }
+
+    @Test func doesNotPauseForNonPendingAskUserResult() async {
+        // ask_user 但结果不是 pending（如已回答的普通内容）时不暂停
+        let pause = await AskUserPlugin.handleToolResult(
+            toolName: "ask_user",
+            result: "用户回答：是",
+            conversationID: UUID()
+        )
+        #expect(pause == false)
+    }
+
+    @Test func doesNotPauseForAskUserErrorResult() async {
+        // ask_user 执行出错（errorPrefix）时不暂停
+        let errorResult = "\(LumiAskUserMarkers.errorPrefix)\n{\"error\":\"bad input\"}"
+        let pause = await AskUserPlugin.handleToolResult(
+            toolName: "ask_user",
+            result: errorResult,
+            conversationID: UUID()
+        )
+        #expect(pause == false)
     }
 }

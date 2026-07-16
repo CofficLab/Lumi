@@ -6,16 +6,16 @@ import SwiftUI
 public enum PortManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.port-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .system
-    public static let iconName = "arrow.up.arrow.down.circle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.port-manager",
         displayName: LumiPluginLocalization.string("Port Manager", bundle: .module),
         description: LumiPluginLocalization.string("Inspect local listening ports.", bundle: .module),
-        order: 43
+        order: 43,
+        category: .system,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "arrow.up.arrow.down.circle",
     )
 
     @MainActor

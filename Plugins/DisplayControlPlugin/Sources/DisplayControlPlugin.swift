@@ -11,13 +11,13 @@ public enum DisplayControlPlugin: LumiPlugin {
             "Control brightness, volume, and contrast for external displays via DDC/CI.",
             bundle: .module
         ),
-        order: 21
+        order: 21,
+        category: .system,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "display",
     )
-    public static let category: LumiPluginCategory = .system
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
 
-    public static let iconName = "display"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
 
     @MainActor
@@ -34,7 +34,7 @@ public enum DisplayControlPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(DisplayControlAboutView())
     }
 

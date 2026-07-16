@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/WorkspaceFileKit"),
+        .package(path: "../../Packages/FileSystemKit"),
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
-                .product(name: "WorkspaceFileKit", package: "WorkspaceFileKit"),
+                .product(name: "FileSystemKit", package: "FileSystemKit"),
             ],
             path: "Sources",
             resources: [

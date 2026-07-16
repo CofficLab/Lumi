@@ -2,7 +2,7 @@ import AppKit
 import SuperLogKit
 import Foundation
 import LumiCoreKit
-import WorkspaceFileKit
+import FileSystemKit
 import os
 
 /// 文件读取工具

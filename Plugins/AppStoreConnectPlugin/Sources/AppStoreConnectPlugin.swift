@@ -3,16 +3,16 @@ import LumiUI
 import SwiftUI
 
 public enum AppStoreConnectPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optIn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "bag"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.app-store-connect",
         displayName: AppStoreConnectLocalization.string("App Store"),
         description: AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots"),
-        order: 65
+        order: 65,
+        category: .development,
+        policy: .optIn,
+        stage: .beta,
+        iconName: "bag",
     )
 
     public static var id: String { info.id }
@@ -80,7 +80,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(AboutView())
     }
 

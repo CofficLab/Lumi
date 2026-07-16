@@ -1,8 +1,8 @@
 import Foundation
 import LLMKit
-import LLMProviderKit
+import LLMKit
 import LumiCoreKit
-import ModelRouterKit
+import LLMKit
 import SuperLogKit
 
 public protocol ProjectIssueScannerProviderType {

@@ -15,7 +15,7 @@ public enum MiniMaxVideoConstants {
     public static let createTaskPath: String = "/v1/video_generation"
 
     /// Step 2: 查询任务状态。
-    public static let queryTaskPath: String = "/v1/video_generation"
+    public static let queryTaskPath: String = "/v1/query/video_generation"
 
     /// Step 3: 获取文件下载链接。
     public static let retrieveFilePath: String = "/v1/files/retrieve"

@@ -2,14 +2,14 @@ import LumiCoreKit
 import LumiUI
 
 public enum ThemeVscodePlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let category: LumiPluginCategory = .theme
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.theme.vscode",
         displayName: LumiPluginLocalization.string("VS Code Theme", bundle: .module),
         description: LumiPluginLocalization.string("VS Code Dark+, Light+ and Auto themes", bundle: .module),
-        order: 129
+        order: 129,
+        category: .theme,
+        policy: .alwaysOn,
+        stage: .beta,
     )
 
     @MainActor

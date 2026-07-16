@@ -1,10 +1,10 @@
 import Foundation
 import LumiCoreKit
-import ModelRouterKit
+import LLMKit
 import SwiftData
 
 @MainActor
-public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUserResuming {
+public final class ChatService: ObservableObject, LumiChatServicing {
     public static weak var shared: ChatService?
 
     // MARK: - Core Reference
@@ -56,6 +56,23 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
     /// 不含首次调用，即总共最多调用 LLM `1 + inlineToolCallMaxRetries` 次。
     let inlineToolCallMaxRetries = 1
 
+    /// Agent turn 结束后的插件钩子回调
+    public var turnFinishedHook: ((UUID, LumiTurnEndReason) async -> Void)?
+
+    /// 工具执行后的插件钩子回调
+    ///
+    /// 在每次工具执行完成后、决定是否继续 Agent 循环之前调用。
+    /// 返回 `true` 表示需要暂停循环等待用户输入（如 ask_user）。
+    /// 由 App 层（RootContainer）注入，避免 LumiChatKit 反向依赖插件注册表。
+    public var toolExecutionHook: ((String, String, UUID) async -> Bool)?
+
+    /// AskUser 通知观察者
+    private var askUserObserver: NSObjectProtocol?
+
+    /// 插件贡献源（由 App 层注入，通常是 `PluginService`）。
+    /// 持有它以便 turn 结束时回调、运行期插件状态变化时重新应用贡献。
+    private var contributionProvider: (any LumiChatContributionProviding)?
+
     // MARK: - Delegates
 
     private(set) var conversationManager: ConversationManager!
@@ -85,6 +102,33 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         self.sendPipeline = SendPipeline(service: self)
 
         Self.shared = self
+        
+        // 监听 AskUser 回答通知
+        setupAskUserNotificationObserver()
+    }
+    
+    /// 设置 AskUser 通知观察者
+    private func setupAskUserNotificationObserver() {
+        askUserObserver = NotificationCenter.default.addObserver(
+            forName: .lumiAskUserDidAnswer,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            
+            let userInfo = notification.userInfo ?? [:]
+            guard let conversationIdStr = userInfo[LumiAskUserNotification.conversationIDKey] as? String,
+                  let conversationID = UUID(uuidString: conversationIdStr),
+                  let toolCallID = userInfo[LumiAskUserNotification.toolCallIDKey] as? String,
+                  let answer = userInfo[LumiAskUserNotification.answerKey] as? String
+            else {
+                return
+            }
+            
+            Task { @MainActor in
+                await self.resumeAfterAskUser(conversationID: conversationID, toolCallID: toolCallID, answer: answer)
+            }
+        }
     }
 
     // MARK: - Registration
@@ -128,6 +172,58 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
 
     public func registerTurnChecks(_ checks: [any LumiAgentTurnCheck]) {
         self.turnChecks = checks
+    }
+
+    /// 应用插件贡献（LLM Provider / 中间件 / 渲染器 / turn 结束钩子）。
+    ///
+    /// 把原先散落在 App 层 `RootContainer.reloadChatPluginContributions` 的注册逻辑
+    /// 收回到 ChatService 内部：ChatService 通过 `LumiChatContributionProviding`
+    /// 协议直接向贡献源拉取并注册，不再需要 App 层逐个调用 register*。
+    ///
+    /// `toolExecutionHook` 仍由 App 层注入——它是 App 层对 `LumiPluginRegistry`
+    /// 的反向桥接（决定工具执行后是否暂停 Agent 循环，如 ask_user），不属于"贡献物"，
+    /// 因此不进协议，保留为闭包注入。见 `toolExecutionHook` 字段注释。
+    public func applyPluginContributions(
+        from provider: any LumiChatContributionProviding,
+        toolExecutionHook: ((String, String, UUID) async -> Bool)? = nil
+    ) {
+        self.contributionProvider = provider
+        let context = makeChatPluginContext()
+        registerProviders(provider.llmProviders(context: context))
+        registerMiddlewares(provider.sendMiddlewares(context: context))
+        registerMessageRenderers(provider.messageRenderers(context: context))
+        turnFinishedHook = { [weak self, weak provider] conversationID, reason in
+            // 每次回调重建 context：贡献源可能在运行期变化（插件启用/禁用），
+            // 回调发生时拉取最新快照，而不是复用注册时的陈旧 context。
+            guard let self, let provider else { return }
+            await provider.onTurnFinished(
+                context: self.makeChatPluginContext(),
+                conversationID: conversationID,
+                reason: reason
+            )
+        }
+        self.toolExecutionHook = toolExecutionHook
+    }
+
+    /// 构造 Chat 作用域的插件上下文快照。
+    private func makeChatPluginContext() -> LumiPluginContext {
+        if let lumiCore {
+            // 走协议签名需显式传全部参数（协议方法无默认值）。
+            return lumiCore.makePluginContext(
+                activeSectionID: "chat.core",
+                activeSectionTitle: "Chat Core",
+                chatSection: .none,
+                showsRail: false,
+                showsPanelChrome: false,
+                isChatSectionVisible: nil,
+                additionalDependencies: { _ in }
+            )
+        }
+        // lumiCore 理论上必非空（由 LumiCoreService 工厂注入），此分支仅作防御兜底。
+        return LumiPluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core"
+        )
     }
 
     // MARK: - Conversation Lifecycle (delegated)
@@ -412,9 +508,9 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
         let verbosity = verbosity(for: conversationID)
 
         var fragments = [
-            lang.systemPromptFragment,
-            automation.systemPromptFragment,
-            verbosity.systemPromptFragment
+            LumiConversationPromptDefaults.fragment(for: lang),
+            LumiConversationPromptDefaults.fragment(for: automation),
+            LumiConversationPromptDefaults.fragment(for: verbosity)
         ]
         fragments.append(contentsOf: context.systemPromptFragments)
 
@@ -926,7 +1022,10 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
                     conversationID: conversationID
                 )
 
-                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                // 调用插件工具执行钩子，让插件决定是否需要暂停（如 ask_user 等待用户回答）。
+                // 钩子由 App 层注入，避免 LumiChatKit 反向依赖插件注册表。
+                if let toolExecutionHook,
+                   await toolExecutionHook(toolCall.name, result.content, conversationID) {
                     statusState.setStatus(conversationID: conversationID, content: "等待您的选择…")
                     incrementRevision()
                     return .awaitingUserResponse
@@ -942,8 +1041,7 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
             containingToolCallID: toolCallID,
             in: messages(for: conversationID)
         ),
-        let result = toolCall.result,
-        LumiAskUserMarkers.isPendingResponse(result.content)
+        let result = toolCall.result
         else {
             return
         }
@@ -1013,9 +1111,14 @@ public final class ChatService: ObservableObject, LumiChatServicing, LumiAskUser
             }
 
             for toolCall in toolCalls {
-                guard let result = toolCall.result,
-                      !LumiAskUserMarkers.isPendingResponse(result.content)
-                else {
+                guard let result = toolCall.result else {
+                    continue
+                }
+
+                // 跳过尚未回答的 `ask_user` pending 占位内容：它不是真实的工具产出，
+                // 不应作为 tool 消息进入下游 LLM 上下文（等用户回答后由
+                // `resumeAfterAskUser` 写入真实答案再展开）。
+                if LumiAskUserMarkers.isPendingResponse(result.content) {
                     continue
                 }
 

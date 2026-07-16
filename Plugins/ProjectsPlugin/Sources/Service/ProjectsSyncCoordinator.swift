@@ -20,7 +20,7 @@ import SuperLogKit
 public final class ProjectsSyncCoordinator: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.sync")
     public nonisolated static let emoji = "🔄"
-    public static var verbose = true
+    public static var verbose = false
 
     // MARK: - 属性
 

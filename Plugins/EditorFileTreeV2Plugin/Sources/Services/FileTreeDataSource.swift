@@ -74,6 +74,11 @@ final class FileTreeDataSource: SuperLog {
     /// 当前扁平化的节点列表（按可见顺序排列）
     private(set) var items: [CollectionItem] = []
 
+    /// 仅文件系统节点（剔除软件包依赖区域），便于上层/测试按文件树结构进行判断。
+    var fileItems: [FileTreeNodeItem] {
+        items.compactMap { $0.fileItem }
+    }
+
     /// 展开状态存储
     private let expandedPathStore: ExpandedPathStoring
 

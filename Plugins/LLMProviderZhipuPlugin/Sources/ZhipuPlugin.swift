@@ -1,15 +1,15 @@
 import LumiCoreKit
 
 public enum ZhipuPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .llmProvider
-    public static let iconName = "sparkles"
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.llm-provider.zhipu",
         displayName: LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module),
         description: LumiPluginLocalization.string("Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
-        order: 110
+        order: 110,
+        category: .llmProvider,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "sparkles",
     )
 
     @MainActor

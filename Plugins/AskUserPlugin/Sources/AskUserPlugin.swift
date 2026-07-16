@@ -6,17 +6,17 @@ import LumiCoreKit
 ///
 /// 提供 ask_user 工具，让 LLM 可以向用户提问并等待回答。
 /// 支持是/否选择、多选项选择和自由文本输入。
-public enum AskUserPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "questionmark.circle.fill"
+public enum AskUserPlugin: @preconcurrency LumiPlugin, LumiToolExecutionHook {
 
     public static let info = LumiPluginInfo(
         id: "plugin-ask-user",
         displayName: LumiPluginLocalization.string("用户询问插件", bundle: .module),
         description: LumiPluginLocalization.string("提供 ask_user 工具，让 LLM 可以向用户提问并等待回答", bundle: .module),
-        order: 100
+        order: 100,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "questionmark.circle.fill",
     )
 
     @MainActor
@@ -36,11 +36,33 @@ public enum AskUserPlugin: LumiPlugin {
         return []
     }
 
+    // MARK: - Turn Finished Hook
+
     @MainActor
-    public static func configureAskUserResume(_ resumer: any LumiAskUserResuming) {
-        AskUserBridge.shared.resumeHandler = { conversationId, toolCallId, answer in
-            guard let conversationID = UUID(uuidString: conversationId) else { return }
-            Task { await resumer.resumeAfterAskUser(conversationID: conversationID, toolCallID: toolCallId, answer: answer) }
+    public static func onTurnFinished(
+        context: LumiPluginContext,
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) async {
+        await AskUserResumeHook.handle(context: context, conversationID: conversationID, reason: reason)
+    }
+
+    // MARK: - LumiToolExecutionHook
+
+    @MainActor
+    public static func handleToolResult(
+        toolName: String,
+        result: String,
+        conversationID: UUID
+    ) async -> Bool {
+        // 只处理 ask_user 工具
+        guard toolName == AskUserTool.name else {
+            return false
         }
+
+        // 仅当结果处于 pending 状态时才需要暂停 Agent 循环等待用户输入。
+        // 内核（ChatService）收到 true 后会设置状态提示并把 turn 结束原因设为
+        // .awaitingUserResponse。
+        return LumiAskUserMarkers.isPendingResponse(result)
     }
 }

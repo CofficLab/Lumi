@@ -240,4 +240,35 @@ extension LumiPluginRegistry {
     public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
         enabledPlugins.flatMap { $0.logoItems(context: context) }
     }
+
+    /// 通知所有插件 agent turn 已结束
+    public static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
+        for plugin in enabledPlugins {
+            await plugin.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
+        }
+    }
+
+    /// 询问实现了 LumiToolExecutionHook 的插件，是否需要在工具执行后暂停 Agent 循环。
+    ///
+    /// 任意插件返回 `true` 即视为需要暂停（如 ask_user 等待用户回答）。
+    /// 由 ChatService 经 App 层注入的 `toolExecutionHook` 闭包调用，
+    /// 从而避免 LumiChatKit 反向依赖插件注册表。
+    @MainActor
+    public static func dispatchToolExecution(
+        toolName: String,
+        result: String,
+        conversationID: UUID
+    ) async -> Bool {
+        for plugin in enabledPlugins {
+            guard let hookPlugin = plugin as? LumiToolExecutionHook.Type else { continue }
+            if await hookPlugin.handleToolResult(
+                toolName: toolName,
+                result: result,
+                conversationID: conversationID
+            ) {
+                return true
+            }
+        }
+        return false
+    }
 }

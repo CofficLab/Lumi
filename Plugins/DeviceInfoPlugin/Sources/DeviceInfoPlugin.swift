@@ -8,13 +8,13 @@ public enum DeviceInfoPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.device-info",
         displayName: LumiPluginLocalization.string("Device Info", bundle: .module),
         description: LumiPluginLocalization.string("Shows basic device and system information.", bundle: .module),
-        order: 0
+        order: 0,
+        category: .system,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "macbook.and.iphone",
     )
-    public static let category: LumiPluginCategory = .system
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
 
-    public static let iconName = "macbook.and.iphone"
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {

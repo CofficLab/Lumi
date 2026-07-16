@@ -7,16 +7,16 @@ import SwiftUI
 ///
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Antigravity 编辑器中打开当前项目。
 public enum AgentOpenInAntigravityPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .optOut
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "paperplane"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.open-in-antigravity",
         displayName: LumiPluginLocalization.string("Open in Antigravity", bundle: .module),
         description: LumiPluginLocalization.string("Open current project in Antigravity editor", bundle: .module),
-        order: 83
+        order: 83,
+        category: .general,
+        policy: .optOut,
+        stage: .beta,
+        iconName: "paperplane",
     )
 
     @MainActor
@@ -36,7 +36,7 @@ public enum AgentOpenInAntigravityPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

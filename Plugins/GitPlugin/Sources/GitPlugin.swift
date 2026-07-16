@@ -6,10 +6,6 @@ import os
 
 /// Git plugin: panel, commit history, status bar, and agent tools.
 public enum GitPlugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "arrow.triangle.branch"
     public static var verbose: Bool { false }
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
 
@@ -20,7 +16,11 @@ public enum GitPlugin: LumiPlugin, SuperLog {
             localized: "Git version control panel, commit history, status bar, and agent tools.",
             bundle: .module
         ),
-        order: 11
+        order: 11,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "arrow.triangle.branch",
     )
 
     public static var id: String { info.id }

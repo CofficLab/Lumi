@@ -17,7 +17,7 @@ import SuperLogKit
 /// 2. 对窗口 resize、holdingPriority 行为更鲁棒（divider 位置由 split view 自己维护）；
 /// 3. pane 的 width/height 可由 `dividerPosition` + `splitView.bounds.size` 推算出来。
 @MainActor
-public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPresenting, SuperLog {
+public final class LumiLayoutState: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
@@ -70,17 +70,10 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
             NotificationCenter.postActiveRailTabIDDidChange(railTabID: value)
         }
     }
-    @Published public var activeBottomTabID: String = "editor-bottom-problems" {
-        didSet {
-            guard activeBottomTabID != oldValue else { return }
-            let value = activeBottomTabID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)activeBottomTabID → \(value)")
-            }
-            NotificationCenter.postActiveBottomTabIDDidChange(bottomTabID: value)
-        }
-    }
     @Published private(set) public var bottomPanelFocusGeneration = 0
+
+    /// 底部面板 tab 的全局默认值（未被显式选择过的容器回退到此值）。
+    public static let defaultBottomTabID = "editor-bottom-problems"
 
     // MARK: - 恢复状态
 
@@ -108,6 +101,10 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
     /// 各视图容器的底部面板 divider 位置（VSplitView 中 divider 0 的 y 坐标 = pane 0 高度 = 内容区高度）。
     /// 注意：这是 pane 0（内容区）的高度，不是 pane 1（底部面板）的高度——它只是 NSSplitView 视角的"divider 在哪"。
     @Published private var bottomPanelDividers: [String: CGFloat] = [:]
+    /// 各视图容器选中的底部面板 tab。key 为 viewContainerID，value 为 tab id。
+    @Published private var activeBottomTabIDs: [String: String] = [:]
+    /// v1 → v2 迁移的 legacy 值：所有容器共享的默认回退 bottom tab ID。
+    @Published private(set) var legacyBottomTabID: String?
 
     /// 各视图容器的 panel column 宽度（= rail 所在 HSplitView 的 bounds.width = 整个左侧栏宽度）。
     /// 由视图层（`SplitDividerPersistenceView`）在每次 didResize 时持续同步，
@@ -249,6 +246,34 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         bottomPanelDividers[viewContainerID] = position
     }
 
+    // MARK: - 底部面板 Tab 选中（per-container）
+
+    /// 获取指定容器的底部面板 tab ID。
+    /// 查找顺序：per-container 字典 → legacy 默认值 → 系统默认值。
+    public func activeBottomTabID(for viewContainerID: String) -> String {
+        activeBottomTabIDs[viewContainerID] ?? legacyBottomTabID ?? Self.defaultBottomTabID
+    }
+
+    /// 设置指定容器的底部面板 tab ID，值变化时发出通知。
+    public func setActiveBottomTabID(_ id: String, for viewContainerID: String) {
+        guard activeBottomTabIDs[viewContainerID] != id else { return }
+        activeBottomTabIDs[viewContainerID] = id
+        if Self.verbose {
+            Self.logger.info("\(Self.t)activeBottomTabID[\(viewContainerID)] → \(id)")
+        }
+        NotificationCenter.postActiveBottomTabIDDidChange(containerID: viewContainerID, bottomTabID: id)
+    }
+
+    /// 内部回填底部面板 tab（恢复时使用，不发通知）。
+    public func restoreActiveBottomTabID(_ id: String, for viewContainerID: String) {
+        activeBottomTabIDs[viewContainerID] = id
+    }
+
+    /// 内部回填 legacy 默认底部面板 tab（v1 → v2 迁移时使用，不发通知）。
+    public func restoreLegacyBottomTabID(_ id: String) {
+        legacyBottomTabID = id
+    }
+
     private func chatSectionDividerKey(
         viewContainerID: String,
         layout: LumiChatSectionLayout
@@ -313,14 +338,14 @@ public final class LumiLayoutState: ObservableObject, LumiBottomPanelLayoutPrese
         Self.logger.info("\(Self.t)三栏宽度[\(viewContainerID)]: \(parts.joined(separator: ", "))")
     }
 
-    // MARK: - LumiBottomPanelLayoutPresenting
+    // MARK: - Panel Presentation
 
     public func presentRailTab(id: String) {
         activeRailTabID = id
     }
 
     public func presentBottomTab(id: String, viewContainerID: String) {
-        activeBottomTabID = id
+        setActiveBottomTabID(id, for: viewContainerID)
         bottomPanelFocusGeneration += 1
     }
 }

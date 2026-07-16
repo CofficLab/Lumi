@@ -1,4 +1,5 @@
 
+import LumiChatKit
 import LumiCoreKit
 import LumiLocalizationKit
 import LumiUI

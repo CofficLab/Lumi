@@ -6,16 +6,16 @@ import SwiftUI
 public enum ClipboardManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "doc.on.clipboard"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.clipboard-manager",
         displayName: LumiPluginLocalization.string("Clipboard", bundle: .module),
         description: LumiPluginLocalization.string("Manage clipboard history and snippets", bundle: .module),
-        order: 70
+        order: 70,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "doc.on.clipboard",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum ClipboardManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(ClipboardManagerAboutView())
     }
 

@@ -10,8 +10,11 @@ public struct UpdateTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "✅"
     public nonisolated static let verbose: Bool = true
 
-    /// 可注入的状态管理器（用于测试）。nil 时使用全局共享实例。
-    public var manager: TaskStateManager?
+    /// 由插件注入的状态管理器。
+    ///
+    /// 由 `AutoTaskPlugin` 在 `agentTools(context:)` 中创建 Tool 时注入，
+    /// 保证 Tool 持有生命周期一致的单实例。
+    public let manager: TaskStateManager
 
     public static let info = LumiAgentToolInfo(
         id: "update_task",
@@ -22,7 +25,9 @@ public struct UpdateTaskTool: LumiAgentTool, SuperLog {
         )
     )
 
-    public init() {}
+    public init(manager: TaskStateManager) {
+        self.manager = manager
+    }
 
     public var inputSchema: LumiJSONValue {
         .object([
@@ -59,7 +64,7 @@ public struct UpdateTaskTool: LumiAgentTool, SuperLog {
             return LumiPluginLocalization.string("Error: status must be one of: in_progress, completed, skipped", bundle: .module)
         }
 
-        let manager = manager ?? .shared
+        let manager = self.manager
         let success: Bool
         do {
             success = try await manager.updateTaskStatus(id: taskId, conversationId: conversationId, status: status)

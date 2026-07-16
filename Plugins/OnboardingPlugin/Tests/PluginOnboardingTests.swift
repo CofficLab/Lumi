@@ -41,11 +41,11 @@ import Testing
             id: "test.dummy",
             displayName: "Dummy",
             description: "A test plugin",
-            order: 0
+            order: 0,
+            policy: .alwaysOn,
+            category: .general,
+            iconName: "star"
         )
-        static let policy: LumiPluginPolicy = .alwaysOn
-        static let category: LumiPluginCategory = .general
-        static let iconName = "star"
     }
 
     let context = LumiPluginContext(

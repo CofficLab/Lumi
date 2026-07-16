@@ -14,16 +14,16 @@ public enum SwiftPluginLog {
 
 /// Swift / Xcode 项目编辑器扩展：语法高亮、LSP、构建上下文与 Xcode 集成
 public enum EditorSwiftEditorPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "swift"
 
     public static let info = LumiPluginInfo(
         id: "EditorSwift",
         displayName: LumiPluginLocalization.string("Swift Editor", bundle: .module),
         description: LumiPluginLocalization.string("Provides Swift language support, Xcode project identity, build context, and sourcekit-lsp integration.", bundle: .module),
-        order: 4
+        order: 4,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "swift",
     )
 
     public static func registerEditorExtensions(into registry: AnyObject) async {

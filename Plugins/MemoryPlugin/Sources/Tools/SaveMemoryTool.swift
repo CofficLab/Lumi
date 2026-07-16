@@ -9,7 +9,7 @@ public struct SaveMemoryTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "save_memory",
         displayName: "Save Memory",
-        description: "Save a memory to the persistent memory system. Memories should be non-obvious information that cannot be derived from code or Git history. Do not save code patterns, architecture, or already-documented content."
+        description: "Save a memory to the persistent memory system. You should proactively save important information that helps you provide better assistance in future conversations, such as: user preferences and workflows, project-specific conventions and practices, feedback about your behavior or output style, recurring patterns in user requests, and lessons learned from debugging sessions. Save when you discover something valuable that is not obvious from the current context."
     )
 
     public init() {}

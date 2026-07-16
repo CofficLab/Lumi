@@ -10,9 +10,9 @@ import os
 ///
 /// 实际逻辑委托给 LumiPluginRegistry，本类仅负责：
 /// - ObservableObject 支持（UI 刷新）
-/// - 协议实现（LumiAgentToolProviding、LumiLLMProviderSettingsContributing）
+/// - 协议实现（LumiAgentToolProviding、LumiChatContributionProviding、LumiLLMProviderSettingsContributing）
 @MainActor
-final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, LumiLLMProviderSettingsContributing {
+final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, LumiChatContributionProviding, LumiLLMProviderSettingsContributing {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false
@@ -28,6 +28,9 @@ final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, L
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 \(LumiPluginRegistry.registeredPlugins.count) 个插件")
         }
+
+        // 初始化插件启用状态（覆盖 overrides 合并等）
+        LumiPluginRegistry.initializePluginStates()
 
         // 设置回调，触发 UI 刷新
         LumiPluginRegistry.onEnabledPluginsChanged = { [weak self] in
@@ -195,5 +198,13 @@ final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, L
         }
 
         LogoRegistry.shared.register(allItems)
+    }
+
+    func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
+        await LumiPluginRegistry.onTurnFinished(
+            context: context,
+            conversationID: conversationID,
+            reason: reason
+        )
     }
 }

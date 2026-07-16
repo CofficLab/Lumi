@@ -903,6 +903,9 @@
     "Replay the first-run onboarding flow." : {
 
     },
+    "Save" : {
+
+    },
     "Saved" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2138,6 +2141,7 @@
       }
     },
     "该插件暂未提供设置页面。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

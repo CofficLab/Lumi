@@ -2,13 +2,13 @@ import LumiCoreKit
 import SwiftUI
 
 public enum ProjectsPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.projects",
         displayName: LumiPluginLocalization.string("Projects", bundle: .module),
-        description: LumiPluginLocalization.string("Adds a project manager control to the title toolbar.", bundle: .module)
+        description: LumiPluginLocalization.string("Adds a project manager control to the title toolbar.", bundle: .module),
+        policy: .alwaysOn,
+        stage: .beta,
     )
 
     /// 插件数据存储的子目录名称

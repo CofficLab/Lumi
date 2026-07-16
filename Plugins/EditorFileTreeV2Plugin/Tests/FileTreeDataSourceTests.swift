@@ -46,26 +46,26 @@ final class FileTreeDataSourceTests: XCTestCase {
     func testRootNodeAlwaysExpanded() {
         let root = URL(fileURLWithPath: "/project")
         fileSystem.markAsDirectory(root)
-        
+
         dataSource.setProjectRoot("/project")
-        
-        XCTAssertEqual(dataSource.items.count, 1)
-        XCTAssertTrue(dataSource.items[0].isExpanded)
-        XCTAssertEqual(dataSource.items[0].depth, 0)
+
+        XCTAssertEqual(dataSource.fileItems.count, 1)
+        XCTAssertEqual(dataSource.fileItems[0].isExpanded, true)
+        XCTAssertEqual(dataSource.fileItems[0].depth, 0)
     }
-    
+
     func testNonRootNodeNotExpandedByDefault() {
         let root = URL(fileURLWithPath: "/project")
         let sources = URL(fileURLWithPath: "/project/Sources")
         fileSystem.markAsDirectory(root)
         fileSystem.markAsDirectory(sources)
         fileSystem.registerDirectory(root, contents: [sources])
-        
+
         dataSource.setProjectRoot("/project")
-        
-        XCTAssertEqual(dataSource.items.count, 2)
-        XCTAssertTrue(dataSource.items[0].isExpanded) // root
-        XCTAssertFalse(dataSource.items[1].isExpanded) // Sources
+
+        XCTAssertEqual(dataSource.fileItems.count, 2)
+        XCTAssertEqual(dataSource.fileItems[0].isExpanded, true) // root
+        XCTAssertEqual(dataSource.fileItems[1].isExpanded, false) // Sources
     }
     
     // MARK: - Expanded Paths
@@ -79,10 +79,10 @@ final class FileTreeDataSourceTests: XCTestCase {
         
         store.addExpandedPath("/Sources", for: "/project")
         dataSource.setProjectRoot("/project")
-        
-        XCTAssertEqual(dataSource.items.count, 2)
-        XCTAssertTrue(dataSource.items[0].isExpanded) // root
-        XCTAssertTrue(dataSource.items[1].isExpanded) // Sources
+
+        XCTAssertEqual(dataSource.fileItems.count, 2)
+        XCTAssertEqual(dataSource.fileItems[0].isExpanded, true) // root
+        XCTAssertEqual(dataSource.fileItems[1].isExpanded, true) // Sources
     }
     
     func testToggleExpansionAddsToStore() {
@@ -128,10 +128,10 @@ final class FileTreeDataSourceTests: XCTestCase {
         fileSystem.registerDirectory(root, contents: [fileA, fileB])
         
         dataSource.setProjectRoot("/project")
-        
-        XCTAssertEqual(dataSource.items.count, 3) // root + 2 files
+
+        XCTAssertEqual(dataSource.fileItems.count, 3) // root + 2 files
     }
-    
+
     func testDirectoriesSortedBeforeFiles() {
         let root = URL(fileURLWithPath: "/project")
         let fileZ = URL(fileURLWithPath: "/project/z.txt")
@@ -140,31 +140,32 @@ final class FileTreeDataSourceTests: XCTestCase {
         fileSystem.markAsFile(fileZ)
         fileSystem.markAsDirectory(dirA)
         fileSystem.registerDirectory(root, contents: [fileZ, dirA])
-        
+
         dataSource.setProjectRoot("/project")
-        
-        XCTAssertEqual(dataSource.items.count, 3)
+
+        XCTAssertEqual(dataSource.fileItems.count, 3)
         // dirA should come before fileZ (directories first, then alphabetical)
-        XCTAssertEqual(dataSource.items[1].url, dirA)
-        XCTAssertEqual(dataSource.items[2].url, fileZ)
+        XCTAssertEqual(dataSource.fileItems[1].url, dirA)
+        XCTAssertEqual(dataSource.fileItems[2].url, fileZ)
     }
     
     // MARK: - Callbacks
     
     func testOnItemsChangedCalled() {
-        var callbackItems: [FileTreeNodeItem]?
-        
+        var callbackItems: [CollectionItem]?
+
         dataSource.onItemsChanged = { items in
             callbackItems = items
         }
-        
+
         let root = URL(fileURLWithPath: "/project")
         fileSystem.markAsDirectory(root)
-        
+
         dataSource.setProjectRoot("/project")
-        
+
         XCTAssertNotNil(callbackItems)
-        XCTAssertEqual(callbackItems?.count, 1)
+        // 回调收到完整 items（含 package header），这里只验证文件节点数
+        XCTAssertEqual(callbackItems?.compactMap { $0.fileItem }.count, 1)
     }
     
     func testFullRefreshTriggersCallback() {
@@ -188,40 +189,40 @@ final class FileTreeDataSourceTests: XCTestCase {
     func testToggleExpansionOnNonexistentItemDoesNothing() {
         let root = URL(fileURLWithPath: "/project")
         fileSystem.markAsDirectory(root)
-        
+
         dataSource.setProjectRoot("/project")
-        
+
         let fakeURL = URL(fileURLWithPath: "/nonexistent")
         dataSource.toggleExpansion(at: fakeURL)
-        
-        XCTAssertEqual(dataSource.items.count, 1) // unchanged
+
+        XCTAssertEqual(dataSource.fileItems.count, 1) // unchanged
     }
-    
+
     func testToggleExpansionOnFileDoesNothing() {
         let root = URL(fileURLWithPath: "/project")
         let file = URL(fileURLWithPath: "/project/file.txt")
         fileSystem.markAsDirectory(root)
         fileSystem.markAsFile(file)
         fileSystem.registerDirectory(root, contents: [file])
-        
+
         dataSource.setProjectRoot("/project")
-        
+
         dataSource.toggleExpansion(at: file)
-        
-        XCTAssertEqual(dataSource.items.count, 2) // unchanged
+
+        XCTAssertEqual(dataSource.fileItems.count, 2) // unchanged
     }
-    
+
     func testSetProjectRootClearsPreviousItems() {
         let root1 = URL(fileURLWithPath: "/project1")
         let root2 = URL(fileURLWithPath: "/project2")
         fileSystem.markAsDirectory(root1)
         fileSystem.markAsDirectory(root2)
-        
+
         dataSource.setProjectRoot("/project1")
-        XCTAssertEqual(dataSource.items.count, 1)
-        
+        XCTAssertEqual(dataSource.fileItems.count, 1)
+
         dataSource.setProjectRoot("/project2")
-        XCTAssertEqual(dataSource.items.count, 1)
-        XCTAssertEqual(dataSource.items[0].url, root2)
+        XCTAssertEqual(dataSource.fileItems.count, 1)
+        XCTAssertEqual(dataSource.fileItems[0].url, root2)
     }
 }

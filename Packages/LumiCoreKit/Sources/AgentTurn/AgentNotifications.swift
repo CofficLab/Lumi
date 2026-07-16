@@ -33,24 +33,14 @@ public enum AgentTurnLifecycle {
         )
     }
 
-    /// 将 Agent 管线 turn 结束原因广播为 `lumiTurnFinished`（及成功时的 `lumiTurnCompleted`）。
+    /// - Note: turn 结束通知（`.lumiTurnFinished` / `.lumiTurnCompleted`）已统一由
+    ///   `LumiChatKit.SendPipeline` **唯一发送**（参见阶段 0 重构）。
+    ///   本函数保留签名，仅为兼容 `SuperPluginLegacyTypes.finishAgentTurn` 的默认闭包调用；
+    ///   此处不再 post，避免同一通知被 CoreKit 与 ChatKit 双重发送。
     public static func postTurnFinished(conversationID: UUID, reason: TurnEndReason) {
-        let lumiReason = LumiTurnEndReason(reason)
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            LumiTurnFinishedNotification.reasonKey: lumiReason.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: .lumiTurnFinished,
-            object: nil,
-            userInfo: userInfo
-        )
-        if lumiReason == .completed {
-            NotificationCenter.default.post(
-                name: .lumiTurnCompleted,
-                object: nil,
-                userInfo: userInfo
-            )
-        }
+        // 故意留空：turn 结束通知的唯一发送方是 LumiChatKit.SendPipeline。
+        // 详见 `docs/architecture-refactor-proposal.md` §5 阶段 0。
+        _ = conversationID
+        _ = reason
     }
 }

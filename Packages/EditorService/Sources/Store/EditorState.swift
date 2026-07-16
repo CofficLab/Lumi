@@ -1145,12 +1145,31 @@ public final class EditorState: ObservableObject, SuperLog {
 
     
     // MARK: - Auto Save
-    
+
     /// 是否有未保存的变更
     @Published var hasUnsavedChanges: Bool = false
-    
+
     /// 保存状态
     @Published var saveState: EditorSaveState = .idle
+
+    /// 自动保存模式（对齐 VS Code 的 files.autoSave）
+    @Published var autoSaveMode: EditorAutoSaveMode = .off {
+        didSet {
+            guard autoSaveMode != oldValue else { return }
+            autoSaveScheduler.handleModeChange(autoSaveMode)
+        }
+    }
+
+    /// 自动保存延迟（秒，仅在 afterDelay 模式下生效）
+    @Published var autoSaveDelay: Double = 1.0 {
+        didSet {
+            guard autoSaveDelay != oldValue else { return }
+            autoSaveScheduler.handleDelayChange(autoSaveDelay)
+        }
+    }
+
+    /// 自动保存防抖调度器
+    let autoSaveScheduler = EditorAutoSaveScheduler()
 
     // MARK: - File Loading Constants
     
@@ -1187,6 +1206,7 @@ public final class EditorState: ObservableObject, SuperLog {
         observeSettingsChanges()
         observeThemeChanges()
         observeProjectContextChanges()
+        autoSaveScheduler.bind(state: self)
     }
 
     /// 编辑器扩展安装完成后重新绑定 registry 能力（LSP client、providers 等）。
@@ -1637,7 +1657,9 @@ public final class EditorState: ObservableObject, SuperLog {
                 showMinimap: showMinimap,
                 showGutter: showGutter,
                 showFoldingRibbon: showFoldingRibbon,
-                currentThemeId: currentThemeId
+                currentThemeId: currentThemeId,
+                autoSaveMode: autoSaveMode,
+                autoSaveDelay: autoSaveDelay
             )
         )
     }
@@ -1655,6 +1677,8 @@ public final class EditorState: ObservableObject, SuperLog {
         showMinimap = snapshot.showMinimap
         showGutter = snapshot.showGutter
         showFoldingRibbon = snapshot.showFoldingRibbon
+        autoSaveMode = snapshot.autoSaveMode
+        autoSaveDelay = snapshot.autoSaveDelay
         // 主题不在此恢复。编辑器主题由 ThemeStatusBarPlugin 通过
         // syncInitialThemeFromExternal() 和 .lumiThemeDidChange 通知统一驱动，
         // 避免旧持久化值（如 "xcode-dark"）覆盖已同步的正确主题。
@@ -1882,6 +1906,7 @@ public final class EditorState: ObservableObject, SuperLog {
                             self.fileName = document.fileName
                             self.hasUnsavedChanges = false
                             self.saveState = .idle
+                            self.autoSaveScheduler.cancel()
 
                             self.detectedLanguage = LanguageRegistry.shared.detectLanguage(
                                 url: loadingURL,
@@ -2506,9 +2531,13 @@ public final class EditorState: ObservableObject, SuperLog {
             hasUnsavedChanges = true
             saveState = .editing
             lspClient.updateDocumentSnapshot(contentString)
+            // 内容变化时调度防抖自动保存（仅 afterDelay 模式生效，内部有守卫）
+            autoSaveScheduler.scheduleIfNeeded()
         } else {
             hasUnsavedChanges = false
             saveState = .idle
+            // 内容与磁盘一致时取消待执行的自动保存
+            autoSaveScheduler.cancel()
         }
         refreshFindMatches()
 

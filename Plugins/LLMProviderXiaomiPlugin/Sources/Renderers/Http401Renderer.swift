@@ -4,7 +4,7 @@ import LumiCoreKit
 enum Http401Renderer {
     static let item = LumiMessageRendererItem(
         id: "xiaomi-http-401",
-        order: 210,
+        order: XiaomiPlugin.info.order + 200,
         canRender: { message in
             XiaomiRenderKind.matchesHttp(statusCode: 401, message: message)
         },

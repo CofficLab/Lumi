@@ -45,6 +45,8 @@ enum EditorConfigStore {
     static let showMinimapKey = "showMinimap"
     static let showGutterKey = "showGutter"
     static let showFoldingRibbonKey = "showFoldingRibbon"
+    static let autoSaveModeKey = "autoSaveMode"
+    static let autoSaveDelayKey = "autoSaveDelay"
 
     // MARK: - Load / Save
 

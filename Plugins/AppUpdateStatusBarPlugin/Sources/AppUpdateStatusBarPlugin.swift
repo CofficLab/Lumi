@@ -2,16 +2,16 @@ import LumiCoreKit
 import SwiftUI
 
 public enum AppUpdateStatusBarPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "arrow.down.circle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.app-update-status-bar",
         displayName: PluginAppUpdateStatusBarLocalization.string("App Update Status"),
         description: PluginAppUpdateStatusBarLocalization.string("Shows a menu bar reminder when an app update is ready to install."),
-        order: 8
+        order: 8,
+        category: .general,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "arrow.down.circle",
     )
 
     @MainActor

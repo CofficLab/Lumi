@@ -6,16 +6,16 @@ import SwiftUI
 public enum MenuBarManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "menubar.rectangle"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.menubar-manager",
         displayName: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
         description: LumiPluginLocalization.string("Manage your menu bar items", bundle: .module),
-        order: 20
+        order: 20,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "menubar.rectangle",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum MenuBarManagerPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

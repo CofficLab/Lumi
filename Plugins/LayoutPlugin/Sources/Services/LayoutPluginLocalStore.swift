@@ -163,6 +163,53 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         }
     }
 
+    // MARK: - 底部面板 Tab（per-container，值类型 String）
+
+    /// 与 `splitDimensions` 同构，但值为 tab id（String）。key 形如 `Layout.Position.<id>.BottomTab`。
+    public func loadBottomTabID(forKey key: String) -> String? {
+        loadBottomTabIDs()[key]
+    }
+
+    public func saveBottomTabID(_ value: String, forKey key: String) {
+        queue.async { [self] in
+            var dict = self.readDict()
+            var tabs = dict[Keys.bottomTabIDs] as? [String: String] ?? [:]
+            tabs[key] = value
+            dict[Keys.bottomTabIDs] = tabs
+            self.writeDict(dict)
+        }
+    }
+
+    /// 删除单个底部 tab key。子字典为空时一并移除 `bottomTabIDs` 键，避免空 dict 残留。
+    public func removeBottomTabID(forKey key: String) {
+        queue.async { [self] in
+            var dict = self.readDict()
+            var tabs = dict[Keys.bottomTabIDs] as? [String: String] ?? [:]
+            guard tabs.removeValue(forKey: key) != nil else { return }
+            if tabs.isEmpty {
+                dict.removeValue(forKey: Keys.bottomTabIDs)
+            } else {
+                dict[Keys.bottomTabIDs] = tabs
+            }
+            self.writeDict(dict)
+        }
+    }
+
+    /// 加载全部已保存的底部面板 tab（供恢复时遍历）。
+    public func loadBottomTabIDs() -> [String: String] {
+        queue.sync {
+            guard let dict = readDict()[Keys.bottomTabIDs] as? [String: Any] else {
+                return [:]
+            }
+            return dict.compactMapValues { $0 as? String }
+        }
+    }
+
+    /// 加载 v1 legacy 的全局 bottom tab ID（迁移用）。
+    public func loadActiveBottomTabID() -> String? {
+        string(forKey: LayoutStorageKey.legacyActiveBottomTabID)
+    }
+
     // MARK: - Layout Ratios
 
     /// 加载已保存的分栏布局比例
@@ -279,6 +326,7 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
         static let selectedAgentSidebarTabId = "selectedAgentSidebarTabId"
         static let selectedAgentDetailId = "selectedAgentDetailId"
         static let splitDimensions = "splitDimensions"
+        static let bottomTabIDs = "bottomTabIDs"
         static let layoutRatios = "layoutRatios"
         static let editorBottomPanelHeight = "editorBottomPanelHeight"
         static let bottomPanelVisible = "bottomPanelVisible"

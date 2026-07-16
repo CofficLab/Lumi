@@ -8,10 +8,6 @@ import SuperLogKit
 ///
 /// 基于 NSCollectionView 的原生渲染实现，优化 LLM 流式响应期间的滚动性能。
 public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .dev
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "square.grid.2x2.fill"
 
     /// 是否启用 Git 状态显示功能（禁用可提升文件树滚动性能）。
     public static let gitStatusEnabled: Bool = true
@@ -32,7 +28,11 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
         id: "com.coffic.lumi.plugin.editor-file-tree-v2",
         displayName: LumiPluginLocalization.string("Editor File Tree V2", bundle: .module),
         description: LumiPluginLocalization.string("Native rendering file tree using NSCollectionView for better performance.", bundle: .module),
-        order: 0
+        order: 0,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .dev,
+        iconName: "square.grid.2x2.fill",
     )
 
     @MainActor

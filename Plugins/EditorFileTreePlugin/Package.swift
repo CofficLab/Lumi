@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/FileTreeKit"),
+        .package(path: "../../Packages/FileSystemKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -26,7 +26,7 @@ let package = Package(
             name: "EditorFileTreePlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "FileTreeKit", package: "FileTreeKit"),
+                .product(name: "FileSystemKit", package: "FileSystemKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),

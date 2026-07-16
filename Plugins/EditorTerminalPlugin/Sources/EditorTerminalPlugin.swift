@@ -4,17 +4,17 @@ import SwiftUI
 import os
 
 public enum EditorTerminalPanelPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .development
-    public static let iconName = "terminal"
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-terminal-panel")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.editor-bottom-terminal",
         displayName: LumiPluginLocalization.string("Editor Terminal", bundle: .module),
         description: LumiPluginLocalization.string("Terminal panel in the editor bottom area.", bundle: .module),
-        order: 100
+        order: 100,
+        category: .development,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "terminal",
     )
 
     @MainActor

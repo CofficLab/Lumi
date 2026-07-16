@@ -5,10 +5,6 @@ import SwiftUI
 
 /// Conversation List Plugin: rail conversation list, project switch guidance, and agent tools.
 public enum ConversationListPlugin: LumiPlugin {
-    public static let policy: LumiPluginPolicy = .alwaysOn
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .agent
-    public static let iconName = "message.fill"
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
     public static let t = "💬"
@@ -17,7 +13,11 @@ public enum ConversationListPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.conversation-list",
         displayName: LumiPluginLocalization.string("Conversation List", bundle: .module),
         description: LumiPluginLocalization.string("Show all conversation history", bundle: .module),
-        order: 76
+        order: 76,
+        category: .agent,
+        policy: .alwaysOn,
+        stage: .beta,
+        iconName: "message.fill",
     )
 
     @MainActor
@@ -114,5 +114,29 @@ public enum ConversationListPlugin: LumiPlugin {
             GetConversationCountLumiTool(chatService: chatService),
             SetConversationProjectLumiTool(chatService: chatService),
         ]
+    }
+
+    @MainActor
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 12) {
+                Text(verbatim: LumiPluginLocalization.string(
+                    "会话列表插件会在工具栏右侧展示一个对话历史入口，支持快速搜索、新建、删除和按项目过滤会话。",
+                    bundle: .module
+                ))
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+
+                Divider()
+
+                Label(
+                    LumiPluginLocalization.string("策略：始终启用，无法关闭", bundle: .module),
+                    systemImage: "lock.fill"
+                )
+                .font(.appMicro)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        )
     }
 }

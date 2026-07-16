@@ -10,8 +10,11 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = true
 
-    /// 可注入的状态管理器（用于测试）。nil 时使用全局共享实例。
-    public var manager: TaskStateManager?
+    /// 由插件注入的状态管理器。
+    ///
+    /// 由 `AutoTaskPlugin` 在 `agentTools(context:)` 中创建 Tool 时注入，
+    /// 保证 Tool 持有生命周期一致的单实例。
+    public let manager: TaskStateManager
 
     public static let info = LumiAgentToolInfo(
         id: "create_task",
@@ -22,7 +25,9 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
         )
     )
 
-    public init() {}
+    public init(manager: TaskStateManager) {
+        self.manager = manager
+    }
 
     public var inputSchema: LumiJSONValue {
         .object([
@@ -75,7 +80,7 @@ public struct CreateTaskTool: LumiAgentTool, SuperLog {
             return LumiPluginLocalization.string("Error: no valid tasks found (each task needs a non-empty title)", bundle: .module)
         }
 
-        let manager = manager ?? .shared
+        let manager = self.manager
         let createdTasks: [TaskItem]
         do {
             createdTasks = try await manager.createTasks(conversationId: conversationId, items: items)

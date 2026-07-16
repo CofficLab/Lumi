@@ -26,6 +26,35 @@ extension EditorState {
         )
     }
 
+    /// 自动保存入口（带完整守卫）。
+    ///
+    /// 与手动保存的区别：跳过需要弹窗确认的文件（project.pbxproj）以及
+    /// 不可写/二进制/截断预览的文件，避免静默覆盖或产生破坏性写入。
+    /// 同时复用 `saveNowIfNeeded` 的脏检查与重入保护。
+    func triggerAutoSave(reason: String) {
+        // 模式守卫：仅自动保存模式开启时才执行
+        guard autoSaveMode != .off else { return }
+
+        // 外部冲突守卫：有冲突时绝不自动保存，防止覆盖磁盘上的新内容
+        guard !hasExternalFileConflict else { return }
+
+        // 文件存在性守卫：没有关联文件（新建未保存）无法自动保存
+        guard currentFileURL != nil else { return }
+
+        // 可写性守卫：二进制、截断预览、只读大文件不自动保存
+        guard isAutoSaveEligible else { return }
+
+        // 确认守卫：跳过需要弹窗确认的文件（pbxproj），避免阻塞主线程
+        guard !isEditingProjectPBXProj else { return }
+
+        saveNowIfNeeded(reason: reason)
+    }
+
+    /// 当前文件是否适合自动保存（非二进制、非截断、可编辑）。
+    var isAutoSaveEligible: Bool {
+        !isBinaryFile && !isTruncated && isEditable && !largeFileMode.isReadOnly
+    }
+
     func performSave(content: String, to url: URL?) {
         saveWorkflowController.performSave(
             content: content,
@@ -49,7 +78,13 @@ extension EditorState {
                 self.recordSuccessfulSave()
                 self.lspClient.documentDidSave(uri: uri, text: content)
             },
-            setHasUnsavedChanges: { [weak self] value in self?.hasUnsavedChanges = value }
+            setHasUnsavedChanges: { [weak self] value in
+                self?.hasUnsavedChanges = value
+                if !value {
+                    // 保存成功（或被清除）后取消待执行的自动保存
+                    self?.autoSaveScheduler.cancel()
+                }
+            }
         )
     }
 

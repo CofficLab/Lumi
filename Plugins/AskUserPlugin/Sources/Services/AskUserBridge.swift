@@ -3,16 +3,16 @@ import LumiCoreKit
 
 /// AskUser 插件桥接器
 ///
-/// 保存 `AskUserPlugin.configureAskUserResume` 注入的恢复回调，
-/// 供渲染器在用户做出选择后调用。
+/// 用户做出选择后，通过 NotificationCenter 发送通知，
+/// ChatService 监听通知并恢复 Agent 循环。
 ///
 /// 数据流：
 /// ```
-/// LumiAskUserResuming.resumeAfterAskUser (ChatService)
-///         ↓ (AskUserPlugin.configureAskUserResume 保存)
-/// AskUserBridge.resume
-///         ↓ (渲染器用户点击后调用)
-/// ChatService 写回 tool result 并继续 runAgentTurn
+/// 渲染器用户点击 → AskUserBridge.resume(...)
+///         ↓
+/// 发送 lumiAskUserDidAnswer 通知
+///         ↓
+/// ChatService 监听通知 → resumeAfterAskUser() → continueAgentTurn()
 /// ```
 @MainActor
 public final class AskUserBridge: ObservableObject {
@@ -20,11 +20,16 @@ public final class AskUserBridge: ObservableObject {
 
     private init() {}
 
-    /// 恢复回调：(conversationId, toolCallId, answer)
-    public var resumeHandler: (@MainActor (String, String, String) -> Void)?
-
-    /// 用户做出选择后调用，触发恢复。
+    /// 用户做出选择后调用，发送通知触发恢复。
     public func resume(conversationId: String, toolCallId: String, answer: String) {
-        resumeHandler?(conversationId, toolCallId, answer)
+        NotificationCenter.default.post(
+            name: .lumiAskUserDidAnswer,
+            object: nil,
+            userInfo: [
+                LumiAskUserNotification.conversationIDKey: conversationId,
+                LumiAskUserNotification.toolCallIDKey: toolCallId,
+                LumiAskUserNotification.answerKey: answer
+            ]
+        )
     }
 }

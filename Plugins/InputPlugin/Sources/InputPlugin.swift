@@ -6,16 +6,16 @@ import SwiftUI
 public enum InputPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
     public static let verbose = false
-    public static let policy: LumiPluginPolicy = .disabled
-    public static let stage: LumiPluginStage = .beta
-    public static let category: LumiPluginCategory = .general
-    public static let iconName = "keyboard"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.input-manager",
         displayName: LumiPluginLocalization.string("Input Manager", bundle: .module),
         description: LumiPluginLocalization.string("Manage input-related behaviors", bundle: .module),
-        order: 70
+        order: 70,
+        category: .general,
+        policy: .disabled,
+        stage: .beta,
+        iconName: "keyboard",
     )
 
     @MainActor
@@ -32,7 +32,7 @@ public enum InputPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func aboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)
