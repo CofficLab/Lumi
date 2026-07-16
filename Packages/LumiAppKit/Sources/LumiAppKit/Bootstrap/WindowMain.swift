@@ -6,7 +6,7 @@ import SwiftUI
 
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
-    nonisolated static let emoji = "🪟"
+    nonisolated public static let emoji = "🪟"
     nonisolated static let verbose = false
 
     @State private var container: RootContainer?

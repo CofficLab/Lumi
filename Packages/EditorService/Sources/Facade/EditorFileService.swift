@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import EditorKernel
 
 @MainActor
 public final class EditorFileService {
