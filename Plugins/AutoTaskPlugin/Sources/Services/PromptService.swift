@@ -59,6 +59,7 @@ public final class PromptService: @unchecked Sendable {
         }
 
         prompt += "---\n"
+        prompt += "**User's perspective:** The user can see this task list in the sidebar with all pending/in-progress tasks displayed. They expect you to continue working on these tasks.\n"
         prompt += "- If a task is done, call `update_task(task_id: \"...\", status: \"completed\")` immediately.\n"
         prompt += "- If a task needs to begin, call `update_task(task_id: \"...\", status: \"in_progress\")`.\n"
         prompt += "- Otherwise, keep working on the current task — do not stop until progress is made.\n"
@@ -137,6 +138,7 @@ public final class PromptService: @unchecked Sendable {
         }
 
         prompt += "---\n"
+        prompt += "**用户视角：** 用户可以在侧边栏看到包含所有待处理/进行中任务的列表，他们期望你继续处理这些任务。\n"
         prompt += "- 若任务已完成，请立即调用 `update_task(task_id: \"...\", status: \"completed\")`。\n"
         prompt += "- 若任务需要开始，请调用 `update_task(task_id: \"...\", status: \"in_progress\")`。\n"
         prompt += "- 否则继续处理当前任务，在取得进展前不要停下。\n"
