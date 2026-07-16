@@ -54,6 +54,9 @@ public final class EditorSessionService {
     }
 
     public func activateAndRestoreSession(id: EditorSession.ID) {
+        // 切换 Tab 前保存当前编辑器（遵循自动保存模式语义）
+        state.triggerAutoSave(reason: "tab_switch")
+
         guard let session = sessionStore.activate(sessionID: id) else { return }
 
         let fileURL = session.fileURL

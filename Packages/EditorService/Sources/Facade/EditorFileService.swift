@@ -26,10 +26,25 @@ public final class EditorFileService {
     public var canPreview: Bool { state.canPreview }
     public var largeFileMode: LargeFileMode { state.largeFileMode }
     public var canLoadFullFile: Bool { state.canLoadFullFile }
+    public var autoSaveMode: EditorAutoSaveMode { state.autoSaveMode }
+    public var autoSaveDelay: Double { state.autoSaveDelay }
+    public var hasExternalFileConflict: Bool { state.hasExternalFileConflict }
+    public var isAutoSaveEligible: Bool { state.isAutoSaveEligible }
     var saveState: EditorSaveState { state.saveState }
 
     public func saveNow() {
         state.saveNow()
+    }
+
+    /// 在有未保存变更时保存（安全网触发：关窗、退 App、切 Tab 等）。
+    public func saveNowIfNeeded(reason: String) {
+        state.saveNowIfNeeded(reason: reason)
+    }
+
+    /// 自动保存入口（遵循 autoSaveMode 语义 + 全套守卫）。
+    /// 用于窗口失焦、App 失活等生命周期触发。
+    public func triggerAutoSave(reason: String) {
+        state.triggerAutoSave(reason: reason)
     }
 
     @discardableResult

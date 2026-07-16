@@ -903,6 +903,9 @@
     "Replay the first-run onboarding flow." : {
 
     },
+    "Save" : {
+
+    },
     "Saved" : {
       "extractionState" : "stale",
       "localizations" : {

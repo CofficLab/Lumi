@@ -37,7 +37,12 @@ final class TextViewBridge {
             queue: .main
         ) { [weak state] _ in
             Task { @MainActor [weak state] in
-                state?.saveNowIfNeeded(reason: "editor_focus_lost")
+                // 编辑器失焦时自动保存。
+                // 语义对齐 VS Code：
+                // - onFocusChange / onWindowChange：失焦保存
+                // - afterDelay / off：失焦不保存（afterDelay 的保存由防抖调度器负责）
+                guard let state, state.autoSaveMode.respondsToFocusChange else { return }
+                state.triggerAutoSave(reason: "editor_focus_lost")
             }
         }
     }

@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import EditorPanelPlugin
 import Foundation
 import LumiCoreKit
 import SuperLogKit
@@ -40,6 +41,19 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
         setOpenPath(path)
         activateMainWindow()
         return true
+    }
+
+    /// 应用即将退出：保存所有窗口编辑器的未保存内容（数据安全网）。
+    /// 无论自动保存模式如何，都尽力避免退出时丢失编辑成果。
+    public func applicationWillTerminate(_ notification: Notification) {
+        EditorRuntimeBridge.editorService?.files.saveNowIfNeeded(reason: "app_will_terminate")
+    }
+
+    /// 应用进入后台（失去活跃状态）：仅在 onWindowChange 模式下触发保存。
+    public func applicationDidResignActive(_ notification: Notification) {
+        guard let files = EditorRuntimeBridge.editorService?.files,
+              files.autoSaveMode.respondsToWindowChange else { return }
+        files.triggerAutoSave(reason: "app_resign_active")
     }
 
     private func resolvePath(fromOpenURL url: URL) -> String? {

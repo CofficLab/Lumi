@@ -5,6 +5,7 @@ public struct AppCommands: Commands {
 
     public var body: some Commands {
         SidebarCommands()
+        EditorSaveCommands()
         ChatCommands()
         DebugCommand()
         CheckForUpdatesCommand()
