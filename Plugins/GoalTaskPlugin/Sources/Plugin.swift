@@ -7,7 +7,7 @@ import os
 import SwiftUI
 
 /// GoalTask 插件：目标导向的任务管理，支持并行执行
-public enum GoalTaskPlugin: LumiPlugin {
+public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.goal-task",
@@ -22,6 +22,8 @@ public enum GoalTaskPlugin: LumiPlugin {
     
     /// 插件数据存储的子目录名称
     public static let dataDirectoryName = "GoalTask"
+    
+    public static let emoji = "🎯"
     
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.goal-task")
     
@@ -51,12 +53,23 @@ public enum GoalTaskPlugin: LumiPlugin {
     
     // MARK: - Agent Tools
     
+    /// 确保 manager 已初始化（懒加载）
+    @MainActor
+    private static func ensureManagerInitialized() -> GoalStateManager {
+        if let manager {
+            return manager
+        }
+        let directory = LumiCore.current?.pluginDataDirectory(for: dataDirectoryName)
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
+        let manager = GoalStateManager(databaseRootURL: directory)
+        Self.manager = manager
+        Self.logger.info("\(Self.t)agentTools: 懒加载初始化 manager")
+        return manager
+    }
+    
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        guard let manager else {
-            Self.logger.warning("agentTools: manager 未初始化，返回空工具列表")
-            return []
-        }
+        let manager = ensureManagerInitialized()
         return [
             CreateGoalTool(manager: manager),
             UpdateTaskStatusTool(manager: manager),
@@ -70,9 +83,7 @@ public enum GoalTaskPlugin: LumiPlugin {
     
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        guard let manager else {
-            return []
-        }
+        let manager = ensureManagerInitialized()
         return [
             GoalContextMiddleware(manager: manager, promptService: promptService)
         ]

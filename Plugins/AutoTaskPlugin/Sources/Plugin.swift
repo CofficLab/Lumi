@@ -2,10 +2,13 @@ import LumiChatKit
 import LumiCoreKit
 import LumiUI
 import os
+import SuperLogKit
 import SwiftUI
 
 /// AutoTask 插件：任务拆解、进度跟踪与 Agent 自动推进。
-public enum AutoTaskPlugin: LumiPlugin {
+public enum AutoTaskPlugin: LumiPlugin, SuperLog {
+
+    nonisolated public static let emoji = "📋"
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.auto-task",
@@ -61,7 +64,7 @@ public enum AutoTaskPlugin: LumiPlugin {
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         guard let manager else {
-            Self.logger.warning("sendMiddlewares: manager 未初始化，返回空中间件列表")
+            Self.logger.warning("\(Self.t)manager 未初始化，返回空中间件列表")
             return []
         }
         return [TaskContextChatMiddleware(manager: manager)]
@@ -80,7 +83,7 @@ public enum AutoTaskPlugin: LumiPlugin {
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         guard let manager else {
-            Self.logger.warning("agentTools: manager 未初始化，返回空工具列表")
+            Self.logger.warning("\(Self.t)manager 未初始化，返回空工具列表")
             return []
         }
         return [
