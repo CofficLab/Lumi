@@ -78,6 +78,17 @@ public enum GoalTaskPlugin: LumiPlugin {
         ]
     }
     
+    // MARK: - Turn Finished Hook
+    
+    @MainActor
+    public static func onTurnFinished(
+        context: LumiPluginContext,
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) async {
+        await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
+    }
+    
     // MARK: - Chat Section (Sidebar)
     
     @MainActor
