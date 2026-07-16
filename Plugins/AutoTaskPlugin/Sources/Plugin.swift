@@ -9,12 +9,12 @@ public enum AutoTaskPlugin: LumiPlugin {
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.auto-task",
-        displayName: LumiPluginLocalization.string("Auto Task", bundle: .module),
-        description: LumiPluginLocalization.string("Break down complex goals into trackable tasks and drive Agent auto-progress.", bundle: .module),
+        displayName: LumiPluginLocalization.string("Auto Task (Deprecated)", bundle: .module),
+        description: LumiPluginLocalization.string("Deprecated: Use GoalTaskPlugin instead. Break down complex goals into trackable tasks and drive Agent auto-progress.", bundle: .module),
         order: 90,
         category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
+        policy: .disabled,
+        stage: .deprecated,
         iconName: "checklist",
     )
 
