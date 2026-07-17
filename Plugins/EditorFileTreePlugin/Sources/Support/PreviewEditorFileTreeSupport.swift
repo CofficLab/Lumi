@@ -4,7 +4,7 @@ import LumiCoreKit
 final class PreviewLumiCoreStub: LumiCoreAccessing {
     var dataRootDirectory: URL? { URL(fileURLWithPath: "/tmp/preview") }
     var logoRegistry: LogoRegistry { .shared }
-    var projectState: LumiProjectState? { nil }
+    var projectState: ProjectState? { nil }
     var layoutState: LumiLayoutState? { nil }
     var chatService: (any LumiChatServicing)? { nil }
     var editorService: (any AbstractEditorServicing)? { nil }

@@ -18,6 +18,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     /// 由 `RootContainer` 在拿到 `LumiCore` 实例后注入;
     /// 注入前 `configureLifecycle` 走 `recentProjects()` 兜底。
     private var lumiCore: LumiCoreAccessing?
+    private var pluginsChangedObserver: NSObjectProtocol?
 
     var editorService: EditorService { core.editorService }
     var extensionRegistry: EditorExtensionRegistry { core.extensionRegistry }
@@ -51,7 +52,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     init(
         pluginService: PluginService,
         themeRegistry: LumiUIThemeRegistry = .shared,
-        recentProjects: @escaping @Sendable () -> [LumiProjectEntry] = { [] }
+        recentProjects: @escaping @Sendable () -> [ProjectEntry] = { [] }
     ) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 EditorCoreService")
@@ -91,8 +92,20 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             self?.syncAppSyntaxThemes()
         }
 
+        // 订阅插件启用状态变化：插件 enable/disable 后编辑器扩展集合会变，
+        // 需要 reinstallExtensions 重建。原先由 RootContainer fan-out 调用，现在本类自治。
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            self?.reinstallExtensions()
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
+        }
+    }
+
+    deinit {
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
         }
     }
 
@@ -170,10 +183,10 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     }
 
     private func configureLifecycle(
-        recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
+        recentProjects: @escaping @Sendable () -> [ProjectEntry]
     ) {
         // 通过 LumiCore 获取项目列表
-        let provider: () -> [LumiProjectEntry] = { [weak self] in
+        let provider: () -> [ProjectEntry] = { [weak self] in
             self?.lumiCore?.projectState?.projects ?? recentProjects()
         }
 

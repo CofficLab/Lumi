@@ -24,7 +24,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
     }
 
     /// 项目状态
-    private var projectState: LumiProjectState? {
+    private var projectState: ProjectState? {
         lumiCore.projectState
     }
 

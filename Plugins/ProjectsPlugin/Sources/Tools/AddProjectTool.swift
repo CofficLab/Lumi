@@ -53,7 +53,7 @@ struct AddProjectTool: LumiAgentTool {
         }
     }
 
-    private static func successMessage(project: LumiProjectEntry, projects: [LumiProjectEntry]) -> String {
+    private static func successMessage(project: ProjectEntry, projects: [ProjectEntry]) -> String {
         var output = """
         Successfully added project.
 

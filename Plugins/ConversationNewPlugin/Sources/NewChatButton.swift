@@ -5,14 +5,14 @@ import SwiftUI
 /// 新会话按钮视图组件
 public struct NewChatButton: View {
     let chatService: any LumiChatServicing
-    let projectState: LumiProjectState?
+    let projectState: ProjectState?
     let lumiCore: (any LumiCoreAccessing)?
 
     @State private var localStore: LocalStore?
 
     public init(
         chatService: any LumiChatServicing,
-        projectState: LumiProjectState? = nil,
+        projectState: ProjectState? = nil,
         lumiCore: (any LumiCoreAccessing)? = nil
     ) {
         self.chatService = chatService

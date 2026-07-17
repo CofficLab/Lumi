@@ -12,22 +12,47 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
 
     let themeRegistry: LumiUIThemeRegistry
     private let selectionStore: ThemeSelectionStore
+    private let pluginService: PluginService
+    private var pluginsChangedObserver: NSObjectProtocol?
     var onThemesDidChange: (() -> Void)?
 
     init(
         pluginService: PluginService,
         lumiCore: LumiCoreAccessing,
+        editorCoreService: EditorCoreService? = nil,
         themeRegistry: LumiUIThemeRegistry = .shared,
         selectionStoreDirectory: URL? = nil
     ) {
         self.themeRegistry = themeRegistry
+        self.pluginService = pluginService
         self.selectionStore = ThemeSelectionStore(
             pluginDirectory: selectionStoreDirectory ?? lumiCore.pluginDataDirectory(for: "LumiUI")
         )
         reloadThemes(from: pluginService)
-        
+
+        // 主题变更 → 编辑器语法主题同步。原先由 RootContainer 在 boot 后手动接线,
+        // 现在收回到 init——editorCoreService 由 RootContainer 显式传入(它是 boot 后
+        // 才存在的具体类型),闭包内以弱引用持有避免循环。
+        if let editorCoreService {
+            connectEditorThemeSync(editorCoreService)
+        }
+
+        // 订阅插件启用状态变化,自动重载主题。原先由 RootContainer fan-out 调用,
+        // 现在本类自治——和仓库其他 State(LumiProviderState 等)的 NotificationCenter
+        // 惯例一致。
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            guard let self else { return }
+            self.reloadThemes(from: self.pluginService)
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiUIService 初始化完成")
+        }
+    }
+
+    deinit {
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
         }
     }
 
@@ -71,10 +96,9 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
 
     /// 把"主题变更"信号接到编辑器语法主题同步。
     ///
-    /// 原先由 RootContainer 直接赋值 `onThemesDidChange`，现在收回到一个命名清晰的
-    /// 接线方法：LumiUIService 负责告诉"谁关心主题变化"。`EditorCoreService` 不被
+    /// 由 init 在收到 `editorCoreService` 参数时调用。`EditorCoreService` 不被
     /// LumiUIService 强持有（仅以弱引用进入闭包），避免循环。
-    func connectEditorThemeSync(_ editorCoreService: EditorCoreService) {
+    private func connectEditorThemeSync(_ editorCoreService: EditorCoreService) {
         onThemesDidChange = { [weak editorCoreService] in
             editorCoreService?.syncAppSyntaxThemes()
         }

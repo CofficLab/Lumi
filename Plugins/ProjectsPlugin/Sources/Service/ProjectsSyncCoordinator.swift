@@ -95,7 +95,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
     /// - `LumiProjectEntry` 的 `lastUsed` 字段在 ViewModel 重建 entry 时会被刷新，
     ///   导致逐字段 `==` 几乎永远不成立。
     /// - 业务上两个项目集合是否"等价"取决于路径身份，而非时间戳。
-    private func syncProjectsToLumiCore(_ projects: [LumiProjectEntry]) {
+    private func syncProjectsToLumiCore(_ projects: [ProjectEntry]) {
         guard let projectState = lumiCore?.projectState else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)syncProjectsToLumiCore 跳过: lumiCore 未设置")
@@ -135,7 +135,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
     }
 
     /// 把当前项目同步给 LumiCore。
-    private func syncCurrentProjectToLumiCore(_ project: LumiProjectEntry?) {
+    private func syncCurrentProjectToLumiCore(_ project: ProjectEntry?) {
         guard let projectState = lumiCore?.projectState else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)syncCurrentProjectToLumiCore 跳过: lumiCore 未设置")
@@ -180,7 +180,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
     private func observeProjectNotifications() {
         NotificationCenter.default.publisher(for: .currentProjectDidChange)
             .sink { notification in
-                let project = notification.userInfo?["project"] as? LumiProjectEntry
+                let project = notification.userInfo?["project"] as? ProjectEntry
                 // TODO: 反向同步启用时，需要先解开下一行注释并捕获 self（参考 syncProjectsToLumiCore）。
                 // guard !isSyncingFromCoordinator else { return }
 

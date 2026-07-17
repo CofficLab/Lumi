@@ -6,14 +6,14 @@ import os
 /// LumiCore 项目状态管理器
 /// 负责管理当前项目和项目列表的状态（内存存储）
 @MainActor
-public final class LumiProjectState: ObservableObject, SuperLog {
+public final class ProjectState: ObservableObject, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.project-state")
     public nonisolated static let emoji = "📂"
     public static var verbose = false
 
     // MARK: - 当前项目
 
-    @Published public var currentProject: LumiProjectEntry? {
+    @Published public var currentProject: ProjectEntry? {
         didSet {
             if currentProject != oldValue {
                 if Self.verbose {
@@ -31,7 +31,7 @@ public final class LumiProjectState: ObservableObject, SuperLog {
 
     // MARK: - 项目列表
 
-    @Published public var projects: [LumiProjectEntry] = [] {
+    @Published public var projects: [ProjectEntry] = [] {
         didSet {
             if projects != oldValue {
                 NotificationCenter.postProjectListDidChange()
@@ -65,7 +65,7 @@ public final class LumiProjectState: ObservableObject, SuperLog {
         }
 
         // 不存在，创建新条目
-        let entry = LumiProjectEntry(
+        let entry = ProjectEntry(
             name: Self.directoryName(for: normalized),
             path: normalized
         )
@@ -73,7 +73,7 @@ public final class LumiProjectState: ObservableObject, SuperLog {
     }
 
     /// 切换到指定项目
-    public func switchToProject(_ entry: LumiProjectEntry) {
+    public func switchToProject(_ entry: ProjectEntry) {
         if Self.verbose {
             Self.logger.info("\(Self.t)switchToProject: \(entry.name) @ \(entry.path)")
         }
@@ -96,7 +96,7 @@ public final class LumiProjectState: ObservableObject, SuperLog {
     }
 
     /// 添加项目到列表
-    public func addProject(_ entry: LumiProjectEntry) {
+    public func addProject(_ entry: ProjectEntry) {
         // 已存在则更新，否则添加
         if let index = projects.firstIndex(where: { $0.path == entry.path }) {
             var updatedProjects = projects
@@ -110,7 +110,7 @@ public final class LumiProjectState: ObservableObject, SuperLog {
     }
 
     /// 从列表移除项目
-    public func removeProject(_ entry: LumiProjectEntry) {
+    public func removeProject(_ entry: ProjectEntry) {
         var updatedProjects = projects
         updatedProjects.removeAll { $0.path == entry.path }
         projects = updatedProjects

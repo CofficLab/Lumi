@@ -38,7 +38,7 @@ extension NotificationCenter {
     }
     
     /// 发送当前项目已变更的通知
-    public static func postCurrentProjectDidChange(project: LumiProjectEntry) {
+    public static func postCurrentProjectDidChange(project: ProjectEntry) {
         NotificationCenter.default.post(
             name: .currentProjectDidChange,
             object: nil,
@@ -62,9 +62,9 @@ public extension View {
     /// 监听当前项目变更通知。
     ///
     /// 目前底层事件只携带新项目；若需要前后对比，建议上游在发送通知前缓存 `LumiProjectState.currentProject`。
-    func onCurrentProjectDidChange(perform action: @escaping (LumiProjectEntry) -> Void) -> some View {
+    func onCurrentProjectDidChange(perform action: @escaping (ProjectEntry) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .currentProjectDidChange)) { notification in
-            guard let project = notification.userInfo?["project"] as? LumiProjectEntry else { return }
+            guard let project = notification.userInfo?["project"] as? ProjectEntry else { return }
             action(project)
         }
     }

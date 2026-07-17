@@ -42,7 +42,7 @@ public final class ProjectsStore: SuperLog {
     // MARK: - Load
 
     /// 加载所有项目
-    public func loadProjects() -> [LumiProjectEntry] {
+    public func loadProjects() -> [ProjectEntry] {
         Self.loadProjects(from: settingsDirectory)
     }
 
@@ -52,7 +52,7 @@ public final class ProjectsStore: SuperLog {
     }
 
     /// 加载当前项目（从项目列表中查找）
-    public func loadCurrentProject(from projects: [LumiProjectEntry]) -> LumiProjectEntry? {
+    public func loadCurrentProject(from projects: [ProjectEntry]) -> ProjectEntry? {
         let currentPath = loadCurrentProjectPath()
         return projects.first { $0.path == currentPath } ?? projects.first
     }
@@ -60,7 +60,7 @@ public final class ProjectsStore: SuperLog {
     // MARK: - Save
 
     /// 保存所有项目和当前项目
-    public func save(projects: [LumiProjectEntry], currentProject: LumiProjectEntry?) {
+    public func save(projects: [ProjectEntry], currentProject: ProjectEntry?) {
         try? FileManager.default.createDirectory(
             at: settingsDirectory,
             withIntermediateDirectories: true,
@@ -71,7 +71,7 @@ public final class ProjectsStore: SuperLog {
     }
 
     /// 添加项目到列表，返回更新后的列表
-    public func addProject(_ project: LumiProjectEntry, to projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
+    public func addProject(_ project: ProjectEntry, to projects: [ProjectEntry]) -> [ProjectEntry] {
         var updated = projects
         updated.removeAll { $0.path == project.path }
         updated.insert(project, at: 0)
@@ -79,15 +79,15 @@ public final class ProjectsStore: SuperLog {
     }
 
     /// 从项目列表中移除项目，返回更新后的列表
-    public func removeProject(_ project: LumiProjectEntry, from projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
+    public func removeProject(_ project: ProjectEntry, from projects: [ProjectEntry]) -> [ProjectEntry] {
         var updated = projects
         updated.removeAll { $0.path == project.path }
         return updated
     }
 
     /// 选中项目：将项目移到列表顶部，返回更新后的列表
-    public func selectProject(_ project: LumiProjectEntry, in projects: [LumiProjectEntry]) -> [LumiProjectEntry] {
-        let updatedProject = LumiProjectEntry(name: project.name, path: project.path)
+    public func selectProject(_ project: ProjectEntry, in projects: [ProjectEntry]) -> [ProjectEntry] {
+        let updatedProject = ProjectEntry(name: project.name, path: project.path)
         var updated = projects
         updated.removeAll { $0.path == updatedProject.path }
         updated.insert(updatedProject, at: 0)
@@ -96,7 +96,7 @@ public final class ProjectsStore: SuperLog {
 
     /// 通过路径添加项目
     @discardableResult
-    public func add(path: String, to projects: [LumiProjectEntry]) throws -> LumiProjectEntry {
+    public func add(path: String, to projects: [ProjectEntry]) throws -> ProjectEntry {
         let expandedPath = (path as NSString).expandingTildeInPath
         let url = URL(fileURLWithPath: expandedPath)
             .resolvingSymlinksInPath()
@@ -111,7 +111,7 @@ public final class ProjectsStore: SuperLog {
             throw ProjectsStoreError.pathIsNotDirectory(url.path)
         }
 
-        return LumiProjectEntry(name: url.lastPathComponent, path: url.path)
+        return ProjectEntry(name: url.lastPathComponent, path: url.path)
     }
 
     /// 标准化路径
@@ -141,11 +141,11 @@ public final class ProjectsStore: SuperLog {
 
     // MARK: - Static I/O
 
-    private static func loadProjects(from settingsDirectory: URL) -> [LumiProjectEntry] {
+    private static func loadProjects(from settingsDirectory: URL) -> [ProjectEntry] {
         let fileURL = settingsDirectory.appendingPathComponent(projectsFileName, isDirectory: false)
 
         guard let data = try? Data(contentsOf: fileURL),
-              let projects = try? JSONDecoder().decode([LumiProjectEntry].self, from: data)
+              let projects = try? JSONDecoder().decode([ProjectEntry].self, from: data)
         else {
             return []
         }

@@ -21,7 +21,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
         lumiCore.projectState?.currentProject?.path ?? ""
     }
 
-    private var projects: [LumiProjectEntry] {
+    private var projects: [ProjectEntry] {
         lumiCore.projectState?.projects ?? []
     }
 
@@ -83,7 +83,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
             self.preloadStatus = .loading(count: projectsToPreload.count)
         }
 
-        await withTaskGroup(of: (project: LumiProjectEntry, success: Bool).self) { group in
+        await withTaskGroup(of: (project: ProjectEntry, success: Bool).self) { group in
             var activeTasks = 0
             let maxConcurrentTasks = 1
 

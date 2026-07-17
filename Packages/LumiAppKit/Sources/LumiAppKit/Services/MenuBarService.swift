@@ -24,6 +24,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     private var buttonWindowObservation: NSKeyValueObservation?
     private nonisolated(unsafe) var systemThemeObserver: NSObjectProtocol?
     private nonisolated(unsafe) var themeSyncObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var pluginsChangedObserver: NSObjectProtocol?
 
     /// 订阅 `LogoRegistry.$bestItem`：插件贡献的 Logo 就绪后，
     /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
@@ -40,6 +41,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         observeSystemAppearanceChanges()
         observeThemeWindowSync()
         observeLogoRegistry()
+        observePluginStateChanges()
         scheduleMenuBarSetup()
 
         if Self.verbose {
@@ -53,6 +55,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         }
         if let themeSyncObserver {
             NotificationCenter.default.removeObserver(themeSyncObserver)
+        }
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
         }
         logoRegistryCancellable?.cancel()
     }
@@ -287,6 +292,15 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
                 }
                 self?.replaceMenuBarContent()
             }
+    }
+
+    /// 订阅插件启用状态变化：插件 enable/disable 后菜单栏条目（statusBarItems /
+    /// menuBarContentItems 等）会随之变化，需要 `refresh()` 重建。
+    /// 原先由 RootContainer fan-out 调用，现在本类自治。
+    private func observePluginStateChanges() {
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            self?.refresh()
+        }
     }
 
     private func startContentTimer() {

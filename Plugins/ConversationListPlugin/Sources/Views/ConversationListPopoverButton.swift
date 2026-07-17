@@ -13,8 +13,8 @@ public struct ConversationListPopoverButton: View {
 
     public init(
         chatService: ChatService,
-        projectPathStore: LumiProjectState? = nil,
-        projectStore: LumiProjectState? = nil
+        projectPathStore: ProjectState? = nil,
+        projectStore: ProjectState? = nil
     ) {
         _context = StateObject(
             wrappedValue: ConversationListContext(

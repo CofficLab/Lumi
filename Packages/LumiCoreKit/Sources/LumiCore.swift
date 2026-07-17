@@ -2,29 +2,6 @@ import Combine
 import Foundation
 import SwiftUI
 
-/// LumiCore 默认实现：`final class`，可实例化、可注入、可 mock。
-///
-/// - 所有公开 API 通过 `LumiCoreAccessing`（视图/插件常用）和 `LumiCoreBootstrapping`
-///   （启动期一次性 API）两个协议暴露。
-/// - 实例化后通过 SwiftUI `Environment(\.lumiCore)` 注入视图树，或直接持有引用。
-/// - 单测时可创建独立实例（多实例隔离），或 mock 实现 `LumiCoreAccessing` 协议。
-///
-/// ## 使用模式
-///
-/// **App 启动期**：
-/// ```swift
-/// let core = LumiCore()
-/// core.setupChatService { ChatService(...) }
-/// try core.boot(dataRootDirectory: ..., provider: pluginService, editorFactory: ...)
-/// // 通过 .environment(\.lumiCore, core) 注入视图树
-/// ```
-///
-/// **单元测试**（多实例隔离）：
-/// ```swift
-/// let core1 = LumiCore()
-/// let core2 = LumiCore()
-/// // 两个实例互不影响，services / projectState / layoutState 完全隔离
-/// ```
 @MainActor
 public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     // MARK: - Active Instance
@@ -38,6 +15,8 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`current` 是
     /// 给静态单例的兜底。
     public nonisolated(unsafe) static var current: (any LumiCoreAccessing)?
+    
+    // MARK: - Components
 
     // MARK: - State
 
@@ -45,7 +24,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     public var logoRegistry: LogoRegistry { .shared }
 
-    @Published public private(set) var projectState: LumiProjectState? {
+    @Published public private(set) var projectState: ProjectState? {
         didSet { subscribeToChild(projectState, into: &projectStateSubscription) }
     }
 
@@ -102,14 +81,15 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     // MARK: - Test-only injection
 
     #if DEBUG
-    /// 仅 DEBUG 编译下可见的内部状态注入器，用于单元测试验证 `objectWillChange` 转发链。
-    /// 运行时不会暴露（release build 中直接消失），无 ABI 影响。
-    internal func _testInject(layoutState: LumiLayoutState?) {
-        self.layoutState = layoutState
-    }
-    internal func _testInject(projectState: LumiProjectState?) {
-        self.projectState = projectState
-    }
+        /// 仅 DEBUG 编译下可见的内部状态注入器，用于单元测试验证 `objectWillChange` 转发链。
+        /// 运行时不会暴露（release build 中直接消失），无 ABI 影响。
+        internal func _testInject(layoutState: LumiLayoutState?) {
+            self.layoutState = layoutState
+        }
+
+        internal func _testInject(projectState: ProjectState?) {
+            self.projectState = projectState
+        }
     #endif
 
     // MARK: - Configuration
@@ -222,7 +202,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         builtInTools: [any LumiAgentTool] = [],
         editorFactory: EditorBootstrapFactory<Service>?
     ) throws {
-        projectState = LumiProjectState()
+        projectState = ProjectState()
         layoutState = LumiLayoutState()
 
         // 物化 data root，并在其下创建 Core 子目录作为核心数据库的物理位置。

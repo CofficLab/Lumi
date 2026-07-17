@@ -31,7 +31,7 @@ public struct WindowMain: View, SuperLog {
                         pluginService: container.pluginService,
                         editorCoreService: container.editorCoreService,
                         lumiUIService: container.lumiUIService,
-                        chatService: RootContainer.checkedChatService(container.lumiCore),
+                        chatService: container.lumiCoreService.chatService,
                         chatSectionCoordinator: container.chatSectionCoordinator
                     )
                 }

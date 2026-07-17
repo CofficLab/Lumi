@@ -28,7 +28,7 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     var logoRegistry: LogoRegistry { get }
 
     /// 项目状态管理器（`boot` 后非空）。
-    var projectState: LumiProjectState? { get }
+    var projectState: ProjectState? { get }
 
     /// 布局状态管理器（`boot` 后非空）。
     var layoutState: LumiLayoutState? { get }

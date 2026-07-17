@@ -66,6 +66,7 @@ extension LumiPluginRegistry {
         _pluginEnabledStates[pluginId] = enabled
         _settingsStore.saveEnabledOverrides(_enabledOverrides)
         onEnabledPluginsChanged?()
+        NotificationCenter.postLumiEnabledPluginsDidChange()
 
         // 如果状态实际发生变化，触发生命周期回调
         if previousState != enabled {
@@ -270,5 +271,44 @@ extension LumiPluginRegistry {
             }
         }
         return false
+    }
+}
+
+// MARK: - NotificationCenter 扩展
+
+/// 插件启用状态变化的广播机制。
+///
+/// 与 `LumiProviderState` 等内核状态对象一致，采用 `NotificationCenter` 作为
+/// 多订阅者广播：任何关心的服务（主题 / 菜单栏 / 编辑器扩展 / 工具贡献等）
+/// 都可以在自己的 init 里订阅 `Notification.Name.lumiEnabledPluginsDidChange`，
+/// 无需中心化的 fan-out 协调器。
+///
+/// 旧的 `onEnabledPluginsChanged` 单一闭包槽予以保留（向后兼容），新的
+/// Notification 与它在 `setPlugin` 中**同步双发**。
+public extension Notification.Name {
+    /// 插件启用集合发生变化时广播。订阅者用 `.onReceive` 或
+    /// `NotificationCenter.default.addObserver(forName: .lumiEnabledPluginsDidChange, ...)`。
+    static let lumiEnabledPluginsDidChange = Notification.Name("LumiPluginRegistry.EnabledPluginsDidChange")
+}
+
+public extension NotificationCenter {
+    /// 插件启用集合发生变化时 post（在 `setPlugin` 中与旧闭包槽同步双发）。
+    static func postLumiEnabledPluginsDidChange() {
+        NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: nil)
+    }
+
+    /// 订阅插件启用集合变化。返回 observer token，可传给 `removeObserver`。
+    ///
+    /// block 声明为 `@MainActor`：因为 observer 注册时传了 `queue: .main`，回调必然在
+    /// 主线程发生，订阅方可以直接调用 `@MainActor` 方法而无需额外 `Task { @MainActor in }` 包裹。
+    @discardableResult
+    func onLumiEnabledPluginsDidChange(using block: @escaping @MainActor @Sendable () -> Void) -> NSObjectProtocol {
+        NotificationCenter.default.addObserver(
+            forName: .lumiEnabledPluginsDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { block() }
+        }
     }
 }

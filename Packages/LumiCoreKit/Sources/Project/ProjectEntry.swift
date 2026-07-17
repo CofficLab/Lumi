@@ -1,7 +1,7 @@
 import Foundation
 
 /// 内核级项目条目模型，所有插件共享。
-public struct LumiProjectEntry: Codable, Equatable, Identifiable, Sendable {
+public struct ProjectEntry: Codable, Equatable, Identifiable, Sendable {
     public var id: String { path }
 
     public let name: String
