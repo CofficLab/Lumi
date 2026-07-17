@@ -1,4 +1,5 @@
-import LumiLLMProviderSupportimport LumiCoreKit
+import LumiLLMProviderSupport
+import LumiCoreKit
 import os
 
 public enum MegaLLMPlugin: LumiPlugin {
@@ -18,7 +19,7 @@ public enum MegaLLMPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMegaLLMPlugin", directory: core.pluginDataDirectory(for: "LLMProviderMegaLLMPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMegaLLMPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderMegaLLMPlugin"))
         }
         return [MegaLLMProvider()]
     }

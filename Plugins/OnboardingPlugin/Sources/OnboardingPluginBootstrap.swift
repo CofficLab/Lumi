@@ -19,7 +19,7 @@ public extension OnboardingPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            OnboardingPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            OnboardingPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

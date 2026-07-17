@@ -28,8 +28,8 @@ public extension AppStoreConnectPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            AppStoreConnectPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
-            AppStoreConnectPluginRuntimeBridge.pluginSubdirectory = core.pluginDataDirectory(for: AppStoreConnectPluginRuntimeBridge.pluginName)
+            AppStoreConnectPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
+            AppStoreConnectPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: AppStoreConnectPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

@@ -59,7 +59,7 @@ public struct NewChatButton: View {
         if let localStore {
             return localStore
         }
-        let store = LocalStore(databaseDirectory: lumiCore?.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory()))
+        let store = LocalStore(databaseDirectory: lumiCore?.storage.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory()))
         localStore = store
         return store
     }

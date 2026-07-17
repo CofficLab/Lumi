@@ -1,4 +1,5 @@
-import LumiLLMProviderSupportimport LumiCoreKit
+import LumiLLMProviderSupport
+import LumiCoreKit
 
 public enum AnthropicPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -15,7 +16,7 @@ public enum AnthropicPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAnthropicPlugin", directory: core.pluginDataDirectory(for: "LLMProviderAnthropicPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAnthropicPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderAnthropicPlugin"))
         }
         return [AnthropicProvider()]
     }

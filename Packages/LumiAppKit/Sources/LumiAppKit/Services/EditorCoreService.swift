@@ -39,7 +39,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     func configure(lumiCore: LumiCoreAccessing) {
         self.lumiCore = lumiCore
         EditorSettingsLifecycle.hostPersistenceRootURL = { [weak lumiCore] in
-            lumiCore?.dataRootDirectory ?? Self.fallbackPersistenceRootURL
+            lumiCore?.storage.dataRootDirectory ?? Self.fallbackPersistenceRootURL
         }
     }
 

@@ -35,7 +35,7 @@ extension LumiCore {
     ///
     /// 通常在 App 层插件加载完成后调用，重复调用是安全的。
     ///
-    /// 注意：工具名称唯一性校验已在 `boot()` 阶段完成，此处不再重复校验。
+    /// 注意：工具名称唯一性校验已在 `init` 阶段完成，此处不再重复校验。
     ///
     /// - Parameters:
     ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）

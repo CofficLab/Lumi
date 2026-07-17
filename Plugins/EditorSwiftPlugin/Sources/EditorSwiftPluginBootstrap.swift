@@ -23,8 +23,8 @@ public extension EditorSwiftPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            EditorSwiftPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
-            EditorSwiftPluginRuntimeBridge.pluginSubdirectory = core.pluginDataDirectory(for: EditorSwiftPluginRuntimeBridge.pluginName)
+            EditorSwiftPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
+            EditorSwiftPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: EditorSwiftPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

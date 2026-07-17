@@ -26,7 +26,7 @@ final class LumiUIService: ObservableObject, LumiThemeServicing, SuperLog {
         self.themeRegistry = themeRegistry
         self.pluginService = pluginService
         self.selectionStore = ThemeSelectionStore(
-            pluginDirectory: selectionStoreDirectory ?? lumiCore.pluginDataDirectory(for: "LumiUI")
+            pluginDirectory: selectionStoreDirectory ?? lumiCore.storage.pluginDataDirectory(for: "LumiUI")
         )
         reloadThemes(from: pluginService)
 

@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 import os
 
@@ -18,7 +19,7 @@ public enum XybbzPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXybbzPlugin", directory: core.pluginDataDirectory(for: "LLMProviderXybbzPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXybbzPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderXybbzPlugin"))
         }
         return [XybbzProvider()]
     }

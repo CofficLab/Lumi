@@ -19,7 +19,7 @@ public extension MenuBarManagerPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            MenuBarManagerPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            MenuBarManagerPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

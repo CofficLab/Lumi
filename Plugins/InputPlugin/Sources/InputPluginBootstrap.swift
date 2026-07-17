@@ -19,7 +19,7 @@ public extension InputPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            InputPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            InputPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

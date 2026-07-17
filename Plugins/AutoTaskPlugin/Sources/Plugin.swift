@@ -43,7 +43,7 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
         switch event {
         case .didRegister:
             // 优先使用 LumiCore 提供的目录；缺失时降级到 tmp。
-            let directory = LumiCore.current?.pluginDataDirectory(for: dataDirectoryName)
+            let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
                 ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
             Self.manager = TaskStateManager(databaseRootURL: directory)
 
@@ -117,7 +117,7 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
         guard !didBootstrapFromLumiCore else { return }
 
         configuration = LumiCoreConfiguration(
-            rootURL: context.lumiCore?.pluginDataDirectory(for: dataDirectoryName) ?? URL(fileURLWithPath: NSTemporaryDirectory())
+            rootURL: context.lumiCore?.storage.pluginDataDirectory(for: dataDirectoryName) ?? URL(fileURLWithPath: NSTemporaryDirectory())
         )
         didBootstrapFromLumiCore = true
     }

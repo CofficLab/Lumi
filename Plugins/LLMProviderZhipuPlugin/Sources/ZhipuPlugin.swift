@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum ZhipuPlugin: LumiPlugin {
@@ -15,7 +16,7 @@ public enum ZhipuPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderZhipuPlugin", directory: core.pluginDataDirectory(for: "LLMProviderZhipuPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderZhipuPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderZhipuPlugin"))
         }
         return [
             ZhipuProvider(),

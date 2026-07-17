@@ -20,11 +20,11 @@ public extension AppManagerPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            AppManagerPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            AppManagerPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
             // 覆盖 provider,让后续访问的 CacheManager 拿到真实路径。
             // 注意:若 CacheManager.shared 已在 bootstrap 前初始化,会留在 fallback 目录
             // (与旧镜像在该时序下行为一致)。
-            AppManagerPlugin.databaseRootURLProvider = { core.dataRootDirectory }
+            AppManagerPlugin.databaseRootURLProvider = { core.storage.dataRootDirectory }
         }
         didBootstrapFromLumiCore = true
     }

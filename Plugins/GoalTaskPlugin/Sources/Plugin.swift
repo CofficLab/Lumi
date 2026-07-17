@@ -71,7 +71,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     @MainActor
     private static func resolveDataDirectory(preferContext context: LumiPluginContext? = nil) -> URL {
         if let core = context?.lumiCore ?? LumiCore.current {
-            return core.pluginDataDirectory(for: dataDirectoryName)
+            return core.storage.pluginDataDirectory(for: dataDirectoryName)
         }
         return FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
     }

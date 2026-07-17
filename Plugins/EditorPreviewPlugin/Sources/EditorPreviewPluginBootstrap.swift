@@ -26,7 +26,7 @@ public extension EditorPreviewBottomPanelPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            EditorPreviewPluginRuntimeBridge.pluginDirectory = core.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
+            EditorPreviewPluginRuntimeBridge.pluginDirectory = core.storage.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

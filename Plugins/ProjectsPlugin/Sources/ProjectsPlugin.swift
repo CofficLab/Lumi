@@ -29,7 +29,7 @@ public enum ProjectsPlugin: LumiPlugin {
     public static func lifecycle(_ event: LumiPluginLifecycle) {
         switch event {
         case .didRegister:
-            let directory = LumiCore.current?.pluginDataDirectory(for: dataDirectoryName)
+            let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
                 ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
             
             // 初始化 Store

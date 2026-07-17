@@ -2,16 +2,13 @@ import Foundation
 import LumiCoreKit
 
 final class PreviewLumiCoreStub: LumiCoreAccessing {
-    var dataRootDirectory: URL { URL(fileURLWithPath: "/tmp/preview") }
+    let storage = StorageComponent(dataRootDirectory: URL(fileURLWithPath: "/tmp/preview"))
     var logoRegistry: LogoRegistry { .shared }
     let projectComponent = ProjectComponent()
     let layoutComponent = LayoutComponent(state: LayoutState())
     let chatService: any LumiChatServicing = PreviewChatServicing()
     var editorService: (any AbstractEditorServicing)? { nil }
-    var coreDataDirectory: URL { URL(fileURLWithPath: "/tmp/preview/Core") }
-    func pluginDataDirectory(for pluginName: String) -> URL {
-        URL(fileURLWithPath: "/tmp/preview/\(pluginName)")
-    }
+
     func makePluginContext(
         activeSectionID: String,
         activeSectionTitle: String,

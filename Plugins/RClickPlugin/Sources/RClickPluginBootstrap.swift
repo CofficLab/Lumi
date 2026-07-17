@@ -19,7 +19,7 @@ public extension RClickPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            RClickPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            RClickPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

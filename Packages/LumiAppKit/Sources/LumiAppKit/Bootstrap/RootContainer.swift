@@ -85,13 +85,10 @@ final class RootContainer: ObservableObject, SuperLog {
         }
 
         // —— 5. 设置全局静态指针 ——
-        // 让无法接收 LumiPluginContext 的静态代码（plugin 的 static let shared 单例等）
-        // 能拿到存储路径。`currentLumiCoreDataRootDirectory` 是 nonisolated 镜像，
-        // 因为 plugin 单例 init 经常发生在非 MainActor 上下文，读协议 dataRootDirectory
-        // 会撞 MainActor 隔离。
+        // LumiCore.current 供 FileLogPlugin 等没有 context 的 lifecycle 入口读取路径。
+        // 各 plugin 的数据目录由它们各自的 bootstrapFromLumiCoreIfNeeded 注入
+        // (走 LumiPluginContext.lumiCore,不再依赖 nonisolated 镜像)。
         LumiCore.current = lumiCore
-        currentLumiCore = lumiCore
-        currentLumiCoreDataRootDirectory = lumiCore.dataRootDirectory
 
         // —— 6. 暴露强类型 chatService + 回填 lumiCore 引用 ——
         guard let chatService = lumiCore.chatService as? ChatService else {

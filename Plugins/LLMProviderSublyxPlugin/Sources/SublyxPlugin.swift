@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum SublyxPlugin: LumiPlugin {
@@ -15,7 +16,7 @@ public enum SublyxPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderSublyxPlugin", directory: core.pluginDataDirectory(for: "LLMProviderSublyxPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderSublyxPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderSublyxPlugin"))
         }
         return [SublyxProvider()]
     }

@@ -19,7 +19,7 @@ public extension StripHeaderPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            EditorTabStripPluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            EditorTabStripPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

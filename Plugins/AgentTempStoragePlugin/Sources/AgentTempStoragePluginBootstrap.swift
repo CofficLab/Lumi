@@ -22,7 +22,7 @@ public extension AgentTempStoragePlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            AgentTempStoragePluginRuntimeBridge.pluginDirectory = core.pluginDataDirectory(for: AgentTempStoragePluginRuntimeBridge.pluginName)
+            AgentTempStoragePluginRuntimeBridge.pluginDirectory = core.storage.pluginDataDirectory(for: AgentTempStoragePluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

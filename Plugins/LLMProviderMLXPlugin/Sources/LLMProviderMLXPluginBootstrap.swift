@@ -21,7 +21,7 @@ public extension MLXLumiPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            LLMProviderMLXPluginRuntimeBridge.pluginSubdirectory = core.pluginDataDirectory(for: LLMProviderMLXPluginRuntimeBridge.pluginName)
+            LLMProviderMLXPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: LLMProviderMLXPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

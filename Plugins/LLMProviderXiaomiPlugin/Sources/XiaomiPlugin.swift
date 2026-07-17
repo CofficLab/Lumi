@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum XiaomiPlugin: LumiPlugin {
@@ -15,7 +16,7 @@ public enum XiaomiPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXiaomiPlugin", directory: core.pluginDataDirectory(for: "LLMProviderXiaomiPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXiaomiPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderXiaomiPlugin"))
         }
         return [XiaomiProvider(), XiaomiAPIProvider()]
     }

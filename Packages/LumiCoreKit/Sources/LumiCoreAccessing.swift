@@ -9,7 +9,7 @@ import SwiftUI
 /// `@Environment(\.lumiCore)` 安全获取。它刻意不暴露任何修改内部状态的能力，
 /// 以保证视图层无法污染内核状态。
 ///
-/// 启动期的一次性配置（`boot`、`registerService`、`setupChatService` 等）请使用
+/// 运行期的注册与编排（`registerService`、`bootstrapToolContributions` 等）请使用
 /// `LumiCoreBootstrapping` 协议。
 ///
 /// - Important: 实现必须为 class（`AnyObject`），因为协议内含可变状态；
@@ -21,8 +21,8 @@ import SwiftUI
 public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     // MARK: - State
 
-    /// 数据根目录。init 时物化,始终非空。
-    var dataRootDirectory: URL { get }
+    /// 存储功能组件。归拢路径计算(coreDataDirectory / pluginDataDirectory(for:))。
+    var storage: StorageComponent { get }
 
     /// Logo 注册表（指向全局共享的 `LogoRegistry.shared`）。
     var logoRegistry: LogoRegistry { get }
@@ -41,16 +41,6 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
 
     /// 编辑器服务（`init(editorFactory:)` 传入工厂时创建；不传则为 nil）。
     var editorService: (any AbstractEditorServicing)? { get }
-
-    // MARK: - Storage
-
-    /// 核心数据目录（`dataRootDirectory/Core`）。
-    var coreDataDirectory: URL { get }
-
-    /// 插件专属数据目录（`dataRootDirectory/<PluginName>`，自动创建）。
-    /// - Parameter pluginName: 插件名称。
-    /// - Returns: 插件专属的数据目录路径。
-    func pluginDataDirectory(for pluginName: String) -> URL
 
     // MARK: - Plugin Context Factory
 

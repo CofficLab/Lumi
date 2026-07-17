@@ -19,7 +19,7 @@ public extension EditorFileTreePanelPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            EditorFileTreePluginRuntimeBridge.dataRootDirectory = core.dataRootDirectory
+            EditorFileTreePluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

@@ -22,7 +22,7 @@ public extension FileLogPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            FileLogPluginRuntimeBridge.pluginSubdirectory = core.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
+            FileLogPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

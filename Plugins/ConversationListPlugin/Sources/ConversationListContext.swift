@@ -53,7 +53,7 @@ public final class ConversationListContext: ObservableObject {
     }
 
     public func databaseDirectory() -> URL {
-        lumiCore?.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        lumiCore?.storage.coreDataDirectory ?? URL(fileURLWithPath: NSTemporaryDirectory())
     }
 
     public func fetchConversationsPage(limit: Int, offset: Int) -> [ConversationListItem] {

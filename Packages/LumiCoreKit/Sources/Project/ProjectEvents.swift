@@ -11,7 +11,7 @@ extension Notification.Name {
     
     /// 当前选中的项目已变更
     /// object: nil
-    /// userInfo: ["project": LumiProjectEntry]
+    /// userInfo: ["project": ProjectEntry]
     public static let currentProjectDidChange = Notification.Name("CurrentProjectDidChange")
     
     /// 当前项目路径已变更
@@ -61,7 +61,7 @@ extension NotificationCenter {
 public extension View {
     /// 监听当前项目变更通知。
     ///
-    /// 目前底层事件只携带新项目；若需要前后对比，建议上游在发送通知前缓存 `LumiProjectState.currentProject`。
+    /// 目前底层事件只携带新项目；若需要前后对比，建议上游在发送通知前缓存 `ProjectState.currentProject`。
     func onCurrentProjectDidChange(perform action: @escaping (ProjectEntry) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .currentProjectDidChange)) { notification in
             guard let project = notification.userInfo?["project"] as? ProjectEntry else { return }

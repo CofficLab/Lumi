@@ -1,4 +1,5 @@
-import LumiLLMProviderSupportimport LumiCoreKit
+import LumiLLMProviderSupport
+import LumiCoreKit
 
 public enum FlyMuxPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -15,7 +16,7 @@ public enum FlyMuxPlugin: LumiPlugin {
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderFlyMuxPlugin", directory: core.pluginDataDirectory(for: "LLMProviderFlyMuxPlugin"))
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderFlyMuxPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderFlyMuxPlugin"))
         }
         return [FlyMuxProvider()]
     }

@@ -105,7 +105,7 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     }
 
     private func readLegacyObject(forKey key: String) -> Any? {
-        let legacyDir = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let legacyDir = (InputPluginRuntimeBridge.dataRootDirectory ?? InputPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("app_settings", isDirectory: true)
         let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
         guard fileManager.fileExists(atPath: legacyFile.path),
