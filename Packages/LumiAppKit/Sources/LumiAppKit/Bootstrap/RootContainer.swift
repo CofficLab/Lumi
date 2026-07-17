@@ -171,7 +171,8 @@ final class RootContainer: ObservableObject, SuperLog {
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core"
         )
-        lumiCore.bootstrapToolContributions(
+        lumiCore.agentToolComponent.bootstrapToolContributions(
+            lumiCore: lumiCore,
             provider: provider,
             context: context,
             builtInTools: ChatService.builtInTools

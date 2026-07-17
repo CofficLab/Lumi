@@ -1,8 +1,16 @@
 import Foundation
 
-// MARK: - Tool Service
+/// LumiCore 的"工具服务"功能组件。
+///
+/// 负责 ToolService 的初始化、工具注册、启动期校验等核心功能。
+/// 与 StorageComponent 类似，本组件是纯服务型（不转发 objectWillChange），
+/// 持有 ToolService 实例并暴露 bootstrap 方法供 LumiCore init 调用。
+@MainActor
+public final class AgentToolComponent {
+    private var toolService: ToolService?
 
-extension LumiCore {
+    public init() {}
+
     // MARK: - Tool Service Bootstrap
 
     /// 初始化 `ToolService` 并注入运行环境。
@@ -12,17 +20,26 @@ extension LumiCore {
     /// 就能拦截"plugin 工具 ↔ 内置工具"、"内置工具 ↔ sub-agent delegate 工具"等
     /// 跨来源的命名冲突，而不是等到聊天发消息时再被 `assertUnique` 拦下。
     public func bootstrapToolService(
+        lumiCore: LumiCore,
         provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = []
     ) throws {
         let toolService = ToolService()
-        registerService(ToolService.self, toolService)
-        registerService((any LumiToolServicing).self, toolService)
+        self.toolService = toolService
+
+        // 注册到 LumiCore 服务表
+        lumiCore.registerService(ToolService.self, toolService)
+        lumiCore.registerService((any LumiToolServicing).self, toolService)
+
         // 注入环境，让 ToolService 能通过协议获取 verbosity / projectPath
-        toolService.environment = ToolServiceEnvironmentBridge(lumiCore: self)
+        toolService.environment = ToolServiceEnvironmentBridge(lumiCore: lumiCore)
 
         // 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
-        try validateToolNameUniqueness(provider: provider, builtInTools: builtInTools)
+        try validateToolNameUniqueness(
+            lumiCore: lumiCore,
+            provider: provider,
+            builtInTools: builtInTools
+        )
     }
 
     // MARK: - Tool Contributions
@@ -35,17 +52,14 @@ extension LumiCore {
     ///
     /// 通常在 App 层插件加载完成后调用，重复调用是安全的。
     ///
-    /// 注意：工具名称唯一性校验已在 `init` 阶段完成，此处不再重复校验。
-    ///
-    /// - Parameters:
-    ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
-    ///   - context: 当前的 `LumiPluginContext`
+    /// 注意：工具名称唯一性校验已在 `bootstrapToolService` 阶段完成，此处不再重复校验。
     public func bootstrapToolContributions(
+        lumiCore: LumiCore,
         provider: any AgentToolProviding,
         context: LumiPluginContext,
         builtInTools: [any LumiAgentTool]
     ) {
-        guard let toolService = resolveService(ToolService.self) else {
+        guard let toolService else {
             return
         }
 
@@ -69,14 +83,14 @@ extension LumiCore {
         let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
             SubAgentDelegateTool(
                 definition: definition,
-                chatService: chatService,
+                chatService: lumiCore.chatService,
                 toolService: toolService
             )
         }
         toolService.appendTools(subAgentTools)
 
         // 4. 关联到 ChatService
-        chatService.registerToolService(toolService)
+        lumiCore.chatService.registerToolService(toolService)
     }
 
     // MARK: - Tool Name Validation
@@ -86,17 +100,12 @@ extension LumiCore {
     /// 校验的是 `ToolService` 在 bootstrap 结束后**最终**累积的工具集：
     /// plugin 工具 + 内置工具 + sub-agent delegate 工具。这三者共同决定了
     /// 聊天时 `LumiLLMRequest.tools` 的内容，必须提前到 boot 阶段一并校验。
-    ///
-    /// - Parameters:
-    ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
-    ///   - builtInTools: 运行期会由 `registerBuiltInTools(_:)` 注入的内置工具
-    ///     （例如 `ChatService.builtInTools`）。不在 `provider` 提供的范围内。
-    /// - Throws: `LumiToolRegistrationError.duplicateNames` 当合并后的工具名有重复。
     public func validateToolNameUniqueness(
+        lumiCore: LumiCore,
         provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = []
     ) throws {
-        let bootContext = makePluginContext(
+        let bootContext = lumiCore.makePluginContext(
             activeSectionID: "lumi.boot",
             activeSectionTitle: "Lumi Boot"
         )
@@ -130,5 +139,12 @@ extension LumiCore {
         try LumiToolNameDeduplication.validateUnique(
             entries: pluginEntries + builtInEntries + subAgentEntries
         )
+    }
+
+    // MARK: - Accessors
+
+    /// 获取已注册的 ToolService 实例。
+    public var toolService_: ToolService? {
+        toolService
     }
 }

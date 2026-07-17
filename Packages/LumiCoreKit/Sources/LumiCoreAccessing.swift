@@ -9,7 +9,7 @@ import SwiftUI
 /// `@Environment(\.lumiCore)` 安全获取。它刻意不暴露任何修改内部状态的能力，
 /// 以保证视图层无法污染内核状态。
 ///
-/// 运行期的注册与编排（`registerService`、`bootstrapToolContributions` 等）请使用
+/// 运行期的注册与编排（`registerService` 等）请使用
 /// `LumiCoreBootstrapping` 协议。
 ///
 /// - Important: 实现必须为 class（`AnyObject`），因为协议内含可变状态；
@@ -95,39 +95,6 @@ public protocol LumiCoreBootstrapping: AnyObject {
 
     /// 从注册表解析已注册的服务实例。
     func resolveService<T>(_ type: T.Type) -> T?
-
-    // MARK: - Tool Service
-
-    /// 启动 `ToolService` 并注入运行环境。
-    ///
-    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
-    /// 内置工具（如 `ChatService.builtInTools`）。把它们传入启动期校验，让 init 阶段
-    /// 就能拦截跨来源的命名冲突。
-    func bootstrapToolService(
-        provider: any AgentToolProviding,
-        builtInTools: [any LumiAgentTool]
-    ) throws
-
-    /// 编排 Agent Tool 工具的注册与注入。
-    ///
-    /// 把 `provider` 提供的插件工具、内置工具和子 Agent 工具注册到 `ToolService`，
-    /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
-    /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
-    func bootstrapToolContributions(
-        provider: any AgentToolProviding,
-        context: LumiPluginContext,
-        builtInTools: [any LumiAgentTool]
-    )
-
-    /// 启动期工具名校验：让 init 阶段就能拦截插件侧的配置冲突。
-    ///
-    /// 校验的是 `ToolService` 最终累积的工具集（plugin + built-in + sub-agent delegate）
-    /// 而非仅 `provider.agentTools(context:)` 的子集——这避免跨来源命名冲突逃逸到
-    /// 聊天阶段才被 `assertUnique` 拦下。
-    func validateToolNameUniqueness(
-        provider: any AgentToolProviding,
-        builtInTools: [any LumiAgentTool]
-    ) throws
 }
 
 // MARK: - SwiftUI Environment
