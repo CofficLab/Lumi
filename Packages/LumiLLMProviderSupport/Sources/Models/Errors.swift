@@ -3,9 +3,6 @@ import HttpKit
 import LLMKit
 import LumiCoreKit
 
-public typealias LumiOpenAICompatibleProviderConfiguration = OpenAICompatibleProviderConfiguration
-public typealias LumiAnthropicCompatibleProviderConfiguration = AnthropicCompatibleProviderConfiguration
-
 enum LumiLLMRequestMessages {
     static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMKit.ChatMessage] {
         LumiVisionMessageSupport.preparedMessages(for: request)
