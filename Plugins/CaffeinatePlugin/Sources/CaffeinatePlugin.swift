@@ -34,8 +34,8 @@ public enum CaffeinatePlugin: LumiPlugin {
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
         [
-            // 排到菜单栏 popup 列表最末：固定为 Int.max，与插件 info.order 解耦。
-            LumiMenuBarPopupItem(id: "\(info.id).popup", order: .max) {
+            // 排到菜单栏 popup 列表最前：固定为 0，放在最上面显示
+            LumiMenuBarPopupItem(id: "\(info.id).popup", order: 0) {
                 CaffeinateMenuBarPopupView()
             }
         ]

@@ -127,6 +127,7 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
 
     func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
         LumiPluginRegistry.menuBarPopupItems(context: context)
+            .sorted { $0.order < $1.order }
     }
 
     func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
