@@ -64,7 +64,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     /// 解析插件数据目录。
     ///
     /// 优先用 `LumiCore.current`（didRegister / 运行期都已就绪）。
-    /// 注意：boot 同步期（`LumiCoreService.init` 内调用 `lumiCore.boot` → `agentTools`）时
+    /// 注意：boot 同步期（`RootContainer.init` 内调用 `lumiCore.boot` → `agentTools`）时
     /// `LumiCore.current` 尚未赋值，此时应改用调用方传入的 `context.lumiCore`，避免落到临时目录 fallback，
     /// 与后续 `.didRegister` 创建的实例产生目录分歧。
     @MainActor

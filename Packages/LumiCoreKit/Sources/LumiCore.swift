@@ -9,7 +9,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 当前活跃的 `LumiCore` 实例，供无法接收 `LumiPluginContext` 的静态代码（例如
     /// `static let shared = XxxLocalStore()` 这类单例）解析存储路径。
     ///
-    /// 由 `LumiCoreService` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
+    /// 由 `RootContainer` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
     /// `LumiCore` 实例在跑（参见 `final class` 文档中的"单实例 App，多实例单测"约定），
     /// 所以静态指针在这里是安全的——它指向"当前活跃"那个实例，而不是一个独立的全局对象。
     /// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`current` 是
@@ -33,7 +33,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     public let layoutState: LumiLayoutState
 
     /// ChatService。init 时由 chatServiceFactory 创建(非可选)。
-    /// 注意:工厂创建时 ChatService 的 lumiCore 引用先留空,由 LumiCoreService 在
+    /// 注意:工厂创建时 ChatService 的 lumiCore 引用先留空,由 RootContainer 在
     /// LumiCore 创建完成后调 `chatService.configure(lumiCore:)` 回填——这是 Swift
     /// 两阶段初始化约束下的延迟注入模式(见 ChatService.lumiCore 注释)。
     public let chatService: (any LumiChatServicing)
@@ -215,7 +215,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 /// 当前活跃的 `LumiCore` 实例，供无法接收 `LumiPluginContext` 的静态代码（例如
 /// `static let shared = XxxLocalStore()` 这类单例）解析存储路径。
 ///
-/// 由 `LumiCoreService` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
+/// 由 `RootContainer` 在 `init` 末尾、boot 完成后设置。应用同一时刻通常只有一个
 /// `LumiCore` 实例在跑（参见 `final class` 文档中的"单实例 App，多实例单测"约定），
 /// 所以这里的静态指针是安全的——它指向"当前活跃"那个实例，而不是一个独立的全局对象。
 /// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`currentLumiCore`
@@ -248,7 +248,7 @@ public nonisolated(unsafe) var lumiCoreFallbackDataRootDirectory: URL = {
 /// 非 MainActor 上下文（actor init、非 MainActor `static let`），读 `currentLumiCore`
 /// 是 nonisolated 的没问题，但顺着协议 `LumiCoreAccessing.dataRootDirectory` 走就会撞
 /// 到 `@MainActor` 隔离。所以这里把 boot 后的 data root 缓存到模块级变量，
-/// 由 `LumiCoreService` 在 `currentLumiCore` 写入后一并刷新。
+/// 由 `RootContainer` 在 `currentLumiCore` 写入后一并刷新。
 ///
 /// 仍然是单一事实源（`LumiCore.dataRootDirectory`），这里只是它的 nonisolated 镜像。
 public nonisolated(unsafe) var currentLumiCoreDataRootDirectory: URL?

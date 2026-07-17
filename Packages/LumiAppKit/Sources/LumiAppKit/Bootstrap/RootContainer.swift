@@ -6,19 +6,18 @@ import SuperLogKit
 import SwiftUI
 import os
 
-/// App 的组合根（Composition Root）。
+/// App 的组合根（Composition Root）：唯一的启动入口。
 ///
-/// 职责严格限定为：
-/// 1. 按依赖顺序 **实例化** 各服务（`new`）；
-/// 2. 把 RootContainer 自己 new 的服务 **注册** 进 LumiCore 服务表。
+/// 承担完整启动职责——创建 LumiCore、装配所有服务、注册、接线、运行期插件贡献协调。
+/// 这里没有"LumiCore 启动器"中间层：所有启动细节（dataRoot 物化、工厂、configure 回填、
+/// 贡献应用、Notification 订阅）都在本类的 init 内。
 ///
-/// 不再包含任何业务算法、启动期接线或运行期事件 fan-out——这些已全部下沉：
-/// - LumiCore 的启动 / 工厂 / `configure` / Chat 维度贡献应用 → `LumiCoreService`
-/// - 工具执行钩子 / 布局早期恢复 → `PluginService`
-/// - 主题同步接线 → `LumiUIService`
-/// - 编辑器扩展重装 / 外观同步 → `EditorCoreService`
-/// - 菜单栏刷新 → `MenuBarService`
-/// - 运行期插件 enable/disable 的广播 → 各服务通过 `NotificationCenter` 自治订阅
+/// 职责分区：
+/// - **创建**：按依赖顺序实例化 LumiCore + 6 个 App 层服务
+/// - **接线**：cast 强类型服务、configure 回填、设置全局静态指针
+/// - **注册**：把服务写进 LumiCore 服务表
+/// - **运行期协调**：插件启用状态变化时，重应用 Chat 维度贡献 + 重编排工具贡献
+///   （ChatService 在 LumiChatKit 不能 import LumiPluginRegistry，所以由本类代为订阅）
 @MainActor
 final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.root-container")
@@ -26,45 +25,159 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let verbose = false
 
     let lumiCore: LumiCore
-    let lumiCoreService: LumiCoreService
     let pluginService: PluginService
+    let chatService: ChatService
     let editorCoreService: EditorCoreService
     let chatSectionCoordinator: ChatSectionCoordinator
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
 
+    /// 工具/子 Agent/Chat 贡献源。保留引用以便运行期插件启用状态变化时
+    /// 重新应用 Chat 维度贡献 + 重编排工具贡献。
+    private let provider: any LumiAgentToolProviding
+
+    /// NotificationCenter 观察者 token，用于 deinit 移除。
+    private var pluginsChangedObserver: NSObjectProtocol?
+
     init() throws {
-        // —— 实例化（按依赖顺序）——
+        // —— 1. 创建 PluginService（无依赖，第一个 new）——
         let pluginService = PluginService()
         self.pluginService = pluginService
+        self.provider = pluginService
 
-        // LumiCoreService 内部完成：dataRoot 物化 / ChatService 工厂 / EditorCoreService
-        // 创建 / configure 回填 / Chat 维度贡献应用 / 工具贡献编排 / 自注册 / 插件状态订阅。
-        let lumiCoreService = try LumiCoreService(provider: pluginService)
-        self.lumiCoreService = lumiCoreService
-        self.lumiCore = lumiCoreService.lumiCore
-        self.editorCoreService = lumiCoreService.editorCoreService
+        // —— 2. 物化数据根目录 ——
+        let dataRootDirectory = StorageService.makeDataRootDirectory()
+        let coreDatabaseDirectory = StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
-        self.chatSectionCoordinator = ChatSectionCoordinator(
-            chatService: lumiCoreService.chatService,
-            databaseDirectory: lumiCoreService.coreDatabaseDirectory
+        // —— 3. Editor 工厂闭包 ——
+        // 返回 EditorCoreService 实例。此时还不持有 lumiCore——LumiCore.init 会接收并存储
+        // 返回值，但 `configure(lumiCore:)` 回填由本 init 在 LumiCore 创建完成后调用
+        // （configure 是 EditorCoreService 的具体方法，不在 AbstractEditorServicing 协议里）。
+        let editorFactory: @MainActor (any LumiAgentToolProviding) throws -> any AbstractEditorServicing = { factoryProvider in
+            guard let pluginService = factoryProvider as? PluginService else {
+                fatalError("Editor factory 收到的 provider 不是 PluginService")
+            }
+            return EditorCoreService(
+                pluginService: pluginService,
+                recentProjects: { [] }
+            )
+        }
+
+        // —— 4. 一次性创建 LumiCore ——
+        // 内部完成 ProjectComponent / LayoutState / dataRoot 物化 / ChatService 创建
+        // （留空 lumiCore）/ ToolService / EditorService 的全部绑定。
+        // ChatService 的 lumiCore 引用留空，由下方 configure 回填
+        // （Swift 两阶段初始化约束：创建 ChatService 时 self 不可 escape）。
+        let lumiCore = try LumiCore(
+            dataRootDirectory: dataRootDirectory,
+            provider: provider,
+            builtInTools: ChatService.builtInTools,
+            chatServiceFactory: { databaseDirectory in
+                ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: nil)
+            },
+            editorFactory: editorFactory
         )
+        self.lumiCore = lumiCore
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)数据根目录: \(dataRootDirectory.path)")
+            Self.logger.info("\(Self.t)核心数据库目录: \(coreDatabaseDirectory.path)")
+        }
+
+        // —— 5. 设置全局静态指针 ——
+        // 让无法接收 LumiPluginContext 的静态代码（plugin 的 static let shared 单例等）
+        // 能拿到存储路径。`currentLumiCoreDataRootDirectory` 是 nonisolated 镜像，
+        // 因为 plugin 单例 init 经常发生在非 MainActor 上下文，读协议 dataRootDirectory
+        // 会撞 MainActor 隔离。
+        LumiCore.current = lumiCore
+        currentLumiCore = lumiCore
+        currentLumiCoreDataRootDirectory = lumiCore.dataRootDirectory
+
+        // —— 6. 暴露强类型 chatService + 回填 lumiCore 引用 ——
+        guard let chatService = lumiCore.chatService as? ChatService else {
+            fatalError("LumiCore.chatService 必须是 ChatService。实际类型: \(String(describing: type(of: lumiCore.chatService)))")
+        }
+        self.chatService = chatService
+        chatService.configure(lumiCore: lumiCore)
+
+        // —— 7. 暴露强类型 editorCoreService + configure 回填 ——
+        guard let editorCoreService = lumiCore.editorService as? EditorCoreService else {
+            fatalError("LumiCore.editorService 必须是 EditorCoreService。实际类型: \(String(describing: lumiCore.editorService))")
+        }
+        self.editorCoreService = editorCoreService
+        editorCoreService.configure(lumiCore: lumiCore)
+        // 把具体类型也注册进服务表（供需要 EditorCoreService 强类型的调用方解析）。
+        lumiCore.registerService(EditorCoreService.self, editorCoreService)
+
+        // —— 8. 创建其余 App 层服务 ——
+        self.chatSectionCoordinator = ChatSectionCoordinator(
+            chatService: chatService,
+            databaseDirectory: coreDatabaseDirectory
+        )
         self.lumiUIService = LumiUIService(
             pluginService: pluginService,
             lumiCore: lumiCore,
-            editorCoreService: lumiCoreService.editorCoreService
+            editorCoreService: editorCoreService
         )
         self.menuBarService = MenuBarService(pluginService: pluginService, lumiCore: lumiCore)
 
-        // —— 注册（仅 RootContainer 自己 new 的对象）——
-        // LumiCoreService / ChatService / EditorCoreService 已在 LumiCoreService.init
-        // 内自注册；PluginService 的 LumiLLMProviderSettingsContributing 也在那里注册。
+        // —— 9. 注册服务进 LumiCore 服务表 ——
         lumiCore.registerService(ChatSectionCoordinator.self, chatSectionCoordinator)
         lumiCore.registerService(LumiThemeServicing.self, lumiUIService)
+        lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
+
+        // —— 10. 应用 Chat 维度插件贡献 + 编排工具贡献 ——
+        // LLM Provider / 中间件 / 渲染器等 Chat 维度贡献由 applyChatPluginContributions 处理；
+        // 工具 / 子 Agent 工具由 bootstrapToolContributions 注册进 ToolService。
+        // 工具名唯一性已在 LumiCore.init 阶段校验，此处直接注册。
+        applyChatPluginContributions()
+        bootstrapToolContributions()
+
+        // —— 11. 订阅运行期插件启用状态变化 ——
+        // ChatService 在 LumiChatKit 不能 import LumiPluginRegistry，因此由本类
+        // （App 层）代为订阅，重应用 Chat 贡献 + 重编排工具贡献。
+        // 其他 UI 服务（LumiUI / MenuBar / Editor）各自直接订阅同一 Notification。
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            guard let self else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)插件启用状态变化，重新应用贡献")
+            }
+            self.applyChatPluginContributions()
+            self.bootstrapToolContributions()
+        }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🎉 RootContainer 初始化完成")
         }
+    }
+
+    deinit {
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
+        }
+    }
+
+    // MARK: - Plugin Contributions
+
+    /// 应用 Chat 维度插件贡献（providers / middlewares / renderers / turn hook + tool execution hook）。
+    /// 启动期调用一次，运行期插件状态变化时由 Notification 回调再次调用。
+    private func applyChatPluginContributions() {
+        chatService.applyPluginContributions(
+            from: pluginService,
+            toolExecutionHook: pluginService.toolExecutionHook
+        )
+    }
+
+    /// 重新编排工具贡献。让新启用插件贡献的工具 / 子 Agent 进入 ToolService。
+    private func bootstrapToolContributions() {
+        let context = lumiCore.makePluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core"
+        )
+        lumiCore.bootstrapToolContributions(
+            provider: provider,
+            context: context,
+            builtInTools: ChatService.builtInTools
+        )
     }
 }

@@ -11,11 +11,11 @@ public final class ChatService: ObservableObject, LumiChatServicing {
 
     /// LumiCore 引用。声明为 `var` 以支持延迟注入——LumiCore 创建 ChatService 时
     /// 处于两阶段初始化中,无法把 self 传进来,因此 init 先留空,
-    /// 由 LumiCoreService 在 LumiCore 创建完成后调 `configure(lumiCore:)` 回填。
+    /// 由 RootContainer 在 LumiCore 创建完成后调 `configure(lumiCore:)` 回填。
     /// 在 configure 之前,凡是读 lumiCore 的地方都已用 `if let lumiCore` / `?.` 守护。
     public private(set) var lumiCore: (any LumiCoreAccessing)?
 
-    /// 回填 LumiCore 引用。由 LumiCoreService 在 LumiCore 创建完成后调用一次。
+    /// 回填 LumiCore 引用。由 RootContainer 在 LumiCore 创建完成后调用一次。
     public func configure(lumiCore: any LumiCoreAccessing) {
         self.lumiCore = lumiCore
     }
@@ -228,7 +228,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                 additionalDependencies: { _ in }
             )
         }
-        // lumiCore 理论上必非空（由 LumiCoreService 工厂注入），此分支仅作防御兜底。
+        // lumiCore 理论上必非空（由 RootContainer 工厂注入），此分支仅作防御兜底。
         return LumiPluginContext(
             activeSectionID: "chat.core",
             activeSectionTitle: "Chat Core"

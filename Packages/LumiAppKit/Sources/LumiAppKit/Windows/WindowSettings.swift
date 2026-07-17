@@ -31,7 +31,7 @@ public struct WindowSettings: View {
                     lumiCore: container.lumiCore,
                     pluginService: container.pluginService,
                     lumiUIService: container.lumiUIService,
-                    chatService: container.lumiCoreService.chatService
+                    chatService: container.chatService
                 )
                 .ignoresSafeArea()
             }
