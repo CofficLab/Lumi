@@ -137,6 +137,10 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
         LumiPluginRegistry.agentTools(context: context)
     }
 
+    func lastAgentToolFailures() -> [LumiPluginContributionFailure] {
+        LumiPluginRegistry.agentToolFailures
+    }
+
     func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
         LumiPluginRegistry.subAgents(context: context)
     }

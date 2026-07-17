@@ -15,6 +15,12 @@ extension LumiPluginRegistry {
     /// 设置存储
     private static let _settingsStore = PluginSettingsStore()
 
+    /// 最近一次 `agentTools(context:)` 收集过程中累积的插件失败列表。
+    ///
+    /// 反映"当前启用集"的最新失败快照——每次聚合都会整体覆盖。
+    /// 由 `AgentToolComponent` 经 `AgentToolProviding.lastAgentToolFailures()` 读取。
+    private static var _agentToolFailures: [LumiPluginContributionFailure] = []
+
     /// 日志
     private static let _logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.state")
 
@@ -161,8 +167,39 @@ extension LumiPluginRegistry {
         enabledPlugins.flatMap { $0.llmProviders(context: context) }
     }
 
+    /// 最近一次工具收集产生的插件失败快照（只读访问）。
+    public static var agentToolFailures: [LumiPluginContributionFailure] {
+        _agentToolFailures
+    }
+
+    /// 聚合所有启用插件的 `agentTools`。
+    ///
+    /// 单个插件抛错时**不影响其他插件**：异常被捕获并包装成
+    /// `LumiPluginContributionFailure` 累积到 `_agentToolFailures`，成功插件的工具
+    /// 照常返回。对外签名保持非 throws——所有调用点（boot 校验、运行期注册、
+    /// `AgentToolProviding`）都无需改动。真正的硬错误（工具名重复）由
+    /// `ToolService.registerTools` 在更上层抛出，与这里无关。
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        enabledPlugins.flatMap { $0.agentTools(context: context) }
+        var tools: [any LumiAgentTool] = []
+        var failures: [LumiPluginContributionFailure] = []
+
+        for plugin in enabledPlugins {
+            do {
+                tools.append(contentsOf: try plugin.agentTools(context: context))
+            } catch {
+                failures.append(LumiPluginContributionFailure(
+                    pluginID: plugin.info.id,
+                    pluginDisplayName: plugin.info.displayName,
+                    contribution: "agentTools",
+                    errorDescription: error.localizedDescription
+                ))
+                _logger.error("插件 \(plugin.info.id) agentTools 失败：\(error.localizedDescription)")
+            }
+        }
+
+        // 整体覆盖：反映"当前启用集"的最新失败快照（禁用插件后旧失败应消失）。
+        _agentToolFailures = failures
+        return tools
     }
 
     public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {

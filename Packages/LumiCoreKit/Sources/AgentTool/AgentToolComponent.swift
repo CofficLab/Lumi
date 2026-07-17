@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// LumiCore 的"工具服务"功能组件。
 ///
@@ -7,7 +8,15 @@ import Foundation
 /// 持有 ToolService 实例并暴露 bootstrap 方法供 LumiCore init 调用。
 @MainActor
 public final class AgentToolComponent {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "agent-tool.component")
+
     private var toolService: ToolService?
+
+    /// 最近一次工具贡献编排（`bootstrapToolContributions`）收集到的插件失败。
+    ///
+    /// 反映当前启用插件集的工具加载状态——UI（「设置 → 插件」详情页）经
+    /// `LumiCore.agentToolComponent` 读取，按 pluginID 匹配后展示红色 banner。
+    public private(set) var toolContributionFailures: [LumiPluginContributionFailure] = []
 
     public init() {}
 
@@ -63,15 +72,23 @@ public final class AgentToolComponent {
             return
         }
 
+        // 每次重编排先清空失败快照（禁用插件后其旧失败应消失）。
+        toolContributionFailures = []
+
         // 1. 收集插件工具
+        // provider（PluginService）内部已逐插件捕获异常并把失败累积到副本，
+        // 通过 lastAgentToolFailures() 暴露给本组件，避免 LumiCoreKit 反向依赖 LumiPluginRegistry。
         let pluginTools = provider.agentTools(context: context)
+        toolContributionFailures = provider.lastAgentToolFailures()
+
         // 工具名称唯一性已在 boot 阶段通过 LumiToolNameDeduplication 校验，
         // 此处使用 registerTools 直接注册（覆盖模式）。
         // 由于 boot 已保证唯一性，理论上不会抛出错误，但 Swift 要求处理 throwing 方法。
         do {
             try toolService.registerTools(pluginTools)
         } catch {
-            // 理论上不应发生（boot 已校验），但为了健壮性仍做容错处理
+            // 理论上不应发生（boot 已校验），但为了健壮性仍做容错处理 + 留下日志便于诊断。
+            Self.logger.error("registerTools 失败（理论上 boot 已校验唯一性）：\(error.localizedDescription)")
         }
 
         // 2. 注册内置工具（no_op / conversation_info）

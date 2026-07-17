@@ -166,6 +166,9 @@ final class RootContainer: ObservableObject, SuperLog {
     }
 
     /// 重新编排工具贡献。让新启用插件贡献的工具 / 子 Agent 进入 ToolService。
+    ///
+    /// 完成后触发 PluginService 的 UI 刷新：工具加载失败快照可能已变化，
+    /// 「设置 → 插件」详情页的错误 banner 需要随之更新。
     private func bootstrapToolContributions() {
         let context = lumiCore.makePluginContext(
             activeSectionID: "chat.core",
@@ -177,5 +180,6 @@ final class RootContainer: ObservableObject, SuperLog {
             context: context,
             builtInTools: ChatService.builtInTools
         )
+        pluginService.objectWillChange.send()
     }
 }

@@ -21,8 +21,14 @@ public protocol LumiPlugin {
     @MainActor
     static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider]
 
+    /// 收集插件提供的 Agent 工具。
+    ///
+    /// 允许 `throws`：插件在产出工具时若依赖外部资源（配置、凭证、SDK 初始化等）
+    /// 失败，应抛错而不是静默返回空数组。聚合层（`LumiPluginRegistry.agentTools`）
+    /// 会逐插件捕获异常并累积到失败列表，最终在「设置 → 插件」详情页展示给用户，
+    /// 单个插件失败不影响其他插件的工具注册。
     @MainActor
-    static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool]
+    static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool]
 
     @MainActor
     static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
@@ -193,7 +199,7 @@ public extension LumiPlugin {
     }
 
     @MainActor
-    static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         []
     }
 

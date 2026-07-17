@@ -246,6 +246,10 @@ private struct PluginSettingsDetailView: View {
                 header
                 enableToggle
 
+                if let failure = pluginFailure {
+                    pluginFailureBanner(failure)
+                }
+
                 AppDivider()
 
                 pluginSettingsContent
@@ -255,6 +259,50 @@ private struct PluginSettingsDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    /// 当前插件在最近一次工具收集中的失败记录（若有）。
+    /// 数据源是 `AgentToolComponent.toolContributionFailures`，由 PluginService
+    /// 的 objectWillChange 触发刷新（RootContainer 在工具重编排后调用）。
+    private var pluginFailure: LumiPluginContributionFailure? {
+        lumiCore.agentToolComponent.toolContributionFailures.first { $0.pluginID == row.id }
+    }
+
+    /// 错误 banner：风格对齐 `AppErrorBanner`（红底 + 红边 + 三角图标 + 红字），
+    /// 但支持动态 `String` 错误描述（AppErrorBanner 的 message 是 LocalizedStringKey，
+    /// 无法承载运行时错误文本）。使用与本文件其余部分一致的字面量 + `.appCaption`
+    /// 系列 modifier（LumiAppKit 不直接引用 LumiUI 的 internal `AppUI` 命名空间）。
+    @ViewBuilder
+    private func pluginFailureBanner(_ failure: LumiPluginContributionFailure) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(theme.error)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(LumiLocalization.string("此插件未能注册工具", bundle: .module))
+                    .font(.appCaptionEmphasized)
+                    .foregroundColor(theme.error)
+
+                Text(failure.errorDescription)
+                    .font(.appMicro)
+                    .foregroundColor(theme.error)
+                    .lineLimit(nil)
+                    .textSelection(.enabled)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(theme.error.opacity(0.1))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.error.opacity(0.2), lineWidth: 1)
+        )
     }
 
     @ViewBuilder

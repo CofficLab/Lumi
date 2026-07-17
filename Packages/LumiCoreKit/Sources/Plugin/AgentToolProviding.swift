@@ -14,4 +14,18 @@ public protocol AgentToolProviding: AnyObject {
 
     /// 收集所有启用插件的 `LumiSubAgentDefinition`
     func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
+
+    /// 返回最近一次 `agentTools(context:)` 收集过程中累积的插件失败列表。
+    ///
+    /// 聚合层（`LumiPluginRegistry`）在收集工具时会逐插件捕获异常并包装成
+    /// `LumiPluginContributionFailure`。`AgentToolComponent` 在 bootstrap 结束后
+    /// 通过本方法读取这份失败快照，供 UI 展示。
+    ///
+    /// 默认返回空数组（无聚合能力的实现者不受影响）。
+    func lastAgentToolFailures() -> [LumiPluginContributionFailure]
+}
+
+public extension AgentToolProviding {
+    /// 默认实现：无聚合能力的 provider 不会产生失败。
+    func lastAgentToolFailures() -> [LumiPluginContributionFailure] { [] }
 }
