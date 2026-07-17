@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -43,7 +44,7 @@ struct Http401View: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                StepFunProvider.setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: StepFunProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -66,7 +67,7 @@ struct Http401View: View {
             }
         }
         .onAppear {
-            apiKey = StepFunProvider.getApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: StepFunProvider.info._apiKeyStorageKey)
         }
     }
 }

@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -66,7 +67,7 @@ struct ApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                AliyunProvider.setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: AliyunProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -89,7 +90,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = AliyunProvider.getApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: AliyunProvider.info._apiKeyStorageKey)
         }
     }
 }

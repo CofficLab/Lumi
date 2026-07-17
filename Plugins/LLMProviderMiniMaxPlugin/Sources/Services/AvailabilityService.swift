@@ -9,7 +9,7 @@ enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderMiniMax")
 
     static func checkAvailability(
-        provider: AnthropicCompatibleProvider,
+        provider: any LumiLLMProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
         // 优先读磁盘缓存
@@ -18,7 +18,7 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await provider.checkAvailabilityUsingChatPing(model: model)
+        let result = await provider.checkAvailability(model: model)
         let mapped = mapUnsupportedModelResult(result)
 
         cache.write(model: model, result: mapped, timestamp: Date())
@@ -56,8 +56,6 @@ enum AvailabilityService {
 
     static func isUnsupportedModelResponse(_ text: String) -> Bool {
         let lower = text.lowercased()
-        // MiniMax 的 Anthropic 兼容接口在模型不支持 / 套餐不含该模型时通常返回
-        // `invalid_parameter_error` / `model_not_found` / `not supported in plan`。
         return lower.contains("invalid_parameter")
             || lower.contains("model_not_found")
             || lower.contains("not supported in plan")

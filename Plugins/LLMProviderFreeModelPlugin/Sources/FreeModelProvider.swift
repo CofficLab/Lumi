@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import SuperLogKit
 import LumiCoreKit
 import LumiLLMProviderSupport
@@ -81,14 +82,14 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
         openAIBackend = FreeModelOpenAIBackend()
         claudeT0Backend = FreeModelClaudeBackend(
             nodeLabel: "claude-t0",
-            configuration: LumiAnthropicCompatibleProviderConfiguration(
+            configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT0,
                 fallbackBaseURLs: [Endpoints.claudeT1]
             )
         )
         claudeT1Backend = FreeModelClaudeBackend(
             nodeLabel: "claude-t1",
-            configuration: LumiAnthropicCompatibleProviderConfiguration(
+            configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT1,
                 fallbackBaseURLs: [Endpoints.claudeT0]
             )

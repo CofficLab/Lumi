@@ -31,10 +31,9 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-4": .init(supportsVision: false, supportsTools: true),
             "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
         ],
-        websiteURL: URL(string: "https://openai.com/")!
-    ,
-            apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
-        )
+        websiteURL: URL(string: "https://openai.com/")!,
+        apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
+    )
 
     private let apiService: LLMAPIService
     private let adapter: OpenAICompatibleProviderAdapter
@@ -55,77 +54,36 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         self.adapter = adapter
     }
 
+    // MARK: - Internal Access for AvailabilityService
+
+    var internalAdapter: OpenAICompatibleProviderAdapter { adapter }
+    var internalApiService: LLMAPIService { apiService }
+
+    // MARK: - LumiLLMProvider Protocol
+
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        guard let conversationID = request.messages.first?.conversationID else {
-            throw OpenAIProviderError.emptyConversation
-        }
+        try await sendStreaming(request) { _ in }
+    }
 
-        let apiKey = try lumiResolveAPIKey()
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            throw OpenAIProviderError.invalidBaseURL(adapter.configuration.baseURL)
-        }
-
-        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKey)
-        let body = try adapter.buildRequestBody(
-            messages: LumiVisionMessageSupport.preparedMessages(for: request),
-            model: request.model,
-            tools: request.tools.map(OpenAIToolSchema.init),
-            systemPrompt: ""
-        )
-        let data = try await apiService.sendChatRequest(request: httpRequest, body: body)
-        let response = try adapter.parseResponse(data: data)
-
-        return LumiChatMessage(
-            conversationID: conversationID,
-            role: .assistant,
-            content: response.content,
-            providerID: Self.info.id,
-            modelName: request.model,
-            toolCalls: response.toolCalls?.map {
-                LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            }
+    public func sendStreaming(
+        _ request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async throws -> LumiChatMessage {
+        try await LumiStreamingRequestSupport.sendOpenAICompatibleStreaming(
+            request,
+            adapter: adapter,
+            apiService: apiService,
+            baseURLs: [adapter.configuration.baseURL] + adapter.configuration.fallbackBaseURLs,
+            resolveAPIKey: lumiResolveAPIKey,
+            buildRequest: { url, apiKey in
+                adapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            onChunk: onChunk
         )
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
-    }
-
-    func performAvailabilityCheck(model: String) async -> LumiModelAvailabilityResult {
-        let apiKeyValue: String
-        do {
-            apiKeyValue = try lumiResolveAPIKey()
-        } catch {
-            return .unavailable(.message(error.localizedDescription))
-        }
-
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            return .unavailable(.message("无效的 Base URL"))
-        }
-
-        let body: [String: Any]
-        do {
-            body = try adapter.buildRequestBody(
-                messages: [LLMKit.ChatMessage(role: .user, content: "ping")],
-                model: model,
-                tools: nil,
-                systemPrompt: ""
-            )
-        } catch {
-            return .unavailable(.message(error.localizedDescription))
-        }
-
-        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKeyValue)
-
-        do {
-            _ = try await apiService.sendChatRequest(
-                request: httpRequest,
-                body: body
-            )
-            return .available
-        } catch {
-            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
-        }
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
@@ -152,67 +110,6 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         LumiAPIKeyTools.remove(storageKey: Self.info._apiKeyStorageKey)
     }
 
-    public func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        guard let conversationID = request.messages.first?.conversationID else {
-            throw OpenAIProviderError.emptyConversation
-        }
-
-        let apiKey = try lumiResolveAPIKey()
-        guard let url = URL(string: adapter.configuration.baseURL) else {
-            throw OpenAIProviderError.invalidBaseURL(adapter.configuration.baseURL)
-        }
-
-        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKey)
-        let body = try adapter.buildStreamingRequestBody(
-            messages: LumiVisionMessageSupport.preparedMessages(for: request),
-            model: request.model,
-            tools: request.tools.map(OpenAIToolSchema.init),
-            systemPrompt: ""
-        )
-
-        return try await withThrowingTaskGroup(of: LumiStreamChunk?.self) { group in
-            group.addTask {
-                let data = try await self.apiService.sendStreamingRequest(
-                    request: httpRequest,
-                    body: body,
-                    onChunk: { chunkData in
-                        if let chunk = try? self.adapter.parseStreamChunk(data: chunkData) {
-                            await onChunk(chunk)
-                        }
-                    }
-                )
-                return try self.adapter.parseResponse(data: data)
-            }
-
-            var finalMessage: LumiChatMessage?
-            for try await result in group {
-                if let content = result.content {
-                    finalMessage = LumiChatMessage(
-                        conversationID: conversationID,
-                        role: .assistant,
-                        content: content,
-                        providerID: Self.info.id,
-                        modelName: request.model,
-                        toolCalls: result.toolCalls?.map {
-                            LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-                        }
-                    )
-                }
-            }
-
-            return finalMessage ?? LumiChatMessage(
-                conversationID: conversationID,
-                role: .assistant,
-                content: "",
-                providerID: Self.info.id,
-                modelName: request.model
-            )
-        }
-    }
-
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         ErrorDispositionResolver.disposition(for: error, context: context)
     }
@@ -236,32 +133,6 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             renderKind: errorRenderKind(for: error)
         )
     }
-
-    private static func convertMessage(_ message: LumiChatMessage) -> LLMKit.ChatMessage {
-        LLMKit.ChatMessage(
-            role: convertRole(message.role),
-            content: message.content,
-            toolCalls: message.toolCalls?.map {
-                LLMKit.ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            },
-            toolCallID: message.toolCallID
-        )
-    }
-
-    private static func convertRole(_ role: LumiChatMessageRole) -> LLMKit.MessageRole {
-        switch role {
-        case .system:
-            .system
-        case .user:
-            .user
-        case .assistant:
-            .assistant
-        case .tool:
-            .tool
-        case .error, .status:
-            .error
-        }
-    }
 }
 
 private struct OpenAIToolSchema: LLMToolSchemaProviding {
@@ -273,22 +144,5 @@ private struct OpenAIToolSchema: LLMToolSchemaProviding {
         self.name = tool.name
         self.toolDescription = tool.toolDescription
         self.inputSchema = tool.inputSchema.anyValue as? [String: Any] ?? [:]
-    }
-}
-
-enum OpenAIProviderError: LocalizedError {
-    case missingAPIKey
-    case invalidBaseURL(String)
-    case emptyConversation
-
-    var errorDescription: String? {
-        switch self {
-        case .missingAPIKey:
-            "OpenAI API Key is not configured."
-        case let .invalidBaseURL(url):
-            "Invalid OpenAI base URL: \(url)"
-        case .emptyConversation:
-            "OpenAI request has no conversation."
-        }
     }
 }

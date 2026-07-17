@@ -1,5 +1,4 @@
 import Foundation
-import KeychainKit
 import LumiCoreKit
 
 /// API Key 管理工具集
@@ -20,7 +19,7 @@ public enum LumiAPIKeyTools {
             throw LumiLLMProviderSupportError.missingAPIKey(displayName)
         }
         
-        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(displayName)
         }
@@ -33,17 +32,17 @@ public enum LumiAPIKeyTools {
     /// - Returns: 如果已配置返回 true，否则返回 false
     public static func has(storageKey: String?) -> Bool {
         guard let storageKey = storageKey else { return false }
-        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         return !key.isEmpty
     }
-    
+
     /// 获取当前配置的 API Key
-    /// 
+    ///
     /// - Parameter storageKey: Keychain 存储键
     /// - Returns: API Key 字符串，未配置时返回空字符串
     public static func get(storageKey: String?) -> String {
         guard let storageKey = storageKey else { return "" }
-        return KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
     }
     
     /// 保存 API Key 到 Keychain
@@ -53,7 +52,7 @@ public enum LumiAPIKeyTools {
     ///   - storageKey: Keychain 存储键
     public static func set(_ apiKey: String, storageKey: String?) {
         guard let storageKey = storageKey else { return }
-        KeychainStore.shared.set(apiKey, forKey: storageKey)
+        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
     }
     
     /// 从 Keychain 删除 API Key
@@ -61,6 +60,6 @@ public enum LumiAPIKeyTools {
     /// - Parameter storageKey: Keychain 存储键
     public static func remove(storageKey: String?) {
         guard let storageKey = storageKey else { return }
-        KeychainStore.shared.remove(forKey: storageKey)
+        LumiAPIKeyStore.shared.remove(forKey: storageKey)
     }
 }

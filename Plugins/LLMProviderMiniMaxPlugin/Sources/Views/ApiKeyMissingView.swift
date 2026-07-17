@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -72,7 +73,7 @@ struct ApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                MiniMaxTokenPlanProvider.setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: MiniMaxTokenPlanProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -95,7 +96,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = MiniMaxTokenPlanProvider.getApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: MiniMaxTokenPlanProvider.info._apiKeyStorageKey)
         }
     }
 }

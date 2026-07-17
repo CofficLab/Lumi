@@ -3,7 +3,6 @@ import SuperLogKit
 import AgentToolKit
 import Combine
 import HttpKit
-import KeychainKit
 import LLMKit
 import LumiCoreKit
 import LumiLLMProviderSupport
@@ -46,7 +45,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public static let apiKeyStorageKey: String = ""
 
     public func lumiResolveAPIKey() throws -> String {
-        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }

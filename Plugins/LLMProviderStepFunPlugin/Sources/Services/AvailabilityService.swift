@@ -1,7 +1,9 @@
 import Foundation
+import HttpKit
+import LLMKit
 import LumiCoreKit
-import SuperLogKit
 import LumiLLMProviderSupport
+import SuperLogKit
 
 enum AvailabilityService: SuperLog {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderStepFunPlugin")
@@ -22,7 +24,15 @@ enum AvailabilityService: SuperLog {
         if Self.verbose {
             StepFunPlugin.logger.info("\(Self.t)开始检查可用性 model=\(model)")
         }
-        let result = await provider.checkAvailabilityUsingChatPing(model: model)
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
+            model: model,
+            adapter: provider.internalAdapter,
+            apiService: provider.internalApiService,
+            buildRequest: { url, apiKey in
+                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+        )
         cache.write(model: model, result: result, timestamp: Date())
         if Self.verbose {
             StepFunPlugin.logger.info("\(Self.t)可用性检查完成 model=\(model)")

@@ -1,5 +1,6 @@
 import Foundation
 import HttpKit
+import LLMKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -9,8 +10,41 @@ enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderAliyun")
 
     static func checkAvailability(
-        provider: AnthropicCompatibleProvider,
+        provider: AliyunTokenPlanProvider,
         model: String
+    ) async -> LumiModelAvailabilityResult {
+        await checkAvailability(
+            model: model,
+            adapter: provider.internalAdapter,
+            apiService: provider.internalApiService,
+            buildRequest: { url, apiKey in
+                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+        )
+    }
+
+    static func checkAvailability(
+        provider: AliyunProvider,
+        model: String
+    ) async -> LumiModelAvailabilityResult {
+        await checkAvailability(
+            model: model,
+            adapter: provider.internalAdapter,
+            apiService: provider.internalApiService,
+            buildRequest: { url, apiKey in
+                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+        )
+    }
+
+    private static func checkAvailability(
+        model: String,
+        adapter: AnthropicCompatibleProviderAdapter,
+        apiService: LLMAPIService,
+        buildRequest: @escaping (URL, String) -> URLRequest,
+        resolveAPIKey: @escaping () throws -> String
     ) async -> LumiModelAvailabilityResult {
         // 优先读磁盘缓存
         if let cached = cache.read(model: model),
@@ -18,7 +52,13 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await provider.checkAvailabilityUsingChatPing(model: model)
+        let result = await LumiAnthropicCompatibleAvailability.chatPing(
+            model: model,
+            adapter: adapter,
+            apiService: apiService,
+            buildRequest: buildRequest,
+            resolveAPIKey: resolveAPIKey
+        )
         let mapped = mapUnsupportedModelResult(result)
 
         cache.write(model: model, result: mapped, timestamp: Date())
