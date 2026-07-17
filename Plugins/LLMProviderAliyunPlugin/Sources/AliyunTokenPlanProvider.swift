@@ -3,7 +3,7 @@ import HttpKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class AliyunTokenPlanProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+public final class AliyunTokenPlanProvider: AnthropicCompatibleProvider, @unchecked Sendable {
     public static let shortName = "Aliyun"
     public static let apiKeyHelpURL: String? = "https://help.aliyun.com/zh/model-studio/get-api-key"
 

@@ -73,6 +73,33 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         MLXErrorHandling.renderKind(for: error)
     }
 
+    public func lumiResolveAPIKey() throws -> String {
+        // MLX 是本地供应商，不需要 API Key
+        return ""
+    }
+
+    public func hasApiKey() -> Bool {
+        // 本地供应商不需要 API Key
+        return true
+    }
+
+    public func getApiKey() -> String {
+        return ""
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        // 本地供应商不需要存储 API Key
+    }
+
+    public func removeApiKey() {
+        // 本地供应商不需要存储 API Key
+    }
+
+    public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        // MLX 本地错误通常不可重试
+        return .nonRetryable
+    }
+
     public func makeErrorMessage(
         conversationID: UUID,
         request: LumiLLMRequest,

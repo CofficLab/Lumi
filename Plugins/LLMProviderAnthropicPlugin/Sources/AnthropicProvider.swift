@@ -2,7 +2,7 @@ import Foundation
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class AnthropicProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+public final class AnthropicProvider: AnthropicCompatibleProvider, @unchecked Sendable {
     public override class var info: LumiLLMProviderInfo {
         LumiLLMProviderInfo(
             id: "anthropic",

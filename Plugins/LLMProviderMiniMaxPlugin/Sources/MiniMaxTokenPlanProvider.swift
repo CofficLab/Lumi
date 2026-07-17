@@ -12,7 +12,7 @@ import LumiLLMProviderSupport
 /// 1. 暴露 MiniMax Token Plan 支持的模型清单（`MiniMax-M2.7` 等）。
 /// 2. 维护 API Key 的本地存取（`LumiAPIKeyStore`）。
 /// 3. 错误信息映射为 `MiniMaxRenderKind`，便于 UI 渲染。
-public final class MiniMaxTokenPlanProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+public final class MiniMaxTokenPlanProvider: AnthropicCompatibleProvider, @unchecked Sendable {
     /// 在错误卡片上显示的短名。
     public static let shortName = "MiniMax"
 

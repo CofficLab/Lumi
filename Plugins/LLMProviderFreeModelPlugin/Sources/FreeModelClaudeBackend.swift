@@ -3,7 +3,7 @@ import LumiCoreKit
 import LumiLLMProviderSupport
 import os
 
-final class FreeModelClaudeBackend: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+final class FreeModelClaudeBackend: AnthropicCompatibleProvider, @unchecked Sendable {
     private let nodeLabel: String
     private let pendingStreamingModel = OSAllocatedUnfairLock<String?>(initialState: nil)
 

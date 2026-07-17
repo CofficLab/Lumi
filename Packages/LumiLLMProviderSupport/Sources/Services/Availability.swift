@@ -118,7 +118,7 @@ public extension OpenAICompatibleLumiProvider {
     }
 }
 
-public extension AnthropicCompatibleLumiProvider {
+public extension AnthropicCompatibleProvider {
     func checkAvailabilityUsingChatPing(model: String) async -> LumiModelAvailabilityResult {
         await LumiAnthropicCompatibleAvailability.chatPing(
             model: model,

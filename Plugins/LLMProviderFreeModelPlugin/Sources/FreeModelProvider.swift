@@ -241,6 +241,50 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
     public func providerStatus() -> LumiLLMProviderStatus? {
         LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
+
+    public func lumiResolveAPIKey() throws -> String {
+        try LumiAPIKeyTools.resolve(storageKey: Self.info._apiKeyStorageKey, displayName: Self.info.displayName)
+    }
+
+    public func hasApiKey() -> Bool {
+        LumiAPIKeyTools.has(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func getApiKey() -> String {
+        LumiAPIKeyTools.get(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        LumiAPIKeyTools.set(apiKey, storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func removeApiKey() {
+        LumiAPIKeyTools.remove(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        ErrorDispositionResolver.disposition(for: error, context: context)
+    }
+
+    public func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    public func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
+            conversationID: conversationID,
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
+        )
+    }
 }
 
 struct BackendSelection {

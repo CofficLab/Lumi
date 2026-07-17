@@ -132,6 +132,111 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
 
+    public func lumiResolveAPIKey() throws -> String {
+        try LumiAPIKeyTools.resolve(storageKey: Self.info._apiKeyStorageKey, displayName: Self.info.displayName)
+    }
+
+    public func hasApiKey() -> Bool {
+        LumiAPIKeyTools.has(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func getApiKey() -> String {
+        LumiAPIKeyTools.get(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        LumiAPIKeyTools.set(apiKey, storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func removeApiKey() {
+        LumiAPIKeyTools.remove(storageKey: Self.info._apiKeyStorageKey)
+    }
+
+    public func sendStreaming(
+        _ request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async throws -> LumiChatMessage {
+        guard let conversationID = request.messages.first?.conversationID else {
+            throw OpenAIProviderError.emptyConversation
+        }
+
+        let apiKey = try lumiResolveAPIKey()
+        guard let url = URL(string: adapter.configuration.baseURL) else {
+            throw OpenAIProviderError.invalidBaseURL(adapter.configuration.baseURL)
+        }
+
+        let httpRequest = adapter.buildRequest(url: url, apiKey: apiKey)
+        let body = try adapter.buildStreamingRequestBody(
+            messages: LumiVisionMessageSupport.preparedMessages(for: request),
+            model: request.model,
+            tools: request.tools.map(OpenAIToolSchema.init),
+            systemPrompt: ""
+        )
+
+        return try await withThrowingTaskGroup(of: LumiStreamChunk?.self) { group in
+            group.addTask {
+                let data = try await self.apiService.sendStreamingRequest(
+                    request: httpRequest,
+                    body: body,
+                    onChunk: { chunkData in
+                        if let chunk = try? self.adapter.parseStreamChunk(data: chunkData) {
+                            await onChunk(chunk)
+                        }
+                    }
+                )
+                return try self.adapter.parseResponse(data: data)
+            }
+
+            var finalMessage: LumiChatMessage?
+            for try await result in group {
+                if let content = result.content {
+                    finalMessage = LumiChatMessage(
+                        conversationID: conversationID,
+                        role: .assistant,
+                        content: content,
+                        providerID: Self.info.id,
+                        modelName: request.model,
+                        toolCalls: result.toolCalls?.map {
+                            LumiToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+                        }
+                    )
+                }
+            }
+
+            return finalMessage ?? LumiChatMessage(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                providerID: Self.info.id,
+                modelName: request.model
+            )
+        }
+    }
+
+    public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        ErrorDispositionResolver.disposition(for: error, context: context)
+    }
+
+    public func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    public func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
+            conversationID: conversationID,
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
+        )
+    }
+
     private static func convertMessage(_ message: LumiChatMessage) -> LLMKit.ChatMessage {
         LLMKit.ChatMessage(
             role: convertRole(message.role),

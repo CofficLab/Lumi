@@ -3,7 +3,7 @@ import HttpKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
-public final class ZhipuProvider: AnthropicCompatibleLumiProvider, @unchecked Sendable {
+public final class ZhipuProvider: AnthropicCompatibleProvider, @unchecked Sendable {
     public static let shortName = "ZhiPu"
     public static let apiKeyHelpURL: String? = "https://open.bigmodel.cn/usercenter/apikeys"
 
