@@ -1,6 +1,5 @@
 import Foundation
 import HttpKit
-import KeychainKit
 import LLMKit
 import LumiCoreKit
 
@@ -35,15 +34,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
     /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
     /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
     open func lumiResolveAPIKey() throws -> String {
-        if Self.info.isLocal { return "" }
-        guard let storageKey = Self.info._apiKeyStorageKey else {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
+        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
     }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
@@ -445,15 +436,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
     /// 显式 override 协议扩展默认实现，确保 `Self.info` 通过虚表分发到子类。
     /// 跨模块继承下，协议 witness 表对 `open class var` 的动态分发会回退到基类 fatalError。
     open func lumiResolveAPIKey() throws -> String {
-        if Self.info.isLocal { return "" }
-        guard let storageKey = Self.info._apiKeyStorageKey else {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
+        throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
     }
 
     open func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
