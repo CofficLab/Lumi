@@ -132,6 +132,59 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
         return chunks
     }
+
+    // MARK: - LumiLLMProvider Protocol
+
+    public func lumiResolveAPIKey() throws -> String {
+        // Codex 是本地供应商，不需要 API Key
+        return ""
+    }
+
+    public func hasApiKey() -> Bool {
+        // 本地供应商不需要 API Key
+        return true
+    }
+
+    public func getApiKey() -> String {
+        return ""
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        // 本地供应商不需要存储 API Key
+    }
+
+    public func removeApiKey() {
+        // 本地供应商不需要存储 API Key
+    }
+
+    public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        // Codex CLI 错误通常不可重试
+        return .nonRetryable
+    }
+
+    public func errorRenderKind(for error: Error) -> String? {
+        return nil
+    }
+
+    public func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        let metadata = disposition.metadataEntries
+        let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: Self.info.id,
+            modelName: request.model,
+            isError: true,
+            rawErrorDetail: detail,
+            metadata: metadata
+        )
+    }
 }
 
 enum CodexLumiError: LocalizedError {

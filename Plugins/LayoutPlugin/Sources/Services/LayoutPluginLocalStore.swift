@@ -27,7 +27,11 @@ public final class LayoutPluginLocalStore: @unchecked Sendable {
     // MARK: - Initialization
 
     convenience private init() {
-        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        // 路径来源从 nonisolated 镜像改为 LayoutPluginRuntimeBridge（由
+        // LayoutPlugin.bootstrapFromLumiCoreIfNeeded 在 @MainActor 上下文注入）。
+        // bootstrap 之前的首次访问会走 fallback,与旧镜像的 nil 行为一致。
+        let root = (LayoutPluginRuntimeBridge.pluginDirectory
+            ?? LayoutPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("LayoutPlugin", isDirectory: true)
         self.init(pluginDirectory: root)
     }

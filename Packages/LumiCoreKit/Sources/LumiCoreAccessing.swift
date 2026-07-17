@@ -9,7 +9,7 @@ import SwiftUI
 /// `@Environment(\.lumiCore)` 安全获取。它刻意不暴露任何修改内部状态的能力，
 /// 以保证视图层无法污染内核状态。
 ///
-/// 启动期的一次性配置（`boot`、`registerService`、`setupChatService` 等）请使用
+/// 运行期的注册与编排（`registerService` 等）请使用
 /// `LumiCoreBootstrapping` 协议。
 ///
 /// - Important: 实现必须为 class（`AnyObject`），因为协议内含可变状态；
@@ -21,33 +21,26 @@ import SwiftUI
 public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     // MARK: - State
 
-    /// 数据根目录（`boot` 后非空）。
-    var dataRootDirectory: URL? { get }
+    /// 存储功能组件。归拢路径计算(coreDataDirectory / pluginDataDirectory(for:))。
+    var storage: StorageComponent { get }
 
-    /// Logo 注册表（指向全局共享的 `LogoRegistry.shared`）。
-    var logoRegistry: LogoRegistry { get }
+    /// Logo 功能组件。收集插件贡献的 Logo 项并选出最高优先级者。
+    var logoComponent: LogoComponent { get }
 
-    /// 项目状态管理器（`boot` 后非空）。
-    var projectState: LumiProjectState? { get }
+    /// 项目功能组件。封装 `ProjectState`,
+    /// 对外暴露只读的 `currentProject` / `projects` + 写方法门面。
+    var projectComponent: ProjectComponent { get }
 
-    /// 布局状态管理器（`boot` 后非空）。
-    var layoutState: LumiLayoutState? { get }
+    /// 布局功能组件。封装 `LumiLayoutState`,转发 objectWillChange。
+    /// 注意:本组件不收敛 state 字段——外部可直接读写 `component.state.xxx`
+    /// (SwiftUI Binding 惯法天然要求外部能写)。
+    var layoutComponent: LayoutComponent { get }
 
-    /// 聊天服务（`boot` 时由 `ChatServiceFactory` 创建并自动注册）。
-    var chatService: (any LumiChatServicing)? { get }
+    /// 聊天服务（init 时由 `ChatServiceFactory` 创建并自动注册）。
+    var chatService: (any LumiChatServicing) { get }
 
-    /// 编辑器服务（`boot(editorFactory:)` 时由工厂创建）。
+    /// 编辑器服务（`init(editorFactory:)` 传入工厂时创建；不传则为 nil）。
     var editorService: (any AbstractEditorServicing)? { get }
-
-    // MARK: - Storage
-
-    /// 核心数据目录（`dataRootDirectory/Core`）。
-    var coreDataDirectory: URL { get }
-
-    /// 插件专属数据目录（`dataRootDirectory/<PluginName>`，自动创建）。
-    /// - Parameter pluginName: 插件名称。
-    /// - Returns: 插件专属的数据目录路径。
-    func pluginDataDirectory(for pluginName: String) -> URL
 
     // MARK: - Plugin Context Factory
 
@@ -90,92 +83,18 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
 /// - Important: 仅 `LumiCore` 主类（及其子类）在 App 启动期实现并使用该协议。
 @MainActor
 public protocol LumiCoreBootstrapping: AnyObject {
-    // MARK: - ChatService Factory
-
-    /// ChatService 工厂闭包类型。
+    /// ChatService 工厂闭包类型。init 时传入,接收 core 数据库目录。
+    /// 工厂创建的 ChatService 的 lumiCore 引用应留空(nil),由调用方在
+    /// LumiCore 创建后调 `chatService.configure(lumiCore:)` 回填。
     typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
-
-    /// EditorBootstrap 工厂闭包类型。
-    typealias EditorBootstrapFactory<Service: AbstractEditorServicing> =
-        @MainActor (any LumiAgentToolProviding) throws -> Service
-
-    /// 设置 ChatService 工厂。
-    /// - Parameter factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
-    ///   应在 `boot()` 之前调用。
-    func setupChatService(_ factory: @escaping ChatServiceFactory)
 
     // MARK: - Service Registry
 
     /// 注册一个服务实例，供 `makePluginContext` 自动注入。
-    /// 应在 `RootContainer` 初始化完成后调用一次。
     func registerService<T>(_ type: T.Type, _ instance: T)
 
     /// 从注册表解析已注册的服务实例。
     func resolveService<T>(_ type: T.Type) -> T?
-
-    // MARK: - Tool Service
-
-    /// 启动 `ToolService` 并注入运行环境。
-    ///
-    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
-    /// 内置工具（如 `ChatService.builtInTools`）。把它们传入启动期校验，让 boot 阶段
-    /// 就能拦截跨来源的命名冲突。
-    func bootstrapToolService(
-        provider: any LumiAgentToolProviding,
-        builtInTools: [any LumiAgentTool]
-    ) throws
-
-    /// 编排 Agent Tool 工具的注册与注入。
-    ///
-    /// 把 `provider` 提供的插件工具、内置工具和子 Agent 工具注册到 `ToolService`，
-    /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
-    /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
-    func bootstrapToolContributions(
-        provider: any LumiAgentToolProviding,
-        context: LumiPluginContext,
-        builtInTools: [any LumiAgentTool]
-    )
-
-    /// 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
-    ///
-    /// 校验的是 `ToolService` 最终累积的工具集（plugin + built-in + sub-agent delegate）
-    /// 而非仅 `provider.agentTools(context:)` 的子集——这避免跨来源命名冲突逃逸到
-    /// 聊天阶段才被 `assertUnique` 拦下。
-    func validateToolNameUniqueness(
-        provider: any LumiAgentToolProviding,
-        builtInTools: [any LumiAgentTool]
-    ) throws
-
-    // MARK: - Boot
-
-    /// 启动 LumiCore。
-    ///
-    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 LumiCore 会在工具服务就绪后
-    /// 自动调用工厂创建 `EditorService`，并同时注册抽象协议（`AbstractEditorServicing`）
-    /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
-    /// 单元测试、CLI 工具）。
-    ///
-    /// `dataRootDirectory` 是 LumiAppKit 决定并传入的数据根父目录，LumiCore 负责
-    /// 在其下物化 `Core/` 子目录作为核心数据库的物理位置。`dataRootDirectory` 始终
-    /// 是父目录本身（而非 `Core/` 子目录），以保证 `coreDataDirectory` /
-    /// `pluginDataDirectory(for:)` 的相对路径计算与历史一致。
-    ///
-    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
-    /// 内置工具（如 `ChatService.builtInTools`）。传入后启动期校验就把 plugin 工具、
-    /// 内置工具、sub-agent delegate 工具的并集一起查重，跨来源的命名冲突在 boot
-    /// 阶段就会以 `LumiToolRegistrationError` 抛出。
-    ///
-    /// - Parameters:
-    ///   - dataRootDirectory: 数据根父目录，由 LumiAppKit 决定。
-    ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
-    ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
-    ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
-    func boot<Service: AbstractEditorServicing>(
-        dataRootDirectory: URL,
-        provider: any LumiAgentToolProviding,
-        builtInTools: [any LumiAgentTool],
-        editorFactory: EditorBootstrapFactory<Service>?
-    ) throws
 }
 
 // MARK: - SwiftUI Environment

@@ -18,7 +18,7 @@ public enum CaffeinatePlugin: LumiPlugin {
         id: "Caffeinate",
         displayName: PluginCaffeinateLocalization.string("Anti-Sleep"),
         description: PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control"),
-        order: 7,
+        order: 1,
         category: .system,
         policy: .optOut,
         stage: .beta,
@@ -34,8 +34,7 @@ public enum CaffeinatePlugin: LumiPlugin {
     @MainActor
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
         [
-            // 排到菜单栏 popup 列表最末：固定为 Int.max，与插件 info.order 解耦。
-            LumiMenuBarPopupItem(id: "\(info.id).popup", order: .max) {
+            LumiMenuBarPopupItem(id: "\(info.id).popup", order: Self.info.order) {
                 CaffeinateMenuBarPopupView()
             }
         ]

@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 

@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -36,21 +37,12 @@ struct ApiKeyMissingView: View {
         }
     }
 
-    private func currentApiKey() -> String {
+    private var apiKeyStorageKey: String {
         switch providerID {
         case "xiaomi-api":
-            return XiaomiAPIProvider.getApiKey()
+            return "DevAssistant_ApiKey_XiaomiAPI"
         default:
-            return XiaomiProvider.getApiKey()
-        }
-    }
-
-    private func setApiKey(_ value: String) {
-        switch providerID {
-        case "xiaomi-api":
-            XiaomiAPIProvider.setApiKey(value)
-        default:
-            XiaomiProvider.setApiKey(value)
+            return "DevAssistant_ApiKey_Xiaomi"
         }
     }
 
@@ -88,7 +80,7 @@ struct ApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -111,7 +103,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = currentApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: apiKeyStorageKey)
         }
     }
 }

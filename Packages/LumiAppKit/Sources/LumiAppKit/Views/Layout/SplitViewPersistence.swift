@@ -20,19 +20,19 @@ import SwiftUI
 /// .background(SplitViewDividerPersistence.chatSection(layoutState: ..., viewContainerID: ..., layout: ...))
 /// ```
 struct SplitViewDividerPersistence: NSViewRepresentable {
-    let layoutState: LumiLayoutState
+    let layoutState: LayoutState
     let role: SplitDividerRole
 
-    static func rail(layoutState: LumiLayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
+    static func rail(layoutState: LayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
         SplitViewDividerPersistence(layoutState: layoutState, role: .rail(viewContainerID: viewContainerID))
     }
 
-    static func bottomPanel(layoutState: LumiLayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
+    static func bottomPanel(layoutState: LayoutState, viewContainerID: String) -> SplitViewDividerPersistence {
         SplitViewDividerPersistence(layoutState: layoutState, role: .bottomPanel(viewContainerID: viewContainerID))
     }
 
     static func chatSection(
-        layoutState: LumiLayoutState,
+        layoutState: LayoutState,
         viewContainerID: String,
         layout: LumiChatSectionLayout
     ) -> SplitViewDividerPersistence {
@@ -88,7 +88,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// 100 × 0.1s = 10s，覆盖 SwiftUI hosting view 装好的极端延迟。
     private static let maxApplyRetryCount = 100
 
-    private var layoutState: LumiLayoutState
+    private var layoutState: LayoutState
     private var role: SplitDividerRole
     private var access: SplitDividerAccess
 
@@ -139,7 +139,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// 不持久化，把“是不是用户拖拽”的判定推迟到窗口之外。
     private var persistenceSuppressionCount = 0
 
-    init(layoutState: LumiLayoutState, role: SplitDividerRole) {
+    init(layoutState: LayoutState, role: SplitDividerRole) {
         self.layoutState = layoutState
         self.role = role
         self.access = role.makeAccess(layoutState: layoutState)
@@ -151,7 +151,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func updateConfiguration(layoutState: LumiLayoutState, role: SplitDividerRole) {
+    func updateConfiguration(layoutState: LayoutState, role: SplitDividerRole) {
         let roleChanged = self.role != role
         self.layoutState = layoutState
         self.role = role

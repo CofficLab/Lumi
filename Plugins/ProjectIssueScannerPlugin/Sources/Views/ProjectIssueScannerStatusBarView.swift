@@ -98,7 +98,7 @@ public struct ProjectIssueScannerStatusBarView: View {
     @State private var modelPreference: ScannerModelPreference = ScannerModelPreference.load()
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public init(lumiCore: LumiCoreAccessing) {

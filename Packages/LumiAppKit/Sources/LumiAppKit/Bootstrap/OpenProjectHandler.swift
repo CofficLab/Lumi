@@ -35,7 +35,7 @@ public final class OpenProjectHandler: SuperLog {
             return
         }
 
-        guard let projectState = lumiCore?.projectState else {
+        guard let projectComponent = lumiCore?.projectComponent else {
             Self.logger.warning("\(Self.t)LumiCore 未就绪,无法切换项目: \(normalized)")
             return
         }
@@ -43,7 +43,7 @@ public final class OpenProjectHandler: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)外部打开项目: \(normalized)")
         }
-        projectState.setCurrentProjectPath(normalized)
+        projectComponent.setCurrentProjectPath(normalized)
     }
 
     private static func normalizePath(_ path: String) -> String {

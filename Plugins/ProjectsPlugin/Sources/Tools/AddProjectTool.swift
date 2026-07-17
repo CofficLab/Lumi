@@ -1,7 +1,11 @@
 import Foundation
 import LumiCoreKit
+import SuperLogKit
 
-struct AddProjectTool: LumiAgentTool {
+struct AddProjectTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "➕"
+    public nonisolated static let verbose: Bool = true
+
     static let info = LumiAgentToolInfo(
         id: "add_project",
         displayName: LumiPluginLocalization.string("Add Project", bundle: .module),
@@ -36,24 +40,59 @@ struct AddProjectTool: LumiAgentTool {
     }
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        if Self.verbose {
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)执行 add_project，参数 path=\(arguments["path"]?.stringValue ?? "<nil>")")
+            }
+        }
+
         guard let path = arguments["path"]?.stringValue else {
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.warning("\(Self.t)⚠️ add_project 缺少必需参数 path")
+                }
+            }
             return "Error: Missing required parameter `path`."
         }
 
         return await MainActor.run {
             guard let viewModel = ProjectsPlugin.viewModel else {
+                if Self.verbose {
+                    if ProjectsPlugin.verbose {
+                        ProjectsPlugin.logger.error("\(Self.t)❌ add_project 失败：Projects view model is not available")
+                    }
+                }
                 return "Error: Projects view model is not available."
             }
+
             do {
+                if Self.verbose {
+                    if ProjectsPlugin.verbose {
+                        ProjectsPlugin.logger.info("\(Self.t)尝试添加项目：\(path)")
+                    }
+                }
+
                 let project = try viewModel.add(path: path, select: false)
+
+                if Self.verbose {
+                    if ProjectsPlugin.verbose {
+                        ProjectsPlugin.logger.info("\(Self.t)✅ 项目添加成功：\(project.name) (\(project.path))")
+                    }
+                }
+
                 return Self.successMessage(project: project, projects: viewModel.projects)
             } catch {
+                if Self.verbose {
+                    if ProjectsPlugin.verbose {
+                        ProjectsPlugin.logger.error("\(Self.t)❌ add_project 失败：\(error.localizedDescription)")
+                    }
+                }
                 return "Error: \(error.localizedDescription)"
             }
         }
     }
 
-    private static func successMessage(project: LumiProjectEntry, projects: [LumiProjectEntry]) -> String {
+    private static func successMessage(project: ProjectEntry, projects: [ProjectEntry]) -> String {
         var output = """
         Successfully added project.
 

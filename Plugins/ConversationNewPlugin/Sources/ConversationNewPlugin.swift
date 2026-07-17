@@ -25,7 +25,7 @@ public enum ConversationNewPlugin: LumiPlugin {
             return []
         }
 
-        let projectState = context.lumiCore?.projectState
+        let projectComponent = context.lumiCore?.projectComponent
         return [
             LumiTitleToolbarItem(
                 id: "\(info.id).new-chat",
@@ -34,7 +34,7 @@ public enum ConversationNewPlugin: LumiPlugin {
             ) {
                 NewChatButton(
                     chatService: chatService,
-                    projectState: projectState,
+                    projectComponent: projectComponent,
                     lumiCore: context.lumiCore
                 )
             }

@@ -38,8 +38,8 @@ public enum EditorPreviewStorage {
         installLock.lock()
         defer { installLock.unlock() }
 
-        let root = lumiCorePluginDataDirectory(for: pluginName)
-            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
+        let root = EditorPreviewPluginRuntimeBridge.pluginDirectory
+            ?? EditorPreviewPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         if !didInstall {
             didInstall = true
@@ -61,8 +61,8 @@ public enum EditorPreviewStorage {
 
     public static var rootDirectory: URL {
         installIfNeeded()
-        return lumiCorePluginDataDirectory(for: pluginName)
-            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
+        return EditorPreviewPluginRuntimeBridge.pluginDirectory
+            ?? EditorPreviewPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
     }
 
     public static var inlineBuilderWorkspaceDirectory: URL {

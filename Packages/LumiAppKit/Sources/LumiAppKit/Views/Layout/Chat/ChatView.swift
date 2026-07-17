@@ -6,7 +6,7 @@ import SwiftUI
 /// 负责整合 Chat 视图相关的代码
 /// 封装了 ChatSection 的可见性判断、items 获取等逻辑
 struct ChatView: View {
-    @ObservedObject private var layoutState: LumiLayoutState
+    @ObservedObject private var layoutState: LayoutState
     let pluginService: PluginService
     let context: LumiPluginContext
     let chatSectionCoordinator: ChatSectionCoordinator
@@ -15,7 +15,7 @@ struct ChatView: View {
     let isRailOnlyPanel: Bool
 
     init(
-        layoutState: LumiLayoutState,
+        layoutState: LayoutState,
         pluginService: PluginService,
         context: LumiPluginContext,
         chatSectionCoordinator: ChatSectionCoordinator,

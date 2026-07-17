@@ -17,7 +17,8 @@ public enum MLXLumiPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [MLXLumiProvider()]
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [MLXLumiProvider()]
     }
 
     @MainActor

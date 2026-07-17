@@ -60,7 +60,7 @@ public enum SplitDividerRole: Equatable {
 
     /// 基于该角色与内核 `layoutState` 构造读写桥接。
     @MainActor
-    public func makeAccess(layoutState: LumiLayoutState) -> SplitDividerAccess {
+    public func makeAccess(layoutState: LayoutState) -> SplitDividerAccess {
         switch self {
         case let .rail(viewContainerID):
             return SplitDividerAccess(

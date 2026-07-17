@@ -10,10 +10,10 @@ public enum RAGPluginRuntime {
     @MainActor
     public static var lumiCore: (any LumiCoreAccessing)?
 
-    /// 当前项目路径，从内核 `lumiCore.projectState` 获取。
+    /// 当前项目路径，从内核 `lumiCore.projectComponent` 获取。
     @MainActor
     public static var currentProjectPath: String {
-        lumiCore?.projectState?.currentProject?.path ?? ""
+        lumiCore?.projectComponent.currentProject?.path ?? ""
     }
 
     /// 当前项目名称，从路径推导。

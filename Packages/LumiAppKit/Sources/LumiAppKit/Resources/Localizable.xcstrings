@@ -1944,7 +1944,11 @@
         }
       }
     },
+    "正在初始化" : {
+
+    },
     "正在初始化..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1971,6 +1975,9 @@
           }
         }
       }
+    },
+    "正在加载组件和插件..." : {
+
     },
     "浅色主题" : {
       "localizations" : {

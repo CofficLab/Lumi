@@ -13,7 +13,7 @@ public final class ProviderSettingsStore {
     private var lumiCore: LumiCoreAccessing?
 
     private var settingsURL: URL? {
-        lumiCore?.pluginDataDirectory(for: "ProviderSettings")
+        lumiCore?.storage.pluginDataDirectory(for: "ProviderSettings")
             .appendingPathComponent("settings.plist")
     }
 

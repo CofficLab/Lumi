@@ -6,7 +6,7 @@ struct PanelBottomView: View {
     @LumiTheme private var theme
 
     let tabs: [LumiPanelBottomTabItem]
-    @ObservedObject var layoutState: LumiLayoutState
+    @ObservedObject var layoutState: LayoutState
     let viewContainerID: String
 
     var body: some View {

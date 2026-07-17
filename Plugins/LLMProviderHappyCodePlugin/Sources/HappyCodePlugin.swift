@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum HappyCodePlugin: LumiPlugin {
@@ -14,6 +15,9 @@ public enum HappyCodePlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [HappyCodeProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderHappyCodePlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderHappyCodePlugin"))
+        }
+        return [HappyCodeProvider()]
     }
 }

@@ -23,6 +23,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        bootstrapFromLumiCoreIfNeeded(context: context)
         guard context.activeSectionID == editorPanelSectionID,
               context.resolve(LumiEditorServicing.self) != nil
         else {
@@ -79,7 +80,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     @MainActor
     private static func configureBuildOutputPresentation(context: LumiPluginContext) {
         guard context.showsPanelChrome,
-              let layoutState = context.lumiCore?.layoutState
+              let layoutState = context.lumiCore?.layoutComponent.state
         else {
             return
         }

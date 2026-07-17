@@ -18,6 +18,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     /// 由 `RootContainer` 在拿到 `LumiCore` 实例后注入;
     /// 注入前 `configureLifecycle` 走 `recentProjects()` 兜底。
     private var lumiCore: LumiCoreAccessing?
+    private var pluginsChangedObserver: NSObjectProtocol?
 
     var editorService: EditorService { core.editorService }
     var extensionRegistry: EditorExtensionRegistry { core.extensionRegistry }
@@ -33,12 +34,12 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     /// 所指的位置）。
     ///
     /// `configureLifecycle` 在 init 时已先于注入执行，但内部的 `provider` 闭包通过
-    /// `self?.lumiCore?.projectState` 读，所以这里只更新引用 + 切换 persistence URL，
+    /// `self?.lumiCore?.projectComponent` 读，所以这里只更新引用 + 切换 persistence URL，
     /// 不需要重跑配置。
     func configure(lumiCore: LumiCoreAccessing) {
         self.lumiCore = lumiCore
         EditorSettingsLifecycle.hostPersistenceRootURL = { [weak lumiCore] in
-            lumiCore?.dataRootDirectory ?? Self.fallbackPersistenceRootURL
+            lumiCore?.storage.dataRootDirectory ?? Self.fallbackPersistenceRootURL
         }
     }
 
@@ -51,7 +52,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     init(
         pluginService: PluginService,
         themeRegistry: LumiUIThemeRegistry = .shared,
-        recentProjects: @escaping @Sendable () -> [LumiProjectEntry] = { [] }
+        recentProjects: @escaping @Sendable () -> [ProjectEntry] = { [] }
     ) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化 EditorCoreService")
@@ -91,8 +92,20 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
             self?.syncAppSyntaxThemes()
         }
 
+        // 订阅插件启用状态变化：插件 enable/disable 后编辑器扩展集合会变，
+        // 需要 reinstallExtensions 重建。原先由 RootContainer fan-out 调用，现在本类自治。
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            self?.reinstallExtensions()
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ EditorCoreService 初始化完成")
+        }
+    }
+
+    deinit {
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
         }
     }
 
@@ -170,11 +183,11 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     }
 
     private func configureLifecycle(
-        recentProjects: @escaping @Sendable () -> [LumiProjectEntry]
+        recentProjects: @escaping @Sendable () -> [ProjectEntry]
     ) {
         // 通过 LumiCore 获取项目列表
-        let provider: () -> [LumiProjectEntry] = { [weak self] in
-            self?.lumiCore?.projectState?.projects ?? recentProjects()
+        let provider: () -> [ProjectEntry] = { [weak self] in
+            self?.lumiCore?.projectComponent.projects ?? recentProjects()
         }
 
         // `hostPersistenceRootURL` 在 init 阶段尚无 LumiCore 实例，配置 `configure(lumiCore:)`

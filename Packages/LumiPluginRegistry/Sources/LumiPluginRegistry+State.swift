@@ -15,6 +15,12 @@ extension LumiPluginRegistry {
     /// 设置存储
     private static let _settingsStore = PluginSettingsStore()
 
+    /// 最近一次 `agentTools(context:)` 收集过程中累积的插件失败列表。
+    ///
+    /// 反映"当前启用集"的最新失败快照——每次聚合都会整体覆盖。
+    /// 由 `AgentToolComponent` 经 `AgentToolProviding.lastAgentToolFailures()` 读取。
+    private static var _agentToolFailures: [LumiPluginContributionFailure] = []
+
     /// 日志
     private static let _logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.state")
 
@@ -66,6 +72,7 @@ extension LumiPluginRegistry {
         _pluginEnabledStates[pluginId] = enabled
         _settingsStore.saveEnabledOverrides(_enabledOverrides)
         onEnabledPluginsChanged?()
+        NotificationCenter.postLumiEnabledPluginsDidChange()
 
         // 如果状态实际发生变化，触发生命周期回调
         if previousState != enabled {
@@ -153,15 +160,52 @@ extension LumiPluginRegistry {
     }
 
     public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        enabledPlugins.flatMap { $0.menuBarPopupItems(context: context) }
+        // 按 item.order 升序排序，让插件作者能通过 LumiMenuBarPopupItem.order 控制 popup
+        // 展示顺序。否则 order 字段会被静默忽略，顺序完全取决于插件在 plugins 清单里的
+        // 注册位置。（Swift 的 sorted 不保证稳定，故相同 order 的相对顺序未定义；当前
+        // 各 popup item 的 order 互不冲突，不存在该问题。）
+        enabledPlugins
+            .flatMap { $0.menuBarPopupItems(context: context) }
+            .sorted { $0.order < $1.order }
     }
 
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
         enabledPlugins.flatMap { $0.llmProviders(context: context) }
     }
 
+    /// 最近一次工具收集产生的插件失败快照（只读访问）。
+    public static var agentToolFailures: [LumiPluginContributionFailure] {
+        _agentToolFailures
+    }
+
+    /// 聚合所有启用插件的 `agentTools`。
+    ///
+    /// 单个插件抛错时**不影响其他插件**：异常被捕获并包装成
+    /// `LumiPluginContributionFailure` 累积到 `_agentToolFailures`，成功插件的工具
+    /// 照常返回。对外签名保持非 throws——所有调用点（boot 校验、运行期注册、
+    /// `AgentToolProviding`）都无需改动。真正的硬错误（工具名重复）由
+    /// `ToolService.registerTools` 在更上层抛出，与这里无关。
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        enabledPlugins.flatMap { $0.agentTools(context: context) }
+        var tools: [any LumiAgentTool] = []
+        var failures: [LumiPluginContributionFailure] = []
+
+        for plugin in enabledPlugins {
+            do {
+                tools.append(contentsOf: try plugin.agentTools(context: context))
+            } catch {
+                failures.append(LumiPluginContributionFailure(
+                    pluginID: plugin.info.id,
+                    pluginDisplayName: plugin.info.displayName,
+                    contribution: "agentTools",
+                    errorDescription: error.localizedDescription
+                ))
+                _logger.error("插件 \(plugin.info.id) agentTools 失败：\(error.localizedDescription)")
+            }
+        }
+
+        // 整体覆盖：反映"当前启用集"的最新失败快照（禁用插件后旧失败应消失）。
+        _agentToolFailures = failures
+        return tools
     }
 
     public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
@@ -270,5 +314,44 @@ extension LumiPluginRegistry {
             }
         }
         return false
+    }
+}
+
+// MARK: - NotificationCenter 扩展
+
+/// 插件启用状态变化的广播机制。
+///
+/// 与 `LumiProviderState` 等内核状态对象一致，采用 `NotificationCenter` 作为
+/// 多订阅者广播：任何关心的服务（主题 / 菜单栏 / 编辑器扩展 / 工具贡献等）
+/// 都可以在自己的 init 里订阅 `Notification.Name.lumiEnabledPluginsDidChange`，
+/// 无需中心化的 fan-out 协调器。
+///
+/// 旧的 `onEnabledPluginsChanged` 单一闭包槽予以保留（向后兼容），新的
+/// Notification 与它在 `setPlugin` 中**同步双发**。
+public extension Notification.Name {
+    /// 插件启用集合发生变化时广播。订阅者用 `.onReceive` 或
+    /// `NotificationCenter.default.addObserver(forName: .lumiEnabledPluginsDidChange, ...)`。
+    static let lumiEnabledPluginsDidChange = Notification.Name("LumiPluginRegistry.EnabledPluginsDidChange")
+}
+
+public extension NotificationCenter {
+    /// 插件启用集合发生变化时 post（在 `setPlugin` 中与旧闭包槽同步双发）。
+    static func postLumiEnabledPluginsDidChange() {
+        NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: nil)
+    }
+
+    /// 订阅插件启用集合变化。返回 observer token，可传给 `removeObserver`。
+    ///
+    /// block 声明为 `@MainActor`：因为 observer 注册时传了 `queue: .main`，回调必然在
+    /// 主线程发生，订阅方可以直接调用 `@MainActor` 方法而无需额外 `Task { @MainActor in }` 包裹。
+    @discardableResult
+    func onLumiEnabledPluginsDidChange(using block: @escaping @MainActor @Sendable () -> Void) -> NSObjectProtocol {
+        NotificationCenter.default.addObserver(
+            forName: .lumiEnabledPluginsDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { block() }
+        }
     }
 }

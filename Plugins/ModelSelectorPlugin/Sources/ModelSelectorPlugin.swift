@@ -50,12 +50,12 @@ public enum ModelSelectorPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         // 工具要拿 `ChatService` 实例才能 `provider(forID:)`，所以这里强转。
         // LumiCoreKit 里的 `LumiChatServicing` 协议还没暴露 provider 字典——
         // 故意不暴露，避免其它子系统绕过 Provider 自己操作 Keychain。
         guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
-            return []
+            throw LumiPluginDependencyError.serviceUnavailable("ChatService")
         }
         return [
             SwitchModelTool(chatService: chatService),

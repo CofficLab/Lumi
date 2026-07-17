@@ -21,8 +21,8 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     // MARK: - Published State
 
-    @Published public private(set) var projects: [LumiProjectEntry]
-    @Published public private(set) var currentProject: LumiProjectEntry? {
+    @Published public private(set) var projects: [ProjectEntry]
+    @Published public private(set) var currentProject: ProjectEntry? {
         didSet {
             if Self.verbose {
                 Self.logger.info("\(Self.t)currentProject 变化: \(oldValue?.name ?? "nil") → \(self.currentProject?.name ?? "nil")")
@@ -55,13 +55,13 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     // MARK: - Intents
 
     /// 选中项目：更新状态并持久化
-    public func select(_ project: LumiProjectEntry) {
+    public func select(_ project: ProjectEntry) {
         if Self.verbose {
             Self.logger.info("\(Self.t)select: \(project.name) @ \(project.path)")
         }
 
         let updatedProjects = store.selectProject(project, in: projects)
-        let updatedProject = LumiProjectEntry(name: project.name, path: project.path)
+        let updatedProject = ProjectEntry(name: project.name, path: project.path)
 
         self.projects = updatedProjects
         self.currentProject = updatedProject
@@ -72,7 +72,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     /// 添加项目
     @discardableResult
-    public func add(path: String, select shouldSelect: Bool = false) throws -> LumiProjectEntry {
+    public func add(path: String, select shouldSelect: Bool = false) throws -> ProjectEntry {
         if Self.verbose {
             Self.logger.info("\(Self.t)add: \(path), select: \(shouldSelect)")
         }
@@ -93,7 +93,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     }
 
     /// 移除项目
-    public func remove(_ project: LumiProjectEntry) {
+    public func remove(_ project: ProjectEntry) {
         if Self.verbose {
             Self.logger.info("\(Self.t)remove: \(project.name) @ \(project.path)")
         }
@@ -132,13 +132,13 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
 
         // 项目不在列表中：构造条目并选中
-        let entry = LumiProjectEntry(name: ProjectsStore.directoryName(for: normalized), path: normalized)
+        let entry = ProjectEntry(name: ProjectsStore.directoryName(for: normalized), path: normalized)
         select(entry)
     }
 
     /// 便捷方法：通过路径添加项目
     @discardableResult
-    public func addProject(path: String, select shouldSelect: Bool = false) throws -> LumiProjectEntry {
+    public func addProject(path: String, select shouldSelect: Bool = false) throws -> ProjectEntry {
         try add(path: path, select: shouldSelect)
     }
 

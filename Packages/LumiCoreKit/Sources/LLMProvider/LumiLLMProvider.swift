@@ -115,12 +115,10 @@ public protocol LumiLLMProvider: Sendable {
     /// 解析 API Key；由具体供应商实现存储策略
     func lumiResolveAPIKey() throws -> String
 
-    /// 是否已配置 API Key。本地供应商恒为 `true`。
-    /// 默认实现基于 `lumiResolveAPIKey()`。
+    /// 是否已配置 API Key。
     func hasApiKey() -> Bool
 
     /// 读取当前已配置的 API Key；未配置时返回空字符串。
-    /// 默认实现基于 `lumiResolveAPIKey()`。
     func getApiKey() -> String
 
     /// 写入 API Key。具体存储策略由供应商自行决定（Keychain / 配置文件 / 内存等）。
@@ -159,109 +157,4 @@ public protocol LumiLLMProvider: Sendable {
         error: Error,
         disposition: LumiLLMErrorDisposition
     ) -> LumiChatMessage
-}
-
-public extension LumiLLMProvider {
-    /// 默认实现：本地供应商恒为 `true`；远程供应商基于 `info.apiKeyStorageKey` 读 Keychain。
-    /// 子类若要使用 Keychain 之外的存储策略，可 override。
-    func hasApiKey() -> Bool {
-        if Self.info.isLocal { return true }
-        guard let storageKey = Self.info.apiKeyStorageKey else { return true }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-        return !key.isEmpty
-    }
-
-    /// 默认实现：本地供应商返回空串；远程供应商基于 `info.apiKeyStorageKey` 读 Keychain。
-    func getApiKey() -> String {
-        if Self.info.isLocal { return "" }
-        guard let storageKey = Self.info.apiKeyStorageKey else { return "" }
-        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-    }
-
-    /// 默认实现：基于 `info.apiKeyStorageKey` 写 Keychain。
-    /// 子类若要使用其他存储策略（如加密文件、外部 Vault），可 override。
-    func setApiKey(_ apiKey: String) {
-        guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
-    }
-
-    /// 默认实现：基于 `info.apiKeyStorageKey` 从 Keychain 删除。
-    func removeApiKey() {
-        guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.remove(forKey: storageKey)
-    }
-
-    /// 默认实现：本地供应商返回空串；远程供应商读 Keychain，缺失时抛 `missingAPIKey`。
-    /// 大多数 Provider 不需要 override 此方法。
-    func lumiResolveAPIKey() throws -> String {
-        if Self.info.isLocal { return "" }
-        guard let storageKey = Self.info.apiKeyStorageKey else {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-        if key.isEmpty {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return key
-    }
-
-    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        if let providing = error as? LumiLLMErrorDispositionProviding {
-            return providing.llmErrorDisposition
-        }
-        return .nonRetryable
-    }
-
-    func errorRenderKind(for error: Error) -> String? {
-        nil
-    }
-
-    // MARK: - 静态便捷方法（供 plugin 内部 View 在没有 provider 实例时使用）
-
-    /// 静态版本：等价于 `Self().getApiKey()`，但避免每次新建实例。
-    /// 内部 View 经常以静态方式访问（如 `AliyunProvider.getApiKey()`），提供此默认实现
-    /// 让子类不必重复样板代码。
-    static func getApiKey() -> String {
-        if Self.info.isLocal { return "" }
-        guard let storageKey = Self.info.apiKeyStorageKey else { return "" }
-        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
-    }
-
-    /// 静态版本：等价于 `Self().setApiKey(_:)`，但避免每次新建实例。
-    static func setApiKey(_ apiKey: String) {
-        guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
-    }
-
-    func makeErrorMessage(
-        conversationID: UUID,
-        request: LumiLLMRequest,
-        error: Error,
-        disposition: LumiLLMErrorDisposition
-    ) -> LumiChatMessage {
-        let metadata = disposition.metadataEntries
-        let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        return LumiChatMessage(
-            conversationID: conversationID,
-            role: .error,
-            content: "",
-            providerID: Self.info.id,
-            modelName: request.model,
-            isError: true,
-            rawErrorDetail: detail,
-            metadata: metadata
-        )
-    }
-
-    func sendStreaming(
-        _ request: LumiLLMRequest,
-        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
-    ) async throws -> LumiChatMessage {
-        let message = try await send(request)
-        if !message.content.isEmpty {
-            await onChunk(LumiStreamChunk(content: message.content, eventTitle: "生成中"))
-        }
-        await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
-        return message
-    }
 }

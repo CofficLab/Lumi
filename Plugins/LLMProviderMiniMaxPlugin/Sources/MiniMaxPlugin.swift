@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum MiniMaxPlugin: LumiPlugin {
@@ -17,7 +18,10 @@ public enum MiniMaxPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [MiniMaxTokenPlanProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMiniMax", directory: core.storage.pluginDataDirectory(for: "LLMProviderMiniMax"))
+        }
+        return [MiniMaxTokenPlanProvider()]
     }
 
     @MainActor

@@ -15,8 +15,8 @@ final class AgentTempStoragePluginLocalStore: @unchecked Sendable {
     private let settingsFileURL: URL
 
     private init() {
-        let root = lumiCorePluginDataDirectory(for: "AgentTempStorage")
-            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("AgentTempStorage", isDirectory: true)
+        let root = AgentTempStoragePluginRuntimeBridge.pluginDirectory
+            ?? AgentTempStoragePluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(AgentTempStoragePluginRuntimeBridge.pluginName, isDirectory: true)
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)

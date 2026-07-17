@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -55,7 +56,7 @@ struct ApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                ZhipuProvider.setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: ZhipuProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -78,7 +79,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = ZhipuProvider.getApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: ZhipuProvider.info._apiKeyStorageKey)
         }
     }
 }

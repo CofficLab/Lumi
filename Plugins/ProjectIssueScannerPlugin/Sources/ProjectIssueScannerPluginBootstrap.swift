@@ -10,7 +10,7 @@ public extension ProjectIssueScannerPlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let lumiCore = context.lumiCore {
-            ProjectIssueScannerRuntimeBridge.dataDirectory = lumiCore.pluginDataDirectory(for: "ProjectIssueScanner")
+            ProjectIssueScannerRuntimeBridge.dataDirectory = lumiCore.storage.pluginDataDirectory(for: "ProjectIssueScanner")
         }
         didBootstrapFromLumiCore = true
     }

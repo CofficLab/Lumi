@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum LPgptPlugin: LumiPlugin {
@@ -14,6 +15,9 @@ public enum LPgptPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [LPgptProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderLPgptPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderLPgptPlugin"))
+        }
+        return [LPgptProvider()]
     }
 }

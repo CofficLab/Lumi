@@ -84,10 +84,10 @@ struct LumiCoreObjectWillChangeForwardingTests {
         #expect(fireCount > baseline)
     }
 
-    /// projectState 子状态变更也应转发（同样的桥接逻辑覆盖所有内部 ObservableObject）。
+    /// projectComponent 子状态变更也应转发（同样的桥接逻辑覆盖所有内部 ObservableObject）。
     @Test func projectStatePropertyChangeForwardsToLumiCore() async throws {
         let core = LumiCore()
-        core._testInject(projectState: LumiProjectState())
+        core._testInject(projectComponent: ProjectComponent())
 
         var fireCount = 0
         let cancellable = core.objectWillChange.sink { _ in
@@ -95,9 +95,8 @@ struct LumiCoreObjectWillChangeForwardingTests {
         }
         defer { cancellable.cancel() }
 
-        core.projectState?.currentProject = LumiProjectEntry(
-            name: "demo",
-            path: "/tmp/demo"
+        core.projectComponent.switchToProject(
+            ProjectEntry(name: "demo", path: "/tmp/demo")
         )
         try await Task.sleep(nanoseconds: 10_000_000)
 

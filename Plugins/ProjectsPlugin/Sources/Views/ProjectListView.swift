@@ -7,7 +7,7 @@ struct ProjectListView: View {
     @State private var searchText = ""
     @Binding var isImporterPresented: Bool
 
-    private var filteredProjects: [LumiProjectEntry] {
+    private var filteredProjects: [ProjectEntry] {
         if searchText.isEmpty {
             return viewModel.projects
         }

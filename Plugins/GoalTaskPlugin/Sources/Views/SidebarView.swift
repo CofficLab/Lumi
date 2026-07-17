@@ -2,7 +2,7 @@ import SwiftUI
 import SuperLogKit
 import LumiCoreKit
 
-/// 右侧栏视图 - 展示当前会话的 Goals 和 Tasks
+/// 右侧栏视图 - 展示当前会话的单一活跃 Goal 及其 Tasks
 public struct SidebarView: View {
     @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
@@ -14,13 +14,9 @@ public struct SidebarView: View {
     private let backgroundColorProvider: () -> Color
 
     private static let headerHeight: CGFloat = 44
-    private static let maxGoalListHeight: CGFloat = 200
 
-    /// 是否有可见的 Goals
-    ///
-    /// 与 AutoTask 的 `isAllDone` 对齐：只要有未到终态的 Goal（或其下还有 pending/inProgress 的 Task），
-    /// 就继续展示；全部完成/失败/跳过后立即隐藏——不依赖 TurnFinishedHook 的数据清理时序。
-    private var hasVisibleGoals: Bool {
+    /// 是否有可见的 Goal
+    private var hasVisibleGoal: Bool {
         viewModel.hasActiveWork
     }
 
@@ -34,7 +30,7 @@ public struct SidebarView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            if hasVisibleGoals {
+            if hasVisibleGoal {
                 headerView
 
                 if isCollapsed {
@@ -44,22 +40,22 @@ public struct SidebarView: View {
                         .controlSize(.small)
                         .padding(.vertical, 8)
                 } else {
-                    goalListView
+                    activeGoalView
                 }
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        .frame(height: hasVisibleGoals ? sidebarHeight : 0)
+        .frame(height: hasVisibleGoal ? sidebarHeight : 0)
         .frame(maxWidth: .infinity, alignment: .top)
-        .frame(minWidth: hasVisibleGoals ? 240 : 0, idealWidth: hasVisibleGoals ? 320 : 0)
+        .frame(minWidth: hasVisibleGoal ? 240 : 0, idealWidth: hasVisibleGoal ? 320 : 0)
         .background {
-            if hasVisibleGoals {
+            if hasVisibleGoal {
                 backgroundColorProvider()
                     .opacity(0.82)
             }
         }
         .overlay {
-            if hasVisibleGoals {
+            if hasVisibleGoal {
                 VStack(spacing: 0) {
                     Rectangle()
                         .fill(Color.orange.opacity(0.16))
@@ -78,20 +74,20 @@ public struct SidebarView: View {
             viewModel.removeObserver()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Goals & Tasks")
+        .accessibilityLabel("Goal & Tasks")
     }
 
     // MARK: - Header
 
     private var headerView: some View {
         HStack {
-            Label("Goals & Tasks", systemImage: "target")
+            Label("Goal", systemImage: "target")
                 .font(.headline)
 
             Spacer()
 
-            if let summary = viewModel.overallSummary {
-                Text("\(summary.completedGoals)/\(summary.totalGoals) (\(summary.completionPercent)%)")
+            if let progress = viewModel.activeGoal {
+                Text(viewModel.progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -120,37 +116,28 @@ public struct SidebarView: View {
         .frame(height: Self.headerHeight)
     }
 
-    // MARK: - Goal List
+    // MARK: - Active Goal View
 
-    private var goalListView: some View {
+    private var activeGoalView: some View {
         ScrollView {
-            VStack(spacing: 8) {
-                ForEach(viewModel.goals) { goal in
-                    GoalCardView(displayItem: goal, tasks: viewModel.tasksByGoalId[goal.id] ?? [])
-                }
+            if let goal = viewModel.activeGoal {
+                GoalCardView(displayItem: goal, tasks: viewModel.activeTasks)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
         }
-        .frame(height: goalListHeight)
-    }
-
-    private var goalListHeight: CGFloat {
-        let totalHeight = viewModel.goals.reduce(CGFloat(0)) { acc, goal in
-            acc + goal.estimatedHeight(taskCount: viewModel.tasksByGoalId[goal.id]?.count ?? 0)
-        }
-        return min(totalHeight, Self.maxGoalListHeight)
+        .frame(maxHeight: 200)
     }
 
     private var sidebarHeight: CGFloat {
-        guard hasVisibleGoals else { return 0 }
+        guard hasVisibleGoal else { return 0 }
         if isCollapsed {
             return Self.headerHeight
         }
         if viewModel.isLoading {
             return Self.headerHeight + 32
         }
-        return Self.headerHeight + goalListHeight
+        return Self.headerHeight + 200
     }
 }
 
@@ -159,6 +146,10 @@ public struct SidebarView: View {
 private struct GoalCardView: View {
     let displayItem: GoalDisplayItem
     let tasks: [GoalTaskDisplayItem]
+
+    private var completedCount: Int {
+        tasks.filter { $0.status == .completed || $0.status == .skipped }.count
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -233,10 +224,6 @@ private struct GoalCardView: View {
         case .skipped: return .gray
         }
     }
-
-    private var completedCount: Int {
-        tasks.filter { $0.status == .completed || $0.status == .skipped }.count
-    }
 }
 
 // MARK: - Task Row
@@ -249,7 +236,7 @@ private struct TaskRowView: View {
             Image(systemName: statusIcon)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(statusColor)
-                .frame(width: 12)
+                .frame(width: 10)
 
             Text(displayItem.title)
                 .font(.caption)
@@ -258,29 +245,21 @@ private struct TaskRowView: View {
 
             if let group = displayItem.parallelGroup {
                 Text("[\(group)]")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
         }
-        .padding(.horizontal, 6)
-        .frame(height: 22)
-        .background(Color.orange.opacity(0.06))
-        .overlay {
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(Color.orange.opacity(0.1), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
     private var statusIcon: String {
         switch displayItem.status {
         case .pending: return "circle"
-        case .inProgress: return "arrow.triangle.2.circlepath"
-        case .completed: return "checkmark.circle.fill"
-        case .failed: return "xmark.circle.fill"
-        case .skipped: return "forward.circle"
+        case .inProgress: return "play.fill"
+        case .completed: return "checkmark"
+        case .failed: return "xmark"
+        case .skipped: return "forward"
         }
     }
 
@@ -295,32 +274,7 @@ private struct TaskRowView: View {
     }
 }
 
-// MARK: - Display Items
-
-extension Goal.GoalStatus {
-    /// 是否为终态（不再会有后续推进）。
-    /// 注意：blocked 不算终态——它需要用户介入，侧栏应保持可见以提示用户。
-    var isTerminal: Bool {
-        switch self {
-        case .completed, .failed, .skipped:
-            return true
-        case .pending, .inProgress, .blocked:
-            return false
-        }
-    }
-}
-
-extension GoalTask.TaskStatus {
-    /// 是否为终态。
-    var isTerminal: Bool {
-        switch self {
-        case .completed, .failed, .skipped:
-            return true
-        case .pending, .inProgress:
-            return false
-        }
-    }
-}
+// MARK: - Goal Display Item
 
 /// Goal 展示用模型（不直接暴露 SwiftData 模型到 View）
 public struct GoalDisplayItem: Identifiable, Equatable {
@@ -328,14 +282,14 @@ public struct GoalDisplayItem: Identifiable, Equatable {
     public let title: String
     public let status: Goal.GoalStatus
     public let blockedReason: String?
-    
+
     public init(from goal: Goal) {
         self.id = goal.id
         self.title = goal.title
         self.status = goal.status
         self.blockedReason = goal.blockedReason
     }
-    
+
     /// 估算高度
     public func estimatedHeight(taskCount: Int) -> CGFloat {
         let baseHeight: CGFloat = 48
@@ -353,7 +307,7 @@ public struct GoalTaskDisplayItem: Identifiable, Equatable {
     public let title: String
     public let status: GoalTask.TaskStatus
     public let parallelGroup: String?
-    
+
     public init(from task: GoalTask) {
         self.id = task.id
         self.title = task.title
@@ -362,26 +316,14 @@ public struct GoalTaskDisplayItem: Identifiable, Equatable {
     }
 }
 
-// MARK: - Overall Summary
-
-public struct OverallSummary {
-    public let totalGoals: Int
-    public let completedGoals: Int
-
-    /// 完成百分比 (0-100)
-    public var completionPercent: Int {
-        guard totalGoals > 0 else { return 0 }
-        return Int(Double(completedGoals) / Double(totalGoals) * 100)
-    }
-}
-
 // MARK: - ViewModel
 
 @MainActor
 final public class SidebarViewModel: ObservableObject {
-    @Published public var goals: [GoalDisplayItem] = []
-    @Published public var tasksByGoalId: [String: [GoalTaskDisplayItem]] = [:]
-    @Published public var overallSummary: OverallSummary?
+    /// 当前活跃的 Goal（单一目标模式）
+    @Published public var activeGoal: GoalDisplayItem?
+    /// 当前活跃 Goal 的 Tasks
+    @Published public var activeTasks: [GoalTaskDisplayItem] = []
     @Published public var isLoading: Bool = false
 
     public var currentConversationId: String?
@@ -389,21 +331,31 @@ final public class SidebarViewModel: ObservableObject {
 
     public init() {}
 
-    /// 是否还有进行中的工作（需要展示侧栏）。
-    ///
-    /// 与 AutoTask 的 `isAllDone` 取反语义一致：只要存在未到终态的 Goal，
-    /// 或任一 Task 仍为 pending/inProgress，就返回 true。
-    /// 全部到达终态后返回 false，侧栏立即隐藏——不依赖数据被删除。
+    /// 是否有可见的 Goal（需要展示侧栏）
     public var hasActiveWork: Bool {
-        guard !goals.isEmpty else { return false }
-        return goals.contains { goal in
-            if goal.status.isTerminal {
-                // 终态 Goal：确认其下没有残留的进行中任务
-                let tasks = tasksByGoalId[goal.id] ?? []
-                return tasks.contains { !$0.status.isTerminal }
+        guard let goal = activeGoal else { return false }
+        // 终态: completed, failed, skipped - 不显示
+        switch goal.status {
+        case .completed, .failed, .skipped:
+            // 终态下检查是否还有进行中的 task
+            return activeTasks.contains { task in
+                switch task.status {
+                case .completed, .failed, .skipped:
+                    return false
+                case .pending, .inProgress:
+                    return true
+                }
             }
+        case .pending, .inProgress, .blocked:
             return true
         }
+    }
+
+    /// 获取进度信息
+    public var progressText: String {
+        guard let _ = activeGoal, !activeTasks.isEmpty else { return "" }
+        let completed = activeTasks.filter { $0.status == .completed || $0.status == .skipped }.count
+        return "\(completed)/\(activeTasks.count)"
     }
 
     /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
@@ -418,9 +370,8 @@ final public class SidebarViewModel: ObservableObject {
 
     public func refresh(conversationId: String?) async {
         guard let conversationId else {
-            goals = []
-            tasksByGoalId = [:]
-            overallSummary = nil
+            activeGoal = nil
+            activeTasks = []
             currentConversationId = nil
             isLoading = false
             return
@@ -462,17 +413,24 @@ final public class SidebarViewModel: ObservableObject {
 
         let fetchedGoals = await manager.fetchGoals(conversationId: cid)
 
-        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
-        for goal in fetchedGoals {
-            let tasks = await manager.fetchTasks(goalId: goal.id)
-            tasksMap[goal.id] = tasks.map { GoalTaskDisplayItem(from: $0) }
+        // 查找最新的活跃 Goal（非终态）
+        let activeGoalModel = fetchedGoals.first { goal in
+            switch goal.status {
+            case .completed, .failed, .skipped:
+                return false
+            case .pending, .inProgress, .blocked:
+                return true
+            }
         }
 
-        goals = fetchedGoals.map { GoalDisplayItem(from: $0) }
-        tasksByGoalId = tasksMap
-
-        let completed = fetchedGoals.filter { $0.status == .completed }.count
-        overallSummary = OverallSummary(totalGoals: fetchedGoals.count, completedGoals: completed)
+        if let goal = activeGoalModel {
+            activeGoal = GoalDisplayItem(from: goal)
+            let tasks = await manager.fetchTasks(goalId: goal.id)
+            activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
+        } else {
+            activeGoal = nil
+            activeTasks = []
+        }
     }
 }
 
@@ -480,20 +438,20 @@ final public class SidebarViewModel: ObservableObject {
 
 private final class NotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?
-    
+
     var hasObserver: Bool {
         observer != nil
     }
-    
+
     deinit {
         remove()
     }
-    
+
     func set(_ observer: NSObjectProtocol) {
         remove()
         self.observer = observer
     }
-    
+
     func remove() {
         if let observer {
             NotificationCenter.default.removeObserver(observer)

@@ -1,5 +1,6 @@
 import Foundation
 import HttpKit
+import LumiLLMProviderSupport
 
 /// 智谱配额查询辅助工具
 enum QuotaService {
@@ -9,7 +10,7 @@ enum QuotaService {
     /// 获取配额信息
     static func fetchQuota() async -> QuotaStatus {
         // 获取 API Key
-        let apiKey = ZhipuProvider.getApiKey()
+        let apiKey = LumiAPIKeyTools.get(storageKey: ZhipuProvider.info._apiKeyStorageKey)
         guard !apiKey.isEmpty else {
             return .authError
         }

@@ -25,7 +25,7 @@ public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     // MARK: - Initialization
     
     public convenience init() {
-        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let root = (RClickPluginRuntimeBridge.dataRootDirectory ?? RClickPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("RClickPlugin", isDirectory: true)
         self.init(pluginDirectory: root)
     }

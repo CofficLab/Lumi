@@ -15,13 +15,16 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI")
+        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "ProjectsPlugin",
             dependencies: [
                 "LumiCoreKit",
+                "SuperLogKit",
                 "LumiUI"
             ],
             path: "Sources",

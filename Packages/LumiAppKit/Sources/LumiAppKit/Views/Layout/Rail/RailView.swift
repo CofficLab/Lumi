@@ -6,7 +6,7 @@ struct RailView: View {
     @LumiTheme private var theme
 
     let tabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: LumiLayoutState
+    @ObservedObject var layoutState: LayoutState
 
     private static let minWidth: CGFloat = 200
 

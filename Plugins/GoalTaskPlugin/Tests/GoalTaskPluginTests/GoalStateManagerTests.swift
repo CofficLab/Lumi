@@ -154,15 +154,14 @@ struct GoalStateManagerTests {
         _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
 
         let vm = SidebarViewModel()
-        vm.goals = (await manager.fetchGoals(conversationId: cid)).map { GoalDisplayItem(from: $0) }
-        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
-        for goal in await manager.fetchGoals(conversationId: cid) {
-            tasksMap[goal.id] = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
+        let goals = await manager.fetchGoals(conversationId: cid)
+        vm.activeGoal = goals.first.map { GoalDisplayItem(from: $0) }
+        if let goal = goals.first {
+            vm.activeTasks = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
         }
-        vm.tasksByGoalId = tasksMap
 
         // 数据仍在 DB（尚未被 hook 清理），但全部到终态 → 应隐藏
-        #expect(vm.goals.isEmpty == false)
+        #expect(vm.activeGoal != nil)
         #expect(vm.hasActiveWork == false)
     }
 
@@ -189,12 +188,9 @@ struct GoalStateManagerTests {
         _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
 
         let vm = SidebarViewModel()
-        vm.goals = (await manager.fetchGoals(conversationId: cid)).map { GoalDisplayItem(from: $0) }
-        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
-        for goal in await manager.fetchGoals(conversationId: cid) {
-            tasksMap[goal.id] = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
-        }
-        vm.tasksByGoalId = tasksMap
+        vm.activeGoal = GoalDisplayItem(from: created.goal)
+        let tasks = await manager.fetchTasks(goalId: created.goal.id)
+        vm.activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
 
         #expect(vm.hasActiveWork == true)
     }

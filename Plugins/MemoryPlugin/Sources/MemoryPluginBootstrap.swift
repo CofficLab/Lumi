@@ -14,7 +14,7 @@ public extension MemoryPlugin {
 
         if let lumiCore = context.lumiCore {
             MemoryPlugin.config = MemoryPluginConfig(
-                memoryRootURL: lumiCore.pluginDataDirectory(for: "Memory")
+                memoryRootURL: lumiCore.storage.pluginDataDirectory(for: "Memory")
             )
         }
         didBootstrapFromLumiCore = true
