@@ -9,7 +9,7 @@ import SuperLogKit
 public final class ProjectsStore: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
     public nonisolated static let emoji = "📁"
-    public static var verbose = true
+    public static var verbose = false
 
     // MARK: - Constants
 

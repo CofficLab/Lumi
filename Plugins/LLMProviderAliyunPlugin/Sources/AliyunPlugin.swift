@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiLLMProviderSupportimport LumiCoreKit
 
 public enum AliyunPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -14,7 +14,10 @@ public enum AliyunPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [AliyunProvider(), AliyunTokenPlanProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAliyun", directory: core.pluginDataDirectory(for: "LLMProviderAliyun"))
+        }
+        return [AliyunProvider(), AliyunTokenPlanProvider()]
     }
 
     @MainActor

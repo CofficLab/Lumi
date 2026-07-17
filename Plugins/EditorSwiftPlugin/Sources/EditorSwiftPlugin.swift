@@ -23,6 +23,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        bootstrapFromLumiCoreIfNeeded(context: context)
         guard context.activeSectionID == editorPanelSectionID,
               context.resolve(LumiEditorServicing.self) != nil
         else {

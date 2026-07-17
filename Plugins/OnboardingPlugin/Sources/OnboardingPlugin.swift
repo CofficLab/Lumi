@@ -17,7 +17,8 @@ public enum OnboardingPlugin: LumiPlugin {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in
                 OnboardingRootOverlay(content: content)
             }

@@ -13,7 +13,7 @@ public struct LayoutMenuButton: View {
     @State private var isPopoverPresented = false
 
     // layoutState 从 lumiCore 获取
-    private var layoutState: LumiLayoutState {
+    private var layoutState: LayoutState {
         lumiCore.layoutComponent.state
     }
 

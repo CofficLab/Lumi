@@ -19,7 +19,10 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [StepFunProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderStepFunPlugin", directory: core.pluginDataDirectory(for: "LLMProviderStepFunPlugin"))
+        }
+        return [StepFunProvider()]
     }
 
     @MainActor

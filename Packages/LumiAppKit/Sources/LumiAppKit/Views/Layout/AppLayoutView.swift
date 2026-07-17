@@ -36,7 +36,7 @@ struct AppLayoutView: View {
     /// 本视图 `@ObservedObject` 监听 → body 重绘。所以点 activity bar 切换 view container
     /// 时右侧内容会同步刷新。如果未来 LumiCore 不再转发，body 会停在旧值上，需在
     /// `LumiCore` 侧的转发逻辑上修。
-    private var layoutState: LumiLayoutState {
+    private var layoutState: LayoutState {
         lumiCore.layoutComponent.state
     }
 

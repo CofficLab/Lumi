@@ -124,7 +124,8 @@ public final class OnboardingPluginStore: SuperLog {
     // MARK: - 初始化
 
     public init(pluginId: String) {
-        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let root = (OnboardingPluginRuntimeBridge.dataRootDirectory
+            ?? OnboardingPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent(pluginId, isDirectory: true)
         self.settingsURL = root.appendingPathComponent("settings", isDirectory: true)
         self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")

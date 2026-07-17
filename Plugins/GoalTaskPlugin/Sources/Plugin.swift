@@ -1,14 +1,13 @@
 import Foundation
-import LumiCoreKit
 import LumiChatKit
+import LumiCoreKit
 import LumiUI
-import SuperLogKit
 import os
+import SuperLogKit
 import SwiftUI
 
 /// GoalTask 插件：目标导向的任务管理，支持并行执行
 public enum GoalTaskPlugin: LumiPlugin, SuperLog {
-    
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.goal-task",
         displayName: "Goal & Task",
@@ -19,22 +18,24 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
         stage: .beta,
         iconName: "target"
     )
-    
+
     /// 插件数据存储的子目录名称
     public static let dataDirectoryName = "GoalTask"
-    
+
     public static let emoji = "🎯"
-    
+
+    public static let verbose: Bool = false
+
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.goal-task")
-    
+
     // MARK: - Lifecycle Managed Instances
-    
+
     /// 由插件生命周期管理的状态管理器实例
     @MainActor
     public static var manager: GoalStateManager?
-    
+
     private static let promptService = PromptService()
-    
+
     @MainActor
     public static func lifecycle(_ event: LumiPluginLifecycle) {
         switch event {
@@ -84,7 +85,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
         let directory = resolveDataDirectory(preferContext: context)
         let manager = GoalStateManager(databaseRootURL: directory)
         Self.manager = manager
-        Self.logger.info("\(Self.t)ensureManagerInitialized: 懒加载初始化 manager（目录=\(directory.path)）")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)ensureManagerInitialized: 懒加载初始化 manager（目录=\(directory.path)）")
+        }
         return manager
     }
 
@@ -107,7 +110,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
             UpdateTaskStatusTool(),
             UpdateGoalStatusTool(),
             GetGoalProgressTool(),
-            AddTasksToGoalTool()
+            AddTasksToGoalTool(),
         ]
     }
 
@@ -117,12 +120,12 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
         _ = ensureManagerInitialized(context: context)
         return [
-            GoalContextMiddleware(promptService: promptService)
+            GoalContextMiddleware(promptService: promptService),
         ]
     }
-    
+
     // MARK: - Turn Finished Hook
-    
+
     @MainActor
     public static func onTurnFinished(
         context: LumiPluginContext,
@@ -131,9 +134,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     ) async {
         await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
     }
-    
+
     // MARK: - Chat Section (Sidebar)
-    
+
     @MainActor
     public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
         guard context.showsChatSection,
@@ -141,11 +144,11 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
         else {
             return []
         }
-        
+
         return [
             LumiChatSectionItem(id: info.id, order: info.order) {
                 ChatSectionView(coordinator: coordinator)
-            }
+            },
         ]
     }
 }
@@ -155,7 +158,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 private struct ChatSectionView: View {
     @LumiTheme private var theme
     @ObservedObject var coordinator: ChatSectionCoordinator
-    
+
     var body: some View {
         SidebarView(
             conversationIdProvider: { coordinator.selectedConversationID },

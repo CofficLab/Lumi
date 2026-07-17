@@ -23,11 +23,11 @@ import Foundation
 @MainActor
 public final class LayoutComponent: ObservableObject {
     /// 真正的布局状态。`private(set)` 让外部可读不可替换。
-    public private(set) var state: LumiLayoutState
+    public private(set) var state: LayoutState
 
     private var stateSubscription: AnyCancellable?
 
-    public init(state: LumiLayoutState = LumiLayoutState()) {
+    public init(state: LayoutState = LayoutState()) {
         self.state = state
         subscribeToState()
     }

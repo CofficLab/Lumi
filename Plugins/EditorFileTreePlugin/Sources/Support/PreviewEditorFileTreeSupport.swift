@@ -5,7 +5,7 @@ final class PreviewLumiCoreStub: LumiCoreAccessing {
     var dataRootDirectory: URL { URL(fileURLWithPath: "/tmp/preview") }
     var logoRegistry: LogoRegistry { .shared }
     let projectComponent = ProjectComponent()
-    let layoutComponent = LayoutComponent(state: LumiLayoutState())
+    let layoutComponent = LayoutComponent(state: LayoutState())
     let chatService: any LumiChatServicing = PreviewChatServicing()
     var editorService: (any AbstractEditorServicing)? { nil }
     var coreDataDirectory: URL { URL(fileURLWithPath: "/tmp/preview/Core") }

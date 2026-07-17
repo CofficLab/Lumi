@@ -14,7 +14,7 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
     let lumiCore: LumiCoreAccessing
 
     // layoutState 从 lumiCore 获取
-    private var layoutState: LumiLayoutState {
+    private var layoutState: LayoutState {
         lumiCore.layoutComponent.state
     }
 

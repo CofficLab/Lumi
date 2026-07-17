@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiLLMProviderSupportimport LumiCoreKit
 import os
 
 public enum OpenRouterPlugin: LumiPlugin {
@@ -17,6 +17,9 @@ public enum OpenRouterPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [OpenRouterProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderOpenRouterPlugin", directory: core.pluginDataDirectory(for: "LLMProviderOpenRouterPlugin"))
+        }
+        return [OpenRouterProvider()]
     }
 }

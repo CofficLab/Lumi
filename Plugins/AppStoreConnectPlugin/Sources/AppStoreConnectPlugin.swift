@@ -22,7 +22,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
             CreateAppStoreConnectVersionTool(),

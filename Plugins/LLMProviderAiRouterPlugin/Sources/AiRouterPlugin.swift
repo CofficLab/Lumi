@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiLLMProviderSupportimport LumiCoreKit
 
 public enum AiRouterPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -14,6 +14,9 @@ public enum AiRouterPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [AiRouterProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAiRouterPlugin", directory: core.pluginDataDirectory(for: "LLMProviderAiRouterPlugin"))
+        }
+        return [AiRouterProvider()]
     }
 }

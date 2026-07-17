@@ -17,7 +17,7 @@ import SuperLogKit
 /// 2. 对窗口 resize、holdingPriority 行为更鲁棒（divider 位置由 split view 自己维护）；
 /// 3. pane 的 width/height 可由 `dividerPosition` + `splitView.bounds.size` 推算出来。
 @MainActor
-public final class LumiLayoutState: ObservableObject, SuperLog {
+public final class LayoutState: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")

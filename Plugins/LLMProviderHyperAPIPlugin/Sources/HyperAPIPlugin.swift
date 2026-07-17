@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiLLMProviderSupportimport LumiCoreKit
 
 public enum HyperAPIPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(
@@ -14,6 +14,9 @@ public enum HyperAPIPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [HyperAPIProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderHyperAPIPlugin", directory: core.pluginDataDirectory(for: "LLMProviderHyperAPIPlugin"))
+        }
+        return [HyperAPIProvider()]
     }
 }

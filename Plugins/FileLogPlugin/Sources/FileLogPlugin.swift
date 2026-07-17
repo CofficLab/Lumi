@@ -33,6 +33,12 @@ public enum FileLogPlugin: LumiPlugin {
     public static func lifecycle(_ event: LumiPluginLifecycle) {
         switch event {
         case .didRegister, .appDidLaunch:
+            // 从 LumiCore.current 注入 plugin 目录(替代旧的 nonisolated 镜像)。
+            // lifecycle 不带 context,但它在 @MainActor 上下文,LumiCore.current 可安全读取。
+            // 时序上 current 可能尚未设置(此时 Bridge 保持 nil,走 fallback,与旧镜像行为一致)。
+            if let core = LumiCore.current {
+                FileLogPluginRuntimeBridge.pluginSubdirectory = core.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
+            }
             bootstrapIfNeeded()
         case .projectDidOpen, .projectDidClose:
             break

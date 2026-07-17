@@ -22,7 +22,8 @@ public final class FileTreeSettings: @unchecked Sendable {
     // MARK: - Initialization
 
     private init() {
-        let root = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let root = (EditorFileTreeV2PluginRuntimeBridge.dataRootDirectory
+            ?? EditorFileTreeV2PluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("AgentEditorFileTree", isDirectory: true)
         self.store = FileTreeStore(directory: root)
     }

@@ -39,7 +39,7 @@ final class LayoutPersistenceCoordinator: SuperLog {
     }
 
     /// 从指定 store 恢复布局状态到指定的 layoutState（可注入，便于测试）。
-    func restore(into state: LumiLayoutState, from store: LayoutPluginLocalStore) {
+    func restore(into state: LayoutState, from store: LayoutPluginLocalStore) {
         var restored: [String] = []
 
         if let id = store.loadActiveViewContainerID() {
@@ -108,7 +108,7 @@ final class LayoutPersistenceCoordinator: SuperLog {
     /// 从 store 的 splitDimensions 字典中按新格式 key 回填各分栏 divider 位置到 layoutState。
     /// 回填使用不发通知的 `restoreXxx` 方法，避免启动时触发落盘。
     private func restoreSplitDimensions(
-        into state: LumiLayoutState,
+        into state: LayoutState,
         from store: LayoutPluginLocalStore,
         restored: inout [String]
     ) {

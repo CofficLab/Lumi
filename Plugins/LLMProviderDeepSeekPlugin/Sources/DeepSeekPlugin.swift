@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiLLMProviderSupportimport LumiCoreKit
 import os
 
 public enum DeepSeekPlugin: LumiPlugin {
@@ -17,6 +17,9 @@ public enum DeepSeekPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [DeepSeekProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderDeepSeekPlugin", directory: core.pluginDataDirectory(for: "LLMProviderDeepSeekPlugin"))
+        }
+        return [DeepSeekProvider()]
     }
 }
