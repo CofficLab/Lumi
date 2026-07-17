@@ -20,9 +20,7 @@ public struct WindowSettings: View {
     @ViewBuilder
     private var contentView: some View {
         if isInitializing {
-            ProgressView("正在初始化...")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .windowBackgroundColor))
+            LoadingView()
         } else if let error = initializationError {
             CrashedView(error: error)
         } else if let container = container {
