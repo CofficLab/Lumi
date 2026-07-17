@@ -221,7 +221,7 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
 
-        context.lumiCore.logoComponent.register(allItems)
+        context.lumiCore?.logoComponent.register(allItems)
     }
 
     func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
