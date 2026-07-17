@@ -21,23 +21,23 @@ import SwiftUI
 public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     // MARK: - State
 
-    /// 数据根目录（`boot` 后非空）。
-    var dataRootDirectory: URL? { get }
+    /// 数据根目录。init 时物化,始终非空。
+    var dataRootDirectory: URL { get }
 
     /// Logo 注册表（指向全局共享的 `LogoRegistry.shared`）。
     var logoRegistry: LogoRegistry { get }
 
-    /// 项目功能组件（`boot` 后非空）。封装 `ProjectState`,
+    /// 项目功能组件。封装 `ProjectState`,
     /// 对外暴露只读的 `currentProject` / `projects` + 写方法门面。
-    var projectComponent: ProjectComponent? { get }
+    var projectComponent: ProjectComponent { get }
 
-    /// 布局状态管理器（`boot` 后非空）。
-    var layoutState: LumiLayoutState? { get }
+    /// 布局状态管理器。
+    var layoutState: LumiLayoutState { get }
 
-    /// 聊天服务（`boot` 时由 `ChatServiceFactory` 创建并自动注册）。
-    var chatService: (any LumiChatServicing)? { get }
+    /// 聊天服务（init 时由 `ChatServiceFactory` 创建并自动注册）。
+    var chatService: (any LumiChatServicing) { get }
 
-    /// 编辑器服务（`boot(editorFactory:)` 时由工厂创建）。
+    /// 编辑器服务（`init(editorFactory:)` 传入工厂时创建；不传则为 nil）。
     var editorService: (any AbstractEditorServicing)? { get }
 
     // MARK: - Storage
@@ -91,24 +91,14 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
 /// - Important: 仅 `LumiCore` 主类（及其子类）在 App 启动期实现并使用该协议。
 @MainActor
 public protocol LumiCoreBootstrapping: AnyObject {
-    // MARK: - ChatService Factory
-
-    /// ChatService 工厂闭包类型。
+    /// ChatService 工厂闭包类型。init 时传入,接收 core 数据库目录。
+    /// 工厂创建的 ChatService 的 lumiCore 引用应留空(nil),由调用方在
+    /// LumiCore 创建后调 `chatService.configure(lumiCore:)` 回填。
     typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
-
-    /// EditorBootstrap 工厂闭包类型。
-    typealias EditorBootstrapFactory<Service: AbstractEditorServicing> =
-        @MainActor (any LumiAgentToolProviding) throws -> Service
-
-    /// 设置 ChatService 工厂。
-    /// - Parameter factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
-    ///   应在 `boot()` 之前调用。
-    func setupChatService(_ factory: @escaping ChatServiceFactory)
 
     // MARK: - Service Registry
 
     /// 注册一个服务实例，供 `makePluginContext` 自动注入。
-    /// 应在 `RootContainer` 初始化完成后调用一次。
     func registerService<T>(_ type: T.Type, _ instance: T)
 
     /// 从注册表解析已注册的服务实例。
@@ -119,7 +109,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// 启动 `ToolService` 并注入运行环境。
     ///
     /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
-    /// 内置工具（如 `ChatService.builtInTools`）。把它们传入启动期校验，让 boot 阶段
+    /// 内置工具（如 `ChatService.builtInTools`）。把它们传入启动期校验，让 init 阶段
     /// 就能拦截跨来源的命名冲突。
     func bootstrapToolService(
         provider: any LumiAgentToolProviding,
@@ -137,7 +127,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
         builtInTools: [any LumiAgentTool]
     )
 
-    /// 启动期工具名校验：让 boot 阶段就能拦截插件侧的配置冲突。
+    /// 启动期工具名校验：让 init 阶段就能拦截插件侧的配置冲突。
     ///
     /// 校验的是 `ToolService` 最终累积的工具集（plugin + built-in + sub-agent delegate）
     /// 而非仅 `provider.agentTools(context:)` 的子集——这避免跨来源命名冲突逃逸到
@@ -145,37 +135,6 @@ public protocol LumiCoreBootstrapping: AnyObject {
     func validateToolNameUniqueness(
         provider: any LumiAgentToolProviding,
         builtInTools: [any LumiAgentTool]
-    ) throws
-
-    // MARK: - Boot
-
-    /// 启动 LumiCore。
-    ///
-    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 LumiCore 会在工具服务就绪后
-    /// 自动调用工厂创建 `EditorService`，并同时注册抽象协议（`AbstractEditorServicing`）
-    /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
-    /// 单元测试、CLI 工具）。
-    ///
-    /// `dataRootDirectory` 是 LumiAppKit 决定并传入的数据根父目录，LumiCore 负责
-    /// 在其下物化 `Core/` 子目录作为核心数据库的物理位置。`dataRootDirectory` 始终
-    /// 是父目录本身（而非 `Core/` 子目录），以保证 `coreDataDirectory` /
-    /// `pluginDataDirectory(for:)` 的相对路径计算与历史一致。
-    ///
-    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 注入 `ToolService` 的
-    /// 内置工具（如 `ChatService.builtInTools`）。传入后启动期校验就把 plugin 工具、
-    /// 内置工具、sub-agent delegate 工具的并集一起查重，跨来源的命名冲突在 boot
-    /// 阶段就会以 `LumiToolRegistrationError` 抛出。
-    ///
-    /// - Parameters:
-    ///   - dataRootDirectory: 数据根父目录，由 LumiAppKit 决定。
-    ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
-    ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
-    ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
-    func boot<Service: AbstractEditorServicing>(
-        dataRootDirectory: URL,
-        provider: any LumiAgentToolProviding,
-        builtInTools: [any LumiAgentTool],
-        editorFactory: EditorBootstrapFactory<Service>?
     ) throws
 }
 

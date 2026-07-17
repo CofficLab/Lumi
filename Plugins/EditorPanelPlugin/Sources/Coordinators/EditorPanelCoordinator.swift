@@ -55,7 +55,7 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 视图出现时的初始化逻辑
     public func handleAppear() {
         guard let panelService, let service else { return }
-        let projectPath = lumiCore?.projectComponent?.currentProject?.path ?? ""
+        let projectPath = lumiCore?.projectComponent.currentProject?.path ?? ""
 
         if EditorPanelPlugin.verbose {
             EditorPanelPlugin.logger.info(

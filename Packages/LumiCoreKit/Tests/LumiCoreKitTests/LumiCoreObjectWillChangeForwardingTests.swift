@@ -95,7 +95,7 @@ struct LumiCoreObjectWillChangeForwardingTests {
         }
         defer { cancellable.cancel() }
 
-        core.projectComponent?.switchToProject(
+        core.projectComponent.switchToProject(
             ProjectEntry(name: "demo", path: "/tmp/demo")
         )
         try await Task.sleep(nanoseconds: 10_000_000)

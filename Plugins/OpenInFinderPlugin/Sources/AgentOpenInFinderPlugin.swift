@@ -61,7 +61,7 @@ public struct OpenInFinderStatusBarView: View {
 
     public var body: some View {
         Group {
-            if (lumiCore.projectComponent?.currentProject?.path ?? "").isEmpty {
+            if (lumiCore.projectComponent.currentProject?.path ?? "").isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -106,8 +106,8 @@ public struct OpenInFinderStatusBarView: View {
     }
 
     private func openInFinder() {
-        guard let path = lumiCore.projectComponent?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: lumiCore.projectComponent?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectComponent.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }
@@ -158,7 +158,7 @@ public struct OpenInFinderDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(lumiCore.projectComponent?.currentProject?.path ?? "")
+                Text(lumiCore.projectComponent.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -168,7 +168,7 @@ public struct OpenInFinderDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(lumiCore.projectComponent?.currentProject?.path ?? "", forType: .string)
+                    NSPasteboard.general.setString(lumiCore.projectComponent.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -182,8 +182,8 @@ public struct OpenInFinderDetailView: View {
     }
 
     private func openInFinder() {
-        guard let path = lumiCore.projectComponent?.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: lumiCore.projectComponent?.currentProject?.path ?? "")
+        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: lumiCore.projectComponent.currentProject?.path ?? "")
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }

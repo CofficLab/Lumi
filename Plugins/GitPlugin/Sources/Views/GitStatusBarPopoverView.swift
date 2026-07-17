@@ -37,7 +37,7 @@ public struct GitPluginPopoverView: View {
     private let commitPageSize = 25
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public var body: some View {

@@ -53,18 +53,11 @@ final class LumiCoreService: SuperLog {
         self.provider = provider
         self.pluginService = provider
 
-        // 创建 LumiCore 实例
-        let lumiCore = LumiCore()
-        self.lumiCore = lumiCore
-
-        // 设置 ChatService 工厂，boot() 时自动创建并注册
-        lumiCore.setupChatService { [weak lumiCore] databaseDirectory in
-            ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: lumiCore)
-        }
-
-        // Editor 工厂：内化原先由 RootContainer 传入的闭包。EditorCoreService 在创建时
-        // 拿不到 lumiCore（boot 还在进行），boot 完成后由本类调 configure 回填。
-        let editorFactory: LumiCore.EditorBootstrapFactory<EditorCoreService> = { factoryProvider in
+        // Editor 工厂:返回 EditorCoreService 实例。注意此时还不持有 lumiCore——
+        // LumiCore.init 会接收并存储返回值,但 `configure(lumiCore:)` 回填由本类
+        // 在 LumiCore 创建完成后调用(因为 configure 是 EditorCoreService 的具体方法、
+        // 不在 AbstractEditorServicing 协议里,LumiCoreKit 无法直接调)。
+        let editorFactory: @MainActor (any LumiAgentToolProviding) throws -> any AbstractEditorServicing = { factoryProvider in
             guard let pluginService = factoryProvider as? PluginService else {
                 fatalError("Editor factory 收到的 provider 不是 PluginService")
             }
@@ -74,12 +67,23 @@ final class LumiCoreService: SuperLog {
             )
         }
 
-        try lumiCore.boot(
-            dataRootDirectory: dataRootDirectory,
-            provider: provider,
-            builtInTools: ChatService.builtInTools,
-            editorFactory: editorFactory
-        )
+        // 一次性创建 LumiCore:内部完成 ProjectComponent / LayoutState / dataRoot 物化 /
+        // ChatService 创建(留空 lumiCore) / ToolService / EditorService 的全部绑定。
+        // ChatService 的 lumiCore 引用留空,在 LumiCore 创建完成后由下方 configure 回填
+        // (Swift 两阶段初始化约束:创建 ChatService 时 self 不可 escape)。
+        let lumiCore: LumiCore
+        do {
+            lumiCore = try LumiCore(
+                dataRootDirectory: dataRootDirectory,
+                provider: provider,
+                builtInTools: ChatService.builtInTools,
+                chatServiceFactory: { databaseDirectory in
+                    ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: nil)
+                },
+                editorFactory: editorFactory
+            )
+        }
+        self.lumiCore = lumiCore
 
         if Self.verbose {
             Self.logger.info("\(Self.t)数据根目录: \(dataRootDirectory.path)")
@@ -98,33 +102,35 @@ final class LumiCoreService: SuperLog {
         currentLumiCore = lumiCore
         currentLumiCoreDataRootDirectory = lumiCore.dataRootDirectory
 
-        // —— 暴露强类型属性（吸收 RootContainer 旧的 checkedChatService 强转）——
+        // —— 暴露强类型 chatService + 回填 lumiCore 引用 ——
         guard let chatService = lumiCore.chatService as? ChatService else {
             fatalError("LumiCore.chatService 必须是 ChatService。实际类型: \(String(describing: type(of: lumiCore.chatService)))")
         }
         self.chatService = chatService
+        chatService.configure(lumiCore: lumiCore)
 
-        guard let editorCoreService = lumiCore.resolveService(EditorCoreService.self) else {
-            fatalError("LumiCore 服务表中未找到 EditorCoreService，请确认 editorFactory 已正确传递。")
+        // editorService 由 editorFactory 创建,init 已存进 LumiCore.editorService(非空)。
+        // 这里取回强类型引用,并补上 configure 回填。
+        guard let editorCoreService = lumiCore.editorService as? EditorCoreService else {
+            fatalError("LumiCore.editorService 必须是 EditorCoreService。实际类型: \(String(describing: lumiCore.editorService))")
         }
         self.editorCoreService = editorCoreService
-
-        // EditorCoreService 在 editorFactory 闭包里被创建时拿不到 lumiCore,
-        // 这里通过 configure 补上,让它能读 projectState + 切换 persistence URL。
         editorCoreService.configure(lumiCore: lumiCore)
+        // 把具体类型也注册进服务表(供需要 EditorCoreService 强类型的调用方解析)。
+        lumiCore.registerService(EditorCoreService.self, editorCoreService)
 
-        // —— 把自己注册进服务表（吸收 RootContainer 的 registerService(LumiCoreService.self)）——
+        // —— 把自己注册进服务表 ——
         lumiCore.registerService(LumiCoreService.self, self)
         // 把 PluginService 注册为 LLM Provider 设置贡献源,供 makePluginContext 自动注入
-        // 到 LumiPluginContext（吸收 RootContainer 旧的 registerService((any LumiLLMProviderSettingsContributing).self)）。
+        // 到 LumiPluginContext。
         lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 
-        // —— 应用 Chat 维度插件贡献（吸收 RootContainer 启动期的 applyPluginContributions）——
+        // —— 应用 Chat 维度插件贡献 ——
         applyChatPluginContributions()
 
         // —— 编排工具贡献：把插件工具 / 内置工具 / 子 Agent 工具注册进 ToolService ——
         // LLM Provider / 中间件 / 渲染器等 Chat 维度的贡献由 applyChatPluginContributions
-        // 处理。工具名唯一性已在 boot 阶段校验,此处直接注册。
+        // 处理。工具名唯一性已在 init 阶段校验,此处直接注册。
         bootstrapToolContributions()
 
         // —— 订阅运行期插件启用状态变化 ——

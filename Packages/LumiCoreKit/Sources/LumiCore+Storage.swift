@@ -3,7 +3,7 @@ import Foundation
 extension LumiCore {
     /// 核心数据目录。
     public var coreDataDirectory: URL {
-        Self._directory(named: "Core", under: dataRootDirectory!)
+        Self._directory(named: "Core", under: dataRootDirectory)
     }
 
     /// 插件数据目录。
@@ -12,7 +12,7 @@ extension LumiCore {
     public func pluginDataDirectory(for pluginName: String) -> URL {
         Self._directory(
             named: Self._sanitizeDirectoryName(pluginName, fallback: "Plugin"),
-            under: dataRootDirectory!
+            under: dataRootDirectory
         )
     }
 

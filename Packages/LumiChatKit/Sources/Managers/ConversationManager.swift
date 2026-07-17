@@ -22,7 +22,7 @@ final class ConversationManager {
 
         let now = Date()
         let resolvedProjectPath = Self.normalizedOptionalPath(projectPath)
-            ?? Self.normalizedOptionalPath(service.lumiCore?.projectComponent?.currentProject?.path)
+            ?? Self.normalizedOptionalPath(service.lumiCore?.projectComponent.currentProject?.path)
 
         let conversation = LumiConversationSummary(
             title: service.normalizedTitle(title) ?? "New Chat",

@@ -187,7 +187,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     ) {
         // 通过 LumiCore 获取项目列表
         let provider: () -> [ProjectEntry] = { [weak self] in
-            self?.lumiCore?.projectComponent?.projects ?? recentProjects()
+            self?.lumiCore?.projectComponent.projects ?? recentProjects()
         }
 
         // `hostPersistenceRootURL` 在 init 阶段尚无 LumiCore 实例，配置 `configure(lumiCore:)`

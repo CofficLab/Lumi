@@ -85,7 +85,7 @@ public struct OpenInGitHubDesktopStatusBarView: View {
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public var body: some View {
@@ -153,7 +153,7 @@ public struct OpenInGitHubDesktopDetailView: View {
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public var body: some View {

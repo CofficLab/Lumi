@@ -66,19 +66,17 @@ extension LumiCore {
 
         // 3. 收集子 Agent 定义并包装成 delegate 工具
         let subAgentDefinitions = provider.subAgents(context: context)
-        if let chatService {
-            let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
-                SubAgentDelegateTool(
-                    definition: definition,
-                    chatService: chatService,
-                    toolService: toolService
-                )
-            }
-            toolService.appendTools(subAgentTools)
+        let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
+            SubAgentDelegateTool(
+                definition: definition,
+                chatService: chatService,
+                toolService: toolService
+            )
         }
+        toolService.appendTools(subAgentTools)
 
         // 4. 关联到 ChatService
-        chatService?.registerToolService(toolService)
+        chatService.registerToolService(toolService)
     }
 
     // MARK: - Tool Name Validation

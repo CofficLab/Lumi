@@ -26,7 +26,7 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
 
     @MainActor
     public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        let projectPath = context.lumiCore?.projectComponent?.currentProject?.path ?? ""
+        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: info.id,

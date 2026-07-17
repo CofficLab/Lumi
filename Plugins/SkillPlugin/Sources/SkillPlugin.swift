@@ -35,7 +35,7 @@ public enum SkillPlugin: LumiPlugin {
             return []
         }
 
-        let projectPath = context.lumiCore?.projectComponent?.currentProject?.path ?? ""
+        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).skills",

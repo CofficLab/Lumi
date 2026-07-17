@@ -12,7 +12,7 @@ public struct ProjectIssueScannerRoot<Content: View>: View {
     @State private var modelPreference: ScannerModelPreference = ScannerModelPreference.load()
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public init(lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {

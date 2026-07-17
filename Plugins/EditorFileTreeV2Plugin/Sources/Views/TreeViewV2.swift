@@ -120,7 +120,7 @@ public struct TreeViewV2: View, SuperLog {
     // MARK: - Private Computed Properties
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     private var showPackageDependencies: Bool {

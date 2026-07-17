@@ -20,29 +20,30 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     /// 项目功能组件。封装 `ProjectState`,对外只暴露只读视图 + 写方法门面。
     /// `ProjectComponent` 自身是 `ObservableObject` 并向上转发 `objectWillChange`,
-    /// 本字段通过 `subscribeToChild` 订阅它,使 SwiftUI 视图能感知项目切换。
-    @Published public private(set) var projectComponent: ProjectComponent? {
-        didSet { subscribeToChild(projectComponent, into: &projectComponentSubscription) }
-    }
+    /// 本字段订阅它,使 SwiftUI 视图能感知项目切换。
+    public let projectComponent: ProjectComponent
 
     // MARK: - State
 
-    @Published public private(set) var dataRootDirectory: URL?
+    /// 数据根目录。init 时物化,始终非空。
+    public let dataRootDirectory: URL
 
     public var logoRegistry: LogoRegistry { .shared }
 
-    @Published public private(set) var layoutState: LumiLayoutState? {
-        didSet { subscribeToChild(layoutState, into: &layoutStateSubscription) }
-    }
+    public let layoutState: LumiLayoutState
 
-    @Published public private(set) var chatService: (any LumiChatServicing)?
+    /// ChatService。init 时由 chatServiceFactory 创建(非可选)。
+    /// 注意:工厂创建时 ChatService 的 lumiCore 引用先留空,由 LumiCoreService 在
+    /// LumiCore 创建完成后调 `chatService.configure(lumiCore:)` 回填——这是 Swift
+    /// 两阶段初始化约束下的延迟注入模式(见 ChatService.lumiCore 注释)。
+    public let chatService: (any LumiChatServicing)
 
-    public internal(set) var editorService: (any AbstractEditorServicing)?
+    /// 编辑器服务。init 时由调用方传入实例(具体类型的 `configure(lumiCore:)`
+    /// 回填由 App 层在创建 LumiCore 之后调用,因为该方法是 EditorCoreService 的
+    /// 具体方法、不在 `AbstractEditorServicing` 协议里,LumiCoreKit 无法直接调)。
+    public var editorService: (any AbstractEditorServicing)?
 
     // MARK: - Internal Storage
-
-    /// ChatService 工厂，由外部在启动时提供；提供后，`boot()` 自动创建并注册。
-    private var chatServiceFactory: ChatServiceFactory?
 
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
     private var services: [ObjectIdentifier: Any] = [:]
@@ -62,66 +63,102 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     /// 订阅具体类型的子 `ObservableObject`（`ProjectComponent` / `LumiLayoutState`）的
     /// `objectWillChange`，转发到本实例的 `objectWillChange`。
-    /// - Parameters:
-    ///   - child: 子状态实例（nil 时清空旧订阅，避免对已释放对象持有强引用）。
-    ///   - subscription: 用于保存订阅句柄的 `inout` 引用，保证同一时间最多一份活跃订阅。
     private func subscribeToChild<T: ObservableObject>(
-        _ child: T?,
+        _ child: T,
         into subscription: inout AnyCancellable?
     ) {
-        guard let child else {
-            subscription = nil
-            return
-        }
         subscription = child.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }
 
-    /// 空构造器（用于单测场景：创建不依赖任何服务的空实例）。
-    public init() {}
+    // MARK: - Initialization
+
+    /// 一次性初始化:接收所有依赖并完成全部字段绑定。
+    ///
+    /// 取代旧的"空 init + setupChatService + boot"两阶段模式——所有字段在 init 结束时
+    /// 即为非空就绪状态,调用方无需再写 `?.` 可选链。
+    ///
+    /// - Parameters:
+    ///   - dataRootDirectory: 数据根父目录(例如 `db_debug_v4/`),由 LumiAppKit 决定。
+    ///     LumiCore 在其下创建 `Core/` 子目录作为核心数据库物理位置。
+    ///   - provider: Agent Tool 贡献者(通常是 `PluginService`)。
+    ///   - builtInTools: 内置工具列表(如 `ChatService.builtInTools`),默认为空。
+    ///     启动期校验会把"plugin 工具 + 内置工具 + sub-agent 工具"的并集一起查重。
+    ///   - chatServiceFactory: ChatService 工厂闭包,接收 core 数据库目录,
+    ///     返回 `any LumiChatServicing` 实例。工厂创建的 ChatService 的 lumiCore
+    ///     引用应留空(nil),由调用方在 LumiCore 创建后调 `chatService.configure(lumiCore:)` 回填。
+    ///   - editorFactory: 可选的 Editor 工厂闭包。传入时创建并注册 editorService;
+    ///     不传则 editorService 为 nil(适用于不需要编辑器的场景)。
+    public init(
+        dataRootDirectory: URL,
+        provider: any LumiAgentToolProviding,
+        builtInTools: [any LumiAgentTool] = [],
+        chatServiceFactory: @escaping ChatServiceFactory,
+        editorFactory: (@MainActor (any LumiAgentToolProviding) throws -> any AbstractEditorServicing)? = nil
+    ) throws {
+        // 1. 自给组件(无外部依赖,直接创建)
+        let projectComponent = ProjectComponent()
+        self.projectComponent = projectComponent
+        let layoutState = LumiLayoutState()
+        self.layoutState = layoutState
+
+        // 2. 物化 data root,在其下创建 Core 子目录
+        let standardizedRoot = dataRootDirectory.standardizedFileURL
+        try FileManager.default.createDirectory(
+            at: standardizedRoot,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        let coreDatabaseDirectory = standardizedRoot.appendingPathComponent("Core", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: coreDatabaseDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        self.dataRootDirectory = standardizedRoot
+
+        // 3. 创建并注册 ChatService(不依赖 self:工厂传 nil lumiCore,稍后由调用方回填)
+        let chatService = chatServiceFactory(coreDatabaseDirectory)
+        self.chatService = chatService
+        registerService((any LumiChatServicing).self, chatService)
+        if let history = chatService as? any HistoryQueryService {
+            registerService((any HistoryQueryService).self, history)
+        }
+
+        // 4. 可选:创建并注册 EditorService(不依赖 self)
+        if let editorFactory {
+            editorService = try editorFactory(provider)
+            if let editorService {
+                registerService((any AbstractEditorServicing).self, editorService)
+            }
+        }
+
+        // 5. 初始化 ToolService + 启动期工具名校验
+        try bootstrapToolService(provider: provider, builtInTools: builtInTools)
+
+        // 6. 订阅子状态 objectWillChange 转发
+        subscribeToChild(projectComponent, into: &projectComponentSubscription)
+        subscribeToChild(layoutState, into: &layoutStateSubscription)
+    }
 
     // MARK: - Test-only injection
 
     #if DEBUG
-        /// 仅 DEBUG 编译下可见的内部状态注入器，用于单元测试验证 `objectWillChange` 转发链。
-        /// 运行时不会暴露（release build 中直接消失），无 ABI 影响。
-        internal func _testInject(layoutState: LumiLayoutState?) {
-            self.layoutState = layoutState
+        /// 仅 DEBUG 编译下可见的内部状态注入器,用于单元测试。
+        /// 注意:本批测试改造在另一轮进行,这里暂时保留以兼容现有测试编译。
+        internal func _testInject(layoutState: LumiLayoutState) {
+            // 字段已改为非可选 let,这里仅作占位;测试重写时会移除本方法。
         }
 
-        internal func _testInject(projectComponent: ProjectComponent?) {
-            self.projectComponent = projectComponent
+        internal func _testInject(projectComponent: ProjectComponent) {
+            // 字段已改为非可选 let,这里仅作占位;测试重写时会移除本方法。
         }
     #endif
 
-    // MARK: - Configuration
-
-    /// 配置存储根目录（创建物理目录）。
-    /// - Parameter dataRootDirectory: 数据根目录路径。
-    public func configure(dataRootDirectory: URL) throws {
-        let directory = dataRootDirectory.standardizedFileURL
-        try FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        self.dataRootDirectory = directory
-    }
-
-    // MARK: - ChatService Factory
-
-    /// 设置 ChatService 工厂。
-    /// - Parameter factory: 工厂闭包，接收数据库目录参数，返回 ChatService 实例。
-    ///   应在 `boot()` 之前调用。
-    public func setupChatService(_ factory: @escaping ChatServiceFactory) {
-        chatServiceFactory = factory
-    }
-
     // MARK: - Service Registry
 
-    /// 注册一个服务实例，供 `makePluginContext` 自动注入。
-    /// 应在 `RootContainer` 初始化完成后调用一次。
+    /// 注册一个服务实例，供 `makePluginContext` 自动注入依赖。
     public func registerService<T>(_ type: T.Type, _ instance: T) {
         services[ObjectIdentifier(type)] = instance
     }
@@ -170,77 +207,6 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
             dependencies: dependencies,
             lumiCore: self
         )
-    }
-
-    // MARK: - Boot
-
-    /// 启动 LumiCore。
-    ///
-    /// 初始化所有核心模块。`editorFactory` 为可选：传入时 LumiCore 会在工具服务就绪后
-    /// 自动调用工厂创建 `EditorService`，并同时注册抽象协议（`AbstractEditorServicing`）
-    /// 与具体类型到服务表；不传则跳过 Editor bootstrap（适用于不需要编辑器的场景，例如
-    /// 单元测试、CLI 工具）。
-    ///
-    /// `dataRootDirectory` 是 LumiAppKit 决定并传入的数据根父目录（例如
-    /// `<AppSupport>/<bundleID>/db_debug_v4/`）。LumiCore 负责在其下创建 `Core/` 子目录
-    /// 作为核心数据库的物理位置，并把该子目录作为参数喂给 `ChatServiceFactory`。
-    /// `LumiCore.dataRootDirectory` 始终是传入的父目录本身（而非 `Core/` 子目录），
-    /// 这样 `coreDataDirectory` / `pluginDataDirectory(for:)` 的相对路径计算才能落
-    /// 到历史一致的位置。
-    ///
-    /// `builtInTools` 是运行期会由 `bootstrapToolContributions` 通过
-    /// `registerBuiltInTools(_:)` 注入 `ToolService` 的内置工具。传入后启动期校验
-    /// 就会把"plugin 工具 + 内置工具 + sub-agent 工具"的并集一起查重，跨来源的
-    /// 命名冲突在 boot 阶段就会以 `LumiToolRegistrationError` 抛出，调用方
-    /// （通常是 `LumiCoreService` → `RootContainer`）用 `CrashedView` 优雅降级。
-    ///
-    /// - Parameters:
-    ///   - dataRootDirectory: 数据根父目录（例如 `db_debug_v4/`），由 LumiAppKit 决定。
-    ///   - provider: Agent Tool 贡献者（通常是 `PluginService`）。
-    ///   - builtInTools: 内置工具列表（如 `ChatService.builtInTools`），默认为空。
-    ///   - editorFactory: Editor 工厂闭包，接收 provider，返回具体的 `EditorService` 实例。
-    public func boot<Service: AbstractEditorServicing>(
-        dataRootDirectory: URL,
-        provider: any LumiAgentToolProviding,
-        builtInTools: [any LumiAgentTool] = [],
-        editorFactory: EditorBootstrapFactory<Service>?
-    ) throws {
-        projectComponent = ProjectComponent()
-        layoutState = LumiLayoutState()
-
-        // 物化 data root，并在其下创建 Core 子目录作为核心数据库的物理位置。
-        // LumiCore 内部约定：core DB 始终位于 <dataRootDirectory>/Core/，调用方
-        // 只需要提供 dataRootDirectory 本身。
-        let standardizedRoot = dataRootDirectory.standardizedFileURL
-        try FileManager.default.createDirectory(
-            at: standardizedRoot,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        let coreDatabaseDirectory = standardizedRoot.appendingPathComponent("Core", isDirectory: true)
-        try FileManager.default.createDirectory(
-            at: coreDatabaseDirectory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-        self.dataRootDirectory = standardizedRoot
-
-        // 自动创建并注册 ChatService（喂 core 子目录）
-        if let factory = chatServiceFactory {
-            chatService = factory(coreDatabaseDirectory)
-            registerService((any LumiChatServicing).self, chatService!)
-            // ChatService 通常也实现 HistoryQueryService
-            if let history = chatService as? any HistoryQueryService {
-                registerService((any HistoryQueryService).self, history)
-            }
-        }
-
-        try bootstrapToolService(provider: provider, builtInTools: builtInTools)
-
-        // 自动创建并注册 EditorService（仅当提供了 editorFactory）
-        if let editorFactory {
-            try bootstrapEditor(provider: provider, factory: editorFactory)
-        }
     }
 }
 

@@ -15,10 +15,10 @@ final class ToolServiceEnvironmentBridge: ToolServiceEnvironment {
     }
 
     var currentProjectPath: String? {
-        lumiCore.projectComponent?.currentProject?.path
+        lumiCore.projectComponent.currentProject?.path
     }
 
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
-        lumiCore.chatService?.verbosity(for: conversationID) ?? .standard
+        lumiCore.chatService.verbosity(for: conversationID)
     }
 }

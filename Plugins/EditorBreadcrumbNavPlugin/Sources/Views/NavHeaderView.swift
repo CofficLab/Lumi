@@ -13,11 +13,11 @@ public struct NavHeaderView: View {
     let lumiCore: LumiCoreAccessing
 
     private var isProjectSelected: Bool {
-        lumiCore.projectComponent?.currentProject != nil
+        lumiCore.projectComponent.currentProject != nil
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public init(service: EditorService, lumiCore: LumiCoreAccessing) {

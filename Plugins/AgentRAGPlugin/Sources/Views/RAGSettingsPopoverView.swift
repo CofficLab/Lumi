@@ -155,7 +155,7 @@ struct RAGSettingsPopoverView: View {
     // MARK: - Private
 
     private var trackedProjects: [RAGTrackedProjectPopover] {
-        let recent = lumiCore.projectComponent?.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) } ?? []
+        let recent = lumiCore.projectComponent.projects.map { RAGTrackedProjectPopover(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProjectPopover]
         if currentPath.isEmpty {

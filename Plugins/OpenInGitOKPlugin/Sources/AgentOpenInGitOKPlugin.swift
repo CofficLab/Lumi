@@ -74,7 +74,7 @@ public struct OpenInGitOKStatusBarView: View {
     @State private var isGitOKInstalled: Bool = false
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public init(lumiCore: LumiCoreAccessing) {
@@ -135,8 +135,8 @@ public struct OpenInGitOKStatusBarView: View {
     }
 
     private func openInGitOK() {
-        guard let path = lumiCore.projectComponent?.currentProject?.path, !path.isEmpty else { return }
-        let projectPath = lumiCore.projectComponent?.currentProject?.path ?? ""
+        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
+        let projectPath = lumiCore.projectComponent.currentProject?.path ?? ""
         let projectURL = URL(fileURLWithPath: projectPath)
         GitOKLauncher.openProject(projectURL)
     }
@@ -190,7 +190,7 @@ public struct OpenInGitOKDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(lumiCore.projectComponent?.currentProject?.path ?? "")
+                Text(lumiCore.projectComponent.currentProject?.path ?? "")
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -200,7 +200,7 @@ public struct OpenInGitOKDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(lumiCore.projectComponent?.currentProject?.path ?? "", forType: .string)
+                    NSPasteboard.general.setString(lumiCore.projectComponent.currentProject?.path ?? "", forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -217,8 +217,8 @@ public struct OpenInGitOKDetailView: View {
     }
 
     private func openInGitOK() {
-        guard let path = lumiCore.projectComponent?.currentProject?.path, !path.isEmpty else { return }
-        let projectPath = lumiCore.projectComponent?.currentProject?.path ?? ""
+        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
+        let projectPath = lumiCore.projectComponent.currentProject?.path ?? ""
         let projectURL = URL(fileURLWithPath: projectPath)
         GitOKLauncher.openProject(projectURL)
     }

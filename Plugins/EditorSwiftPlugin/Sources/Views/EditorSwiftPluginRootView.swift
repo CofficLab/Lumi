@@ -18,11 +18,11 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
     @StateObject private var windowScope = EditorSwiftWindowScope()
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     private var projects: [ProjectEntry] {
-        lumiCore.projectComponent?.projects ?? []
+        lumiCore.projectComponent.projects ?? []
     }
 
     public init(lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {

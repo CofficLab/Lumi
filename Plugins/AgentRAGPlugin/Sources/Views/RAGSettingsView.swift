@@ -189,7 +189,7 @@ extension RAGSettingsView {
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let projects = lumiCore.projectComponent?.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
+        let projects = lumiCore.projectComponent.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]
         if currentPath.isEmpty {

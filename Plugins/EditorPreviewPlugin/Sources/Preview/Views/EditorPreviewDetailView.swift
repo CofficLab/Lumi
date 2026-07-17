@@ -266,7 +266,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .buttonStyle(.borderless)
             .disabled(
                 isCleaningProjectStringCatalogs ||
-                (lumiCore.projectComponent?.currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+                (lumiCore.projectComponent.currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
@@ -714,7 +714,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func cleanProjectStringCatalogs() {
         guard !isCleaningProjectStringCatalogs else { return }
-        let projectRootPath = (lumiCore.projectComponent?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectRootPath = (lumiCore.projectComponent.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
             alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return

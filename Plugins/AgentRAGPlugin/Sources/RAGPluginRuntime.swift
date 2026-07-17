@@ -13,7 +13,7 @@ public enum RAGPluginRuntime {
     /// 当前项目路径，从内核 `lumiCore.projectComponent` 获取。
     @MainActor
     public static var currentProjectPath: String {
-        lumiCore?.projectComponent?.currentProject?.path ?? ""
+        lumiCore?.projectComponent.currentProject?.path ?? ""
     }
 
     /// 当前项目名称，从路径推导。

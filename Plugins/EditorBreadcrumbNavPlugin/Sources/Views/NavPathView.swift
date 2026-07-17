@@ -14,7 +14,7 @@ public struct NavPathView: View {
     public let fileURL: URL
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     public init(fileURL: URL, service: EditorService, lumiCore: LumiCoreAccessing) {
