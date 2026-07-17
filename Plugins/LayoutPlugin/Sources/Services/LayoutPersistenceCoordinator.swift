@@ -29,9 +29,9 @@ final class LayoutPersistenceCoordinator: SuperLog {
 
     /// 从磁盘恢复布局状态到内核
     func restore() {
-        guard let state = lumiCore?.layoutState else {
+        guard let state = lumiCore?.layoutComponent.state else {
             if Self.verbose {
-                LayoutPlugin.logger.warning("\(self.t)LumiCore.layoutState 未初始化，跳过恢复")
+                LayoutPlugin.logger.warning("\(self.t)LumiCore.layoutComponent.state 未初始化，跳过恢复")
             }
             return
         }

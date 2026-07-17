@@ -11,7 +11,7 @@ public struct GitCommitHistoryRootOverlay<Content: View>: View {
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
-        lumiCore.layoutState ?? LumiLayoutState()
+        lumiCore.layoutComponent.state
     }
 
     public let content: Content

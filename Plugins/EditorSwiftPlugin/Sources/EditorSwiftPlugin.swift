@@ -79,7 +79,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     @MainActor
     private static func configureBuildOutputPresentation(context: LumiPluginContext) {
         guard context.showsPanelChrome,
-              let layoutState = context.lumiCore?.layoutState
+              let layoutState = context.lumiCore?.layoutComponent.state
         else {
             return
         }

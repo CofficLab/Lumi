@@ -31,8 +31,10 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     /// 对外暴露只读的 `currentProject` / `projects` + 写方法门面。
     var projectComponent: ProjectComponent { get }
 
-    /// 布局状态管理器。
-    var layoutState: LumiLayoutState { get }
+    /// 布局功能组件。封装 `LumiLayoutState`,转发 objectWillChange。
+    /// 注意:本组件不收敛 state 字段——外部可直接读写 `component.state.xxx`
+    /// (SwiftUI Binding 惯法天然要求外部能写)。
+    var layoutComponent: LayoutComponent { get }
 
     /// 聊天服务（init 时由 `ChatServiceFactory` 创建并自动注册）。
     var chatService: (any LumiChatServicing) { get }

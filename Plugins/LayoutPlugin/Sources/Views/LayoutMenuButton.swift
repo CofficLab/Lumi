@@ -14,7 +14,7 @@ public struct LayoutMenuButton: View {
 
     // layoutState 从 lumiCore 获取
     private var layoutState: LumiLayoutState {
-        lumiCore.layoutState ?? LumiLayoutState()
+        lumiCore.layoutComponent.state
     }
 
     public init(lumiCore: LumiCore) {

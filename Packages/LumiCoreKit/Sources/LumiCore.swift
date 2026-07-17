@@ -30,7 +30,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
     public var logoRegistry: LogoRegistry { .shared }
 
-    public let layoutState: LumiLayoutState
+    public let layoutComponent: LayoutComponent
 
     /// ChatService。init 时由 chatServiceFactory 创建(非可选)。
     /// 注意:工厂创建时 ChatService 的 lumiCore 引用先留空,由 RootContainer 在
@@ -48,7 +48,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
     private var services: [ObjectIdentifier: Any] = [:]
 
-    /// 内部 `ObservableObject` 子状态（`projectComponent` / `layoutState`）的
+    /// 内部 `ObservableObject` 子状态（`projectComponent` / `layoutComponent`）的
     /// `objectWillChange` 转发订阅。把它们的变更信号桥接到 `LumiCore.objectWillChange`，
     /// 这样用 `@ObservedObject var lumiCore: LumiCore` 的 SwiftUI 视图（如 `AppLayoutView`）
     /// 才能在子状态变更时收到刷新信号——否则只观察 `LumiCore` 的 @Published 是收不到的
@@ -59,7 +59,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// `let` 注入（见 `AppLayoutView`），不通过 `@ObservedObject` 监听，所以不会触发
     /// "UI 不刷新" 的同款问题；需要时可在 `LumiChatServicing` 实现里手动 `objectWillChange.send()`。
     private var projectComponentSubscription: AnyCancellable?
-    private var layoutStateSubscription: AnyCancellable?
+    private var layoutComponentSubscription: AnyCancellable?
 
     /// 订阅具体类型的子 `ObservableObject`（`ProjectComponent` / `LumiLayoutState`）的
     /// `objectWillChange`，转发到本实例的 `objectWillChange`。
@@ -100,8 +100,8 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         // 1. 自给组件(无外部依赖,直接创建)
         let projectComponent = ProjectComponent()
         self.projectComponent = projectComponent
-        let layoutState = LumiLayoutState()
-        self.layoutState = layoutState
+        let layoutComponent = LayoutComponent()
+        self.layoutComponent = layoutComponent
 
         // 2. 物化 data root,在其下创建 Core 子目录
         let standardizedRoot = dataRootDirectory.standardizedFileURL
@@ -139,7 +139,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
 
         // 6. 订阅子状态 objectWillChange 转发
         subscribeToChild(projectComponent, into: &projectComponentSubscription)
-        subscribeToChild(layoutState, into: &layoutStateSubscription)
+        subscribeToChild(layoutComponent, into: &layoutComponentSubscription)
     }
 
     // MARK: - Test-only injection
@@ -147,10 +147,6 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     #if DEBUG
         /// 仅 DEBUG 编译下可见的内部状态注入器,用于单元测试。
         /// 注意:本批测试改造在另一轮进行,这里暂时保留以兼容现有测试编译。
-        internal func _testInject(layoutState: LumiLayoutState) {
-            // 字段已改为非可选 let,这里仅作占位;测试重写时会移除本方法。
-        }
-
         internal func _testInject(projectComponent: ProjectComponent) {
             // 字段已改为非可选 let,这里仅作占位;测试重写时会移除本方法。
         }
