@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.18.0</title>
-            <pubDate>Thu, 16 Jul 2026 16:48:37 +0000</pubDate>
-            <sparkle:version>247</sparkle:version>
-            <sparkle:shortVersionString>4.18.0</sparkle:shortVersionString>
+            <title>4.19.0</title>
+            <pubDate>Fri, 17 Jul 2026 17:26:34 +0000</pubDate>
+            <sparkle:version>248</sparkle:version>
+            <sparkle:shortVersionString>4.19.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.18.0</h2>
-<h3>Changes since v4.17.0</h3>
+            <description><![CDATA[<h2>Release v4.19.0</h2>
+<h3>Changes since v4.18.0</h3>
 <ul>
-<li>docs: add LumiCoreKit/LumiChatKit layered architecture refactor proposal</li>
-<li>docs(editor-chat): add README and .gitignore for EditorChatPlugin</li>
-<li>feat: add ConversationTurnDurationPlugin for chat toolbar</li>
-<li>feat: add GoalTaskPlugin for goal-oriented task management</li>
-<li>feat: add turn finished hook for GoalTaskPlugin auto-continuation</li>
-<li>feat: Enhance GoalTask prompt system and sidebar display logic</li>
-<li>feat: register GoalTaskPlugin in plugin registry</li>
-<li>feat(auto-task): add user perspective to continuation prompts</li>
-<li>feat(core): add onTurnFinished hook for plugins</li>
+<li>feat: add elegant macOS-style Loading page</li>
+<li>feat: refactor LLM provider base classes and fix Keychain service regression</li>
+<li>feat(core): extract KeychainKit as independent package</li>
 <li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
-<li>feat(editor): add auto-save modes and improve save workflow</li>
-<li>feat(LumiCoreKit): add LumiProviderState for provider/model selection and availability runtime state</li>
-<li>feat(memory): encourage proactive memory saving via prompt improvements</li>
-<li>feat(plugin): Add pluginAboutView protocol hook for plugin about page</li>
-<li>feat(plugins): fix aboutView method name and add comprehensive AboutViews</li>
-<li>fix: add missing defaultBottomTabID static constant in LumiLayoutState</li>
-<li>fix: add missing EditorKernel import in EditorFileService</li>
-<li>fix: correct MiniMax video query task API endpoint path</li>
-<li>fix: improve logging for debugging sidebar reload issues</li>
-<li>fix(ask-user): guard against missing options for multi-choice questions</li>
+<li>feat(goal-task): add chat toolbar button to display goals</li>
+<li>feat(goal-task): enforce single active goal policy</li>
+<li>feat(menu-bar): sort menu bar popup items by order</li>
+<li>feat(plugin): allow agentTools to throw and surface failures to UI</li>
+<li>fix(menu-bar): honor LumiMenuBarPopupItem.order when aggregating popup items</li>
+<li>refactor: move plugin-related types to Plugin directory</li>
+<li>refactor(agent-tool): extract tool service methods into AgentToolComponent</li>
+<li>refactor(app): simplify RootContainer and rename project types</li>
+<li>refactor(bootstrap): merge LumiCoreService into RootContainer</li>
+<li>refactor(core): introduce ProjectComponent to encapsulate ProjectState</li>
+<li>refactor(core): remove KeychainKit dependency from LumiLLMProvider protocol</li>
+<li>refactor(core): remove LumiCoreKit Security module, use KeychainKit directly</li>
+<li>refactor(goal-task): simplify sidebar to show single active goal</li>
+<li>refactor(layout): introduce LayoutComponent to encapsulate LumiLayoutState</li>
+<li>refactor(logo): rename LogoRegistry to LogoComponent, migrate to component pattern</li>
+<li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.18.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.18.0/Lumi_4.18.0_x86_64.dmg" length="46904479" type="application/octet-stream" sparkle:edSignature="7tilDTfn25lFsYn/E+fEq71TW0NNOPiPwcIphmIEnFt2sfgrWQbb12Ap81otewpIWByKGRG5JAniUTYEbgrPCQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.19.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.19.0/Lumi_4.19.0_x86_64.dmg" length="44944829" type="application/octet-stream" sparkle:edSignature="NibogWzVQg6oAvGcaVPNYQmzdhyPhmV6iJR1/GQ4lXg0KR8EwBT+5x0+DmhNTJMJ85O5wG6LEIoxHaQhW9A3AA=="/>
         </item>
     </channel>
 </rss>
