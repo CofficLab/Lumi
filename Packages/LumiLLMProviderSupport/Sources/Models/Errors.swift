@@ -1,5 +1,6 @@
 import Foundation
 import HttpKit
+import KeychainKit
 import LLMKit
 import LumiCoreKit
 
@@ -38,7 +39,7 @@ open class OpenAICompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable {
         guard let storageKey = Self.info._apiKeyStorageKey else {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
@@ -448,7 +449,7 @@ open class AnthropicCompatibleLumiProvider: LumiLLMProvider, @unchecked Sendable
         guard let storageKey = Self.info._apiKeyStorageKey else {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }

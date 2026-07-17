@@ -1,4 +1,5 @@
 import Foundation
+import KeychainKit
 
 /// LLM 模型可用性检测结果
 public enum LumiModelAvailabilityResult: Sendable, Equatable {
@@ -167,7 +168,7 @@ public extension LumiLLMProvider {
     func hasApiKey() -> Bool {
         if Self.info.isLocal { return true }
         guard let storageKey = Self.info.apiKeyStorageKey else { return true }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         return !key.isEmpty
     }
 
@@ -175,20 +176,20 @@ public extension LumiLLMProvider {
     func getApiKey() -> String {
         if Self.info.isLocal { return "" }
         guard let storageKey = Self.info.apiKeyStorageKey else { return "" }
-        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        return KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
     }
 
     /// 默认实现：基于 `info.apiKeyStorageKey` 写 Keychain。
     /// 子类若要使用其他存储策略（如加密文件、外部 Vault），可 override。
     func setApiKey(_ apiKey: String) {
         guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
+        KeychainStore.shared.set(apiKey, forKey: storageKey)
     }
 
     /// 默认实现：基于 `info.apiKeyStorageKey` 从 Keychain 删除。
     func removeApiKey() {
         guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.remove(forKey: storageKey)
+        KeychainStore.shared.remove(forKey: storageKey)
     }
 
     /// 默认实现：本地供应商返回空串；远程供应商读 Keychain，缺失时抛 `missingAPIKey`。
@@ -198,7 +199,7 @@ public extension LumiLLMProvider {
         guard let storageKey = Self.info.apiKeyStorageKey else {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
@@ -224,13 +225,13 @@ public extension LumiLLMProvider {
     static func getApiKey() -> String {
         if Self.info.isLocal { return "" }
         guard let storageKey = Self.info.apiKeyStorageKey else { return "" }
-        return LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        return KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
     }
 
     /// 静态版本：等价于 `Self().setApiKey(_:)`，但避免每次新建实例。
     static func setApiKey(_ apiKey: String) {
         guard let storageKey = Self.info.apiKeyStorageKey else { return }
-        LumiAPIKeyStore.shared.set(apiKey, forKey: storageKey)
+        KeychainStore.shared.set(apiKey, forKey: storageKey)
     }
 
     func makeErrorMessage(
