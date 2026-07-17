@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../SuperLogKit"),
         .package(path: "../LumiLocalizationKit"),
+        .package(path: "../KeychainKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "KeychainKit", package: "KeychainKit"),
             ],
             path: "Sources",
             resources: [
