@@ -26,7 +26,8 @@ public enum AgentTempStoragePlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             WriteTempFileTool(),
             ReadTempFileTool(),
             ListTempFilesTool()

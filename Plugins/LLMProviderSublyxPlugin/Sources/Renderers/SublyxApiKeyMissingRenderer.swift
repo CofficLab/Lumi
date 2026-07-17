@@ -1,4 +1,5 @@
 import LumiCoreKit
+import LumiLLMProviderSupport
 import LumiUI
 import SwiftUI
 
@@ -55,7 +56,7 @@ struct SublyxApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                SublyxProvider.setApiKey(newValue)
+                                LumiAPIKeyTools.set(newValue, storageKey: SublyxProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -78,7 +79,7 @@ struct SublyxApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = SublyxProvider.getApiKey()
+            apiKey = LumiAPIKeyTools.get(storageKey: SublyxProvider.info._apiKeyStorageKey)
         }
     }
 }

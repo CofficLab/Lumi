@@ -1,5 +1,6 @@
 import Foundation
 import HttpKit
+import LLMKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -36,7 +37,15 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await provider.checkAvailabilityUsingChatPing(model: model),
+            await LumiOpenAICompatibleAvailability.chatPing(
+                model: model,
+                adapter: provider.internalAdapter,
+                apiService: provider.internalApiService,
+                buildRequest: { url, apiKey in
+                    provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+                },
+                resolveAPIKey: { try provider.lumiResolveAPIKey() }
+            ),
             kind: .tokenPlan
         )
 
@@ -54,7 +63,15 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await provider.checkAvailabilityUsingChatPing(model: model),
+            await LumiOpenAICompatibleAvailability.chatPing(
+                model: model,
+                adapter: provider.internalAdapter,
+                apiService: provider.internalApiService,
+                buildRequest: { url, apiKey in
+                    provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+                },
+                resolveAPIKey: { try provider.lumiResolveAPIKey() }
+            ),
             kind: .api
         )
 

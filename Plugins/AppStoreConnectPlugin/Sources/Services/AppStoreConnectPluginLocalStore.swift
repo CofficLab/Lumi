@@ -13,7 +13,8 @@ final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
     private let settingsFileURL: URL
 
     init(pluginDirectory: URL? = nil) {
-        let root = pluginDirectory ?? (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let root = pluginDirectory ?? (AppStoreConnectPluginRuntimeBridge.dataRootDirectory
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")

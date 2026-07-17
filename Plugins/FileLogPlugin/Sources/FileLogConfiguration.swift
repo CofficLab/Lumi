@@ -7,7 +7,7 @@ public protocol FileLogConfiguration: Sendable {
 
 struct DefaultFileLogConfiguration: FileLogConfiguration {
     func logsDirectory() -> URL {
-        lumiCorePluginDataDirectory(for: "FileLog")
-            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent("FileLog", isDirectory: true)
+        FileLogPluginRuntimeBridge.pluginSubdirectory
+            ?? FileLogPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent("FileLog", isDirectory: true)
     }
 }

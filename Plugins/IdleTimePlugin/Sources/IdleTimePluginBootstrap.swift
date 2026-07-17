@@ -6,7 +6,7 @@ public extension IdleTimePlugin {
     static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
-            IdleTimeRuntimeBridge.directoryURL = core.pluginDataDirectory(for: "IdleTime")
+            IdleTimeRuntimeBridge.directoryURL = core.storage.pluginDataDirectory(for: "IdleTime")
             didBootstrapFromLumiCore = true
         }
     }

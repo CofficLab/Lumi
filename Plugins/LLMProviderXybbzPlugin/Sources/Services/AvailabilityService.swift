@@ -1,4 +1,6 @@
 import Foundation
+import HttpKit
+import LLMKit
 import LumiCoreKit
 import LumiLLMProviderSupport
 
@@ -14,7 +16,15 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await provider.checkAvailabilityUsingChatPing(model: model)
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
+            model: model,
+            adapter: provider.internalAdapter,
+            apiService: provider.internalApiService,
+            buildRequest: { url, apiKey in
+                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+        )
         cache.write(model: model, result: result, timestamp: Date())
         return result
     }

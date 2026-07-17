@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 import os
 
@@ -17,6 +18,9 @@ public enum FeifeimiaoPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [FeifeimiaoProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderFeifeimiaoPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderFeifeimiaoPlugin"))
+        }
+        return [FeifeimiaoProvider()]
     }
 }

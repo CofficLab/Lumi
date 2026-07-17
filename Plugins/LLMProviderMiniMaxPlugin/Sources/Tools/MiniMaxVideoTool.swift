@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreKit
+import LumiLLMProviderSupport
 
 /// MiniMax 视频生成工具：通过 MiniMax API 生成视频并返回 mp4 文件。
 ///

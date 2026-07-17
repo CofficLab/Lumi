@@ -24,6 +24,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     private var buttonWindowObservation: NSKeyValueObservation?
     private nonisolated(unsafe) var systemThemeObserver: NSObjectProtocol?
     private nonisolated(unsafe) var themeSyncObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var pluginsChangedObserver: NSObjectProtocol?
 
     /// 订阅 `LogoRegistry.$bestItem`：插件贡献的 Logo 就绪后，
     /// 自动触发菜单栏内容重建，让 `LogoView(scene: .statusBar)` 拿到正确的 Logo。
@@ -40,6 +41,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         observeSystemAppearanceChanges()
         observeThemeWindowSync()
         observeLogoRegistry()
+        observePluginStateChanges()
         scheduleMenuBarSetup()
 
         if Self.verbose {
@@ -53,6 +55,9 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         }
         if let themeSyncObserver {
             NotificationCenter.default.removeObserver(themeSyncObserver)
+        }
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
         }
         logoRegistryCancellable?.cancel()
     }
@@ -256,7 +261,7 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
         }
     }
 
-    /// 订阅 `LumiCore.logoRegistry.$bestItem`。
+    /// 订阅 `LumiCore.logoComponent.$bestItem`。
     ///
     /// `MenuBarService` 启动时（`init` → `scheduleMenuBarSetup`）会立刻创建 `NSStatusItem`
     /// 并渲染 `MenuBarIconView`，但此时插件的 Logo 贡献可能尚未注册（由 `RootView.body`
@@ -271,13 +276,13 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
     /// 选择 Combine 订阅而不是依赖 `onEnabledPluginsChanged`：
     /// - `onEnabledPluginsChanged` 的语义是「启用列表变了」，跟「Logo 注册了」是两件事，
     ///   用它当信号灯会引入误触发与漏触发；
-    /// - `LogoRegistry` 已经是 `ObservableObject`，订阅 `@Published` 是单一事实源路径，
+    /// - `LogoComponent` 已经是 `ObservableObject`，订阅 `@Published` 是单一事实源路径，
     ///   与 `LogoView` 用 `@ObservedObject` 订阅同一份数据保持一致。
     ///
     /// `dropFirst()` 跳过初始 nil（菜单栏还没创建，按钮状态 item 也是 nil，没必要重建）。
     /// `replaceMenuBarContent` 内部用 `statusItem?.button` 守护，未创建时直接 return，不会崩溃。
     private func observeLogoRegistry() {
-        logoRegistryCancellable = lumiCore.logoRegistry
+        logoRegistryCancellable = lumiCore.logoComponent
             .$bestItem
             .dropFirst()
             .receive(on: DispatchQueue.main)
@@ -287,6 +292,15 @@ final class MenuBarService: NSObject, NSPopoverDelegate, SuperLog {
                 }
                 self?.replaceMenuBarContent()
             }
+    }
+
+    /// 订阅插件启用状态变化：插件 enable/disable 后菜单栏条目（statusBarItems /
+    /// menuBarContentItems 等）会随之变化，需要 `refresh()` 重建。
+    /// 原先由 RootContainer fan-out 调用，现在本类自治。
+    private func observePluginStateChanges() {
+        pluginsChangedObserver = NotificationCenter.default.onLumiEnabledPluginsDidChange { [weak self] in
+            self?.refresh()
+        }
     }
 
     private func startContentTimer() {

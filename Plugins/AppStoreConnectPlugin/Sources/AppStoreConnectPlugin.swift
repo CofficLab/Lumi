@@ -22,7 +22,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
             CreateAppStoreConnectVersionTool(),
@@ -63,7 +64,7 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
         let provider: @MainActor @Sendable () -> String = {
-            context.lumiCore?.projectState?.currentProject?.path ?? ""
+            context.lumiCore?.projectComponent.currentProject?.path ?? ""
         }
         AddToChat.currentProjectPathProvider = provider
         CoverArtRuntime.currentProjectPathProvider = provider

@@ -20,7 +20,8 @@ public enum RClickPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,

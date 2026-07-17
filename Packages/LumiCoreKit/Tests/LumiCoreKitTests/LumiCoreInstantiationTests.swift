@@ -21,7 +21,7 @@ import Testing
 
     // 初始状态：所有可选属性为 nil（没有依赖任何服务即可构造）
     #expect(core.dataRootDirectory == nil)
-    #expect(core.projectState == nil)
+    #expect(core.projectComponent == nil)
     #expect(core.layoutState == nil)
     #expect(core.chatService == nil)
     #expect(core.editorService == nil)
@@ -51,9 +51,9 @@ import Testing
     try coreA.configure(dataRootDirectory: dataRootA)
     try coreB.configure(dataRootDirectory: dataRootB)
 
-    // 独立之前：projectState/layoutState 在 boot() 之前为 nil（这是预期设计）
-    #expect(coreA.projectState == nil)
-    #expect(coreB.projectState == nil)
+    // 独立之前：projectComponent/layoutState 在 boot() 之前为 nil（这是预期设计）
+    #expect(coreA.projectComponent == nil)
+    #expect(coreB.projectComponent == nil)
 
     // 数据根目录独立
     #expect(coreA.dataRootDirectory?.standardizedFileURL == dataRootA.standardizedFileURL)
@@ -188,7 +188,7 @@ import Testing
     let accessor: any LumiCoreAccessing = core
     #expect(accessor.dataRootDirectory?.standardizedFileURL == dataRoot.standardizedFileURL)
     #expect(accessor.logoRegistry === LogoRegistry.shared)
-    #expect(accessor.projectState == nil)
+    #expect(accessor.projectComponent == nil)
     #expect(accessor.layoutState == nil)
     #expect(accessor.chatService == nil)
     #expect(accessor.editorService == nil)

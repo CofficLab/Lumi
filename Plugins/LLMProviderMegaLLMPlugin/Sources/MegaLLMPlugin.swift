@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 import os
 
@@ -17,6 +18,9 @@ public enum MegaLLMPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [MegaLLMProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMegaLLMPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderMegaLLMPlugin"))
+        }
+        return [MegaLLMProvider()]
     }
 }

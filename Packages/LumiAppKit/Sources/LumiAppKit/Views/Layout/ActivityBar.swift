@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ActivityBar: View {
     @Environment(\.openWindow) private var openWindow
-    @ObservedObject var layoutState: LumiLayoutState
+    @ObservedObject var layoutState: LayoutState
     let containers: [LumiViewContainerItem]
 
     var body: some View {

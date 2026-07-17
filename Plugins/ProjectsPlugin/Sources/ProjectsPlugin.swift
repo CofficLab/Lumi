@@ -1,7 +1,14 @@
+import Foundation
 import LumiCoreKit
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum ProjectsPlugin: LumiPlugin {
+public enum ProjectsPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "📂"
+    public nonisolated static let verbose: Bool = true
+
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
 
     public static let info = LumiPluginInfo(
         id: "com.coffic.lumi.plugin.projects",
@@ -29,26 +36,68 @@ public enum ProjectsPlugin: LumiPlugin {
     public static func lifecycle(_ event: LumiPluginLifecycle) {
         switch event {
         case .didRegister:
-            let directory = LumiCore.current?.pluginDataDirectory(for: dataDirectoryName)
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)生命周期 didRegister：初始化 ProjectsPlugin")
+                }
+            }
+
+            let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
                 ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
-            
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)数据目录: \(directory.path)")
+                }
+            }
+
             // 初始化 Store
             let storeInstance = ProjectsStore(pluginDirectory: directory)
             Self.store = storeInstance
-            
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ ProjectsStore 初始化完成")
+                }
+            }
+
             // 初始化 ViewModel
             let viewModelInstance = ProjectsViewModel(store: storeInstance)
             Self.viewModel = viewModelInstance
-            
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ ProjectsViewModel 初始化完成")
+                }
+            }
+
             // 初始化 SyncCoordinator 并注入 LumiCore
             let coordinator = ProjectsSyncCoordinator(viewModel: viewModelInstance)
             coordinator.lumiCore = LumiCore.current
             Self.syncCoordinator = coordinator
-            
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ ProjectsSyncCoordinator 初始化完成")
+                }
+            }
+
         case .willDisable:
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)生命周期 willDisable：清理 ProjectsPlugin 状态")
+                }
+            }
+
             Self.store = nil
             Self.syncCoordinator = nil
             Self.viewModel = nil
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ 状态已清理")
+                }
+            }
         default:
             break
         }
@@ -56,6 +105,12 @@ public enum ProjectsPlugin: LumiPlugin {
 
     @MainActor
     public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+        if Self.verbose {
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)titleToolbarItems 被调用，viewModel 可用=\(Self.viewModel != nil)")
+            }
+        }
+
         guard let viewModel else { return [] }
         return [
             LumiTitleToolbarItem(
@@ -74,13 +129,30 @@ public enum ProjectsPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+        if Self.verbose {
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)agentTools 被调用，viewModel 可用=\(Self.viewModel != nil)")
+            }
+        }
+
         // Tools access store dynamically via ProjectsPlugin.store inside MainActor.run
-        guard Self.viewModel != nil else { return [] }
-        return [
+        guard Self.viewModel != nil else {
+            throw LumiPluginDependencyError.stateNotInitialized("ProjectsViewModel")
+        }
+
+        let tools: [any LumiAgentTool] = [
             AddProjectTool(),
             ListProjectsTool(),
             GetCurrentProjectTool()
         ]
+
+        if Self.verbose {
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)✅ agentTools 返回 \(tools.count) 个工具：\(tools.map { $0.name }.joined(separator: ", "))")
+            }
+        }
+
+        return tools
     }
 }

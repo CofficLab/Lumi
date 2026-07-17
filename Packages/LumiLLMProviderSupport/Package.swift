@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../LLMKit"),
         .package(path: "../LumiCoreKit"),
         .package(path: "../LumiLocalizationKit"),
+        .package(path: "../KeychainKit"),
     ],
     targets: [
         .target(

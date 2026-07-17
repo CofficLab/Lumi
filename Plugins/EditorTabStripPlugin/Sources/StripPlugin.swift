@@ -20,6 +20,7 @@ public enum StripHeaderPlugin: LumiPlugin {
 
     @MainActor
     public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+        bootstrapFromLumiCoreIfNeeded(context: context)
         guard context.showsPanelChrome else {
             return []
         }

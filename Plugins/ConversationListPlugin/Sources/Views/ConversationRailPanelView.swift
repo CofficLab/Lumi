@@ -8,8 +8,8 @@ struct ConversationRailPanelView: View {
 
     init(
         chatService: ChatService,
-        projectPathStore: LumiProjectState?,
-        projectStore: LumiProjectState? = nil
+        projectPathStore: ProjectComponent?,
+        projectStore: ProjectComponent? = nil
     ) {
         _context = StateObject(
             wrappedValue: ConversationListContext(

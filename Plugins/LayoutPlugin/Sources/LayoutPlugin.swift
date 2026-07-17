@@ -52,7 +52,8 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in
                 LayoutRootView(content: content)
             }

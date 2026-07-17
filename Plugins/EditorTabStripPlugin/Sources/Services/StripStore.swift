@@ -40,7 +40,7 @@ public final class StripStore: @unchecked Sendable, SuperLog {
     // MARK: - Initialization
 
     public convenience init() {
-        self.init(baseDirectory: (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        self.init(baseDirectory: (EditorTabStripPluginRuntimeBridge.dataRootDirectory ?? EditorTabStripPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("EditorTabStrip", isDirectory: true)
             .appendingPathComponent("projects", isDirectory: true))
     }

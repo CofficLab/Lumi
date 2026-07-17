@@ -6,8 +6,10 @@ import SwiftUI
 public enum AppManagerPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
     public static let verbose = false
+    /// 数据根目录解析器。默认走 fallback,由 `bootstrapFromLumiCoreIfNeeded`
+    /// 在 @MainActor 上下文覆盖为真实路径(替代旧的 nonisolated 镜像)。
     nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = {
-        currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory
+        AppManagerPluginRuntimeBridge.fallbackRootDirectory
     }
 
 
@@ -24,7 +26,8 @@ public enum AppManagerPlugin: LumiPlugin {
 
     @MainActor
     public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
+        bootstrapFromLumiCoreIfNeeded(context: context)
+        return [
             LumiViewContainerItem(
                 id: info.id,
                 title: info.displayName,

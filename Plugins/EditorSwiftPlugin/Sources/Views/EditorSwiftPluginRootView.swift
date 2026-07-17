@@ -18,11 +18,11 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
     @StateObject private var windowScope = EditorSwiftWindowScope()
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
-    private var projects: [LumiProjectEntry] {
-        lumiCore.projectState?.projects ?? []
+    private var projects: [ProjectEntry] {
+        lumiCore.projectComponent.projects ?? []
     }
 
     public init(lumiCore: LumiCoreAccessing, @ViewBuilder content: () -> Content) {
@@ -83,7 +83,7 @@ public struct EditorSwiftPluginRootView<Content: View>: View, SuperLog {
             self.preloadStatus = .loading(count: projectsToPreload.count)
         }
 
-        await withTaskGroup(of: (project: LumiProjectEntry, success: Bool).self) { group in
+        await withTaskGroup(of: (project: ProjectEntry, success: Bool).self) { group in
             var activeTasks = 0
             let maxConcurrentTasks = 1
 

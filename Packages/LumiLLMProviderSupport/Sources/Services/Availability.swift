@@ -105,27 +105,3 @@ enum LumiLLMProviderAvailabilitySupport {
         }
     }
 }
-
-public extension OpenAICompatibleLumiProvider {
-    func checkAvailabilityUsingChatPing(model: String) async -> LumiModelAvailabilityResult {
-        await LumiOpenAICompatibleAvailability.chatPing(
-            model: model,
-            adapter: lumiOpenAIAdapter,
-            apiService: lumiAPIService,
-            buildRequest: buildRequest(url:apiKey:),
-            resolveAPIKey: lumiResolveAPIKey
-        )
-    }
-}
-
-public extension AnthropicCompatibleLumiProvider {
-    func checkAvailabilityUsingChatPing(model: String) async -> LumiModelAvailabilityResult {
-        await LumiAnthropicCompatibleAvailability.chatPing(
-            model: model,
-            adapter: lumiAnthropicAdapter,
-            apiService: lumiAPIService,
-            buildRequest: buildRequest(url:apiKey:),
-            resolveAPIKey: lumiResolveAPIKey
-        )
-    }
-}

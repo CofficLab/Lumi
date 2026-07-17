@@ -11,7 +11,7 @@ struct PanelColumnView: View {
     let showsPanelChrome: Bool
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: LumiLayoutState
+    @ObservedObject var layoutState: LayoutState
     let lumiCore: LumiCore
     let editor: any LumiEditorServicing
 

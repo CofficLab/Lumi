@@ -1,3 +1,4 @@
+import LumiLLMProviderSupport
 import LumiCoreKit
 
 public enum OpenAIPlugin: LumiPlugin {
@@ -14,6 +15,9 @@ public enum OpenAIPlugin: LumiPlugin {
 
     @MainActor
     public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [OpenAIProvider()]
+        if let core = context.lumiCore {
+            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderOpenAIPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderOpenAIPlugin"))
+        }
+        return [OpenAIProvider()]
     }
 }

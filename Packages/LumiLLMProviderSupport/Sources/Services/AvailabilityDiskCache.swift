@@ -1,6 +1,39 @@
 import Foundation
 import LumiCoreKit
 
+/// `AvailabilityDiskCache` 的目录解析器。
+///
+/// 各 LLM Provider 插件在自己的 `bootstrapFromLumiCoreIfNeeded` 里调
+/// `set(pluginName:directory:)` 注入 plugin 专属目录,替代直接读 nonisolated 镜像。
+/// AvailabilityDiskCache.init 从这里按 pluginName 取目录;未注入时走 fallback。
+///
+/// 之所以用 resolver 而非让每个 provider 直接传 URL 给 init:AvailabilityDiskCache
+/// 是底层 package,被 18 个 provider 以 `private static let cache = ...` 形式各自实例化
+/// (在 nonisolated 上下文 lazy 初始化),无法在 init 时拿到 @MainActor 的路径。
+public enum AvailabilityDiskCacheDirectoryResolver {
+    /// 锁保护下的 pluginName -> directory 映射。
+    private static let lock = NSLock()
+    private nonisolated(unsafe) static var directories: [String: URL] = [:]
+
+    /// 由各 plugin 的 bootstrap 调用,注入 plugin 专属目录。
+    /// - Parameters:
+    ///   - pluginName: 插件目录名(与 AvailabilityDiskCache.init 的 pluginName 一致)。
+    ///   - directory: 该插件的专属数据目录。
+    public static func set(pluginName: String, directory: URL) {
+        lock.lock()
+        defer { lock.unlock() }
+        directories[pluginName] = directory
+    }
+
+    /// AvailabilityDiskCache.init 调用,按 pluginName 取目录。
+    /// 未注入时返回 nil(由调用方走 fallback)。
+    public static func directory(for pluginName: String) -> URL? {
+        lock.lock()
+        defer { lock.unlock() }
+        return directories[pluginName]
+    }
+}
+
 /// 通用的模型可用性磁盘缓存
 ///
 /// 为所有 LLM Provider 插件提供可复用的 5 分钟磁盘缓存。
@@ -39,14 +72,22 @@ public final class AvailabilityDiskCache: @unchecked Sendable {
     /// - Parameters:
     ///   - pluginName: 插件目录名，用于确定存储路径
     ///   - cacheInterval: 缓存有效期（秒），默认 300 秒（5 分钟）
+    ///
+    /// plugin 目录从 `AvailabilityDiskCacheDirectoryResolver` 取(由各 plugin bootstrap 注入);
+    /// 未注入时走 fallback `<AppSupport>/<bundleID>/<pluginName>`。
     public init(pluginName: String, cacheInterval: TimeInterval = 300) {
         self.cacheInterval = cacheInterval
         self.queue = DispatchQueue(
             label: "com.cofficlab.lumi.\(pluginName).availability.cache",
             qos: .utility
         )
-        self.pluginDirectory = lumiCorePluginDataDirectory(for: pluginName)
-            ?? lumiCoreFallbackDataRootDirectory.appendingPathComponent(pluginName, isDirectory: true)
+        // 优先走 resolver(由各 plugin 的 bootstrap 注入);未注入走 fallback。
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+        let fallbackRoot = appSupport.appendingPathComponent(bundleID, isDirectory: true)
+        self.pluginDirectory = AvailabilityDiskCacheDirectoryResolver.directory(for: pluginName)
+            ?? fallbackRoot.appendingPathComponent(pluginName, isDirectory: true)
         self.storeFileURL = pluginDirectory.appendingPathComponent("availability_cache.json")
     }
 

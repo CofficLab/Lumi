@@ -12,7 +12,7 @@ public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable
     private let corruptSettingsFileURL: URL
 
     public convenience init() {
-        self.init(settingsDirectory: (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        self.init(settingsDirectory: (MenuBarManagerPluginRuntimeBridge.dataRootDirectory ?? MenuBarManagerPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("MenuBarManagerPlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
@@ -105,7 +105,7 @@ public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable
     }
 
     private func readLegacyObject(forKey key: String) -> Any? {
-        let legacyDir = (currentLumiCoreDataRootDirectory ?? lumiCoreFallbackDataRootDirectory)
+        let legacyDir = (MenuBarManagerPluginRuntimeBridge.dataRootDirectory ?? MenuBarManagerPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("app_settings", isDirectory: true)
         let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
         guard fileManager.fileExists(atPath: legacyFile.path),

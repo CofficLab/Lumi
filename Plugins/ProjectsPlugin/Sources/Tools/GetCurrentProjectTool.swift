@@ -1,7 +1,11 @@
 import Foundation
 import LumiCoreKit
+import SuperLogKit
 
-struct GetCurrentProjectTool: LumiAgentTool {
+struct GetCurrentProjectTool: LumiAgentTool, SuperLog {
+    public nonisolated static let emoji = "📍"
+    public nonisolated static let verbose: Bool = true
+
     static let info = LumiAgentToolInfo(
         id: "get_current_project",
         displayName: LumiPluginLocalization.string("Get Current Project", bundle: .module),
@@ -26,14 +30,32 @@ struct GetCurrentProjectTool: LumiAgentTool {
     }
 
     func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        await MainActor.run {
+        if Self.verbose {
+            if ProjectsPlugin.verbose {
+                ProjectsPlugin.logger.info("\(Self.t)执行 get_current_project")
+            }
+        }
+
+        return await MainActor.run {
             guard let viewModel = ProjectsPlugin.viewModel,
                   let project = viewModel.currentProject else {
+                if Self.verbose {
+                    if ProjectsPlugin.verbose {
+                        ProjectsPlugin.logger.warning("\(Self.t)⚠️ get_current_project 返回空：当前无选中项目")
+                    }
+                }
+
                 return """
                 ## Current Project Status
 
                 **Status**: No project selected
                 """
+            }
+
+            if Self.verbose {
+                if ProjectsPlugin.verbose {
+                    ProjectsPlugin.logger.info("\(Self.t)✅ 当前项目：\(project.name) (\(project.path))")
+                }
             }
 
             return """

@@ -19,7 +19,7 @@ public struct EditorPanelView: View {
     private var editorState: EditorState { service.state }
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent.currentProject?.path ?? ""
     }
 
     private var projectRootPath: String? {
