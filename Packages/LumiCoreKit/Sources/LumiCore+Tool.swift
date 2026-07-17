@@ -12,7 +12,7 @@ extension LumiCore {
     /// 就能拦截"plugin 工具 ↔ 内置工具"、"内置工具 ↔ sub-agent delegate 工具"等
     /// 跨来源的命名冲突，而不是等到聊天发消息时再被 `assertUnique` 拦下。
     public func bootstrapToolService(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = []
     ) throws {
         let toolService = ToolService()
@@ -41,7 +41,7 @@ extension LumiCore {
     ///   - provider: 工具/子 Agent 贡献者（通常为 `PluginService`）
     ///   - context: 当前的 `LumiPluginContext`
     public func bootstrapToolContributions(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         context: LumiPluginContext,
         builtInTools: [any LumiAgentTool]
     ) {
@@ -93,7 +93,7 @@ extension LumiCore {
     ///     （例如 `ChatService.builtInTools`）。不在 `provider` 提供的范围内。
     /// - Throws: `LumiToolRegistrationError.duplicateNames` 当合并后的工具名有重复。
     public func validateToolNameUniqueness(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = []
     ) throws {
         let bootContext = makePluginContext(

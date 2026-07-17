@@ -15,10 +15,10 @@ struct LogoView: View {
     }
 
     var body: some View {
-        // logoRegistry 是 LumiCore 共享的全局单例,从传入的 lumiCore 实例获取。
+        // logoComponent 是 LumiCore 的组件,从传入的 lumiCore 实例获取。
         // SwiftUI 通过对 lumiCore 的 objectWillChange 订阅来重绘,
-        // 而 logoRegistry 自身的 @Published 变化由 lumiCore 转播。
-        if let item = lumiCore.logoRegistry.bestItem {
+        // 而 logoComponent 自身的 @Published 变化由 lumiCore 转播。
+        if let item = lumiCore.logoComponent.bestItem {
             ZStack {
                 item.makeView(scene)
                 if let overlay = item.makeOverlay {

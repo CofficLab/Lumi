@@ -135,6 +135,21 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
         await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
     }
 
+    // MARK: - Chat Section Toolbar
+
+    @MainActor
+    public static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+        guard context.showsChatSection else {
+            return []
+        }
+
+        return [
+            LumiChatSectionToolbarItem(id: info.id, order: info.order, placement: .leading) {
+                GoalToolbarButton()
+            }
+        ]
+    }
+
     // MARK: - Chat Section (Sidebar)
 
     @MainActor

@@ -3,7 +3,7 @@ import LumiCoreKit
 
 final class PreviewLumiCoreStub: LumiCoreAccessing {
     let storage = StorageComponent(dataRootDirectory: URL(fileURLWithPath: "/tmp/preview"))
-    var logoRegistry: LogoRegistry { .shared }
+    let logoComponent = LogoComponent()
     let projectComponent = ProjectComponent()
     let layoutComponent = LayoutComponent(state: LayoutState())
     let chatService: any LumiChatServicing = PreviewChatServicing()

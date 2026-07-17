@@ -24,8 +24,8 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     /// 存储功能组件。归拢路径计算(coreDataDirectory / pluginDataDirectory(for:))。
     var storage: StorageComponent { get }
 
-    /// Logo 注册表（指向全局共享的 `LogoRegistry.shared`）。
-    var logoRegistry: LogoRegistry { get }
+    /// Logo 功能组件。收集插件贡献的 Logo 项并选出最高优先级者。
+    var logoComponent: LogoComponent { get }
 
     /// 项目功能组件。封装 `ProjectState`,
     /// 对外暴露只读的 `currentProject` / `projects` + 写方法门面。
@@ -104,7 +104,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// 内置工具（如 `ChatService.builtInTools`）。把它们传入启动期校验，让 init 阶段
     /// 就能拦截跨来源的命名冲突。
     func bootstrapToolService(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool]
     ) throws
 
@@ -114,7 +114,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
     /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
     func bootstrapToolContributions(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         context: LumiPluginContext,
         builtInTools: [any LumiAgentTool]
     )
@@ -125,7 +125,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// 而非仅 `provider.agentTools(context:)` 的子集——这避免跨来源命名冲突逃逸到
     /// 聊天阶段才被 `assertUnique` 拦下。
     func validateToolNameUniqueness(
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool]
     ) throws
 }

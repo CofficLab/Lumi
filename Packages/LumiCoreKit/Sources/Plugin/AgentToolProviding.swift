@@ -8,7 +8,7 @@ import Foundation
 /// 实现者通常是 App 层的 `PluginService`。`LumiCore.bootstrapToolContributions`
 /// 会调用这两个方法完成所有工具编排。
 @MainActor
-public protocol LumiAgentToolProviding: AnyObject {
+public protocol AgentToolProviding: AnyObject {
     /// 收集所有启用插件的 `LumiAgentTool`
     func agentTools(context: LumiPluginContext) -> [any LumiAgentTool]
 

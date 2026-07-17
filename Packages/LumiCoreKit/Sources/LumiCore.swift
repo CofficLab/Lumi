@@ -15,16 +15,13 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 仍然推荐在能拿到 `LumiPluginContext` 的地方用 `context.lumiCore`；`current` 是
     /// 给静态单例的兜底。
     public nonisolated(unsafe) static var current: (any LumiCoreAccessing)?
-    
+
     // MARK: - Components
 
     public let projectComponent: ProjectComponent
     public let layoutComponent: LayoutComponent
     public let storage: StorageComponent
-
-    // MARK: - State
-
-    public var logoRegistry: LogoRegistry { .shared }
+    public let logoComponent: LogoComponent
 
     /// ChatService。init 时由 chatServiceFactory 创建(非可选)。
     /// 注意:工厂创建时 ChatService 的 lumiCore 引用先留空,由 RootContainer 在
@@ -42,7 +39,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
     private var services: [ObjectIdentifier: Any] = [:]
 
-    /// 内部 `ObservableObject` 子状态（`projectComponent` / `layoutComponent`）的
+    /// 内部 `ObservableObject` 子状态（`projectComponent` / `layoutComponent` / `logoComponent`）的
     /// `objectWillChange` 转发订阅。把它们的变更信号桥接到 `LumiCore.objectWillChange`，
     /// 这样用 `@ObservedObject var lumiCore: LumiCore` 的 SwiftUI 视图（如 `AppLayoutView`）
     /// 才能在子状态变更时收到刷新信号——否则只观察 `LumiCore` 的 @Published 是收不到的
@@ -54,8 +51,9 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// "UI 不刷新" 的同款问题；需要时可在 `LumiChatServicing` 实现里手动 `objectWillChange.send()`。
     private var projectComponentSubscription: AnyCancellable?
     private var layoutComponentSubscription: AnyCancellable?
+    private var logoComponentSubscription: AnyCancellable?
 
-    /// 订阅具体类型的子 `ObservableObject`（`ProjectComponent` / `LumiLayoutState`）的
+    /// 订阅具体类型的子 `ObservableObject`（`ProjectComponent` / `LayoutComponent` / `LogoComponent`）的
     /// `objectWillChange`，转发到本实例的 `objectWillChange`。
     private func subscribeToChild<T: ObservableObject>(
         _ child: T,
@@ -86,16 +84,18 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     ///     不传则 editorService 为 nil(适用于不需要编辑器的场景)。
     public init(
         dataRootDirectory: URL,
-        provider: any LumiAgentToolProviding,
+        provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = [],
         chatServiceFactory: @escaping ChatServiceFactory,
-        editorFactory: (@MainActor (any LumiAgentToolProviding) throws -> any AbstractEditorServicing)? = nil
+        editorFactory: (@MainActor (any AgentToolProviding) throws -> any AbstractEditorServicing)? = nil
     ) throws {
         // 1. 自给组件(无外部依赖,直接创建)
         let projectComponent = ProjectComponent()
         self.projectComponent = projectComponent
         let layoutComponent = LayoutComponent()
         self.layoutComponent = layoutComponent
+        let logoComponent = LogoComponent()
+        self.logoComponent = logoComponent
 
         // 2. 物化 data root,在其下创建 Core 子目录
         let standardizedRoot = dataRootDirectory.standardizedFileURL
@@ -135,6 +135,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         // 6. 订阅子状态 objectWillChange 转发
         subscribeToChild(projectComponent, into: &projectComponentSubscription)
         subscribeToChild(layoutComponent, into: &layoutComponentSubscription)
+        subscribeToChild(logoComponent, into: &logoComponentSubscription)
     }
 
     // MARK: - Test-only injection

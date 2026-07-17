@@ -12,7 +12,7 @@ import os
 /// - ObservableObject 支持（UI 刷新）
 /// - 协议实现（LumiAgentToolProviding、LumiChatContributionProviding、LumiLLMProviderSettingsContributing）
 @MainActor
-final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, LumiChatContributionProviding, LumiLLMProviderSettingsContributing {
+final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiChatContributionProviding, LumiLLMProviderSettingsContributing {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.plugin")
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false
@@ -221,7 +221,7 @@ final class PluginService: ObservableObject, SuperLog, LumiAgentToolProviding, L
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
 
-        LogoRegistry.shared.register(allItems)
+        context.lumiCore.logoComponent.register(allItems)
     }
 
     func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {

@@ -34,7 +34,7 @@ final class RootContainer: ObservableObject, SuperLog {
 
     /// 工具/子 Agent/Chat 贡献源。保留引用以便运行期插件启用状态变化时
     /// 重新应用 Chat 维度贡献 + 重编排工具贡献。
-    private let provider: any LumiAgentToolProviding
+    private let provider: any AgentToolProviding
 
     /// NotificationCenter 观察者 token，用于 deinit 移除。
     private var pluginsChangedObserver: NSObjectProtocol?
@@ -53,7 +53,7 @@ final class RootContainer: ObservableObject, SuperLog {
         // 返回 EditorCoreService 实例。此时还不持有 lumiCore——LumiCore.init 会接收并存储
         // 返回值，但 `configure(lumiCore:)` 回填由本 init 在 LumiCore 创建完成后调用
         // （configure 是 EditorCoreService 的具体方法，不在 AbstractEditorServicing 协议里）。
-        let editorFactory: @MainActor (any LumiAgentToolProviding) throws -> any AbstractEditorServicing = { factoryProvider in
+        let editorFactory: @MainActor (any AgentToolProviding) throws -> any AbstractEditorServicing = { factoryProvider in
             guard let pluginService = factoryProvider as? PluginService else {
                 fatalError("Editor factory 收到的 provider 不是 PluginService")
             }

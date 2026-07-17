@@ -2,17 +2,16 @@ import Foundation
 import os.log
 import SwiftUI
 
-/// Logo 注册表
+/// LumiCore 的"Logo"功能组件。
 ///
 /// 收集所有插件贡献的 ``LogoItem``，按 ``LogoItem/order`` 选出全局最高优先级的 Logo。
 /// 无插件贡献时回退到内置的 Logo。
 @MainActor
-public final class LogoRegistry: ObservableObject {
-    /// 全局单例
-    public static let shared = LogoRegistry()
-
+public final class LogoComponent: ObservableObject {
     /// 当前最高优先级的 Logo 项
     @Published public private(set) var bestItem: LogoItem?
+
+    public init() {}
 
     /// 批量注册 Logo 项，保留 order 最高的一项
     ///
