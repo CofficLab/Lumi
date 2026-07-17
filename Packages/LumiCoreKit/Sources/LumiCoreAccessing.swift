@@ -27,8 +27,9 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     /// Logo 注册表（指向全局共享的 `LogoRegistry.shared`）。
     var logoRegistry: LogoRegistry { get }
 
-    /// 项目状态管理器（`boot` 后非空）。
-    var projectState: ProjectState? { get }
+    /// 项目功能组件（`boot` 后非空）。封装 `ProjectState`,
+    /// 对外暴露只读的 `currentProject` / `projects` + 写方法门面。
+    var projectComponent: ProjectComponent? { get }
 
     /// 布局状态管理器（`boot` 后非空）。
     var layoutState: LumiLayoutState? { get }

@@ -18,15 +18,18 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     
     // MARK: - Components
 
+    /// 项目功能组件。封装 `ProjectState`,对外只暴露只读视图 + 写方法门面。
+    /// `ProjectComponent` 自身是 `ObservableObject` 并向上转发 `objectWillChange`,
+    /// 本字段通过 `subscribeToChild` 订阅它,使 SwiftUI 视图能感知项目切换。
+    @Published public private(set) var projectComponent: ProjectComponent? {
+        didSet { subscribeToChild(projectComponent, into: &projectComponentSubscription) }
+    }
+
     // MARK: - State
 
     @Published public private(set) var dataRootDirectory: URL?
 
     public var logoRegistry: LogoRegistry { .shared }
-
-    @Published public private(set) var projectState: ProjectState? {
-        didSet { subscribeToChild(projectState, into: &projectStateSubscription) }
-    }
 
     @Published public private(set) var layoutState: LumiLayoutState? {
         didSet { subscribeToChild(layoutState, into: &layoutStateSubscription) }
@@ -44,7 +47,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// 内部服务注册表，用于 `makePluginContext` 自动注入依赖。
     private var services: [ObjectIdentifier: Any] = [:]
 
-    /// 内部 `ObservableObject` 子状态（`projectState` / `layoutState`）的
+    /// 内部 `ObservableObject` 子状态（`projectComponent` / `layoutState`）的
     /// `objectWillChange` 转发订阅。把它们的变更信号桥接到 `LumiCore.objectWillChange`，
     /// 这样用 `@ObservedObject var lumiCore: LumiCore` 的 SwiftUI 视图（如 `AppLayoutView`）
     /// 才能在子状态变更时收到刷新信号——否则只观察 `LumiCore` 的 @Published 是收不到的
@@ -54,10 +57,10 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     /// `any Publisher`，`sink` 不可用，因此暂不做转发。`chatService` 在视图层通常以
     /// `let` 注入（见 `AppLayoutView`），不通过 `@ObservedObject` 监听，所以不会触发
     /// "UI 不刷新" 的同款问题；需要时可在 `LumiChatServicing` 实现里手动 `objectWillChange.send()`。
-    private var projectStateSubscription: AnyCancellable?
+    private var projectComponentSubscription: AnyCancellable?
     private var layoutStateSubscription: AnyCancellable?
 
-    /// 订阅具体类型的子 `ObservableObject`（`LumiProjectState` / `LumiLayoutState`）的
+    /// 订阅具体类型的子 `ObservableObject`（`ProjectComponent` / `LumiLayoutState`）的
     /// `objectWillChange`，转发到本实例的 `objectWillChange`。
     /// - Parameters:
     ///   - child: 子状态实例（nil 时清空旧订阅，避免对已释放对象持有强引用）。
@@ -87,8 +90,8 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
             self.layoutState = layoutState
         }
 
-        internal func _testInject(projectState: ProjectState?) {
-            self.projectState = projectState
+        internal func _testInject(projectComponent: ProjectComponent?) {
+            self.projectComponent = projectComponent
         }
     #endif
 
@@ -202,7 +205,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         builtInTools: [any LumiAgentTool] = [],
         editorFactory: EditorBootstrapFactory<Service>?
     ) throws {
-        projectState = ProjectState()
+        projectComponent = ProjectComponent()
         layoutState = LumiLayoutState()
 
         // 物化 data root，并在其下创建 Core 子目录作为核心数据库的物理位置。

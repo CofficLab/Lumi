@@ -23,19 +23,19 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
         self.gitVM = gitVM
     }
 
-    /// 项目状态
-    private var projectState: ProjectState? {
-        lumiCore.projectState
+    /// 项目组件
+    private var projectComponent: ProjectComponent? {
+        lumiCore.projectComponent
     }
 
     /// 当前项目路径
     private var currentProjectPath: String {
-        projectState?.currentProject?.path ?? ""
+        projectComponent?.currentProject?.path ?? ""
     }
 
     /// 是否已选择项目
     private var isProjectSelected: Bool {
-        projectState?.currentProject != nil
+        projectComponent?.currentProject != nil
     }
 
     /// 提交列表数据

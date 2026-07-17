@@ -37,7 +37,7 @@ struct EditorScopeView<Content: View>: View {
             }
             .onAppear {
                 editor.currentProjectPathProvider = {
-                    lumiCore.projectState?.currentProject?.path ?? ""
+                    lumiCore.projectComponent?.currentProject?.path ?? ""
                 }
                 EditorRuntimeBridge.configure(editor: editor)
                 syncEditorTheme()

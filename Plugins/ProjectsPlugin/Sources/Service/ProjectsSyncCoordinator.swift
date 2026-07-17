@@ -4,7 +4,7 @@ import LumiCoreKit
 import os
 import SuperLogKit
 
-/// 协调 `ProjectsViewModel` 与 `LumiCore.projectState` 之间的同步。
+/// 协调 `ProjectsViewModel` 与 `LumiCore.projectComponent` 之间的同步。
 ///
 /// ## 同步方向
 /// 数据流：`ViewModel → LumiCore`。Coordinator 把 ViewModel 的状态单向推送给 LumiCore，
@@ -96,7 +96,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
     ///   导致逐字段 `==` 几乎永远不成立。
     /// - 业务上两个项目集合是否"等价"取决于路径身份，而非时间戳。
     private func syncProjectsToLumiCore(_ projects: [ProjectEntry]) {
-        guard let projectState = lumiCore?.projectState else {
+        guard let projectComponent = lumiCore?.projectComponent else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)syncProjectsToLumiCore 跳过: lumiCore 未设置")
             }
@@ -112,7 +112,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
         }
 
         // 幂等检查：按 path 集合判断内容是否相同。
-        let existingPaths = Set(projectState.projects.map(\.path))
+        let existingPaths = Set(projectComponent.projects.map(\.path))
         let incomingPaths = Set(projects.map(\.path))
         if existingPaths == incomingPaths {
             if Self.verbose {
@@ -130,13 +130,13 @@ public final class ProjectsSyncCoordinator: SuperLog {
         defer { isSyncingFromCoordinator = false }
 
         for project in projects {
-            projectState.addProject(project)
+            projectComponent.addProject(project)
         }
     }
 
     /// 把当前项目同步给 LumiCore。
     private func syncCurrentProjectToLumiCore(_ project: ProjectEntry?) {
-        guard let projectState = lumiCore?.projectState else {
+        guard let projectComponent = lumiCore?.projectComponent else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)syncCurrentProjectToLumiCore 跳过: lumiCore 未设置")
             }
@@ -144,7 +144,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
         }
 
         // 幂等检查：按 path 判断。nil 和 nil 视为相等；其他情况比较 path。
-        let currentPath = projectState.currentProject?.path
+        let currentPath = projectComponent.currentProject?.path
         let incomingPath = project?.path
         if currentPath == incomingPath {
             if Self.verbose {
@@ -161,12 +161,12 @@ public final class ProjectsSyncCoordinator: SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)同步当前项目到 LumiCore: \(project.name) @ \(project.path)")
             }
-            projectState.switchToProject(project)
+            projectComponent.switchToProject(project)
         } else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)同步当前项目到 LumiCore: nil (清空)")
             }
-            projectState.clearCurrentProject()
+            projectComponent.clearCurrentProject()
         }
     }
 

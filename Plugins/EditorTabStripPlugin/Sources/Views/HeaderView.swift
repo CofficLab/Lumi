@@ -20,7 +20,7 @@ public struct HeaderView: View {
     @StateObject private var coordinator = StripCoordinator()
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     public init(service: EditorService, lumiCore: LumiCoreAccessing) {
@@ -52,10 +52,10 @@ public struct HeaderView: View {
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: {
-                    lumiCore.projectState?.currentProject?.path ?? ""
+                    lumiCore.projectComponent?.currentProject?.path ?? ""
                 },
                 openFile: { [weak service] url in
-                    let projectPath = lumiCore.projectState?.currentProject?.path
+                    let projectPath = lumiCore.projectComponent?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)
@@ -78,7 +78,7 @@ public struct HeaderView: View {
                 newPath: newPath,
                 sessionStore: sessionStore,
                 openFile: { [weak service] url in
-                    let projectPath = lumiCore.projectState?.currentProject?.path
+                    let projectPath = lumiCore.projectComponent?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)

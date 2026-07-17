@@ -34,7 +34,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     /// 所指的位置）。
     ///
     /// `configureLifecycle` 在 init 时已先于注入执行，但内部的 `provider` 闭包通过
-    /// `self?.lumiCore?.projectState` 读，所以这里只更新引用 + 切换 persistence URL，
+    /// `self?.lumiCore?.projectComponent` 读，所以这里只更新引用 + 切换 persistence URL，
     /// 不需要重跑配置。
     func configure(lumiCore: LumiCoreAccessing) {
         self.lumiCore = lumiCore
@@ -187,7 +187,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     ) {
         // 通过 LumiCore 获取项目列表
         let provider: () -> [ProjectEntry] = { [weak self] in
-            self?.lumiCore?.projectState?.projects ?? recentProjects()
+            self?.lumiCore?.projectComponent?.projects ?? recentProjects()
         }
 
         // `hostPersistenceRootURL` 在 init 阶段尚无 LumiCore 实例，配置 `configure(lumiCore:)`

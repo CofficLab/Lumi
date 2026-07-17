@@ -12,7 +12,7 @@ public struct TreeView: View, SuperLog {
     public nonisolated static let logger = EditorFileTreePanelPlugin.logger
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     @EnvironmentObject var editorContext: EditorContext

@@ -10,16 +10,16 @@ public final class ConversationListContext: ObservableObject {
     @Published public private(set) var unreadCount: Int = 0
 
     private let chatService: ChatService
-    private let projectPathStore: ProjectState?
-    private let projectStore: ProjectState?
+    private let projectPathStore: ProjectComponent?
+    private let projectStore: ProjectComponent?
     private weak var lumiCore: LumiCore?
     private var conversationSnapshots: [UUID: Date] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     public init(
         chatService: ChatService,
-        projectPathStore: ProjectState? = nil,
-        projectStore: ProjectState? = nil,
+        projectPathStore: ProjectComponent? = nil,
+        projectStore: ProjectComponent? = nil,
         lumiCore: LumiCore? = nil
     ) {
         self.chatService = chatService

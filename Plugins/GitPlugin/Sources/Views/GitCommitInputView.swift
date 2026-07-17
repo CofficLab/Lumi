@@ -199,7 +199,7 @@ public struct GitCommitInputView: View {
 
     /// AI 生成 commit message
     private func generateAICommitMessage() async {
-        let path = lumiCore.projectState?.currentProject?.path ?? ""
+        let path = lumiCore.projectComponent?.currentProject?.path ?? ""
         guard !path.isEmpty else { return }
 
         guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
@@ -248,7 +248,7 @@ public struct GitCommitInputView: View {
 
     /// 执行 commit
     private func performCommit() async {
-        let path = lumiCore.projectState?.currentProject?.path ?? ""
+        let path = lumiCore.projectComponent?.currentProject?.path ?? ""
         guard !path.isEmpty, canCommit else { return }
 
         let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)

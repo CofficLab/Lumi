@@ -20,7 +20,7 @@ public struct TerminalMainView: View {
     }
 
     private var currentProjectPathForTerminal: String? {
-        let path = lumiCore.projectState?.currentProject?.path ?? ""
+        let path = lumiCore.projectComponent?.currentProject?.path ?? ""
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -79,7 +79,7 @@ public struct TerminalMainView: View {
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
-        .onChange(of: lumiCore.projectState?.currentProject?.path) { _, _ in
+        .onChange(of: lumiCore.projectComponent?.currentProject?.path) { _, _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
     }

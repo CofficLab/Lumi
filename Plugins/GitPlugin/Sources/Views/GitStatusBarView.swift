@@ -17,7 +17,7 @@ public struct GitPluginStatusBarView: View {
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     public var body: some View {

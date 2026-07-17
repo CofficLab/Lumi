@@ -27,7 +27,7 @@ public enum IdleTimePlugin: LumiPlugin {
             return []
         }
 
-        let projectPath = context.lumiCore?.projectState?.currentProject?.path ?? ""
+        let projectPath = context.lumiCore?.projectComponent?.currentProject?.path ?? ""
         return [
             LumiStatusBarItem(
                 id: "\(info.id).status",
@@ -45,7 +45,7 @@ public enum IdleTimePlugin: LumiPlugin {
     public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         let projectPathProvider = {
-            context.lumiCore?.projectState?.currentProject?.path ?? ""
+            context.lumiCore?.projectComponent?.currentProject?.path ?? ""
         }
         return [
             LumiRootOverlayItem(id: "\(info.id).observer", order: info.order) { content in

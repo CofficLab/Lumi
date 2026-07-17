@@ -13,7 +13,7 @@ public final class ProjectState: ObservableObject, SuperLog {
 
     // MARK: - 当前项目
 
-    @Published public var currentProject: ProjectEntry? {
+    @Published public private(set) var currentProject: ProjectEntry? {
         didSet {
             if currentProject != oldValue {
                 if Self.verbose {
@@ -31,7 +31,7 @@ public final class ProjectState: ObservableObject, SuperLog {
 
     // MARK: - 项目列表
 
-    @Published public var projects: [ProjectEntry] = [] {
+    @Published public private(set) var projects: [ProjectEntry] = [] {
         didSet {
             if projects != oldValue {
                 NotificationCenter.postProjectListDidChange()

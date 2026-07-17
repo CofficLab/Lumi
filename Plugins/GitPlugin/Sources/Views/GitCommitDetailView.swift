@@ -30,11 +30,11 @@ public struct GitCommitDetailView: View, SuperLog {
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     private var currentProjectName: String {
-        lumiCore.projectState?.currentProject?.name ?? ""
+        lumiCore.projectComponent?.currentProject?.name ?? ""
     }
 
     /// 当前加载的 commit 详情
@@ -91,7 +91,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 loadingView
             } else if let error = errorMessage {
                 errorView(error)
-            } else if lumiCore.projectState?.currentProject != nil {
+            } else if lumiCore.projectComponent?.currentProject != nil {
                 noSelectionView
             } else {
                 noProjectView

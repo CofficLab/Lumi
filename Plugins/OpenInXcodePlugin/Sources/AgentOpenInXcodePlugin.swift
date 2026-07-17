@@ -67,7 +67,7 @@ public struct OpenInXcodeStatusBarView: View {
     let lumiCore: LumiCoreAccessing
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     public init(lumiCore: LumiCoreAccessing) {
@@ -135,7 +135,7 @@ public struct OpenInXcodeDetailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     private var currentProjectPath: String {
-        lumiCore.projectState?.currentProject?.path ?? ""
+        lumiCore.projectComponent?.currentProject?.path ?? ""
     }
 
     public init(lumiCore: LumiCoreAccessing) {
