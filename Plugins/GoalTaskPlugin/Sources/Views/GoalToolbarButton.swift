@@ -8,6 +8,7 @@ import SwiftUI
 /// 显示在 chat 工具栏的 Goal 按钮，点击展示 goals 详情
 struct GoalToolbarButton: View {
     @LumiTheme private var theme
+    @Environment(\.lumiCore) private var lumiCore
     @StateObject private var viewModel = GoalToolbarViewModel()
     @State private var isPopoverPresented = false
 
@@ -18,7 +19,7 @@ struct GoalToolbarButton: View {
     var body: some View {
         Button {
             Task {
-                await viewModel.refresh()
+                await viewModel.refresh(lumiCore: lumiCore)
             }
             isPopoverPresented.toggle()
         } label: {
@@ -60,27 +61,18 @@ final class GoalToolbarViewModel: ObservableObject {
         GoalTaskPlugin.currentManager()
     }
 
-    func refresh() async {
+    func refresh(lumiCore: LumiCoreAccessing?) async {
         guard let manager else { return }
 
-        // 延迟获取 coordinator，避免初始化时序问题
-        let coordinator: ChatSectionCoordinator? = await MainActor.run {
-            // 尝试从 context 获取，或者从全局获取
-            LumiCore.current?.pluginContext?.resolve(ChatSectionCoordinator.self)
-        }
+        guard let chatService = lumiCore?.chatService else { return }
 
-        guard let coordinator else {
-            // 如果无法获取 coordinator，使用 chatService 获取
-            if let chatService = LumiCore.current?.pluginContext?.resolve(LumiChatServicing.self) as? ChatService,
-               let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id {
-                await loadGoals(conversationId: conversationID.uuidString, manager: manager)
-            }
+        guard let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
+            goals = []
+            tasksByGoalId = [:]
             return
         }
 
-        if let conversationID = coordinator.selectedConversationID {
-            await loadGoals(conversationId: conversationID.uuidString, manager: manager)
-        }
+        await loadGoals(conversationId: conversationID.uuidString, manager: manager)
     }
 
     private func loadGoals(conversationId: String, manager: GoalStateManager) async {
