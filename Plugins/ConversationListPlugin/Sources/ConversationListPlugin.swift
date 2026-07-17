@@ -103,9 +103,9 @@ public enum ConversationListPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         guard let chatService = context.resolve((any LumiChatServicing).self) else {
-            return []
+            throw LumiPluginDependencyError.serviceUnavailable("LumiChatServicing")
         }
         return [
             CreateNewConversationLumiTool(chatService: chatService),

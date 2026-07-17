@@ -80,11 +80,10 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         guard let manager else {
-            Self.logger.warning("\(Self.t)manager 未初始化，返回空工具列表")
-            return []
+            throw LumiPluginDependencyError.stateNotInitialized("TaskStateManager")
         }
         return [
             CreateTaskTool(manager: manager),

@@ -129,7 +129,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         if Self.verbose {
             if ProjectsPlugin.verbose {
                 ProjectsPlugin.logger.info("\(Self.t)agentTools 被调用，viewModel 可用=\(Self.viewModel != nil)")
@@ -138,12 +138,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
 
         // Tools access store dynamically via ProjectsPlugin.store inside MainActor.run
         guard Self.viewModel != nil else {
-            if Self.verbose {
-                if ProjectsPlugin.verbose {
-                    ProjectsPlugin.logger.warning("\(Self.t)⚠️ agentTools 返回空数组：viewModel 为 nil")
-                }
-            }
-            return []
+            throw LumiPluginDependencyError.stateNotInitialized("ProjectsViewModel")
         }
 
         let tools: [any LumiAgentTool] = [
