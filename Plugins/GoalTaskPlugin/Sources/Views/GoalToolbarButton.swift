@@ -5,15 +5,14 @@ import SwiftUI
 
 // MARK: - Goal Toolbar Button
 
-/// 显示在 chat 工具栏的 Goal 按钮，点击展示 goals 详情
+/// 显示在 chat 工具栏的 Goal 按钮，点击展示当前活跃 goal 详情
 struct GoalToolbarButton: View {
-    @LumiTheme private var theme
     @Environment(\.lumiCore) private var lumiCore
     @StateObject private var viewModel = GoalToolbarViewModel()
     @State private var isPopoverPresented = false
 
     private var goalCount: Int {
-        viewModel.goals.count
+        viewModel.hasActiveGoal ? 1 : 0
     }
 
     var body: some View {
@@ -51,8 +50,8 @@ struct GoalToolbarButton: View {
 
 @MainActor
 final class GoalToolbarViewModel: ObservableObject {
-    @Published public var goals: [GoalDisplayItem] = []
-    @Published public var tasksByGoalId: [String: [GoalTaskDisplayItem]] = [:]
+    @Published public var activeGoal: GoalDisplayItem?
+    @Published public var activeTasks: [GoalTaskDisplayItem] = []
     @Published public var isLoading: Bool = false
 
     private var currentConversationId: String?
@@ -61,14 +60,18 @@ final class GoalToolbarViewModel: ObservableObject {
         GoalTaskPlugin.currentManager()
     }
 
+    public var hasActiveGoal: Bool {
+        activeGoal != nil
+    }
+
     func refresh(lumiCore: LumiCoreAccessing?) async {
         guard let manager else { return }
 
         guard let chatService = lumiCore?.chatService else { return }
 
         guard let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
-            goals = []
-            tasksByGoalId = [:]
+            activeGoal = nil
+            activeTasks = []
             return
         }
 
@@ -83,14 +86,25 @@ final class GoalToolbarViewModel: ObservableObject {
 
         let fetchedGoals = await manager.fetchGoals(conversationId: conversationId)
 
-        var tasksMap: [String: [GoalTaskDisplayItem]] = [:]
-        for goal in fetchedGoals {
-            let tasks = await manager.fetchTasks(goalId: goal.id)
-            tasksMap[goal.id] = tasks.map { GoalTaskDisplayItem(from: $0) }
+        // 查找最新的活跃 Goal（非终态）
+        let activeGoalModel = fetchedGoals.first { goal in
+            switch goal.status {
+            case .completed, .failed, .skipped:
+                return false
+            case .pending, .inProgress, .blocked:
+                return true
+            }
         }
 
-        goals = fetchedGoals.map { GoalDisplayItem(from: $0) }
-        tasksByGoalId = tasksMap
+        if let goal = activeGoalModel {
+            activeGoal = GoalDisplayItem(from: goal)
+            let tasks = await manager.fetchTasks(goalId: goal.id)
+            activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
+        } else {
+            activeGoal = nil
+            activeTasks = []
+        }
+
         isLoading = false
     }
 }
@@ -105,7 +119,7 @@ private struct GoalPopoverContent: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Label("Goals", systemImage: "target")
+                Label("Goal", systemImage: "target")
                     .font(.headline)
 
                 Spacer()
@@ -113,14 +127,6 @@ private struct GoalPopoverContent: View {
                 if viewModel.isLoading {
                     ProgressView()
                         .controlSize(.small)
-                } else {
-                    Text("\(viewModel.goals.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.2))
-                        .clipShape(Capsule())
                 }
             }
             .padding(.horizontal, 16)
@@ -129,33 +135,26 @@ private struct GoalPopoverContent: View {
             Divider()
 
             // Content
-            if viewModel.goals.isEmpty {
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView()
+                Spacer()
+            } else if let goal = viewModel.activeGoal {
+                ScrollView {
+                    GoalRowView(goal: goal, tasks: viewModel.activeTasks)
+                        .padding(12)
+                }
+            } else {
                 VStack(spacing: 8) {
                     Image(systemName: "target")
                         .font(.system(size: 32))
                         .foregroundStyle(.tertiary)
-                    Text("No active goals")
+                    Text("No active goal")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("Goals will appear here when created")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(viewModel.goals) { goal in
-                            GoalRowView(
-                                goal: goal,
-                                tasks: viewModel.tasksByGoalId[goal.id] ?? []
-                            )
-                        }
-                    }
-                    .padding(12)
-                }
             }
         }
         .background(theme.background)
@@ -176,18 +175,12 @@ private struct GoalRowView: View {
 
     private var statusColor: Color {
         switch goal.status {
-        case .pending:
-            return .secondary
-        case .inProgress:
-            return .blue
-        case .completed:
-            return .green
-        case .blocked:
-            return .orange
-        case .failed:
-            return .red
-        case .skipped:
-            return .secondary
+        case .pending: return .secondary
+        case .inProgress: return .blue
+        case .completed: return .green
+        case .blocked: return .orange
+        case .failed: return .red
+        case .skipped: return .secondary
         }
     }
 
@@ -203,7 +196,8 @@ private struct GoalRowView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            // Goal Header
             HStack(spacing: 6) {
                 Image(systemName: statusIcon)
                     .font(.system(size: 10, weight: .semibold))
@@ -212,7 +206,6 @@ private struct GoalRowView: View {
                 Text(goal.title)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .lineLimit(1)
 
                 Spacer()
 
@@ -236,24 +229,67 @@ private struct GoalRowView: View {
             .frame(height: 4)
 
             // Task count
-            HStack {
-                Text("\(tasks.filter { $0.status == .completed || $0.status == .skipped }.count)/\(tasks.count) tasks")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+            Text("\(tasks.filter { $0.status == .completed || $0.status == .skipped }.count)/\(tasks.count) tasks")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                Spacer()
+            if let blockedReason = goal.blockedReason, goal.status == .blocked {
+                Text("⚠️ \(blockedReason)")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
 
-                if let blockedReason = goal.blockedReason, goal.status == .blocked {
-                    Text("⚠️ \(blockedReason)")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                        .lineLimit(1)
+            Divider()
+
+            // Task List
+            Text("Tasks")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ForEach(tasks) { task in
+                HStack(spacing: 6) {
+                    Image(systemName: taskStatusIcon(task.status))
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(taskStatusColor(task.status))
+                        .frame(width: 10)
+
+                    Text(task.title)
+                        .font(.caption)
+                        .lineLimit(2)
+
+                    if let group = task.parallelGroup {
+                        Text("[\(group)]")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
                 }
             }
         }
         .padding(12)
         .background(Color.secondary.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func taskStatusIcon(_ status: GoalTask.TaskStatus) -> String {
+        switch status {
+        case .pending: return "circle"
+        case .inProgress: return "play.fill"
+        case .completed: return "checkmark"
+        case .failed: return "xmark"
+        case .skipped: return "forward"
+        }
+    }
+
+    private func taskStatusColor(_ status: GoalTask.TaskStatus) -> Color {
+        switch status {
+        case .pending: return .secondary
+        case .inProgress: return .blue
+        case .completed: return .green
+        case .failed: return .red
+        case .skipped: return .gray
+        }
     }
 }
 
