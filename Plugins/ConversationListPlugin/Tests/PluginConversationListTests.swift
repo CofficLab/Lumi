@@ -1,6 +1,6 @@
 import Foundation
 import LumiCoreKit
-import LumiChatKit
+import LumiCoreKit
 import Testing
 @testable import ConversationListPlugin
 

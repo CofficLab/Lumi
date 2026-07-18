@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 
 @MainActor

@@ -1,5 +1,5 @@
 import Combine
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 import LumiUI
 import SuperLogKit

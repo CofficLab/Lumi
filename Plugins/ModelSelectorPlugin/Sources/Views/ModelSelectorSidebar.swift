@@ -1,5 +1,5 @@
 
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 import LumiUI
 import SwiftUI

@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 import SwiftData
 import Testing

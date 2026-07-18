@@ -1,5 +1,5 @@
 import Foundation
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 
 /// 格式化逻辑现位于 `LumiChatKit.TokenCountFormat`, 这里保留旧名以减少调用点改动。

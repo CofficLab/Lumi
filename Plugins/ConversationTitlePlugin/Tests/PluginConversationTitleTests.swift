@@ -1,5 +1,5 @@
 import Foundation
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 import Testing
 @testable import ConversationTitlePlugin

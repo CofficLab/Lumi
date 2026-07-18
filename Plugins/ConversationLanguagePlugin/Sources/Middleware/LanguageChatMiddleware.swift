@@ -1,4 +1,4 @@
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 
 struct LanguageChatMiddleware: LumiSendMiddleware {

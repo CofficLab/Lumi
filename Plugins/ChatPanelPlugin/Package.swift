@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/EditorChatInputKit")
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "ChatPanelPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
             ],

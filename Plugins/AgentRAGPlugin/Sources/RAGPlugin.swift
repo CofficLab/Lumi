@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiChatKit
+import LumiCoreKit
 import LumiCoreKit
 import SuperLogKit
 import os

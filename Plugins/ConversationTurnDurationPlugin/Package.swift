@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiLocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -23,7 +22,6 @@ let package = Package(
         .target(
             name: "ConversationTurnDurationPlugin",
             dependencies: [
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

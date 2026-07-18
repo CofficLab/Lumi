@@ -12,13 +12,12 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/LumiChatKit"),
         .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "GoalTaskPlugin",
-            dependencies: ["LumiCoreKit", "SuperLogKit", "LumiChatKit", "LumiUI"],
+            dependencies: ["LumiCoreKit", "SuperLogKit", "LumiUI"],
             path: "Sources"
         ),
         .testTarget(
