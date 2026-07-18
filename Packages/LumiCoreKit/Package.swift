@@ -16,7 +16,6 @@ let package = Package(
     dependencies: [
         .package(path: "../SuperLogKit"),
         .package(path: "../LumiLocalizationKit"),
-        .package(path: "../KeychainKit"),
         .package(path: "../LumiComponentLayout"),
         .package(path: "../LumiComponentGit"),
         .package(path: "../LumiComponentProject"),
@@ -38,7 +37,6 @@ let package = Package(
             dependencies: [
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "LumiComponentLayout", package: "LumiComponentLayout"),
                 .product(name: "LumiComponentGit", package: "LumiComponentGit"),
                 .product(name: "LumiComponentProject", package: "LumiComponentProject"),
