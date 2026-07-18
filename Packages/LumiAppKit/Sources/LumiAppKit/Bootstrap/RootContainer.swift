@@ -49,7 +49,10 @@ final class RootContainer: ObservableObject, SuperLog {
         let dataRootDirectory = try StorageService.makeDataRootDirectory()
         let coreDatabaseDirectory = try StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
-        // —— 3. Editor 工厂闭包 ——
+        // —— 3. 创建 AgentToolComponent（组合根创建，注入 LumiCore 和 ChatService）——
+        let agentToolComponent = AgentToolComponent()
+
+        // —— 4. Editor 工厂闭包 ——
         // 返回 EditorCoreService 实例。此时还不持有 lumiCore——LumiCore.init 会接收并存储
         // 返回值，但 `configure(lumiCore:)` 回填由本 init 在 LumiCore 创建完成后调用
         // （configure 是 EditorCoreService 的具体方法，不在 AbstractEditorServicing 协议里）。
@@ -63,7 +66,7 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         }
 
-        // —— 4. 一次性创建 LumiCore ——
+        // —— 5. 一次性创建 LumiCore ——
         // 内部完成 ProjectComponent / LayoutState / dataRoot 物化 / ChatService 创建
         // （留空 lumiCore）/ ToolService / EditorService 的全部绑定。
         // ChatService 的 lumiCore 引用留空，由下方 configure 回填
@@ -72,8 +75,12 @@ final class RootContainer: ObservableObject, SuperLog {
             dataRootDirectory: dataRootDirectory,
             provider: provider,
             builtInTools: ChatService.builtInTools,
+            agentToolComponent: agentToolComponent,
             chatServiceFactory: { databaseDirectory in
-                try ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+                try ChatService(
+                    configuration: .coreDatabase(directory: databaseDirectory),
+                    agentToolComponent: agentToolComponent
+                )
             },
             editorFactory: editorFactory
         )
