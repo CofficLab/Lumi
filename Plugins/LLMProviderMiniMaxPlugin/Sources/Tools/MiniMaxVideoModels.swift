@@ -163,7 +163,7 @@ struct MiniMaxFileRetrieveResponse: Decodable, Equatable, Sendable {
 
 /// 视频生成流程中可被 UI 区分的错误类型。
 enum MiniMaxVideoError: LocalizedError, Equatable {
-    /// 未配置 API Key（通过 `LumiAPIKeyStore` 读取失败）。
+    /// 未配置 API Key（通过 `APIKeyStore` 读取失败）。
     case missingAPIKey
     /// 业务错误：HTTP 200 但 `base_resp.status_code != 0`。
     case apiError(code: Int, message: String)

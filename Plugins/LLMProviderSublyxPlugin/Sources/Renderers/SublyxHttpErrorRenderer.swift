@@ -1,5 +1,6 @@
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import SwiftUI
 
 enum SublyxHttpErrorRenderer {

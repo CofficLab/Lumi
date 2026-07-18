@@ -1,6 +1,7 @@
 import Foundation
 import HttpKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 
 /// 智谱配额查询辅助工具
 enum QuotaService {

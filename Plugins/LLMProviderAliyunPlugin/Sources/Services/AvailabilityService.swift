@@ -2,7 +2,8 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 
 // MARK: - AvailabilityService
 
@@ -104,6 +105,6 @@ enum AvailabilityService {
             return isUnsupportedModelResponse(message)
         }
 
-        return isUnsupportedModelFailure(LumiLLMFailureDetailResolver.resolve(from: error))
+        return isUnsupportedModelFailure(LLMFailureDetailResolver.resolve(from: error))
     }
 }

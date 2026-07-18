@@ -2,7 +2,8 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXiaomiPlugin")
@@ -172,7 +173,7 @@ enum AvailabilityService {
         if case let HTTPClientError.httpError(_, message) = error {
             return isUnsupportedModelResponse(message)
         }
-        return isUnsupportedModelFailure(LumiLLMFailureDetailResolver.resolve(from: error))
+        return isUnsupportedModelFailure(LLMFailureDetailResolver.resolve(from: error))
     }
 
     private static func combinedText(from failure: LumiLLMFailureDetail) -> String {

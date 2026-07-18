@@ -1,6 +1,7 @@
 import Foundation
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 
 /// MiniMax 视频生成工具：通过 MiniMax API 生成视频并返回 mp4 文件。
 ///
@@ -38,7 +39,7 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
     public init(
         client: any MiniMaxVideoClientProtocol = MiniMaxVideoClient(apiKeyProvider: {
-            LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
+            APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
         })
     ) {
         self.client = client
