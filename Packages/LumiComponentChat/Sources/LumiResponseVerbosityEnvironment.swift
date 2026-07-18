@@ -1,3 +1,4 @@
+import LumiComponentMessage
 import SwiftUI
 
 private struct LumiResponseVerbosityKey: EnvironmentKey {

@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 public enum LumiMessagePerformanceMetadata {
     public static let latencyKey = "latencyMs"
@@ -25,25 +26,13 @@ public enum LumiMessagePerformanceMetadata {
 }
 
 public extension LumiChatMessage {
-    var latencyMs: Double? {
-        metadata[LumiMessagePerformanceMetadata.latencyKey].flatMap(Double.init)
-    }
-
-    var timeToFirstTokenMs: Double? {
-        metadata[LumiMessagePerformanceMetadata.timeToFirstTokenKey].flatMap(Double.init)
-    }
-
-    var streamingDurationMs: Double? {
-        metadata[LumiMessagePerformanceMetadata.streamingDurationKey].flatMap(Double.init)
-    }
-
     /// Tokens per second for this message when output tokens and streaming duration are available.
     var tokensPerSecond: Double? {
         guard let outputTokens = outputTokenCount,
-              let streamingDurationMs,
-              streamingDurationMs > 0 else {
+              let duration = streamingDurationMs,
+              duration > 0 else {
             return nil
         }
-        return Double(outputTokens) / (streamingDurationMs / 1000.0)
+        return Double(outputTokens) / (Double(duration) / 1000.0)
     }
 }

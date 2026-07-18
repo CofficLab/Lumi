@@ -1,4 +1,6 @@
 import Foundation
+import LumiComponentLLMProvider
+import LumiComponentMessage
 
 /// 一个全占位的 `LumiChatServicing` 实现，供 SwiftUI Preview / 测试 stub 使用。
 ///

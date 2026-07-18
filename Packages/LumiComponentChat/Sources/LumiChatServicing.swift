@@ -1,4 +1,6 @@
 import Foundation
+import LumiComponentLLMProvider
+import LumiComponentMessage
 
 @MainActor
 public protocol LumiChatServicing: AnyObject, ObservableObject {
