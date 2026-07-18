@@ -30,21 +30,8 @@ struct GoalToolbarButton: View {
             }
             isPopoverPresented.toggle()
         } label: {
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "target")
-                    .font(.system(size: 14, weight: .medium))
-
-                if goalCount > 0 {
-                    Text("\(goalCount)")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.red)
-                        .clipShape(Capsule())
-                        .offset(x: 6, y: -4)
-                }
-            }
+            Image(systemName: "target")
+                .font(.system(size: 14, weight: .medium))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
