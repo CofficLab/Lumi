@@ -1,8 +1,8 @@
 import Foundation
 import LumiCoreKit
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 public enum ProjectsPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "📂"
@@ -25,10 +25,10 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static var store: ProjectsStore?
-    
+
     @MainActor
     public static var syncCoordinator: ProjectsSyncCoordinator?
-    
+
     @MainActor
     public static var viewModel: ProjectsViewModel?
 
@@ -119,7 +119,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
                 placement: .center
             ) {
                 ProjectControlView(viewModel: viewModel)
-            }
+            },
         ]
     }
 
@@ -131,9 +131,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     @MainActor
     public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         if Self.verbose {
-            if ProjectsPlugin.verbose {
-                ProjectsPlugin.logger.info("\(Self.t)agentTools 被调用，viewModel 可用=\(Self.viewModel != nil)")
-            }
+            ProjectsPlugin.logger.info("\(Self.t)agentTools 被调用，viewModel 可用=\(Self.viewModel != nil)")
         }
 
         // Tools access store dynamically via ProjectsPlugin.store inside MainActor.run
@@ -144,13 +142,11 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
         let tools: [any LumiAgentTool] = [
             AddProjectTool(),
             ListProjectsTool(),
-            GetCurrentProjectTool()
+            GetCurrentProjectTool(),
         ]
 
         if Self.verbose {
-            if ProjectsPlugin.verbose {
-                ProjectsPlugin.logger.info("\(Self.t)✅ agentTools 返回 \(tools.count) 个工具：\(tools.map { $0.name }.joined(separator: ", "))")
-            }
+            Self.logger.info("\(Self.t)✅ agentTools 返回 \(tools.count) 个工具：\(tools.map { $0.name }.joined(separator: ", "))")
         }
 
         return tools
