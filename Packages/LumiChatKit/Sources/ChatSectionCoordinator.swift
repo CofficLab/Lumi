@@ -1,6 +1,5 @@
 import AppKit
 import Combine
-import EditorChatInputKit
 import LumiCoreKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -10,7 +9,7 @@ public final class ChatSectionCoordinator: ObservableObject {
     @Published public var draft = ""
     @Published public var rawMessageIDs: Set<UUID> = []
     @Published public var oldestVisibleMessageID: UUID?
-    @Published public var inputHeight: CGFloat = ChatInputEditorView.minHeight
+    @Published public var inputHeight: CGFloat = ChatInputConstants.inputMinHeight
     @Published public var isInputFocused = false
     @Published public var inputCursorPosition = 0
     @Published public var isImageDragHovering = false
@@ -130,7 +129,7 @@ public final class ChatSectionCoordinator: ObservableObject {
 
     public func handleFileDrop(_ url: URL) {
         let fileURL = url.standardizedFileURL
-        if ChatInputEditorRules.isChatImageFileURL(fileURL) {
+        if ChatInputConstants.isChatImageFileURL(fileURL) {
             guard canAttachImages(for: selectedConversationID) else {
                 showImageUnsupportedAlert = true
                 return
