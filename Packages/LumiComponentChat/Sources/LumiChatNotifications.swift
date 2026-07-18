@@ -1,5 +1,5 @@
 import Foundation
-import LumiComponentTurn
+import LumiComponentMessage
 
 public enum LumiMessageSavedNotification {
     public static let messageIDKey = "messageID"

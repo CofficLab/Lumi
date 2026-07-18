@@ -94,7 +94,7 @@ import Testing
 struct InlineToolCallRetrySuite {
     private func makeService(provider: SequencedResponseMockProvider) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "InlineToolCallRetry")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -235,7 +235,7 @@ struct InlineToolCallEndToEndSuite {
         provider: SequencedResponseMockProvider
     ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "InlineE2E")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)

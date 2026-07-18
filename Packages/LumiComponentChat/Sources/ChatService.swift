@@ -5,7 +5,6 @@ import LumiComponentLayout
 import LumiComponentLLMProvider
 import LumiComponentMessage
 import LumiComponentPlugin
-import LumiComponentTurn
 import SwiftData
 
 @MainActor
@@ -13,6 +12,9 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     public static weak var shared: ChatService?
 
     // MARK: - Core Reference
+
+    /// Agent 工具功能组件。由组合根注入，用于构建 per-request 工具集。
+    public let agentToolComponent: AgentToolComponent
 
     /// 代理引用。通过 `configure(delegate:)` 注入，用于访问 LumiCore 提供的功能。
     public weak var delegate: ChatServiceDelegate?
@@ -92,7 +94,8 @@ public final class ChatService: ObservableObject, LumiChatServicing {
 
     // MARK: - Init
 
-    public init(configuration: Configuration) throws {
+    public init(configuration: Configuration, agentToolComponent: AgentToolComponent) throws {
+        self.agentToolComponent = agentToolComponent
         let store = try ChatStore(configuration: configuration)
         self.store = store
         self.backgroundQueryContainer = store.sharedContainer
@@ -451,7 +454,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
-        let toolService: any LumiToolServicing = toolService ?? ToolService()
+        let toolService: any LumiToolServicing = toolService ?? agentToolComponent.buildToolSet(builtInTools: Self.builtInTools)
         return try await sendPipeline.makeAssistantMessage(
             conversationID: conversationID,
             messages: messages,
@@ -727,7 +730,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
-        let toolService: any LumiToolServicing = toolService ?? ToolService()
+        let toolService: any LumiToolServicing = toolService ?? agentToolComponent.buildToolSet(builtInTools: Self.builtInTools)
         let maxRetries = emptyResponseMaxRetries
         let conversationLanguage = language(for: conversationID)
         var lastMessage: LumiChatMessage?
@@ -797,7 +800,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
-        let toolService: any LumiToolServicing = toolService ?? ToolService()
+        let toolService: any LumiToolServicing = toolService ?? agentToolComponent.buildToolSet(builtInTools: Self.builtInTools)
         // 首条消息不含内联工具调用 → 无需重试，直接返回。
         guard firstMessage.hasInlineToolCallInBody else {
             return firstMessage
@@ -853,7 +856,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment] = []
     ) async throws -> TurnOutcome {
-        let toolService: any LumiToolServicing = toolService ?? ToolService()
+        let toolService: any LumiToolServicing = toolService ?? agentToolComponent.buildToolSet(builtInTools: Self.builtInTools)
         var iteration = 0
 
         while true {

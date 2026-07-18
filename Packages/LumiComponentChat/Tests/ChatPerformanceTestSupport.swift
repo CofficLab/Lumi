@@ -15,7 +15,7 @@ enum ChatPerformanceTestSupport {
         directory: URL,
         provider: any LumiLLMProvider
     ) throws -> (ChatService, UUID) {
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "Perf")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)

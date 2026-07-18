@@ -25,7 +25,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let persistBefore = service.persistCallCount
 
         _ = service.createConversation(title: "First")
@@ -41,7 +41,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         // 预填充：模拟用户长期使用后的状态（50 个对话，每个对话 20 条消息）
         seedConversationsAndMessages(service: service, count: 50, messagesPerConversation: 20)
@@ -64,7 +64,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         // 预填充 200 个对话，每个 30 条消息
         seedConversationsAndMessages(service: service, count: 200, messagesPerConversation: 30)
@@ -86,7 +86,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let revisionBefore = service.revision
 
         _ = service.createConversation(title: "Test")
@@ -102,7 +102,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         let revisionBefore = service.revision
         _ = service.createConversation(title: "Batch")
@@ -125,13 +125,13 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         seedConversationsAndMessages(service: service, count: 10, messagesPerConversation: 5)
         let newID = service.createConversation(title: "Newest")
 
         // 重新加载
-        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory))
+        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         // 包含预填充的 10 个 + 新建的 1 个 = 11 个对话
         #expect(reloaded.conversations.count == 11)
@@ -147,7 +147,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "Test")
 
         let persistBefore = service.persistCallCount
@@ -175,7 +175,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         // 预填充 100 个对话，每个 10 条消息
         seedConversationsAndMessages(service: service, count: 100, messagesPerConversation: 10)
@@ -196,7 +196,7 @@ struct CreateConversationPerformanceSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
         // 预填充 100 个对话，每个 10 条消息
         seedConversationsAndMessages(service: service, count: 100, messagesPerConversation: 10)

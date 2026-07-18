@@ -141,7 +141,7 @@ final class NoOpToolService: LumiToolServicing {
 struct EmptyResponseRetrySuite {
     private func makeService(provider: SequencedResponseMockProvider) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "EmptyRetry")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -289,7 +289,7 @@ struct EmptyResponseEndToEndSuite {
         provider: SequencedResponseMockProvider
     ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "E2E")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)

@@ -227,7 +227,7 @@ private func makeService() throws -> (ChatService, UUID, HighRiskToolService) {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("LumiChatKitToolApproval-\(UUID().uuidString)", isDirectory: true)
 
-    let service = try ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let conversationID = service.createConversation(title: "Approval Cancel")
     // 关键：.build 模式才会触发高危工具的审批弹窗（.autonomous 会跳过审批直接执行）。
     service.setAutomationLevel(.build, for: conversationID)
@@ -366,7 +366,7 @@ private func waitForApprovalPending(
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("LumiChatKitToolApprovalTrunc-\(UUID().uuidString)", isDirectory: true)
 
-    let service = try ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let conversationID = service.createConversation(title: "Truncated Args")
     service.setAutomationLevel(.build, for: conversationID)
     // 模拟流被截断：arguments 是半截 JSON，JSONDecoder 会抛错。

@@ -13,7 +13,7 @@ struct LumiChatKitIntegrationSuite {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let provider = ChunkedStreamingMockProvider(chunks: ["Hello"])
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let id = service.createConversation(title: "Test")
         service.registerProviders([provider])
         service.selectProvider(id: ChunkedStreamingMockProvider.info.id, model: "mock", for: id)
@@ -26,7 +26,7 @@ struct LumiChatKitIntegrationSuite {
         )
         _ = try await service.runAgentTurn(conversationID: id)
 
-        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory))
+        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         #expect(reloaded.conversations.count == 1)
         #expect(reloaded.messages(for: id).count == 2)
         #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("Lumi.db").path))
@@ -38,13 +38,13 @@ struct LumiChatKitIntegrationSuite {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let id = service.createConversation(title: "Verbose")
         service.setLanguage(.english, for: id)
         service.setAutomationLevel(.build, for: id)
         service.setVerbosity(.detailed, for: id)
 
-        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory))
+        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         #expect(reloaded.language(for: id) == .english)
         #expect(reloaded.automationLevel(for: id) == .build)
         #expect(reloaded.verbosity(for: id) == .detailed)
@@ -59,7 +59,7 @@ struct LumiChatKitIntegrationSuite {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let coordinator = ChatSectionCoordinator(chatService: service)
         let conversationID = service.createConversation(title: "Paged")
 

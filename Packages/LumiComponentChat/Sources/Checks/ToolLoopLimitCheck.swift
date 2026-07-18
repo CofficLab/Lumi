@@ -1,7 +1,7 @@
 // MARK: - Checks
 //
 // Pluggable checks that run after each LLM response in the agent loop.
-// Each check implements `LumiAgentTurnCheck` (defined in LumiComponentTurn).
+// Each check implements `LumiAgentTurnCheck` (defined in this package).
 //
 // To add a new check:
 // 1. Create a new Swift file in this directory
@@ -11,7 +11,6 @@
 // MARK: - ToolLoopLimitCheck
 
 import Foundation
-import LumiComponentTurn
 
 /// Terminates the agent loop when the iteration count exceeds a configured maximum.
 ///

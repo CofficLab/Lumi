@@ -3,7 +3,6 @@ import LumiComponentAgentTool
 import LumiComponentLLMProvider
 import LumiComponentMessage
 import LumiComponentPlugin
-import LumiComponentTurn
 
 /// Manages the send queue, pending messages, and tool approval.
 @MainActor
@@ -234,26 +233,16 @@ final class SendPipeline {
 
     /// 为一次发送构建 per-request 工具集。
     ///
-    /// 委托给内核的 `AgentToolComponent.buildToolSet`：按当前 context（反映当前项目、
+    /// 委托给 `agentToolComponent.buildToolSet`：按当前 context（反映当前项目、
     /// 会话、model 等）收集插件工具，合并内置工具与子 Agent 工具，软去重后返回一份
     /// 全新的 `ToolService`。本次 turn 序列全程持有它，请求结束即释放。
-    ///
-    /// 兜底：`delegate` 未回填时（理论不应发生——`RootContainer` 创建 LumiCore 后
-    /// 立即 `configure`），返回只含内置工具的 ToolService，保证发消息不崩。
     private func makePerRequestToolService(for conversationID: UUID) -> any LumiToolServicing {
-        guard let delegate = service?.delegate else {
-            return ToolService(tools: ChatService.builtInTools, environment: nil)
+        guard let service else {
+            // 理论上不应发生——SendPipeline 由 ChatService 持有
+            fatalError("SendPipeline.service is nil when building per-request tool service")
         }
-        let context = delegate.makePluginContext(
-            activeSectionID: "chat.core",
-            activeSectionTitle: "Chat Core",
-            chatSection: .none,
-            showsRail: false,
-            showsPanelChrome: false,
-            isChatSectionVisible: nil,
-            additionalDependencies: { _ in }
-        )
-        return delegate.agentToolComponent.buildToolSet(
+        // 使用注入的 agentToolComponent 构建 per-request 工具集
+        return service.agentToolComponent.buildToolSet(
             builtInTools: ChatService.builtInTools
         )
     }

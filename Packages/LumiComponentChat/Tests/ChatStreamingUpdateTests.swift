@@ -114,7 +114,7 @@ struct ChatStreamingUpdateSuite {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = try ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
         let conversationID = service.createConversation(title: "Persist budget")
         let persistBefore = service.persistCallCount
 
