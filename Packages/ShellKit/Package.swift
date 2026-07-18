@@ -9,14 +9,14 @@ let package = Package(
         .library(name: "ShellKit", targets: ["ShellKit"]),
     ],
     dependencies: [
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
 
     targets: [
         .target(
             name: "ShellKit",
             dependencies: [
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SuperLogKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
         .package(path: "../LumiCoreKit"),
     ],
     targets: [
@@ -24,7 +24,7 @@ let package = Package(
             dependencies: [
                 "SuperLogKit",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

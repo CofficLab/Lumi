@@ -7,14 +7,14 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "TerminalCoreKit", targets: ["TerminalCoreKit"])],
     dependencies: [
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.0.0")
     ],
     targets: [
         .target(
             name: "TerminalCoreKit",
             dependencies: ["SwiftTerm",
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

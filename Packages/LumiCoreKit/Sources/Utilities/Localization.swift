@@ -1,12 +1,12 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiLocalizationKit
+import LocalizationKit
 
 /// Runtime localization for LLM provider support.
 ///
 /// Provides localization lookup scoped to LLMKit/LumiCoreKit by delegating
-/// to `LumiLocalizationKit`. New code should prefer `LumiLocalization.string(...)`
+/// to `LocalizationKit`. New code should prefer `LumiLocalization.string(...)`
 /// directly; this wrapper exists for backward compatibility with existing
 /// call sites.
 public enum LLMProviderSupportLocalization {

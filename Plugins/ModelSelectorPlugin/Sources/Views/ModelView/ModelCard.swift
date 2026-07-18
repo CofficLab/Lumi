@@ -1,7 +1,7 @@
 
 import LumiCoreKit
 import LumiCoreKit
-import LumiLocalizationKit
+import LocalizationKit
 import LumiUI
 import SwiftUI
 

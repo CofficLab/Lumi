@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit")
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "MessageListPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit")
             ],
@@ -38,7 +38,7 @@ let package = Package(
             dependencies: [
                 "MessageListPlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "MarkdownKitTesting", package: "MarkdownKit")
             ],
             path: "Tests"

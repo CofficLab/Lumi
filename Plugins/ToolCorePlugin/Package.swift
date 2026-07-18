@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/FileSystemKit"),
@@ -25,7 +25,7 @@ let package = Package(
             name: "ToolCorePlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "FileSystemKit", package: "FileSystemKit"),
             ],

@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/FileSystemKit"),
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
     ],
@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "FileSystemKit", package: "FileSystemKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
@@ -42,7 +42,7 @@ let package = Package(
             dependencies: [
                 "EditorFileTreePlugin",
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
+                .product(name: "LocalizationKit", package: "LocalizationKit"),            ],
             path: "Tests"
         )
     ]

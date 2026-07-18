@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../LumiComponentLayout"),
         .package(path: "../LumiComponentLLMProvider"),
         .package(path: "../LLMKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LumiComponentLayout", package: "LumiComponentLayout"),
                 .product(name: "LumiComponentLLMProvider", package: "LumiComponentLLMProvider"),
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

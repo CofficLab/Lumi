@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiUI")
     ],

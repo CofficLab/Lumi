@@ -2,24 +2,24 @@
 import PackageDescription
 
 let package = Package(
-    name: "LumiLocalizationKit",
+    name: "LocalizationKit",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "LumiLocalizationKit",
-            targets: ["LumiLocalizationKit"]
+            name: "LocalizationKit",
+            targets: ["LocalizationKit"]
         ),
     ],
     targets: [
         .target(
-            name: "LumiLocalizationKit"
+            name: "LocalizationKit"
         ),
         .testTarget(
-            name: "LumiLocalizationKitTests",
-            dependencies: ["LumiLocalizationKit"]
+            name: "LocalizationKitTests",
+            dependencies: ["LocalizationKit"]
         ),
     ]
 )

@@ -14,17 +14,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderFlyMuxPlugin",
             dependencies: [
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

@@ -13,13 +13,13 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),    ],
+        .package(path: "../../Packages/LocalizationKit"),    ],
     targets: [
         .target(
             name: "LogoCofficPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
+                .product(name: "LocalizationKit", package: "LocalizationKit"),            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")

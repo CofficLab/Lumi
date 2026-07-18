@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiCoreKit"),
         .package(path: "../LumiUI"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
         .package(path: "../EditorKernel"),
         .package(path: "../EditorSource"),
         .package(path: "../EditorTextView"),
@@ -35,7 +35,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "EditorSource", package: "EditorSource"),
                 .product(name: "EditorTextView", package: "EditorTextView"),

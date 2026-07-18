@@ -1,4 +1,4 @@
-import LumiLocalizationKit
+import LocalizationKit
 import AppKit
 import LumiCoreKit
 import os

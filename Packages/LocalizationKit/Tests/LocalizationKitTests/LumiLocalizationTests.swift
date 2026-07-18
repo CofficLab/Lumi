@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LumiLocalizationKit
+@testable import LocalizationKit
 
 @Suite("LumiLocalization")
 struct LumiLocalizationTests {

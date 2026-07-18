@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(path: "../EditorLanguageRuntime"),
         .package(path: "../SuperLogKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/ShellKit"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "BrowserPlugin",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "ShellKit", package: "ShellKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

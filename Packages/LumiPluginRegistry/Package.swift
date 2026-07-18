@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../EditorService"),
         .package(path: "../LumiCoreKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
         .package(path: "../../Plugins/ActivityHeatmapPlugin"),
         .package(path: "../../Plugins/AgentDelayMessagePlugin"),
         .package(path: "../../Plugins/AgentRAGPlugin"),
@@ -159,7 +159,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
                 .product(name: "AgentDelayMessagePlugin", package: "AgentDelayMessagePlugin"),
                 .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),

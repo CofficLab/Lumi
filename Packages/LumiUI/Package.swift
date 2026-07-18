@@ -14,13 +14,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
             name: "LumiUI",
             dependencies: [
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

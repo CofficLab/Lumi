@@ -1,5 +1,5 @@
 import Foundation
-import LumiLocalizationKit
+import LocalizationKit
 
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general

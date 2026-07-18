@@ -1,6 +1,6 @@
 import Foundation
 import LumiCoreKit
-import LumiLocalizationKit
+import LocalizationKit
 
 public enum LumiPluginRegistryLocalization {
     public static func string(_ key: String, bundle: Bundle, locale: Locale = .current) -> String {

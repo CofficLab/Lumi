@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiLocalizationKit
+import LocalizationKit
 
 public enum LLMFailureDetailResolver {
     public static func resolve(from error: Error, locale: Locale = .current) -> LumiLLMFailureDetail {
