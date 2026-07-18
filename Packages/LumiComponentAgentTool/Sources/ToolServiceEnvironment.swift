@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 /// ToolService 的运行环境协议
 ///
