@@ -75,6 +75,25 @@ public final class LayoutState: ObservableObject, SuperLog {
     /// 底部面板 tab 的全局默认值（未被显式选择过的容器回退到此值）。
     public static let defaultBottomTabID = "editor-bottom-problems"
 
+    // MARK: - 设置窗口状态
+
+    /// 当前选中的设置标签 ID。
+    ///
+    /// 格式为 `"<category>.<tab>"`，例如：
+    /// - `"core.general"` - 核心设置-常规
+    /// - `"core.appearance"` - 核心设置-外观
+    /// - `"plugin.<pluginID>"` - 插件设置
+    ///
+    /// 由 SettingsView 在用户切换标签时更新，持久化后下次打开设置窗口可恢复选择。
+    @Published public var selectedSettingsTabID: String? {
+        didSet {
+            guard selectedSettingsTabID != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)selectedSettingsTabID → \(selectedSettingsTabID ?? "nil")")
+            }
+        }
+    }
+
     // MARK: - 恢复状态
 
     /// 布局状态是否已完成从磁盘恢复。

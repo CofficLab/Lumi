@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -53,7 +52,6 @@ struct SettingsView: View {
     let pluginService: PluginService
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
-    @State private var selectedTab: SettingsTabSelection?
 
     /// All plugin-registered settings tabs, aggregated from every loaded plugin.
     private var pluginTabs: [LumiSettingsTabItem] {
@@ -62,6 +60,42 @@ struct SettingsView: View {
             tabs.append(contentsOf: plugin.addSettingsTabs(context: settingsPluginContext))
         }
         return tabs
+    }
+
+    /// Current selected tab, derived from LayoutState.selectedSettingsTabID.
+    ///
+    /// - On appear: if no tab is selected in LayoutState, defaults to `.core(.general)`.
+    /// - Reads from LayoutState to restore persisted selection.
+    /// - Writes to LayoutState when user changes selection.
+    private var selectedTab: SettingsTabSelection? {
+        get {
+            guard let id = lumiCore.layoutComponent.state.selectedSettingsTabID else {
+                return nil
+            }
+            return selectionFromID(id)
+        }
+        nonmutating set {
+            lumiCore.layoutComponent.state.selectedSettingsTabID = newValue?.id
+        }
+    }
+
+    /// Convert a tab ID back to SettingsTabSelection.
+    private func selectionFromID(_ id: String) -> SettingsTabSelection? {
+        // Try core tab first
+        if id.hasPrefix("core.") {
+            let rawValue = id.replacingOccurrences(of: "core.", with: "")
+            if let tab = SettingsTab(rawValue: rawValue) {
+                return .core(tab)
+            }
+        }
+        // Try plugin tab
+        if id.hasPrefix("plugin.") {
+            let pluginID = id.replacingOccurrences(of: "plugin.", with: "")
+            if let pluginTab = pluginTabs.first(where: { $0.id == pluginID }) {
+                return pluginSelection(for: pluginTab)
+            }
+        }
+        return nil
     }
 
     private var settingsPluginContext: LumiPluginContext {
