@@ -2,7 +2,9 @@
 
 > 目标：把插件向 Agent 贡献工具的时机，从**「App 启动时一次性冻结进全局单例」**改为**「每次发消息时按当前 context 动态构建 per-request 工具集」**。
 >
-> 状态：提案（Proposal），尚未实施。所有 `file:line` 引用基于 `dev` 分支截至 2026-07-18 的代码。
+> 状态：**已实施（内核 + ChatKit + App 层）**。实施完成于 2026-07-18。本文件下半部保留原始设计论证；实际落地与原计划的偏差见末尾「实施记录」。
+>
+> 原 `file:line` 引用基于改造前的 `dev` 分支代码。
 
 ---
 
@@ -338,3 +340,60 @@ func runAgentTurn(
 
 - 现状分层模型与 ChatService 上帝对象诊断：`docs/architecture-refactor-proposal.md`
 - LLM Provider 重构模式（直接实现协议 + 工具函数复用）：`docs/refactor-guide-llm-provider.md`
+
+---
+
+## 11. 实施记录（2026-07-18）
+
+内核 + ChatKit + App 层改造完成。待全量编译验证。
+
+### 实际落地的改动
+
+**内核层（LumiCoreKit）：**
+- `ToolService` 新增 `init(tools:environment:)` per-request 构造器，抽出私有 `reindex()` 统一三个写路径的重建逻辑。旧的 `init()`/`registerTools`/`appendTools`/`registerBuiltInTools` 保留（测试与兜底路径仍用）。
+- `AgentToolComponent`：
+  - 新增 `buildToolSet(context:builtInTools:) -> ToolService`（per-request 构建入口，软去重）。
+  - 弱持有 `lumiCore` 引用（`buildToolSet` 内部取 provider 与 chatService）。
+  - `bootstrapToolService` 瘦身：移除 `provider`/`builtInTools` 参数与 `throws`，**移除启动期 `validateToolNameUniqueness` 调用**，启动期零工具开销。
+  - 删除 `validateToolNameUniqueness` 方法（名校验改由 `buildToolSet` 软去重承担）。
+  - `bootstrapToolContributions` 标记 `@available(*, deprecated)`（App 调用点已移除）。
+- `SubAgentDelegateTool`：`toolService` 拆为 `availableTools`（过滤用快照）+ `executionToolService`（执行用），子 Agent 工具可见性跟随本次请求的工具集。
+- `LumiCoreAccessing`：暴露 `agentToolComponent`，让 ChatKit 能拿到 `buildToolSet` 入口。
+- `LumiCore.init`：provider 注册进服务表（供 `buildToolSet` 取用）。
+- `LumiPluginContext`：加 `currentProject` 便捷属性。
+- `ProjectEntry`：加 `Language` 枚举与 `language` 字段，`init` 默认 `.unknown` 向后兼容，自定义 Codable 用 `decodeIfPresent` 兼容旧数据。
+- 新增 `ProjectLanguageDetector`：扫 marker 文件（Package.swift/go.mod/Cargo.toml/pyproject.toml/setup.py/package.json）推断语言，package.json 按 dependencies 区分 ts/js。
+
+**ChatKit 层：**
+- `SendPipeline`：`processPendingSend`/`continueAgentTurn` 发消息前调 `makePerRequestToolService(for:)` 构建 per-request 实例并透传 turn loop。
+- `makeAssistantMessage`（SendPipeline + ChatService 转发）+ `makeAssistantMessageWithEmptyRetry` + `makeAssistantMessageWithInlineToolCallRetry`：全部加 `toolService` 参数透传，tools 改用 per-request 实例。
+- `runAgentTurn`：加 `toolService` 参数，turn loop 三处改用传入实例。
+- 上述方法的 `toolService` 参数均带默认值 `nil`，内部回退 `self.toolService`——向后兼容测试调用点（16 处测试无需改动）。
+
+**App 层（LumiAppKit）：**
+- `RootContainer`：移除 `bootstrapToolContributions()` 调用与私有方法，`bootstrapAfterPluginLifecycle` 不再收集工具，失败检查只保留 lifecycle 失败。插件开关通知回调也移除工具重建。
+
+### 与原计划的偏差
+
+1. **`buildToolSet` 签名调整**：原计划 `buildToolSet(lumiCore:context:builtInTools:)`，实际改为 `buildToolSet(context:builtInTools:)`——`lumiCore` 改由 `AgentToolComponent` 弱持有。原因：ChatKit 通过 `any LumiCoreAccessing` 协议类型访问，无法传具体 `LumiCore`；而 `resolveService` 属于 `LumiCoreBootstrapping` 协议，不宜下放到 `LumiCoreAccessing`。弱持有方案避免破坏协议边界。
+2. **`runAgentTurn` 等 5 个方法的 `toolService` 参数带默认值 `nil` + 内部回退**：原计划强制非可选、同步改 16 处测试。实际采用默认值回退方案，让 16 处测试零改动。代价：测试走旧的全局缓存路径（per-request 隔离的验证应通过专门的内核测试覆盖，而非依赖这些业务逻辑测试）。
+3. **`makePluginContext` 调用补全参数**：`SendPipeline.makePerRequestToolService` 通过协议类型调 `makePluginContext` 时必须传全参数（协议方法无默认参数），与 `LumiCore` 具体实现的便利重载不同。
+
+### 遗留项（留给后续插件改造）
+
+1. ~~**`ProjectsPlugin` 重建 entry 丢 `language` 字段**~~：✅ 已修复（2026-07-18 二次交接）。
+2. ~~**插件 `agentTools(context:)` 尚未利用 `context.currentProject`**~~：✅ EditorSwiftPlugin 已改造为 fail-open 筛选策略（`.swift`/`.unknown`/`nil` 保持全量返回，明确非 Swift 语言才剔除）。
+3. ~~**`ChatService.toolService` weak 属性 + `agentTools` getter 成为死代码**~~：✅ 已删除。生产路径全部走 per-request，测试改用显式传参。
+4. ~~**`bootstrapToolContributions` deprecated 但暂留**~~：✅ 已彻底删除。
+5. **`LumiComponentProject` 副本未改**：dev 分支另有"Component 化重构"在进行，存在 `Packages/LumiComponentProject/Sources/ProjectState.swift` 副本。本次只改 `LumiCoreKit` 下的，两份副本的同步由 Component 化重构负责。
+
+### 可选增强（后续可做）
+
+- **扩充语言检测**：`ProjectLanguageDetector` 追加 Java/Kotlin/C++/Ruby/PHP 等 marker 文件。
+- **per-request 隔离测试**：验证多会话、不同项目语言各自 `buildToolSet` 互不污染。
+
+### 验证状态
+
+- **内核（LumiCoreKit）**：编译通过，171 测试全过（删除了 3 个冗余的 `LumiCoreBootValidationTests`）。
+- **ChatKit（LumiChatKit）**：编译通过，70/71 测试通过。1 个失败（`toolExecutionUpdatesElapsedSecondsInTransientStatus`）经 `git stash` 在原始代码上验证为预先存在的 flaky 测试（时序敏感），与本次改造无关。
+- **App 层 + 全量**：待用户统一编译验证（本次改造未执行 xcodebuild 全量构建）。
