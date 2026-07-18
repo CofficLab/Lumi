@@ -1,8 +1,8 @@
 import Combine
 import Foundation
-import LumiComponentChat
-import LumiComponentLayout
-import LumiComponentPlugin
+import LumiCoreChat
+import LumiCoreLayout
+import LumiCorePlugin
 import SwiftUI
 
 @MainActor

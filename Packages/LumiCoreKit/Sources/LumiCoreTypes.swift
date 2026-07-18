@@ -1,157 +1,157 @@
 import Foundation
-import LumiComponentGit
-import LumiComponentLayout
+import LumiCoreGit
+import LumiCoreLayout
 
 // MARK: - Git Component Types
 
-public typealias GitComponent = LumiComponentGit.GitComponent
-public typealias GitAccessCoordinator = LumiComponentGit.GitAccessCoordinator
+public typealias GitComponent = LumiCoreGit.GitComponent
+public typealias GitAccessCoordinator = LumiCoreGit.GitAccessCoordinator
 
 // MARK: - Layout Component Types
 
-public typealias LayoutComponent = LumiComponentLayout.LayoutComponent
-public typealias LayoutState = LumiComponentLayout.LayoutState
-public typealias LayoutEventPayload = LumiComponentLayout.LayoutEventPayload
+public typealias LayoutComponent = LumiCoreLayout.LayoutComponent
+public typealias LayoutState = LumiCoreLayout.LayoutState
+public typealias LayoutEventPayload = LumiCoreLayout.LayoutEventPayload
 
 // MARK: - Logo Component Types
 
-public typealias LogoComponent = LumiComponentLayout.LogoComponent
-public typealias LogoItem = LumiComponentLayout.LogoItem
-public typealias LogoScene = LumiComponentLayout.LogoScene
+public typealias LogoComponent = LumiCoreLayout.LogoComponent
+public typealias LogoItem = LumiCoreLayout.LogoItem
+public typealias LogoScene = LumiCoreLayout.LogoScene
 
 // MARK: - Chat Section Types
 
-public typealias LumiChatSectionLayout = LumiComponentLayout.LumiChatSectionLayout
-public typealias LumiChatSectionPlacement = LumiComponentLayout.LumiChatSectionPlacement
-public typealias LumiChatSectionItem = LumiComponentLayout.LumiChatSectionItem
-public typealias LumiChatSectionToolbarBarItem = LumiComponentLayout.LumiChatSectionToolbarBarItem
-public typealias LumiChatSectionHeaderItem = LumiComponentLayout.LumiChatSectionHeaderItem
-public typealias LumiChatSectionToolbarPlacement = LumiComponentLayout.LumiChatSectionToolbarPlacement
-public typealias LumiChatSectionToolbarItem = LumiComponentLayout.LumiChatSectionToolbarItem
+public typealias LumiChatSectionLayout = LumiCoreLayout.LumiChatSectionLayout
+public typealias LumiChatSectionPlacement = LumiCoreLayout.LumiChatSectionPlacement
+public typealias LumiChatSectionItem = LumiCoreLayout.LumiChatSectionItem
+public typealias LumiChatSectionToolbarBarItem = LumiCoreLayout.LumiChatSectionToolbarBarItem
+public typealias LumiChatSectionHeaderItem = LumiCoreLayout.LumiChatSectionHeaderItem
+public typealias LumiChatSectionToolbarPlacement = LumiCoreLayout.LumiChatSectionToolbarPlacement
+public typealias LumiChatSectionToolbarItem = LumiCoreLayout.LumiChatSectionToolbarItem
 
 // MARK: - Split Divider Types
 
-public typealias DividerClamp = LumiComponentLayout.DividerClamp
-public typealias DividerDragClassification = LumiComponentLayout.DividerDragClassification
-public typealias SplitDividerAccess = LumiComponentLayout.SplitDividerAccess
-public typealias SplitDividerRole = LumiComponentLayout.SplitDividerRole
+public typealias DividerClamp = LumiCoreLayout.DividerClamp
+public typealias DividerDragClassification = LumiCoreLayout.DividerDragClassification
+public typealias SplitDividerAccess = LumiCoreLayout.SplitDividerAccess
+public typealias SplitDividerRole = LumiCoreLayout.SplitDividerRole
 
 // 类型经 typealias 导出；`Notification.Name` / `View` 扩展无法 typealias，
 // 需要 `@_exported` 让只 import LumiCoreKit 的下游模块（插件）继续可见，
 // 与这些代码此前直接内嵌在 LumiCoreKit 时的可见性保持一致。
-@_exported import LumiComponentProject
+@_exported import LumiCoreProject
 
 // MARK: - Project Component Types
 
-public typealias ProjectComponent = LumiComponentProject.ProjectComponent
-public typealias ProjectState = LumiComponentProject.ProjectState
-public typealias ProjectEntry = LumiComponentProject.ProjectEntry
-public typealias ProjectLanguageDetector = LumiComponentProject.ProjectLanguageDetector
+public typealias ProjectComponent = LumiCoreProject.ProjectComponent
+public typealias ProjectState = LumiCoreProject.ProjectState
+public typealias ProjectEntry = LumiCoreProject.ProjectEntry
+public typealias ProjectLanguageDetector = LumiCoreProject.ProjectLanguageDetector
 
-@_exported import LumiComponentStorage
+@_exported import LumiCoreStorage
 
 // MARK: - Storage Component Types
 
-public typealias StorageComponent = LumiComponentStorage.StorageComponent
+public typealias StorageComponent = LumiCoreStorage.StorageComponent
 
-@_exported import LumiComponentMessage
+@_exported import LumiCoreMessage
 
 // MARK: - Message Types
 
-public typealias LumiChatMessageRole = LumiComponentMessage.LumiChatMessageRole
-public typealias LumiPendingMessage = LumiComponentMessage.LumiPendingMessage
-public typealias LumiChatMarkers = LumiComponentMessage.LumiChatMarkers
-public typealias LumiMessagePerformanceMetadata = LumiComponentChat.LumiMessagePerformanceMetadata
-public typealias LumiMessageTokenMetadata = LumiComponentChat.LumiMessageTokenMetadata
-public typealias LumiToolTag = LumiComponentMessage.LumiToolTag
+public typealias LumiChatMessageRole = LumiCoreMessage.LumiChatMessageRole
+public typealias LumiPendingMessage = LumiCoreMessage.LumiPendingMessage
+public typealias LumiChatMarkers = LumiCoreMessage.LumiChatMarkers
+public typealias LumiMessagePerformanceMetadata = LumiCoreChat.LumiMessagePerformanceMetadata
+public typealias LumiMessageTokenMetadata = LumiCoreChat.LumiMessageTokenMetadata
+public typealias LumiToolTag = LumiCoreMessage.LumiToolTag
 
 // MARK: - Turn Types
-// LumiTurnEndReason 已下沉到 LumiComponentMessage（通过 @_exported import 导出）
-// TurnDerivation 和 TurnOutcome 已合并到 LumiComponentChat
+// LumiTurnEndReason 已下沉到 LumiCoreMessage（通过 @_exported import 导出）
+// TurnDerivation 和 TurnOutcome 已合并到 LumiCoreChat
 
-public typealias TurnDerivation = LumiComponentChat.TurnDerivation
-public typealias TurnOutcome = LumiComponentChat.TurnOutcome
+public typealias TurnDerivation = LumiCoreChat.TurnDerivation
+public typealias TurnOutcome = LumiCoreChat.TurnOutcome
 
-@_exported import LumiComponentAgentTool
+@_exported import LumiCoreAgentTool
 
 // MARK: - Agent Tool Types
 
-public typealias LumiAgentTool = LumiComponentAgentTool.LumiAgentTool
-public typealias LumiAgentToolInfo = LumiComponentAgentTool.LumiAgentToolInfo
-public typealias LumiToolCall = LumiComponentMessage.LumiToolCall
-public typealias LumiToolResult = LumiComponentMessage.LumiToolResult
-public typealias LumiToolServicing = LumiComponentAgentTool.LumiToolServicing
-public typealias ToolService = LumiComponentAgentTool.ToolService
+public typealias LumiAgentTool = LumiCoreAgentTool.LumiAgentTool
+public typealias LumiAgentToolInfo = LumiCoreAgentTool.LumiAgentToolInfo
+public typealias LumiToolCall = LumiCoreMessage.LumiToolCall
+public typealias LumiToolResult = LumiCoreMessage.LumiToolResult
+public typealias LumiToolServicing = LumiCoreAgentTool.LumiToolServicing
+public typealias ToolService = LumiCoreAgentTool.ToolService
 
-@_exported import LumiComponentChat
+@_exported import LumiCoreChat
 
 // MARK: - Chat Types
 
-public typealias LumiChatMessage = LumiComponentMessage.LumiChatMessage
-public typealias LumiChatServicing = LumiComponentChat.LumiChatServicing
-public typealias LumiMessageRendererItem = LumiComponentMessage.LumiMessageRendererItem
-public typealias InlineToolCallDetector = LumiComponentMessage.InlineToolCallDetector
-public typealias ChatService = LumiComponentChat.ChatService
-public typealias ChatServiceDelegate = LumiComponentChat.ChatServiceDelegate
-public typealias ChatSectionCoordinator = LumiComponentChat.ChatSectionCoordinator
-public typealias LumiConversationSummary = LumiComponentMessage.LumiConversationSummary
-public typealias LumiImageAttachment = LumiComponentMessage.LumiImageAttachment
-public typealias LumiPendingToolConfirmation = LumiComponentMessage.LumiPendingToolConfirmation
-public typealias LumiSendMiddleware = LumiComponentMessage.LumiSendMiddleware
-public typealias LumiStreamChunk = LumiComponentMessage.LumiStreamChunk
-public typealias LumiSendContext = LumiComponentMessage.LumiSendContext
-public typealias LumiConversationLanguage = LumiComponentMessage.LumiConversationLanguage
-public typealias LumiAutomationLevel = LumiComponentMessage.LumiAutomationLevel
-public typealias LumiResponseVerbosity = LumiComponentMessage.LumiResponseVerbosity
-public typealias LumiModelRoutingMode = LumiComponentMessage.LumiModelRoutingMode
-public typealias LumiLLMErrorDisposition = LumiComponentMessage.LumiLLMErrorDisposition
-public typealias LumiLLMFailureDetail = LumiComponentMessage.LumiLLMFailureDetail
+public typealias LumiChatMessage = LumiCoreMessage.LumiChatMessage
+public typealias LumiChatServicing = LumiCoreChat.LumiChatServicing
+public typealias LumiMessageRendererItem = LumiCoreMessage.LumiMessageRendererItem
+public typealias InlineToolCallDetector = LumiCoreMessage.InlineToolCallDetector
+public typealias ChatService = LumiCoreChat.ChatService
+public typealias ChatServiceDelegate = LumiCoreChat.ChatServiceDelegate
+public typealias ChatSectionCoordinator = LumiCoreChat.ChatSectionCoordinator
+public typealias LumiConversationSummary = LumiCoreMessage.LumiConversationSummary
+public typealias LumiImageAttachment = LumiCoreMessage.LumiImageAttachment
+public typealias LumiPendingToolConfirmation = LumiCoreMessage.LumiPendingToolConfirmation
+public typealias LumiSendMiddleware = LumiCoreMessage.LumiSendMiddleware
+public typealias LumiStreamChunk = LumiCoreMessage.LumiStreamChunk
+public typealias LumiSendContext = LumiCoreMessage.LumiSendContext
+public typealias LumiConversationLanguage = LumiCoreMessage.LumiConversationLanguage
+public typealias LumiAutomationLevel = LumiCoreMessage.LumiAutomationLevel
+public typealias LumiResponseVerbosity = LumiCoreMessage.LumiResponseVerbosity
+public typealias LumiModelRoutingMode = LumiCoreMessage.LumiModelRoutingMode
+public typealias LumiLLMErrorDisposition = LumiCoreMessage.LumiLLMErrorDisposition
+public typealias LumiLLMFailureDetail = LumiCoreMessage.LumiLLMFailureDetail
 
-@_exported import LumiComponentLLMProvider
+@_exported import LumiCoreLLMProvider
 
 // MARK: - LLM Provider Types
 
-public typealias LumiLLMProvider = LumiComponentLLMProvider.LumiLLMProvider
-public typealias LumiLLMProviderInfo = LumiComponentMessage.LumiLLMProviderInfo
-public typealias LumiLLMRequest = LumiComponentLLMProvider.LumiLLMRequest
-public typealias LumiLLMProviderStatus = LumiComponentLLMProvider.LumiLLMProviderStatus
-public typealias LumiProviderState = LumiComponentLLMProvider.LumiProviderState
+public typealias LumiLLMProvider = LumiCoreLLMProvider.LumiLLMProvider
+public typealias LumiLLMProviderInfo = LumiCoreMessage.LumiLLMProviderInfo
+public typealias LumiLLMRequest = LumiCoreLLMProvider.LumiLLMRequest
+public typealias LumiLLMProviderStatus = LumiCoreLLMProvider.LumiLLMProviderStatus
+public typealias LumiProviderState = LumiCoreLLMProvider.LumiProviderState
 
-@_exported import LumiComponentPlugin
+@_exported import LumiCorePlugin
 
 // MARK: - Plugin Types
 
-public typealias LumiPlugin = LumiComponentPlugin.LumiPlugin
-public typealias LumiPluginInfo = LumiComponentPlugin.LumiPluginInfo
-public typealias LumiPluginContext = LumiComponentPlugin.LumiPluginContext
-public typealias LumiPluginDependencies = LumiComponentPlugin.LumiPluginDependencies
-public typealias LumiPluginContributionFailure = LumiComponentPlugin.LumiPluginContributionFailure
-public typealias AgentToolProviding = LumiComponentPlugin.AgentToolProviding
-public typealias LumiStatusBarItem = LumiComponentPlugin.LumiStatusBarItem
-public typealias LumiTitleToolbarItem = LumiComponentPlugin.LumiTitleToolbarItem
-public typealias LumiViewContainerItem = LumiComponentPlugin.LumiViewContainerItem
+public typealias LumiPlugin = LumiCorePlugin.LumiPlugin
+public typealias LumiPluginInfo = LumiCorePlugin.LumiPluginInfo
+public typealias LumiPluginContext = LumiCorePlugin.LumiPluginContext
+public typealias LumiPluginDependencies = LumiCorePlugin.LumiPluginDependencies
+public typealias LumiPluginContributionFailure = LumiCorePlugin.LumiPluginContributionFailure
+public typealias AgentToolProviding = LumiCorePlugin.AgentToolProviding
+public typealias LumiStatusBarItem = LumiCorePlugin.LumiStatusBarItem
+public typealias LumiTitleToolbarItem = LumiCorePlugin.LumiTitleToolbarItem
+public typealias LumiViewContainerItem = LumiCorePlugin.LumiViewContainerItem
 
-@_exported import LumiComponentSubAgent
+@_exported import LumiCoreSubAgent
 
 // MARK: - SubAgent Types
 
-public typealias SubAgentDelegateTool = LumiComponentSubAgent.SubAgentDelegateTool
-public typealias LumiSubAgentDefinition = LumiComponentSubAgent.LumiSubAgentDefinition
+public typealias SubAgentDelegateTool = LumiCoreSubAgent.SubAgentDelegateTool
+public typealias LumiSubAgentDefinition = LumiCoreSubAgent.LumiSubAgentDefinition
 
-@_exported import LumiComponentMenuBar
+@_exported import LumiCoreMenuBar
 
 // MARK: - MenuBar Types
 
-public typealias LumiMenuBarContentItem = LumiComponentMenuBar.LumiMenuBarContentItem
-public typealias LumiMenuBarPopupItem = LumiComponentMenuBar.LumiMenuBarPopupItem
+public typealias LumiMenuBarContentItem = LumiCoreMenuBar.LumiMenuBarContentItem
+public typealias LumiMenuBarPopupItem = LumiCoreMenuBar.LumiMenuBarPopupItem
 
-@_exported import LumiComponentOverlay
+@_exported import LumiCoreOverlay
 
 // MARK: - Overlay Types
 
 // Add type aliases as needed
 
-@_exported import LumiComponentPanelChrome
+@_exported import LumiCorePanelChrome
 
 // MARK: - PanelChrome Types
 

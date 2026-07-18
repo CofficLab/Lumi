@@ -1,5 +1,5 @@
 import Foundation
-import LumiComponentPlugin
+import LumiCorePlugin
 import SwiftUI
 
 // MARK: - LumiCoreAccessing

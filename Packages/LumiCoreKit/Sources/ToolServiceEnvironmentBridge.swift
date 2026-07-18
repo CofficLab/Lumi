@@ -1,6 +1,6 @@
 import Foundation
-import LumiComponentAgentTool
-import LumiComponentMessage
+import LumiCoreAgentTool
+import LumiCoreMessage
 
 /// ToolService 运行时环境桥接器（CoreKit 内部使用）
 ///
