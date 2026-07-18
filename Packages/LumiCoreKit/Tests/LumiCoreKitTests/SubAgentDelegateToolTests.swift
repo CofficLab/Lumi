@@ -137,11 +137,10 @@ private func filteredToolNames(
     definition: LumiSubAgentDefinition,
     tools: [any LumiAgentTool]
 ) -> Set<String> {
-    let chat = SubAgentMockChatService()
     let service = SubAgentMockToolService(tools: tools)
     let delegate = SubAgentDelegateTool(
         definition: definition,
-        chatService: chat,
+        providerResolver: { _ in nil },
         availableTools: service.tools,
         executionToolService: service
     )
@@ -160,11 +159,10 @@ private func filteredToolNames(
         providerID: "x", modelID: "y", systemPrompt: "sp",
         requiredTags: [.git]
     )
-    let chat = SubAgentMockChatService()
     let service = SubAgentMockToolService(tools: [UntaggedTool()])
     let delegate = SubAgentDelegateTool(
         definition: def,
-        chatService: chat,
+        providerResolver: { _ in nil },
         availableTools: service.tools,
         executionToolService: service
     )
@@ -192,11 +190,10 @@ private func filteredToolNames(
         providerID: "x", modelID: "y", systemPrompt: "sp",
         requiredTags: [.git, .readOnly]
     )
-    let chat = SubAgentMockChatService()
     let service = SubAgentMockToolService(tools: [toolA, toolB, toolC, untagged])
     let delegate = SubAgentDelegateTool(
         definition: def,
-        chatService: chat,
+        providerResolver: { _ in nil },
         availableTools: service.tools,
         executionToolService: service
     )
@@ -220,11 +217,10 @@ private func filteredToolNames(
         providerID: "x", modelID: "y", systemPrompt: "sp",
         requiredTags: [.all]
     )
-    let chat = SubAgentMockChatService()
     let service = SubAgentMockToolService(tools: [untagged])
     let delegate = SubAgentDelegateTool(
         definition: def,
-        chatService: chat,
+        providerResolver: { _ in nil },
         availableTools: service.tools,
         executionToolService: service
     )

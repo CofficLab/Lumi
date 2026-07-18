@@ -61,17 +61,17 @@ public typealias StorageComponent = LumiComponentStorage.StorageComponent
 public typealias LumiChatMessageRole = LumiComponentMessage.LumiChatMessageRole
 public typealias LumiPendingMessage = LumiComponentMessage.LumiPendingMessage
 public typealias LumiChatMarkers = LumiComponentMessage.LumiChatMarkers
-public typealias LumiMessagePerformanceMetadata = LumiComponentMessage.LumiMessagePerformanceMetadata
-public typealias LumiMessageTokenMetadata = LumiComponentMessage.LumiMessageTokenMetadata
+public typealias LumiMessagePerformanceMetadata = LumiComponentChat.LumiMessagePerformanceMetadata
+public typealias LumiMessageTokenMetadata = LumiComponentChat.LumiMessageTokenMetadata
+public typealias LumiToolTag = LumiComponentMessage.LumiToolTag
 
 @_exported import LumiComponentTurn
 
 // MARK: - Turn Types
 
-public typealias TurnCheck = LumiComponentTurn.TurnCheck
 public typealias TurnDerivation = LumiComponentTurn.TurnDerivation
 public typealias TurnOutcome = LumiComponentTurn.TurnOutcome
-public typealias TurnEndReason = LumiComponentTurn.TurnEndReason
+public typealias LumiTurnEndReason = LumiComponentTurn.LumiTurnEndReason
 
 @_exported import LumiComponentAgentTool
 
@@ -79,8 +79,8 @@ public typealias TurnEndReason = LumiComponentTurn.TurnEndReason
 
 public typealias LumiAgentTool = LumiComponentAgentTool.LumiAgentTool
 public typealias LumiAgentToolInfo = LumiComponentAgentTool.LumiAgentToolInfo
-public typealias LumiToolCall = LumiComponentAgentTool.LumiToolCall
-public typealias LumiToolResult = LumiComponentAgentTool.LumiToolResult
+public typealias LumiToolCall = LumiComponentMessage.LumiToolCall
+public typealias LumiToolResult = LumiComponentMessage.LumiToolResult
 public typealias LumiToolServicing = LumiComponentAgentTool.LumiToolServicing
 public typealias ToolService = LumiComponentAgentTool.ToolService
 
@@ -88,17 +88,32 @@ public typealias ToolService = LumiComponentAgentTool.ToolService
 
 // MARK: - Chat Types
 
-public typealias LumiChatMessage = LumiComponentChat.LumiChatMessage
+public typealias LumiChatMessage = LumiComponentMessage.LumiChatMessage
 public typealias LumiChatServicing = LumiComponentChat.LumiChatServicing
-public typealias LumiMessageRendererItem = LumiComponentChat.LumiMessageRendererItem
-public typealias InlineToolCallDetector = LumiComponentChat.InlineToolCallDetector
+public typealias LumiMessageRendererItem = LumiComponentMessage.LumiMessageRendererItem
+public typealias InlineToolCallDetector = LumiComponentMessage.InlineToolCallDetector
+public typealias ChatService = LumiComponentChat.ChatService
+public typealias ChatServiceDelegate = LumiComponentChat.ChatServiceDelegate
+public typealias ChatSectionCoordinator = LumiComponentChat.ChatSectionCoordinator
+public typealias LumiConversationSummary = LumiComponentMessage.LumiConversationSummary
+public typealias LumiImageAttachment = LumiComponentMessage.LumiImageAttachment
+public typealias LumiPendingToolConfirmation = LumiComponentMessage.LumiPendingToolConfirmation
+public typealias LumiSendMiddleware = LumiComponentMessage.LumiSendMiddleware
+public typealias LumiStreamChunk = LumiComponentMessage.LumiStreamChunk
+public typealias LumiSendContext = LumiComponentMessage.LumiSendContext
+public typealias LumiConversationLanguage = LumiComponentMessage.LumiConversationLanguage
+public typealias LumiAutomationLevel = LumiComponentMessage.LumiAutomationLevel
+public typealias LumiResponseVerbosity = LumiComponentMessage.LumiResponseVerbosity
+public typealias LumiModelRoutingMode = LumiComponentMessage.LumiModelRoutingMode
+public typealias LumiLLMErrorDisposition = LumiComponentMessage.LumiLLMErrorDisposition
+public typealias LumiLLMFailureDetail = LumiComponentMessage.LumiLLMFailureDetail
 
 @_exported import LumiComponentLLMProvider
 
 // MARK: - LLM Provider Types
 
 public typealias LumiLLMProvider = LumiComponentLLMProvider.LumiLLMProvider
-public typealias LumiLLMProviderInfo = LumiComponentLLMProvider.LumiLLMProviderInfo
+public typealias LumiLLMProviderInfo = LumiComponentMessage.LumiLLMProviderInfo
 public typealias LumiLLMRequest = LumiComponentLLMProvider.LumiLLMRequest
 public typealias LumiLLMProviderStatus = LumiComponentLLMProvider.LumiLLMProviderStatus
 public typealias LumiProviderState = LumiComponentLLMProvider.LumiProviderState
@@ -110,6 +125,7 @@ public typealias LumiProviderState = LumiComponentLLMProvider.LumiProviderState
 public typealias LumiPlugin = LumiComponentPlugin.LumiPlugin
 public typealias LumiPluginInfo = LumiComponentPlugin.LumiPluginInfo
 public typealias LumiPluginContext = LumiComponentPlugin.LumiPluginContext
+public typealias LumiPluginDependencies = LumiComponentPlugin.LumiPluginDependencies
 public typealias LumiPluginContributionFailure = LumiComponentPlugin.LumiPluginContributionFailure
 public typealias AgentToolProviding = LumiComponentPlugin.AgentToolProviding
 public typealias LumiStatusBarItem = LumiComponentPlugin.LumiStatusBarItem

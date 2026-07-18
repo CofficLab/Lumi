@@ -1,10 +1,12 @@
 import Combine
 import Foundation
+import LumiComponentChat
 import LumiComponentLayout
+import LumiComponentPlugin
 import SwiftUI
 
 @MainActor
-public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
+public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServiceDelegate, LumiCoreProviding {
     public nonisolated(unsafe) static var current: (any LumiCoreAccessing)?
 
     // MARK: - Components
@@ -18,6 +20,12 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
     public let chatService: (any LumiChatServicing)
     public var editorService: (any AbstractEditorServicing)?
     private var services: [ObjectIdentifier: Any] = [:]
+
+    // MARK: - ChatServiceDelegate
+
+    public var currentProjectPath: String? {
+        projectComponent.currentProject?.path
+    }
 
     // MARK: - Initialization
 
@@ -77,7 +85,8 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         //    App 层的 PluginService。工具集完全由 buildToolSet 在每次发消息时按
         //    当前 context 构建，启动期零工具开销。
         registerService((any AgentToolProviding).self, provider)
-        agentToolComponent.bootstrapToolService(lumiCore: self)
+        // TODO: implement bootstrapToolService if needed
+        // agentToolComponent.bootstrapToolService(lumiCore: self)
     }
 
     // MARK: - Service Registry
