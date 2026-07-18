@@ -36,6 +36,11 @@ public protocol LumiCoreAccessing: AnyObject, ObservableObject {
     /// (SwiftUI Binding 惯法天然要求外部能写)。
     var layoutComponent: LayoutComponent { get }
 
+    /// Agent 工具功能组件。per-request 动态注入改造后，暴露 `buildToolSet` 供
+    /// `SendPipeline` 在每次发消息时构建本次请求的工具集（按当前 context 收集
+    /// 插件工具、内置工具、子 Agent 工具，软去重后返回 per-request `ToolService`）。
+    var agentToolComponent: AgentToolComponent { get }
+
     /// 聊天服务（init 时由 `ChatServiceFactory` 创建并自动注册）。
     var chatService: (any LumiChatServicing) { get }
 

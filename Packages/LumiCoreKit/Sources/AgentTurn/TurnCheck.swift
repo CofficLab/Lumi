@@ -1,7 +1,7 @@
 import Foundation
 
 /// Context provided to each `LumiAgentTurnCheck` during evaluation.
-public struct LumiAgentTurnContext: Sendable {
+public struct TurnContext: Sendable {
     /// Which conversation this turn belongs to.
     public let conversationID: UUID
 
@@ -34,5 +34,5 @@ public struct LumiAgentTurnContext: Sendable {
 ///
 /// Checks are evaluated in registration order; the first non-nil result stops the loop.
 public protocol LumiAgentTurnCheck: Sendable {
-    func evaluate(_ context: LumiAgentTurnContext) async -> String?
+    func evaluate(_ context: TurnContext) async -> String?
 }

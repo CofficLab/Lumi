@@ -19,6 +19,27 @@ public final class ToolService: LumiToolServicing {
 
     public init() {}
 
+    /// per-request 构造：直接用一份已去重的工具集初始化。
+    ///
+    /// 供动态注入路径（`AgentToolComponent.buildToolSet`）使用——每次发消息时
+    /// 构建一份全新的 `ToolService`，本次 turn 序列内全程持有，请求结束即释放。
+    /// 多个会话因此天然隔离，不会互相覆盖工具集。
+    ///
+    /// - Parameters:
+    ///   - tools: 本次请求要暴露给 LLM 的工具集。本构造器不做去重——调用方
+    ///     （`buildToolSet`）应已做完软去重，这里直接覆盖式装载，后到同名工具
+    ///     压盖先到者。
+    ///   - environment: 运行时环境（verbosity / currentProjectPath），由启动期
+    ///     注入的 bridge 提供，可被多个 per-request 实例共享（只读消费）。
+    public init(tools: [any LumiAgentTool], environment: (any ToolServiceEnvironment)?) {
+        self.environment = environment
+        self.toolsByName = Dictionary(tools.map { ($0.name, $0) }, uniquingKeysWith: { last, _ in last })
+        reindex()
+        if Self.verbose {
+            Self.logger.info("\(Self.emoji)per-request 工具集构建完成，总计 \(self.tools.count) 个")
+        }
+    }
+
     // MARK: - Registration
 
     /// 注册工具（覆盖已有同名工具）
@@ -35,9 +56,7 @@ public final class ToolService: LumiToolServicing {
         }
 
         self.toolsByName = uniqueTools
-        self.tools = uniqueTools.values.sorted {
-            $0.name.localizedStandardCompare($1.name) == .orderedAscending
-        }
+        reindex()
 
         if Self.verbose {
             Self.logger.info("\(Self.emoji)✅ 工具注册完成，总计 \(self.tools.count) 个")
@@ -69,9 +88,7 @@ public final class ToolService: LumiToolServicing {
                 skippedCount += 1
             }
         }
-        self.tools = toolsByName.values.sorted {
-            $0.name.localizedStandardCompare($1.name) == .orderedAscending
-        }
+        reindex()
 
         if Self.verbose {
             Self.logger.info("\(Self.emoji)✅ 工具追加完成，新增 \(appendedCount) 个，跳过 \(skippedCount) 个；当前总计 \(self.tools.count) 个")
@@ -159,6 +176,16 @@ public final class ToolService: LumiToolServicing {
     }
 
     // MARK: - Private
+
+    /// 用 `toolsByName` 重建按名字排序的 `tools` 数组。
+    ///
+    /// 任何改动 `toolsByName` 的写路径（`init(tools:)` / `registerTools` /
+    /// `appendTools`）都应调用本方法收尾，保证 `tools` 与 `toolsByName` 永远同步。
+    private func reindex() {
+        tools = toolsByName.values.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
 
     private static func decodeArguments(_ json: String) throws -> [String: LumiJSONValue] {
         guard let data = json.data(using: .utf8), !data.isEmpty else {

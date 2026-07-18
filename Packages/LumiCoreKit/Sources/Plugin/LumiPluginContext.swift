@@ -47,6 +47,16 @@ public struct LumiPluginContext {
         Self.resolveActiveProviderID(from: dependencies)
     }
 
+    /// 当前打开的项目（若存在）。等价于 `lumiCore?.projectComponent.currentProject`。
+    ///
+    /// per-request 动态注入改造后，插件在 `agentTools(context:)` 内据此判断要不要
+    /// 返回工具（例如只在 Swift 项目下暴露 Swift 工具）。每次发消息时由
+    /// `buildToolSet` 用最新的 `makePluginContext` 构造，反映此刻的当前项目。
+    @MainActor
+    public var currentProject: ProjectEntry? {
+        lumiCore?.projectComponent.currentProject
+    }
+
     public init(
         activeSectionID: String,
         activeSectionTitle: String,

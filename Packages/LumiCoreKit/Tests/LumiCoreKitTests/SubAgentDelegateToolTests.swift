@@ -144,7 +144,8 @@ private func filteredToolNames(
     let delegate = SubAgentDelegateTool(
         definition: definition,
         chatService: chat,
-        toolService: service
+        availableTools: service.tools,
+        executionToolService: service
     )
     // 反射拿 resolveTools 不行，直接复用公开的输入 schema + 测试过滤路径：
     // 我们走 execute 路径会触发 provider 解析失败返回错误，改用复制方法
@@ -166,7 +167,8 @@ private func filteredToolNames(
     let delegate = SubAgentDelegateTool(
         definition: def,
         chatService: chat,
-        toolService: service
+        availableTools: service.tools,
+        executionToolService: service
     )
     let result = try await delegate.execute(
         arguments: ["task": .string("hi")],
@@ -197,7 +199,8 @@ private func filteredToolNames(
     let delegate = SubAgentDelegateTool(
         definition: def,
         chatService: chat,
-        toolService: service
+        availableTools: service.tools,
+        executionToolService: service
     )
     // 强制提取过滤结果的方式：调用 execute 拿 error，但中间过滤结果被吃掉了。
     // 这里退化为通过构造定义 + 自行验证 LumiToolTag 过滤逻辑（见下方 Note）。
@@ -224,7 +227,8 @@ private func filteredToolNames(
     let delegate = SubAgentDelegateTool(
         definition: def,
         chatService: chat,
-        toolService: service
+        availableTools: service.tools,
+        executionToolService: service
     )
     let _ = try await delegate.execute(
         arguments: ["task": .string("hi")],
@@ -372,7 +376,8 @@ private func filteredToolNames(
     let delegate = SubAgentDelegateTool(
         definition: def,
         chatService: SubAgentMockChatService(),
-        toolService: SubAgentMockToolService(tools: [])
+        availableTools: [],
+        executionToolService: SubAgentMockToolService(tools: [])
     )
     #expect(delegate.name == "delegate_git-commit-writer")
     #expect(delegate.toolDescription == "Analyze git changes and create a commit.")
@@ -415,7 +420,7 @@ private func filteredToolNames(
     let chat = SubAgentMockChatService()
     let underlying = SubAgentMockToolService(tools: [])
     let delegates: [any LumiAgentTool] = definitions.map { def in
-        SubAgentDelegateTool(definition: def, chatService: chat, toolService: underlying)
+        SubAgentDelegateTool(definition: def, chatService: chat, availableTools: underlying.tools, executionToolService: underlying)
     }
 
     // 3. 断言：所有 delegate_<id> 都能在工具集合里检索到

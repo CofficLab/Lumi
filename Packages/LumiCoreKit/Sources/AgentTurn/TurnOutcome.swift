@@ -1,7 +1,7 @@
 import Foundation
 
 /// `runAgentTurn` 结束时的结果，用于区分正常完成、失败与等待用户回答。
-public enum LumiAgentTurnOutcome: Sendable, Equatable {
+public enum TurnOutcome: Sendable, Equatable {
     case completed
     case failed
     case awaitingUserResponse

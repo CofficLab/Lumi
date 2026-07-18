@@ -5,8 +5,8 @@ import Foundation
 //
 // LumiCore 迁移到 component 架构后（一次性 init：dataRootDirectory + provider +
 // chatServiceFactory），构造 LumiCore 实例用于测试时需要最小的 AgentToolProviding
-// 与 LumiChatServicing 桩。本文件集中这些桩，供 LumiCoreTests /
-// LumiCoreBootValidationTests 等共用，避免每个测试文件各写一份。
+// 与 LumiChatServicing 桩。本文件集中这些桩，供 LumiCoreTests 等共用，
+// 避免每个测试文件各写一份。
 
 // MARK: - EmptyAgentToolProvider
 

@@ -1,9 +1,6 @@
 import Foundation
 
 /// `LumiChatKit` turn 结束原因（唯一权威类型）。
-///
-/// String rawValue 对外稳定，被 `LumiChatKit` turn-finished 通知的 userInfo 序列化依赖
-/// （见 `Chat/LumiChatNotifications.swift` 的 `init?(notificationUserInfo:)`）。
 public enum LumiTurnEndReason: String, Sendable, Equatable, Codable {
   case completed
   case failed

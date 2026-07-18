@@ -5,6 +5,13 @@
 /// 把 `LumiSubAgentDefinition` 自动包装成一个 `LumiAgentTool`，
 /// 对主 LLM 完全透明（工具名 = `delegate_<definition.id>`）。
 ///
+/// 持有两份工具相关的引用：
+/// - `availableTools`：本次请求里所有可供子 Agent 选择的工具**快照**（用于按
+///   标签过滤）。这是 per-request 改造的关键——子 Agent 看到的工具集和主 LLM
+///   一致，都来自本次 `buildToolSet` 构建的快照，而不是某个全局缓存。
+/// - `executionToolService`：实际执行工具调用的服务。复用主 turn 的 per-request
+///   `ToolService`，继承其路径白名单/取消机制。
+///
 /// 注意：持有 `any LumiChatServicing` / `any LumiToolServicing`，
 /// 无法满足严格的 `Sendable` 检查，用 `@unchecked Sendable` 抑制。
 public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
@@ -16,16 +23,19 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
 
     private let definition: LumiSubAgentDefinition
     private let chatService: any LumiChatServicing
-    private let toolService: any LumiToolServicing
+    private let availableTools: [any LumiAgentTool]
+    private let executionToolService: any LumiToolServicing
 
     public init(
         definition: LumiSubAgentDefinition,
         chatService: any LumiChatServicing,
-        toolService: any LumiToolServicing
+        availableTools: [any LumiAgentTool],
+        executionToolService: any LumiToolServicing
     ) {
         self.definition = definition
         self.chatService = chatService
-        self.toolService = toolService
+        self.availableTools = availableTools
+        self.executionToolService = executionToolService
     }
 
     // MARK: - LumiAgentTool
@@ -87,7 +97,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
             systemPrompt: definition.systemPrompt,
             task: task,
             tools: tools,
-            toolService: toolService,
+            toolService: executionToolService,
             conversationID: context.conversationID,
             maxTurns: definition.maxTurns
         )
@@ -107,7 +117,10 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
     /// 5. 补充 `additionalToolNames` 中的工具（去重）
     @MainActor
     private func resolveTools() -> [any LumiAgentTool] {
-        let allTools = toolService.tools
+        // 读本次请求的工具集快照（由 buildToolSet 在构造本工具时传入），
+        // 而不是运行时去全局 toolService.tools 取——后者在 per-request 模型下
+        // 是本次 turn 自己的实例，但显式快照让过滤逻辑不依赖执行服务。
+        let allTools = availableTools
 
         // 1. requiredTags 含 .all → 直接返回全部
         if definition.requiredTags.contains(.all) {

@@ -1,7 +1,7 @@
 import Foundation
 
 /// 基于 `LumiChatMessage` 的 Turn 推导（供 `LumiChatKit` 与聊天侧插件使用）。
-public enum LumiAgentTurnDerivation {
+public enum TurnDerivation {
   public static func turnMessagesSinceLastUser(in messages: [LumiChatMessage]) -> [LumiChatMessage] {
     guard let lastUserIndex = messages.lastIndex(where: { $0.role == .user }) else {
       return []
