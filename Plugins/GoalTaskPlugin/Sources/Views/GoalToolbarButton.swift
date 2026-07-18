@@ -7,18 +7,26 @@ import SwiftUI
 
 /// 显示在 chat 工具栏的 Goal 按钮（Verbosity 按钮右侧），点击展示当前对话的所有 Goal 列表。
 struct GoalToolbarButton: View {
-    @Environment(\.lumiCore) private var lumiCore
-    @StateObject private var viewModel = GoalToolbarViewModel()
+    @ObservedObject private var chatService: ChatService
+    @StateObject private var viewModel: GoalToolbarViewModel
     @State private var isPopoverPresented = false
 
     private var goalCount: Int {
         viewModel.goals.count
     }
 
+    init(chatService: any LumiChatServicing) {
+        guard let chatService = chatService as? ChatService else {
+            preconditionFailure("GoalToolbarButton requires ChatService")
+        }
+        _chatService = ObservedObject(wrappedValue: chatService)
+        _viewModel = StateObject(wrappedValue: GoalToolbarViewModel(chatService: chatService))
+    }
+
     var body: some View {
         Button {
             Task {
-                await viewModel.refresh(lumiCore: lumiCore)
+                await viewModel.refresh()
             }
             isPopoverPresented.toggle()
         } label: {
@@ -54,7 +62,7 @@ final class GoalToolbarViewModel: ObservableObject {
     @Published public var goals: [GoalListItem] = []
     @Published public var isLoading: Bool = false
 
-    private var currentConversationId: String?
+    private let chatService: ChatService
 
     private var manager: GoalStateManager? {
         GoalTaskPlugin.currentManager()
@@ -65,10 +73,12 @@ final class GoalToolbarViewModel: ObservableObject {
         goals.contains { (item: GoalListItem) in item.goal.isTerminal == false }
     }
 
-    func refresh(lumiCore: LumiCoreAccessing?) async {
-        guard let manager else { return }
+    init(chatService: ChatService) {
+        self.chatService = chatService
+    }
 
-        guard let chatService = lumiCore?.chatService else { return }
+    func refresh() async {
+        guard let manager else { return }
 
         guard let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
             goals = []
@@ -79,9 +89,7 @@ final class GoalToolbarViewModel: ObservableObject {
     }
 
     private func loadGoals(conversationId: String, manager: GoalStateManager) async {
-        // 同一对话已加载过则跳过（点击按钮刷新数据由 force 逻辑触发；此处保持幂等）。
-        // 但用户可能在外部新增了 goal，所以这里不短路——每次点击都重新拉取最新列表。
-        currentConversationId = conversationId
+        // 每次点击都重新拉取最新列表（用户可能在外部新增了 goal）。
         isLoading = true
 
         let fetchedGoals = await manager.fetchGoals(conversationId: conversationId)
@@ -283,9 +291,3 @@ private struct GoalRowView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview {
-    GoalToolbarButton()
-        .padding()
-}

@@ -141,13 +141,15 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
-        guard context.showsChatSection else {
+        guard context.showsChatSection,
+              let chatService = context.resolve(LumiChatServicing.self)
+        else {
             return []
         }
 
         return [
             LumiChatSectionToolbarBarItem(id: info.id, order: info.order + 1) {
-                GoalToolbarButton()
+                GoalToolbarButton(chatService: chatService)
             }
         ]
     }
