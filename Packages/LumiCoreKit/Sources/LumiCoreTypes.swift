@@ -92,3 +92,52 @@ public typealias LumiChatMessage = LumiComponentChat.LumiChatMessage
 public typealias LumiChatServicing = LumiComponentChat.LumiChatServicing
 public typealias LumiMessageRendererItem = LumiComponentChat.LumiMessageRendererItem
 public typealias InlineToolCallDetector = LumiComponentChat.InlineToolCallDetector
+
+@_exported import LumiComponentLLMProvider
+
+// MARK: - LLM Provider Types
+
+public typealias LumiLLMProvider = LumiComponentLLMProvider.LumiLLMProvider
+public typealias LumiLLMProviderInfo = LumiComponentLLMProvider.LumiLLMProviderInfo
+public typealias LumiLLMRequest = LumiComponentLLMProvider.LumiLLMRequest
+public typealias LumiLLMProviderStatus = LumiComponentLLMProvider.LumiLLMProviderStatus
+public typealias LumiProviderState = LumiComponentLLMProvider.LumiProviderState
+
+@_exported import LumiComponentPlugin
+
+// MARK: - Plugin Types
+
+public typealias LumiPlugin = LumiComponentPlugin.LumiPlugin
+public typealias LumiPluginInfo = LumiComponentPlugin.LumiPluginInfo
+public typealias LumiPluginContext = LumiComponentPlugin.LumiPluginContext
+public typealias LumiPluginContributionFailure = LumiComponentPlugin.LumiPluginContributionFailure
+public typealias AgentToolProviding = LumiComponentPlugin.AgentToolProviding
+public typealias LumiStatusBarItem = LumiComponentPlugin.LumiStatusBarItem
+public typealias LumiTitleToolbarItem = LumiComponentPlugin.LumiTitleToolbarItem
+public typealias LumiViewContainerItem = LumiComponentPlugin.LumiViewContainerItem
+
+@_exported import LumiComponentSubAgent
+
+// MARK: - SubAgent Types
+
+public typealias SubAgentDelegateTool = LumiComponentSubAgent.SubAgentDelegateTool
+public typealias LumiSubAgentDefinition = LumiComponentSubAgent.LumiSubAgentDefinition
+
+@_exported import LumiComponentMenuBar
+
+// MARK: - MenuBar Types
+
+public typealias LumiMenuBarContentItem = LumiComponentMenuBar.LumiMenuBarContentItem
+public typealias LumiMenuBarPopupItem = LumiComponentMenuBar.LumiMenuBarPopupItem
+
+@_exported import LumiComponentOverlay
+
+// MARK: - Overlay Types
+
+// Add type aliases as needed
+
+@_exported import LumiComponentPanelChrome
+
+// MARK: - PanelChrome Types
+
+// Add type aliases as needed
