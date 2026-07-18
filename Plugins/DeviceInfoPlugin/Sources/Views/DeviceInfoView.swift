@@ -305,8 +305,7 @@ struct DeviceInfoView: View {
         guard batteryService.hasBattery else { return "powerplug.fill" }
         let pct = Int(batteryService.level * 100)
         if batteryService.isCharging {
-            if pct >= 90 { return "battery.100.bolt" }
-            return "battery.25.bolt"
+            return "battery.100.bolt"
         }
         if pct >= 90 { return "battery.100" }
         if pct >= 65 { return "battery.75" }

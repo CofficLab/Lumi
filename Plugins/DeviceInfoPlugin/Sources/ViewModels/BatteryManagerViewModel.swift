@@ -73,8 +73,7 @@ class BatteryManagerViewModel: ObservableObject {
         guard batteryService.hasBattery else { return "powerplug.fill" }
         let pct = levelPercentage
         if batteryService.isCharging {
-            if pct >= 90 { return "battery.100.bolt" }
-            return "battery.25.bolt"
+            return "battery.100.bolt"
         }
         if pct >= 90 { return "battery.100" }
         if pct >= 65 { return "battery.75" }
