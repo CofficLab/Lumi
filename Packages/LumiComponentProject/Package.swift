@@ -23,5 +23,9 @@ let package = Package(
             ],
             path: "Sources"
         ),
+        .testTarget(
+            name: "LumiComponentProjectTests",
+            dependencies: ["LumiComponentProject"]
+        ),
     ]
 )

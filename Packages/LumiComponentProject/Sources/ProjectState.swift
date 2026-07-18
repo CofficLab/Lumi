@@ -64,10 +64,12 @@ public final class ProjectState: ObservableObject, SuperLog {
             return
         }
 
-        // 不存在，创建新条目
+        // 不存在，创建新条目。打开时探测一次项目语言（marker 文件扫描），
+        // 结果存入 entry.language，供插件在 agentTools(context:) 内按项目类型筛选工具。
         let entry = ProjectEntry(
             name: Self.directoryName(for: normalized),
-            path: normalized
+            path: normalized,
+            language: ProjectLanguageDetector.detect(at: normalized)
         )
         switchToProject(entry)
     }
