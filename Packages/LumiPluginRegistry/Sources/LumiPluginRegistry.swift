@@ -68,6 +68,7 @@ import LLMProviderFlyMuxPlugin
 import LLMProviderFreeModelPlugin
 import LLMProviderHappyCodePlugin
 import LLMProviderHyperAPIPlugin
+import LLMProviderKimiCodePlugin
 import LLMProviderLPgptPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMegaLLMPlugin

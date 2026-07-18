@@ -11,6 +11,7 @@ import LLMProviderFlyMuxPlugin
 import LLMProviderFreeModelPlugin
 import LLMProviderHappyCodePlugin
 import LLMProviderHyperAPIPlugin
+import LLMProviderKimiCodePlugin
 import LLMProviderLPgptPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMegaLLMPlugin
@@ -41,6 +42,7 @@ extension LumiPluginRegistry {
 
         // MARK: - Other Providers
 
+        KimiCodePlugin.self,
         FeifeimiaoPlugin.self,
         FlyMuxPlugin.self,
         FreeModelPlugin.self,
