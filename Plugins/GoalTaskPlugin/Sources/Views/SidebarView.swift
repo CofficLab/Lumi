@@ -6,6 +6,7 @@ import LumiCoreKit
 public struct SidebarView: View {
     @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
+    @State private var showDescriptionPopover = false
 
     /// 获取当前会话 ID 的闭包（内部统一为 String?）
     private let conversationIdProvider: () -> String?
@@ -105,6 +106,21 @@ public struct SidebarView: View {
                 Text(viewModel.progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if let description = viewModel.activeGoal?.goalDescription,
+               !description.isEmpty {
+                Button {
+                    showDescriptionPopover.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help("Goal description")
+                .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
+                    GoalDescriptionPopoverContent(text: description)
+                }
             }
 
             Button {
@@ -224,6 +240,23 @@ private struct TaskRowView: View {
     }
 }
 
+// MARK: - Goal Description Popover
+
+private struct GoalDescriptionPopoverContent: View {
+    let text: String
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .padding(12)
+        }
+        .frame(maxWidth: 280)
+    }
+}
+
 // MARK: - Goal Display Item
 
 /// Goal 展示用模型（不直接暴露 SwiftData 模型到 View）
@@ -232,12 +265,14 @@ public struct GoalDisplayItem: Identifiable, Equatable {
     public let title: String
     public let status: Goal.GoalStatus
     public let blockedReason: String?
+    public let goalDescription: String?
 
     public init(from goal: Goal) {
         self.id = goal.id
         self.title = goal.title
         self.status = goal.status
         self.blockedReason = goal.blockedReason
+        self.goalDescription = goal.goalDescription
     }
 
     /// 是否为终态（completed / failed / skipped），非终态即视为「活跃」。
