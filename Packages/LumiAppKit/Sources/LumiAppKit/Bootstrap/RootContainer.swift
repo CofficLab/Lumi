@@ -1,5 +1,4 @@
 import LumiAppKit
-import LumiChatKit
 import LumiCoreKit
 import LumiPluginRegistry
 import LumiUI
@@ -74,7 +73,7 @@ final class RootContainer: ObservableObject, SuperLog {
             provider: provider,
             builtInTools: ChatService.builtInTools,
             chatServiceFactory: { databaseDirectory in
-                try ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: nil)
+                try ChatService(configuration: .coreDatabase(directory: databaseDirectory))
             },
             editorFactory: editorFactory
         )
@@ -98,7 +97,7 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         }
         self.chatService = chatService
-        chatService.configure(lumiCore: lumiCore)
+        chatService.configure(delegate: lumiCore)
 
         // —— 7. 暴露强类型 editorCoreService + configure 回填 ——
         guard let editorCoreService = lumiCore.editorService as? EditorCoreService else {

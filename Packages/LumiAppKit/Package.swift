@@ -14,9 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        // 本地包依赖
+        // 本地包依赖 - 只依赖 LumiCoreKit
         .package(name: "LumiCoreKit", path: "../LumiCoreKit"),
-        .package(name: "LumiChatKit", path: "../LumiChatKit"),
         .package(name: "LumiUI", path: "../LumiUI"),
         .package(name: "SuperLogKit", path: "../SuperLogKit"),
         .package(name: "LumiPluginRegistry", path: "../LumiPluginRegistry"),
@@ -33,7 +32,6 @@ let package = Package(
             name: "LumiAppKit",
             dependencies: [
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiPluginRegistry", package: "LumiPluginRegistry"),

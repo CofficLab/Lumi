@@ -1,6 +1,6 @@
 import LumiLocalizationKit
 import LumiCoreKit
-import LumiChatKit
+import LumiCoreKit
 import LumiUI
 import SwiftUI
 
