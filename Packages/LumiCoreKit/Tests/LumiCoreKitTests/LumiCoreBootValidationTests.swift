@@ -38,7 +38,7 @@ private struct MockBootTool: LumiAgentTool, @unchecked Sendable {
 // MARK: - Mock Provider (class-only protocol)
 
 /// 用于测试的 mock provider，提供自定义工具列表
-private final class MockBootProvider: LumiAgentToolProviding {
+private final class MockBootProvider: AgentToolProviding {
     let tools: [any LumiAgentTool]
 
     init(tools: [any LumiAgentTool]) {
@@ -67,7 +67,11 @@ struct LumiCoreBootValidationTests {
         ])
 
         // 创建 LumiCore 实例
-        let core = LumiCore()
+        let core = try LumiCore(
+            dataRootDirectory: FileManager.default.temporaryDirectory,
+            provider: EmptyAgentToolProvider(),
+            chatServiceFactory: { _ in StubChatServicing() }
+        )
 
         // 直接调用校验逻辑，模拟 boot 阶段的行为
         let tools = provider.agentTools(context: core.makePluginContext(
@@ -80,14 +84,18 @@ struct LumiCoreBootValidationTests {
     }
 
     /// 启动期工具名校验：有重复工具时应抛出 LumiToolRegistrationError
-    @Test func bootWithDuplicateToolsShouldThrow() {
+    @Test func bootWithDuplicateToolsShouldThrow() throws {
         let provider = MockBootProvider(tools: [
             MockBootTool(toolName: "duplicate_tool"),
             MockBootTool(toolName: "unique_tool"),
             MockBootTool(toolName: "duplicate_tool")  // 重复
         ])
 
-        let core = LumiCore()
+        let core = try LumiCore(
+            dataRootDirectory: FileManager.default.temporaryDirectory,
+            provider: EmptyAgentToolProvider(),
+            chatServiceFactory: { _ in StubChatServicing() }
+        )
         let tools = provider.agentTools(context: core.makePluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"
@@ -106,7 +114,11 @@ struct LumiCoreBootValidationTests {
             MockBootTool(toolName: duplicateName)
         ])
 
-        let core = LumiCore()
+        let core = try LumiCore(
+            dataRootDirectory: FileManager.default.temporaryDirectory,
+            provider: EmptyAgentToolProvider(),
+            chatServiceFactory: { _ in StubChatServicing() }
+        )
         let tools = provider.agentTools(context: core.makePluginContext(
             activeSectionID: "test",
             activeSectionTitle: "Test"

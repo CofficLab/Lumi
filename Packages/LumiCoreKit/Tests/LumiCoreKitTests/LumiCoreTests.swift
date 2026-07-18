@@ -160,18 +160,21 @@ import Testing
 }
 
 @MainActor
-@Test func pluginDataDirectoryUsesSanitizedNameUnderConfiguredRoot() {
+@Test func pluginDataDirectoryUsesSanitizedNameUnderConfiguredRoot() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
-    
-    let core = LumiCore()
-    try? core.configure(dataRootDirectory: root)
-    
-    let directory = core.pluginDataDirectory(for: "Projects Plugin!")
-    
+
+    let core = try LumiCore(
+        dataRootDirectory: root,
+        provider: EmptyAgentToolProvider(),
+        chatServiceFactory: { _ in StubChatServicing() }
+    )
+
+    let directory = core.storage.pluginDataDirectory(for: "Projects Plugin!")
+
     #expect(directory == root.appendingPathComponent("Projects_Plugin", isDirectory: true))
     #expect(FileManager.default.fileExists(atPath: directory.path))
-    
+
     try? FileManager.default.removeItem(at: root)
 }
 

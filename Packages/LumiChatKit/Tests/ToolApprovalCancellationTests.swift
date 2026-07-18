@@ -37,6 +37,10 @@ private final class ApprovalMockProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     func lumiResolveAPIKey() throws -> String { "mock-key" }
+    func hasApiKey() -> Bool { true }
+    func getApiKey() -> String { "mock-key" }
+    func setApiKey(_ apiKey: String) {}
+    func removeApiKey() {}
 
     func sendStreaming(
         _ request: LumiLLMRequest,
@@ -74,6 +78,26 @@ private final class ApprovalMockProvider: LumiLLMProvider, @unchecked Sendable {
     func providerStatus() -> LumiLLMProviderStatus? {
         nil
     }
+
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? { nil }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: error.localizedDescription,
+            isError: true
+        )
+    }
 }
 
 /// 首轮提出携带指定 arguments 的工具调用，用于测试不同参数形态（如半截 JSON）。
@@ -98,6 +122,10 @@ private final class FixedArgumentsMockProvider: LumiLLMProvider, @unchecked Send
     }
 
     func lumiResolveAPIKey() throws -> String { "mock-key" }
+    func hasApiKey() -> Bool { true }
+    func getApiKey() -> String { "mock-key" }
+    func setApiKey(_ apiKey: String) {}
+    func removeApiKey() {}
 
     func sendStreaming(
         _ request: LumiLLMRequest,
@@ -132,6 +160,26 @@ private final class FixedArgumentsMockProvider: LumiLLMProvider, @unchecked Send
 
     func providerStatus() -> LumiLLMProviderStatus? {
         nil
+    }
+
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? { nil }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: error.localizedDescription,
+            isError: true
+        )
     }
 }
 

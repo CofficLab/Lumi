@@ -10,20 +10,20 @@ import Testing
 
     @MainActor
     @Test func railDividerFallsBackToDefaultWhenUnset() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         #expect(state.railDivider(for: "LumiEditor") == 240)
         #expect(state.storedRailDivider(for: "LumiEditor") == nil)
     }
 
     @MainActor
     @Test func railDividerReturnsCustomFallbackWhenUnset() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         #expect(state.railDivider(for: "LumiEditor", fallback: 300) == 300)
     }
 
     @MainActor
     @Test func setRailDividerStoresAndReadsBack() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setRailDivider(312, for: "LumiEditor")
         #expect(state.railDivider(for: "LumiEditor") == 312)
         #expect(state.storedRailDivider(for: "LumiEditor") == 312)
@@ -31,7 +31,7 @@ import Testing
 
     @MainActor
     @Test func bottomPanelDividerStoresAndReadsBack() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         #expect(state.bottomPanelDivider(for: "main") == 400)
         state.setBottomPanelDivider(450, for: "main")
         #expect(state.bottomPanelDivider(for: "main") == 450)
@@ -40,7 +40,7 @@ import Testing
 
     @MainActor
     @Test func chatSectionDividerStoresAndReadsBack() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         #expect(state.chatSectionDivider(for: "main", layout: .wide) == 320)
         state.setChatSectionDivider(500, for: "main", layout: .wide)
         #expect(state.chatSectionDivider(for: "main", layout: .wide) == 500)
@@ -49,7 +49,7 @@ import Testing
 
     @MainActor
     @Test func chatSectionDividerIsolatesByLayoutSuffix() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setChatSectionDivider(500, for: "main", layout: .wide)
         // narrow 档位应独立、未受 wide 设置影响
         #expect(state.storedChatSectionDivider(for: "main", layout: .narrow) == nil)
@@ -58,7 +58,7 @@ import Testing
 
     @MainActor
     @Test func dividersIsolateByViewContainerID() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setRailDivider(200, for: "LumiEditor")
         state.setRailDivider(400, for: "LumiAgent")
         #expect(state.railDivider(for: "LumiEditor") == 200)
@@ -69,7 +69,7 @@ import Testing
 
     @MainActor
     @Test func setRailDividerPostsNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let box = EventBox<String, CGFloat>()
 
         let token = NotificationCenter.default.addObserver(
@@ -98,7 +98,7 @@ import Testing
 
     @MainActor
     @Test func setRailDividerDoesNotNotifyForSameValue() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setRailDivider(300, for: "main")
 
         let counter = CounterBox()
@@ -118,7 +118,7 @@ import Testing
 
     @MainActor
     @Test func setBottomPanelDividerPostsNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let box = EventBox<String, CGFloat>()
 
         let token = NotificationCenter.default.addObserver(
@@ -145,7 +145,7 @@ import Testing
 
     @MainActor
     @Test func setChatSectionDividerPostsNotificationWithLayoutSuffix() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let box = EventBox<String, CGFloat>()
         var layoutSuffix: String?
 
@@ -178,7 +178,7 @@ import Testing
 
     @MainActor
     @Test func restoreRailDividerDoesNotPostNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
             forName: .railDividerDidChange,
@@ -199,7 +199,7 @@ import Testing
 
     @MainActor
     @Test func customDefaultsApplyWhenUnset() {
-        let state = LumiLayoutState(
+        let state = LayoutState(
             defaultRailDivider: 260,
             defaultChatSectionDivider: 360,
             defaultBottomPanelDivider: 420
@@ -213,7 +213,7 @@ import Testing
 
     @MainActor
     @Test func setPanelColumnWidthStoresAndReadsBack() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         #expect(state.panelColumnWidth(for: "LumiEditor") == nil)
         state.setPanelColumnWidth(800, for: "LumiEditor")
         #expect(state.panelColumnWidth(for: "LumiEditor") == 800)
@@ -221,7 +221,7 @@ import Testing
 
     @MainActor
     @Test func setPanelColumnWidthIgnoresNonPositiveValues() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setPanelColumnWidth(800, for: "LumiEditor")
         state.setPanelColumnWidth(0, for: "LumiEditor")
         state.setPanelColumnWidth(-10, for: "LumiEditor")
@@ -231,7 +231,7 @@ import Testing
 
     @MainActor
     @Test func setPanelColumnWidthIsolatesByViewContainerID() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setPanelColumnWidth(800, for: "LumiEditor")
         state.setPanelColumnWidth(1200, for: "LumiAgent")
         #expect(state.panelColumnWidth(for: "LumiEditor") == 800)
@@ -241,7 +241,7 @@ import Testing
 
     @MainActor
     @Test func setRailDividerCanDeriveMiddleFromPanelColumnWidth() {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         // 模拟视图层同步 panel column 宽度
         state.setPanelColumnWidth(800, for: "LumiEditor")
         state.setRailDivider(240, for: "LumiEditor")
@@ -252,7 +252,7 @@ import Testing
 
     @MainActor
     @Test func setPanelColumnWidthDoesNotPostNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let counter = CounterBox()
         // 监听所有 divider 通知，确保 setPanelColumnWidth 不会发出任何通知
         let tokens: [NSObjectProtocol] = [
@@ -278,7 +278,7 @@ import Testing
 
     @MainActor
     @Test func restoreChatSectionDividerDoesNotPostNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
             forName: .chatSectionDividerDidChange,
@@ -297,7 +297,7 @@ import Testing
 
     @MainActor
     @Test func restoreBottomPanelDividerDoesNotPostNotification() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
             forName: .bottomPanelDividerDidChange,
@@ -318,7 +318,7 @@ import Testing
 
     @MainActor
     @Test func setChatSectionDividerDoesNotNotifyForSameValue() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setChatSectionDivider(500, for: "main", layout: .wide)
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(
@@ -338,7 +338,7 @@ import Testing
 
     @MainActor
     @Test func setBottomPanelDividerDoesNotNotifyForSameValue() async {
-        let state = LumiLayoutState()
+        let state = LayoutState()
         state.setBottomPanelDivider(450, for: "main")
         let counter = CounterBox()
         let token = NotificationCenter.default.addObserver(

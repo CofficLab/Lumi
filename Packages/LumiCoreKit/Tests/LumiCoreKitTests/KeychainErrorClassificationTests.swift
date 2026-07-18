@@ -1,59 +1,100 @@
 import Foundation
+import KeychainKit
 import Security
-@testable import LumiCoreKit
 import Testing
 
 @Suite("KeychainErrorClassification", .serialized)
 struct KeychainErrorClassificationTests {
     @Test func successWithDataClassifiedAsFound() {
         let data = Data("sk-test".utf8)
-        let outcome = classifyKeychainReadResult(status: errSecSuccess, data: data)
+        let outcome = classifyKeychainResult(status: errSecSuccess, data: data)
 
-        #expect(outcome == .found(data))
+        guard case .found(let stored) = outcome else {
+            Issue.record("应为 .found，实际：\(outcome)")
+            return
+        }
+        #expect(stored == data)
     }
 
     @Test func successWithNilDataClassifiedAsMissing() {
-        #expect(classifyKeychainReadResult(status: errSecSuccess, data: nil) == .missing)
+        let outcome = classifyKeychainResult(status: errSecSuccess, data: nil)
+        guard case .missing = outcome else {
+            Issue.record("应为 .missing，实际：\(outcome)")
+            return
+        }
     }
 
     @Test func itemNotFoundClassifiedAsMissing() {
-        #expect(classifyKeychainReadResult(status: errSecItemNotFound, data: nil) == .missing)
+        let outcome = classifyKeychainResult(status: errSecItemNotFound, data: nil)
+        guard case .missing = outcome else {
+            Issue.record("应为 .missing，实际：\(outcome)")
+            return
+        }
     }
 
     @Test func interactionNotAllowedClassifiedAsTransient() {
-        let outcome = classifyKeychainReadResult(status: errSecInteractionNotAllowed, data: nil)
-        #expect(outcome == .transientFailure(errSecInteractionNotAllowed))
+        let outcome = classifyKeychainResult(status: errSecInteractionNotAllowed, data: nil)
+        guard case .transientFailure(let code) = outcome else {
+            Issue.record("应为 .transientFailure，实际：\(outcome)")
+            return
+        }
+        #expect(code == errSecInteractionNotAllowed)
     }
 
-    @Test func authFailedClassifiedAsTransient() {
-        let outcome = classifyKeychainReadResult(status: errSecAuthFailed, data: nil)
-        #expect(outcome == .transientFailure(errSecAuthFailed))
+    @Test func notAvailableClassifiedAsTransient() {
+        let outcome = classifyKeychainResult(status: errSecNotAvailable, data: nil)
+        guard case .transientFailure(let code) = outcome else {
+            Issue.record("应为 .transientFailure，实际：\(outcome)")
+            return
+        }
+        #expect(code == errSecNotAvailable)
     }
 
-    @Test func interactionRequiredClassifiedAsTransient() {
-        let outcome = classifyKeychainReadResult(status: errSecInteractionRequired, data: nil)
-        #expect(outcome == .transientFailure(errSecInteractionRequired))
+    @Test func duplicateCallbackClassifiedAsTransient() {
+        let outcome = classifyKeychainResult(status: errSecDuplicateCallback, data: nil)
+        guard case .transientFailure(let code) = outcome else {
+            Issue.record("应为 .transientFailure，实际：\(outcome)")
+            return
+        }
+        #expect(code == errSecDuplicateCallback)
     }
 
-    @Test func dataNotAvailableClassifiedAsTransient() {
-        let outcome = classifyKeychainReadResult(status: errSecDataNotAvailable, data: nil)
-        #expect(outcome == .transientFailure(errSecDataNotAvailable))
+    @Test func authFailedClassifiedAsUnexpected() {
+        // 新实现只把 interactionNotAllowed / notAvailable / duplicateCallback 视为瞬时；
+        // errSecAuthFailed 落入 .unexpected，需要用户介入而非自动重试。
+        let outcome = classifyKeychainResult(status: errSecAuthFailed, data: nil)
+        guard case .unexpected(let code) = outcome else {
+            Issue.record("应为 .unexpected，实际：\(outcome)")
+            return
+        }
+        #expect(code == errSecAuthFailed)
     }
 
     @Test func unknownStatusClassifiedAsUnexpected() {
         let unknown: OSStatus = -99999
-        #expect(classifyKeychainReadResult(status: unknown, data: nil) == .unexpected(unknown))
+        let outcome = classifyKeychainResult(status: unknown, data: nil)
+        guard case .unexpected(let code) = outcome else {
+            Issue.record("应为 .unexpected，实际：\(outcome)")
+            return
+        }
+        #expect(code == unknown)
     }
 
     @Test func transientFailuresCarryOriginalStatus() {
         // 不同瞬时错误码应各自保留原值，便于诊断
-        let interaction = classifyKeychainReadResult(status: errSecInteractionNotAllowed, data: nil)
-        let auth = classifyKeychainReadResult(status: errSecAuthFailed, data: nil)
+        let interaction = classifyKeychainResult(status: errSecInteractionNotAllowed, data: nil)
+        let notAvailable = classifyKeychainResult(status: errSecNotAvailable, data: nil)
 
-        if case .transientFailure(let code) = interaction { #expect(code == errSecInteractionNotAllowed) }
-        else { Issue.record("应为 transientFailure") }
+        guard case .transientFailure(let code) = interaction else {
+            Issue.record("errSecInteractionNotAllowed 应为 transientFailure")
+            return
+        }
+        #expect(code == errSecInteractionNotAllowed)
 
-        if case .transientFailure(let code) = auth { #expect(code == errSecAuthFailed) }
-        else { Issue.record("应为 transientFailure") }
+        guard case .transientFailure(let code) = notAvailable else {
+            Issue.record("errSecNotAvailable 应为 transientFailure")
+            return
+        }
+        #expect(code == errSecNotAvailable)
     }
 }

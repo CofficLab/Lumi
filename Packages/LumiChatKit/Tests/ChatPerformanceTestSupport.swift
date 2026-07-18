@@ -45,6 +45,10 @@ final class ChunkedStreamingMockProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     func lumiResolveAPIKey() throws -> String { "mock-key" }
+    func hasApiKey() -> Bool { true }
+    func getApiKey() -> String { "mock-key" }
+    func setApiKey(_ apiKey: String) {}
+    func removeApiKey() {}
 
     func sendStreaming(
         _ request: LumiLLMRequest,
@@ -75,5 +79,25 @@ final class ChunkedStreamingMockProvider: LumiLLMProvider, @unchecked Sendable {
 
     func providerStatus() -> LumiLLMProviderStatus? {
         nil
+    }
+
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? { nil }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: error.localizedDescription,
+            isError: true
+        )
     }
 }
