@@ -1,4 +1,5 @@
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import LumiCoreKit
 
 public enum HappyCodePlugin: LumiPlugin {

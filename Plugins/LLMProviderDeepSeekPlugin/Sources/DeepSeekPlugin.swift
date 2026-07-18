@@ -1,4 +1,5 @@
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import LumiCoreKit
 import os
 

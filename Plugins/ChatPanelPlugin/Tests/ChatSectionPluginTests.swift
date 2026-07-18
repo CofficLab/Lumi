@@ -34,7 +34,7 @@ import Testing
         .appendingPathComponent("ChatSectionPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let context = LumiPluginContext(
         activeSectionID: "chat",
@@ -57,7 +57,7 @@ import Testing
         .appendingPathComponent("ChatSectionCoordinatorTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let firstID = chatService.createConversation(title: "First")
     let secondID = chatService.createConversation(title: "Second")

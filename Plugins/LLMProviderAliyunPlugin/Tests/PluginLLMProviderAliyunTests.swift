@@ -1,7 +1,8 @@
 import Foundation
 import HttpKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import Testing
 @testable import LLMProviderAliyunPlugin
 
@@ -144,7 +145,7 @@ struct PluginLLMProviderAliyunTests {
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
         #expect(message.rawErrorDetail == "invalid_api_key")
-        #expect(message.metadata[LumiLLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
@@ -163,14 +164,14 @@ struct PluginLLMProviderAliyunTests {
         Response Status: 401
         Response Body: invalid_api_key
         """
-        let full = "invalid_api_key" + LumiLLMTransportDetails.summarySeparator + transport
+        let full = "invalid_api_key" + LLMTransportDetails.summarySeparator + transport
         let message = makeMessage(
             for: LumiLLMProviderSupportError.streamingFailed(full)
         )
 
         #expect(message.renderKind == AliyunRenderKind.http(401))
         #expect(message.rawErrorDetail == "invalid_api_key")
-        #expect(message.metadata[LumiLLMTransportMetadata.requestDetails]?.contains("Request URL") == true)
+        #expect(message.metadata[LLMTransportMetadata.requestDetails]?.contains("Request URL") == true)
     }
 
     @Test func unsupportedModelAvailabilityMapsToStructuredFailure() {
@@ -180,7 +181,7 @@ struct PluginLLMProviderAliyunTests {
         #expect(AvailabilityService.isUnsupportedModelError(error))
 
         let mapped = AvailabilityService.mapUnsupportedModelResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+            .unavailable(LLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {

@@ -10,7 +10,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
     let hiddenContext = LumiPluginContext(
         activeSectionID: "chat",
@@ -53,7 +53,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
 
     let hiddenContext = LumiPluginContext(
         activeSectionID: "chat",
@@ -85,7 +85,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let provider = MockLLMProvider()
     chatService.registerProviders([provider])
 
@@ -288,7 +288,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     chatService.registerProviders([MockLLMProvider()])
 
     let tool = CheckModelAvailabilityTool(chatService: chatService)
@@ -315,7 +315,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let provider = MockLLMProvider(
         resultForModel: { _ in .unavailable(.message("HTTP 401 unauthorized")) }
     )
@@ -344,7 +344,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let tool = CheckModelAvailabilityTool(chatService: chatService)
 
     let result = try await tool.execute(
@@ -369,7 +369,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let provider = MockLLMProvider(
         resultForModel: { model in
             model == "mock-model-a" ? .available : .unavailable(.message("nope"))
@@ -398,7 +398,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let tool = ListAvailableModelsTool(chatService: chatService)
 
     let result = try await tool.execute(
@@ -419,7 +419,7 @@ import Testing
         .appendingPathComponent("ModelSelectorPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     chatService.registerProviders([MockLLMProvider()])
 
     let tool = ListAvailableModelsTool(chatService: chatService)

@@ -28,7 +28,7 @@ import Testing
         .appendingPathComponent("ConversationListToolbarTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: databaseDirectory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: databaseDirectory), agentToolComponent: AgentToolComponent())
     let visibleWithService = LumiPluginContext(
         activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",

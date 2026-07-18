@@ -1,7 +1,8 @@
 import Foundation
 import HttpKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import Testing
 @testable import LLMProviderZhipuPlugin
 
@@ -104,7 +105,7 @@ struct PluginLLMProviderZhipuTests {
         #expect(AvailabilityService.isRateLimitedError(error))
 
         let mapped = AvailabilityService.mapFriendlyFailureResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+            .unavailable(LLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {
@@ -124,7 +125,7 @@ struct PluginLLMProviderZhipuTests {
         let error = HTTPClientError.httpError(statusCode: 429, message: body)
 
         let mapped = AvailabilityService.mapFriendlyFailureResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+            .unavailable(LLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {

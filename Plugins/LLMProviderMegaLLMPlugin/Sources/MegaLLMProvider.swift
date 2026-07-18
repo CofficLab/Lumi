@@ -2,7 +2,8 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 
 public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(

@@ -49,7 +49,7 @@ import Testing
         .appendingPathComponent("ConversationTitlePluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory), agentToolComponent: AgentToolComponent())
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let hidden = LumiPluginContext(
         activeSectionID: "editor",

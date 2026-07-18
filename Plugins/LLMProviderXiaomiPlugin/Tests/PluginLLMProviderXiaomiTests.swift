@@ -1,7 +1,8 @@
 import Foundation
 import HttpKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import Testing
 @testable import LLMProviderXiaomiPlugin
 
@@ -41,7 +42,7 @@ struct PluginLLMProviderXiaomiTests {
         #expect(AvailabilityService.isUnsupportedModelError(error))
 
         let mapped = AvailabilityService.mapFriendlyFailureResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            .unavailable(LLMFailureDetailResolver.resolve(from: error)),
             kind: .tokenPlan
         )
 
@@ -60,7 +61,7 @@ struct PluginLLMProviderXiaomiTests {
         let error = HTTPClientError.httpError(statusCode: 401, message: body)
 
         let mapped = AvailabilityService.mapFriendlyFailureResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            .unavailable(LLMFailureDetailResolver.resolve(from: error)),
             kind: .api
         )
 
@@ -79,7 +80,7 @@ struct PluginLLMProviderXiaomiTests {
         let error = HTTPClientError.httpError(statusCode: 429, message: body)
 
         let mapped = AvailabilityService.mapFriendlyFailureResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error)),
+            .unavailable(LLMFailureDetailResolver.resolve(from: error)),
             kind: .tokenPlan
         )
 

@@ -5,7 +5,8 @@ import Combine
 import HttpKit
 import LLMKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import os
 
 /// MLX 本地模型 Provider
@@ -45,7 +46,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     public static let apiKeyStorageKey: String = ""
 
     public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        let key = APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }

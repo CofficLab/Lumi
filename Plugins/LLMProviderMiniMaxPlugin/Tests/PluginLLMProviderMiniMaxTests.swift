@@ -1,7 +1,8 @@
 import Foundation
 import HttpKit
 import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiCoreKit
 import Testing
 @testable import LLMProviderMiniMaxPlugin
 
@@ -148,7 +149,7 @@ struct PluginLLMProviderMiniMaxTests {
 
         #expect(message.renderKind == MiniMaxRenderKind.http(401))
         #expect(message.rawErrorDetail == "invalid_api_key")
-        #expect(message.metadata[LumiLLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
@@ -168,7 +169,7 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(AvailabilityService.isUnsupportedModelError(error))
 
         let mapped = AvailabilityService.mapUnsupportedModelResult(
-            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+            .unavailable(LLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {
