@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../LumiCoreMenuBar"),
         .package(path: "../LumiCoreOverlay"),
         .package(path: "../LumiCorePanelChrome"),
+        .package(path: "../LumiCoreStorage"),
     ],
     targets: [
         .target(
@@ -31,6 +32,7 @@ let package = Package(
                 .product(name: "LumiCoreMenuBar", package: "LumiCoreMenuBar"),
                 .product(name: "LumiCoreOverlay", package: "LumiCoreOverlay"),
                 .product(name: "LumiCorePanelChrome", package: "LumiCorePanelChrome"),
+                .product(name: "LumiCoreStorage", package: "LumiCoreStorage"),
             ],
             path: "Sources"
         ),

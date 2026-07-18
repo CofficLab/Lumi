@@ -25,7 +25,7 @@ enum AvailabilityService: SuperLog {
         if Self.verbose {
             StepFunPlugin.logger.info("\(Self.t)开始检查可用性 model=\(model)")
         }
-        let result = await LumiOpenAICompatibleAvailability.chatPing(
+        let result = await OpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

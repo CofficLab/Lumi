@@ -74,7 +74,7 @@ final class FreeModelOpenAIBackend: LumiLLMProvider, @unchecked Sendable {
     }
     
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await LumiOpenAICompatibleAvailability.chatPing(
+        await OpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: adapter,
             apiService: apiService,

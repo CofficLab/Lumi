@@ -26,9 +26,9 @@ public enum StreamingRequestSupport {
         try LumiToolNameDeduplication.assertUnique(tools: request.tools)
         
         let body = try adapter.buildStreamingRequestBody(
-            messages: LumiLLMRequestMessages.preparedForProvider(request),
+            messages: LLMRequestMessages.preparedForProvider(request),
             model: request.model,
-            tools: request.tools.map(LumiToolSchema.init),
+            tools: request.tools.map(LLMToolSchema.init),
             systemPrompt: ""
         )
         let apiKeyValue = try resolveAPIKey()
@@ -108,7 +108,7 @@ public enum StreamingRequestSupport {
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            let detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            let detail = LLMFailureDetailResolver.resolve(from: error)
             let summary = detail.summary.isEmpty ? (detail.transportDetails ?? error.localizedDescription) : detail.summary
             let detailed = await attachTransportDetails(
                 summary: summary,
@@ -173,9 +173,9 @@ public enum StreamingRequestSupport {
         }
         
         var body = try adapter.buildStreamingRequestBody(
-            messages: LumiLLMRequestMessages.preparedForProvider(request),
+            messages: LLMRequestMessages.preparedForProvider(request),
             model: request.model,
-            tools: request.tools.map(LumiToolSchema.init),
+            tools: request.tools.map(LLMToolSchema.init),
             systemPrompt: systemPrompt
         )
         customizeBody?(&body, request)
@@ -265,7 +265,7 @@ public enum StreamingRequestSupport {
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
-            let detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            let detail = LLMFailureDetailResolver.resolve(from: error)
             let summary = detail.summary.isEmpty ? (detail.transportDetails ?? error.localizedDescription) : detail.summary
             let detailed = await attachTransportDetails(
                 summary: summary,
@@ -404,7 +404,7 @@ public enum StreamingRequestSupport {
             }
         } catch is CancellationError {
         } catch {
-            await state.recordError(error)
+            await state.setError(error.localizedDescription)
         }
     }
     

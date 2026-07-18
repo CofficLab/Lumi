@@ -14,6 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -21,6 +23,8 @@ let package = Package(
         .target(
             name: "LLMProviderFreeModelPlugin",
             dependencies: [
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

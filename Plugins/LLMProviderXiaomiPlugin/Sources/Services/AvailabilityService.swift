@@ -38,7 +38,7 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await LumiOpenAICompatibleAvailability.chatPing(
+            await OpenAICompatibleAvailability.chatPing(
                 model: model,
                 adapter: provider.internalAdapter,
                 apiService: provider.internalApiService,
@@ -64,7 +64,7 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await LumiOpenAICompatibleAvailability.chatPing(
+            await OpenAICompatibleAvailability.chatPing(
                 model: model,
                 adapter: provider.internalAdapter,
                 apiService: provider.internalApiService,

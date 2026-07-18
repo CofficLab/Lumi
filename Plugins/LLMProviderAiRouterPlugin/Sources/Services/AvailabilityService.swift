@@ -15,7 +15,7 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await LumiOpenAICompatibleAvailability.chatPing(
+        let result = await OpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

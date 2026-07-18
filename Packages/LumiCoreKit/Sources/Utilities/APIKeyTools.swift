@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiCoreKit
 
 /// API Key 管理工具集

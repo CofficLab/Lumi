@@ -114,7 +114,7 @@ public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
     }
     
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await LumiOpenAICompatibleAvailability.chatPing(
+        await OpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: adapter,
             apiService: apiService,

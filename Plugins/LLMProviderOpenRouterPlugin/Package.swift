@@ -14,12 +14,16 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderOpenRouterPlugin",
             dependencies: [
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
