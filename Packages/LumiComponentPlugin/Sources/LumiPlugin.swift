@@ -6,7 +6,6 @@ import LumiComponentMessage
 import LumiComponentOverlay
 import LumiComponentPanelChrome
 import LumiComponentSubAgent
-import LumiComponentTurn
 import SwiftUI
 
 public protocol LumiPlugin {

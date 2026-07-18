@@ -24,8 +24,11 @@ public struct LumiPluginDependencies {
 
 /// Protocol for core functionality that LumiPluginContext needs.
 /// LumiCoreAccessing in LumiCoreKit conforms to this.
+///
+/// This protocol provides a minimal interface for plugin context,
+/// allowing access to the project component.
 @MainActor
-public protocol LumiCoreProviding {
+public protocol LumiCoreProviding: AnyObject {
     var projectComponent: ProjectComponent { get }
 }
 
