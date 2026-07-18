@@ -5,14 +5,14 @@ import SwiftUI
 
 // MARK: - Goal Toolbar Button
 
-/// 显示在 chat 工具栏的 Goal 按钮，点击展示当前活跃 goal 详情
+/// 显示在 chat 工具栏的 Goal 按钮（Verbosity 按钮右侧），点击展示当前对话的所有 Goal 列表。
 struct GoalToolbarButton: View {
     @Environment(\.lumiCore) private var lumiCore
     @StateObject private var viewModel = GoalToolbarViewModel()
     @State private var isPopoverPresented = false
 
     private var goalCount: Int {
-        viewModel.hasActiveGoal ? 1 : 0
+        viewModel.goals.count
     }
 
     var body: some View {
@@ -50,8 +50,8 @@ struct GoalToolbarButton: View {
 
 @MainActor
 final class GoalToolbarViewModel: ObservableObject {
-    @Published public var activeGoal: GoalDisplayItem?
-    @Published public var activeTasks: [GoalTaskDisplayItem] = []
+    /// 当前对话的所有 Goal（每个携带自己的任务），按创建时间升序。
+    @Published public var goals: [GoalListItem] = []
     @Published public var isLoading: Bool = false
 
     private var currentConversationId: String?
@@ -60,8 +60,9 @@ final class GoalToolbarViewModel: ObservableObject {
         GoalTaskPlugin.currentManager()
     }
 
+    /// 是否有活跃（非终态）Goal，供外部判断。
     public var hasActiveGoal: Bool {
-        activeGoal != nil
+        goals.contains { (item: GoalListItem) in item.goal.isTerminal == false }
     }
 
     func refresh(lumiCore: LumiCoreAccessing?) async {
@@ -70,8 +71,7 @@ final class GoalToolbarViewModel: ObservableObject {
         guard let chatService = lumiCore?.chatService else { return }
 
         guard let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
-            activeGoal = nil
-            activeTasks = []
+            goals = []
             return
         }
 
@@ -79,34 +79,33 @@ final class GoalToolbarViewModel: ObservableObject {
     }
 
     private func loadGoals(conversationId: String, manager: GoalStateManager) async {
-        guard conversationId != currentConversationId else { return }
-
+        // 同一对话已加载过则跳过（点击按钮刷新数据由 force 逻辑触发；此处保持幂等）。
+        // 但用户可能在外部新增了 goal，所以这里不短路——每次点击都重新拉取最新列表。
         currentConversationId = conversationId
         isLoading = true
 
         let fetchedGoals = await manager.fetchGoals(conversationId: conversationId)
 
-        // 查找最新的活跃 Goal（非终态）
-        let activeGoalModel = fetchedGoals.first { goal in
-            switch goal.status {
-            case .completed, .failed, .skipped:
-                return false
-            case .pending, .inProgress, .blocked:
-                return true
-            }
-        }
-
-        if let goal = activeGoalModel {
-            activeGoal = GoalDisplayItem(from: goal)
+        // 逐个加载每个 goal 的任务（SwiftData 关系跨 ModelContext 不可靠，必须显式查询）。
+        var items: [GoalListItem] = []
+        for goal in fetchedGoals {
             let tasks = await manager.fetchTasks(goalId: goal.id)
-            activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
-        } else {
-            activeGoal = nil
-            activeTasks = []
+            items.append(GoalListItem(
+                goal: GoalDisplayItem(from: goal),
+                tasks: tasks.map { GoalTaskDisplayItem(from: $0) }
+            ))
         }
-
+        goals = items
         isLoading = false
     }
+}
+
+/// 一个 Goal 及其任务的展示组合（用于工具栏弹窗的列表项）。
+struct GoalListItem: Identifiable, Equatable {
+    let goal: GoalDisplayItem
+    let tasks: [GoalTaskDisplayItem]
+
+    var id: String { goal.id }
 }
 
 // MARK: - Goal Popover Content
@@ -119,10 +118,16 @@ private struct GoalPopoverContent: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Label("Goal", systemImage: "target")
+                Label("Goals", systemImage: "target")
                     .font(.headline)
 
                 Spacer()
+
+                if !viewModel.goals.isEmpty {
+                    Text("\(viewModel.goals.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 if viewModel.isLoading {
                     ProgressView()
@@ -135,26 +140,30 @@ private struct GoalPopoverContent: View {
             Divider()
 
             // Content
-            if viewModel.isLoading {
+            if viewModel.isLoading && viewModel.goals.isEmpty {
                 Spacer()
                 ProgressView()
                 Spacer()
-            } else if let goal = viewModel.activeGoal {
-                ScrollView {
-                    GoalRowView(goal: goal, tasks: viewModel.activeTasks)
-                        .padding(12)
-                }
-            } else {
+            } else if viewModel.goals.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "target")
                         .font(.system(size: 32))
                         .foregroundStyle(.tertiary)
-                    Text("No active goal")
+                    Text("No goals yet")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(viewModel.goals) { item in
+                            GoalRowView(item: item)
+                        }
+                    }
+                    .padding(12)
+                }
             }
         }
         .background(theme.background)
@@ -164,55 +173,62 @@ private struct GoalPopoverContent: View {
 // MARK: - Goal Row View
 
 private struct GoalRowView: View {
-    let goal: GoalDisplayItem
-    let tasks: [GoalTaskDisplayItem]
+    let item: GoalListItem
+    @State private var isExpanded = false
+
+    private var goal: GoalDisplayItem { item.goal }
+    private var tasks: [GoalTaskDisplayItem] { item.tasks }
+
+    private var completedCount: Int {
+        tasks.filter { $0.status == .completed || $0.status == .skipped }.count
+    }
 
     private var progress: Double {
         guard !tasks.isEmpty else { return 0 }
-        let completedCount = tasks.filter { $0.status == .completed || $0.status == .skipped }.count
         return Double(completedCount) / Double(tasks.count)
     }
 
     private var statusColor: Color {
-        switch goal.status {
-        case .pending: return .secondary
-        case .inProgress: return .blue
-        case .completed: return .green
-        case .blocked: return .orange
-        case .failed: return .red
-        case .skipped: return .secondary
-        }
+        goal.statusColor
     }
 
     private var statusIcon: String {
-        switch goal.status {
-        case .pending: return "circle"
-        case .inProgress: return "arrow.triangle.2.circlepath"
-        case .completed: return "checkmark.circle.fill"
-        case .blocked: return "exclamationmark.triangle.fill"
-        case .failed: return "xmark.circle.fill"
-        case .skipped: return "forward.circle"
-        }
+        goal.statusSystemImage
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Goal Header
-            HStack(spacing: 6) {
-                Image(systemName: statusIcon)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(statusColor)
+            // Goal Header（点击展开/折叠任务）
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: statusIcon)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(statusColor)
+                        .frame(width: 14)
 
-                Text(goal.title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    Text(goal.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
-                Spacer()
+                    Spacer(minLength: 4)
 
-                Text(goal.status.rawValue.replacingOccurrences(of: "_", with: " "))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    Text("\(completedCount)/\(tasks.count)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             // Progress bar
             GeometryReader { geometry in
@@ -228,68 +244,42 @@ private struct GoalRowView: View {
             }
             .frame(height: 4)
 
-            // Task count
-            Text("\(tasks.filter { $0.status == .completed || $0.status == .skipped }.count)/\(tasks.count) tasks")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
             if let blockedReason = goal.blockedReason, goal.status == .blocked {
                 Text("⚠️ \(blockedReason)")
                     .font(.caption2)
                     .foregroundStyle(.orange)
+                    .lineLimit(2)
             }
 
-            Divider()
+            // 展开后的任务列表
+            if isExpanded && !tasks.isEmpty {
+                Divider()
 
-            // Task List
-            Text("Tasks")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                ForEach(tasks) { task in
+                    HStack(spacing: 6) {
+                        Image(systemName: task.statusSystemImage)
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(task.statusColor)
+                            .frame(width: 10)
 
-            ForEach(tasks) { task in
-                HStack(spacing: 6) {
-                    Image(systemName: taskStatusIcon(task.status))
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(taskStatusColor(task.status))
-                        .frame(width: 10)
+                        Text(task.title)
+                            .font(.caption)
+                            .lineLimit(2)
 
-                    Text(task.title)
-                        .font(.caption)
-                        .lineLimit(2)
+                        if let group = task.parallelGroup {
+                            Text("[\(group)]")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.secondary)
+                        }
 
-                    if let group = task.parallelGroup {
-                        Text("[\(group)]")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
+                        Spacer()
                     }
-
-                    Spacer()
                 }
             }
         }
         .padding(12)
         .background(Color.secondary.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func taskStatusIcon(_ status: GoalTask.TaskStatus) -> String {
-        switch status {
-        case .pending: return "circle"
-        case .inProgress: return "play.fill"
-        case .completed: return "checkmark"
-        case .failed: return "xmark"
-        case .skipped: return "forward"
-        }
-    }
-
-    private func taskStatusColor(_ status: GoalTask.TaskStatus) -> Color {
-        switch status {
-        case .pending: return .secondary
-        case .inProgress: return .blue
-        case .completed: return .green
-        case .failed: return .red
-        case .skipped: return .gray
-        }
     }
 }
 

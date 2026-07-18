@@ -240,6 +240,14 @@ public struct GoalDisplayItem: Identifiable, Equatable {
         self.blockedReason = goal.blockedReason
     }
 
+    /// 是否为终态（completed / failed / skipped），非终态即视为「活跃」。
+    public var isTerminal: Bool {
+        switch status {
+        case .completed, .failed, .skipped: true
+        case .pending, .inProgress, .blocked: false
+        }
+    }
+
     public var statusSystemImage: String {
         switch status {
         case .pending: "circle"
