@@ -251,8 +251,14 @@ extension LumiPluginRegistry {
     }
 
     public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+        // 按 item.order 升序排序，让插件作者能通过 LumiChatSectionToolbarBarItem.order 控制
+        // 工具栏按钮的展示顺序。否则 order 字段会被静默忽略，顺序完全取决于插件在 plugins
+        // 清单里的注册位置。（Swift 的 sorted 不保证稳定，故相同 order 的相对顺序未定义；
+        // 当前各 toolbar bar item 的 order 互不冲突，不存在该问题。）
         guard context.supportsChatSection else { return [] }
-        return enabledPlugins.flatMap { $0.chatSectionToolbarBarItems(context: context) }
+        return enabledPlugins
+            .flatMap { $0.chatSectionToolbarBarItems(context: context) }
+            .sorted { $0.order < $1.order }
     }
 
     public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {

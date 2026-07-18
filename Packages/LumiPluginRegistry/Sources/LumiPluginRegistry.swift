@@ -298,7 +298,6 @@ public enum LumiPluginRegistry: SuperLog {
             ActivityHeatmapPlugin.self,
             RAGPlugin.self,
             AgentTempStoragePlugin.self,
-            GoalTaskPlugin.self,
 
             // MARK: - Logo Plugins
             LogoSmartLightPlugin.self,
