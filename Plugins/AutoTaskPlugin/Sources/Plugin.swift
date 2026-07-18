@@ -39,13 +39,13 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     public static var manager: TaskStateManager?
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister:
             // 优先使用 LumiCore 提供的目录；缺失时降级到 tmp。
             let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
                 ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
-            Self.manager = TaskStateManager(databaseRootURL: directory)
+            Self.manager = try TaskStateManager(databaseRootURL: directory)
 
         case .appDidLaunch:
             // 已注册则无需重复初始化；未注册时（如单元测试或外部手动初始化）

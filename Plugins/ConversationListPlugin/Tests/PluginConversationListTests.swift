@@ -13,7 +13,7 @@ import Testing
 }
 
 @MainActor
-@Test func titleToolbarItemsRequireChatSectionAndService() {
+@Test func titleToolbarItemsRequireChatSectionAndService() throws {
     let hiddenChatContext = LumiPluginContext(
         activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",
@@ -28,7 +28,7 @@ import Testing
         .appendingPathComponent("ConversationListToolbarTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: databaseDirectory) }
 
-    let chatService = ChatService(configuration: .coreDatabase(directory: databaseDirectory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: databaseDirectory))
     let visibleWithService = LumiPluginContext(
         activeSectionID: "LumiEditor",
         activeSectionTitle: "Editor",
@@ -52,12 +52,12 @@ import Testing
 }
 
 @MainActor
-@Test func pluginRegistersConversationListToolsWhenChatServiceExists() {
+@Test func pluginRegistersConversationListToolsWhenChatServiceExists() throws {
     let databaseDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ConversationListPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: databaseDirectory) }
 
-    let chatService = ChatService(
+    let chatService = try ChatService(
         configuration: .coreDatabase(directory: databaseDirectory)
     )
     let context = LumiPluginContext(

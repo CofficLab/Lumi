@@ -69,7 +69,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping {
         self.storage = StorageComponent(dataRootDirectory: standardizedRoot)
 
         // 3. 创建并注册 ChatService(不依赖 self:工厂传 nil lumiCore,稍后由调用方回填)
-        let chatService = chatServiceFactory(coreDatabaseDirectory)
+        let chatService = try chatServiceFactory(coreDatabaseDirectory)
         self.chatService = chatService
         registerService((any LumiChatServicing).self, chatService)
         if let history = chatService as? any HistoryQueryService {

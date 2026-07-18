@@ -21,11 +21,11 @@ struct CreateConversationPerformanceSuite {
     // MARK: - Problem 1: persist() 全量保存，随数据量线性增长
 
     @Test("createConversation 在空数据下 persist 调用一次")
-    func createConversationTriggersSinglePersistOnEmptyStore() {
+    func createConversationTriggersSinglePersistOnEmptyStore() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let persistBefore = service.persistCallCount
 
         _ = service.createConversation(title: "First")
@@ -37,11 +37,11 @@ struct CreateConversationPerformanceSuite {
     }
 
     @Test("createConversation 在大量历史数据下 persist 仍然只调用一次")
-    func createConversationStillOnePersistWithLargeHistory() {
+    func createConversationStillOnePersistWithLargeHistory() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         // 预填充：模拟用户长期使用后的状态（50 个对话，每个对话 20 条消息）
         seedConversationsAndMessages(service: service, count: 50, messagesPerConversation: 20)
@@ -60,11 +60,11 @@ struct CreateConversationPerformanceSuite {
         "全量 persist 在大量历史数据下的耗时（基线对照）",
         .disabled("仅手动运行以收集基线数据")
     )
-    func persistLatencyWithLargeDataset() {
+    func persistLatencyWithLargeDataset() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         // 预填充 200 个对话，每个 30 条消息
         seedConversationsAndMessages(service: service, count: 200, messagesPerConversation: 30)
@@ -82,11 +82,11 @@ struct CreateConversationPerformanceSuite {
     // MARK: - Problem 2: @Published 属性多次触发 revision
 
     @Test("createConversation 单次调用 revision 增量")
-    func createConversationRevisionIncrement() {
+    func createConversationRevisionIncrement() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let revisionBefore = service.revision
 
         _ = service.createConversation(title: "Test")
@@ -98,11 +98,11 @@ struct CreateConversationPerformanceSuite {
     }
 
     @Test("连续创建多个对话时 revision 不再线性增长")
-    func consecutiveCreateConversationRevisionGrowth() {
+    func consecutiveCreateConversationRevisionGrowth() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         let revisionBefore = service.revision
         _ = service.createConversation(title: "Batch")
@@ -121,17 +121,17 @@ struct CreateConversationPerformanceSuite {
     // MARK: - Problem 3: persist 全量 fetch 验证
 
     @Test("createConversation 后数据可正确从磁盘恢复")
-    func createConversationDataPersistsAcrossInstances() {
+    func createConversationDataPersistsAcrossInstances() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         seedConversationsAndMessages(service: service, count: 10, messagesPerConversation: 5)
         let newID = service.createConversation(title: "Newest")
 
         // 重新加载
-        let reloaded = ChatService(configuration: .coreDatabase(directory: directory))
+        let reloaded = try ChatService(configuration: .coreDatabase(directory: directory))
 
         // 包含预填充的 10 个 + 新建的 1 个 = 11 个对话
         #expect(reloaded.conversations.count == 11)
@@ -143,11 +143,11 @@ struct CreateConversationPerformanceSuite {
     // MARK: - Problem 4: 大量消息场景下 persist 开销随数据增长
 
     @Test("单次 append 消息触发增量 persist")
-    func appendMessageTriggersIncrementalPersist() {
+    func appendMessageTriggersIncrementalPersist() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "Test")
 
         let persistBefore = service.persistCallCount
@@ -171,11 +171,11 @@ struct CreateConversationPerformanceSuite {
     // MARK: - Optimization Verification: 增量 persist 在大数据下不退化
 
     @Test("大量数据下 createConversation 耗时与空数据相当")
-    func createConversationLatencyStableWithLargeHistory() {
+    func createConversationLatencyStableWithLargeHistory() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         // 预填充 100 个对话，每个 10 条消息
         seedConversationsAndMessages(service: service, count: 100, messagesPerConversation: 10)
@@ -192,11 +192,11 @@ struct CreateConversationPerformanceSuite {
     }
 
     @Test("大量数据下 append 消息耗时与空数据相当")
-    func appendMessageLatencyStableWithLargeHistory() {
+    func appendMessageLatencyStableWithLargeHistory() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
 
         // 预填充 100 个对话，每个 10 条消息
         seedConversationsAndMessages(service: service, count: 100, messagesPerConversation: 10)

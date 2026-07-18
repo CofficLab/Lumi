@@ -72,7 +72,7 @@ struct StorageServiceCoreDirectoryTests {
         defer { try? FileManager.default.removeItem(at: tempRoot) }
 
         // When
-        let coreDirectory = StorageService.makeCoreDatabaseDirectory(in: tempRoot)
+        let coreDirectory = try StorageService.makeCoreDatabaseDirectory(in: tempRoot)
 
         // Then
         #expect(coreDirectory.lastPathComponent == "Core")
@@ -85,17 +85,17 @@ struct StorageServiceCoreDirectoryTests {
         let tempRoot = try makeTemporaryRoot()
         defer { try? FileManager.default.removeItem(at: tempRoot) }
 
-        let first = StorageService.makeCoreDatabaseDirectory(in: tempRoot)
-        let second = StorageService.makeCoreDatabaseDirectory(in: tempRoot)
+        let first = try StorageService.makeCoreDatabaseDirectory(in: tempRoot)
+        let second = try StorageService.makeCoreDatabaseDirectory(in: tempRoot)
 
         #expect(first == second)
         #expect(FileManager.default.fileExists(atPath: second.path))
     }
 
     @Test
-    func appendsCoreComponentToGivenRoot() {
+    func appendsCoreComponentToGivenRoot() throws {
         let fakeRoot = URL(fileURLWithPath: "/tmp/LumiAppKit-FakeRoot", isDirectory: true)
-        let coreDirectory = StorageService.makeCoreDatabaseDirectory(in: fakeRoot)
+        let coreDirectory = try StorageService.makeCoreDatabaseDirectory(in: fakeRoot)
 
         #expect(coreDirectory.path == "/tmp/LumiAppKit-FakeRoot/Core")
     }
@@ -112,7 +112,7 @@ struct StorageServiceDataRootDirectoryTests {
 
     @Test
     func createsDirectoryUnderApplicationSupport() throws {
-        let url = StorageService.makeDataRootDirectory()
+        let url = try StorageService.makeDataRootDirectory()
 
         let appSupport = try #require(
             FileManager.default
@@ -125,7 +125,7 @@ struct StorageServiceDataRootDirectoryTests {
 
     @Test
     func directoryNameFollowsVersionedPattern() throws {
-        let url = StorageService.makeDataRootDirectory()
+        let url = try StorageService.makeDataRootDirectory()
         let lastComponent = url.lastPathComponent
 
         // 期望形如 db_debug_vN 或 db_production_vN

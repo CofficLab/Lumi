@@ -54,7 +54,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     ///
     /// 现在在 `.didRegister` 触发初始化，agent 工具运行时一定已经可用。
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister, .appDidLaunch:
             // .didRegister 是最早的事件，理论上足够；这里再覆盖 .appDidLaunch

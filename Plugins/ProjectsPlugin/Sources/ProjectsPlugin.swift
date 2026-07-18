@@ -33,7 +33,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     public static var viewModel: ProjectsViewModel?
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister:
             if Self.verbose {

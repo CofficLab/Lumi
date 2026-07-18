@@ -86,7 +86,7 @@ public protocol LumiCoreBootstrapping: AnyObject {
     /// ChatService 工厂闭包类型。init 时传入,接收 core 数据库目录。
     /// 工厂创建的 ChatService 的 lumiCore 引用应留空(nil),由调用方在
     /// LumiCore 创建后调 `chatService.configure(lumiCore:)` 回填。
-    typealias ChatServiceFactory = @MainActor (URL) -> any LumiChatServicing
+    typealias ChatServiceFactory = @MainActor (URL) throws -> any LumiChatServicing
 
     // MARK: - Service Registry
 

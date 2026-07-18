@@ -37,7 +37,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     private static let promptService = PromptService()
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister:
             // 关键：不再无条件覆盖。若 manager 已存在（例如 boot 同步期 agentTools 已懒加载过），
@@ -46,7 +46,7 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
             // 目录解析优先用 context 传入的 lumiCore（didRegister 阶段全局 LumiCore.current 也已就绪）。
             if Self.manager == nil {
                 let directory = resolveDataDirectory()
-                Self.manager = GoalStateManager(databaseRootURL: directory)
+                Self.manager = try GoalStateManager(databaseRootURL: directory)
                 Self.logger.info("\(Self.t)lifecycle(didRegister): 初始化 manager")
             } else {
                 Self.logger.info("\(Self.t)lifecycle(didRegister): manager 已存在，保留单例")
@@ -78,12 +78,12 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 
     /// 确保 manager 已初始化（懒加载，且全局只创建一次）。
     @MainActor
-    private static func ensureManagerInitialized(context: LumiPluginContext? = nil) -> GoalStateManager {
+    private static func ensureManagerInitialized(context: LumiPluginContext? = nil) throws -> GoalStateManager {
         if let manager {
             return manager
         }
         let directory = resolveDataDirectory(preferContext: context)
-        let manager = GoalStateManager(databaseRootURL: directory)
+        let manager = try GoalStateManager(databaseRootURL: directory)
         Self.manager = manager
         if Self.verbose {
             Self.logger.info("\(Self.t)ensureManagerInitialized: 懒加载初始化 manager（目录=\(directory.path)）")
@@ -102,9 +102,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
         // 提前确保 manager 存在，使首帧即可取数；工具内部仍走 currentManager() 动态读取。
-        _ = ensureManagerInitialized(context: context)
+        _ = try ensureManagerInitialized(context: context)
         return [
             CreateGoalTool(),
             UpdateTaskStatusTool(),
@@ -118,7 +118,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        _ = ensureManagerInitialized(context: context)
+        // sendMiddlewares 协议非 throws；懒加载初始化若失败，用 try? 降级——
+        // 失败会经 lifecycle/agentTools 路径上报，此处不重复抛错。
+        _ = try? ensureManagerInitialized(context: context)
         return [
             GoalContextMiddleware(promptService: promptService),
         ]

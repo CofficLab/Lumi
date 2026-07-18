@@ -44,11 +44,10 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
             self?.objectWillChange.send()
         }
 
-        // 统一触发插件生命周期事件
-        Task { @MainActor in
-            await LumiPluginRegistry.registerAll()
-            await LumiPluginRegistry.appDidLaunch()
-        }
+        // 注：插件 lifecycle（registerAll / appDidLaunch）不再在此异步触发——
+        // 已收敛到 RootContainer.bootstrapAfterPluginLifecycle()，由 WindowMain
+        // 显式 await，保证 registerAll → appDidLaunch → 工具收集的严格顺序，
+        // 避免 agentTools 在 lifecycle 完成前被调用导致"插件状态未就绪"误报。
     }
 
     // MARK: - Hooks

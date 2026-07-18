@@ -35,8 +35,8 @@ struct ChatStore {
     private let jsonEncoder = JSONEncoder()
     private let jsonDecoder = JSONDecoder()
 
-    init(configuration: Configuration, fileManager: FileManager = .default) {
-        try? fileManager.createDirectory(
+    init(configuration: Configuration, fileManager: FileManager = .default) throws {
+        try fileManager.createDirectory(
             at: configuration.databaseDirectory,
             withIntermediateDirectories: true,
             attributes: nil
@@ -59,49 +59,42 @@ struct ChatStore {
             allowsSave: true,
             cloudKitDatabase: .none
         )
-        do {
-            self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("无法打开聊天数据库 (\(storeURL.lastPathComponent)): \(error.localizedDescription)。请检查磁盘空间和文件权限。")
-        }
+        // 数据库打开失败（磁盘满、文件损坏、schema 迁移失败、权限问题）属于不可恢复的
+        // 启动错误，直接抛出由 WindowMain 走 CrashedView，而不是 fatalError 闪退。
+        self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
 
         self.context = ModelContext(container)
     }
 
-    func load() -> Snapshot {
-        do {
-            let conversationDescriptor = FetchDescriptor<Conversation>(
-                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
-            )
-            let conversationEntities = try context.fetch(conversationDescriptor)
-            let conversations = conversationEntities.map(conversationSummary(from:))
+    func load() throws -> Snapshot {
+        let conversationDescriptor = FetchDescriptor<Conversation>(
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        let conversationEntities = try context.fetch(conversationDescriptor)
+        let conversations = conversationEntities.map(conversationSummary(from:))
 
-            let messageDescriptor = FetchDescriptor<ChatMessageEntity>(
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-            let messageEntities = try context.fetch(messageDescriptor)
-            var messagesByConversationID: [UUID: [LumiChatMessage]] = [:]
-            for entity in messageEntities {
-                messagesByConversationID[entity.conversationId, default: []].append(message(from: entity))
-            }
-
-            let state = try currentState(createIfNeeded: false)
-            let selectedID = state?.selectedConversationID.flatMap { id in
-                conversations.contains(where: { $0.id == id }) ? id : conversations.first?.id
-            } ?? conversations.first?.id
-
-            return Snapshot(
-                conversations: conversations,
-                messagesByConversationID: messagesByConversationID,
-                selectedConversationID: selectedID,
-                selectedProviderID: state?.selectedProviderID,
-                selectedModel: state?.selectedModel,
-                routingMode: state?.routingMode.flatMap(LumiModelRoutingMode.init(rawValue:)) ?? .manual
-            )
-        } catch {
-            assertionFailure("LumiChatKit failed to load SwiftData store: \(error)")
-            return .empty
+        let messageDescriptor = FetchDescriptor<ChatMessageEntity>(
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        let messageEntities = try context.fetch(messageDescriptor)
+        var messagesByConversationID: [UUID: [LumiChatMessage]] = [:]
+        for entity in messageEntities {
+            messagesByConversationID[entity.conversationId, default: []].append(message(from: entity))
         }
+
+        let state = try currentState(createIfNeeded: false)
+        let selectedID = state?.selectedConversationID.flatMap { id in
+            conversations.contains(where: { $0.id == id }) ? id : conversations.first?.id
+        } ?? conversations.first?.id
+
+        return Snapshot(
+            conversations: conversations,
+            messagesByConversationID: messagesByConversationID,
+            selectedConversationID: selectedID,
+            selectedProviderID: state?.selectedProviderID,
+            selectedModel: state?.selectedModel,
+            routingMode: state?.routingMode.flatMap(LumiModelRoutingMode.init(rawValue:)) ?? .manual
+        )
     }
 
     // MARK: - Full Save (fallback, only for bulk sync)

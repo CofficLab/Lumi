@@ -115,9 +115,9 @@ final class NoOpToolService: LumiToolServicing {
 @Suite(.serialized)
 @MainActor
 struct EmptyResponseRetrySuite {
-    private func makeService(provider: SequencedResponseMockProvider) -> (ChatService, UUID) {
+    private func makeService(provider: SequencedResponseMockProvider) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "EmptyRetry")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -131,7 +131,7 @@ struct EmptyResponseRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Done") }
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let message = try await service.makeAssistantMessageWithEmptyRetry(
             conversationID: conversationID,
@@ -155,7 +155,7 @@ struct EmptyResponseRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Recovered") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let message = try await service.makeAssistantMessageWithEmptyRetry(
             conversationID: conversationID,
@@ -189,7 +189,7 @@ struct EmptyResponseRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let message = try await service.makeAssistantMessageWithEmptyRetry(
             conversationID: conversationID,
@@ -213,7 +213,7 @@ struct EmptyResponseRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "OK") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         _ = try await service.makeAssistantMessageWithEmptyRetry(
             conversationID: conversationID,
@@ -239,7 +239,7 @@ struct EmptyResponseRetrySuite {
                 role: .assistant, content: "",
                 toolCalls: [LumiToolCall(id: "1", name: "noop", arguments: "{}")]) }
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let message = try await service.makeAssistantMessageWithEmptyRetry(
             conversationID: conversationID,
@@ -266,9 +266,9 @@ struct EmptyResponseEndToEndSuite {
     private func makeService(
         provider: SequencedResponseMockProvider,
         toolService: LumiToolServicing? = nil
-    ) -> (ChatService, UUID) {
+    ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "E2E")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -290,7 +290,7 @@ struct EmptyResponseEndToEndSuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Done") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)
@@ -316,7 +316,7 @@ struct EmptyResponseEndToEndSuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)
@@ -346,7 +346,7 @@ struct EmptyResponseEndToEndSuite {
         ])
         // 必须持有强引用：ChatService.toolService 是 weak。
         let toolService = NoOpToolService()
-        let (service, conversationID) = makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)

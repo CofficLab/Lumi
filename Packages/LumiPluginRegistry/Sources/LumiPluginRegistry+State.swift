@@ -61,10 +61,11 @@ extension LumiPluginRegistry {
             _logger.info("设置插件 \(pluginId) -> \(enabled)")
         }
 
-        // 如果从启用变为禁用，先触发 willDisable 生命周期
+        // 如果从启用变为禁用，先触发 willDisable 生命周期。
+        // willDisable 是清理语义（manager = nil），失败不应中断禁用流程，故 try? 降级。
         if previousState && !enabled {
             Task {
-                await plugin.lifecycle(.willDisable)
+                try? await plugin.lifecycle(.willDisable)
             }
         }
 
@@ -199,7 +200,7 @@ extension LumiPluginRegistry {
                     contribution: "agentTools",
                     errorDescription: error.localizedDescription
                 ))
-                _logger.error("插件 \(plugin.info.id) agentTools 失败：\(error.localizedDescription)")
+                _logger.error("\(Self.t)插件 \(plugin.info.id) agentTools 失败：\(error.localizedDescription)")
             }
         }
 

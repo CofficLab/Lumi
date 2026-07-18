@@ -125,6 +125,7 @@ let package = Package(
         .package(path: "../../Plugins/RequestLogPlugin"),
         .package(path: "../../Plugins/ShowImagePlugin"),
         .package(path: "../../Plugins/SkillPlugin"),
+        .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Plugins/TerminalPlugin"),
         .package(path: "../../Plugins/ThemeAuroraPlugin"),
         .package(path: "../../Plugins/ThemeAutumnPlugin"),
@@ -154,6 +155,7 @@ let package = Package(
         .target(
             name: "LumiPluginRegistry",
             dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),

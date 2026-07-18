@@ -59,6 +59,11 @@ public struct WindowMain: View, SuperLog {
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds) / 1_000_000
             Self.logger.info("\(Self.t)RootContainer 创建完成，耗时 \(elapsed.formattedMilliseconds)")
 
+            // 等待所有插件 lifecycle 完成，再收集工具贡献。
+            // - 保证 agentTools 在插件状态就绪后被调用，避免"插件状态未初始化"误报；
+            // - 若有插件工具加载失败，抛聚合错误，由下方 catch 走 CrashedView。
+            try await newContainer.bootstrapAfterPluginLifecycle()
+
             // 把 LumiCore 注入到 OpenProjectHandler(单例),让外部
             // `application(_:openFile:)` 路径也能切换项目。
             OpenProjectHandler.shared.configure(lumiCore: newContainer.lumiCore)

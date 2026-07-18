@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreKit
 import SwiftData
 import SuperLogKit
 import os
@@ -40,11 +41,11 @@ public actor TaskStateManager: SuperLog {
 
     // MARK: - Initialization
 
-    public init(databaseRootURL: URL) {
-        self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
+    public init(databaseRootURL: URL) throws {
+        self.container = try Self.makeContainer(databaseRootURL: databaseRootURL)
     }
 
-    static func makeContainer(databaseRootURL: URL) -> ModelContainer {
+    static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
         let schema = Schema([TaskItem.self])
         let dbDir = databaseRootURL.appendingPathComponent("AutoTaskPlugin", isDirectory: true)
         let dbURL = dbDir.appendingPathComponent("tasks.sqlite")
@@ -54,9 +55,9 @@ public actor TaskStateManager: SuperLog {
             quarantineFileIfItBlocksDirectory(at: dbDir)
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)创建任务数据库目录失败：\(error.localizedDescription)")
-            }
+            // 目录创建失败属于不可恢复的环境错误，抛出让 lifecycle 上层走 CrashedView，
+            // 而不是静默降级到内存库（会导致数据不落盘但用户无感）。
+            throw LumiPluginDependencyError.stateNotInitialized("AutoTaskPlugin 数据库目录: \(error.localizedDescription)")
         }
 
         let config = ModelConfiguration(
@@ -75,29 +76,12 @@ public actor TaskStateManager: SuperLog {
             quarantinePersistentStore(at: dbURL)
         }
 
+        // 重建尝试：隔离损坏文件后重新打开。仍失败则抛错（不再静默降级到内存库）。
         do {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)重建任务数据库失败，使用临时内存存储：\(error.localizedDescription)")
-            }
-            return makeInMemoryContainer(schema: schema)
-        }
-    }
-
-    private static func makeInMemoryContainer(schema: Schema) -> ModelContainer {
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: true,
-            allowsSave: true,
-            cloudKitDatabase: .none
-        )
-
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            preconditionFailure("Could not create in-memory AutoTaskPlugin ModelContainer: \(error)")
+            throw LumiPluginDependencyError.stateNotInitialized("AutoTaskPlugin 数据库重建失败: \(error.localizedDescription)")
         }
     }
 

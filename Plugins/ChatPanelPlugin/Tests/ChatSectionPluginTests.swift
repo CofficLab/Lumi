@@ -29,12 +29,12 @@ import Testing
 }
 
 @MainActor
-@Test func chatSectionPluginsContributeItemsWithCoordinator() {
+@Test func chatSectionPluginsContributeItemsWithCoordinator() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ChatSectionPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let context = LumiPluginContext(
         activeSectionID: "chat",
@@ -52,12 +52,12 @@ import Testing
 }
 
 @MainActor
-@Test func coordinatorForwardsChatServiceSelectionChanges() {
+@Test func coordinatorForwardsChatServiceSelectionChanges() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ChatSectionCoordinatorTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let firstID = chatService.createConversation(title: "First")
     let secondID = chatService.createConversation(title: "Second")

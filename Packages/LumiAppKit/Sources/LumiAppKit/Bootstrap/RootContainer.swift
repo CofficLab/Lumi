@@ -1,6 +1,7 @@
 import LumiAppKit
 import LumiChatKit
 import LumiCoreKit
+import LumiPluginRegistry
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -46,8 +47,8 @@ final class RootContainer: ObservableObject, SuperLog {
         self.provider = pluginService
 
         // —— 2. 物化数据根目录 ——
-        let dataRootDirectory = StorageService.makeDataRootDirectory()
-        let coreDatabaseDirectory = StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
+        let dataRootDirectory = try StorageService.makeDataRootDirectory()
+        let coreDatabaseDirectory = try StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
 
         // —— 3. Editor 工厂闭包 ——
         // 返回 EditorCoreService 实例。此时还不持有 lumiCore——LumiCore.init 会接收并存储
@@ -55,7 +56,7 @@ final class RootContainer: ObservableObject, SuperLog {
         // （configure 是 EditorCoreService 的具体方法，不在 AbstractEditorServicing 协议里）。
         let editorFactory: @MainActor (any AgentToolProviding) throws -> any AbstractEditorServicing = { factoryProvider in
             guard let pluginService = factoryProvider as? PluginService else {
-                fatalError("Editor factory 收到的 provider 不是 PluginService")
+                throw LumiBootstrapError.editorProviderCastFailed
             }
             return EditorCoreService(
                 pluginService: pluginService,
@@ -73,7 +74,7 @@ final class RootContainer: ObservableObject, SuperLog {
             provider: provider,
             builtInTools: ChatService.builtInTools,
             chatServiceFactory: { databaseDirectory in
-                ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: nil)
+                try ChatService(configuration: .coreDatabase(directory: databaseDirectory), lumiCore: nil)
             },
             editorFactory: editorFactory
         )
@@ -92,14 +93,18 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // —— 6. 暴露强类型 chatService + 回填 lumiCore 引用 ——
         guard let chatService = lumiCore.chatService as? ChatService else {
-            fatalError("LumiCore.chatService 必须是 ChatService。实际类型: \(String(describing: type(of: lumiCore.chatService)))")
+            throw LumiBootstrapError.chatServiceCastFailed(
+                actual: String(describing: type(of: lumiCore.chatService))
+            )
         }
         self.chatService = chatService
         chatService.configure(lumiCore: lumiCore)
 
         // —— 7. 暴露强类型 editorCoreService + configure 回填 ——
         guard let editorCoreService = lumiCore.editorService as? EditorCoreService else {
-            fatalError("LumiCore.editorService 必须是 EditorCoreService。实际类型: \(String(describing: lumiCore.editorService))")
+            throw LumiBootstrapError.editorServiceCastFailed(
+                actual: String(describing: type(of: lumiCore.editorService))
+            )
         }
         self.editorCoreService = editorCoreService
         editorCoreService.configure(lumiCore: lumiCore)
@@ -123,12 +128,12 @@ final class RootContainer: ObservableObject, SuperLog {
         lumiCore.registerService(LumiThemeServicing.self, lumiUIService)
         lumiCore.registerService((any LumiLLMProviderSettingsContributing).self, pluginService)
 
-        // —— 10. 应用 Chat 维度插件贡献 + 编排工具贡献 ——
-        // LLM Provider / 中间件 / 渲染器等 Chat 维度贡献由 applyChatPluginContributions 处理；
-        // 工具 / 子 Agent 工具由 bootstrapToolContributions 注册进 ToolService。
-        // 工具名唯一性已在 LumiCore.init 阶段校验，此处直接注册。
+        // —— 10. 应用 Chat 维度插件贡献 ——
+        // LLM Provider / 中间件 / 渲染器等 Chat 维度贡献由 applyChatPluginContributions 处理。
+        // 工具贡献（bootstrapToolContributions）不再在此同步调用——它依赖各插件的
+        // lifecycle(.didRegister/.appDidLaunch) 完成后状态才就绪，故后移到
+        // bootstrapAfterPluginLifecycle() 由 WindowMain 显式 await。详见该方法说明。
         applyChatPluginContributions()
-        bootstrapToolContributions()
 
         // —— 11. 订阅运行期插件启用状态变化 ——
         // ChatService 在 LumiChatKit 不能 import LumiPluginRegistry，因此由本类
@@ -163,6 +168,33 @@ final class RootContainer: ObservableObject, SuperLog {
             from: pluginService,
             toolExecutionHook: pluginService.toolExecutionHook
         )
+    }
+
+    /// 在所有插件 lifecycle（`.didRegister` + `.appDidLaunch`）完成后编排工具贡献。
+    ///
+    /// 由 `WindowMain.initializeContainer` 在 `RootContainer()` 创建后显式 await。
+    /// 这样保证工具收集（`agentTools`）发生在各插件 lifecycle 初始化状态**之后**，
+    /// 避免启动期"插件状态未就绪"的误报（典型如 ProjectsPlugin 的 viewModel）。
+    ///
+    /// - throws: 若工具收集后 `toolContributionFailures` 非空，抛出聚合错误，
+    ///   由 WindowMain 走 `CrashedView`——启动期插件失败视为需要用户介入的硬条件
+    ///   （区别于运行期插件开关触发的软失败，后者只走「设置 → 插件」详情页 banner）。
+    func bootstrapAfterPluginLifecycle() async throws {
+        // 1. 等待所有插件 lifecycle 完成（原由 PluginService.init 的异步 Task 触发，
+        //    现收敛到此处，保证 registerAll → appDidLaunch → 工具收集的严格顺序）。
+        // registerAll/appDidLaunch 内部已逐插件捕获 lifecycle 抛错，累积到 lifecycleFailures。
+        await LumiPluginRegistry.registerAll()
+        await LumiPluginRegistry.appDidLaunch()
+
+        // 2. 此时所有插件状态就绪，收集工具；失败累积到 AgentToolComponent
+        bootstrapToolContributions()
+
+        // 3. 汇总所有失败：lifecycle 失败 + 工具贡献失败。任一非空则走 CrashedView。
+        var allFailures = LumiPluginRegistry.lifecycleFailures
+        allFailures += lumiCore.agentToolComponent.toolContributionFailures
+        if !allFailures.isEmpty {
+            throw LumiPluginContributionFailureAggregate(allFailures)
+        }
     }
 
     /// 重新编排工具贡献。让新启用插件贡献的工具 / 子 Agent 进入 ToolService。

@@ -29,7 +29,7 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin Lifecycle
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister:
             break

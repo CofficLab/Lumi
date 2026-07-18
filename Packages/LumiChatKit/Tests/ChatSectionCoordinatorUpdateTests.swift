@@ -16,7 +16,7 @@ struct ChatSectionCoordinatorUpdateSuite {
             chunks: chunks,
             chunkDelayNanoseconds: 2_000_000
         )
-        let (service, conversationID) = ChatPerformanceTestSupport.configuredService(
+        let (service, conversationID) = try ChatPerformanceTestSupport.configuredService(
             directory: directory,
             provider: provider
         )
@@ -50,7 +50,7 @@ struct ChatSectionCoordinatorUpdateSuite {
             chunks: ["one", "two", "three"],
             chunkDelayNanoseconds: 5_000_000
         )
-        let (service, conversationID) = ChatPerformanceTestSupport.configuredService(
+        let (service, conversationID) = try ChatPerformanceTestSupport.configuredService(
             directory: directory,
             provider: provider
         )

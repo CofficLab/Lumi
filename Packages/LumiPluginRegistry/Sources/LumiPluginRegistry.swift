@@ -132,21 +132,71 @@ import VerbosityPlugin
 import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
+import os
+import SuperLogKit
 
+/// 插件注册表
 @MainActor
-public enum LumiPluginRegistry {
+public enum LumiPluginRegistry: SuperLog {
+    /// SuperLog 标识 emoji
+    public nonisolated static let emoji = "📦"
+
+    /// 是否启用详细日志输出
+    public nonisolated static let verbose: Bool = false
+
+    /// 日志记录器
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiPluginRegistry")
+
+    /// 最近一次 lifecycle（registerAll + appDidLaunch）累积的插件失败列表。
+    ///
+    /// 逐插件捕获 `lifecycle(_:)` 抛出的错误，反映"当前插件集"的最新失败快照。
+    /// 由 `RootContainer.bootstrapAfterPluginLifecycle` 读取，启动期失败走 CrashedView。
+    private static var _lifecycleFailures: [LumiPluginContributionFailure] = []
+
+    /// 最近一次 lifecycle 失败快照（只读访问）。
+    public static var lifecycleFailures: [LumiPluginContributionFailure] {
+        _lifecycleFailures
+    }
+
+    /// 逐插件触发 lifecycle 事件并捕获失败，累积到 `_lifecycleFailures`。
+    ///
+    /// 单个插件抛错**不影响其他插件**：异常被捕获并包装成 `LumiPluginContributionFailure`，
+    /// 其他插件照常收到事件。与 `agentTools` 的聚合模式一致。
+    @MainActor
+    private static func dispatchLifecycle(
+        _ event: LumiPluginLifecycle,
+        verboseLabel: String
+    ) async {
+        if verbose {
+            logger.info("\(Self.t)\(verboseLabel)，共 \(Self.plugins.count) 个插件")
+        }
+        for plugin in plugins {
+            do {
+                try await plugin.lifecycle(event)
+            } catch {
+                _lifecycleFailures.append(LumiPluginContributionFailure(
+                    pluginID: plugin.info.id,
+                    pluginDisplayName: plugin.info.displayName,
+                    contribution: "lifecycle.\(event.label)",
+                    errorDescription: error.localizedDescription
+                ))
+                logger.error("插件 \(plugin.info.id) lifecycle(\(event.label)) 失败：\(error.localizedDescription)")
+            }
+        }
+        if verbose {
+            logger.info("\(Self.t)\(verboseLabel) 完成")
+        }
+    }
+
     /// 注册所有插件并触发 didRegister 生命周期事件
     public static func registerAll() async {
-        for plugin in plugins {
-            await plugin.lifecycle(.didRegister)
-        }
+        _lifecycleFailures = []
+        await dispatchLifecycle(.didRegister, verboseLabel: "开始注册所有插件")
     }
 
     /// 触发应用启动生命周期事件
     public static func appDidLaunch() async {
-        for plugin in plugins {
-            await plugin.lifecycle(.appDidLaunch)
-        }
+        await dispatchLifecycle(.appDidLaunch, verboseLabel: "触发 appDidLaunch")
     }
 
     /// 在 app 启动早期、首帧渲染之前同步触发布局状态恢复。
@@ -159,20 +209,43 @@ public enum LumiPluginRegistry {
     /// restore 幂等：后续 `.appDidLaunch` 的二次调用为 no-op（普通属性 didSet 去重、divider 走无副作用的 restoreXxx）。
     @MainActor
     public static func restoreLayoutEarly() {
-        LayoutPlugin.lifecycle(.appDidLaunch)
+        if verbose {
+            logger.info("\(Self.t)同步恢复布局状态")
+        }
+        // 此入口在 PluginService.init 阶段同步调用，早于 lumiCore 就绪。lifecycle 现已
+        // 改为 throws，但此处失败通常是时序性的（layoutComponent.state 尚未就绪），不是
+        // 真失败——故用 try? 降级，不累积到 _lifecycleFailures，避免误报走 CrashedView。
+        // 真正的 lifecycle 失败由 registerAll/appDidLaunch 的聚合捕获覆盖。
+        try? LayoutPlugin.lifecycle(.appDidLaunch)
     }
 
     /// 触发项目打开生命周期事件
+    ///
+    /// 运行期事件（非启动期）：失败用 try? 降级，不走 CrashedView。
     public static func projectDidOpen(path: String) async {
+        if verbose {
+            logger.info("\(Self.t)项目打开：\(path)")
+        }
         for plugin in plugins {
-            await plugin.lifecycle(.projectDidOpen(path: path))
+            try? await plugin.lifecycle(.projectDidOpen(path: path))
+        }
+        if verbose {
+            logger.info("\(Self.t)projectDidOpen 完成")
         }
     }
 
     /// 触发项目关闭生命周期事件
+    ///
+    /// 运行期事件（非启动期）：失败用 try? 降级，不走 CrashedView。
     public static func projectDidClose() async {
+        if verbose {
+            logger.info("\(Self.t)触发项目关闭生命周期")
+        }
         for plugin in plugins {
-            await plugin.lifecycle(.projectDidClose)
+            try? await plugin.lifecycle(.projectDidClose)
+        }
+        if verbose {
+            logger.info("\(Self.t)projectDidClose 完成")
         }
     }
 
@@ -190,10 +263,19 @@ public enum LumiPluginRegistry {
         }
 
         // 过滤出重复的 ID
-        return idToPlugins
+        let duplicates = idToPlugins
             .filter { $0.value.count > 1 }
             .map { (id: $0.key, plugins: $0.value) }
             .sorted { $0.id < $1.id }
+
+        if verbose {
+            if duplicates.isEmpty {
+                logger.info("\(Self.t)未检测到重复插件 ID")
+            } else {
+                logger.warning("\(Self.t)检测到重复插件 ID：\(duplicates.map { $0.id }.joined(separator: ", "))")
+            }
+        }
+        return duplicates
     }
 
     public static let plugins: [any LumiPlugin.Type] =

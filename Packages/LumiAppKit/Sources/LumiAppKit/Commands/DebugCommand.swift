@@ -60,7 +60,10 @@ public struct DebugCommand: Commands, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)打开数据库目录")
                 }
-                Self.openURL(StorageService.makeDataRootDirectory())
+                // makeDataRootDirectory() 已改为 throws（启动期失败走 CrashedView）。
+                // 此处是调试菜单的便利入口，非启动路径，用 try? 降级到 Application Support 目录。
+                let url = (try? StorageService.makeDataRootDirectory()) ?? Self.appSupportDirectory()
+                Self.openURL(url)
             }
         }
     }

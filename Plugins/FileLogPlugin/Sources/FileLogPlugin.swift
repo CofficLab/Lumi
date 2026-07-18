@@ -30,7 +30,7 @@ public enum FileLogPlugin: LumiPlugin {
     /// 只要 `LumiPluginRegistry` 在任一阶段调用了 `lifecycle(...)`，
     /// Coordinator 就会被启动。宿主无需感知本插件存在。
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
+    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
         switch event {
         case .didRegister, .appDidLaunch:
             // 从 LumiCore.current 注入 plugin 目录(替代旧的 nonisolated 镜像)。

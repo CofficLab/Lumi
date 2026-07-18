@@ -12,7 +12,7 @@ struct ChatStreamingUpdateSuite {
 
         let chunks = (0..<40).map { "token\($0)" }
         let provider = ChunkedStreamingMockProvider(chunks: chunks)
-        let (service, conversationID) = ChatPerformanceTestSupport.configuredService(
+        let (service, conversationID) = try ChatPerformanceTestSupport.configuredService(
             directory: directory,
             provider: provider
         )
@@ -46,7 +46,7 @@ struct ChatStreamingUpdateSuite {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let provider = ChunkedStreamingMockProvider(chunks: ["hello", "world"])
-        let (service, conversationID) = ChatPerformanceTestSupport.configuredService(
+        let (service, conversationID) = try ChatPerformanceTestSupport.configuredService(
             directory: directory,
             provider: provider
         )
@@ -79,7 +79,7 @@ struct ChatStreamingUpdateSuite {
             chunks: ["a", "b", "c"],
             chunkDelayNanoseconds: 5_000_000
         )
-        let (service, conversationID) = ChatPerformanceTestSupport.configuredService(
+        let (service, conversationID) = try ChatPerformanceTestSupport.configuredService(
             directory: directory,
             provider: provider
         )
@@ -110,11 +110,11 @@ struct ChatStreamingUpdateSuite {
         #expect(observedStatusIDs.count <= 1)
     }
 
-    @Test func eachPersistedMessageAppendTriggersSnapshotSave() {
+    @Test func eachPersistedMessageAppendTriggersSnapshotSave() throws {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "Persist budget")
         let persistBefore = service.persistCallCount
 

@@ -83,12 +83,19 @@ public final class AgentToolComponent {
 
         // 工具名称唯一性已在 boot 阶段通过 LumiToolNameDeduplication 校验，
         // 此处使用 registerTools 直接注册（覆盖模式）。
-        // 由于 boot 已保证唯一性，理论上不会抛出错误，但 Swift 要求处理 throwing 方法。
+        // 理论上不会抛错，但若真的抛了（运行期注册了与 boot 期不同的工具集），
+        // 把错误纳入 toolContributionFailures，让 bootstrapAfterPluginLifecycle 的
+        // 失败检查能覆盖到它，最终走 CrashedView，而不是静默只记日志。
         do {
             try toolService.registerTools(pluginTools)
         } catch {
-            // 理论上不应发生（boot 已校验），但为了健壮性仍做容错处理 + 留下日志便于诊断。
             Self.logger.error("registerTools 失败（理论上 boot 已校验唯一性）：\(error.localizedDescription)")
+            toolContributionFailures.append(LumiPluginContributionFailure(
+                pluginID: "<tool-service>",
+                pluginDisplayName: "ToolService",
+                contribution: "registerTools",
+                errorDescription: error.localizedDescription
+            ))
         }
 
         // 2. 注册内置工具（no_op / conversation_info）

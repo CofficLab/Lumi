@@ -91,12 +91,12 @@ public final class ChatService: ObservableObject, LumiChatServicing {
 
     // MARK: - Init
 
-    public init(configuration: Configuration, lumiCore: (any LumiCoreAccessing)? = nil) {
-        let store = ChatStore(configuration: configuration)
+    public init(configuration: Configuration, lumiCore: (any LumiCoreAccessing)? = nil) throws {
+        let store = try ChatStore(configuration: configuration)
         self.store = store
         self.backgroundQueryContainer = store.sharedContainer
         self.lumiCore = lumiCore
-        let snapshot = store.load()
+        let snapshot = try store.load()
         self.conversations = snapshot.conversations
         self.messagesByConversationID = MessageManager.messagesByMergingToolResults(snapshot.messagesByConversationID)
         self.selectedConversationID = snapshot.selectedConversationID

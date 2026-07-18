@@ -92,9 +92,9 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct InlineToolCallRetrySuite {
-    private func makeService(provider: SequencedResponseMockProvider) -> (ChatService, UUID) {
+    private func makeService(provider: SequencedResponseMockProvider) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "InlineToolCallRetry")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -109,7 +109,7 @@ struct InlineToolCallRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Done") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let firstMessage = LumiChatMessage(
             conversationID: conversationID,
@@ -146,7 +146,7 @@ struct InlineToolCallRetrySuite {
                 role: .assistant,
                 content: "{\"name\":\"read_file\",\"arguments\":{\"path\":\"a.swift\"}}") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let firstMessage = LumiChatMessage(
             conversationID: conversationID,
@@ -174,7 +174,7 @@ struct InlineToolCallRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Hello!") }
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let firstMessage = LumiChatMessage(
             conversationID: conversationID,
@@ -202,7 +202,7 @@ struct InlineToolCallRetrySuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "OK") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
 
         let firstMessage = LumiChatMessage(
             conversationID: conversationID,
@@ -234,9 +234,9 @@ struct InlineToolCallEndToEndSuite {
     private func makeService(
         provider: SequencedResponseMockProvider,
         toolService: LumiToolServicing? = nil
-    ) -> (ChatService, UUID) {
+    ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
-        let service = ChatService(configuration: .coreDatabase(directory: directory))
+        let service = try ChatService(configuration: .coreDatabase(directory: directory))
         let conversationID = service.createConversation(title: "InlineE2E")
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
@@ -266,7 +266,7 @@ struct InlineToolCallEndToEndSuite {
                 role: .assistant, content: "Task done") },
         ])
         let toolService = NoOpToolService()
-        let (service, conversationID) = makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)
@@ -292,7 +292,7 @@ struct InlineToolCallEndToEndSuite {
                 role: .assistant,
                 content: "<function_calls><invoke>noop</invoke></function_calls>") },
         ])
-        let (service, conversationID) = makeService(provider: provider)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)
@@ -317,7 +317,7 @@ struct InlineToolCallEndToEndSuite {
                 role: .assistant, content: "Done") },
         ])
         let toolService = NoOpToolService()
-        let (service, conversationID) = makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
         let outcome = try await service.runAgentTurn(conversationID: conversationID)

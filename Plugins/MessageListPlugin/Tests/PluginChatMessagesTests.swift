@@ -27,12 +27,12 @@ import Testing
 }
 
 @MainActor
-@Test func chatMessagesSectionPluginContributesItemWithCoordinator() {
+@Test func chatMessagesSectionPluginContributesItemWithCoordinator() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("MessageListPluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let context = LumiPluginContext(
         activeSectionID: "chat",

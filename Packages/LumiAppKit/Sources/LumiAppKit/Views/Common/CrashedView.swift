@@ -89,7 +89,11 @@ struct CrashedView: View {
                 GroupBox {
                     makeKeyValueItem(
                         key: String(localized: "App Support"),
-                        value: StorageService.makeDataRootDirectory().path(percentEncoded: false)
+                        // 崩溃屏自身不能 throw（否则崩溃屏二次崩溃）。
+                        // makeDataRootDirectory() 已改为 throws，此处用 try? 降级；
+                        // 解析失败时显示占位符，恰好说明环境异常。
+                        value: (try? StorageService.makeDataRootDirectory())?.path(percentEncoded: false)
+                            ?? "(unavailable)"
                     )
                 }
             }, header: { makeTitle("Folders") })

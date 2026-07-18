@@ -88,8 +88,14 @@ public protocol LumiPlugin {
     // MARK: - Lifecycle
 
     /// 插件生命周期事件
+    ///
+    /// 允许 `throws`：插件在 `.didRegister` / `.appDidLaunch` 里初始化数据库、读取配置、
+    /// 加载外部 SDK 等可能失败的操作时，应抛错而不是静默降级（典型如 in-memory 降级会
+    /// 导致"数据不落盘但用户无感"）。聚合层（`LumiPluginRegistry.registerAll` /
+    /// `appDidLaunch`）会逐插件捕获并累积到失败列表，启动期失败经
+    /// `bootstrapAfterPluginLifecycle` 走 CrashedView。
     @MainActor
-    static func lifecycle(_ event: LumiPluginLifecycle)
+    static func lifecycle(_ event: LumiPluginLifecycle) throws
 
     /// Agent Turn 结束后钩子（可选实现）
     ///
@@ -145,6 +151,17 @@ public enum LumiPluginLifecycle {
     case projectDidOpen(path: String)  // 项目打开时
     case projectDidClose  // 项目关闭时
     case willDisable      // 插件即将被禁用时
+
+    /// 用于日志与失败上报的可读标签。
+    public var label: String {
+        switch self {
+        case .didRegister: return "didRegister"
+        case .appDidLaunch: return "appDidLaunch"
+        case .projectDidOpen: return "projectDidOpen"
+        case .projectDidClose: return "projectDidClose"
+        case .willDisable: return "willDisable"
+        }
+    }
 }
 
 public extension LumiPlugin {
@@ -296,7 +313,7 @@ public extension LumiPlugin {
     // MARK: - Lifecycle Default Implementation
 
     @MainActor
-    static func lifecycle(_ event: LumiPluginLifecycle) {}
+    static func lifecycle(_ event: LumiPluginLifecycle) throws {}
 
     // MARK: - Turn Finished Hook Default Implementation
 

@@ -101,7 +101,7 @@ enum ToolExecutionStatusTestsSupport {
         .appendingPathComponent("LumiChatKitToolStatus-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let service = ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory))
     let conversationID = service.createConversation(title: "Tool Progress")
     service.setAutomationLevel(.autonomous, for: conversationID)
     service.registerProviders([AgentTurnMockProvider()])

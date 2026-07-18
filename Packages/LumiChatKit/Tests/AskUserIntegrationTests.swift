@@ -31,12 +31,12 @@ import Testing
 }
 
 @MainActor
-@Test func resumeAfterAskUserReplacesPendingResult() async {
+@Test func resumeAfterAskUserReplacesPendingResult() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("LumiChatKitAskUser-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let service = ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory))
     let conversationID = service.createConversation(title: "Ask User")
     let assistantID = UUID()
     let toolCallID = "call-ask-user"

@@ -175,11 +175,11 @@ private final class HighRiskToolService: LumiToolServicing {
 // MARK: - Helpers
 
 @MainActor
-private func makeService() -> (ChatService, UUID, HighRiskToolService) {
+private func makeService() throws -> (ChatService, UUID, HighRiskToolService) {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("LumiChatKitToolApproval-\(UUID().uuidString)", isDirectory: true)
 
-    let service = ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory))
     let conversationID = service.createConversation(title: "Approval Cancel")
     // 关键：.build 模式才会触发高危工具的审批弹窗（.autonomous 会跳过审批直接执行）。
     service.setAutomationLevel(.build, for: conversationID)
@@ -223,7 +223,7 @@ private func waitForApprovalPending(
 
 @MainActor
 @Test func cancelDuringToolApprovalResumesContinuationAndDoesNotDeadlock() async throws {
-    let (service, conversationID, toolService) = makeService()
+    let (service, conversationID, toolService) = try makeService()
 
     // 启动 turn，它会在 requestToolApproval 处挂起，等待用户审批。
     let turnTask = Task { @MainActor in
@@ -253,7 +253,7 @@ private func waitForApprovalPending(
 @MainActor
 @Test func resumingApprovalTwiceIsSafe() async throws {
     // toolService 必须强持有：ChatService.toolService 是 weak，丢弃返回值会令其立即释放。
-    let (service, conversationID, _toolService) = makeService()
+    let (service, conversationID, _toolService) = try makeService()
 
     let turnTask = Task { @MainActor in
         _ = try? await service.runAgentTurn(conversationID: conversationID)
@@ -282,7 +282,7 @@ private func waitForApprovalPending(
 @MainActor
 @Test func cancellingUnrelatedConversationDoesNotDisturbPendingApproval() async throws {
     // toolService 必须强持有（见上一个测试的说明）。
-    let (service, conversationA, _toolService) = makeService()
+    let (service, conversationA, _toolService) = try makeService()
 
     // 第二个会话，用于触发一次「无关的」cancel。
     let conversationB = service.createConversation(title: "Unrelated")
@@ -323,7 +323,7 @@ private func waitForApprovalPending(
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("LumiChatKitToolApprovalTrunc-\(UUID().uuidString)", isDirectory: true)
 
-    let service = ChatService(configuration: .coreDatabase(directory: directory))
+    let service = try ChatService(configuration: .coreDatabase(directory: directory))
     let conversationID = service.createConversation(title: "Truncated Args")
     service.setAutomationLevel(.build, for: conversationID)
     // 模拟流被截断：arguments 是半截 JSON，JSONDecoder 会抛错。

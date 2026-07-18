@@ -23,12 +23,12 @@ import Testing
 }
 
 @MainActor
-@Test func pluginRegistersTitleToolWhenChatServiceExists() {
+@Test func pluginRegistersTitleToolWhenChatServiceExists() throws {
     let databaseDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ConversationTitlePluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: databaseDirectory) }
 
-    let chatService = ChatService(
+    let chatService = try ChatService(
         configuration: .coreDatabase(directory: databaseDirectory)
     )
     let context = LumiPluginContext(
@@ -44,12 +44,12 @@ import Testing
 }
 
 @MainActor
-@Test func pluginContributesTitleHeaderWhenChatSectionVisible() {
+@Test func pluginContributesTitleHeaderWhenChatSectionVisible() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ConversationTitlePluginTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
+    let chatService = try ChatService(configuration: .coreDatabase(directory: directory))
     let coordinator = ChatSectionCoordinator(chatService: chatService)
     let hidden = LumiPluginContext(
         activeSectionID: "editor",
