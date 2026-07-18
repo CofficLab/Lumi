@@ -192,6 +192,17 @@ ChatKit：`ChatService.swift:8` 的 `static weak var shared`，且 `BuiltInTools
 
 ### 阶段 0：通知与枚举统一（零架构成本，立即收益）
 
+> ✅ **已于本次清理完成**（2026-07）：`AgentTurn/` 模块整批 legacy 类型已移除——
+> `AgentNotifications.swift`（连同 `.messageSaved`/`.agentTurnPhaseChanged` 及 no-op 的
+> `AgentTurnLifecycle.postTurnFinished`）、废弃 `TurnEndReason` 及其桥接 `init`、
+> `AgentChatMessage` / `AgentConversationStore` / `AgentLLMSendService` / `AgentTurnPhase` /
+> `AgentTurnDerivation` / `NotifyingAgentConversationStore` / `AgentSendPipelineLog` /
+> `ToolExecutionSummary` 全部删除；`SuperPluginLegacyTypes.PluginRuntimeContext` 中无人
+> 覆盖的 Agent pipeline 闭包段一并剥离。模块现仅保留 4 个 Lumi 前缀类型
+> （`LumiAgentTurnCheck` / `LumiAgentTurnOutcome` / `LumiAgentTurnDerivation` / `LumiTurnEndReason`）。
+> 通知名权威定义在 `Chat/LumiChatNotifications.swift`，turn 结束通知由
+> `LumiChatKit.SendPipeline` 唯一发送。
+
 **目标**：消除双重发送、重复定义。不移动任何文件、不改依赖图。
 
 | 动作 | 文件 |

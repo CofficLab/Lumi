@@ -2,61 +2,6 @@ import Foundation
 import LumiCoreKit
 import Testing
 
-@Suite("AgentTurnDerivation")
-struct AgentTurnDerivationTests {
-    private let conversationId = UUID()
-
-    @Test("pending user message allows dequeue when idle")
-    func dequeueWhenIdle() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending),
-        ]
-        #expect(AgentTurnDerivation.shouldDequeueNextTurn(messages: messages, phase: .idle))
-    }
-
-    @Test("does not dequeue while processing")
-    func noDequeueWhenBusy() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi", queueStatus: .pending),
-        ]
-        #expect(!AgentTurnDerivation.shouldDequeueNextTurn(messages: messages, phase: .processing))
-    }
-
-    @Test("assistant error ends turn as failed")
-    func assistantErrorIsFailedTurn() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
-            AgentChatMessage(role: .assistant, conversationId: conversationId, content: "503", isError: true),
-        ]
-        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .failed("503"))
-        #expect(AgentTurnDerivation.isTurnComplete(messages: messages))
-    }
-
-    @Test("successful assistant without tools completes turn")
-    func assistantCompletesTurn() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
-            AgentChatMessage(role: .assistant, conversationId: conversationId, content: "done"),
-        ]
-        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .completed)
-    }
-
-    @Test("assistant with pending tool calls is not complete")
-    func assistantWithToolsIsIncomplete() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
-            AgentChatMessage(
-                role: .assistant,
-                conversationId: conversationId,
-                content: "",
-                toolCalls: [AgentChatToolCall(id: "1", name: "read", arguments: "{}")]
-            ),
-        ]
-        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == nil)
-        #expect(AgentTurnDerivation.shouldExecuteTools(messages: messages, phase: .processing))
-    }
-}
-
 @Suite("LumiAgentTurnDerivation")
 struct LumiAgentTurnDerivationTests {
     private let conversationId = UUID()
@@ -90,38 +35,6 @@ struct LumiAgentTurnDerivationTests {
     func failedTurnBlocksContinuation() {
         #expect(LumiTurnEndReason.failed.allowsAutomaticContinuation == false)
         #expect(LumiTurnEndReason.completed.allowsAutomaticContinuation == true)
-    }
-
-    @Test("postTurnFinished is a no-op; turn notifications are owned by LumiChatKit.SendPipeline")
-    @MainActor
-    func agentTurnLifecycleNotifications() async {
-        // 阶段 0 重构后：turn 结束通知（`.lumiTurnFinished` / `.lumiTurnCompleted`）
-        // 统一由 `LumiChatKit.SendPipeline` 唯一发送，`AgentTurnLifecycle.postTurnFinished`
-        // 退化为 no-op（仅保留签名以兼容插件 legacy 默认闭包）。此测试固化该契约：
-        // 调用它不得触发任何 turn 通知。
-        let conversationID = UUID()
-        var anyTurnFired = false
-
-        let finishedObserver = NotificationCenter.default.addObserver(
-            forName: .lumiTurnFinished,
-            object: nil,
-            queue: .main
-        ) { _ in anyTurnFired = true }
-        let completedObserver = NotificationCenter.default.addObserver(
-            forName: .lumiTurnCompleted,
-            object: nil,
-            queue: .main
-        ) { _ in anyTurnFired = true }
-        defer {
-            NotificationCenter.default.removeObserver(finishedObserver)
-            NotificationCenter.default.removeObserver(completedObserver)
-        }
-
-        AgentTurnLifecycle.postTurnFinished(conversationID: conversationID, reason: .failed("503"))
-        AgentTurnLifecycle.postTurnFinished(conversationID: conversationID, reason: .completed)
-        await Task.yield()
-
-        #expect(anyTurnFired == false)
     }
 
     @Test("LumiTurnEndReason reconstructs from notification userInfo")
@@ -207,40 +120,6 @@ struct LumiChatMessageIsEmptyResponseTests {
     }
 }
 
-@Suite("AgentChatMessage.isEmptyResponse")
-struct AgentChatMessageIsEmptyResponseTests {
-    private let conversationId = UUID()
-
-    @Test("normal text is not empty")
-    func normalTextIsNotEmpty() {
-        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "Hello")
-        #expect(!msg.isEmptyResponse)
-    }
-
-    @Test("empty string is empty")
-    func emptyStringIsEmpty() {
-        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "")
-        #expect(msg.isEmptyResponse)
-    }
-
-    @Test("with toolCall is not empty")
-    func withToolCallIsNotEmpty() {
-        let msg = AgentChatMessage(
-            role: .assistant,
-            conversationId: conversationId,
-            content: "",
-            toolCalls: [AgentChatToolCall(id: "1", name: "read", arguments: "{}")]
-        )
-        #expect(!msg.isEmptyResponse)
-    }
-
-    @Test("error message is not empty")
-    func errorMessageIsNotEmpty() {
-        let msg = AgentChatMessage(role: .assistant, conversationId: conversationId, content: "", isError: true)
-        #expect(!msg.isEmptyResponse)
-    }
-}
-
 // MARK: - Turn Derivation with Empty Response
 
 @Suite("LumiAgentTurnDerivation empty response")
@@ -289,25 +168,3 @@ struct LumiAgentTurnDerivationEmptyResponseTests {
     }
 }
 
-@Suite("AgentTurnDerivation empty response")
-struct AgentTurnDerivationEmptyResponseTests {
-    private let conversationId = UUID()
-
-    @Test("empty assistant without toolCall is failed")
-    func emptyAssistantIsFailed() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
-            AgentChatMessage(role: .assistant, conversationId: conversationId, content: ""),
-        ]
-        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .failed(""))
-    }
-
-    @Test("non-empty assistant completes")
-    func nonEmptyAssistantCompletes() {
-        let messages = [
-            AgentChatMessage(role: .user, conversationId: conversationId, content: "hi"),
-            AgentChatMessage(role: .assistant, conversationId: conversationId, content: "done"),
-        ]
-        #expect(AgentTurnDerivation.turnEndReason(messages: messages) == .completed)
-    }
-}
