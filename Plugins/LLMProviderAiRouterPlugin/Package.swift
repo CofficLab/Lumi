@@ -15,14 +15,16 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiCoreKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderAiRouterPlugin",
             dependencies: [
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Sources",
             resources: [

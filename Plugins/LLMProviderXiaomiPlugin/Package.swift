@@ -16,7 +16,8 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -25,7 +26,8 @@ let package = Package(
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
@@ -39,7 +41,8 @@ let package = Package(
                 "LLMProviderXiaomiPlugin",
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
             ],
             path: "Tests"
         )
