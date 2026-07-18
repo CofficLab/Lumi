@@ -1,0 +1,106 @@
+import Foundation
+import HttpKit
+import LLMKit
+import LumiCoreKit
+
+public enum OpenAICompatibleAvailability {
+    public static func chatPing(
+        model: String,
+        adapter: OpenAICompatibleProviderAdapter,
+        apiService: LLMAPIService,
+        buildRequest: (URL, String) -> URLRequest,
+        resolveAPIKey: () throws -> String
+    ) async -> LumiModelAvailabilityResult {
+        await LLMProviderAvailabilitySupport.chatPing(
+            model: model,
+            baseURL: adapter.configuration.baseURL,
+            apiService: apiService,
+            buildRequestBody: { model in
+                try adapter.buildRequestBody(
+                    messages: [ChatMessage(role: .user, content: "ping")],
+                    model: model,
+                    tools: nil,
+                    systemPrompt: ""
+                )
+            },
+            buildRequest: buildRequest,
+            resolveAPIKey: resolveAPIKey
+        )
+    }
+}
+
+public enum AnthropicCompatibleAvailability {
+    public static func chatPing(
+        model: String,
+        adapter: AnthropicCompatibleProviderAdapter,
+        apiService: LLMAPIService,
+        buildRequest: (URL, String) -> URLRequest,
+        resolveAPIKey: () throws -> String
+    ) async -> LumiModelAvailabilityResult {
+        await LLMProviderAvailabilitySupport.chatPing(
+            model: model,
+            baseURL: adapter.configuration.baseURL,
+            apiService: apiService,
+            buildRequestBody: { model in
+                try adapter.buildRequestBody(
+                    messages: [ChatMessage(role: .user, content: "ping")],
+                    model: model,
+                    tools: nil,
+                    systemPrompt: ""
+                )
+            },
+            buildRequest: buildRequest,
+            resolveAPIKey: resolveAPIKey
+        )
+    }
+}
+
+enum LLMProviderAvailabilitySupport {
+    static let pingMaxTokens = 1
+
+    static func applyPingTokenLimit(to body: inout [String: Any]) {
+        body["max_tokens"] = pingMaxTokens
+    }
+
+    static func chatPing(
+        model: String,
+        baseURL: String,
+        apiService: LLMAPIService,
+        buildRequestBody: (String) throws -> [String: Any],
+        buildRequest: (URL, String) -> URLRequest,
+        resolveAPIKey: () throws -> String
+    ) async -> LumiModelAvailabilityResult {
+        let apiKeyValue: String
+        do {
+            apiKeyValue = try resolveAPIKey()
+        } catch {
+            return .unavailable( LLMFailureDetailResolver.resolve(from: error))
+        }
+
+        guard let url = URL(string: baseURL) else {
+            return .unavailable( .message("无效的 Base URL"))
+        }
+
+        let body: [String: Any]
+        do {
+            var builtBody = try buildRequestBody(model)
+            applyPingTokenLimit(to: &builtBody)
+            body = builtBody
+        } catch {
+            return .unavailable(.message(error.localizedDescription))
+        }
+
+        let httpRequest = buildRequest(url, apiKeyValue)
+
+        do {
+            _ = try await apiService.sendChatRequest(
+                request: httpRequest,
+                body: body
+            )
+            return .available
+        } catch {
+            let detail = LLMFailureDetailResolver.resolve(from: error)
+            return .unavailable( detail)
+        }
+    }
+}

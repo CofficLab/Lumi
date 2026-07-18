@@ -167,6 +167,7 @@ import Testing
     let core = try LumiCore(
         dataRootDirectory: root,
         provider: EmptyAgentToolProvider(),
+        agentToolComponent: AgentToolComponent(),
         chatServiceFactory: { _ in StubChatServicing() }
     )
 

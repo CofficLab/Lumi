@@ -19,7 +19,7 @@ import SwiftUI
 /// 允许 SwiftUI 视图通过 `@EnvironmentObject` 完整观察内核状态变化。
 ///   所有访问必须在主线程（`@MainActor`）。
 @MainActor
-public protocol LumiCoreAccessing: AnyObject, ObservableObject {
+public protocol LumiCoreAccessing: LumiCoreProviding, ObservableObject {
     // MARK: - State
 
     /// 存储功能组件。归拢路径计算(coreDataDirectory / pluginDataDirectory(for:))。

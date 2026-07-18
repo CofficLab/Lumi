@@ -34,6 +34,7 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
         dataRootDirectory: URL,
         provider: any AgentToolProviding,
         builtInTools: [any LumiAgentTool] = [],
+        agentToolComponent: AgentToolComponent,
         chatServiceFactory: @escaping ChatServiceFactory,
         editorFactory: (@MainActor (any AgentToolProviding) throws -> any AbstractEditorServicing)? = nil
     ) throws {
@@ -44,7 +45,6 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
         self.layoutComponent = layoutComponent
         let logoComponent = LogoComponent()
         self.logoComponent = logoComponent
-        let agentToolComponent = AgentToolComponent()
         self.agentToolComponent = agentToolComponent
 
         // 2. 物化 data root,在其下创建 Core 子目录

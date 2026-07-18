@@ -65,13 +65,12 @@ public typealias LumiMessagePerformanceMetadata = LumiComponentChat.LumiMessageP
 public typealias LumiMessageTokenMetadata = LumiComponentChat.LumiMessageTokenMetadata
 public typealias LumiToolTag = LumiComponentMessage.LumiToolTag
 
-@_exported import LumiComponentTurn
-
 // MARK: - Turn Types
+// LumiTurnEndReason 已下沉到 LumiComponentMessage（通过 @_exported import 导出）
+// TurnDerivation 和 TurnOutcome 已合并到 LumiComponentChat
 
-public typealias TurnDerivation = LumiComponentTurn.TurnDerivation
-public typealias TurnOutcome = LumiComponentTurn.TurnOutcome
-public typealias LumiTurnEndReason = LumiComponentTurn.LumiTurnEndReason
+public typealias TurnDerivation = LumiComponentChat.TurnDerivation
+public typealias TurnOutcome = LumiComponentChat.TurnOutcome
 
 @_exported import LumiComponentAgentTool
 
