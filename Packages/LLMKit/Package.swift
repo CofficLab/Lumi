@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(name: "HttpKit", path: "../HttpKit"),
         .package(path: "../LumiLocalizationKit"),
+        .package(path: "../KeychainKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 "HttpKit",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "KeychainKit", package: "KeychainKit"),
             ],
             path: "Sources/LLMKit",
             resources: [

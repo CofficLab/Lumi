@@ -1,11 +1,10 @@
 import Foundation
 import HttpKit
-import LLMKit
 
 /// 传输详情工具函数
 ///
 /// 提供统一的传输详情格式化逻辑，用于错误消息和调试。
-public enum LumiTransportDetailsSupport {
+public enum TransportDetailsSupport {
     
     /// 构建传输详情字符串
     ///
@@ -25,7 +24,7 @@ public enum LumiTransportDetailsSupport {
         lines.append("Request Headers:")
         lines.append(prettyHeaders(maskedHeaders(request.allHTTPHeaderFields ?? [:])))
         lines.append("Request Body:")
-        lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(prettyJSON(requestBody)))
+        lines.append(LLMTransportDetails.truncatedBodyForDisplay(prettyJSON(requestBody)))
         
         if let state {
             let status = await state.httpStatusCode
@@ -35,7 +34,7 @@ public enum LumiTransportDetailsSupport {
             lines.append("Response Headers:")
             lines.append(prettyHeaders(maskedHeaders(responseHeaders)))
             lines.append("Response Body:")
-            lines.append(LumiLLMTransportDetails.truncatedBodyForDisplay(responseBody))
+            lines.append(LLMTransportDetails.truncatedBodyForDisplay(responseBody))
         }
         return lines.joined(separator: "\n")
     }

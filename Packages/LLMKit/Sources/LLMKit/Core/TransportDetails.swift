@@ -1,11 +1,11 @@
 import Foundation
 
-public enum LumiLLMTransportMetadata {
+public enum LLMTransportMetadata {
     public static let requestDetails = "llm.transport.request"
     public static let responseDetails = "llm.transport.response"
 }
 
-public struct LumiLLMTransportDetailsSplit: Equatable, Sendable {
+public struct LLMTransportDetailsSplit: Equatable, Sendable {
     public let summary: String
     public let requestDetails: String?
     public let responseDetails: String?
@@ -21,7 +21,7 @@ public struct LumiLLMTransportDetailsSplit: Equatable, Sendable {
     }
 }
 
-public enum LumiLLMTransportDetails {
+public enum LLMTransportDetails {
     public static let summarySeparator = "\n\n--- Request / Response Details ---\n"
     public static let maxBodyDisplayCharacters = 2_000
     private static let responseSectionMarker = "Response Status:"
@@ -32,9 +32,9 @@ public enum LumiLLMTransportDetails {
         return prefix + "\n...[truncated, \(text.count) characters total]"
     }
 
-    public static func split(_ fullDetail: String) -> LumiLLMTransportDetailsSplit {
+    public static func split(_ fullDetail: String) -> LLMTransportDetailsSplit {
         guard let separatorRange = fullDetail.range(of: summarySeparator) else {
-            return LumiLLMTransportDetailsSplit(
+            return LLMTransportDetailsSplit(
                 summary: fullDetail,
                 requestDetails: nil,
                 responseDetails: nil
@@ -45,20 +45,20 @@ public enum LumiLLMTransportDetails {
         let detailsBlock = String(fullDetail[separatorRange.upperBound...])
         let (request, response) = splitDetailsBlock(detailsBlock)
 
-        return LumiLLMTransportDetailsSplit(
+        return LLMTransportDetailsSplit(
             summary: summary,
             requestDetails: request,
             responseDetails: response
         )
     }
 
-    public static func metadata(from split: LumiLLMTransportDetailsSplit) -> [String: String] {
+    public static func metadata(from split: LLMTransportDetailsSplit) -> [String: String] {
         var metadata: [String: String] = [:]
         if let request = split.requestDetails {
-            metadata[LumiLLMTransportMetadata.requestDetails] = request
+            metadata[LLMTransportMetadata.requestDetails] = request
         }
         if let response = split.responseDetails {
-            metadata[LumiLLMTransportMetadata.responseDetails] = response
+            metadata[LLMTransportMetadata.responseDetails] = response
         }
         return metadata
     }
