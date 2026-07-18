@@ -11,7 +11,7 @@ import LLMProviderFlyMuxPlugin
 import LLMProviderFreeModelPlugin
 import LLMProviderHappyCodePlugin
 import LLMProviderHyperAPIPlugin
-import LLMProviderKimiCodePlugin
+// import LLMProviderKimiCodePlugin  // TODO: module dependency issue
 import LLMProviderLPgptPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMegaLLMPlugin
@@ -42,7 +42,7 @@ extension LumiPluginRegistry {
 
         // MARK: - Other Providers
 
-        KimiCodePlugin.self,
+        // KimiCodePlugin.self,  // TODO: module dependency issue
         FeifeimiaoPlugin.self,
         FlyMuxPlugin.self,
         FreeModelPlugin.self,

@@ -3,20 +3,21 @@ import PackageDescription
 
 let package = Package(
     name: "LumiComponentAgentTool",
-    platforms: [
-        .macOS(.v14)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
-        .library(
-            name: "LumiComponentAgentTool",
-            targets: ["LumiComponentAgentTool"]
-        ),
+        .library(name: "LumiComponentAgentTool", targets: ["LumiComponentAgentTool"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../LumiComponentMessage"),
+    ],
     targets: [
         .target(
             name: "LumiComponentAgentTool",
+            dependencies: [
+                .product(name: "LumiComponentMessage", package: "LumiComponentMessage"),
+            ],
             path: "Sources"
         ),
+        .testTarget(name: "LumiComponentAgentToolTests", dependencies: ["LumiComponentAgentTool"])
     ]
 )

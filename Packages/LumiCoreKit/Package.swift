@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../LumiComponentGit"),
         .package(path: "../LumiComponentProject"),
         .package(path: "../LumiComponentStorage"),
+        .package(path: "../LumiComponentMessage"),
     ],
     targets: [
         .target(
@@ -33,6 +34,7 @@ let package = Package(
                 .product(name: "LumiComponentGit", package: "LumiComponentGit"),
                 .product(name: "LumiComponentProject", package: "LumiComponentProject"),
                 .product(name: "LumiComponentStorage", package: "LumiComponentStorage"),
+                .product(name: "LumiComponentMessage", package: "LumiComponentMessage"),
             ],
             path: "Sources",
             resources: [

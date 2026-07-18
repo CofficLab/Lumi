@@ -7,6 +7,7 @@ final class PreviewLumiCoreStub: LumiCoreAccessing {
     let projectComponent = ProjectComponent()
     let layoutComponent = LayoutComponent(state: LayoutState())
     let chatService: any LumiChatServicing = PreviewChatServicing()
+    let agentToolComponent = AgentToolComponent()
     var editorService: (any AbstractEditorServicing)? { nil }
 
     func makePluginContext(
