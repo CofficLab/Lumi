@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiComponentMessage"),
         .package(path: "../LumiComponentAgentTool"),
+        .package(path: "../LumiComponentLLMProvider"),
     ],
     targets: [
         .target(
@@ -17,6 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiComponentMessage", package: "LumiComponentMessage"),
                 .product(name: "LumiComponentAgentTool", package: "LumiComponentAgentTool"),
+                .product(name: "LumiComponentLLMProvider", package: "LumiComponentLLMProvider"),
             ],
             path: "Sources"
         ),

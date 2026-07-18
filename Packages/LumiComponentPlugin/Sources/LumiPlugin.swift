@@ -1,3 +1,12 @@
+import LumiComponentAgentTool
+import LumiComponentLayout
+import LumiComponentLLMProvider
+import LumiComponentMenuBar
+import LumiComponentMessage
+import LumiComponentOverlay
+import LumiComponentPanelChrome
+import LumiComponentSubAgent
+import LumiComponentTurn
 import SwiftUI
 
 public protocol LumiPlugin {

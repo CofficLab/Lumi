@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 public enum LumiModelVisionSupport {
     /// Returns whether image attachments are allowed for the current model selection.

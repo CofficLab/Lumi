@@ -1,3 +1,5 @@
+import LumiComponentLLMProvider
+import LumiComponentMessage
 import SwiftUI
 
 /// A provider-specific settings detail view contributed by an LLM provider plugin.

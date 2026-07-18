@@ -10,6 +10,8 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiComponentMessage"),
         .package(path: "../LumiComponentAgentTool"),
+        .package(path: "../SuperLogKit"),
+        .package(path: "../LumiLocalizationKit"),
     ],
     targets: [
         .target(
@@ -17,6 +19,8 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiComponentMessage", package: "LumiComponentMessage"),
                 .product(name: "LumiComponentAgentTool", package: "LumiComponentAgentTool"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
             ],
             path: "Sources"
         ),

@@ -1,5 +1,4 @@
 import Foundation
-import LumiLocalizationKit
 
 public struct LumiLLMProviderStatus: Equatable, Sendable {
     public enum Level: Equatable, Sendable {
@@ -36,7 +35,7 @@ public struct LumiLLMProviderStatus: Equatable, Sendable {
 public enum LumiLLMProviderStatusSupport {
     public static func missingAPIKeyStatus(providerName: String) -> LumiLLMProviderStatus {
         LumiLLMProviderStatus(
-            message: LumiLocalization.string("API Key not configured", bundle: .module),
+            message: "API Key not configured",
             level: .warning
         )
     }

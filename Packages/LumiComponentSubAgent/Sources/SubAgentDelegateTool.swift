@@ -1,4 +1,7 @@
 @preconcurrency import Foundation
+import LumiComponentAgentTool
+import LumiComponentLLMProvider
+import LumiComponentMessage
 
 // MARK: - SubAgentDelegateTool
 
@@ -12,7 +15,7 @@
 /// - `executionToolService`：实际执行工具调用的服务。复用主 turn 的 per-request
 ///   `ToolService`，继承其路径白名单/取消机制。
 ///
-/// 注意：持有 `any LumiChatServicing` / `any LumiToolServicing`，
+/// 注意：持有 `any LumiToolServicing`，
 /// 无法满足严格的 `Sendable` 检查，用 `@unchecked Sendable` 抑制。
 public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
     public static let info = LumiAgentToolInfo(
@@ -22,18 +25,18 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
     )
 
     private let definition: LumiSubAgentDefinition
-    private let chatService: any LumiChatServicing
+    private let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)?
     private let availableTools: [any LumiAgentTool]
     private let executionToolService: any LumiToolServicing
 
     public init(
         definition: LumiSubAgentDefinition,
-        chatService: any LumiChatServicing,
+        providerResolver: @escaping @MainActor @Sendable (String) -> (any LumiLLMProvider)?,
         availableTools: [any LumiAgentTool],
         executionToolService: any LumiToolServicing
     ) {
         self.definition = definition
-        self.chatService = chatService
+        self.providerResolver = providerResolver
         self.availableTools = availableTools
         self.executionToolService = executionToolService
     }
@@ -83,7 +86,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         }
 
         // 动态解析 provider（每次取最新，避免插件 reload 后实例过期）
-        guard let provider = chatService.provider(forID: definition.providerID) else {
+        guard let provider = providerResolver(definition.providerID) else {
             return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
         }
 

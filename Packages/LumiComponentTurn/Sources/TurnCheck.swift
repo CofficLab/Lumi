@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 /// Context provided to each `LumiAgentTurnCheck` during evaluation.
 public struct TurnContext: Sendable {

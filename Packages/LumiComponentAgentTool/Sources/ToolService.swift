@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 import os
 /// 工具服务
 ///

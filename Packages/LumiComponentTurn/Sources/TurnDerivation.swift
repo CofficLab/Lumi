@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 /// 基于 `LumiChatMessage` 的 Turn 推导（供 `LumiChatKit` 与聊天侧插件使用）。
 public enum TurnDerivation {

@@ -1,4 +1,5 @@
 import Foundation
+import LumiComponentMessage
 
 /// LLM 供应商层的统一错误类型。
 ///

@@ -1,4 +1,6 @@
 import Foundation
+import LumiComponentAgentTool
+import LumiComponentSubAgent
 
 /// Agent Tool 贡献协议
 ///

@@ -1,4 +1,6 @@
 import Foundation
+import LumiComponentAgentTool
+import LumiComponentMessage
 
 /// 子 Agent 的声明式定义。
 ///

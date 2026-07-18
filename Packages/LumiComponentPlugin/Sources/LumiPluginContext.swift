@@ -1,4 +1,5 @@
 import LumiComponentLayout
+import LumiComponentProject
 
 public struct LumiPluginDependencies {
     private var values: [ObjectIdentifier: Any]
@@ -21,6 +22,13 @@ public struct LumiPluginDependencies {
     }
 }
 
+/// Protocol for core functionality that LumiPluginContext needs.
+/// LumiCoreAccessing in LumiCoreKit conforms to this.
+@MainActor
+public protocol LumiCoreProviding {
+    var projectComponent: ProjectComponent { get }
+}
+
 public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
@@ -31,7 +39,7 @@ public struct LumiPluginContext {
     public let isChatSectionVisible: Bool
     public let dependencies: LumiPluginDependencies
     /// 可选的 LumiCore 实例，供插件访问核心服务
-    public let lumiCore: (any LumiCoreAccessing)?
+    public let lumiCore: (any LumiCoreProviding)?
 
     /// Whether the active view container is configured to host a chat section.
     public var supportsChatSection: Bool {
@@ -41,12 +49,6 @@ public struct LumiPluginContext {
     /// Whether chat section contributions should be active for this context.
     public var showsChatSection: Bool {
         isChatSectionVisible
-    }
-
-    /// Current active LLM provider ID (conversation preference with global fallback).
-    @MainActor
-    public var activeProviderID: String? {
-        Self.resolveActiveProviderID(from: dependencies)
     }
 
     /// 当前打开的项目（若存在）。等价于 `lumiCore?.projectComponent.currentProject`。
@@ -67,7 +69,7 @@ public struct LumiPluginContext {
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil,
         dependencies: LumiPluginDependencies = LumiPluginDependencies(),
-        lumiCore: (any LumiCoreAccessing)? = nil
+        lumiCore: (any LumiCoreProviding)? = nil
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
@@ -98,13 +100,5 @@ public struct LumiPluginContext {
             dependencies: dependencies,
             lumiCore: lumiCore
         )
-    }
-
-    @MainActor
-    public static func resolveActiveProviderID(from dependencies: LumiPluginDependencies) -> String? {
-        guard let chatService = dependencies.resolve(LumiChatServicing.self) else {
-            return nil
-        }
-        return chatService.providerID(for: chatService.selectedConversationID)
     }
 }

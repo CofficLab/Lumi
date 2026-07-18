@@ -1,4 +1,7 @@
 import Foundation
+import LumiComponentLLMProvider
+import LumiComponentMessage
+import LumiComponentTurn
 
 /// Chat 贡献协议
 ///
