@@ -22,16 +22,12 @@ public struct LumiPluginDependencies {
     }
 }
 
-/// Protocol for core functionality that LumiPluginContext needs.
-/// LumiCoreAccessing in LumiCoreKit conforms to this.
+/// Plugin context containing view state and core reference.
 ///
-/// This protocol provides a minimal interface for plugin context,
-/// allowing access to the project component.
-@MainActor
-public protocol LumiCoreProviding: AnyObject {
-    var projectComponent: ProjectComponent { get }
-}
-
+/// This struct provides:
+/// - View state (activeSectionID, chatSection, etc.)
+/// - Service dependencies injection
+/// - Reference to core functionality via LumiCoreAccessing
 public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
@@ -41,8 +37,9 @@ public struct LumiPluginContext {
     /// Whether the chat section is currently rendered in the app layout.
     public let isChatSectionVisible: Bool
     public let dependencies: LumiPluginDependencies
-    /// 可选的 LumiCore 实例，供插件访问核心服务
-    public let lumiCore: (any LumiCoreProviding)?
+    /// Reference to LumiCore for accessing core functionality.
+    /// Uses LumiCoreAccessing protocol for full API access.
+    public let lumiCore: (any LumiCoreAccessing)?
 
     /// Whether the active view container is configured to host a chat section.
     public var supportsChatSection: Bool {
@@ -72,7 +69,7 @@ public struct LumiPluginContext {
         showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil,
         dependencies: LumiPluginDependencies = LumiPluginDependencies(),
-        lumiCore: (any LumiCoreProviding)? = nil
+        lumiCore: (any LumiCoreAccessing)? = nil
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle

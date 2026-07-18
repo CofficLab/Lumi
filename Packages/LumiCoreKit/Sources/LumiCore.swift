@@ -6,7 +6,7 @@ import LumiCorePlugin
 import SwiftUI
 
 @MainActor
-public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServiceDelegate, LumiCoreProviding {
+public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServiceDelegate {
     public nonisolated(unsafe) static var current: (any LumiCoreAccessing)?
 
     // MARK: - Components

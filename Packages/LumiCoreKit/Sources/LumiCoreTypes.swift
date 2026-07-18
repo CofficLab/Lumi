@@ -120,6 +120,9 @@ public typealias LumiProviderState = LumiCoreLLMProvider.LumiProviderState
 @_exported import LumiCorePlugin
 
 // MARK: - Plugin Types
+// LumiCoreAccessing 现在定义在 LumiCorePlugin 中，LumiCoreKit 通过 @_exported 自动导出
+
+// MARK: - Plugin Types Aliases
 
 public typealias LumiPlugin = LumiCorePlugin.LumiPlugin
 public typealias LumiPluginInfo = LumiCorePlugin.LumiPluginInfo
