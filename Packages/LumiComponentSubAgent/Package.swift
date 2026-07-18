@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "LumiComponentLLMProvider",
+    name: "LumiComponentSubAgent",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "LumiComponentLLMProvider", targets: ["LumiComponentLLMProvider"])
+        .library(name: "LumiComponentSubAgent", targets: ["LumiComponentSubAgent"])
     ],
     dependencies: [
         .package(path: "../LumiComponentMessage"),
@@ -13,13 +13,13 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "LumiComponentLLMProvider",
+            name: "LumiComponentSubAgent",
             dependencies: [
                 .product(name: "LumiComponentMessage", package: "LumiComponentMessage"),
                 .product(name: "LumiComponentAgentTool", package: "LumiComponentAgentTool"),
             ],
             path: "Sources"
         ),
-        .testTarget(name: "LumiComponentLLMProviderTests", dependencies: ["LumiComponentLLMProvider"])
+        .testTarget(name: "LumiComponentSubAgentTests", dependencies: ["LumiComponentSubAgent"])
     ]
 )

@@ -63,3 +63,32 @@ public typealias LumiPendingMessage = LumiComponentMessage.LumiPendingMessage
 public typealias LumiChatMarkers = LumiComponentMessage.LumiChatMarkers
 public typealias LumiMessagePerformanceMetadata = LumiComponentMessage.LumiMessagePerformanceMetadata
 public typealias LumiMessageTokenMetadata = LumiComponentMessage.LumiMessageTokenMetadata
+
+@_exported import LumiComponentTurn
+
+// MARK: - Turn Types
+
+public typealias TurnCheck = LumiComponentTurn.TurnCheck
+public typealias TurnDerivation = LumiComponentTurn.TurnDerivation
+public typealias TurnOutcome = LumiComponentTurn.TurnOutcome
+public typealias TurnEndReason = LumiComponentTurn.TurnEndReason
+
+@_exported import LumiComponentAgentTool
+
+// MARK: - Agent Tool Types
+
+public typealias LumiAgentTool = LumiComponentAgentTool.LumiAgentTool
+public typealias LumiAgentToolInfo = LumiComponentAgentTool.LumiAgentToolInfo
+public typealias LumiToolCall = LumiComponentAgentTool.LumiToolCall
+public typealias LumiToolResult = LumiComponentAgentTool.LumiToolResult
+public typealias LumiToolServicing = LumiComponentAgentTool.LumiToolServicing
+public typealias ToolService = LumiComponentAgentTool.ToolService
+
+@_exported import LumiComponentChat
+
+// MARK: - Chat Types
+
+public typealias LumiChatMessage = LumiComponentChat.LumiChatMessage
+public typealias LumiChatServicing = LumiComponentChat.LumiChatServicing
+public typealias LumiMessageRendererItem = LumiComponentChat.LumiMessageRendererItem
+public typealias InlineToolCallDetector = LumiComponentChat.InlineToolCallDetector
