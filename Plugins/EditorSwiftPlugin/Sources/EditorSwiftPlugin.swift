@@ -70,7 +70,16 @@ public enum EditorSwiftPlugin: LumiPlugin {
 
     @MainActor
     public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
+        // per-request 筛选：识别出明确非 Swift 的项目语言时不再注入 Swift 工具。
+        // nil（无项目）/ .unknown（未识别，如纯 Xcode 工程无 Package.swift）保持全量返回，
+        // 与内核约定一致（unknown ≈ 全量返回），避免老项目工具消失。
+        switch context.currentProject?.language {
+        case .swift, .unknown, nil:
+            break
+        default:
+            return []
+        }
+        return [
             AddSwiftPackageTool(),
             ListSwiftPackagesTool(),
             GenerateXcodeProjectTool(),

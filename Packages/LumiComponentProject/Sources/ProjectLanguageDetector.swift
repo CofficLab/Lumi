@@ -67,7 +67,7 @@ public enum ProjectLanguageDetector {
 
         let dependencies = (root["dependencies"] as? [String: Any]) ?? [:]
         let devDependencies = (root["devDependencies"] as? [String: Any]) ?? [:]
-        let allKeys = dependencies.keys + devDependencies.keys
+        let allKeys = Array(dependencies.keys) + Array(devDependencies.keys)
 
         let typescriptIndicators: Set<String> = [
             "typescript", "@types/node", "@types/react", "@types/jest",

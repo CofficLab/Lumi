@@ -39,7 +39,11 @@ public enum ChatPanelPlugin: LumiPlugin {
                 systemImage: "wrench.and.screwdriver",
                 placement: .trailing,
                 statusBarView: {
-                    ChatAvailableToolsStatusBarView(chatService: chatService)
+                    if let lumiCore = context.lumiCore {
+                        ChatAvailableToolsStatusBarView(lumiCore: lumiCore)
+                    } else {
+                        EmptyView()
+                    }
                 }
             )
         ]

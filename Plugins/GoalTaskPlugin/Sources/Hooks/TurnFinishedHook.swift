@@ -65,7 +65,7 @@ enum TurnFinishedHook {
         
         // 检测本轮是否调用了任务相关工具
         let messages = chatService.messages(for: conversationID)
-        let turnMessages = LumiAgentTurnDerivation.turnMessagesSinceLastUser(in: messages)
+        let turnMessages = TurnDerivation.turnMessagesSinceLastUser(in: messages)
         
         let taskToolNames = [
             "update_task_status",
@@ -75,7 +75,7 @@ enum TurnFinishedHook {
         ]
         
         let didUpdateTaskThisTurn = taskToolNames.contains { toolName in
-            LumiAgentTurnDerivation.assistantCalledTool(named: toolName, in: turnMessages)
+            TurnDerivation.assistantCalledTool(named: toolName, in: turnMessages)
         }
         
         // 如果本轮推进了任务，重置续聊计数

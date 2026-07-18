@@ -5,7 +5,7 @@ import Foundation
 /// 把"插件 → 工具 / 子 Agent"的收集能力抽象出来，让 `LumiCore` 能直接消费
 /// `PluginService` 提供的工具和子 Agent 定义，而不需要在 App 层手工拼装。
 ///
-/// 实现者通常是 App 层的 `PluginService`。`LumiCore.bootstrapToolContributions`
+/// 实现者通常是 App 层的 `PluginService`。`AgentToolComponent.buildToolSet`
 /// 会调用这两个方法完成所有工具编排。
 @MainActor
 public protocol AgentToolProviding: AnyObject {

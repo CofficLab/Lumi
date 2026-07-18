@@ -8,7 +8,7 @@ import Foundation
 ///
 /// 与 `LumiAgentToolProviding`（工具/子 Agent 贡献）是并列关系：
 /// - 本协议负责 ChatService 维度的贡献（providers/middlewares/renderers/turn hook）；
-/// - `LumiAgentToolProviding` 负责工具维度，仍由 `LumiCore.bootstrapToolContributions` 消费。
+/// - `LumiAgentToolProviding` 负责工具维度，由 `AgentToolComponent.buildToolSet` 消费。
 ///
 /// 实现者通常是 App 层的 `PluginService`。`ChatService.applyPluginContributions`
 /// 会调用这些方法完成贡献物的注册。

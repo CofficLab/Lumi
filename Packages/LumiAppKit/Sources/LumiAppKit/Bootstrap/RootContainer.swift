@@ -130,9 +130,8 @@ final class RootContainer: ObservableObject, SuperLog {
 
         // —— 10. 应用 Chat 维度插件贡献 ——
         // LLM Provider / 中间件 / 渲染器等 Chat 维度贡献由 applyChatPluginContributions 处理。
-        // 工具贡献（bootstrapToolContributions）不再在此同步调用——它依赖各插件的
-        // lifecycle(.didRegister/.appDidLaunch) 完成后状态才就绪，故后移到
-        // bootstrapAfterPluginLifecycle() 由 WindowMain 显式 await。详见该方法说明。
+        // 工具贡献（per-request）不再在启动期收集——每次发消息时由
+        // AgentToolComponent.buildToolSet 按当前 context 动态构建，启动期零工具开销。
         applyChatPluginContributions()
 
         // —— 11. 订阅运行期插件启用状态变化 ——
@@ -144,8 +143,9 @@ final class RootContainer: ObservableObject, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)插件启用状态变化，重新应用贡献")
             }
+            // per-request 改造后工具集不再需要重建——下次发消息时 buildToolSet 自然
+            // 反映最新的插件启用状态。这里只重应用 Chat 维度贡献（provider/middleware 等）。
             self.applyChatPluginContributions()
-            self.bootstrapToolContributions()
         }
 
         if Self.verbose {
@@ -170,48 +170,28 @@ final class RootContainer: ObservableObject, SuperLog {
         )
     }
 
-    /// 在所有插件 lifecycle（`.didRegister` + `.appDidLaunch`）完成后编排工具贡献。
+    /// 在所有插件 lifecycle（`.didRegister` + `.appDidLaunch`）完成后做最后的启动校验。
     ///
     /// 由 `WindowMain.initializeContainer` 在 `RootContainer()` 创建后显式 await。
-    /// 这样保证工具收集（`agentTools`）发生在各插件 lifecycle 初始化状态**之后**，
-    /// 避免启动期"插件状态未就绪"的误报（典型如 ProjectsPlugin 的 viewModel）。
     ///
-    /// - throws: 若工具收集后 `toolContributionFailures` 非空，抛出聚合错误，
-    ///   由 WindowMain 走 `CrashedView`——启动期插件失败视为需要用户介入的硬条件
-    ///   （区别于运行期插件开关触发的软失败，后者只走「设置 → 插件」详情页 banner）。
+    /// per-request 动态注入改造后，启动期**不再收集工具**——工具集完全由
+    /// `AgentToolComponent.buildToolSet` 在每次发消息时按当前 context 构建。
+    /// 因此本方法只负责：等待插件 lifecycle 完成 + 检查 lifecycle 失败。
+    /// 工具相关的失败（软去重冲突、单插件 agentTools 抛错）改在发消息时软降级，
+    /// 不再走启动期 CrashedView。
+    ///
+    /// - throws: 若 lifecycle 失败非空，抛出聚合错误，由 WindowMain 走 `CrashedView`。
     func bootstrapAfterPluginLifecycle() async throws {
         // 1. 等待所有插件 lifecycle 完成（原由 PluginService.init 的异步 Task 触发，
-        //    现收敛到此处，保证 registerAll → appDidLaunch → 工具收集的严格顺序）。
+        //    现收敛到此处，保证 registerAll → appDidLaunch 的严格顺序）。
         // registerAll/appDidLaunch 内部已逐插件捕获 lifecycle 抛错，累积到 lifecycleFailures。
         await LumiPluginRegistry.registerAll()
         await LumiPluginRegistry.appDidLaunch()
 
-        // 2. 此时所有插件状态就绪，收集工具；失败累积到 AgentToolComponent
-        bootstrapToolContributions()
-
-        // 3. 汇总所有失败：lifecycle 失败 + 工具贡献失败。任一非空则走 CrashedView。
-        var allFailures = LumiPluginRegistry.lifecycleFailures
-        allFailures += lumiCore.agentToolComponent.toolContributionFailures
+        // 2. 只检查 lifecycle 失败。工具贡献失败已改为发消息时软降级，不在此阻断启动。
+        let allFailures = LumiPluginRegistry.lifecycleFailures
         if !allFailures.isEmpty {
             throw LumiPluginContributionFailureAggregate(allFailures)
         }
-    }
-
-    /// 重新编排工具贡献。让新启用插件贡献的工具 / 子 Agent 进入 ToolService。
-    ///
-    /// 完成后触发 PluginService 的 UI 刷新：工具加载失败快照可能已变化，
-    /// 「设置 → 插件」详情页的错误 banner 需要随之更新。
-    private func bootstrapToolContributions() {
-        let context = lumiCore.makePluginContext(
-            activeSectionID: "chat.core",
-            activeSectionTitle: "Chat Core"
-        )
-        lumiCore.agentToolComponent.bootstrapToolContributions(
-            lumiCore: lumiCore,
-            provider: provider,
-            context: context,
-            builtInTools: ChatService.builtInTools
-        )
-        pluginService.objectWillChange.send()
     }
 }

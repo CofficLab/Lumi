@@ -19,7 +19,6 @@ public final class PreviewChatServicing: ObservableObject, LumiChatServicing, @u
     public var selectedModel: String?
     public var messageRenderers: [LumiMessageRendererItem] = []
     public var revision: Int = 0
-    public var agentTools: [any LumiAgentTool] = []
     public var pendingMessages: [LumiPendingMessage] = []
     public var routingMode: LumiModelRoutingMode = .manual
     public var pendingToolConfirmation: LumiPendingToolConfirmation?
@@ -48,7 +47,6 @@ public final class PreviewChatServicing: ObservableObject, LumiChatServicing, @u
     public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
     public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-    public func registerToolService(_ toolService: (any LumiToolServicing)?) {}
     public func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
     public func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
     public func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }

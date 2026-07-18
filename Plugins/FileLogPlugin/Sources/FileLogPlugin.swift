@@ -40,8 +40,6 @@ public enum FileLogPlugin: LumiPlugin {
                 FileLogPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
             }
             bootstrapIfNeeded()
-        case .projectDidOpen, .projectDidClose:
-            break
         case .willDisable:
             // FileLogPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
             break

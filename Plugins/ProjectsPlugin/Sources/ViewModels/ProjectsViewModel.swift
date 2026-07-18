@@ -61,7 +61,9 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
 
         let updatedProjects = store.selectProject(project, in: projects)
-        let updatedProject = ProjectEntry(name: project.name, path: project.path)
+        let updatedProject = ProjectEntry(
+            name: project.name, path: project.path, language: project.language
+        )
 
         self.projects = updatedProjects
         self.currentProject = updatedProject
@@ -131,8 +133,12 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
             return
         }
 
-        // 项目不在列表中：构造条目并选中
-        let entry = ProjectEntry(name: ProjectsStore.directoryName(for: normalized), path: normalized)
+        // 项目不在列表中：构造条目并选中（探测一次语言，供插件按项目类型筛选工具）
+        let entry = ProjectEntry(
+            name: ProjectsStore.directoryName(for: normalized),
+            path: normalized,
+            language: ProjectLanguageDetector.detect(at: normalized)
+        )
         select(entry)
     }
 

@@ -60,7 +60,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
             // .didRegister 是最早的事件，理论上足够；这里再覆盖 .appDidLaunch
             // 是防御性兜底——若宿主将来调整生命周期顺序，初始化仍然不会落下。
             ensureLibGit2Initialized()
-        case .projectDidOpen, .projectDidClose, .willDisable:
+        case .willDisable:
             break
         }
     }

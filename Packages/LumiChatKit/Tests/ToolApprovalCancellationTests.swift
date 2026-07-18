@@ -237,10 +237,7 @@ private func makeService() throws -> (ChatService, UUID, HighRiskToolService) {
         model: "mock",
         for: conversationID
     )
-    // 必须强持有 toolService：ChatService.toolService 是 weak，临时实例会在
-    // registerToolService 返回后被释放，导致 agentTools 里只剩内置工具。
     let toolService = HighRiskToolService()
-    service.registerToolService(toolService)
 
     service.append(
         LumiChatMessage(
@@ -275,7 +272,7 @@ private func waitForApprovalPending(
 
     // 启动 turn，它会在 requestToolApproval 处挂起，等待用户审批。
     let turnTask = Task { @MainActor in
-        _ = try? await service.runAgentTurn(conversationID: conversationID)
+        _ = try? await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
     }
 
     let pending = await waitForApprovalPending(in: service)
@@ -300,11 +297,10 @@ private func waitForApprovalPending(
 
 @MainActor
 @Test func resumingApprovalTwiceIsSafe() async throws {
-    // toolService 必须强持有：ChatService.toolService 是 weak，丢弃返回值会令其立即释放。
-    let (service, conversationID, _toolService) = try makeService()
+    let (service, conversationID, toolService) = try makeService()
 
     let turnTask = Task { @MainActor in
-        _ = try? await service.runAgentTurn(conversationID: conversationID)
+        _ = try? await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
     }
 
     let pending = await waitForApprovalPending(in: service)
@@ -329,8 +325,7 @@ private func waitForApprovalPending(
 
 @MainActor
 @Test func cancellingUnrelatedConversationDoesNotDisturbPendingApproval() async throws {
-    // toolService 必须强持有（见上一个测试的说明）。
-    let (service, conversationA, _toolService) = try makeService()
+    let (service, conversationA, toolService) = try makeService()
 
     // 第二个会话，用于触发一次「无关的」cancel。
     let conversationB = service.createConversation(title: "Unrelated")
@@ -342,7 +337,7 @@ private func waitForApprovalPending(
     )
 
     let turnTask = Task { @MainActor in
-        _ = try? await service.runAgentTurn(conversationID: conversationA)
+        _ = try? await service.runAgentTurn(conversationID: conversationA, toolService: toolService)
     }
 
     let pending = await waitForApprovalPending(in: service)
@@ -384,7 +379,6 @@ private func waitForApprovalPending(
         for: conversationID
     )
     let toolService = HighRiskToolService()
-    service.registerToolService(toolService)
 
     service.append(
         LumiChatMessage(
@@ -395,7 +389,7 @@ private func waitForApprovalPending(
     )
 
     let turnTask = Task { @MainActor in
-        _ = try? await service.runAgentTurn(conversationID: conversationID)
+        _ = try? await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
     }
 
     // 关键断言：即便 arguments 是半截 JSON，审批弹窗仍应出现。

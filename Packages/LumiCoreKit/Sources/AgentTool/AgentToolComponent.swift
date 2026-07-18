@@ -25,7 +25,7 @@ public final class AgentToolComponent {
         func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] { [] }
     }
 
-    /// 最近一次工具贡献编排（`bootstrapToolContributions`）收集到的插件失败。
+    /// 最近一次工具贡献编排（`buildToolSet`）收集到的插件失败。
     ///
     /// 反映当前启用插件集的工具加载状态——UI（「设置 → 插件」详情页）经
     /// `LumiCore.agentToolComponent` 读取，按 pluginID 匹配后展示红色 banner。
@@ -59,82 +59,6 @@ public final class AgentToolComponent {
         toolService.environment = ToolServiceEnvironmentBridge(lumiCore: lumiCore)
     }
 
-    // MARK: - Tool Contributions
-
-    /// 编排 Agent Tool 工具的注册与注入。
-    ///
-    /// 把 `provider` 提供的插件工具、内置工具和子 Agent 工具注册到 `ToolService`，
-    /// 并把 `ToolService` 关联到 `ChatService`。App 层无需直接接触 `ToolService`、
-    /// `LumiAgentTool` 或 `SubAgentDelegateTool` 任何细节。
-    ///
-    /// 通常在 App 层插件加载完成后调用，重复调用是安全的。
-    ///
-    /// 注意：工具名称唯一性校验已在 `bootstrapToolService` 阶段完成，此处不再重复校验。
-    ///
-    /// - Deprecated: per-request 动态注入改造后，工具集不再在启动期一次性冻结进
-    ///   全局 `ToolService`，而是每次发消息时由 `buildToolSet` 按当前 context 构建。
-    ///   本方法仅供过渡期保留，新的生产路径请使用 `buildToolSet`。App 层调用点
-    ///   （`RootContainer`）会在后续清理中移除。
-    @available(*, deprecated, message: "使用 buildToolSet 构建 per-request 工具集，启动期不再冻结工具")
-    public func bootstrapToolContributions(
-        lumiCore: LumiCore,
-        provider: any AgentToolProviding,
-        context: LumiPluginContext,
-        builtInTools: [any LumiAgentTool]
-    ) {
-        guard let toolService else {
-            return
-        }
-
-        // 每次重编排先清空失败快照（禁用插件后其旧失败应消失）。
-        toolContributionFailures = []
-
-        // 1. 收集插件工具
-        // provider（PluginService）内部已逐插件捕获异常并把失败累积到副本，
-        // 通过 lastAgentToolFailures() 暴露给本组件，避免 LumiCoreKit 反向依赖 LumiPluginRegistry。
-        let pluginTools = provider.agentTools(context: context)
-        toolContributionFailures = provider.lastAgentToolFailures()
-
-        // 工具名称唯一性已在 boot 阶段通过 LumiToolNameDeduplication 校验，
-        // 此处使用 registerTools 直接注册（覆盖模式）。
-        // 理论上不会抛错，但若真的抛了（运行期注册了与 boot 期不同的工具集），
-        // 把错误纳入 toolContributionFailures，让 bootstrapAfterPluginLifecycle 的
-        // 失败检查能覆盖到它，最终走 CrashedView，而不是静默只记日志。
-        do {
-            try toolService.registerTools(pluginTools)
-        } catch {
-            Self.logger.error("registerTools 失败（理论上 boot 已校验唯一性）：\(error.localizedDescription)")
-            toolContributionFailures.append(LumiPluginContributionFailure(
-                pluginID: "<tool-service>",
-                pluginDisplayName: "ToolService",
-                contribution: "registerTools",
-                errorDescription: error.localizedDescription
-            ))
-        }
-
-        // 2. 注册内置工具（no_op / conversation_info）
-        // 内置工具由调用方（LumiChatKit）提供，因为它们与对话业务紧密相关
-        toolService.registerBuiltInTools(builtInTools)
-
-        // 3. 收集子 Agent 定义并包装成 delegate 工具
-        //    availableTools 用已注册的 plugin + builtIn 工具快照（不含 subAgent 自身，
-        //    避免子 Agent 递归委派）；executionToolService 复用本 ToolService。
-        let subAgentDefinitions = provider.subAgents(context: context)
-        let subAgentAvailableSnapshot = toolService.tools
-        let subAgentTools: [any LumiAgentTool] = subAgentDefinitions.map { definition in
-            SubAgentDelegateTool(
-                definition: definition,
-                chatService: lumiCore.chatService,
-                availableTools: subAgentAvailableSnapshot,
-                executionToolService: toolService
-            )
-        }
-        toolService.appendTools(subAgentTools)
-
-        // 4. 关联到 ChatService
-        lumiCore.chatService.registerToolService(toolService)
-    }
-
     // MARK: - Per-request Tool Set
 
     /// 为一次 LLM 请求构建 per-request `ToolService`。
@@ -143,12 +67,6 @@ public final class AgentToolComponent {
     /// `context`（反映此刻世界状态：当前项目、会话、model 等）收集插件工具，合并内置
     /// 工具与子 Agent 工具，软去重后返回一份全新的 `ToolService`。本次 turn 序列全程
     /// 持有它，请求结束即释放——多个会话因此天然隔离，不会互相覆盖工具集。
-    ///
-    /// 与 `bootstrapToolContributions`（已废弃）的区别：
-    /// - **时机**：每次发消息时调用，而非启动期一次。启动期零工具开销。
-    /// - **去重**：软去重——同名工具后到者跳过并记入 `toolContributionFailures`，
-    ///   不抛错、不阻断本次请求。
-    /// - **失败语义**：单插件抛错走软降级（用其余插件工具继续），而非启动期硬失败。
     ///
     /// - Parameters:
     ///   - context: 本次请求的插件上下文（由调用方用 `makePluginContext` 构造，反映

@@ -78,7 +78,6 @@ import LumiCoreKit
         var selectedModel: String? { nil }
         var messageRenderers: [LumiMessageRendererItem] { [] }
         var revision: Int { 0 }
-        var agentTools: [any LumiAgentTool] { [] }
         var pendingMessages: [LumiPendingMessage] { [] }
         var routingMode: LumiModelRoutingMode { .auto }
         var pendingToolConfirmation: LumiPendingToolConfirmation? { nil }
@@ -100,7 +99,6 @@ import LumiCoreKit
         func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
         func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
         func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func registerToolService(_ toolService: (any LumiToolServicing)?) {}
         func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
         func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
         func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }

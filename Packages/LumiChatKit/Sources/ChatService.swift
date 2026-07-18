@@ -42,7 +42,6 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     public internal(set) var providersByID: [String: any LumiLLMProvider] = [:]
     var middlewares: [any LumiSendMiddleware] = []
     var turnChecks: [any LumiAgentTurnCheck] = [ToolLoopLimitCheck()]
-    weak var toolService: (any LumiToolServicing)?
     let store: ChatStore
     /// `Sendable` container captured at init for background, off-main-actor
     /// history queries (see `fetchDailyMessageCounts(since:)`). Safe to share
@@ -167,17 +166,6 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         NoOpTool(),
         ConversationInfoTool(),
     ]
-
-    public var agentTools: [any LumiAgentTool] {
-        // 优先返回 `toolService` 已注册的完整工具列表（包含 plugin 工具 + 已被
-        // `registerBuiltInTools` 注入的内置工具）。仅在 `toolService` 尚未就绪时
-        // 退回到 `builtInTools`，避免与 `toolService` 重复拼装造成同名工具出现两次。
-        toolService?.tools ?? Self.builtInTools
-    }
-
-    public func registerToolService(_ toolService: (any LumiToolServicing)?) {
-        self.toolService = toolService
-    }
 
     public func registerTurnChecks(_ checks: [any LumiAgentTurnCheck]) {
         self.turnChecks = checks
@@ -460,11 +448,14 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     func makeAssistantMessage(
         conversationID: UUID,
         messages: [LumiChatMessage],
+        toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
-        try await sendPipeline.makeAssistantMessage(
+        let toolService: any LumiToolServicing = toolService ?? ToolService()
+        return try await sendPipeline.makeAssistantMessage(
             conversationID: conversationID,
             messages: messages,
+            toolService: toolService,
             imageAttachments: imageAttachments
         )
     }
@@ -733,8 +724,10 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     func makeAssistantMessageWithEmptyRetry(
         conversationID: UUID,
         baseMessages: [LumiChatMessage],
+        toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
+        let toolService: any LumiToolServicing = toolService ?? ToolService()
         let maxRetries = emptyResponseMaxRetries
         let conversationLanguage = language(for: conversationID)
         var lastMessage: LumiChatMessage?
@@ -763,6 +756,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             let message = try await makeAssistantMessage(
                 conversationID: conversationID,
                 messages: messagesToSend,
+                toolService: toolService,
                 imageAttachments: imageAttachments
             )
             lastMessage = message
@@ -800,8 +794,10 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         conversationID: UUID,
         baseMessages: [LumiChatMessage],
         firstMessage: LumiChatMessage,
+        toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment]
     ) async throws -> LumiChatMessage {
+        let toolService: any LumiToolServicing = toolService ?? ToolService()
         // 首条消息不含内联工具调用 → 无需重试，直接返回。
         guard firstMessage.hasInlineToolCallInBody else {
             return firstMessage
@@ -830,6 +826,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             let message = try await makeAssistantMessage(
                 conversationID: conversationID,
                 messages: messagesToSend,
+                toolService: toolService,
                 imageAttachments: imageAttachments
             )
             lastMessage = message
@@ -847,10 +844,16 @@ public final class ChatService: ObservableObject, LumiChatServicing {
     // MARK: - Agent Loop Execution
 
     /// Executes the agent turn loop: send to LLM → evaluate checks → execute tools → repeat.
+    ///
+    /// - Parameter toolService: 本次 turn 使用的 per-request 工具集。由调用方
+    ///   （`SendPipeline`）在发消息前用 `agentToolComponent.buildToolSet` 按当前
+    ///   context 构建，贯穿整个 turn 序列。多个会话因此各自持有独立工具集，互不覆盖。
     func runAgentTurn(
         conversationID: UUID,
+        toolService: (any LumiToolServicing)? = nil,
         imageAttachments: [LumiImageAttachment] = []
-    ) async throws -> LumiAgentTurnOutcome {
+    ) async throws -> TurnOutcome {
+        let toolService: any LumiToolServicing = toolService ?? ToolService()
         var iteration = 0
 
         while true {
@@ -865,6 +868,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             var assistantMessage = try await makeAssistantMessageWithEmptyRetry(
                 conversationID: conversationID,
                 baseMessages: baseMessages,
+                toolService: toolService,
                 imageAttachments: imageAttachments
             )
 
@@ -890,6 +894,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
                     conversationID: conversationID,
                     baseMessages: baseMessages,
                     firstMessage: assistantMessage,
+                    toolService: toolService,
                     imageAttachments: imageAttachments
                 )
 
@@ -913,7 +918,7 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             incrementRevision()
 
             // ── Phase 2: Evaluate checks ───────────────────────────
-            let turnContext = LumiAgentTurnContext(
+            let turnContext = TurnContext(
                 conversationID: conversationID,
                 iteration: iteration,
                 assistantMessage: assistantMessage,
@@ -939,10 +944,11 @@ public final class ChatService: ObservableObject, LumiChatServicing {
             }
 
             // ── Phase 3: Execute tool calls (if any) ───────────────
+            // toolService 是本次 turn 的 per-request 实例（由 runAgentTurn 参数传入），
+            // 非 optional，无需解包。三处 tool(named:) / execute 都用它。
             guard automationLevel(for: conversationID).allowsTools,
                   let toolCalls = assistantMessage.toolCalls,
-                  !toolCalls.isEmpty,
-                  let toolService
+                  !toolCalls.isEmpty
             else {
                 return .completed
             }

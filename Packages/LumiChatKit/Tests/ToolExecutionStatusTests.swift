@@ -136,7 +136,6 @@ enum ToolExecutionStatusTestsSupport {
     )
 
     let slowTools = SlowToolService()
-    service.registerToolService(slowTools)
 
     service.append(
         LumiChatMessage(
@@ -147,7 +146,7 @@ enum ToolExecutionStatusTestsSupport {
     )
 
     let turnTask = Task { @MainActor in
-        _ = try await service.runAgentTurn(conversationID: conversationID)
+        _ = try await service.runAgentTurn(conversationID: conversationID, toolService: slowTools)
     }
 
     var sawNonZeroElapsed = false

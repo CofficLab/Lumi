@@ -200,8 +200,13 @@ final class SendPipeline {
         service.revision += 1
 
         do {
+            // per-request：为本次发送构建一份全新的工具集（按当前 context 动态收集插件
+            // 工具、内置工具、子 Agent 工具）。贯穿整个 turn 序列，请求结束随局部变量释放。
+            // 多个会话因此各自持有独立 ToolService，互不覆盖。
+            let toolService = makePerRequestToolService(for: conversationID)
             let outcome = try await service.runAgentTurn(
                 conversationID: conversationID,
+                toolService: toolService,
                 imageAttachments: pending.imageAttachments
             )
             finishTurn(conversationID: conversationID, reason: outcome.turnEndReason)
@@ -219,6 +224,35 @@ final class SendPipeline {
             )
             finishTurn(conversationID: conversationID, reason: .failed)
         }
+    }
+
+    // MARK: - Per-request Tool Set
+
+    /// 为一次发送构建 per-request 工具集。
+    ///
+    /// 委托给内核的 `AgentToolComponent.buildToolSet`：按当前 context（反映当前项目、
+    /// 会话、model 等）收集插件工具，合并内置工具与子 Agent 工具，软去重后返回一份
+    /// 全新的 `ToolService`。本次 turn 序列全程持有它，请求结束即释放。
+    ///
+    /// 兜底：`lumiCore` 未回填时（理论不应发生——`RootContainer` 创建 LumiCore 后
+    /// 立即 `configure`），返回只含内置工具的 ToolService，保证发消息不崩。
+    private func makePerRequestToolService(for conversationID: UUID) -> any LumiToolServicing {
+        guard let lumiCore = service?.lumiCore else {
+            return ToolService(tools: ChatService.builtInTools, environment: nil)
+        }
+        let context = lumiCore.makePluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core",
+            chatSection: .none,
+            showsRail: false,
+            showsPanelChrome: false,
+            isChatSectionVisible: nil,
+            additionalDependencies: { _ in }
+        )
+        return lumiCore.agentToolComponent.buildToolSet(
+            context: context,
+            builtInTools: ChatService.builtInTools
+        )
     }
 
     // MARK: - Context & Assistant
@@ -251,6 +285,7 @@ final class SendPipeline {
     func makeAssistantMessage(
         conversationID: UUID,
         messages: [LumiChatMessage],
+        toolService: any LumiToolServicing,
         imageAttachments: [LumiImageAttachment] = []
     ) async throws -> LumiChatMessage {
         guard let service else {
@@ -272,7 +307,9 @@ final class SendPipeline {
 
         let providerInfo = type(of: provider).info
         let model = service.providerManager.resolvedModel(for: conversationID, providerInfo: providerInfo)
-        let tools = service.automationLevel(for: conversationID).allowsTools ? service.agentTools : []
+        // per-request：tools 来自本次 turn 构建的 toolService（按当前 context 动态收集），
+        // 而非全局缓存的 service.agentTools。多会话因此各自持有独立工具集。
+        let tools = service.automationLevel(for: conversationID).allowsTools ? toolService.tools : []
         let request = LumiLLMRequest(
             messages: MessageManager.messagesWithImageContext(messages, imageAttachments: imageAttachments),
             model: model,
@@ -351,7 +388,12 @@ final class SendPipeline {
         }
 
         do {
-            let outcome = try await service.runAgentTurn(conversationID: conversationID)
+            // per-request：续聊同样按当前 context 构建本次工具集。
+            let toolService = makePerRequestToolService(for: conversationID)
+            let outcome = try await service.runAgentTurn(
+                conversationID: conversationID,
+                toolService: toolService
+            )
             finishTurn(conversationID: conversationID, reason: outcome.turnEndReason)
         } catch is CancellationError {
             finishTurn(conversationID: conversationID, reason: .cancelled)

@@ -1,3 +1,5 @@
+import LumiComponentLayout
+
 public struct LumiPluginDependencies {
     private var values: [ObjectIdentifier: Any]
 

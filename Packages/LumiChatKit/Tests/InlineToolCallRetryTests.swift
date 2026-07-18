@@ -232,8 +232,7 @@ struct InlineToolCallRetrySuite {
 @MainActor
 struct InlineToolCallEndToEndSuite {
     private func makeService(
-        provider: SequencedResponseMockProvider,
-        toolService: LumiToolServicing? = nil
+        provider: SequencedResponseMockProvider
     ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         let service = try ChatService(configuration: .coreDatabase(directory: directory))
@@ -241,9 +240,6 @@ struct InlineToolCallEndToEndSuite {
         service.registerProviders([provider])
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
         service.setAutomationLevel(.autonomous, for: conversationID)
-        if let toolService {
-            service.registerToolService(toolService)
-        }
         return (service, conversationID)
     }
 
@@ -266,10 +262,10 @@ struct InlineToolCallEndToEndSuite {
                 role: .assistant, content: "Task done") },
         ])
         let toolService = NoOpToolService()
-        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
-        let outcome = try await service.runAgentTurn(conversationID: conversationID)
+        let outcome = try await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
 
         #expect(outcome == .completed)
         #expect(provider.callCount == 3)
@@ -317,10 +313,10 @@ struct InlineToolCallEndToEndSuite {
                 role: .assistant, content: "Done") },
         ])
         let toolService = NoOpToolService()
-        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
-        let outcome = try await service.runAgentTurn(conversationID: conversationID)
+        let outcome = try await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
 
         #expect(provider.callCount == 2)
         #expect(outcome == .completed)

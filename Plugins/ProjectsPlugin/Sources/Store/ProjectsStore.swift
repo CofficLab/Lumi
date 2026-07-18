@@ -87,7 +87,9 @@ public final class ProjectsStore: SuperLog {
 
     /// 选中项目：将项目移到列表顶部，返回更新后的列表
     public func selectProject(_ project: ProjectEntry, in projects: [ProjectEntry]) -> [ProjectEntry] {
-        let updatedProject = ProjectEntry(name: project.name, path: project.path)
+        let updatedProject = ProjectEntry(
+            name: project.name, path: project.path, language: project.language
+        )
         var updated = projects
         updated.removeAll { $0.path == updatedProject.path }
         updated.insert(updatedProject, at: 0)
@@ -111,7 +113,11 @@ public final class ProjectsStore: SuperLog {
             throw ProjectsStoreError.pathIsNotDirectory(url.path)
         }
 
-        return ProjectEntry(name: url.lastPathComponent, path: url.path)
+        return ProjectEntry(
+            name: url.lastPathComponent,
+            path: url.path,
+            language: ProjectLanguageDetector.detect(at: url.path)
+        )
     }
 
     /// 标准化路径

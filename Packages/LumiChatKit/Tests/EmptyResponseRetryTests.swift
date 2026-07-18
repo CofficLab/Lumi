@@ -285,11 +285,8 @@ struct EmptyResponseRetrySuite {
 @MainActor
 struct EmptyResponseEndToEndSuite {
     /// 构建测试用 service。
-    /// - Parameter toolService: 可选的 tool service；调用方必须持有强引用，
-    ///   因为 `ChatService.toolService` 是 weak（否则注册后立即释放）。
     private func makeService(
-        provider: SequencedResponseMockProvider,
-        toolService: LumiToolServicing? = nil
+        provider: SequencedResponseMockProvider
     ) throws -> (ChatService, UUID) {
         let directory = ChatPerformanceTestSupport.makeTemporaryDatabaseDirectory()
         let service = try ChatService(configuration: .coreDatabase(directory: directory))
@@ -298,9 +295,6 @@ struct EmptyResponseEndToEndSuite {
         service.selectProvider(id: type(of: provider).info.id, model: "mock", for: conversationID)
         // E2E 测试验证完整 agent loop，需要工具可用（默认 .chat 不允许工具）。
         service.setAutomationLevel(.autonomous, for: conversationID)
-        if let toolService {
-            service.registerToolService(toolService)
-        }
         return (service, conversationID)
     }
 
@@ -368,12 +362,11 @@ struct EmptyResponseEndToEndSuite {
                 conversationID: req.messages.last?.conversationID ?? UUID(),
                 role: .assistant, content: "Task done") },
         ])
-        // 必须持有强引用：ChatService.toolService 是 weak。
         let toolService = NoOpToolService()
-        let (service, conversationID) = try makeService(provider: provider, toolService: toolService)
+        let (service, conversationID) = try makeService(provider: provider)
         service.append(LumiChatMessage(conversationID: conversationID, role: .user, content: "hi"))
 
-        let outcome = try await service.runAgentTurn(conversationID: conversationID)
+        let outcome = try await service.runAgentTurn(conversationID: conversationID, toolService: toolService)
 
         #expect(provider.callCount == 2)
         #expect(outcome == .completed)

@@ -220,36 +220,6 @@ public enum LumiPluginRegistry: SuperLog {
         try? LayoutPlugin.lifecycle(.appDidLaunch)
     }
 
-    /// 触发项目打开生命周期事件
-    ///
-    /// 运行期事件（非启动期）：失败用 try? 降级，不走 CrashedView。
-    public static func projectDidOpen(path: String) async {
-        if verbose {
-            logger.info("\(Self.t)项目打开：\(path)")
-        }
-        for plugin in plugins {
-            try? await plugin.lifecycle(.projectDidOpen(path: path))
-        }
-        if verbose {
-            logger.info("\(Self.t)projectDidOpen 完成")
-        }
-    }
-
-    /// 触发项目关闭生命周期事件
-    ///
-    /// 运行期事件（非启动期）：失败用 try? 降级，不走 CrashedView。
-    public static func projectDidClose() async {
-        if verbose {
-            logger.info("\(Self.t)触发项目关闭生命周期")
-        }
-        for plugin in plugins {
-            try? await plugin.lifecycle(.projectDidClose)
-        }
-        if verbose {
-            logger.info("\(Self.t)projectDidClose 完成")
-        }
-    }
-
     /// 检测所有已注册插件是否有 ID 重复。
     ///
     /// 返回：如果存在重复，返回 [(id: String, plugins: [any LumiPlugin.Type])]；否则返回空数组。

@@ -38,8 +38,8 @@ enum TurnFinishedHook {
         }
 
         let messages = chatService.messages(for: conversationID)
-        let turnMessages = LumiAgentTurnDerivation.turnMessagesSinceLastUser(in: messages)
-        let didUpdateTaskThisTurn = LumiAgentTurnDerivation.assistantCalledTool(named: "update_task", in: turnMessages)
+        let turnMessages = TurnDerivation.turnMessagesSinceLastUser(in: messages)
+        let didUpdateTaskThisTurn = TurnDerivation.assistantCalledTool(named: "update_task", in: turnMessages)
 
         if didUpdateTaskThisTurn {
             await manager.resetContinuationCount(conversationId: conversationIdStr)

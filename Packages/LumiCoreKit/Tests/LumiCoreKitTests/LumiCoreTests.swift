@@ -196,7 +196,6 @@ import Testing
         var selectedModel: String?
         var messageRenderers: [LumiMessageRendererItem] = []
         var revision = 0
-        var agentTools: [any LumiAgentTool] = []
         var pendingMessages: [LumiPendingMessage] = []
         var routingMode: LumiModelRoutingMode = .manual
         var pendingToolConfirmation: LumiPendingToolConfirmation?
@@ -220,7 +219,6 @@ import Testing
         func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
         func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
         func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func registerToolService(_ toolService: (any LumiToolServicing)?) {}
         func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
         func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
         func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }

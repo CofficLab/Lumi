@@ -38,10 +38,6 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
                 Self.logger.info("\(Self.t)appDidLaunch，开始恢复布局")
             }
             LayoutPersistenceCoordinator.shared.restore()
-        case .projectDidOpen:
-            break
-        case .projectDidClose:
-            break
         case .willDisable:
             // LayoutPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
             break

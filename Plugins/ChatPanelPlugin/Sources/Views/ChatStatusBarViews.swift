@@ -88,11 +88,12 @@ private struct ChatTimelineDetailView: View {
 }
 
 struct ChatAvailableToolsStatusBarView: View {
-    let chatService: any LumiChatServicing
+    let lumiCore: any LumiCoreAccessing
 
     var body: some View {
+        let tools = buildTools()
         StatusBarHoverContainer(
-            detailView: ChatAvailableToolsDetailView(tools: chatService.agentTools),
+            detailView: ChatAvailableToolsDetailView(tools: tools),
             popoverWidth: 620,
             id: "chat-available-tools"
         ) {
@@ -101,6 +102,22 @@ struct ChatAvailableToolsStatusBarView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
         }
+    }
+
+    private func buildTools() -> [any LumiAgentTool] {
+        let context = lumiCore.makePluginContext(
+            activeSectionID: "chat.core",
+            activeSectionTitle: "Chat Core",
+            chatSection: .none,
+            showsRail: false,
+            showsPanelChrome: false,
+            isChatSectionVisible: nil,
+            additionalDependencies: { _ in }
+        )
+        return lumiCore.agentToolComponent.buildToolSet(
+            context: context,
+            builtInTools: ChatService.builtInTools
+        ).tools
     }
 }
 

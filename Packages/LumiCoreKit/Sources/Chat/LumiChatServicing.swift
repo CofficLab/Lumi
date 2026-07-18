@@ -9,7 +9,6 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     var selectedModel: String? { get }
     var messageRenderers: [LumiMessageRendererItem] { get }
     var revision: Int { get }
-    var agentTools: [any LumiAgentTool] { get }
     var pendingMessages: [LumiPendingMessage] { get }
     var routingMode: LumiModelRoutingMode { get }
     var pendingToolConfirmation: LumiPendingToolConfirmation? { get }
@@ -43,7 +42,6 @@ public protocol LumiChatServicing: AnyObject, ObservableObject {
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?)
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
-    func registerToolService(_ toolService: (any LumiToolServicing)?)
     func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem?
     func messages(for conversationID: UUID) -> [LumiChatMessage]
     func displayMessages(for conversationID: UUID) -> [LumiChatMessage]

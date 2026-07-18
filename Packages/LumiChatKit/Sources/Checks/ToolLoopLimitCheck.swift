@@ -25,7 +25,7 @@ public struct ToolLoopLimitCheck: LumiAgentTurnCheck, Sendable {
         self.maxIterations = maxIterations
     }
 
-    public func evaluate(_ context: LumiAgentTurnContext) async -> String? {
+    public func evaluate(_ context: TurnContext) async -> String? {
         guard context.iteration >= maxIterations else {
             return nil
         }

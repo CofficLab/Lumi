@@ -75,7 +75,6 @@ private final class MockChatService: LumiChatServicing {
     var selectedModel: String?
     var messageRenderers: [LumiMessageRendererItem] = []
     var revision = 0
-    var agentTools: [any LumiAgentTool] = []
     var pendingMessages: [LumiPendingMessage] = []
     var routingMode: LumiModelRoutingMode = .manual
     var pendingToolConfirmation: LumiPendingToolConfirmation?
@@ -111,7 +110,6 @@ private final class MockChatService: LumiChatServicing {
     }
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-    func registerToolService(_ toolService: (any LumiToolServicing)?) {}
     func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
     func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
     func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }

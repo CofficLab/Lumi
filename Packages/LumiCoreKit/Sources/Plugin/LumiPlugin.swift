@@ -148,8 +148,6 @@ public protocol LumiToolExecutionHook {
 public enum LumiPluginLifecycle {
     case didRegister      // 插件注册时
     case appDidLaunch     // 应用启动
-    case projectDidOpen(path: String)  // 项目打开时
-    case projectDidClose  // 项目关闭时
     case willDisable      // 插件即将被禁用时
 
     /// 用于日志与失败上报的可读标签。
@@ -157,8 +155,6 @@ public enum LumiPluginLifecycle {
         switch self {
         case .didRegister: return "didRegister"
         case .appDidLaunch: return "appDidLaunch"
-        case .projectDidOpen: return "projectDidOpen"
-        case .projectDidClose: return "projectDidClose"
         case .willDisable: return "willDisable"
         }
     }
