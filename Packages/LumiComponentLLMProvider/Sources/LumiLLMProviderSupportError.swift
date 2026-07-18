@@ -3,9 +3,8 @@ import LumiComponentMessage
 
 /// LLM 供应商层的统一错误类型。
 ///
-/// 设计上放在 `LumiCoreKit`（最底层），供 `LumiLLMProvider` 协议默认实现直接抛出；
-/// 高级功能（HTTP 流式处理、BaseURL 校验等）的 `LumiLLMProviderSupport` 包依赖
-/// `LumiCoreKit`，可直接复用本类型。
+/// 设计上放在 `LumiComponentLLMProvider`，供 `LumiLLMProvider` 协议默认实现直接抛出；
+/// HTTP 流式处理、BaseURL 校验等高级功能在 `LumiCoreKit` 中实现，可直接复用本类型。
 public enum LumiLLMProviderSupportError: LocalizedError, LumiLLMErrorDispositionProviding {
     case emptyConversation
     case invalidBaseURL(String)
