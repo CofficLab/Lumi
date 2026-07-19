@@ -65,7 +65,11 @@ struct DockerManagerAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
+        switch key {
+        case "about.section.howItWorks": return L("How It Works")
+        case "about.section.tips": return L("Tips")
+        default: return key
+        }
     }
 }
 

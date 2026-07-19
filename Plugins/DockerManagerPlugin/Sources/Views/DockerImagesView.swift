@@ -227,7 +227,7 @@ struct DockerImagesView: View, SuperLog {
         .onAppear {
             Task { await viewModel.refreshImages() }
         }
-        .navigationTitle(DockerManagerPlugin.info.displayName)
+        .navigationTitle(DockerManagerPlugin().name)
     }
 }
 
@@ -423,7 +423,7 @@ struct DockerImageDetailView: View {
         } message: {
             Text("Are you sure you want to delete image \(image.name)? This action cannot be undone.")
         }
-        .navigationTitle(DockerManagerPlugin.info.displayName)
+        .navigationTitle(DockerManagerPlugin().name)
     }
 }
 
