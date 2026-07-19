@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Chat Service Capability Protocol
-
 /// 聊天服务能力协议
 ///
 /// 定义 LumiCore 需要的聊天服务功能，由 LumiCoreChat 实现。

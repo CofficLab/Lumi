@@ -42,6 +42,24 @@ public final class LumiKernel: ObservableObject {
     private var menuBarPopups: [String: MenuBarPopupItem] = [:]
     private var menuBarPopupOrder: [String] = []
 
+    // MARK: - Title Toolbar Registry
+
+    /// 标题栏工具栏注册表
+    private var titleToolbarItems: [String: TitleToolbarItem] = [:]
+    private var titleToolbarOrder: [String] = []
+
+    // MARK: - Send Middleware Registry
+
+    /// 发送中间件注册表
+    private var sendMiddlewares: [String: any SendMiddleware] = [:]
+    private var sendMiddlewareOrder: [String] = []
+
+    // MARK: - Agent Tool Registry
+
+    /// Agent 工具注册表（单个工具注册）
+    private var agentTools: [String: AgentToolItem] = [:]
+    private var agentToolOrder: [String] = []
+
     // MARK: - Service Accessors (Protocol Types)
 
     /// 存储服务
@@ -324,6 +342,77 @@ public final class LumiKernel: ObservableObject {
     public func unregisterMenuBarPopup(id: String) {
         menuBarPopups.removeValue(forKey: id)
         menuBarPopupOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Title Toolbar Registry
+
+    /// 所有已注册的标题栏工具栏项（按 order 排序）
+    public var allTitleToolbarItems: [TitleToolbarItem] {
+        titleToolbarOrder.compactMap { titleToolbarItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 按位置获取标题栏工具栏项
+    public func titleToolbarItems(placement: TitleToolbarPlacement) -> [TitleToolbarItem] {
+        allTitleToolbarItems.filter { $0.placement == placement }
+    }
+
+    /// 注册标题栏工具栏项
+    public func registerTitleToolbarItem(_ item: TitleToolbarItem) {
+        if titleToolbarItems[item.id] == nil {
+            titleToolbarOrder.append(item.id)
+        }
+        titleToolbarItems[item.id] = item
+    }
+
+    /// 注销标题栏工具栏项
+    public func unregisterTitleToolbarItem(id: String) {
+        titleToolbarItems.removeValue(forKey: id)
+        titleToolbarOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Send Middleware Registry
+
+    /// 所有已注册的发送中间件
+    public var allSendMiddlewares: [any SendMiddleware] {
+        sendMiddlewareOrder.compactMap { sendMiddlewares[$0] }
+    }
+
+    /// 注册发送中间件
+    public func registerSendMiddleware(_ middleware: any SendMiddleware, id: String? = nil) {
+        let middlewareId = id ?? UUID().uuidString
+        if sendMiddlewares[middlewareId] == nil {
+            sendMiddlewareOrder.append(middlewareId)
+        }
+        sendMiddlewares[middlewareId] = middleware
+    }
+
+    /// 注销发送中间件
+    public func unregisterSendMiddleware(id: String) {
+        sendMiddlewares.removeValue(forKey: id)
+        sendMiddlewareOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Agent Tool Registry (Individual)
+
+    /// 所有已注册的 Agent 工具
+    public var allAgentTools: [any AgentToolInfo] {
+        agentToolOrder.compactMap { agentTools[$0]?.tool }
+    }
+
+    /// 注册单个 Agent 工具
+    public func registerAgentTool(_ tool: any AgentToolInfo) {
+        let item = AgentToolItem(tool: tool)
+        if agentTools[item.id] == nil {
+            agentToolOrder.append(item.id)
+        }
+        agentTools[item.id] = item
+    }
+
+    /// 注销 Agent 工具
+    public func unregisterAgentTool(id: String) {
+        agentTools.removeValue(forKey: id)
+        agentToolOrder.removeAll { $0 == id }
     }
 }
 

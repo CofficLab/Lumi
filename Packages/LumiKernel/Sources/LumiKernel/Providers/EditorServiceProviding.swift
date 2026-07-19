@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Editor Service Capability Protocol
-
 /// 编辑器服务能力协议
 ///
 /// 定义 LumiCore 需要的编辑器功能，由具体编辑器插件实现。
