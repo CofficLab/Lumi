@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "DeviceInfoKernelPlugin",
+    name: "DeviceInfoPlugin",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "DeviceInfoKernelPlugin",
-            targets: ["DeviceInfoKernelPlugin"]
+            name: "DeviceInfoPlugin",
+            targets: ["DeviceInfoPlugin"]
         )
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "DeviceInfoKernelPlugin",
+            name: "DeviceInfoPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),

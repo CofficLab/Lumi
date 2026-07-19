@@ -21,7 +21,7 @@ let package = Package(
         .package(path: "../../Plugins/LayoutKernelPlugin"),
         .package(path: "../../Plugins/EditorKernelPlugin"),
         .package(path: "../../Plugins/ChatKernelPlugin"),
-        .package(path: "../../Plugins/DeviceInfoKernelPlugin"),
+        .package(path: "../../Plugins/DeviceInfoPlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
         .package(path: "../../Plugins/BrewManagerPlugin"),
         .package(path: "../../Plugins/DiskManagerPlugin"),
@@ -34,6 +34,7 @@ let package = Package(
         .package(path: "../../Plugins/RegistryManagerPlugin"),
         .package(path: "../../Plugins/DisplayControlPlugin"),
         .package(path: "../../Plugins/ViewContainerPlugin"),
+        .package(path: "../../Plugins/DockerManagerPlugin"),
     ],
     targets: [
         .target(
@@ -52,7 +53,7 @@ let package = Package(
                 .product(name: "LayoutKernelPlugin", package: "LayoutKernelPlugin"),
                 .product(name: "EditorKernelPlugin", package: "EditorKernelPlugin"),
                 .product(name: "ChatKernelPlugin", package: "ChatKernelPlugin"),
-                .product(name: "DeviceInfoKernelPlugin", package: "DeviceInfoKernelPlugin"),
+                .product(name: "DeviceInfoPlugin", package: "DeviceInfoPlugin"),
                 .product(name: "ClipboardManagerPlugin", package: "ClipboardManagerPlugin"),
                 .product(name: "BrewManagerPlugin", package: "BrewManagerPlugin"),
                 .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
@@ -64,6 +65,7 @@ let package = Package(
                 .product(name: "AppManagerPlugin", package: "AppManagerPlugin"),
                 .product(name: "RegistryManagerPlugin", package: "RegistryManagerPlugin"),
                 .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
+                .product(name: "DockerManagerPlugin", package: "DockerManagerPlugin"),
             ]
         ),
     ]

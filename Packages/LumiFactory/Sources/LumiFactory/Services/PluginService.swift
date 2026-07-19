@@ -5,7 +5,7 @@ import AppManagerPlugin
 import BrewManagerPlugin
 import ChatKernelPlugin
 import ClipboardManagerPlugin
-import DeviceInfoKernelPlugin
+import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
@@ -53,8 +53,8 @@ public enum PluginService {
         // ChatKernelPlugin
         list.append(ChatKernelPlugin())
 
-        // DeviceInfoKernelPlugin
-        list.append(DeviceInfoKernelPlugin())
+        // DeviceInfoPlugin
+        list.append(DeviceInfoPlugin())
 
         // ClipboardManagerPlugin
         list.append(ClipboardManagerPlugin())
