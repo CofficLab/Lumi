@@ -99,6 +99,32 @@ public final class LumiKernel: ObservableObject {
         }
     }
 
+    // MARK: - Startup & Validation
+
+    /// 启动内核并进行自检
+    ///
+    /// 检查所有必需服务是否已注册，未满足要求时抛出错误。
+    /// - Throws: 如果必需服务缺失
+    public func startup() throws {
+        var missingServices: [String] = []
+
+        // 检查必需服务
+        if storage == nil {
+            missingServices.append("Storage")
+        }
+
+        // 其他服务暂时不检查，等后续插件实现后再添加
+         if project == nil { missingServices.append("Project") }
+        // if layout == nil { missingServices.append("Layout") }
+        // if chat == nil { missingServices.append("Chat") }
+        // if editor == nil { missingServices.append("Editor") }
+        // if agentTool == nil { missingServices.append("AgentTool") }
+
+        if !missingServices.isEmpty {
+            throw LumiKernelError.missingRequiredServices(missingServices)
+        }
+    }
+
     /// 查询已注册的插件
     ///
     /// - Parameter type: 插件类型
@@ -176,6 +202,7 @@ public final class LumiKernel: ObservableObject {
 public enum LumiKernelError: Error, LocalizedError {
     case pluginAlreadyRegistered(id: String)
     case pluginNotFound(id: String)
+    case missingRequiredServices([String])
 
     public var errorDescription: String? {
         switch self {
@@ -183,6 +210,8 @@ public enum LumiKernelError: Error, LocalizedError {
             return "Plugin '\(id)' is already registered"
         case .pluginNotFound(let id):
             return "Plugin '\(id)' not found"
+        case .missingRequiredServices(let services):
+            return "Missing required services: \(services.joined(separator: ", "))"
         }
     }
 }
