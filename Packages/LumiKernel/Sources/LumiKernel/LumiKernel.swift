@@ -263,6 +263,22 @@ public final class LumiKernel: ObservableObject {
         try await plugin?.bootstrapPlugins()
     }
 
+    /// Register UI contributions from all plugins
+    ///
+    /// This method should be called after all plugins have been registered and booted.
+    /// It collects UI contributions from all plugins and registers them with the kernel.
+    public func registerPluginUIContributions() {
+        guard let pluginService = plugin else { return }
+
+        // Register status bar items from all plugins
+        for plugin in pluginService.allPlugins {
+            let items = plugin.statusBarItems(kernel: self)
+            for item in items {
+                registerStatusBarItem(item)
+            }
+        }
+    }
+
     /// Query plugin by type
     public func plugin<T: LumiPlugin>(ofType type: T.Type) -> T? {
         plugin?.plugin(ofType: type)

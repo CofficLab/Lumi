@@ -48,10 +48,13 @@ public enum LumiFactory: SuperLog {
         // 3. 启动插件
         try await kernel.bootstrapPlugins()
 
-        // 4. 内核自检
+        // 4. 注册插件的 UI 贡献
+        kernel.registerPluginUIContributions()
+
+        // 5. 内核自检
         try kernel.startup()
 
-        // 5. 保存到内核列表
+        // 6. 保存到内核列表
         kernels.append(kernel)
 
         if verbose {
