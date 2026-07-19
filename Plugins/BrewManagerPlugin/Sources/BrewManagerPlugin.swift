@@ -1,76 +1,54 @@
 import LumiCoreKit
+import LumiKernel
 import LumiUI
 import os
 import SwiftUI
 
-public enum BrewManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
-    public static let verbose = false
+/// Brew Manager 插件
+///
+/// 向 LumiKernel 注册 Homebrew 包管理功能：
+/// - ViewContainer：侧边栏包管理视图
+@MainActor
+public final class BrewManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
+    public nonisolated public static let emoji = "🍺"
+    nonisolated static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.brew-manager",
-        displayName: PluginBrewManagerLocalization.string("Package Management"),
-        description: PluginBrewManagerLocalization.string("Manage Homebrew packages and casks"),
-        order: 60,
-        category: .development,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "mug.fill",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    public let id = "com.coffic.lumi.plugin.brew-manager"
+    public let name = "Package Management"
+    public let order = 60
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册视图容器
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "mug.fill"
             ) {
                 BrewManagerView()
             }
-        ]
-    }
-
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 BrewManager 插件到内核")
+        }
     }
 
-    @MainActor
-    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "shippingbox",
-                            title: PluginBrewManagerLocalization.string("Packages & casks"),
-                            description: PluginBrewManagerLocalization.string("Install, upgrade, and remove Homebrew formulae")
-                        ),
-                        .init(
-                            icon: "arrow.clockwise",
-                            title: PluginBrewManagerLocalization.string("Stay up to date"),
-                            description: PluginBrewManagerLocalization.string("Refresh and upgrade everything in one place")
-                        ),
-                    ],
-                    tip: PluginBrewManagerLocalization.string("Open Package Management from the sidebar to manage brew.")
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        // 无需额外启动逻辑
     }
 }
+
+// MARK: - Localization
 
 enum PluginBrewManagerLocalization {
     static let table = "Localizable"
