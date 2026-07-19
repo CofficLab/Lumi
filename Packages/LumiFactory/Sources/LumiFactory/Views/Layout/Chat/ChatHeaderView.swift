@@ -1,9 +1,9 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
 struct ChatHeaderView: View {
-    let items: [LumiChatSectionHeaderItem]
+    let items: [ChatSectionHeaderItem]
 
     var body: some View {
         AppToolbarContainer(

@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../LocalizationKit"),
         .package(path: "../../Plugins/ActivityHeatmapPlugin"),
         .package(path: "../../Plugins/AgentDelayMessagePlugin"),
-        .package(path: "../../Plugins/AgentRAGPlugin"),
+        // .package(path: "../../Plugins/AgentRAGPlugin"),  // TODO: 需要适配新版插件系统
         .package(path: "../../Plugins/AgentRulesPlugin"),
         .package(path: "../../Plugins/AgentTempStoragePlugin"),
         .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
@@ -161,7 +161,7 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
                 .product(name: "AgentDelayMessagePlugin", package: "AgentDelayMessagePlugin"),
-                .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
+                // .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),  // TODO: 需要适配新版插件系统
                 .product(name: "AgentRulesPlugin", package: "AgentRulesPlugin"),
                 .product(name: "AgentTempStoragePlugin", package: "AgentTempStoragePlugin"),
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),

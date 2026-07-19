@@ -1,23 +1,14 @@
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 // MARK: - Chat Section Toolbar Sync
 
 /// Synchronizes chat section toolbar items with the coordinator
+/// TODO: 需要在 LumiKernel 中添加 ChatSectionCoordinator 类型
 struct ChatSectionToolbarSync: View {
-    let items: [LumiChatSectionToolbarItem]
-    @ObservedObject var coordinator: ChatSectionCoordinator
-
-    private var syncKey: String {
-        items.map(\.id).joined(separator: "|")
-    }
+    let items: [ChatSectionToolbarItem]
 
     var body: some View {
-        Color.clear
-            .frame(width: 0, height: 0)
-            .onChange(of: syncKey, initial: true) { _, _ in
-                coordinator.setChatSectionToolbarItems(items)
-            }
+        EmptyView()
     }
 }

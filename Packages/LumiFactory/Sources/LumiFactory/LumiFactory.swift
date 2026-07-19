@@ -38,23 +38,30 @@ public enum LumiFactory: SuperLog {
         // 1. 创建内核
         let kernel = LumiKernel()
 
-        // 2. 注册插件
-        let plugins = PluginService.plugins
+        // 2. 获取插件列表并按 order 排序
+        let plugins = PluginService.plugins.sorted { $0.order < $1.order }
         if verbose {
             logger.info("\(t)注册 \(plugins.count) 个插件")
         }
-        try kernel.plugin?.registerPlugins(plugins)
 
-        // 3. 启动插件
+        // 3. 按顺序注册插件（先注册 PluginManagementPlugin 以提供 PluginProviding 服务）
+        for plugin in plugins {
+            // 调用插件的 register 方法注册服务
+            try plugin.register(kernel: kernel)
+            // 将插件实例注册到 PluginProviding（如果可用）
+            try? kernel.plugin?.registerPlugin(plugin)
+        }
+
+        // 4. 启动插件
         try await kernel.plugin?.bootstrapPlugins()
 
-        // 4. 注册插件的 UI 贡献
+        // 5. 注册插件的 UI 贡献
         kernel.plugin?.registerPluginUIContributions(in: kernel)
 
-        // 5. 内核自检
+        // 6. 内核自检
         try kernel.startup()
 
-        // 6. 保存到内核列表
+        // 7. 保存到内核列表
         kernels.append(kernel)
 
         if verbose {

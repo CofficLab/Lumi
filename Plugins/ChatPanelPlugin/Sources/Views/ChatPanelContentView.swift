@@ -32,11 +32,12 @@ struct ChatPanelContentView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.workspaceBackground)
+        .background(theme.surface)
     }
 }
 
 private struct ConversationContentView: View {
+    @LumiTheme private var theme
     @ObservedObject var chatService: ChatService
     let conversationID: UUID
 
@@ -58,7 +59,7 @@ private struct ConversationContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color(theme.workspaceBackground))
+        .background(theme.surface)
     }
 
     private var header: some View {

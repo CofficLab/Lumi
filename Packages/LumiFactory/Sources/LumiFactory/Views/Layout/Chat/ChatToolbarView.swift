@@ -1,11 +1,11 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
 struct ChatToolbarView: View {
     @LumiTheme private var theme
 
-    let items: [LumiChatSectionToolbarBarItem]
+    let items: [ChatSectionToolbarBarItem]
 
     var body: some View {
         AppToolbarContainer(

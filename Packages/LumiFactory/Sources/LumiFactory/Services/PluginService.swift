@@ -26,7 +26,6 @@ import PluginManagementPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
-import RAGPlugin
 import RClickPlugin
 import RegistryManagerPlugin
 import SendMiddlewarePlugin
@@ -236,4 +235,30 @@ public enum PluginService {
 
         return list
     }()
+
+    // MARK: - Chat UI 聚合
+
+    /// 从 kernel 读取聊天分区项，按 order 排序
+    static func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] {
+        let items = kernel.allChatSectionItems
+        return items.sorted { $0.order < $1.order }
+    }
+
+    /// 从 kernel 读取聊天分区工具栏项，按 order 排序
+    static func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
+        let items = kernel.allChatSectionToolbarItems
+        return items.sorted { $0.order < $1.order }
+    }
+
+    /// 从 kernel 读取聊天分区工具栏条项，按 order 排序
+    static func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
+        let items = kernel.allChatSectionToolbarBarItems
+        return items.sorted { $0.order < $1.order }
+    }
+
+    /// 从 kernel 读取聊天分区标题项，按 order 排序
+    static func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
+        let items = kernel.allChatSectionHeaderItems
+        return items.sorted { $0.order < $1.order }
+    }
 }

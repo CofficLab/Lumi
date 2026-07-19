@@ -1001,6 +1001,9 @@
         }
       }
     },
+    "No conversation selected" : {
+
+    },
     "No Conversations" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1240,6 +1243,9 @@
           }
         }
       }
+    },
+    "Pick or start a conversation from the sidebar." : {
+
     },
     "Providers" : {
       "extractionState" : "stale",

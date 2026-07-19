@@ -4,8 +4,8 @@ import SwiftUI
 
 /// 新版应用主布局
 ///
-/// 基于 `LumiKernel` 构建，消费插件注册的视图容器。当前为最小可用实现，
-/// 后续随插件迁移逐步恢复 panel、chat、status bar 等高级布局能力。
+/// 基于 `LumiKernel` 构建，消费插件注册的视图容器。右侧始终展示 Chat 区域，
+/// 支持插件通过 `kernel.registerChatSectionItem` 注入 Chat UI。
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
@@ -23,6 +23,8 @@ struct AppLayoutView: View {
         let containers = kernel.allViewContainers
         let selected = selectedContainer(from: containers)
 
+        let activeID = selected?.id ?? "main"
+
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
 
@@ -36,12 +38,24 @@ struct AppLayoutView: View {
 
                 AppDivider(.vertical)
 
-                if let selected {
-                    selected.makeView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    emptyState
+                HSplitView {
+                    if let selected {
+                        selected.makeView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        emptyState
+                    }
+
+                    ChatView(
+                        kernel: kernel,
+                        activeID: activeID,
+                        isRailOnlyPanel: false
+                    )
                 }
+
+                ChatSectionToolbarSync(
+                    items: PluginService.chatSectionToolbarItems(kernel: kernel)
+                )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
