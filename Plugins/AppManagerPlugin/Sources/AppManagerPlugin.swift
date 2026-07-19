@@ -1,71 +1,75 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import os
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum AppManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
-    public static let verbose = false
-    /// 数据根目录解析器。默认走 fallback,由 `bootstrapFromLumiCoreIfNeeded`
-    /// 在 @MainActor 上下文覆盖为真实路径(替代旧的 nonisolated 镜像)。
+/// App Manager Plugin
+///
+/// Browse installed macOS applications.
+@MainActor
+public final class AppManagerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-manager")
+    nonisolated public static let emoji = "📱"
+    nonisolated public static let verbose = false
+
+    // MARK: - LumiPlugin
+
+    public let id = "com.coffic.lumi.plugin.app-manager"
+    public let name = "App Manager"
+    public let order = 42
+
+    /// 数据根目录解析器
     nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = {
         AppManagerPluginRuntimeBridge.fallbackRootDirectory
     }
 
+    // MARK: - Initialization
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.app-manager",
-        displayName: PluginAppManagerLocalization.string("App Manager"),
-        description: PluginAppManagerLocalization.string("Browse installed macOS applications."),
-        order: 42,
-        category: .system,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "apps.ipad",
-    )
+    public init() {}
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: "App Manager",
+                systemImage: "apps.ipad",
+                order: order
             ) {
                 AppManagerView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 App Manager 视图容器到内核")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(AppManagerAboutView())
-    }
+    public func boot(kernel: LumiKernel) async throws {
+        // 设置数据目录
+        if let storage = kernel.storage {
+            AppManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+            Self.databaseRootURLProvider = { storage.dataRootDirectory }
+        }
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "square.grid.2x2",
-                            title: PluginAppManagerLocalization.string("Browse apps"),
-                            description: PluginAppManagerLocalization.string("See all installed macOS applications")
-                        ),
-                        .init(
-                            icon: "magnifyingglass",
-                            title: PluginAppManagerLocalization.string("Search"),
-                            description: PluginAppManagerLocalization.string("Find apps by name instantly")
-                        ),
-                    ],
-                    tip: PluginAppManagerLocalization.string("Open App Manager from the sidebar to explore your apps.")
-                )
-            )
-        ]
+        if Self.verbose {
+            Self.logger.info("\(Self.t)App Manager 插件启动完成")
+        }
     }
+}
+
+// MARK: - Runtime Bridge
+
+enum AppManagerPluginRuntimeBridge {
+    nonisolated(unsafe) static var dataRootDirectory: URL?
+
+    static let fallbackRootDirectory: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+        return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+    }()
 }

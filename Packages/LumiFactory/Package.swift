@@ -30,6 +30,7 @@ let package = Package(
         .package(path: "../../Plugins/NettoPlugin"),
         .package(path: "../../Plugins/QuickLauncherPlugin"),
         .package(path: "../../Plugins/PortManagerPlugin"),
+        .package(path: "../../Plugins/AppManagerPlugin"),
     ],
     targets: [
         .target(
@@ -57,6 +58,7 @@ let package = Package(
                 .product(name: "NettoPlugin", package: "NettoPlugin"),
                 .product(name: "QuickLauncherPlugin", package: "QuickLauncherPlugin"),
                 .product(name: "PortManagerPlugin", package: "PortManagerPlugin"),
+                .product(name: "AppManagerPlugin", package: "AppManagerPlugin"),
             ]
         ),
     ]

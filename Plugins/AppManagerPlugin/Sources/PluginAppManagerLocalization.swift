@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LocalizationKit
 
 enum PluginAppManagerLocalization {
     static let table = "Localizable"

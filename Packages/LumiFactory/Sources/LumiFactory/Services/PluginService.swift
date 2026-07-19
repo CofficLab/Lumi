@@ -1,6 +1,7 @@
 import Foundation
 import LumiKernel
 import AgentToolPlugin
+import AppManagerPlugin
 import BrewManagerPlugin
 import ChatKernelPlugin
 import ClipboardManagerPlugin
@@ -75,6 +76,9 @@ public enum PluginService {
 
         // PortManagerPlugin
         list.append(PortManagerPlugin())
+
+        // AppManagerPlugin
+        list.append(AppManagerPlugin())
 
         return list
     }()
