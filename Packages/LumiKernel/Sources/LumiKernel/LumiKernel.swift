@@ -214,7 +214,7 @@ public final class LumiKernel: ObservableObject {
 
     /// Register a plugin
     public func registerPlugin(_ plugin: LumiPlugin) throws {
-        try plugin?.register(plugin)
+        try plugin.register(kernel: self)
     }
 
     /// Register multiple plugins
