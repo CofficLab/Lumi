@@ -1,144 +1,145 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Pure void black, deep and mysterious": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pure void black, deep and mysterious"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Pure void black, deep and mysterious" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pure void black, deep and mysterious"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "纯粹的虚空黑，深邃而神秘"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "纯粹的虚空黑，深邃而神秘"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         }
       }
     },
-    "Void": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Void"
+    "Void" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Void"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虚空深黑"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虚空深黑"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑"
           }
         }
       }
     },
-    "纯粹的虚空黑，深邃而神秘": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pure void black, deep and mysterious"
+    "纯粹的虚空黑，深邃而神秘" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pure void black, deep and mysterious"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "纯粹的虚空黑，深邃而神秘"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "纯粹的虚空黑，深邃而神秘"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純粹的虛空黑，深邃而神秘"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "純粹的虛空黑，深邃而神秘"
           }
         }
       }
     },
-    "虚空深黑 Theme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Void Black Theme"
+    "虚空深黑 Theme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Void Black Theme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虚空深黑 Theme"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虚空深黑 Theme"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑 Theme"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑 Theme"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑 Theme"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑 Theme"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "虛空深黑 Theme"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "虛空深黑 Theme"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

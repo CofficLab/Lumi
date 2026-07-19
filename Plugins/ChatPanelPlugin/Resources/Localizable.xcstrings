@@ -414,6 +414,7 @@
       }
     },
     "Chat input area with editor and command suggestions." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1276,6 +1277,7 @@
       }
     },
     "Queued chat messages above the composer." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
