@@ -552,6 +552,14 @@ public final class LumiKernel: ObservableObject {
         statusBar?.statusBarItems(placement: placement) ?? []
     }
 
+    /// Get status bar items by placement (throws if service not available)
+    public func statusBarItemsChecked(placement: StatusBarPlacement) throws -> [StatusBarItem] {
+        guard let statusBarService = statusBar else {
+            throw LumiKernelError.serviceNotAvailable(service: "StatusBar")
+        }
+        return statusBarService.statusBarItems(placement: placement)
+    }
+
     /// Register status bar item
     public func registerStatusBarItem(_ item: StatusBarItem) {
         statusBar?.registerStatusBarItem(item)

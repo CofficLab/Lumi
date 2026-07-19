@@ -5,29 +5,55 @@ import SwiftUI
 /// 状态栏视图
 ///
 /// 显示所有插件注册的状态栏项，按位置分为左侧、中间、右侧三个区域。
+/// 如果 StatusBarProviding 服务不可用，显示错误提示。
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @ObservedObject var kernel: LumiKernel
 
     var body: some View {
-        let leadingItems = kernel.statusBarItems(placement: .leading)
-        let centerItems = kernel.statusBarItems(placement: .center)
-        let trailingItems = kernel.statusBarItems(placement: .trailing)
+        VStack(spacing: 0) {
+            switch statusBarResult {
+            case .success(let items):
+                statusBarContent(
+                    leading: items.leading,
+                    center: items.center,
+                    trailing: items.trailing
+                )
+            case .failure(let error):
+                StatusBarErrorView(message: error.localizedDescription)
+            }
+        }
+        .overlay(alignment: .top) {
+            AppDivider()
+        }
+    }
 
+    private var statusBarResult: Result<StatusBarItems, Error> {
+        do {
+            let leading = try kernel.statusBarItemsChecked(placement: .leading)
+            let center = try kernel.statusBarItemsChecked(placement: .center)
+            let trailing = try kernel.statusBarItemsChecked(placement: .trailing)
+            return .success(StatusBarItems(leading: leading, center: center, trailing: trailing))
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func statusBarContent(leading: [StatusBarItem], center: [StatusBarItem], trailing: [StatusBarItem]) -> some View {
         HStack(spacing: 14) {
-            ForEach(leadingItems) { item in
+            ForEach(leading) { item in
                 StatusBarPluginButton(item: item)
             }
 
             Spacer()
 
-            ForEach(centerItems) { item in
+            ForEach(center) { item in
                 StatusBarPluginButton(item: item)
             }
 
             Spacer()
 
-            ForEach(trailingItems) { item in
+            ForEach(trailing) { item in
                 StatusBarPluginButton(item: item)
             }
         }
@@ -36,9 +62,6 @@ struct StatusBar: View {
         .padding(.horizontal, 10)
         .frame(height: 24)
         .appSurface(style: .custom(statusBarBackgroundColor), cornerRadius: 0)
-        .overlay(alignment: .top) {
-            AppDivider()
-        }
     }
 
     private var chromeTheme: any LumiAppChromeTheme {
@@ -51,6 +74,42 @@ struct StatusBar: View {
 
     private var statusBarForegroundColor: Color {
         chromeTheme.statusBarForegroundColor()
+    }
+}
+
+// MARK: - Status Bar Items Container
+
+private struct StatusBarItems {
+    let leading: [StatusBarItem]
+    let center: [StatusBarItem]
+    let trailing: [StatusBarItem]
+}
+
+// MARK: - Status Bar Error View
+
+private struct StatusBarErrorView: View {
+    let message: String
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.red)
+            Text(message)
+                .foregroundColor(.red)
+            Spacer()
+            Text("⚠️ Service Error")
+                .foregroundColor(.orange)
+        }
+        .font(.caption)
+        .padding(.horizontal, 10)
+        .frame(height: 24)
+        .background(isHovered ? Color.red.opacity(0.1) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .help("StatusBarProviding service is not registered. Please ensure StatusBarPlugin is loaded.")
     }
 }
 

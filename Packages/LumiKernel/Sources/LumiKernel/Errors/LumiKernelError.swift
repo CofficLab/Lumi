@@ -5,6 +5,7 @@ public enum LumiKernelError: Error, LocalizedError {
     case pluginAlreadyRegistered(id: String)
     case pluginNotFound(id: String)
     case missingRequiredServices([String])
+    case serviceNotAvailable(service: String)
 
     public var errorDescription: String? {
         switch self {
@@ -14,6 +15,8 @@ public enum LumiKernelError: Error, LocalizedError {
             return "Plugin '\(id)' not found"
         case .missingRequiredServices(let services):
             return "Missing required services: \(services.joined(separator: ", "))"
+        case .serviceNotAvailable(let service):
+            return "\(service) service is not available"
         }
     }
 }
