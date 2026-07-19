@@ -1,10 +1,14 @@
 import Foundation
+import LumiUI
 
 /// 编辑器服务能力协议
 ///
 /// 定义 LumiCore 需要的编辑器功能，由具体编辑器插件实现。
+/// 包括文件操作和主题管理功能。
 @MainActor
 public protocol EditorServiceProviding: AnyObject {
+    // MARK: - 文件操作
+
     /// 打开文件
     func openFile(at path: String) async throws
 
@@ -13,4 +17,29 @@ public protocol EditorServiceProviding: AnyObject {
 
     /// 当前文件路径
     var currentFilePath: String? { get }
+
+    // MARK: - 主题管理
+
+    /// 当前编辑器主题 ID
+    var currentThemeId: String { get }
+
+    /// 设置当前编辑器主题
+    /// - Parameter themeId: 主题唯一标识符
+    func setCurrentTheme(_ themeId: String) throws
+
+    /// 所有已注册的编辑器主题
+    var allEditorThemes: [EditorThemeInfo] { get }
+
+    /// 注册编辑器主题
+    /// - Parameter theme: 主题元数据
+    func registerEditorTheme(_ theme: EditorThemeInfo)
+
+    /// 注销编辑器主题
+    /// - Parameter themeId: 主题唯一标识符
+    func unregisterEditorTheme(themeId: String)
+
+    /// 根据主题 ID 获取语法调色板
+    /// - Parameter themeId: 主题唯一标识符
+    /// - Returns: 对应的编辑器语法调色板，如果未找到则返回 nil
+    func editorSyntaxPalette(for themeId: String) -> EditorSyntaxPalette?
 }

@@ -421,6 +421,41 @@ public final class LumiKernel: ObservableObject {
         agentTool?.unregister(id: id)
     }
 
+    // MARK: - Editor Convenience Accessors
+
+    /// 当前编辑器主题 ID
+    public var currentEditorThemeId: String {
+        editor?.currentThemeId ?? "xcode-dark"
+    }
+
+    /// 设置当前编辑器主题
+    public func setCurrentEditorTheme(_ themeId: String) throws {
+        guard let editorService = editor else {
+            throw LumiKernelError.serviceNotAvailable(service: "Editor")
+        }
+        try editorService.setCurrentTheme(themeId)
+    }
+
+    /// 所有已注册的编辑器主题
+    public var allEditorThemes: [EditorThemeInfo] {
+        editor?.allEditorThemes ?? []
+    }
+
+    /// 注册编辑器主题
+    public func registerEditorTheme(_ theme: EditorThemeInfo) {
+        editor?.registerEditorTheme(theme)
+    }
+
+    /// 注销编辑器主题
+    public func unregisterEditorTheme(themeId: String) {
+        editor?.unregisterEditorTheme(themeId: themeId)
+    }
+
+    /// 根据主题 ID 获取语法调色板
+    public func editorSyntaxPalette(for themeId: String) -> EditorSyntaxPalette? {
+        editor?.editorSyntaxPalette(for: themeId)
+    }
+
     // MARK: - Panel Convenience Accessors
 
     /// All registered panel header items

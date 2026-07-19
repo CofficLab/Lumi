@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - AgentToolInfo
+
 /// Agent 工具信息接口
 ///
 /// 简单协议，仅提供工具的基本信息。
