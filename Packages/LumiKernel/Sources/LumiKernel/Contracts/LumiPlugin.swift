@@ -20,6 +20,15 @@ public protocol LumiPlugin: AnyObject {
     /// - 可选插件：300+
     var order: Int { get }
 
+    /// 插件启用策略
+    ///
+    /// 定义插件的启用行为和用户可配置性。
+    /// - alwaysOn: 始终启用，不可禁用（如核心插件）
+    /// - optOut: 默认启用，用户可禁用
+    /// - optIn: 默认禁用，用户可启用
+    /// - disabled: 禁用，不可启用
+    var policy: LumiPluginPolicy { get }
+
     /// 注册服务到内核
     ///
     /// 在此方法中调用 `kernel.registerXxx()` 注册服务。
@@ -71,6 +80,11 @@ public protocol LumiPlugin: AnyObject {
 // MARK: - Default UI Contribution Implementations
 
 public extension LumiPlugin {
+    /// 默认启用策略：默认启用，用户可禁用
+    var policy: LumiPluginPolicy {
+        .optOut
+    }
+
     func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] {
         []
     }
