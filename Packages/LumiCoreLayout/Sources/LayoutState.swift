@@ -35,6 +35,51 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
+    @Published public var activeViewContainerTitle: String = "Main" {
+        didSet {
+            guard activeViewContainerTitle != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)activeViewContainerTitle → \(activeViewContainerTitle)")
+            }
+        }
+    }
+
+    @Published public var currentChatSection: LumiChatSectionLayout = .none {
+        didSet {
+            guard currentChatSection != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)currentChatSection → \(currentChatSection)")
+            }
+        }
+    }
+
+    @Published public var showsRail: Bool = false {
+        didSet {
+            guard showsRail != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)showsRail → \(showsRail)")
+            }
+        }
+    }
+
+    @Published public var showsPanelChrome: Bool = false {
+        didSet {
+            guard showsPanelChrome != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)showsPanelChrome → \(showsPanelChrome)")
+            }
+        }
+    }
+
+    @Published public var isChatSectionVisible: Bool = false {
+        didSet {
+            guard isChatSectionVisible != oldValue else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)isChatSectionVisible → \(isChatSectionVisible)")
+            }
+        }
+    }
+
     // MARK: - 可见性状态
 
     @Published public var chatSectionVisible: Bool = true {
@@ -87,9 +132,9 @@ public final class LayoutState: ObservableObject, SuperLog {
     /// 由 SettingsView 在用户切换标签时更新，持久化后下次打开设置窗口可恢复选择。
     @Published public var selectedSettingsTabID: String? {
         didSet {
-            guard selectedSettingsTabID != oldValue else { return }
+            guard self.selectedSettingsTabID != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)selectedSettingsTabID → \(selectedSettingsTabID ?? "nil")")
+                Self.logger.info("\(Self.t)selectedSettingsTabID → \(self.selectedSettingsTabID ?? "nil")")
             }
         }
     }
