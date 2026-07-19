@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# LogoPlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`LogoPlugin` 是 Lumi 中用于展示或管理界面标识的插件。
 
 ## 目录
 

@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# LayoutKernelPlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`LayoutKernelPlugin` 是 Lumi 中负责核心布局能力的插件，用于提供基础的结构与空间分配逻辑。
 
 ## 目录
 

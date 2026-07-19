@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# ThemePlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`ThemePlugin` 是 Lumi 中负责主题能力相关功能的插件。
 
 ## 目录
 

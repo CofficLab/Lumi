@@ -1,3 +1,15 @@
-.build/
+# Xcode
+*.xcworkspace
+*.xcuserdata
+*.xcconfig
+*.xcbkptlist
+*.xcscmblueprint
+DerivedData/
+build/
 
-Package.resolved
+# Swift Package Manager
+.build/
+Packages/
+
+# macOS
+.DS_Store

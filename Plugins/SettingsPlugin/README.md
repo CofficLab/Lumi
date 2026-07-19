@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# SettingsPlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`SettingsPlugin` 是 Lumi 中负责设置界面与配置管理的插件。
 
 ## 目录
 

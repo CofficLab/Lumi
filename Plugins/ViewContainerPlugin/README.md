@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# ViewContainerPlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`ViewContainerPlugin` 是 Lumi 中负责视图容器相关功能的插件。
 
 ## 目录
 

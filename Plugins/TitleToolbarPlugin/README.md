@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# TitleToolbarPlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`TitleToolbarPlugin` 是 Lumi 中负责标题栏工具栏相关功能的插件。
 
 ## 目录
 

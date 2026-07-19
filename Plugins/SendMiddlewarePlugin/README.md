@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# SendMiddlewarePlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`SendMiddlewarePlugin` 是 Lumi 中负责消息发送流程中间处理逻辑的插件。
 
 ## 目录
 

@@ -1,8 +1,8 @@
-# ToolCorePlugin
+# StoragePlugin
 
 ## 概述
 
-`ToolCorePlugin` 是 Lumi 中负责工具核心能力的插件。
+`StoragePlugin` 是 Lumi 中负责数据存储与持久化相关能力的插件。
 
 ## 目录
 
