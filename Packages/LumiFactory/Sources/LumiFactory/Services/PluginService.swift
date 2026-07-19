@@ -13,6 +13,7 @@ import EditorKernelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
+import MenuBarManagerPlugin
 import NettoPlugin
 import PortManagerPlugin
 import ProjectsPlugin
@@ -99,6 +100,9 @@ public enum PluginService {
 
         // InputPlugin
         list.append(InputPlugin())
+
+        // MenuBarManagerPlugin
+        list.append(MenuBarManagerPlugin())
 
         return list
     }()

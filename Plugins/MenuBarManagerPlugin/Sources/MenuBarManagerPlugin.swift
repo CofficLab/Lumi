@@ -1,75 +1,41 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import os
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum MenuBarManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
-    public static let verbose = false
+/// Menu Bar Manager Plugin
+@MainActor
+public final class MenuBarManagerPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.menubar-manager",
-        displayName: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Manage your menu bar items", bundle: .module),
-        order: 20,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "menubar.rectangle",
-    )
+    public let id = "com.coffic.lumi.plugin.menubar-manager"
+    public let name = "Menu Bar Manager"
+    public let order = 20
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(id: id, title: "Menu Bar Manager", systemImage: "menubar.rectangle") {
                 MenuBarSettingsView()
             }
-        ]
-    }
-
-        @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
         )
     }
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "menubar.rectangle",
-                            title: LumiPluginLocalization.string("Menu bar items", bundle: .module),
-                            description: LumiPluginLocalization.string("See and organize items contributed by plugins", bundle: .module)
-                        ),
-                        .init(
-                            icon: "slider.horizontal.3",
-                            title: LumiPluginLocalization.string("Reorder", bundle: .module),
-                            description: LumiPluginLocalization.string("Arrange menu bar items to your liking", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Menu Bar Manager from the sidebar to manage items.", bundle: .module)
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            MenuBarManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+        }
     }
+}
 
+enum MenuBarManagerPluginRuntimeBridge {
+    nonisolated(unsafe) static var dataRootDirectory: URL?
+    static let fallbackRootDirectory: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        return appSupport.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.coffic.lumi", isDirectory: true)
+    }()
 }
