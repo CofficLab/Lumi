@@ -26,6 +26,7 @@ import PluginManagementPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
+import RAGPlugin
 import RClickPlugin
 import RegistryManagerPlugin
 import SendMiddlewarePlugin

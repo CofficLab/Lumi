@@ -18,10 +18,24 @@ enum RAGPluginService {
         service
     }
 
+    static func configure(kernel: LumiKernel) {
+        let directoryProvider: @Sendable () -> URL = { [weak kernel] in
+            guard let kernel, let storage = kernel.storage else {
+                return RAGPluginRuntime.databaseDirectoryProvider()
+            }
+            return storage.pluginDataDirectory(for: "RAG")
+        }
+
+        service = RAGService(
+            databaseDirectoryProvider: directoryProvider,
+            onProgress: { event in
+                NotificationCenter.postRAGIndexProgress(event)
+            }
+        )
+    }
+
     static func initializeIfNeeded() {
         guard !service.isInitialized else { return }
-        // 异步 fire-and-forget：受限于 agentTools 的同步签名，初始化错误无法经
-        // throws 上抛到 UI。这里至少捕获并记录日志，避免错误被完全静默吞掉。
         Task {
             do {
                 try await service.initialize()

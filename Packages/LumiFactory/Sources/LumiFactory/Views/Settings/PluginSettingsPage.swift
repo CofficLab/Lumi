@@ -10,7 +10,7 @@ struct PluginSettingsPage: View {
     @ObservedObject var kernel: LumiKernel
 
     private var plugins: [LumiPlugin] {
-        kernel.allPlugins
+        kernel.plugin?.allPlugins ?? []
     }
 
     var body: some View {

@@ -10,8 +10,12 @@ public final class RAGPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Register services here
+        // RAG capabilities are provided through RAGPluginService singleton.
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
+    public func boot(kernel: LumiKernel) async throws {
+        RAGPluginRuntime.kernel = kernel
+        RAGPluginService.configure(kernel: kernel)
+        RAGPluginBootstrap.bootstrapRuntime(context: kernel)
+    }
 }

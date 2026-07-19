@@ -43,13 +43,13 @@ public enum LumiFactory: SuperLog {
         if verbose {
             logger.info("\(t)注册 \(plugins.count) 个插件")
         }
-        try kernel.registerPlugins(plugins)
+        try kernel.plugin?.registerPlugins(plugins)
 
         // 3. 启动插件
-        try await kernel.bootstrapPlugins()
+        try await kernel.plugin?.bootstrapPlugins()
 
         // 4. 注册插件的 UI 贡献
-        kernel.registerPluginUIContributions()
+        kernel.plugin?.registerPluginUIContributions(in: kernel)
 
         // 5. 内核自检
         try kernel.startup()
@@ -58,7 +58,7 @@ public enum LumiFactory: SuperLog {
         kernels.append(kernel)
 
         if verbose {
-            logger.info("\(t)内核创建完成，已注册 \(kernel.allPlugins.count) 个插件")
+            logger.info("\(t)内核创建完成，已注册 \(kernel.plugin?.allPlugins.count ?? 0) 个插件")
         }
         return kernel
     }

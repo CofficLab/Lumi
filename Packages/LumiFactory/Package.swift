@@ -70,6 +70,7 @@ let package = Package(
         .package(path: "../../Plugins/RClickPlugin"),
         .package(path: "../../Plugins/InputPlugin"),
         .package(path: "../../Plugins/MenuBarManagerPlugin"),
+        .package(path: "../../Plugins/AgentRAGPlugin"),
     ],
     targets: [
         .target(
@@ -137,6 +138,7 @@ let package = Package(
                 .product(name: "RClickPlugin", package: "RClickPlugin"),
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
+                .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
             ]
         ),
     ]

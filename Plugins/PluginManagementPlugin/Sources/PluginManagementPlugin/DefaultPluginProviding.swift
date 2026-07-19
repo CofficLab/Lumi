@@ -33,6 +33,7 @@ public final class DefaultPluginProviding: PluginProviding {
     }
 
     public func bootstrapPlugins() async throws {
+        guard let kernel else { return }
         for plugin in allPlugins {
             try await plugin.boot(kernel: kernel)
         }
@@ -59,17 +60,16 @@ public final class DefaultPluginProviding: PluginProviding {
 
             // Register view containers from all plugins
             for container in plugin.viewContainers(kernel: kernel) {
-                kernel.registerViewContainer(
-                    ViewContainerItem(
-                        id: container.id,
-                        title: container.title,
-                        systemImage: container.systemImage,
-                        order: pluginOrder,
-                        showsRail: container.showsRail,
-                        showsPanelChrome: container.showsPanelChrome,
-                        content: container.makeView
-                    )
+                var viewContainer = ViewContainerItem(
+                    id: container.id,
+                    title: container.title,
+                    systemImage: container.systemImage,
+                    showsRail: container.showsRail,
+                    showsPanelChrome: container.showsPanelChrome,
+                    content: container.makeView
                 )
+                viewContainer.order = pluginOrder
+                kernel.registerViewContainer(viewContainer)
             }
 
             // Register panel items from all plugins
@@ -77,68 +77,62 @@ public final class DefaultPluginProviding: PluginProviding {
                 kernel.registerPanelHeaderItem(item)
             }
             for item in plugin.panelBottomTabItems(kernel: kernel) {
-                kernel.registerPanelBottomTabItem(
-                    PanelBottomTabItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        title: item.title,
-                        systemImage: item.systemImage,
-                        content: item.makeView
-                    )
+                var tabItem = PanelBottomTabItem(
+                    id: item.id,
+                    title: item.title,
+                    systemImage: item.systemImage,
+                    content: item.makeView
                 )
+                tabItem.order = pluginOrder
+                kernel.registerPanelBottomTabItem(tabItem)
             }
             for item in plugin.panelRailTabItems(kernel: kernel) {
-                kernel.registerPanelRailTabItem(
-                    PanelRailTabItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        title: item.title,
-                        systemImage: item.systemImage,
-                        content: item.makeView
-                    )
+                var railItem = PanelRailTabItem(
+                    id: item.id,
+                    title: item.title,
+                    systemImage: item.systemImage,
+                    content: item.makeView
                 )
+                railItem.order = pluginOrder
+                kernel.registerPanelRailTabItem(railItem)
             }
 
             // Register chat section items from all plugins
             for item in plugin.chatSectionItems(kernel: kernel) {
-                kernel.registerChatSectionItem(
-                    ChatSectionItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        placement: item.placement,
-                        fillsRemainingHeight: item.fillsRemainingHeight,
-                        showsTrailingDivider: item.showsTrailingDivider,
-                        content: item.makeView
-                    )
+                var chatItem = ChatSectionItem(
+                    id: item.id,
+                    placement: item.placement,
+                    fillsRemainingHeight: item.fillsRemainingHeight,
+                    showsTrailingDivider: item.showsTrailingDivider,
+                    content: item.makeView
                 )
+                chatItem.order = pluginOrder
+                kernel.registerChatSectionItem(chatItem)
             }
             for item in plugin.chatSectionToolbarItems(kernel: kernel) {
-                kernel.registerChatSectionToolbarItem(
-                    ChatSectionToolbarItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        placement: item.placement,
-                        content: item.makeView
-                    )
+                var toolbarItem = ChatSectionToolbarItem(
+                    id: item.id,
+                    placement: item.placement,
+                    content: item.makeView
                 )
+                toolbarItem.order = pluginOrder
+                kernel.registerChatSectionToolbarItem(toolbarItem)
             }
             for item in plugin.chatSectionToolbarBarItems(kernel: kernel) {
-                kernel.registerChatSectionToolbarBarItem(
-                    ChatSectionToolbarBarItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        content: item.makeView
-                    )
+                var barItem = ChatSectionToolbarBarItem(
+                    id: item.id,
+                    content: item.makeView
                 )
+                barItem.order = pluginOrder
+                kernel.registerChatSectionToolbarBarItem(barItem)
             }
             for item in plugin.chatSectionHeaderItems(kernel: kernel) {
-                kernel.registerChatSectionHeaderItem(
-                    ChatSectionHeaderItem(
-                        id: item.id,
-                        order: pluginOrder,
-                        content: item.makeView
-                    )
+                var headerItem = ChatSectionHeaderItem(
+                    id: item.id,
+                    content: item.makeView
                 )
+                headerItem.order = pluginOrder
+                kernel.registerChatSectionHeaderItem(headerItem)
             }
 
             // Register settings items from all plugins
@@ -151,35 +145,31 @@ public final class DefaultPluginProviding: PluginProviding {
 
             // Register logo items from all plugins
             for item in plugin.logoItems(kernel: kernel) {
+                var logoItem: LogoItem
                 if let makeOverlay = item.makeOverlay {
-                    kernel.registerLogoItem(
-                        LogoItem(
-                            id: item.id,
-                            order: pluginOrder,
-                            makeView: item.makeView,
-                            makeOverlay: makeOverlay
-                        )
+                    logoItem = LogoItem(
+                        id: item.id,
+                        makeView: item.makeView,
+                        makeOverlay: makeOverlay
                     )
                 } else {
-                    kernel.registerLogoItem(
-                        LogoItem(
-                            id: item.id,
-                            order: pluginOrder,
-                            makeView: item.makeView
-                        )
+                    logoItem = LogoItem(
+                        id: item.id,
+                        makeView: item.makeView
                     )
                 }
+                logoItem.order = pluginOrder
+                kernel.registerLogoItem(logoItem)
             }
 
             // Register onboarding pages from all plugins
             for page in plugin.onboardingPages(kernel: kernel) {
-                kernel.registerOnboardingPage(
-                    OnboardingPageItem(
-                        id: page.id,
-                        order: pluginOrder,
-                        content: page.makeView
-                    )
+                var pageItem = OnboardingPageItem(
+                    id: page.id,
+                    content: page.makeView
                 )
+                pageItem.order = pluginOrder
+                kernel.registerOnboardingPage(pageItem)
             }
         }
 
@@ -197,5 +187,6 @@ public final class DefaultPluginProviding: PluginProviding {
 
     private func updateSortedPlugins() {
         allPlugins = pluginOrder.compactMap { plugins[$0] }
+            .sorted { $0.order < $1.order }
     }
 }
