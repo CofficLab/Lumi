@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../SuperLogKit"),
         .package(path: "../../Plugins/StoragePlugin"),
         .package(path: "../../Plugins/ProjectPlugin"),
+        .package(path: "../../Plugins/AgentToolPlugin"),
     ],
     targets: [
         .target(
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
                 .product(name: "ProjectPlugin", package: "ProjectPlugin"),
+                .product(name: "AgentToolPlugin", package: "AgentToolPlugin"),
             ]
         ),
     ]
