@@ -22,45 +22,25 @@ public enum EditorRuntimeBridge {
         guard let editor else { return }
         let service = editor.editorService
 
-        EditorPreviewRuntimeBridge.editorServiceProvider = { _ in service }
-        EditorStickySymbolBarBridge.editorServiceProvider = { _ in service }
+        // EditorPreviewBridge
+        EditorPreviewRuntimeBridge.editorServiceProvider = { service }
 
-        EditorBottomTerminalBridge.currentProjectPathProvider = { _ in
-            editor.currentProjectPathProvider?() ?? ""
-        }
+        // EditorStickySymbolBarBridge
+        EditorStickySymbolBarBridge.editorServiceProvider = { service }
+
+        // EditorBottomTerminalBridge
         EditorBottomTerminalBridge.editorThemeIdProvider = {
             let scheme = AppThemeAppearanceResolver.effectiveColorScheme
             return LumiUIThemeRegistry.shared.resolvedEditorThemeId(colorScheme: scheme) ?? "xcode-dark"
         }
 
-        EditorPreviewRuntimeBridge.addToChatHandler = { text, _ in
+        // Add to chat handler
+        EditorPreviewRuntimeBridge.addToChatHandler = { text in
             NotificationCenter.default.post(
                 name: Notification.Name("addToChat"),
                 object: nil,
                 userInfo: ["text": text, "windowId": service.state.windowId as Any]
             )
-        }
-
-        let runtime = PluginRuntimeContext(
-            editorServiceProvider: { _ in service },
-            currentProjectPath: { _ in editor.currentProjectPathProvider?() }
-        )
-        runtime.addToChat = { text, _ in
-            NotificationCenter.default.post(
-                name: Notification.Name("addToChat"),
-                object: nil,
-                userInfo: ["text": text, "windowId": service.state.windowId as Any]
-            )
-        }
-        runtime.openFile = { url, projectRoot, _ in
-            if let projectRoot {
-                await service.refreshProjectContext(for: projectRoot)
-            }
-            service.sessions.open(at: url)
-        }
-
-        Task { @MainActor in
-            await EditorLanguageRuntimeBridge.configure?(runtime)
         }
     }
 }

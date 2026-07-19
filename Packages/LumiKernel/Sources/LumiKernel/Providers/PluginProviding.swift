@@ -18,8 +18,8 @@ public protocol PluginProviding: ObservableObject {
     /// 按类型查询插件
     func plugin<T: LumiPlugin>(ofType type: T.Type) -> T?
 
-    /// 注册插件
-    func register(_ plugin: LumiPlugin) throws
+    /// 注册插件（内部使用，调用插件的 register 方法）
+    func registerPlugin(_ plugin: LumiPlugin) throws
 
     /// 批量注册插件
     func registerPlugins(_ plugins: [LumiPlugin]) throws

@@ -13,13 +13,13 @@ import UniformTypeIdentifiers
 public struct EditorPanelView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
     @EnvironmentObject private var service: EditorService
-    let lumiCore: any LumiCoreAccessing
+    let kernel: LumiKernel
 
     /// 便利访问
     private var editorState: EditorState { service.state }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        kernel.project?.currentProject?.path ?? ""
     }
 
     private var projectRootPath: String? {
@@ -37,8 +37,8 @@ public struct EditorPanelView: View {
     /// 避免在 SourceEditorView.onAppear (initializeCoordinators) 执行前就触发文件加载导致崩溃
     @State private var isEditorReady: Bool = false
 
-    public init(lumiCore: any LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
     public var body: some View {
