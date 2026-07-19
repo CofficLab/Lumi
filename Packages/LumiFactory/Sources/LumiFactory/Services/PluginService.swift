@@ -14,6 +14,7 @@ import NettoPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
+import RegistryManagerPlugin
 import StoragePlugin
 import VideoConverterPlugin
 import os
@@ -79,6 +80,9 @@ public enum PluginService {
 
         // AppManagerPlugin
         list.append(AppManagerPlugin())
+
+        // RegistryManagerPlugin
+        list.append(RegistryManagerPlugin())
 
         return list
     }()

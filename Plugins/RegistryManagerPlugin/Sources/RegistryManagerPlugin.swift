@@ -1,63 +1,50 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
+import SuperLogKit
 import SwiftUI
 import os
 
-public enum RegistryManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.registry-manager")
+/// Registry Manager Plugin
+///
+/// Manage Lumi registries.
+@MainActor
+public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.registry-manager")
+    nonisolated public static let emoji = "🔄"
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.registry-manager",
-        displayName: LumiPluginLocalization.string("Registry Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Manage Lumi registries", bundle: .module),
-        order: 80,
-        category: .system,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "arrow.triangle.2.circlepath",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    public let id = "com.coffic.lumi.plugin.registry-manager"
+    public let name = "Registry Manager"
+    public let order = 80
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: "Registry Manager",
+                systemImage: "arrow.triangle.2.circlepath"
             ) {
                 RegistryManagerView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 Registry Manager 视图容器到内核")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(RegistryManagerAboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "externaldrive.connected.to.line.below",
-                            title: LumiPluginLocalization.string("Connect", bundle: .module),
-                            description: LumiPluginLocalization.string("Add and manage Lumi registries", bundle: .module)
-                        ),
-                        .init(
-                            icon: "arrow.triangle.2.circlepath",
-                            title: LumiPluginLocalization.string("Sync", bundle: .module),
-                            description: LumiPluginLocalization.string("Refresh registry contents on demand", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Registry Manager from the sidebar to manage sources.", bundle: .module)
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Registry Manager 插件启动完成")
+        }
     }
 }

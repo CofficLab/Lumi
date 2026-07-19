@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 public struct RegistryManagerView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
