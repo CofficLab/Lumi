@@ -16,6 +16,7 @@ public final class ProjectPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.project"
     public let name = "Project Plugin"
+    public let order = 20  // 核心插件，其次加载
 
     // MARK: - Initialization
 
@@ -29,5 +30,9 @@ public final class ProjectPlugin: LumiPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 Project 服务")
         }
+    }
+
+    public func boot(kernel: LumiKernel) async throws {
+        // 无需额外启动逻辑
     }
 }

@@ -12,15 +12,13 @@ public struct AppCommands: Commands {
     }
 
     public var body: some Commands {
-        // 渲染插件注册的命令组
-        ForEach(kernel.allCommandGroups) { group in
-            CommandGroup(named: group.name) {
-                ForEach(group.items) { item in
-                    Button(item.title) {
-                        item.action()
-                    }
-                    .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
+        // 渲染插件注册的命令组到工具菜单
+        CommandGroup(after: .toolbar) {
+            ForEach(kernel.allCommandGroups.first?.items ?? []) { item in
+                Button(item.title) {
+                    item.action()
                 }
+                .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
             }
         }
 

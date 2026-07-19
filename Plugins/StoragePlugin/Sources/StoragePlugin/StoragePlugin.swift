@@ -16,6 +16,7 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.storage"
     public let name = "Storage Plugin"
+    public let order = 10  // 核心插件，最先加载
 
     /// 数据根目录
     private let dataRootDirectory: URL
@@ -43,6 +44,10 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 Storage 服务: \(self.dataRootDirectory.path)")
         }
+    }
+
+    public func boot(kernel: LumiKernel) async throws {
+        // 无需额外启动逻辑
     }
 
     // MARK: - Factory Methods

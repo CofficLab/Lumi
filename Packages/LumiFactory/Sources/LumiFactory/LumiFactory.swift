@@ -109,25 +109,6 @@ public enum LumiFactory: SuperLog {
 
     /// 创建应用命令菜单
     public static func makeCommands() -> some Commands {
-        // 使用主内核，如果不存在则使用空命令
-        if let kernel = mainKernel {
-            return AppCommands(kernel: kernel)
-        } else {
-            return EmptyCommands()
-        }
-    }
-}
-
-// MARK: - Empty Commands
-
-private struct EmptyCommands: Commands {
-    var body: some Commands {
-        EmptyCommandsContent()
-    }
-}
-
-private struct EmptyCommandsContent: Commands {
-    var body: some Commands {
-        // 空实现
+        AppCommands(kernel: mainKernel ?? LumiKernel())
     }
 }
