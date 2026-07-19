@@ -1,73 +1,17 @@
 import LumiKernel
 import LumiUI
-import SwiftUI
-import os
 
-public struct LoadedPluginInfo: Identifiable, Sendable {
-    public let id: String
-    public let displayName: String
-    public let description: String
-    public let order: Int
+@MainActor
+public final class AppLoadedPluginsPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.app-loaded-plugins"
+    public let name = "AppLoadeds"
+    public let order = 79
 
-    public init(id: String, displayName: String, description: String, order: Int) {
-        self.id = id
-        self.displayName = displayName
-        self.description = description
-        self.order = order
-    }
-}
+    public init() {}
 
-public enum AppLoadedPluginsPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-loaded-plugins")
-
-    nonisolated(unsafe) public static var pluginProvider: @MainActor () -> [LoadedPluginInfo] = { [] }
-
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.app-loaded-plugins",
-        displayName: PluginAppLoadedPluginsLocalization.string("App Plugins"),
-        description: PluginAppLoadedPluginsLocalization.string("Show loaded app plugins in status bar"),
-        order: 79,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "puzzlepiece.extension",
-    )
-
-    @MainActor
-    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
-        [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    AppLoadedPluginsStatusBarView(pluginProvider: pluginProvider)
-                }
-            )
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
-}
-
-enum PluginAppLoadedPluginsLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

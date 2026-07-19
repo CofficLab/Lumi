@@ -14,12 +14,14 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // 核心依赖最少化，只依赖必要的抽象
+        .package(path: "../LumiUI"),
     ],
     targets: [
         .target(
             name: "LumiKernel",
-            dependencies: [],
+            dependencies: [
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
             path: "Sources/LumiKernel"
         ),
         .testTarget(

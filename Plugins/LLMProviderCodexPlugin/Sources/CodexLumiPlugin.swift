@@ -1,31 +1,19 @@
+import LLMKit
 import LumiKernel
-import os
+import LumiUI
 
-public enum CodexLumiPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.codex")
+@MainActor
+public final class CodexLumiPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.codex"
+    public let name = "Codex CLI"
+    public let order = 105
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.codex",
-        displayName: LumiPluginLocalization.string("Codex CLI", bundle: .module),
-        description: LumiPluginLocalization.string("OpenAI models through the Codex CLI.", bundle: .module),
-        order: 105,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "terminal",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        [CodexLumiProvider()]
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
 
-    @MainActor
-    public static func llmProviderSettingsViews(context: any LumiLLMProviderSettingsContributing) -> [LumiLLMProviderSettingsViewItem] {
-        [
-            LumiLLMProviderSettingsViewItem(providerID: "codex") { provider in
-                CodexLocalProviderSettingsView(provider: provider)
-            },
-        ]
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

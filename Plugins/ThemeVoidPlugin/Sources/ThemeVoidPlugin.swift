@@ -1,27 +1,22 @@
 import LumiKernel
 import LumiUI
-import os
 
-public enum ThemeVoidPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.theme.void")
+@MainActor
+public final class ThemeVoidPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.void"
+    public let name = "Void Theme"
+    public let order = 123
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.void",
-        displayName: LumiPluginLocalization.string("虚空深黑 Theme", bundle: .module),
-        description: LumiPluginLocalization.string("纯粹的虚空黑，深邃而神秘", bundle: .module),
-        order: 123,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+    public init() {}
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VoidTheme(),
                 editorThemeId: "void"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

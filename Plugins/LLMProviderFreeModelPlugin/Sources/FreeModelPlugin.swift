@@ -1,22 +1,19 @@
+import LLMKit
 import LumiKernel
-import os
+import LumiUI
 
-public enum FreeModelPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.freemodel")
+@MainActor
+public final class FreeModelPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.freemodel"
+    public let name = "FreeModel"
+    public let order = 95
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.freemodel",
-        displayName: LumiPluginLocalization.string("FreeModel", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes FreeModel models to Lumi Chat.", bundle: .module),
-        order: 95,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        [FreeModelProvider()]
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

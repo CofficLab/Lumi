@@ -10,14 +10,14 @@ let package = Package(
         .library(name: "GoalTaskPlugin", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "GoalTaskPlugin",
-            dependencies: ["LumiCoreKit", "SuperLogKit", "LumiUI"],
+            dependencies: ["LumiKernel", "SuperLogKit", "LumiUI"],
             path: "Sources"
         ),
         .testTarget(

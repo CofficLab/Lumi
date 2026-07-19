@@ -1,21 +1,25 @@
 import LumiKernel
+import LumiUI
 
-public enum LogoSmartLightPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.lumi.plugin.logo-smart-light",
-        displayName: LumiPluginLocalization.string("Smart Light Logo", bundle: .module),
-        description: LumiPluginLocalization.string("Default animated logo with smart light effect", bundle: .module),
-        order: 200,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class LogoSmartLightPlugin: LumiPlugin {
+    public let id = "com.lumi.plugin.logo-smart-light"
+    public let name = "Smart Light Logo"
+    public let order = 200
 
+    public init() {}
 
-    public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
+    public func register(kernel: LumiKernel) throws {
+        // Logo items are registered in logoItems method
+    }
+
+    public func boot(kernel: LumiKernel) async throws {}
+
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] {
         [
             LogoItem(
-                id: info.id,
-                order: info.order,
+                id: id,
+                order: order,
                 makeView: { scene in
                     SmartLightLogoView(scene: scene)
                 }

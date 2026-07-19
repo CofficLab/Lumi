@@ -1,38 +1,19 @@
+import LLMKit
 import LumiKernel
 import LumiUI
-import SwiftUI
 
-@available(macOS 14.0, *)
-public enum MLXLumiPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.mlx",
-        displayName: LumiPluginLocalization.string("MLX", bundle: .module),
-        description: LumiPluginLocalization.string("Local MLX models for offline chat.", bundle: .module),
-        order: 95,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "desktopcomputer",
-    )
+@MainActor
+public final class MLXLumiPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.mlx"
+    public let name = "MLX"
+    public let order = 95
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [MLXLumiProvider()]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
 
-    @MainActor
-    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
-        ProviderRenderKindManager.shared.registerProviderPrefix("mlx-", for: "mlx")
-        return [ModelNotDownloadedRenderer.item]
-    }
-
-    @MainActor
-    public static func llmProviderSettingsViews(context: any LumiLLMProviderSettingsContributing) -> [LumiLLMProviderSettingsViewItem] {
-        [
-            LumiLLMProviderSettingsViewItem(providerID: "mlx") { _ in
-                MLXLocalProviderSettingsView()
-            },
-        ]
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

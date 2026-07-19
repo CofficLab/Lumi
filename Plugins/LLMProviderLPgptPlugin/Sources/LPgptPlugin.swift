@@ -1,24 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
+import LumiUI
 
-public enum LPgptPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.lpgpt",
-        displayName: LumiPluginLocalization.string("LPgpt", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes LPgpt models to Lumi Chat.", bundle: .module),
-        order: 98,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class LPgptPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.lpgpt"
+    public let name = "LPgpt"
+    public let order = 98
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderLPgptPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderLPgptPlugin"))
-        }
-        return [LPgptProvider()]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

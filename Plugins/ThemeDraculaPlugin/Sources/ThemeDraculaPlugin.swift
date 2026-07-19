@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeDraculaPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.dracula",
-        displayName: LumiPluginLocalization.string("Dracula Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Dracula Official dark theme", bundle: .module),
-        order: 132,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeDraculaPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.dracula"
+    public let name = "Dracula Theme"
+    public let order = 132
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: DraculaTheme(),
                 editorThemeId: "dracula"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

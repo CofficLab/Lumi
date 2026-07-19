@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeGithubPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.github",
-        displayName: LumiPluginLocalization.string("GitHub Theme", bundle: .module),
-        description: LumiPluginLocalization.string("GitHub style app theme", bundle: .module),
-        order: 128,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeGithubPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.github"
+    public let name = "GitHub Theme"
+    public let order = 128
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: GitHubTheme(),
                 editorThemeId: "github"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

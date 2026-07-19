@@ -1,45 +1,17 @@
 import LumiKernel
 import LumiUI
-import SwiftUI
 
-public enum OpenInCursorPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.open-in-cursor",
-        displayName: LumiPluginLocalization.string("Open in Cursor", bundle: .module),
-        description: LumiPluginLocalization.string("Open current file or project in Cursor editor.", bundle: .module),
-        order: 60,
-        category: .development,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "cursor",
-    )
+@MainActor
+public final class AgentOpenInCursorPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.open-in-cursor"
+    public let name = "Open in Cursor"
+    public let order = 60
 
-    @MainActor
-    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
-        [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    OpenInCursorStatusBarView()
-                }
-            )
-        ]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

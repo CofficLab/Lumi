@@ -1,24 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
+import LumiUI
 
-public enum HyperAPIPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.hyperapi",
-        displayName: LumiPluginLocalization.string("HyperAPI", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes HyperAPI models to Lumi Chat.", bundle: .module),
-        order: 97,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class HyperAPIPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.hyperapi"
+    public let name = "HyperAPI"
+    public let order = 97
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderHyperAPIPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderHyperAPIPlugin"))
-        }
-        return [HyperAPIProvider()]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

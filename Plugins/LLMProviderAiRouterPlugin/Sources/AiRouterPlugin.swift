@@ -1,24 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
+import LumiUI
 
-public enum AiRouterPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.airouter",
-        displayName: LumiPluginLocalization.string("AiRouter", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes AiRouter models to Lumi Chat.", bundle: .module),
-        order: 91,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class AiRouterPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
+    public let name = "AiRouter"
+    public let order = 91
 
-    @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAiRouterPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderAiRouterPlugin"))
-        }
-        return [AiRouterProvider()]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

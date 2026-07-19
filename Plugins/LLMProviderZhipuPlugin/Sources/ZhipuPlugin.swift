@@ -1,60 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
+import LumiUI
 
-public enum ZhipuPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.zhipu",
-        displayName: LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes Zhipu GLM models and Zhipu-specific chat error renderers.", bundle: .module),
-        order: 110,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class ZhipuPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.zhipu"
+    public let name = "智谱 Coding Plan"
+    public let order = 110
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderZhipuPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderZhipuPlugin"))
-        }
-        return [
-            ZhipuProvider(),
-            ZhipuAPIProvider()
-        ]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
 
-    @MainActor
-    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
-        guard context.isChatSectionVisible,
-              context.activeProviderID == ZhipuProvider.info.id
-        else {
-            return []
-        }
-
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).quota",
-                title: LumiPluginLocalization.string("Zhipu GLM Quota", bundle: .module),
-                systemImage: "chart.bar.fill",
-                placement: .trailing,
-                statusBarView: {
-                    StatusBarView()
-                }
-            )
-        ]
-    }
-
-    @MainActor
-    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
-        ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: ZhipuProvider.info.id)
-        return [
-            ApiKeyMissingRenderer.item,
-            Http401Renderer.item,
-            Http403Renderer.item,
-            HttpErrorRenderer.item,
-            RequestFailedRenderer.item,
-        ]
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

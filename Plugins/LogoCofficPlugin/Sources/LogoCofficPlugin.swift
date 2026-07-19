@@ -1,21 +1,25 @@
 import LumiKernel
+import LumiUI
 
-public enum LogoCofficPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.lumi.plugin.logo-coffic",
-        displayName: LumiPluginLocalization.string("Coffic Logo", bundle: .module),
-        description: LumiPluginLocalization.string("Coffee cup themed animated logo", bundle: .module),
-        order: 100,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class LogoCofficPlugin: LumiPlugin {
+    public let id = "com.lumi.plugin.logo-coffic"
+    public let name = "Coffic Logo"
+    public let order = 100
 
+    public init() {}
 
-    public static func logoItems(context: any LumiCoreAccessing) -> [LogoItem] {
+    public func register(kernel: LumiKernel) throws {
+        // Logo items are registered in logoItems method
+    }
+
+    public func boot(kernel: LumiKernel) async throws {}
+
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] {
         [
             LogoItem(
-                id: info.id,
-                order: info.order,
+                id: id,
+                order: order,
                 makeView: { scene in
                     CofficLogoView(scene: scene)
                 }

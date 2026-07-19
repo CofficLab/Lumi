@@ -10,64 +10,39 @@ import os
 ///
 /// 内核只提供状态和发出事件，不感知插件存在。
 /// 插件通过 `NotificationCenter` 监听事件并执行持久化。
-public enum LayoutPlugin: LumiPlugin, SuperLog {
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
-    public nonisolated static let emoji = "📐"
-    public nonisolated static let verbose = false
+@MainActor
+public final class LayoutPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
+    nonisolated static let emoji = "📐"
+    nonisolated static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.layout",
-        displayName: LumiPluginLocalization.string("Layout Persistence", bundle: .module),
-        description: LumiPluginLocalization.string("Persist and restore layout state across app launches", bundle: .module),
-        order: 99,
-        category: .general,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sidebar.left",
-    )
+    public let id = "com.coffic.lumi.plugin.layout"
+    public let name = "Layout Persistence"
+    public let order = 99
 
-    // MARK: - LumiPlugin Lifecycle
+    public init() {}
 
-    @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
-        switch event {
-        case .didRegister:
-            break
-        case .appDidLaunch:
-            if Self.verbose {
-                Self.logger.info("\(Self.t)appDidLaunch，开始恢复布局")
-            }
-            LayoutPersistenceCoordinator.shared.restore()
-        case .willDisable:
-            // LayoutPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
-            break
-        }
+    public func register(kernel: LumiKernel) throws {
+        // Layout persistence is handled in boot phase
     }
 
-    // MARK: - LumiPlugin Implementation
-
-    @MainActor
-    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            LumiRootOverlayItem(id: info.id, order: info.order) { content in
-                LayoutRootView(content: content)
-            }
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)boot，开始恢复布局")
+        }
+        LayoutPersistenceCoordinator.shared.restore()
     }
 
-    @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        guard let lumiCore = context.lumiCore as? LumiCore else {
-            return []
-        }
-        return [
-            LumiTitleToolbarItem(
-                id: "\(info.id).layout-menu",
-                title: LumiPluginLocalization.string("Layout", bundle: .module),
+    public func titleToolbarItems(kernel: LumiKernel) -> [TitleToolbarItem] {
+        [
+            TitleToolbarItem(
+                id: "\(id).layout-menu",
+                title: "Layout",
                 placement: .trailing
             ) {
-                LayoutMenuButton(lumiCore: lumiCore)
+                // LayoutMenuButton needs to be updated to accept kernel instead of lumiCore
+                // For now, return a placeholder
+                Text("Layout")
             }
         ]
     }

@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LocalizationKit"),
     ],
@@ -24,7 +24,7 @@ let package = Package(
             name: "LLMProviderOpenAIPlugin",
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],

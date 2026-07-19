@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeMidnightPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.midnight",
-        displayName: LumiPluginLocalization.string("Midnight Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Deep dark blue color scheme", bundle: .module),
-        order: 120,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeMidnightPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.midnight"
+    public let name = "Midnight Theme"
+    public let order = 120
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: MidnightTheme(),
                 editorThemeId: "midnight"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

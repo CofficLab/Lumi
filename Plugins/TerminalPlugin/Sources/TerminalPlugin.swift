@@ -1,73 +1,17 @@
 import LumiKernel
 import LumiUI
-import SwiftUI
 
-public enum TerminalPlugin: LumiPlugin {
+@MainActor
+public final class TerminalPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.terminal"
+    public let name = "Terminal"
+    public let order = 90
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.terminal",
-        displayName: LumiPluginLocalization.string("Terminal", bundle: .module),
-        description: LumiPluginLocalization.string("Native interactive terminal powered by SwiftTerm", bundle: .module),
-        order: 90,
-        category: .development,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "terminal",
-    )
+    public init() {}
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) { [lumiCore = context.lumiCore] in
-                if let lumiCore = lumiCore {
-                    TerminalMainView(lumiCore: lumiCore)
-                }
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-        @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
-
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "rectangle.3.group",
-                            title: LumiPluginLocalization.string("Multiple sessions", bundle: .module),
-                            description: LumiPluginLocalization.string("Open several shells side by side", bundle: .module)
-                        ),
-                        .init(
-                            icon: "keyboard",
-                            title: LumiPluginLocalization.string("Full keyboard", bundle: .module),
-                            description: LumiPluginLocalization.string("Complete VT escapes and shell integration", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Terminal from the sidebar at any time.", bundle: .module)
-                )
-            )
-        ]
-    }
-
+    public func boot(kernel: LumiKernel) async throws {}
 }

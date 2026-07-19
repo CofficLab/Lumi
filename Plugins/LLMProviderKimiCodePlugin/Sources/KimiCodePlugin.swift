@@ -1,32 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
-import os
+import LumiUI
 
-public enum KimiCodePlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.kimi-code")
+@MainActor
+public final class KimiCodePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.kimi-code"
+    public let name = "Kimi Code"
+    public let order = 103
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.kimi-code",
-        displayName: LumiPluginLocalization.string("Kimi Code", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes Kimi Code models to Lumi Chat.", bundle: .module),
-        order: 103,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            let directory = core.storage.pluginDataDirectory(for: "LLMProviderKimiCodePlugin")
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderKimiCodePlugin-OpenAI", directory: directory)
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderKimiCodePlugin-Anthropic", directory: directory)
-        }
-        return [
-            KimiCodeOpenAIProvider(),
-            KimiCodeAnthropicProvider()
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

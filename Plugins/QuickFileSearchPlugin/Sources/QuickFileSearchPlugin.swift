@@ -1,65 +1,17 @@
-import EditorService
-import Foundation
 import LumiKernel
-import SwiftUI
+import LumiUI
 
-public enum QuickFileSearchBridge {
-    public nonisolated(unsafe) static var activeWindowIdProvider: (@MainActor () -> UUID?)?
-    public nonisolated(unsafe) static var selectFileHandler: (@MainActor (String, UUID?) -> Void)?
-}
+@MainActor
+public final class QuickFileSearchPlugin: LumiPlugin {
+    public let id = "QuickFileSearch"
+    public let name = "Quick File Search"
+    public let order = 50
 
-/// Quick File Search Plugin: 快速文件搜索插件
-///
-/// 功能：通过 Cmd+P 快捷键触发悬浮文件搜索框，快速定位和选择项目中的文件
-public enum QuickFileSearchPlugin: LumiPlugin {
+    public init() {}
 
-    public static let info = LumiPluginInfo(
-        id: "QuickFileSearch",
-        displayName: LumiPluginLocalization.string("Quick File Search", bundle: .module),
-        description: LumiPluginLocalization.string("Fast file search with Cmd+P", bundle: .module),
-        order: 50,
-        category: .general,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "magnifyingglass",
-    )
-
-    @MainActor
-    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
-        configureBridge(context: context)
-        let projectPathProvider = {
-            context.lumiCore?.projectComponent.currentProject?.path ?? ""
-        }
-        let windowIdProvider = {
-            context.resolve(LumiEditorServicing.self)?.editorService.state.windowId
-        }
-        return [
-            LumiRootOverlayItem(id: "\(info.id).overlay", order: info.order) { content in
-                AnyView(
-                    FileSearchOverlay(
-                        content: content,
-                        projectPathProvider: projectPathProvider,
-                        windowIdProvider: windowIdProvider
-                    )
-                )
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
-        return AnyView(QuickFileSearchSettingsView(projectPath: projectPath))
-    }
-
-    @MainActor
-    private static func configureBridge(context: any LumiCoreAccessing) {
-        QuickFileSearchBridge.activeWindowIdProvider = {
-            context.resolve(LumiEditorServicing.self)?.editorService.state.windowId
-        }
-        QuickFileSearchBridge.selectFileHandler = { path, _ in
-            guard let editor = context.resolve(LumiEditorServicing.self) else { return }
-            editor.editorService.sessions.open(at: URL(fileURLWithPath: path))
-        }
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

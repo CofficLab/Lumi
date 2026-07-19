@@ -1,38 +1,17 @@
 import LumiKernel
-import LumiKernel
-import SwiftUI
+import LumiUI
 
-/// 历史数据库浏览器：在聊天面板状态栏展示消息/对话列表。
-public enum HistoryDBStatusBarPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.history-db-status-bar",
-        displayName: LumiPluginLocalization.string("History Database Browser", bundle: .module),
-        description: LumiPluginLocalization.string("Browse message and conversation history in status bar popover", bundle: .module),
-        order: 98,
-        category: .general,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "tablecells",
-    )
+@MainActor
+public final class HistoryDBStatusBarPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.history-db-status-bar"
+    public let name = "History Database Browser"
+    public let order = 98
 
-    @MainActor
-    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
-        guard context.isChatSectionVisible,
-              let historyService = context.resolve((any HistoryQueryService).self)
-        else {
-            return []
-        }
+    public init() {}
 
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).browser",
-                title: LumiPluginLocalization.string("History Database Browser", bundle: .module),
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    StatusBarView(historyService: historyService)
-                }
-            ),
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

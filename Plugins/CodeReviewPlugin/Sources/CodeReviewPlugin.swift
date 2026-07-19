@@ -1,26 +1,17 @@
 import LumiKernel
-import SwiftUI
+import LumiUI
 
-public enum CodeReviewPlugin: LumiPlugin {
+@MainActor
+public final class CodeReviewPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.code-review"
+    public let name = "Code Review"
+    public let order = 17
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.code-review",
-        displayName: LumiPluginLocalization.string("Code Review", bundle: .module),
-        description: LumiPluginLocalization.string("Reviews current Git changes and reports actionable issues.", bundle: .module),
-        order: 17,
-        category: .development,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "checklist",
-    )
+    public init() {}
 
-    @MainActor
-    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
-        [RunReviewTool()]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(CodeReviewAboutView())
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

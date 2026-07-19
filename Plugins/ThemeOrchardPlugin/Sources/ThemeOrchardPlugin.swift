@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeOrchardPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.orchard",
-        displayName: LumiPluginLocalization.string("Orchard Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Orchard red app theme", bundle: .module),
-        order: 128,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeOrchardPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.orchard"
+    public let name = "Orchard Theme"
+    public let order = 128
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: OrchardTheme(),
                 editorThemeId: "orchard"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

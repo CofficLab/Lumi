@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeAuroraPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.aurora",
-        displayName: LumiPluginLocalization.string("Aurora Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Aurora purple app theme", bundle: .module),
-        order: 121,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeAuroraPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.aurora"
+    public let name = "Aurora Theme"
+    public let order = 121
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: AuroraTheme(),
                 editorThemeId: "aurora"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

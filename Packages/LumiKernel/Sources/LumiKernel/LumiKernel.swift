@@ -1,4 +1,5 @@
 import Foundation
+import LumiUI
 
 /// Lumi lightweight core
 ///
@@ -96,6 +97,11 @@ public final class LumiKernel: ObservableObject {
     /// Logo service
     public var logo: (any LogoProviding)? {
         resolveService(LogoProviding.self)
+    }
+
+    /// Theme service
+    public var theme: (any ThemeProviding)? {
+        resolveService(ThemeProviding.self)
     }
 
     // MARK: - Initialization
@@ -206,6 +212,11 @@ public final class LumiKernel: ObservableObject {
     /// Register logo service
     public func registerLogoService(_ logo: any LogoProviding) {
         registerService(LogoProviding.self, logo)
+    }
+
+    /// Register theme service
+    public func registerThemeService(_ theme: any ThemeProviding) {
+        registerService(ThemeProviding.self, theme)
     }
 
     // MARK: - Convenience Accessors (Delegated)
@@ -561,6 +572,23 @@ public final class LumiKernel: ObservableObject {
         logo?.unregisterLogoItem(id: id)
     }
 
+    // MARK: - Theme Convenience Accessors
+
+    /// All registered themes
+    public var allThemes: [LumiUIThemeContribution] {
+        theme?.allThemes ?? []
+    }
+
+    /// Register theme
+    public func registerTheme(_ contribution: LumiUIThemeContribution) {
+        theme?.registerTheme(contribution)
+    }
+
+    /// Unregister theme
+    public func unregisterTheme(id: String) {
+        theme?.unregisterTheme(id: id)
+    }
+
     // MARK: - Startup & Validation
 
     /// Startup kernel and perform self-check
@@ -570,16 +598,24 @@ public final class LumiKernel: ObservableObject {
     public func startup() throws {
         var missingServices: [String] = []
 
-        // Check required services
-        if storage == nil {
-            missingServices.append("Storage")
-        }
-
+        if storage == nil { missingServices.append("Storage") }
         if project == nil { missingServices.append("Project") }
         if layout == nil { missingServices.append("Layout") }
+        if viewContainer == nil { missingServices.append("ViewContainer") }
+        if command == nil { missingServices.append("Command") }
+        if menuBar == nil { missingServices.append("MenuBar") }
+        if titleToolbar == nil { missingServices.append("TitleToolbar") }
+        if sendMiddleware == nil { missingServices.append("SendMiddleware") }
         if chat == nil { missingServices.append("Chat") }
+        if chatSection == nil { missingServices.append("ChatSection") }
         if editor == nil { missingServices.append("Editor") }
         if agentTool == nil { missingServices.append("AgentTool") }
+        if panel == nil { missingServices.append("Panel") }
+        if statusBar == nil { missingServices.append("StatusBar") }
+        if settings == nil { missingServices.append("Settings") }
+        if logo == nil { missingServices.append("Logo") }
+        if theme == nil { missingServices.append("Theme") }
+        if plugin == nil { missingServices.append("Plugin") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)

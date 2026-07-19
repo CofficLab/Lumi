@@ -14,14 +14,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "FileLogPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

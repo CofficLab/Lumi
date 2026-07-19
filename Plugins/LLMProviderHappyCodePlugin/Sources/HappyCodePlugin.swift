@@ -1,24 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
+import LumiUI
 
-public enum HappyCodePlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.happycode",
-        displayName: LumiPluginLocalization.string("HappyCode", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes HappyCode models to Lumi Chat.", bundle: .module),
-        order: 96,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class HappyCodePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.happycode"
+    public let name = "HappyCode"
+    public let order = 96
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderHappyCodePlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderHappyCodePlugin"))
-        }
-        return [HappyCodeProvider()]
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

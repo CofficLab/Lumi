@@ -1,24 +1,19 @@
 import LLMKit
 import LumiKernel
-import os
+import LumiUI
 
-public enum XybbzPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.xybbz")
+@MainActor
+public final class XybbzPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.xybbz"
+    public let name = "Xybbz"
+    public let order = 103
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.xybbz",
-        displayName: LumiPluginLocalization.string("Xybbz", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes Xybbz models to Lumi Chat.", bundle: .module),
-        order: 103,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
-        AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXybbzPlugin", directory: lumiCore.storage.pluginDataDirectory(for: "LLMProviderXybbzPlugin"))
-        return [XybbzProvider()]
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

@@ -1,33 +1,17 @@
-import Foundation
 import LumiKernel
-import os
+import LumiUI
 
-/// Tool Core 插件
-///
-/// 将核心工具集从内核硬编码迁移到插件系统，便于增删与组合。
-/// 该插件不可配置且默认启用，确保基础工具始终可用。
-public enum ToolCorePlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "ToolCore",
-        displayName: LumiPluginLocalization.string("Tool Core", bundle: .module),
-        description: LumiPluginLocalization.string("提供 Lumi 的基础工具（文件/命令）。", bundle: .module),
-        order: 0,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "wrench.and.screwdriver",
-    )
+@MainActor
+public final class ToolCorePlugin: LumiPlugin {
+    public let id = "ToolCore"
+    public let name = "Tool Core"
+    public let order = 0
 
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
+    public init() {}
 
-    @MainActor
-    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
-        [
-            ListDirectoryTool(),
-            ReadFileTool(),
-            WriteFileTool(),
-            EditFileTool(),
-            ShellTool()
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

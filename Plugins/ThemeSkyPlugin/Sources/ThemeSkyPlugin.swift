@@ -1,24 +1,22 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeSkyPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.sky",
-        displayName: LumiPluginLocalization.string("Sky Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Sky inspired app theme that adapts to system appearance", bundle: .module),
-        order: 120,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeSkyPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.sky"
+    public let name = "Sky Theme"
+    public let order = 120
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: SkyTheme(),
                 editorThemeId: "sky-dark"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

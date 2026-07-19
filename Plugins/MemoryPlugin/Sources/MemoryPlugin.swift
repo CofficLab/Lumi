@@ -1,46 +1,17 @@
-import Foundation
 import LumiKernel
+import LumiUI
 
-/// Memory Plugin：持久化记忆系统。
-public enum MemoryPlugin: LumiPlugin {
-    public static var verbose: Bool { false }
+@MainActor
+public final class MemoryPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.memory"
+    public let name = "Memory"
+    public let order = 15
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.memory",
-        displayName: PluginMemoryLocalization.string("Memory"),
-        description: PluginMemoryLocalization.string("Persistent memory system for cross-session context"),
-        order: 15,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "brain.head.profile",
-    )
+    public init() {}
 
-    nonisolated(unsafe) public static var config: MemoryPluginConfig = .default
-
-    @MainActor
-    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
-        Self.bootstrapFromLumiCoreIfNeeded(context: context)
-        return [MemoryChatMiddleware()]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
-        Self.bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            SaveMemoryTool(),
-            RecallMemoryTool(),
-            ListMemoriesTool(),
-            DeleteMemoryTool()
-        ]
-    }
-}
-
-enum PluginMemoryLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

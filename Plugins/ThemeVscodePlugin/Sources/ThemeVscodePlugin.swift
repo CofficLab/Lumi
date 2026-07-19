@@ -1,32 +1,35 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeVscodePlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.vscode",
-        displayName: LumiPluginLocalization.string("VS Code Theme", bundle: .module),
-        description: LumiPluginLocalization.string("VS Code Dark+, Light+ and Auto themes", bundle: .module),
-        order: 129,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeVscodePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.vscode"
+    public let name = "VS Code Theme"
+    public let order = 129
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // Register VS Code themes
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeAutoTheme(),
                 editorThemeId: "vscode-auto"
-            ),
+            )
+        )
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeDarkTheme(),
                 editorThemeId: "vscode-dark"
-            ),
+            )
+        )
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light"
-            ),
-        ]
+            )
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

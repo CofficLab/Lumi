@@ -1,30 +1,17 @@
-import Foundation
 import LumiKernel
-import os
-import SwiftUI
+import LumiUI
 
-/// DocxRead 插件
-///
-/// 提供读取 DOCX 文件正文内容的工具，供 Agent 在对话中调用。
-public enum DocxReadPlugin: LumiPlugin {
+@MainActor
+public final class DocxReadPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.docx-read"
+    public let name = "Docx Read"
+    public let order = 90
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.docx-read",
-        displayName: LumiPluginLocalization.string("Docx Read", bundle: .module),
-        description: LumiPluginLocalization.string("Read DOCX file content for Agent.", bundle: .module),
-        order: 90,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "doc.text",
-    )
+    public init() {}
 
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
-
-    @MainActor
-    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
-        [
-            DocxReadTool()
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

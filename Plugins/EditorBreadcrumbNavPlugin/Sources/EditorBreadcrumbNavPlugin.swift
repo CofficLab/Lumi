@@ -2,34 +2,18 @@ import EditorService
 import LumiKernel
 import LumiUI
 import SwiftUI
-import os
 
-public enum EditorBreadcrumbHeaderPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-breadcrumb-header")
+@MainActor
+public final class EditorBreadcrumbNavPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-breadcrumb-header"
+    public let name = "Editor Breadcrumb Header"
+    public let order = 80
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-breadcrumb-header",
-        displayName: LumiPluginLocalization.string("Editor Breadcrumb Header", bundle: .module),
-        description: LumiPluginLocalization.string("Breadcrumb navigation header for the editor panel.", bundle: .module),
-        order: 80,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "chevron.compact.right",
-    )
+    public init() {}
 
-    @MainActor
-    public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome else {
-            return []
-        }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
-        guard let lumiCore = context.lumiCore else { return [] }
-
-        return [
-            LumiPanelHeaderItem(id: info.id) {
-                NavHeaderView(service: service, lumiCore: lumiCore)
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Panel items are registered via panelBottomTabItems/panelRailTabItems
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

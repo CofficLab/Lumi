@@ -3,70 +3,51 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-public enum EditorSearchPanelPlugin: LumiPlugin {
+@MainActor
+public final class EditorSearchPanelPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-bottom-search"
+    public let name = "Editor Search"
+    public let order = 2
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-search",
-        displayName: LumiPluginLocalization.string("Editor Search", bundle: .module),
-        description: LumiPluginLocalization.string("Search panel in the editor rail and bottom area.", bundle: .module),
-        order: 2,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "magnifyingglass",
-    )
+    public init() {}
 
-    @MainActor
-    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
+    public func register(kernel: LumiKernel) throws {
+        // Panel items are registered in panelBottomTabItems/panelRailTabItems methods
+    }
+
+    public func boot(kernel: LumiKernel) async throws {}
+
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] {
+        guard let service = kernel.editor?.editorService else {
             return []
         }
 
         return [
-            LumiPanelBottomTabItem(
+            PanelBottomTabItem(
                 id: "editor-bottom-search",
-                order: info.order,
-                title: LumiPluginLocalization.string("Search", bundle: .module),
-                systemImage: iconName
+                order: order,
+                title: "Search",
+                systemImage: "magnifyingglass"
             ) {
                 BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
             }
         ]
     }
 
-    @MainActor
-    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        guard let service = kernel.editor?.editorService else {
             return []
         }
 
         return [
-            LumiPanelRailTabItem(
+            PanelRailTabItem(
                 id: "search",
-                order: info.order,
-                title: LumiPluginLocalization.string("Search", bundle: .module),
-                systemImage: iconName
+                order: order,
+                title: "Search",
+                systemImage: "magnifyingglass"
             ) {
                 BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
             }
         ]
-    }
-
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
     }
 }

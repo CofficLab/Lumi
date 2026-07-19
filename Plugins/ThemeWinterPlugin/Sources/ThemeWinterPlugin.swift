@@ -1,27 +1,22 @@
 import LumiKernel
 import LumiUI
-import os
 
-public enum ThemeWinterPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.theme.winter")
+@MainActor
+public final class ThemeWinterPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.winter"
+    public let name = "Winter Theme"
+    public let order = 127
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.winter",
-        displayName: LumiPluginLocalization.string("Winter Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Winter cool app theme", bundle: .module),
-        order: 127,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+    public init() {}
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: WinterTheme(),
                 editorThemeId: "winter"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

@@ -1,27 +1,22 @@
 import LumiKernel
 import LumiUI
-import os
 
-public enum ThemeMountainPlugin: LumiPlugin, LumiUIThemeProviding {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.theme.mountain")
+@MainActor
+public final class ThemeMountainPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme.mountain"
+    public let name = "Mountain Theme"
+    public let order = 129
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme.mountain",
-        displayName: LumiPluginLocalization.string("Mountain Theme", bundle: .module),
-        description: LumiPluginLocalization.string("Mountain gray app theme", bundle: .module),
-        order: 129,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+    public init() {}
 
-    @MainActor
-    public static func themeContributions() -> [LumiUIThemeContribution] {
-        [
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerTheme(
             LumiUIThemeContribution(
                 appTheme: MountainTheme(),
                 editorThemeId: "mountain"
             )
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

@@ -1,35 +1,37 @@
 import LumiKernel
 import LumiUI
 
-public enum ThemeStatusBarPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.theme-status-bar",
-        displayName: LumiPluginLocalization.string("Theme Status Bar", bundle: .module),
-        description: LumiPluginLocalization.string("Adds a status bar theme switcher.", bundle: .module),
-        order: 76,
-        category: .theme,
-        policy: .alwaysOn,
-        stage: .beta,
-    )
+@MainActor
+public final class ThemeStatusBarPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme-status-bar"
+    public let name = "Theme Status Bar"
+    public let order = 76
 
-    @MainActor
-    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // Status bar items are registered in statusBarItems method
+    }
+
+    public func boot(kernel: LumiKernel) async throws {}
+
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
         // LumiThemeServicing 不可用时显示错误视图
-        guard let themeService = context.resolve(LumiThemeServicing.self) else {
+        guard let themeService = kernel.theme else {
             return [
-                LumiStatusBarItem(
-                    id: "\(info.id).error",
+                StatusBarItem(
+                    id: "\(id).error",
                     title: "Theme",
                     systemImage: "exclamationmark.triangle.fill",
                     placement: .trailing,
-                    statusBarView: { ThemeStatusBarErrorView(pluginName: info.displayName) }
+                    statusBarView: { ThemeStatusBarErrorView(pluginName: name) }
                 )
             ]
         }
 
         return [
-            LumiStatusBarItem(
-                id: "\(info.id).switcher",
+            StatusBarItem(
+                id: "\(id).switcher",
                 title: "Theme",
                 systemImage: "paintbrush",
                 placement: .trailing,

@@ -3,30 +3,17 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-public enum EditorSymbolsPanelPlugin: LumiPlugin {
+@MainActor
+public final class EditorSymbolsPanelPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-bottom-symbols"
+    public let name = "Editor Symbols"
+    public let order = 3
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-symbols",
-        displayName: LumiPluginLocalization.string("Editor Symbols", bundle: .module),
-        description: LumiPluginLocalization.string("Symbols panel in the editor rail and bottom area.", bundle: .module),
-        order: 3,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "list.bullet.rectangle",
-    )
+    public init() {}
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public func register(kernel: LumiKernel) throws {
+        // Panel items are registered in panelBottomTabItems/panelRailTabItems methods
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

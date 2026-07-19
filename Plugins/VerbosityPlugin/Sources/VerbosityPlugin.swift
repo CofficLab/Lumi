@@ -1,32 +1,17 @@
 import LumiKernel
-import SwiftUI
+import LumiUI
 
-/// 详细级别切换插件：在 Chat 工具栏提供简洁 / 标准 / 详细回复风格选择。
-public enum VerbosityPlugin: LumiPlugin {
+@MainActor
+public final class VerbosityPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.verbosity"
+    public let name = "Verbosity"
+    public let order = 85
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.verbosity",
-        displayName: LumiPluginLocalization.string("Verbosity", bundle: .module),
-        description: LumiPluginLocalization.string("Switch between Brief, Normal, and Detailed response styles", bundle: .module),
-        order: 85,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "text.alignleft",
-    )
+    public init() {}
 
-    @MainActor
-    public static func chatSectionToolbarBarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
-        guard context.showsChatSection,
-              let chatService = context.resolve(LumiChatServicing.self)
-        else {
-            return []
-        }
-
-        return [
-            LumiChatSectionToolbarBarItem(id: info.id, order: info.order) {
-                VerbosityToolbarView(chatService: chatService)
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

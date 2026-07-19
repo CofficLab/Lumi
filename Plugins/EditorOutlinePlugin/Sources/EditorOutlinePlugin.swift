@@ -3,46 +3,17 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-public enum EditorOutlinePanelPlugin: LumiPlugin {
+@MainActor
+public final class EditorOutlinePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-rail-outline"
+    public let name = "Editor Outline"
+    public let order = 1
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-rail-outline",
-        displayName: LumiPluginLocalization.string("Editor Outline", bundle: .module),
-        description: LumiPluginLocalization.string("Outline tab in the editor rail.", bundle: .module),
-        order: 1,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "list.bullet.indent",
-    )
+    public init() {}
 
-    @MainActor
-    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
-            return []
-        }
-
-        return [
-            LumiPanelRailTabItem(
-                id: "outline",
-                order: info.order,
-                title: LumiPluginLocalization.string("Outline", bundle: .module),
-                systemImage: iconName
-            ) {
-                if let provider = service.lsp.documentSymbolProvider as? DocumentSymbolProvider {
-                    EditorOutlinePanelView(
-                        service: service,
-                        provider: provider,
-                        showsHeader: false,
-                        showsResizeHandle: false
-                    )
-                } else {
-                    Text(LumiPluginLocalization.string("Outline not available", bundle: .module))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Panel items are registered via panelBottomTabItems/panelRailTabItems
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

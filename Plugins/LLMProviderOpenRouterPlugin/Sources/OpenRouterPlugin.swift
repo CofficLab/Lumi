@@ -1,27 +1,19 @@
 import LLMKit
 import LumiKernel
-import LumiKernel
-import os
+import LumiUI
 
-public enum OpenRouterPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.openrouter")
+@MainActor
+public final class OpenRouterPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.openrouter"
+    public let name = "OpenRouter"
+    public let order = 101
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.openrouter",
-        displayName: LumiPluginLocalization.string("OpenRouter", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes OpenRouter models to Lumi Chat.", bundle: .module),
-        order: 101,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderOpenRouterPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderOpenRouterPlugin"))
-        }
-        return [OpenRouterProvider()]
+    public func register(kernel: LumiKernel) throws {
+        // LLM Providers will be registered by old mechanism temporarily
+        // TODO: Migrate to new registration method when available
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

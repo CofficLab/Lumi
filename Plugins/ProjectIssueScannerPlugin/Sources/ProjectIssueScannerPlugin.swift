@@ -1,30 +1,17 @@
 import LumiKernel
-import SwiftUI
-import os
+import LumiUI
 
-/// 空闲时扫描项目问题，并在发送消息时向 LLM 提示已知问题。
-public enum ProjectIssueScannerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-issue-scanner")
+@MainActor
+public final class ProjectIssueScannerPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.project-issue-scanner"
+    public let name = "Project Issue Scanner"
+    public let order = 97
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.project-issue-scanner",
-        displayName: LumiPluginLocalization.string("Project Issue Scanner", bundle: .module),
-        description: LumiPluginLocalization.string("Scans for project issues during idle time and hints them to the LLM.", bundle: .module),
-        order: 97,
-        category: .development,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "scope",
-    )
+    public init() {}
 
-    @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [IssueHintChatMiddleware()]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(ProjectIssueScannerAboutView())
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }

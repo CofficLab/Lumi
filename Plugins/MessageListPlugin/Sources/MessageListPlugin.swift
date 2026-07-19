@@ -1,40 +1,17 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
-import SwiftUI
 
-public enum MessageListPlugin: LumiPlugin {
+@MainActor
+public final class MessageListPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.chat-messages-section"
+    public let name = "Chat Messages"
+    public let order = 82
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.chat-messages-section",
-        displayName: LumiPluginLocalization.string("Chat Messages", bundle: .module),
-        description: LumiPluginLocalization.string("Agent chat messages timeline in the right ChatSection.", bundle: .module),
-        order: 82,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "text.bubble.fill",
-    )
+    public init() {}
 
-    @MainActor
-    public static func chatSectionItems(context: any LumiCoreAccessing) -> [LumiChatSectionItem] {
-        guard context.showsChatSection else {
-            return []
-        }
-
-        // ChatSectionCoordinator 不可用时显示错误视图
-        guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
-            return [
-                LumiChatSectionItem(id: info.id, order: info.order, fillsRemainingHeight: true) {
-                    ChatMessagesErrorView(pluginName: info.displayName)
-                }
-            ]
-        }
-
-        return [
-            LumiChatSectionItem(id: info.id, order: info.order, fillsRemainingHeight: true) {
-                ChatMessagesSectionView(coordinator: coordinator)
-            }
-        ]
+    public func register(kernel: LumiKernel) throws {
+        // Register services here
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }
