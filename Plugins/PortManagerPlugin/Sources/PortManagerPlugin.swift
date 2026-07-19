@@ -19,7 +19,7 @@ public enum PortManagerPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
                 id: info.id,
@@ -32,7 +32,7 @@ public enum PortManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(

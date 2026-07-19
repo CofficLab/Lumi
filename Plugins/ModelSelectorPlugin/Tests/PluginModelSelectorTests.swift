@@ -21,7 +21,7 @@ import Testing
             dependencies.register(LumiChatServicing.self, chatService)
         }
     )
-    #expect(ModelSelectorPlugin.chatSectionToolbarItems(context: hiddenContext).isEmpty)
+    #expect(ModelSelectorPlugin.chatSectionToolbarItems(lumiCore: hiddenContext).isEmpty)
 
     let shownContext = LumiPluginContext(
         activeSectionID: "chat",
@@ -32,8 +32,8 @@ import Testing
             dependencies.register(LumiChatServicing.self, chatService)
         }
     )
-    #expect(ModelSelectorPlugin.chatSectionToolbarItems(context: shownContext).count == 1)
-    #expect(ModelSelectorPlugin.chatSectionToolbarItems(context: shownContext).first?.placement == .leading)
+    #expect(ModelSelectorPlugin.chatSectionToolbarItems(lumiCore: shownContext).count == 1)
+    #expect(ModelSelectorPlugin.chatSectionToolbarItems(lumiCore: shownContext).first?.placement == .leading)
 }
 
 @MainActor
@@ -44,7 +44,7 @@ import Testing
         chatSection: .wide,
         isChatSectionVisible: true
     )
-    #expect(ModelSelectorPlugin.chatSectionToolbarItems(context: context).isEmpty)
+    #expect(ModelSelectorPlugin.chatSectionToolbarItems(lumiCore: context).isEmpty)
 }
 
 @MainActor
@@ -64,7 +64,7 @@ import Testing
             dependencies.register(LumiChatServicing.self, chatService)
         }
     )
-    #expect(ModelSelectorPlugin.chatSectionToolbarBarItems(context: hiddenContext).isEmpty)
+    #expect(ModelSelectorPlugin.chatSectionToolbarBarItems(lumiCore: hiddenContext).isEmpty)
 
     let shownContext = LumiPluginContext(
         activeSectionID: "chat",

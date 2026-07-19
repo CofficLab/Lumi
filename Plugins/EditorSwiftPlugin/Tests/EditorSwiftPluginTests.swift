@@ -20,10 +20,10 @@ import Testing
 @MainActor
 @Test func titleToolbarItemsRequireEditorPanel() {
     let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other")
-    #expect(EditorSwiftPlugin.titleToolbarItems(context: hiddenContext).isEmpty)
+    #expect(EditorSwiftPlugin.titleToolbarItems(lumiCore: hiddenContext).isEmpty)
 
     let visibleWithoutService = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
-    #expect(EditorSwiftPlugin.titleToolbarItems(context: visibleWithoutService).isEmpty)
+    #expect(EditorSwiftPlugin.titleToolbarItems(lumiCore: visibleWithoutService).isEmpty)
 
     let core = EditorCore()
     let visibleContext = LumiPluginContext(
@@ -33,7 +33,7 @@ import Testing
             dependencies.register(LumiEditorServicing.self, core)
         }
     )
-    let items = EditorSwiftPlugin.titleToolbarItems(context: visibleContext)
+    let items = EditorSwiftPlugin.titleToolbarItems(lumiCore: visibleContext)
     #expect(items.count == 1)
     #expect(items[0].id == "EditorSwift.xcode-scheme")
     #expect(items[0].placement == .leading)
@@ -42,10 +42,10 @@ import Testing
 @MainActor
 @Test func panelBottomTabItemsRequireEditorPanel() {
     let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other", showsPanelChrome: true)
-    #expect(EditorSwiftPlugin.panelBottomTabItems(context: hiddenContext).isEmpty)
+    #expect(EditorSwiftPlugin.panelBottomTabItems(lumiCore: hiddenContext).isEmpty)
 
     let withoutChrome = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
-    #expect(EditorSwiftPlugin.panelBottomTabItems(context: withoutChrome).isEmpty)
+    #expect(EditorSwiftPlugin.panelBottomTabItems(lumiCore: withoutChrome).isEmpty)
 
     let core = EditorCore()
     let visibleContext = LumiPluginContext(
@@ -56,7 +56,7 @@ import Testing
             dependencies.register(LumiEditorServicing.self, core)
         }
     )
-    let tabs = EditorSwiftPlugin.panelBottomTabItems(context: visibleContext)
+    let tabs = EditorSwiftPlugin.panelBottomTabItems(lumiCore: visibleContext)
     #expect(tabs.count == 1)
     #expect(tabs[0].id == SwiftBuildPanelIDs.bottomTab)
     #expect(tabs[0].systemImage == "play.fill")
@@ -64,7 +64,7 @@ import Testing
 
 @MainActor
 @Test func agentToolsExposeSwiftXcodeTools() {
-    let tools = EditorSwiftPlugin.agentTools(context: LumiPluginContext(activeSectionID: "main", activeSectionTitle: "Main"))
+    let tools = EditorSwiftPlugin.agentTools(lumiCore: PreviewEditorSwiftSupport.lumiCore)
     #expect(tools.count == 3)
     #expect(tools.map(\.name).sorted() == [
         "add_xcode_package",

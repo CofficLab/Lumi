@@ -1,6 +1,5 @@
 import LocalizationKit
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -250,8 +249,6 @@ private struct PluginSettingsDetailView: View {
                     pluginFailureBanner(failure)
                 }
 
-                AppDivider()
-
                 pluginSettingsContent
             }
             .padding(22)
@@ -301,13 +298,13 @@ private struct PluginSettingsDetailView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.error.opacity(0.2), lineWidth: 1)
+                .strokeBorder(theme.error.opacity(0.2), lineWidth: 1)
         )
     }
 
     @ViewBuilder
     private var pluginSettingsContent: some View {
-        if let about = row.plugin.pluginAboutView(context: settingsContext) {
+        if let about = row.plugin.pluginAboutView(lumiCore: lumiCore) {
             about
         } else {
             AppEmptyState(
@@ -320,13 +317,6 @@ private struct PluginSettingsDetailView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-    }
-
-    private var settingsContext: LumiPluginContext {
-        lumiCore.makePluginContext(
-            activeSectionID: "settings.plugins",
-            activeSectionTitle: LumiLocalization.string("插件管理", bundle: .module)
-        )
     }
 
     private var header: some View {

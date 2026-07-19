@@ -18,8 +18,7 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard let lumiCore = context.lumiCore else { return [] }
+    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         return [
             LumiStatusBarItem(
                 id: info.id,
@@ -34,7 +33,7 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)
@@ -46,7 +45,6 @@ public enum AgentOpenInXcodePlugin: LumiPlugin {
             .padding()
         )
     }
-
 }
 
 private enum XcodeOpener {

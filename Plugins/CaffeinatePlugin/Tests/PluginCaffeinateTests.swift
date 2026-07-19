@@ -20,7 +20,7 @@ struct PluginCaffeinateTests {
     @Test
     func pluginRegistersCaffeinateTools() {
         let tools = CaffeinatePlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.map(\.name) == [
@@ -30,7 +30,7 @@ struct PluginCaffeinateTests {
             "caffeinate_turn_off_display",
         ])
         #expect(CaffeinatePlugin.menuBarPopupItems(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         ).isEmpty == false)
     }
 

@@ -15,12 +15,12 @@ public enum CodeReviewPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [RunReviewTool()]
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(CodeReviewAboutView())
     }
 }

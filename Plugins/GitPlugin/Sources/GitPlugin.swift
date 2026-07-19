@@ -77,7 +77,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [
             GitStatusTool(),
             GitDiffTool(),
@@ -90,7 +90,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         // 不再依赖注入，直接从 LumiCore 获取项目路径
         guard let lumiCore = context.lumiCore else { return [] }
         return [
@@ -105,7 +105,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.activeSectionID == info.id else { return [] }
         guard let lumiCore = context.lumiCore else { return [] }
 
@@ -123,7 +123,7 @@ public enum GitPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         guard let lumiCore = context.lumiCore else { return [] }
         return [
             LumiRootOverlayItem(id: "\(info.id).commit-history", order: info.order) { content in

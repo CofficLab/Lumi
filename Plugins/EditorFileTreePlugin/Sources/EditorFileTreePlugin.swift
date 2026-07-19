@@ -51,10 +51,8 @@ public enum EditorFileTreePanelPlugin: LumiPlugin, SuperLog {
     )
 
     @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        guard context.showsRail else { return [] }
-        guard let lumiCore = context.lumiCore else { return [] }
+    public static func panelRailTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
+        guard lumiCore.layoutComponent.state.showsRail else { return [] }
 
         return [
             LumiPanelRailTabItem(

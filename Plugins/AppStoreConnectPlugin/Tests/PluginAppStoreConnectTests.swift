@@ -19,10 +19,10 @@ struct PluginAppStoreConnectTests {
     @Test
     func titleToolbarItemsShowAppPickerOnlyInAppStoreSection() {
         let hidden = AppStoreConnectPlugin.titleToolbarItems(
-            context: LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
+            lumiCore: LumiPluginContext(activeSectionID: "editor", activeSectionTitle: "Editor")
         )
         let visible = AppStoreConnectPlugin.titleToolbarItems(
-            context: LumiPluginContext(
+            lumiCore: LumiPluginContext(
                 activeSectionID: AppStoreConnectPlugin.id,
                 activeSectionTitle: AppStoreConnectPlugin.displayName
             )

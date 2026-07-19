@@ -33,7 +33,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     public static var viewModel: ProjectsViewModel?
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
+    public static func lifecycle(_ event: LumiPluginLifecycle, lumiCore: any LumiCoreAccessing) throws {
         switch event {
         case .didRegister:
             if Self.verbose {
@@ -42,8 +42,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
                 }
             }
 
-            let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
-                ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
+            let directory = lumiCore.storage.pluginDataDirectory(for: dataDirectoryName)
 
             if Self.verbose {
                 if ProjectsPlugin.verbose {
@@ -73,7 +72,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
 
             // 初始化 SyncCoordinator 并注入 LumiCore
             let coordinator = ProjectsSyncCoordinator(viewModel: viewModelInstance)
-            coordinator.lumiCore = LumiCore.current
+            coordinator.lumiCore = lumiCore
             Self.syncCoordinator = coordinator
 
             if Self.verbose {
@@ -104,7 +103,7 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+    public static func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
         if Self.verbose {
             if ProjectsPlugin.verbose {
                 ProjectsPlugin.logger.info("\(Self.t)titleToolbarItems 被调用，viewModel 可用=\(Self.viewModel != nil)")
@@ -124,12 +123,12 @@ public enum ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         [ConversationHintMiddleware()]
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         if Self.verbose {
             ProjectsPlugin.logger.info("\(Self.t)agentTools 被调用，viewModel 可用=\(Self.viewModel != nil)")
         }

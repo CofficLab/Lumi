@@ -16,7 +16,7 @@ enum EditorTabStripPluginRuntimeBridge {
 
 @MainActor
 public extension StripHeaderPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
             EditorTabStripPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory

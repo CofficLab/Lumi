@@ -19,7 +19,7 @@ struct PluginDiskManagerTests {
     @Test
     func viewContainerContributionIsAvailable() throws {
         let items = DiskManagerPlugin.viewContainers(
-            context: LumiPluginContext(activeSectionID: "workspace", activeSectionTitle: "Workspace")
+            lumiCore: LumiPluginContext(activeSectionID: "workspace", activeSectionTitle: "Workspace")
         )
         let item = try #require(items.first)
         #expect(item.id == DiskManagerPlugin.info.id)

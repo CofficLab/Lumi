@@ -19,12 +19,12 @@ public enum DelayMessagePlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [DelayMessageTool()]
     }
 
         @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

@@ -15,7 +15,7 @@ public enum AliyunPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderAliyun", directory: core.storage.pluginDataDirectory(for: "LLMProviderAliyun"))
         }
@@ -23,7 +23,7 @@ public enum AliyunPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix("aliyun-", for: AliyunProvider.info.id)
         return [
             ApiKeyMissingRenderer.item,

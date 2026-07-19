@@ -38,9 +38,9 @@ import LumiCoreKit
         dependencies: dependencies
     )
 
-    #expect(ConversationForkPlugin.chatSectionToolbarItems(context: hiddenChatContext).isEmpty)
-    #expect(ConversationForkPlugin.chatSectionToolbarItems(context: visibleWithoutService).isEmpty)
-    #expect(ConversationForkPlugin.chatSectionToolbarItems(context: visibleWithService).count == 1)
+    #expect(ConversationForkPlugin.chatSectionToolbarItems(lumiCore: hiddenChatContext).isEmpty)
+    #expect(ConversationForkPlugin.chatSectionToolbarItems(lumiCore: visibleWithoutService).isEmpty)
+    #expect(ConversationForkPlugin.chatSectionToolbarItems(lumiCore: visibleWithService).count == 1)
 }
 
 // MARK: - Prompt templates

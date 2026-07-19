@@ -26,12 +26,12 @@ public enum WebSearchPlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [WebSearchTool()]
     }
 
         @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

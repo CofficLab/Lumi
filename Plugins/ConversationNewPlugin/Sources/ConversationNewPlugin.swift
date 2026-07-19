@@ -18,7 +18,7 @@ public enum ConversationNewPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+    public static func titleToolbarItems(context: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve(LumiChatServicing.self)
         else {

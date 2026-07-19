@@ -30,7 +30,7 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard let lumiCore = context.lumiCore else { return [] }
         return [
             LumiStatusBarItem(
@@ -46,7 +46,7 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

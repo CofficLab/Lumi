@@ -17,7 +17,7 @@ struct PluginMemoryTests {
     @MainActor
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
-        let tools = MemoryPlugin.agentTools(context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
+        let tools = MemoryPlugin.agentTools(lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
 
         #expect(tools.count == 4)
         let names = tools.map(\.name)

@@ -27,7 +27,7 @@ public enum ProjectOverviewPlugin: LumiPlugin {
     public static var isConfigurable: Bool { policy.isConfigurable }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [ProjectOverviewTool()]
     }
 }

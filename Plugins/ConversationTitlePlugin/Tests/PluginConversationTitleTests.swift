@@ -16,7 +16,7 @@ import Testing
 @MainActor
 @Test func pluginRegistersTitleHintMiddleware() {
     let middlewares = ConversationTitlePlugin.sendMiddlewares(
-        context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+        lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
     )
 
     #expect(middlewares.count == 1)
@@ -38,7 +38,7 @@ import Testing
             dependencies.register((any LumiChatServicing).self, chatService)
         }
     )
-    let tools = ConversationTitlePlugin.agentTools(context: context)
+    let tools = ConversationTitlePlugin.agentTools(lumiCore: context)
 
     #expect(tools.map(\.name).contains("update_conversation_title"))
 }

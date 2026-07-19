@@ -1,6 +1,5 @@
 import LLMKit
 import LumiCoreKit
-import LumiCoreKit
 import os
 
 public enum XybbzPlugin: LumiPlugin {
@@ -18,10 +17,8 @@ public enum XybbzPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXybbzPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderXybbzPlugin"))
-        }
+    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
+        AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXybbzPlugin", directory: lumiCore.storage.pluginDataDirectory(for: "LLMProviderXybbzPlugin"))
         return [XybbzProvider()]
     }
 }

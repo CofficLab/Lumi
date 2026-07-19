@@ -15,7 +15,7 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+    public static func addSettingsTabs(context: any LumiCoreAccessing) -> [LumiSettingsTabItem] {
         guard let historyService = context.resolve((any HistoryQueryService).self) else {
             return []
         }
@@ -32,7 +32,7 @@ public enum ActivityHeatmapPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 12) {
                 Text(verbatim: LumiPluginLocalization.string(

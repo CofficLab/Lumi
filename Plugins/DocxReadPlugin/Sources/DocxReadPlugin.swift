@@ -22,7 +22,7 @@ public enum DocxReadPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [
             DocxReadTool()
         ]

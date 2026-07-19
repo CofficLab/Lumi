@@ -6,14 +6,14 @@ import LumiCoreKit
 enum TurnFinishedHook {
     /// 插件钩子入口：当 agent turn 结束时被内核调用
     static func handle(
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
         // 仅响应成功完成的 turn
         guard reason == .completed else { return }
 
-        guard let chatService = context.resolve(LumiChatServicing.self) else {
+        guard let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
             return
         }
 

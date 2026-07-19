@@ -17,7 +17,7 @@ public enum EditorOutlinePanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
+    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
         guard context.showsRail,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {

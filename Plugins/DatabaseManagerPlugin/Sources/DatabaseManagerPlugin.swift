@@ -21,7 +21,7 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
                 id: info.id,
@@ -34,7 +34,7 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [
             DatabaseListConnectionsTool(),
             DatabaseDescribeSchemaTool(),
@@ -44,12 +44,12 @@ public enum DatabaseManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(DatabaseManagerAboutView())
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(

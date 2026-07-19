@@ -20,7 +20,7 @@ struct PluginWebSearchTests {
     @Test("plugin registers one web search tool")
     func pluginRegistersTool() {
         let tools = WebSearchPlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.count == 1)

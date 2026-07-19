@@ -18,7 +18,7 @@ public enum MiniMaxPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMiniMax", directory: core.storage.pluginDataDirectory(for: "LLMProviderMiniMax"))
         }
@@ -26,12 +26,12 @@ public enum MiniMaxPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [MiniMaxVideoTool()]
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix(
             "minimax-",
             for: MiniMaxTokenPlanProvider.info.id

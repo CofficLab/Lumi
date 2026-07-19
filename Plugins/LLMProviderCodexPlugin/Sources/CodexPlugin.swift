@@ -1,25 +1,22 @@
-import Foundation
 import LumiCoreKit
-import SwiftUI
+import os
 
-/// Codex CLI LLM provider plugin.
-///
-/// The app still exposes a small Lumi-namespace adapter for runtime discovery;
-/// this package owns the provider implementation and tests.
 public enum CodexPlugin: LumiPlugin {
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.codex")
 
     public static let info = LumiPluginInfo(
-        id: "LLMProviderCodex",
-        displayName: LumiPluginLocalization.string("Codex CLI", bundle: .module),
-        description: LumiPluginLocalization.string("通过 Codex CLI 使用 OpenAI 模型（ChatGPT 账号认证）", bundle: .module),
-        order: 11,
+        id: "com.coffic.lumi.plugin.llm-provider.codex",
+        displayName: LumiPluginLocalization.string("Codex", bundle: .module),
+        description: LumiPluginLocalization.string("Contributes Codex models to Lumi Chat.", bundle: .module),
+        order: 105,
         category: .llmProvider,
         policy: .alwaysOn,
         stage: .beta,
-        iconName: "terminal",
+        iconName: "sparkles",
     )
 
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        [CodexProvider.self as! any LumiLLMProvider]
+    @MainActor
+    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
+        return [CodexProvider()]
     }
 }

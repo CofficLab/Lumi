@@ -61,8 +61,9 @@ final class RootContainer: ObservableObject, SuperLog {
         let kernel = LumiKernel()
         self.kernel = kernel
 
-        let storageProvider = try StorageServiceProvider(dataRootDirectory: dataRootDirectory)
-        try await kernel.bootstrap(with: [storageProvider])
+        // 直接注册 Storage 服务（简单明了）
+        let storage = StorageService(dataRootDirectory: dataRootDirectory)
+        kernel.registerStorage(storage)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ LumiKernel 初始化完成，Storage 服务已注入")

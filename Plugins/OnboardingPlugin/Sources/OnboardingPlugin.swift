@@ -16,7 +16,7 @@ public enum OnboardingPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         return [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in
@@ -26,7 +26,7 @@ public enum OnboardingPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 OnboardingWelcomePage()

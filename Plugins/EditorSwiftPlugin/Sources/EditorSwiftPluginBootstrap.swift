@@ -20,7 +20,7 @@ enum EditorSwiftPluginRuntimeBridge {
 
 @MainActor
 public extension EditorSwiftPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
             EditorSwiftPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory

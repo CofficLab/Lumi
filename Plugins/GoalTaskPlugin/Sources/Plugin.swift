@@ -1,6 +1,5 @@
 import Foundation
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import os
 import SuperLogKit
@@ -37,15 +36,15 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     private static let promptService = PromptService()
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
+    public static func lifecycle(_ event: LumiPluginLifecycle, lumiCore: any LumiCoreAccessing) throws {
         switch event {
         case .didRegister:
             // 关键：不再无条件覆盖。若 manager 已存在（例如 boot 同步期 agentTools 已懒加载过），
             // 直接保留——否则会把工具/中间件已经捕获的实例替换成新的，
             // 导致写到一个库、Sidebar 从另一个库读（见 create_goal 后 UI 不刷新的根因）。
-            // 目录解析优先用 context 传入的 lumiCore（didRegister 阶段全局 LumiCore.current 也已就绪）。
+            // 目录解析优先用调用方传入的 lumiCore。
             if Self.manager == nil {
-                let directory = resolveDataDirectory()
+                let directory = lumiCore.storage.pluginDataDirectory(for: dataDirectoryName)
                 Self.manager = try GoalStateManager(databaseRootURL: directory)
                 Self.logger.info("\(Self.t)lifecycle(didRegister): 初始化 manager")
             } else {
@@ -62,27 +61,14 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 
     // MARK: - Agent Tools
 
-    /// 解析插件数据目录。
-    ///
-    /// 优先用 `LumiCore.current`（didRegister / 运行期都已就绪）。
-    /// 注意：boot 同步期（`RootContainer.init` 内调用 `lumiCore.boot` → `agentTools`）时
-    /// `LumiCore.current` 尚未赋值，此时应改用调用方传入的 `context.lumiCore`，避免落到临时目录 fallback，
-    /// 与后续 `.didRegister` 创建的实例产生目录分歧。
-    @MainActor
-    private static func resolveDataDirectory(preferContext context: LumiPluginContext? = nil) -> URL {
-        if let core = context?.lumiCore ?? LumiCore.current {
-            return core.storage.pluginDataDirectory(for: dataDirectoryName)
-        }
-        return FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
-    }
-
     /// 确保 manager 已初始化（懒加载，且全局只创建一次）。
     @MainActor
-    private static func ensureManagerInitialized(context: LumiPluginContext? = nil) throws -> GoalStateManager {
+    private static func ensureManagerInitialized() throws -> GoalStateManager {
         if let manager {
             return manager
         }
-        let directory = resolveDataDirectory(preferContext: context)
+        let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
         let manager = try GoalStateManager(databaseRootURL: directory)
         Self.manager = manager
         if Self.verbose {
@@ -102,9 +88,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         // 提前确保 manager 存在，使首帧即可取数；工具内部仍走 currentManager() 动态读取。
-        _ = try ensureManagerInitialized(context: context)
+        _ = try ensureManagerInitialized()
         return [
             CreateGoalTool(),
             UpdateTaskStatusTool(),
@@ -117,10 +103,10 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     // MARK: - Middleware
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         // sendMiddlewares 协议非 throws；懒加载初始化若失败，用 try? 降级——
         // 失败会经 lifecycle/agentTools 路径上报，此处不重复抛错。
-        _ = try? ensureManagerInitialized(context: context)
+        _ = try? ensureManagerInitialized()
         return [
             GoalContextMiddleware(promptService: promptService),
         ]
@@ -130,19 +116,19 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func onTurnFinished(
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
-        await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
+        await TurnFinishedHook.handle(lumiCore: lumiCore, conversationID: conversationID, reason: reason)
     }
 
     // MARK: - Chat Section Toolbar Bar (Bottom - Next to Verbosity)
 
     @MainActor
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
-        guard context.showsChatSection,
-              let chatService = context.resolve(LumiChatServicing.self)
+    public static func chatSectionToolbarBarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let chatService = lumiCore.resolveService((any LumiChatServicing).self) as? ChatService
         else {
             return []
         }
@@ -157,9 +143,9 @@ public enum GoalTaskPlugin: LumiPlugin, SuperLog {
     // MARK: - Chat Section (Sidebar)
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let coordinator = lumiCore.resolveService((any ChatSectionCoordinator).self)
         else {
             return []
         }

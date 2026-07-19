@@ -19,7 +19,7 @@ public enum HostsManagerPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
                 id: info.id,
@@ -32,12 +32,12 @@ public enum HostsManagerPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(HostsManagerAboutView())
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(

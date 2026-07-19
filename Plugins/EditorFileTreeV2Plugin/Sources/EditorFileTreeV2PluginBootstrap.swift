@@ -16,7 +16,7 @@ enum EditorFileTreeV2PluginRuntimeBridge {
 
 @MainActor
 public extension EditorFileTreeV2Plugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
             EditorFileTreeV2PluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory

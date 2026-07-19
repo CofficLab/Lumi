@@ -22,7 +22,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+    public static func titleToolbarItems(context: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         guard context.activeSectionID == editorPanelSectionID,
               context.resolve(LumiEditorServicing.self) != nil
@@ -44,7 +44,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome,
               context.activeSectionID == editorPanelSectionID,
               context.resolve(LumiEditorServicing.self) != nil
@@ -69,7 +69,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         // per-request 筛选：识别出明确非 Swift 的项目语言时不再注入 Swift 工具。
         // nil（无项目）/ .unknown（未识别，如纯 Xcode 工程无 Package.swift）保持全量返回，
         // 与内核约定一致（unknown ≈ 全量返回），避免老项目工具消失。
@@ -87,7 +87,7 @@ public enum EditorSwiftPlugin: LumiPlugin {
     }
 
     @MainActor
-    private static func configureBuildOutputPresentation(context: LumiPluginContext) {
+    private static func configureBuildOutputPresentation(context: any LumiCoreAccessing) {
         guard context.showsPanelChrome,
               let layoutState = context.lumiCore?.layoutComponent.state
         else {

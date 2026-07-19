@@ -24,7 +24,7 @@ public enum BrowserPlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [
             BrowserScreenshotTool(),
             BrowserAgentTool(),

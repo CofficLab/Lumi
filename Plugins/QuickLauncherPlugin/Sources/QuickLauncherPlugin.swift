@@ -19,7 +19,7 @@ public enum QuickLauncherPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+    public static func menuBarPopupItems(context: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
         [
             LumiMenuBarPopupItem(id: "\(info.id).launcher", order: info.order) {
                 QuickLauncherMenuBarPopupView()
@@ -28,7 +28,7 @@ public enum QuickLauncherPlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

@@ -34,7 +34,7 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         [
             LumiStatusBarItem(
                 id: info.id,
@@ -48,8 +48,8 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
         ]
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    @MainActor
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)
@@ -61,7 +61,6 @@ public enum AppLoadedPluginsPlugin: LumiPlugin {
             .padding()
         )
     }
-
 }
 
 enum PluginAppLoadedPluginsLocalization {

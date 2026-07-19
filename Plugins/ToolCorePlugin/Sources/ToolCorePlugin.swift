@@ -21,7 +21,7 @@ public enum ToolCorePlugin: LumiPlugin {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [
             ListDirectoryTool(),
             ReadFileTool(),

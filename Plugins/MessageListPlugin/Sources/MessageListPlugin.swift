@@ -17,7 +17,7 @@ public enum MessageListPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+    public static func chatSectionItems(context: any LumiCoreAccessing) -> [LumiChatSectionItem] {
         guard context.showsChatSection else {
             return []
         }

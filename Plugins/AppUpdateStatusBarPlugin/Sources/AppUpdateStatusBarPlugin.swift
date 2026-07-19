@@ -15,7 +15,7 @@ public enum AppUpdateStatusBarPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
+    public static func menuBarContentItems(context: any LumiCoreAccessing) -> [LumiMenuBarContentItem] {
         AppUpdateStatusBarStore.shared.start()
         return [
             LumiMenuBarContentItem(id: "\(info.id).content", order: info.order) {
@@ -25,7 +25,7 @@ public enum AppUpdateStatusBarPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+    public static func menuBarPopupItems(context: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
         AppUpdateStatusBarStore.shared.start()
         return [
             LumiMenuBarPopupItem(id: "\(info.id).popup", order: info.order) {

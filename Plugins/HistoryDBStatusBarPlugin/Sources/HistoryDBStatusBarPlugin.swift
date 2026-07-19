@@ -16,7 +16,7 @@ public enum HistoryDBStatusBarPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.isChatSectionVisible,
               let historyService = context.resolve((any HistoryQueryService).self)
         else {

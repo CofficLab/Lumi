@@ -12,9 +12,9 @@ import Testing
         chatSection: .none
     )
 
-    #expect(ChatPendingSectionPlugin.chatSectionItems(context: context).isEmpty)
-    #expect(ChatAttachmentSectionPlugin.chatSectionItems(context: context).isEmpty)
-    #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).isEmpty)
+    #expect(ChatPendingSectionPlugin.chatSectionItems(lumiCore: context).isEmpty)
+    #expect(ChatAttachmentSectionPlugin.chatSectionItems(lumiCore: context).isEmpty)
+    #expect(ChatComposerSectionPlugin.chatSectionItems(lumiCore: context).isEmpty)
 }
 
 @MainActor
@@ -25,7 +25,7 @@ import Testing
         chatSection: .wide
     )
 
-    #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).isEmpty)
+    #expect(ChatComposerSectionPlugin.chatSectionItems(lumiCore: context).isEmpty)
 }
 
 @MainActor
@@ -45,10 +45,10 @@ import Testing
         }
     )
 
-    #expect(ChatPendingSectionPlugin.chatSectionItems(context: context).count == 1)
-    #expect(ChatAttachmentSectionPlugin.chatSectionItems(context: context).count == 1)
-    #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).count == 1)
-    #expect(ChatComposerSectionPlugin.chatSectionItems(context: context).first?.placement == .bottomFixed)
+    #expect(ChatPendingSectionPlugin.chatSectionItems(lumiCore: context).count == 1)
+    #expect(ChatAttachmentSectionPlugin.chatSectionItems(lumiCore: context).count == 1)
+    #expect(ChatComposerSectionPlugin.chatSectionItems(lumiCore: context).count == 1)
+    #expect(ChatComposerSectionPlugin.chatSectionItems(lumiCore: context).first?.placement == .bottomFixed)
 }
 
 @MainActor

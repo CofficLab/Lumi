@@ -47,7 +47,7 @@ public enum LayoutPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin Implementation
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         return [
             LumiRootOverlayItem(id: info.id, order: info.order) { content in

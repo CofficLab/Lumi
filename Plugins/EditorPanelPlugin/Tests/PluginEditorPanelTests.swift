@@ -11,12 +11,12 @@ import Testing
 @Test func editorPanelPluginViewContainerRequiresEditorService() async throws {
     let core = EditorCore()
     let containersWithoutEditor = EditorPanelPlugin.viewContainers(
-        context: LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
+        lumiCore: LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
     )
     #expect(containersWithoutEditor.isEmpty)
 
     let containers = EditorPanelPlugin.viewContainers(
-        context: LumiPluginContext(
+        lumiCore: LumiPluginContext(
             activeSectionID: "LumiEditor",
             activeSectionTitle: "Editor",
             dependencies: LumiPluginDependencies { dependencies in

@@ -20,15 +20,18 @@ struct AutoTaskPluginTests {
 
     @MainActor
     @Test("plugin registers task tools and middleware")
-    func pluginContributions() async {
+    func pluginContributions() async throws {
         // 使用临时目录初始化 manager
         let tmpDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("auto-task-plugin-test-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         AutoTaskPlugin.manager = TaskStateManager(databaseRootURL: tmpDir)
 
-        let context = LumiPluginContext(activeSectionID: "com.coffic.lumi.plugin.chat-panel", activeSectionTitle: "Chat")
-        let tools = AutoTaskPlugin.agentTools(context: context)
+        let context = LumiPluginContext(
+            activeSectionID: "com.coffic.lumi.plugin.chat-panel",
+            activeSectionTitle: "Chat"
+        )
+        let tools = try AutoTaskPlugin.agentTools(lumiCore: context)
 
         #expect(tools.map(\.name) == [
             "create_task",
@@ -37,7 +40,7 @@ struct AutoTaskPluginTests {
             "list_tasks",
             "check_progress",
         ])
-        #expect(AutoTaskPlugin.sendMiddlewares(context: context).count == 1)
+        #expect(AutoTaskPlugin.sendMiddlewares(lumiCore: context).count == 1)
     }
 }
 

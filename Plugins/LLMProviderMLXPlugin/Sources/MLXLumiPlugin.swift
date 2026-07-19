@@ -16,19 +16,19 @@ public enum MLXLumiPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         return [MLXLumiProvider()]
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix("mlx-", for: "mlx")
         return [ModelNotDownloadedRenderer.item]
     }
 
     @MainActor
-    public static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+    public static func llmProviderSettingsViews(context: any LumiLLMProviderSettingsContributing) -> [LumiLLMProviderSettingsViewItem] {
         [
             LumiLLMProviderSettingsViewItem(providerID: "mlx") { _ in
                 MLXLocalProviderSettingsView()

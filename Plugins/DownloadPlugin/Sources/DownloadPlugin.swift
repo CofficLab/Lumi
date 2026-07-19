@@ -36,7 +36,7 @@ public enum DownloadPlugin: LumiPlugin {
     }()
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         let manager = sharedManager
         return [
             DownloadFileTool(manager: manager),

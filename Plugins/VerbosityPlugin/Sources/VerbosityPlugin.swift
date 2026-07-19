@@ -16,7 +16,7 @@ public enum VerbosityPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+    public static func chatSectionToolbarBarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve(LumiChatServicing.self)
         else {

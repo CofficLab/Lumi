@@ -15,12 +15,12 @@ public enum RequestLogPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         [RequestLogChatMiddleware()]
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.isChatSectionVisible,
               context.resolve((any LumiChatServicing).self) != nil
         else {

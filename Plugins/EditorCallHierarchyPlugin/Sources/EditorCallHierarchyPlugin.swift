@@ -19,7 +19,7 @@ public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome else { return [] }
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
 
@@ -36,7 +36,7 @@ public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
+    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
         guard context.showsRail else { return [] }
         guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
 

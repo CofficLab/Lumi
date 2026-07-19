@@ -15,7 +15,7 @@ public enum ZhipuPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderZhipuPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderZhipuPlugin"))
         }
@@ -26,7 +26,7 @@ public enum ZhipuPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.isChatSectionVisible,
               context.activeProviderID == ZhipuProvider.info.id
         else {
@@ -47,7 +47,7 @@ public enum ZhipuPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: ZhipuProvider.info.id)
         return [
             ApiKeyMissingRenderer.item,

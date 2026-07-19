@@ -16,7 +16,7 @@ public enum ConversationLanguagePlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+    public static func chatSectionToolbarBarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve(LumiChatServicing.self)
         else {
@@ -31,7 +31,7 @@ public enum ConversationLanguagePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         [LanguageChatMiddleware()]
     }
 }

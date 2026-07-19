@@ -20,7 +20,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+    public static func chatSectionToolbarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve(LumiChatServicing.self)
         else {
@@ -35,7 +35,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+    public static func chatSectionToolbarBarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve(LumiChatServicing.self)
         else {
@@ -50,7 +50,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         // 工具要拿 `ChatService` 实例才能 `provider(forID:)`，所以这里强转。
         // LumiCoreKit 里的 `LumiChatServicing` 协议还没暴露 provider 字典——
         // 故意不暴露，避免其它子系统绕过 Provider 自己操作 Keychain。
@@ -65,7 +65,7 @@ public enum ModelSelectorPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+    public static func addSettingsTabs(context: any LumiCoreAccessing) -> [LumiSettingsTabItem] {
         guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
             return []
         }

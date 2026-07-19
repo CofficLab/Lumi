@@ -23,7 +23,7 @@ public enum ConversationForkPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+    public static func chatSectionToolbarItems(context: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem] {
         guard context.showsChatSection,
               let chatService = context.resolve((any LumiChatServicing).self)
         else {

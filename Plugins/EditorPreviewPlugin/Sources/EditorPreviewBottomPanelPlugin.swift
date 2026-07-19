@@ -19,7 +19,7 @@ public enum EditorPreviewBottomPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         guard context.showsPanelChrome else { return [] }
         guard let lumiCore = context.lumiCore else { return [] }

@@ -15,7 +15,7 @@ public enum MessageRendererPlugin: LumiPlugin {
 
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         [
             LumiMessageRendererItem(
                 id: "core-turn-completed",

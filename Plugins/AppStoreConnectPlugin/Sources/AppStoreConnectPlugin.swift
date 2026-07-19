@@ -21,8 +21,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
+        bootstrapFromLumiCoreIfNeeded(context: lumiCore)
         return [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
@@ -47,8 +47,8 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        guard context.activeSectionID == info.id else { return [] }
+    public static func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
+        guard lumiCore.layoutComponent.state.activeSectionID == info.id else { return [] }
 
         return [
             LumiTitleToolbarItem(
@@ -62,9 +62,9 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         let provider: @MainActor @Sendable () -> String = {
-            context.lumiCore?.projectComponent.currentProject?.path ?? ""
+            lumiCore.projectComponent.currentProject?.path ?? ""
         }
         AddToChat.currentProjectPathProvider = provider
         CoverArtRuntime.currentProjectPathProvider = provider
@@ -81,12 +81,12 @@ public enum AppStoreConnectPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(AboutView())
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(

@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiCoreKit
 import SwiftUI
 
 public enum ChatPendingSectionPlugin: LumiPlugin {
@@ -16,7 +15,7 @@ public enum ChatPendingSectionPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
         // Pending messages are now rendered inline inside ChatComposerSectionView
         return []
     }
@@ -32,9 +31,9 @@ public enum ChatAttachmentSectionPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let coordinator = lumiCore.resolveService((any ChatSectionCoordinator).self)
         else {
             return []
         }
@@ -61,9 +60,9 @@ public enum ChatComposerSectionPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let coordinator = lumiCore.resolveService((any ChatSectionCoordinator).self)
         else {
             return []
         }

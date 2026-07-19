@@ -15,7 +15,7 @@ public enum XiaomiPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderXiaomiPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderXiaomiPlugin"))
         }
@@ -23,7 +23,7 @@ public enum XiaomiPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix("xiaomi-", for: XiaomiProvider.info.id)
         return [
             ApiKeyMissingRenderer.item,

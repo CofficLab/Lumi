@@ -21,12 +21,12 @@ public enum ConversationListPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         [ProjectSwitchChatMiddleware()]
     }
 
     @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+    public static func titleToolbarItems(context: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
         guard context.showsChatSection else {
             return []
         }
@@ -63,7 +63,7 @@ public enum ConversationListPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
+    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
         guard context.showsRail else {
             return []
         }
@@ -103,7 +103,7 @@ public enum ConversationListPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         guard let chatService = context.resolve((any LumiChatServicing).self) else {
             throw LumiPluginDependencyError.serviceUnavailable("LumiChatServicing")
         }
@@ -117,7 +117,7 @@ public enum ConversationListPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 12) {
                 Text(verbatim: LumiPluginLocalization.string(

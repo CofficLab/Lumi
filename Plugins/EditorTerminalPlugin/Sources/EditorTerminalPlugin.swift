@@ -18,7 +18,7 @@ public enum EditorTerminalPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome else { return [] }
 
         return [

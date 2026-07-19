@@ -6,7 +6,7 @@ import LumiCoreKit
 enum TurnFinishedHook {
     /// 插件钩子入口：当 agent turn 结束时被内核调用
     static func handle(
-        context: LumiPluginContext,
+        context: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {

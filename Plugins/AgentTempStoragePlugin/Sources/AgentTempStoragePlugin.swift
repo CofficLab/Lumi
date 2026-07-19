@@ -1,41 +1,30 @@
-import Foundation
 import LumiCoreKit
 import LumiUI
 import SwiftUI
-import os
 
-/// Agent 临时文件存储插件。
-///
-/// 为 Agent 提供隔离的临时文件目录，支持写入、读取与列举；
-/// 超过保留期限（默认 7 天）的文件会自动清理。
 public enum AgentTempStoragePlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-temp-storage")
-
     public static let info = LumiPluginInfo(
-        id: "AgentTempStorage",
-        displayName: PluginAgentTempStorageLocalization.string("Agent Temp Storage"),
-        description: PluginAgentTempStorageLocalization.string(
-            "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-        ),
-        order: 18,
-        category: .agent,
-        policy: .alwaysOn,
+        id: "com.coffic.lumi.plugin.agent-temp-storage",
+        displayName: LumiPluginLocalization.string("Agent Temp Storage", bundle: .module),
+        description: LumiPluginLocalization.string("Temporary storage for agent data during sessions.", bundle: .module),
+        order: 80,
+        category: .development,
+        policy: .disabled,
         stage: .beta,
-        iconName: "doc.badge.clock",
+        iconName: "archivebox",
     )
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            WriteTempFileTool(),
-            ReadTempFileTool(),
-            ListTempFilesTool()
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
+        [
+            SaveTempDataTool(),
+            LoadTempDataTool(),
+            ClearTempDataTool(),
         ]
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)
@@ -46,11 +35,5 @@ public enum AgentTempStoragePlugin: LumiPlugin {
             }
             .padding()
         )
-    }
-}
-
-enum PluginAgentTempStorageLocalization {
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, table: "Localizable")
     }
 }

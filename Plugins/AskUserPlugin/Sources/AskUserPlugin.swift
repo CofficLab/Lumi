@@ -23,12 +23,12 @@ public enum AskUserPlugin: @preconcurrency LumiPlugin, LumiToolExecutionHook {
     private static var didConfigureRenderer = false
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [AskUserTool().asLumiAgentTool()]
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem] {
         if !didConfigureRenderer {
             didConfigureRenderer = true
             ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
@@ -40,11 +40,11 @@ public enum AskUserPlugin: @preconcurrency LumiPlugin, LumiToolExecutionHook {
 
     @MainActor
     public static func onTurnFinished(
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
-        await AskUserResumeHook.handle(context: context, conversationID: conversationID, reason: reason)
+        await AskUserResumeHook.handle(lumiCore: lumiCore, conversationID: conversationID, reason: reason)
     }
 
     // MARK: - LumiToolExecutionHook

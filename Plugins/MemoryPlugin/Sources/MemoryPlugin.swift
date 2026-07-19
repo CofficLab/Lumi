@@ -19,13 +19,13 @@ public enum MemoryPlugin: LumiPlugin {
     nonisolated(unsafe) public static var config: MemoryPluginConfig = .default
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         Self.bootstrapFromLumiCoreIfNeeded(context: context)
         return [MemoryChatMiddleware()]
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         Self.bootstrapFromLumiCoreIfNeeded(context: context)
         return [
             SaveMemoryTool(),

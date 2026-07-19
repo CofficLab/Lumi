@@ -22,13 +22,13 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
     )
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         RAGPluginService.initializeIfNeeded()
         return [RAGChatMiddleware()]
     }
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         [
             LumiRootOverlayItem(id: "\(info.id).index-maintenance") { content in
                 ZStack {
@@ -40,7 +40,7 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.isChatSectionVisible else {
             return []
         }
@@ -60,7 +60,7 @@ public enum RAGPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         RAGPluginService.initializeIfNeeded()
         return [RAGCodeSearchTool()]
     }

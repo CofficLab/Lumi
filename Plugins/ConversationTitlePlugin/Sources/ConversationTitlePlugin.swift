@@ -30,7 +30,7 @@ public enum ConversationTitlePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
+    public static func chatSectionHeaderItems(context: any LumiCoreAccessing) -> [LumiChatSectionHeaderItem] {
         guard context.showsChatSection else {
             return []
         }
@@ -53,12 +53,12 @@ public enum ConversationTitlePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         [ConversationTitleChatMiddleware()]
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         guard let chatService = context.resolve((any LumiChatServicing).self) else {
             throw LumiPluginDependencyError.serviceUnavailable("LumiChatServicing")
         }

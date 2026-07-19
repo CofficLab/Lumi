@@ -28,13 +28,13 @@ public enum GitHubPlugin: LumiPlugin {
     // MARK: - Insight Features
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         bootstrapIfNeeded()
         return [GitHubKBChatMiddleware()]
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         bootstrapIfNeeded()
         return [
             // Insight tools
@@ -57,7 +57,7 @@ public enum GitHubPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         bootstrapIfNeeded()
         let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
         return [
@@ -74,7 +74,7 @@ public enum GitHubPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+    public static func addSettingsTabs(context: any LumiCoreAccessing) -> [LumiSettingsTabItem] {
         bootstrapIfNeeded()
         return [
             LumiSettingsTabItem(
@@ -88,7 +88,7 @@ public enum GitHubPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         bootstrapIfNeeded()
         return AnyView(GitHubPluginAboutView())
     }

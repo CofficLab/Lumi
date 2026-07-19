@@ -27,7 +27,7 @@ struct PluginDeviceInfoTests {
     @Test
     func viewContainerIsProvided() {
         let items = DeviceInfoPlugin.viewContainers(
-            context: LumiPluginContext(
+            lumiCore: LumiPluginContext(
                 activeSectionID: "workspace",
                 activeSectionTitle: "Workspace"
             )
@@ -42,7 +42,7 @@ struct PluginDeviceInfoTests {
     @Test
     func onboardingPageIsProvided() {
         let pages = DeviceInfoPlugin.onboardingPages(
-            context: LumiPluginContext(
+            lumiCore: LumiPluginContext(
                 activeSectionID: "workspace",
                 activeSectionTitle: "Workspace"
             )
@@ -56,7 +56,7 @@ struct PluginDeviceInfoTests {
     @Test
     func menuBarContentItemsProvided() {
         let items = DeviceInfoPlugin.menuBarContentItems(
-            context: LumiPluginContext(
+            lumiCore: LumiPluginContext(
                 activeSectionID: "workspace",
                 activeSectionTitle: "Workspace"
             )
@@ -68,7 +68,7 @@ struct PluginDeviceInfoTests {
     @Test
     func menuBarPopupItemsProvided() {
         let items = DeviceInfoPlugin.menuBarPopupItems(
-            context: LumiPluginContext(
+            lumiCore: LumiPluginContext(
                 activeSectionID: "workspace",
                 activeSectionTitle: "Workspace"
             )

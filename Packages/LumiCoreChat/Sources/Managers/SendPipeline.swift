@@ -241,9 +241,29 @@ final class SendPipeline {
             // 理论上不应发生——SendPipeline 由 ChatService 持有
             fatalError("SendPipeline.service is nil when building per-request tool service")
         }
+
+        let builtInTools = ChatService.builtInTools
+        var pluginTools: [any LumiAgentTool] = []
+        var toolFailures: [LumiPluginContributionFailure] = []
+
+        // 从 provider 收集插件工具，失败时软降级，不阻断发送。
+        if let provider = service.delegate as? any AgentToolProviding {
+            do {
+                pluginTools = try provider.agentTools(lumiCore: service.delegate?.lumiCore)
+            } catch {
+                toolFailures.append(LumiPluginContributionFailure(
+                    pluginID: "send-pipeline",
+                    pluginDisplayName: "SendPipeline",
+                    contribution: "agentTools",
+                    errorDescription: error.localizedDescription
+                ))
+            }
+        }
+
         // 使用注入的 agentToolComponent 构建 per-request 工具集
         return service.agentToolComponent.buildToolSet(
-            builtInTools: ChatService.builtInTools
+            builtInTools: builtInTools,
+            pluginTools: pluginTools
         )
     }
 

@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -16,9 +15,9 @@ public enum ChatPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.isChatSectionVisible,
-              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
+    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let chatService = lumiCore.resolveService((any LumiChatServicing).self) as? ChatService
         else {
             return []
         }
@@ -39,18 +38,14 @@ public enum ChatPanelPlugin: LumiPlugin {
                 systemImage: "wrench.and.screwdriver",
                 placement: .trailing,
                 statusBarView: {
-                    if let lumiCore = context.lumiCore {
-                        ChatAvailableToolsStatusBarView(lumiCore: lumiCore)
-                    } else {
-                        EmptyView()
-                    }
+                    ChatAvailableToolsStatusBarView(lumiCore: lumiCore)
                 }
             )
         ]
     }
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
                 id: info.id,
@@ -65,7 +60,7 @@ public enum ChatPanelPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(
@@ -90,4 +85,3 @@ public enum ChatPanelPlugin: LumiPlugin {
         ]
     }
 }
-

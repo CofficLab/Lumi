@@ -24,12 +24,12 @@ public enum ShowImagePlugin: LumiPlugin {
     public static var order: Int { info.order }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
         [ShowImageTool()]
     }
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         [
             LumiRootOverlayItem(id: "\(info.id).overlay", order: info.order) { content in
                 ShowImageOverlay { content }

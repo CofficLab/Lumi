@@ -19,7 +19,7 @@ public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+    public static func panelHeaderItems(context: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
         guard context.showsPanelChrome else {
             return []
         }

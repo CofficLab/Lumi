@@ -18,7 +18,7 @@ public enum OpenRouterPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderOpenRouterPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderOpenRouterPlugin"))
         }

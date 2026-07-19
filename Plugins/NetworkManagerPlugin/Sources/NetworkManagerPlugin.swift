@@ -24,7 +24,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     )
 
     @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         [
             LumiViewContainerItem(
                 id: info.id,
@@ -37,7 +37,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
         [
             AnyView(
                 PluginOnboardingPageView(
@@ -63,7 +63,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
+    public static func menuBarContentItems(context: any LumiCoreAccessing) -> [LumiMenuBarContentItem] {
         [
             LumiMenuBarContentItem(id: "\(info.id).speed", order: info.order) {
                 NetworkMenuBarContentView()
@@ -72,7 +72,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+    public static func menuBarPopupItems(context: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
         [
             LumiMenuBarPopupItem(id: "\(info.id).network", order: info.order) {
                 NetworkMenuBarPopupView()
@@ -81,7 +81,7 @@ public enum NetworkManagerPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(NetworkManagerAboutView())
     }
 }

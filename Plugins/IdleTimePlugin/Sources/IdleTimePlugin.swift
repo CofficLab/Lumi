@@ -16,13 +16,13 @@ public enum IdleTimePlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    public static func sendMiddlewares(context: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         return [IdleTimeChatMiddleware()]
     }
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         guard context.activeSectionID == "LumiEditor" else {
             return []
         }
@@ -42,7 +42,7 @@ public enum IdleTimePlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    public static func rootOverlays(context: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         bootstrapFromLumiCoreIfNeeded(context: context)
         let projectPathProvider = {
             context.lumiCore?.projectComponent.currentProject?.path ?? ""
@@ -55,7 +55,7 @@ public enum IdleTimePlugin: LumiPlugin {
     }
 
         @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

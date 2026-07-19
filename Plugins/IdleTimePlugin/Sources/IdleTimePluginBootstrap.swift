@@ -3,7 +3,7 @@ import LumiCoreKit
 
 @MainActor
 public extension IdleTimePlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
             IdleTimeRuntimeBridge.directoryURL = core.storage.pluginDataDirectory(for: "IdleTime")

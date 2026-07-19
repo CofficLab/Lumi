@@ -13,7 +13,7 @@ public enum ThemeStatusBarPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    public static func statusBarItems(context: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         // LumiThemeServicing 不可用时显示错误视图
         guard let themeService = context.resolve(LumiThemeServicing.self) else {
             return [

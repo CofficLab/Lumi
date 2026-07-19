@@ -17,7 +17,7 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         guard context.showsPanelChrome,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {
@@ -37,7 +37,7 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
+    public static func panelRailTabItems(context: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
         guard context.showsRail,
               let service = context.resolve(LumiEditorServicing.self)?.editorService
         else {
@@ -57,7 +57,7 @@ public enum EditorReferencesPanelPlugin: LumiPlugin {
     }
 
     @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
                 Text(info.displayName)

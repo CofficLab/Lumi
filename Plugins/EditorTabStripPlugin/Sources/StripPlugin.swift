@@ -19,15 +19,12 @@ public enum StripHeaderPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        guard context.showsPanelChrome else {
+    public static func panelHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
+        guard lumiCore.layoutComponent.state.showsPanelChrome else {
             return []
         }
-        guard let lumiCore = context.lumiCore else { return [] }
 
-        // LumiEditorServicing 不可用时显示错误视图
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else {
+        guard let service = lumiCore.resolveService((any LumiEditorServicing).self)?.editorService else {
             return [
                 LumiPanelHeaderItem(id: "\(info.id).error") {
                     StripHeaderErrorView(pluginName: info.displayName)

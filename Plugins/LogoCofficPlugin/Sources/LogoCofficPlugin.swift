@@ -11,7 +11,7 @@ public enum LogoCofficPlugin: LumiPlugin {
     )
 
 
-    public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
+    public static func logoItems(context: any LumiCoreAccessing) -> [LogoItem] {
         [
             LogoItem(
                 id: info.id,

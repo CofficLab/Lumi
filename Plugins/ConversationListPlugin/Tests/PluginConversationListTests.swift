@@ -38,15 +38,15 @@ import Testing
         }
     )
 
-    #expect(ConversationListPlugin.titleToolbarItems(context: hiddenChatContext).isEmpty)
-    #expect(ConversationListPlugin.titleToolbarItems(context: visibleWithoutService).isEmpty)
-    #expect(ConversationListPlugin.titleToolbarItems(context: visibleWithService).count == 1)
+    #expect(ConversationListPlugin.titleToolbarItems(lumiCore: hiddenChatContext).isEmpty)
+    #expect(ConversationListPlugin.titleToolbarItems(lumiCore: visibleWithoutService).isEmpty)
+    #expect(ConversationListPlugin.titleToolbarItems(lumiCore: visibleWithService).count == 1)
 }
 
 @MainActor
 @Test func pluginRegistersProjectSwitchMiddleware() {
     let middlewares = ConversationListPlugin.sendMiddlewares(
-        context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+        lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
     )
     #expect(middlewares.count == 1)
 }
@@ -67,7 +67,7 @@ import Testing
             dependencies.register((any LumiChatServicing).self, chatService)
         }
     )
-    let tools = ConversationListPlugin.agentTools(context: context)
+    let tools = ConversationListPlugin.agentTools(lumiCore: context)
     let toolNames = Set(tools.map(\.name))
 
     #expect(toolNames.contains("create_new_conversation"))
@@ -80,7 +80,7 @@ import Testing
 @MainActor
 @Test func pluginProvidesChatRailTabWhenShowsRail() {
     let hidden = ConversationListPlugin.panelRailTabItems(
-        context: LumiPluginContext(
+        lumiCore: LumiPluginContext(
             activeSectionID: ChatPanelSection.id,
             activeSectionTitle: "Chat"
         )
@@ -88,7 +88,7 @@ import Testing
     #expect(hidden.isEmpty)
 
     let withoutService = ConversationListPlugin.panelRailTabItems(
-        context: LumiPluginContext(
+        lumiCore: LumiPluginContext(
             activeSectionID: ChatPanelSection.id,
             activeSectionTitle: "Chat",
             showsRail: true

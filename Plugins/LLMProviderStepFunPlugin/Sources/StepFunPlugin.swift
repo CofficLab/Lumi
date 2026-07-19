@@ -20,7 +20,7 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    public static func llmProviders(context: any LumiLLMProviderSettingsContributing) -> [any LumiLLMProvider] {
         if let core = context.lumiCore {
             AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderStepFunPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderStepFunPlugin"))
         }
@@ -28,7 +28,7 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    public static func messageRenderers(context: any LumiChatContributionProviding) -> [LumiMessageRendererItem] {
         ProviderRenderKindManager.shared.registerProviderPrefix("stepfun-", for: StepFunProvider.info.id)
         return [
             ApiKeyMissingRenderer.item,
@@ -40,7 +40,7 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
+    public static func subAgents(context: any LumiChatContributionProviding) -> [LumiSubAgentDefinition] {
         if Self.verbose {
             logger.info("\(Self.t)开始注册子 Agent")
         }
@@ -77,7 +77,7 @@ public enum StepFunPlugin: LumiPlugin, SuperLog {
     /// `nil` 或 `.info` 级别视为可用；`.warning`/`.error` 视为阻塞。
     /// 这样 API Key 缺失、套餐过期、平台不兼容等情况都会自动跳过子 Agent 注册。
     @MainActor
-    private static func isStepFunProviderAvailable(context: LumiPluginContext) -> Bool {
+    private static func isStepFunProviderAvailable(context: any LumiLLMProviderSettingsContributing) -> Bool {
         if Self.verbose {
             logger.info("\(Self.t)检查 StepFunProvider 可用性")
         }

@@ -13,14 +13,14 @@ enum AskUserResumeHook {
     /// 此钩子会检测当前 turn 是否因为等待用户回答而暂停，
     /// 如果是，则自动恢复 Agent 循环。
     static func handle(
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
         // 仅在 turn 因等待用户响应而结束时处理
         guard reason == .awaitingUserResponse else { return }
 
-        guard let chatService = context.resolve(LumiChatServicing.self) else {
+        guard let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
             return
         }
 

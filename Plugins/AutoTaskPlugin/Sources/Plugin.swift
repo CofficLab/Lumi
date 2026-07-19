@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import os
 import SuperLogKit
@@ -39,12 +38,11 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     public static var manager: TaskStateManager?
 
     @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) throws {
+    public static func lifecycle(_ event: LumiPluginLifecycle, lumiCore: any LumiCoreAccessing) throws {
         switch event {
         case .didRegister:
             // 优先使用 LumiCore 提供的目录；缺失时降级到 tmp。
-            let directory = LumiCore.current?.storage.pluginDataDirectory(for: dataDirectoryName)
-                ?? FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/\(dataDirectoryName)")
+            let directory = lumiCore.storage.pluginDataDirectory(for: dataDirectoryName)
             Self.manager = try TaskStateManager(databaseRootURL: directory)
 
         case .appDidLaunch:
@@ -61,8 +59,7 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
+    public static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         guard let manager else {
             Self.logger.warning("\(Self.t)manager 未初始化，返回空中间件列表")
             return []
@@ -72,16 +69,15 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
 
     @MainActor
     public static func onTurnFinished(
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {
-        await TurnFinishedHook.handle(context: context, conversationID: conversationID, reason: reason)
+        await TurnFinishedHook.handle(lumiCore: lumiCore, conversationID: conversationID, reason: reason)
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
+    public static func agentTools(lumiCore: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         guard let manager else {
             throw LumiPluginDependencyError.stateNotInitialized("TaskStateManager")
         }
@@ -95,9 +91,9 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     }
 
     @MainActor
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.showsChatSection,
-              let coordinator = context.resolve(ChatSectionCoordinator.self)
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible,
+              let coordinator = lumiCore.resolveService((any ChatSectionCoordinator).self)
         else {
             return []
         }
@@ -112,11 +108,11 @@ public enum AutoTaskPlugin: LumiPlugin, SuperLog {
     // MARK: - Bootstrap
 
     @MainActor
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(lumiCore: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
 
         configuration = LumiCoreConfiguration(
-            rootURL: context.lumiCore?.storage.pluginDataDirectory(for: dataDirectoryName) ?? URL(fileURLWithPath: NSTemporaryDirectory())
+            rootURL: lumiCore.storage.pluginDataDirectory(for: dataDirectoryName)
         )
         didBootstrapFromLumiCore = true
     }

@@ -98,19 +98,7 @@ struct SettingsView: View {
         return nil
     }
 
-    private var settingsPluginContext: LumiPluginContext {
-        lumiCore.makePluginContext(
-            activeSectionID: "settings",
-            activeSectionTitle: "设置",
-            additionalDependencies: { dependencies in
-                dependencies.register((any LumiChatServicing).self, chatService)
-                dependencies.register((any HistoryQueryService).self, chatService)
-                dependencies.register((any LumiLLMProviderSettingsContributing).self, pluginService)
-            }
-        )
-    }
 
-    /// Combined list of sidebar items: core tabs followed by plugin tabs with a separator.
     private var sidebarItems: [SettingsSidebarItem] {
         var items: [SettingsSidebarItem] = []
         for tab in SettingsTab.allCases {

@@ -18,7 +18,7 @@ struct PluginWebFetchTests {
     @Test("plugin registers one web fetch tool")
     func pluginRegistersTool() {
         let tools = WebFetchPlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.count == 1)

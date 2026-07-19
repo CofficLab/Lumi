@@ -1,6 +1,5 @@
 import LLMKit
 import LumiCoreKit
-import LumiCoreKit
 import os
 
 public enum FeifeimiaoPlugin: LumiPlugin {
@@ -10,7 +9,7 @@ public enum FeifeimiaoPlugin: LumiPlugin {
         id: "com.coffic.lumi.plugin.llm-provider.feifeimiao",
         displayName: LumiPluginLocalization.string("Feifeimiao", bundle: .module),
         description: LumiPluginLocalization.string("Contributes Feifeimiao models to Lumi Chat.", bundle: .module),
-        order: 93,
+        order: 104,
         category: .llmProvider,
         policy: .alwaysOn,
         stage: .beta,
@@ -18,10 +17,7 @@ public enum FeifeimiaoPlugin: LumiPlugin {
     )
 
     @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderFeifeimiaoPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderFeifeimiaoPlugin"))
-        }
+    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
         return [FeifeimiaoProvider()]
     }
 }

@@ -18,7 +18,7 @@ struct PluginShowImageTests {
     @Test("plugin registers one show image tool")
     func pluginRegistersTool() {
         let tools = ShowImagePlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.count == 1)
