@@ -221,6 +221,7 @@
       }
     },
     "Tab bar for the editor panel." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

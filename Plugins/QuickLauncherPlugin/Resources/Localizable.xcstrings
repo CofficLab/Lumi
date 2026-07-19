@@ -72,6 +72,7 @@
       }
     },
     "Quick access to system apps and utilities" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

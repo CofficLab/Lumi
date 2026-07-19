@@ -10,6 +10,7 @@ import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
 import EditorKernelPlugin
+import EditorPanelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -52,6 +53,9 @@ public enum PluginService {
 
         // EditorKernelPlugin
         list.append(EditorKernelPlugin())
+
+        // EditorPanelPlugin
+        list.append(EditorPanelPlugin())
 
         // ChatKernelPlugin
         list.append(ChatKernelPlugin())
