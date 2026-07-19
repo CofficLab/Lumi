@@ -1,64 +1,49 @@
 import LumiCoreKit
+import LumiKernel
 import LumiUI
 import os
 import SwiftUI
 
-public enum HostsManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
-    public static let verbose = false
+/// Hosts Manager 插件
+///
+/// 向 LumiKernel 注册 hosts 文件管理功能：
+/// - ViewContainer：侧边栏 hosts 管理视图
+@MainActor
+public final class HostsManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
+    public nonisolated public static let emoji = "📝"
+    nonisolated static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.hosts-manager",
-        displayName: LumiPluginLocalization.string("Hosts Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Manage system hosts file configuration", bundle: .module),
-        order: 21,
-        category: .system,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "list.bullet.rectangle",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    public let id = "com.coffic.lumi.plugin.hosts-manager"
+    public let name = "Hosts Manager"
+    public let order = 21
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册视图容器
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "list.bullet.rectangle"
             ) {
                 HostsManagerView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 HostsManager 插件到内核")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
-        AnyView(HostsManagerAboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "list.bullet.rectangle",
-                            title: LumiPluginLocalization.string("Edit hosts", bundle: .module),
-                            description: LumiPluginLocalization.string("Add or remove entries with a live preview", bundle: .module)
-                        ),
-                        .init(
-                            icon: "arrow.uturn.backward",
-                            title: LumiPluginLocalization.string("Toggle entries", bundle: .module),
-                            description: LumiPluginLocalization.string("Enable or disable mappings without deleting them", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Editing the hosts file requires administrator privileges.", bundle: .module)
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        // 无需额外启动逻辑
     }
 }
