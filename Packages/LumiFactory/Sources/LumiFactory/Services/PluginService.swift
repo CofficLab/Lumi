@@ -31,6 +31,7 @@ import SendMiddlewarePlugin
 import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
+import ThemeLumiPlugin
 import ThemeStatusBarPlugin
 import TitleToolbarPlugin
 import VideoConverterPlugin
@@ -104,6 +105,9 @@ public enum PluginService {
 
         // ThemeStatusBarPlugin (合并了原 ThemePlugin 功能)
         list.append(ThemeStatusBarPlugin())
+
+        // ThemeLumiPlugin
+        list.append(ThemeLumiPlugin())
 
         // ViewContainerPlugin
         list.append(ViewContainerPlugin())
