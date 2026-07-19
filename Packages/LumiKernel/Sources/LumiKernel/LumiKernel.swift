@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiUI
 
@@ -11,6 +12,9 @@ public final class LumiKernel: ObservableObject {
 
     /// Service registry
     private var services: [ObjectIdentifier: Any] = [:]
+
+    /// Service change subscriptions
+    private var serviceSubscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
     // MARK: - Service Accessors (Protocol Types)
 
@@ -115,6 +119,23 @@ public final class LumiKernel: ObservableObject {
     /// Register service implementation
     public func registerService<T>(_ type: T.Type, _ instance: T) {
         services[ObjectIdentifier(type)] = instance
+
+        // Forward objectWillChange from ObservableObject services
+        subscribeToObjectWillChange(observable: instance, key: ObjectIdentifier(type))
+    }
+
+    /// Helper to subscribe to ObservableObject's objectWillChange
+    private func subscribeToObjectWillChange<T>(observable: T, key: ObjectIdentifier) {
+        guard let observableObject = observable as? any ObservableObject else { return }
+
+        // Force cast to ObservableObjectPublisher which is the concrete type
+        let publisher = observableObject.objectWillChange as! ObservableObjectPublisher
+        serviceSubscriptions[key] = publisher
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.objectWillChange.send()
+            }
     }
 
     /// Resolve service implementation
@@ -124,7 +145,9 @@ public final class LumiKernel: ObservableObject {
 
     /// Unregister service
     public func unregisterService<T>(_ type: T.Type) {
-        services.removeValue(forKey: ObjectIdentifier(type))
+        let key = ObjectIdentifier(type)
+        services.removeValue(forKey: key)
+        serviceSubscriptions.removeValue(forKey: key)
     }
 
     // MARK: - Service Registration
