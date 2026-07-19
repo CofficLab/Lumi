@@ -108,6 +108,11 @@ public final class LumiKernel: ObservableObject {
         resolveService(ThemeProviding.self)
     }
 
+    /// Onboarding service
+    public var onboarding: (any OnboardingProviding)? {
+        resolveService(OnboardingProviding.self)
+    }
+
     // MARK: - Initialization
 
     public init() {
@@ -242,6 +247,11 @@ public final class LumiKernel: ObservableObject {
         registerService(ThemeProviding.self, theme)
     }
 
+    /// Register onboarding service
+    public func registerOnboardingService(_ onboarding: any OnboardingProviding) {
+        registerService(OnboardingProviding.self, onboarding)
+    }
+
     // MARK: - Convenience Accessors (Delegated)
 
     // MARK: - Plugin Convenience Accessors
@@ -275,11 +285,148 @@ public final class LumiKernel: ObservableObject {
     public func registerPluginUIContributions() {
         guard let pluginService = plugin else { return }
 
-        // Register status bar items from all plugins
         for plugin in pluginService.allPlugins {
-            let items = plugin.statusBarItems(kernel: self)
-            for item in items {
+            let pluginOrder = plugin.order
+
+            // Register status bar items from all plugins
+            for item in plugin.statusBarItems(kernel: self) {
                 registerStatusBarItem(item)
+            }
+
+            // Register view containers from all plugins
+            for container in plugin.viewContainers(kernel: self) {
+                registerViewContainer(
+                    ViewContainerItem(
+                        id: container.id,
+                        title: container.title,
+                        systemImage: container.systemImage,
+                        order: pluginOrder,
+                        showsRail: container.showsRail,
+                        showsPanelChrome: container.showsPanelChrome,
+                        content: container.makeView
+                    )
+                )
+            }
+
+            // Register panel items from all plugins
+            for item in plugin.panelHeaderItems(kernel: self) {
+                registerPanelHeaderItem(item)
+            }
+            for item in plugin.panelBottomTabItems(kernel: self) {
+                registerPanelBottomTabItem(
+                    PanelBottomTabItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        title: item.title,
+                        systemImage: item.systemImage,
+                        content: item.makeView
+                    )
+                )
+            }
+            for item in plugin.panelRailTabItems(kernel: self) {
+                registerPanelRailTabItem(
+                    PanelRailTabItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        title: item.title,
+                        systemImage: item.systemImage,
+                        content: item.makeView
+                    )
+                )
+            }
+
+            // Register chat section items from all plugins
+            for item in plugin.chatSectionItems(kernel: self) {
+                registerChatSectionItem(
+                    ChatSectionItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        placement: item.placement,
+                        fillsRemainingHeight: item.fillsRemainingHeight,
+                        showsTrailingDivider: item.showsTrailingDivider,
+                        content: item.makeView
+                    )
+                )
+            }
+            for item in plugin.chatSectionToolbarItems(kernel: self) {
+                registerChatSectionToolbarItem(
+                    ChatSectionToolbarItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        placement: item.placement,
+                        content: item.makeView
+                    )
+                )
+            }
+            for item in plugin.chatSectionToolbarBarItems(kernel: self) {
+                registerChatSectionToolbarBarItem(
+                    ChatSectionToolbarBarItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        content: item.makeView
+                    )
+                )
+            }
+            for item in plugin.chatSectionHeaderItems(kernel: self) {
+                registerChatSectionHeaderItem(
+                    ChatSectionHeaderItem(
+                        id: item.id,
+                        order: pluginOrder,
+                        content: item.makeView
+                    )
+                )
+            }
+
+            // Register settings items from all plugins
+            for item in plugin.settingsTabItems(kernel: self) {
+                registerSettingsTabItem(item)
+            }
+            for item in plugin.llmProviderSettingsItems(kernel: self) {
+                registerLLMProviderSettingsItem(item)
+            }
+
+            // Register logo items from all plugins
+            for item in plugin.logoItems(kernel: self) {
+                if let makeOverlay = item.makeOverlay {
+                    registerLogoItem(
+                        LogoItem(
+                            id: item.id,
+                            order: pluginOrder,
+                            makeView: item.makeView,
+                            makeOverlay: makeOverlay
+                        )
+                    )
+                } else {
+                    registerLogoItem(
+                        LogoItem(
+                            id: item.id,
+                            order: pluginOrder,
+                            makeView: item.makeView
+                        )
+                    )
+                }
+            }
+
+            // Register onboarding pages from all plugins
+            for page in plugin.onboardingPages(kernel: self) {
+                registerOnboardingPage(
+                    OnboardingPageItem(
+                        id: page.id,
+                        order: pluginOrder,
+                        content: page.makeView
+                    )
+                )
+            }
+        }
+
+        // Sync layout active section with registered view containers.
+        let containers = allViewContainers
+        if let first = containers.first,
+           let layoutService = layout,
+           layoutService.state.activeSectionID.isEmpty {
+            layoutService.updateLayout { state in
+                state.activeSectionID = first.id
+                state.activeSectionTitle = ""
             }
         }
     }
@@ -657,6 +804,23 @@ public final class LumiKernel: ObservableObject {
     /// Unregister logo item
     public func unregisterLogoItem(id: String) {
         logo?.unregisterLogoItem(id: id)
+    }
+
+    // MARK: - Onboarding Convenience Accessors
+
+    /// All registered onboarding pages (sorted by order)
+    public var allOnboardingPages: [OnboardingPageItem] {
+        onboarding?.allOnboardingPages ?? []
+    }
+
+    /// Register onboarding page
+    public func registerOnboardingPage(_ page: OnboardingPageItem) {
+        onboarding?.registerOnboardingPage(page)
+    }
+
+    /// Unregister onboarding page
+    public func unregisterOnboardingPage(id: String) {
+        onboarding?.unregisterOnboardingPage(id: id)
     }
 
     // MARK: - Theme Convenience Accessors

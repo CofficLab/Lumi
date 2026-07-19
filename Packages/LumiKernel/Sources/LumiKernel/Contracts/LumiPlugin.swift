@@ -67,6 +67,9 @@ public protocol LumiPlugin: AnyObject {
     /// 状态栏项
     func statusBarItems(kernel: LumiKernel) -> [StatusBarItem]
 
+    /// 视图容器项
+    func viewContainers(kernel: LumiKernel) -> [ViewContainerItem]
+
     /// 设置标签项
     func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem]
 
@@ -75,6 +78,9 @@ public protocol LumiPlugin: AnyObject {
 
     /// Logo 项
     func logoItems(kernel: LumiKernel) -> [LogoItem]
+
+    /// 引导页项
+    func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem]
 }
 
 // MARK: - Default UI Contribution Implementations
@@ -117,6 +123,10 @@ public extension LumiPlugin {
         []
     }
 
+    func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        []
+    }
+
     func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
         []
     }
@@ -126,6 +136,10 @@ public extension LumiPlugin {
     }
 
     func logoItems(kernel: LumiKernel) -> [LogoItem] {
+        []
+    }
+
+    func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] {
         []
     }
 }
