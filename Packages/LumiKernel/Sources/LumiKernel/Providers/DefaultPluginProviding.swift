@@ -28,7 +28,7 @@ public final class DefaultPluginProviding: PluginProviding {
         updateSortedPlugins()
     }
 
-    public func plugin(for id: String) -> LumiPlugin? {
+    public func plugin(id: String) -> LumiPlugin? {
         plugins[id]
     }
 
