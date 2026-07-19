@@ -1,57 +1,76 @@
 import Foundation
 import LumiKernel
 
-/// Agent 工具信息
-public struct AgentToolInfoImpl: AgentToolInfo, Sendable {
-    public let name: String
-    public let description: String
-
-    public init(name: String, description: String) {
-        self.name = name
-        self.description = description
-    }
-}
-
 /// Agent 工具服务实现
 @MainActor
 public final class AgentToolService: AgentToolProviding {
 
     /// 已注册的工具
-    private var registeredTools: [String: AgentToolInfoImpl] = [:]
+    private var registeredTools: [String: any LumiAgentTool] = [:]
 
-    /// 工具执行器
-    private var executors: [String: @MainActor @Sendable (String) async throws -> String] = [:]
+    /// 工具注册顺序
+    private var toolOrder: [String] = []
 
     public init() {}
 
-    // MARK: - Tool Registration
-
-    /// 注册工具
-    public func registerTool(
-        _ tool: AgentToolInfoImpl,
-        executor: @MainActor @Sendable @escaping (String) async throws -> String
-    ) {
-        registeredTools[tool.name] = tool
-        executors[tool.name] = executor
-    }
-
-    /// 注销工具
-    public func unregisterTool(name: String) {
-        registeredTools.removeValue(forKey: name)
-        executors.removeValue(forKey: name)
-    }
-
     // MARK: - AgentToolProviding
 
-    public func collectTools() async throws -> [any AgentToolInfo] {
-        Array(registeredTools.values)
+    public var allAgentTools: [any LumiAgentTool] {
+        toolOrder.compactMap { registeredTools[$0] }
     }
 
-    public func executeTool(name: String, arguments: String) async throws -> String {
-        guard let executor = executors[name] else {
+    public func register(_ tool: any LumiAgentTool) {
+        if registeredTools[tool.name] == nil {
+            toolOrder.append(tool.name)
+        }
+        registeredTools[tool.name] = tool
+    }
+
+    public func unregister(id: String) {
+        registeredTools.removeValue(forKey: id)
+        toolOrder.removeAll { $0 == id }
+    }
+
+    public func collectTools() async throws -> [any LumiAgentTool] {
+        allAgentTools
+    }
+
+    public func executeTool(name: String, arguments: String, context: LumiToolExecutionContext) async throws -> String {
+        guard let tool = registeredTools[name] else {
             throw AgentToolError.toolNotFound(name: name)
         }
-        return try await executor(arguments)
+
+        // 解析参数 JSON
+        var argumentsDict: [String: LumiJSONValue] = [:]
+        if let data = arguments.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            argumentsDict = Self.convertToLumiJSONValue(json)
+        }
+
+        return try await tool.execute(arguments: argumentsDict, context: context)
+    }
+
+    // MARK: - JSON Conversion
+
+    private static func convertToLumiJSONValue(_ dict: [String: Any]) -> [String: LumiJSONValue] {
+        dict.mapValues { value -> LumiJSONValue in
+            convertValueToLumiJSONValue(value)
+        }
+    }
+
+    private static func convertValueToLumiJSONValue(_ value: Any) -> LumiJSONValue {
+        switch value {
+        case let s as String: return .string(s)
+        case let n as Int: return .int(n)
+        case let n as Double: return .double(n)
+        case let b as Bool: return .bool(b)
+        case let arr as [Any]:
+            return .array(arr.map { convertValueToLumiJSONValue($0) })
+        case let obj as [String: Any]:
+            return .object(convertToLumiJSONValue(obj))
+        case is NSNull: return .null
+        default: return .null
+        }
     }
 }
 

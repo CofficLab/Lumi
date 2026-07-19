@@ -3,41 +3,57 @@ import LumiKernel
 import SuperLogKit
 
 /// List Projects Tool
-struct ListProjectsTool: AgentToolInfo, Sendable, SuperLog {
+struct ListProjectsTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose = false
 
-    var name: String { "list_projects" }
-    var description: String { "List saved projects with project names, paths, and last used times." }
+    static let info = LumiAgentToolInfo(
+        id: "list_projects",
+        displayName: "List Projects",
+        description: "List saved projects with project names, paths, and last used times."
+    )
+
+    var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "limit": .object([
+                    "type": .string("integer"),
+                    "description": .string("Maximum number of projects to return (default: 5, max: 500)")
+                ])
+            ])
+        ])
+    }
 
     private let maxLimit = 500
 
-    @MainActor
-    func execute(arguments: [String: Any], viewModel: ProjectsViewModel?) -> String {
-        let limit = min((arguments["limit"] as? Int) ?? 5, maxLimit)
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        let limit = min(arguments.int("limit") ?? 5, maxLimit)
 
-        guard let viewModel else {
+        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
             return "Error: Projects view model is not available."
         }
 
-        let projects = Array(viewModel.projects.prefix(limit))
+        return await MainActor.run {
+            let projects = Array(viewModel.projects.prefix(limit))
 
-        guard !projects.isEmpty else {
-            return "No projects found."
-        }
-
-        var output = "## Projects\n\n"
-        for (index, project) in projects.enumerated() {
-            output += "\(index + 1). **\(project.name)**"
-            if viewModel.currentProject?.path == project.path {
-                output += " (current)"
+            guard !projects.isEmpty else {
+                return "No projects found."
             }
-            output += "\n"
-            output += "   Path: `\(project.path)`\n"
-            output += "   Last used: \(Self.formatDate(project.lastUsed))\n\n"
-        }
 
-        return output
+            var output = "## Projects\n\n"
+            for (index, project) in projects.enumerated() {
+                output += "\(index + 1). **\(project.name)**"
+                if viewModel.currentProject?.path == project.path {
+                    output += " (current)"
+                }
+                output += "\n"
+                output += "   Path: `\(project.path)`\n"
+                output += "   Last used: \(Self.formatDate(project.lastUsed))\n\n"
+            }
+
+            return output
+        }
     }
 
     private static func formatDate(_ date: Date) -> String {

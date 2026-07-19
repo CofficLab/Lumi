@@ -32,8 +32,7 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: "Port Manager",
-                systemImage: "arrow.up.arrow.down.circle",
-                order: order
+                systemImage: "arrow.up.arrow.down.circle"
             ) {
                 PortManagerView()
             }

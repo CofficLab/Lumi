@@ -26,7 +26,7 @@ public final class AgentToolPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         let agentToolService = AgentToolService()
-        kernel.registerAgentTool(agentToolService)
+        kernel.registerAgentToolService(agentToolService)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 AgentTool 服务")
         }

@@ -1,4 +1,5 @@
 import LumiKernel
+import SuperLogKit
 import LumiUI
 import os
 import SwiftUI
@@ -8,9 +9,9 @@ import SwiftUI
 /// 向 LumiKernel 注册 Homebrew 包管理功能：
 /// - ViewContainer：侧边栏包管理视图
 @MainActor
-public final class BrewManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
+public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.brew-manager")
-    public nonisolated public static let emoji = "🍺"
+    public nonisolated static let emoji = "🍺"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin

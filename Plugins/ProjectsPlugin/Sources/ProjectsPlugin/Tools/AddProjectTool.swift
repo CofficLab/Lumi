@@ -3,28 +3,45 @@ import LumiKernel
 import SuperLogKit
 
 /// Add Project Tool
-struct AddProjectTool: AgentToolInfo, Sendable, SuperLog {
+struct AddProjectTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "➕"
     nonisolated static let verbose = false
 
-    var name: String { "add_project" }
-    var description: String { "Add an existing local directory to the projects list without switching the current project." }
+    static let info = LumiAgentToolInfo(
+        id: "add_project",
+        displayName: "Add Project",
+        description: "Add an existing local directory to the projects list without switching the current project."
+    )
 
-    @MainActor
-    func execute(arguments: [String: Any], viewModel: ProjectsViewModel?) -> String {
-        guard let viewModel else {
+    var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "path": .object([
+                    "type": .string("string"),
+                    "description": .string("The path to the project directory to add")
+                ])
+            ]),
+            "required": .array([.string("path")])
+        ])
+    }
+
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
             return "Error: Projects view model is not available."
         }
 
-        guard let path = arguments["path"] as? String else {
+        guard let path = arguments.string("path") else {
             return "Error: Missing required parameter `path`."
         }
 
-        do {
-            let project = try viewModel.add(path: path, select: false)
-            return successMessage(project: project, projects: viewModel.projects)
-        } catch {
-            return "Error: \(error.localizedDescription)"
+        return await MainActor.run {
+            do {
+                let project = try viewModel.add(path: path, select: false)
+                return successMessage(project: project, projects: viewModel.projects)
+            } catch {
+                return "Error: \(error.localizedDescription)"
+            }
         }
     }
 

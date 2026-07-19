@@ -60,13 +60,12 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         coordinator.kernel = kernel
         self.syncCoordinator = coordinator
 
-        // 5. 注册标题栏工具栏项
+        // 5. 注册标题栏工具栏项（order 自动从插件继承）
         kernel.registerTitleToolbarItem(
             TitleToolbarItem(
                 id: "\(id).toolbar",
                 title: "Projects",
-                placement: .center,
-                order: order
+                placement: .center
             ) {
                 if let vm = self.viewModel {
                     ProjectControlView(viewModel: vm)
@@ -90,6 +89,9 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     public func boot(kernel: LumiKernel) async throws {
+        // 设置 RuntimeBridge 供工具使用
+        ProjectsToolRuntimeBridge.viewModel = viewModel
+
         // 启动时同步当前项目状态
         if let currentProject = viewModel?.currentProject {
             try? await kernel.project?.openProject(at: currentProject.path)

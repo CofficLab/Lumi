@@ -27,13 +27,12 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        // 注册视图容器
+        // 注册视图容器（order 自动从插件继承）
         kernel.registerViewContainer(
             ViewContainerItem(
                 id: id,
                 title: VideoConverterLocalization.string("Video Converter"),
-                systemImage: "video",
-                order: order
+                systemImage: "video"
             ) {
                 VideoConverterMainView()
             }

@@ -3,17 +3,25 @@ import LumiKernel
 import SuperLogKit
 
 /// Get Current Project Tool
-struct GetCurrentProjectTool: AgentToolInfo, Sendable, SuperLog {
+struct GetCurrentProjectTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "📍"
     nonisolated static let verbose = false
 
-    var name: String { "get_current_project" }
-    var description: String { "Get the currently selected project name and path. Returns empty status if no project is selected." }
+    static let info = LumiAgentToolInfo(
+        id: "get_current_project",
+        displayName: "Get Current Project",
+        description: "Get the currently selected project name and path. Returns empty status if no project is selected."
+    )
 
-    @MainActor
-    func execute(arguments: [String: Any], viewModel: ProjectsViewModel?) -> String {
-        guard let viewModel,
-              let project = viewModel.currentProject else {
+    var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([:])
+        ])
+    }
+
+    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
             return """
             ## Current Project Status
 
@@ -21,12 +29,22 @@ struct GetCurrentProjectTool: AgentToolInfo, Sendable, SuperLog {
             """
         }
 
-        return """
-        ## Current Project Info
+        return await MainActor.run {
+            guard let project = viewModel.currentProject else {
+                return """
+                ## Current Project Status
 
-        **Project Name**: \(project.name)
+                **Status**: No project selected
+                """
+            }
 
-        **Project Path**: \(project.path)
-        """
+            return """
+            ## Current Project Info
+
+            **Project Name**: \(project.name)
+
+            **Project Path**: \(project.path)
+            """
+        }
     }
 }

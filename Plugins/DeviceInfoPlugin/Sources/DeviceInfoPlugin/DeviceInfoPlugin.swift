@@ -26,33 +26,30 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        // 注册主视图容器
+        // 注册主视图容器（order 自动从插件继承）
         kernel.registerViewContainer(
             ViewContainerItem(
                 id: id,
                 title: "Device Info",
-                systemImage: "macbook.and.iphone",
-                order: order
+                systemImage: "macbook.and.iphone"
             ) {
                 DeviceInfoView()
             }
         )
 
-        // 注册菜单栏内容
+        // 注册菜单栏内容（order 自动从插件继承）
         kernel.registerMenuBarContent(
             MenuBarContentItem(
-                id: "\(id).metrics",
-                order: order
+                id: "\(id).metrics"
             ) {
                 DeviceInfoMenuBarContentView()
             }
         )
 
-        // 注册菜单栏弹出项
+        // 注册菜单栏弹出项（order 自动从插件继承）
         kernel.registerMenuBarPopup(
             MenuBarPopupItem(
-                id: "\(id).cpu",
-                order: order
+                id: "\(id).cpu"
             ) {
                 DeviceInfoMenuBarPopupView()
             }
@@ -60,8 +57,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
 
         kernel.registerMenuBarPopup(
             MenuBarPopupItem(
-                id: "\(id).memory",
-                order: order + 1
+                id: "\(id).memory"
             ) {
                 MemoryMenuBarPopupView()
             }

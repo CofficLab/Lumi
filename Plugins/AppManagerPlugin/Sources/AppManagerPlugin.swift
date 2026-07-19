@@ -36,8 +36,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: "App Manager",
-                systemImage: "apps.ipad",
-                order: order
+                systemImage: "apps.ipad"
             ) {
                 AppManagerView()
             }

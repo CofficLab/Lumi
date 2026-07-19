@@ -14,6 +14,9 @@ public final class LumiKernel: ObservableObject {
     /// 插件注册顺序（用于按顺序启动）
     private var pluginOrder: [String] = []
 
+    /// 当前正在注册的插件（用于自动传递 order）
+    private var currentRegisteringPlugin: LumiPlugin?
+
     // MARK: - Command Registry
 
     /// 命令组注册表
@@ -47,11 +50,6 @@ public final class LumiKernel: ObservableObject {
     private var sendMiddlewares: [String: any SendMiddleware] = [:]
     private var sendMiddlewareOrder: [String] = []
 
-    // MARK: - Agent Tool Registry
-
-    /// Agent 工具注册表（单个工具注册）
-    private var agentTools: [String: AgentToolItem] = [:]
-    private var agentToolOrder: [String] = []
 
     // MARK: - Service Accessors (Protocol Types)
 
@@ -112,8 +110,14 @@ public final class LumiKernel: ObservableObject {
         plugins[id] = plugin
         pluginOrder.append(id)
 
+        // 设置当前注册插件（用于自动传递 order）
+        currentRegisteringPlugin = plugin
+
         // 立即调用注册方法
         try plugin.register(kernel: self)
+
+        // 清除当前注册插件
+        currentRegisteringPlugin = nil
     }
 
     /// 批量注册插件
@@ -211,7 +215,7 @@ public final class LumiKernel: ObservableObject {
     }
 
     /// 注册 Agent 工具服务
-    public func registerAgentTool(_ agentTool: any AgentToolProviding) {
+    public func registerAgentToolService(_ agentTool: any AgentToolProviding) {
         registerService(AgentToolProviding.self, agentTool)
     }
 
@@ -290,6 +294,11 @@ public final class LumiKernel: ObservableObject {
 
     /// 注册视图容器
     public func registerViewContainer(_ container: ViewContainerItem) {
+        var container = container
+        // 自动从插件继承 order
+        if let pluginOrder = currentRegisteringPlugin?.order {
+            container.order = pluginOrder
+        }
         viewContainer?.register(container)
     }
 
@@ -308,6 +317,11 @@ public final class LumiKernel: ObservableObject {
 
     /// 注册菜单栏内容
     public func registerMenuBarContent(_ content: MenuBarContentItem) {
+        var content = content
+        // 自动从插件继承 order
+        if let pluginOrder = currentRegisteringPlugin?.order {
+            content.order = pluginOrder
+        }
         if menuBarContents[content.id] == nil {
             menuBarContentOrder.append(content.id)
         }
@@ -330,6 +344,11 @@ public final class LumiKernel: ObservableObject {
 
     /// 注册菜单栏弹出项
     public func registerMenuBarPopup(_ popup: MenuBarPopupItem) {
+        var popup = popup
+        // 自动从插件继承 order
+        if let pluginOrder = currentRegisteringPlugin?.order {
+            popup.order = pluginOrder
+        }
         if menuBarPopups[popup.id] == nil {
             menuBarPopupOrder.append(popup.id)
         }
@@ -357,6 +376,11 @@ public final class LumiKernel: ObservableObject {
 
     /// 注册标题栏工具栏项
     public func registerTitleToolbarItem(_ item: TitleToolbarItem) {
+        var item = item
+        // 自动从插件继承 order
+        if let pluginOrder = currentRegisteringPlugin?.order {
+            item.order = pluginOrder
+        }
         if titleToolbarItems[item.id] == nil {
             titleToolbarOrder.append(item.id)
         }
@@ -394,24 +418,20 @@ public final class LumiKernel: ObservableObject {
     // MARK: - Agent Tool Registry (Individual)
 
     /// 所有已注册的 Agent 工具
-    public var allAgentTools: [any AgentToolInfo] {
-        agentToolOrder.compactMap { agentTools[$0]?.tool }
+    public var allAgentTools: [any LumiAgentTool] {
+        agentTool?.allAgentTools ?? []
     }
 
     /// 注册单个 Agent 工具
-    public func registerAgentTool(_ tool: any AgentToolInfo) {
-        let item = AgentToolItem(tool: tool)
-        if agentTools[item.id] == nil {
-            agentToolOrder.append(item.id)
-        }
-        agentTools[item.id] = item
+    public func registerAgentTool(_ tool: any LumiAgentTool) {
+        agentTool?.register(tool)
     }
 
     /// 注销 Agent 工具
     public func unregisterAgentTool(id: String) {
-        agentTools.removeValue(forKey: id)
-        agentToolOrder.removeAll { $0 == id }
+        agentTool?.unregister(id: id)
     }
+
 
     // MARK: - Panel Registry
 
