@@ -1,49 +1,67 @@
 # ProjectsPlugin
 
-Project management plugin for Lumi. Maintains the global recent projects list, provides a toolbar project selector, and supplies project context to agent tools.
+项目管iving理插件，为 Lumi 应用提供完整的项目管理功能。
 
-## Features
+## 功能
 
-- **Recent projects** — maintains a global list of recently opened projects
-- **Toolbar selector** — project picker in the title toolbar when the active view supports it
-- **Agent tools** — `list_projects`, `get_current_project`, `add_project` tools for agent use
-- **Send middleware** — injects current project context into agent requests
-- **Overlay guidance** — shows project selection guidance when no project is active
+### 内核服务
+- **ProjectService**: 实现 `ProjectProviding` 协议，管理项目状态
 
-## Requirements
+### UI 组件
+- **TitleToolbarItem**: 标题栏项目控制视图，显示当前项目名称
 
-- macOS 14.0+
-- Swift 6.0+
+### Agent Tools
+- `list_projects`: 列出已保存的项目
+- `add_project`: 添加新项目
+- `get_current_project`: 获取当前项目信息
 
-## Dependencies
+### Middleware
+- **ConversationHintMiddleware**: 在消息中添加当前项目路径提示
 
-| Package | Description |
-|---------|-------------|
-| [LumiCoreKit](../../Packages/LumiCoreKit) | Core framework for Lumi plugins |
-| [LumiUI](../../Packages/LumiUI) | UI components |
-| [AgentToolKit](../../Packages/AgentToolKit) | Agent tool definitions |
-| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
-
-## Usage
-
-### As a Lumi Plugin
-
-This plugin integrates with the Lumi application. It provides:
-
-- **Title Toolbar View** — project selector in the title bar
-- **Root View Overlay** — project selection overlay and guidance
-- **Agent Tools** — project management tools for the AI assistant
-
-### Project Structure
+## 架构
 
 ```
-Sources/
-├── ProjectsPlugin.swift        # Plugin entry point
-└── ProjectsEvents.swift         # Project-related events
-Tests/
-└── ProjectsPluginTests/         # Unit tests
+ProjectsPlugin
+├── ProjectsPlugin.swift          # 主插件类
+├── Services/
+│   ├── ProjectService.swift      # 内核服务实现
+│   └── ProjectsSyncCoordinator   # 状态同步协调器
+├── Store/
+│   └── ProjectsStore.swift       # 数据持久化
+├── ViewModels/
+│   └── ProjectsViewModel.swift   # 视图状态管理
+├── Models/
+│   ├── ProjectEntry.swift        # 项目条目数据模型
+│   └── LumiProject.swift         # 类型别名
+├── Views/
+│   ├── ProjectControlView.swift  # 项目控制按钮
+│   ├── ProjectListView.swift     # 项目列表
+│   ├── ProjectRowView.swift      # 项目行
+│   └── ProjectsPopoverView.swift # 弹出视图
+├── Tools/
+│   ├── ListProjectsTool.swift
+│   ├── AddProjectTool.swift
+│   └── GetCurrentProjectTool.swift
+└── Middleware/
+    └── ConversationHintMiddleware.swift
+```
+
+## 依赖
+
+- LumiKernel
+- LumiUI
+- LocalizationKit
+- SuperLogKit
+
+## 使用
+
+通过 LumiFactory 自动注册：
+
+```swift
+// LumiFactory/PluginService.swift
+list.append(ProjectsPlugin())
 ```
 
 ## License
 
-Proprietary. All rights reserved.
+MIT

@@ -5,7 +5,7 @@ import ChatKernelPlugin
 import DeviceInfoKernelPlugin
 import EditorKernelPlugin
 import LayoutKernelPlugin
-import ProjectPlugin
+import ProjectsPlugin
 import StoragePlugin
 import os
 
@@ -26,8 +26,8 @@ public enum PluginService {
             list.append(plugin)
         }
 
-        // ProjectPlugin
-        list.append(ProjectPlugin())
+        // ProjectsPlugin
+        list.append(ProjectsPlugin())
 
         // AgentToolPlugin
         list.append(AgentToolPlugin())

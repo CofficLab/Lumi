@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 struct ProjectListView: View {
     @ObservedObject var viewModel: ProjectsViewModel

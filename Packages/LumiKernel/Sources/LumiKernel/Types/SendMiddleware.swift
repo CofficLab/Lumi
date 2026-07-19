@@ -28,7 +28,7 @@ public struct SendContext: Sendable {
 ///
 /// 在消息发送前对内容进行预处理。
 /// 中间件可以修改消息内容、添加元数据或阻止发送。
-public protocol SendMiddleware: AnyObject, Sendable {
+public protocol SendMiddleware: Sendable {
     /// 处理发送上下文
     ///
     /// - Parameter context: 原始发送上下文

@@ -1,40 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Add an existing local directory to the projects list without switching the current project." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add an existing local directory to the projects list without switching the current project."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将现有本地目录添加到项目列表，而不切换当前项目。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        }
-      }
-    },
     "Add" : {
       "localizations" : {
         "en" : {
@@ -69,7 +35,42 @@
         }
       }
     },
+    "Add an existing local directory to the projects list without switching the current project." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add an existing local directory to the projects list without switching the current project."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将现有本地目录添加到项目列表，而不切换当前项目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        }
+      }
+    },
     "Add Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,6 +105,7 @@
       }
     },
     "Adds a project manager control to the title toolbar." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -138,6 +140,7 @@
       }
     },
     "Get Current Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -206,6 +209,7 @@
       }
     },
     "List Projects" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

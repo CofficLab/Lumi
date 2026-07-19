@@ -1,9 +1,8 @@
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
 struct ProjectControlView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var viewModel: ProjectsViewModel
     @State private var isPopoverPresented = false
 

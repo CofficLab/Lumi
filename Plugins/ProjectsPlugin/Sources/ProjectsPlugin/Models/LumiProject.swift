@@ -1,0 +1,2 @@
+/// 向后兼容 typealias
+public typealias LumiProject = ProjectEntry
