@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// MLX 本地 LLM 供应商插件

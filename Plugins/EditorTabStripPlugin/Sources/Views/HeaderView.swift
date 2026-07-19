@@ -1,5 +1,5 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
@@ -11,7 +11,7 @@ public struct HeaderView: View {
 
     // MARK: - 属性
 
-    let lumiCore: LumiCoreAccessing
+    let kernel: LumiKernel
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var draggedTabSessionID: UUID?
     @ObservedObject private var service: EditorService
@@ -20,12 +20,12 @@ public struct HeaderView: View {
     @StateObject private var coordinator = StripCoordinator()
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        kernel.project?.currentProject?.path ?? ""
     }
 
-    public init(service: EditorService, lumiCore: LumiCoreAccessing) {
+    public init(service: EditorService, kernel: LumiKernel) {
         self._service = ObservedObject(wrappedValue: service)
-        self.lumiCore = lumiCore
+        self.kernel = kernel
     }
 
     // ⚠️ sessionStore 用于 StripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
@@ -52,10 +52,10 @@ public struct HeaderView: View {
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: {
-                    lumiCore.projectComponent.currentProject?.path ?? ""
+                    kernel.project?.currentProject?.path ?? ""
                 },
                 openFile: { [weak service] url in
-                    let projectPath = lumiCore.projectComponent.currentProject?.path
+                    let projectPath = kernel.project?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)
@@ -78,7 +78,7 @@ public struct HeaderView: View {
                 newPath: newPath,
                 sessionStore: sessionStore,
                 openFile: { [weak service] url in
-                    let projectPath = lumiCore.projectComponent.currentProject?.path
+                    let projectPath = kernel.project?.currentProject?.path
                     Task { @MainActor in
                         await service?.refreshProjectContext(for: projectPath)
                         service?.sessions.open(at: url)

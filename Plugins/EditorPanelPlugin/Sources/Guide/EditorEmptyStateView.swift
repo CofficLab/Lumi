@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 /// 编辑器空白占位视图。

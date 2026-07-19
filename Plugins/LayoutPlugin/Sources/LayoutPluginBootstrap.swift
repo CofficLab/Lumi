@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// LayoutPlugin 的运行时桥接:持有 plugin 数据目录,供 `LayoutPluginLocalStore`
 /// 等 nonisolated 单例在 init 里读取(替代旧的 nonisolated 镜像变量)。

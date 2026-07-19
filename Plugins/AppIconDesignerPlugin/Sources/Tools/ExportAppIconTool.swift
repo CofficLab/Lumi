@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct ExportAppIconTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(

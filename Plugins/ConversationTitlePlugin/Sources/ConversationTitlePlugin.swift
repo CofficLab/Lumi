@@ -1,5 +1,5 @@
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftUI
 
 /// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.

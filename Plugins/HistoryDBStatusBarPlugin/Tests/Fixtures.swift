@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 @testable import HistoryDBStatusBarPlugin
-@testable import LumiCoreKit
+@testable import LumiKernel
 
 // MARK: - Test Fixtures
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Statistics period options for the heatmap view.
 enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable {

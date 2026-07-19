@@ -1,7 +1,7 @@
 import Testing
 import Foundation
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 @testable import ModelSelectorPlugin
 
 /// Unit tests for `ModelSelectorFormatService` (pure formatting) and the

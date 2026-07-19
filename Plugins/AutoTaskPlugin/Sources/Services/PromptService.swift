@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 提示词服务：负责生成任务相关的各种提示词
 public final class PromptService: @unchecked Sendable {

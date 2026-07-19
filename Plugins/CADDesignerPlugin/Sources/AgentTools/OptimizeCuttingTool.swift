@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 切割优化：对项目中的型材需求长度做一维切割优化（FFD 算法）。
 public struct OptimizeCuttingTool: LumiAgentTool {

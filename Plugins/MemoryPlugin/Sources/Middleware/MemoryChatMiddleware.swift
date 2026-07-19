@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 enum MemoryPromptBuilder {
     static func buildPrompt(projectPath: String, userMessage: String) async -> String {

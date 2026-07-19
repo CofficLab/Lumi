@@ -1,6 +1,6 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 工具栏上的会话列表入口按钮

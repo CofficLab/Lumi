@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 struct AgentRulesChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {

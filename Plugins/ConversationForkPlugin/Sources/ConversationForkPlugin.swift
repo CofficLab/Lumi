@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 一键续接对话插件。

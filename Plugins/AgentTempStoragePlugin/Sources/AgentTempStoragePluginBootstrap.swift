@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// AgentTempStoragePlugin 的运行时桥接:持有 plugin 专属数据目录,
 /// 供 `AgentTempStoragePluginLocalStore` / `TempFileStorageService` 读取

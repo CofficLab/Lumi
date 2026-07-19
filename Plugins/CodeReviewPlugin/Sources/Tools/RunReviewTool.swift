@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 public struct RunReviewTool: LumiAgentTool, SuperLog {

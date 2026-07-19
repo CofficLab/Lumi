@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 保存当前项目为 .cadproj 文件。
 public struct SaveCADProjectTool: LumiAgentTool {

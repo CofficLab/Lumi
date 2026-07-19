@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiCoreKit
+import LumiKernel
 @testable import MessageRendererPlugin
 
 /// Unit tests for the pure logic helpers in MessageRendererPlugin.

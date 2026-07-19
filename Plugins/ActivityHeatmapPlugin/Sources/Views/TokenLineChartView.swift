@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 /// Line chart view displaying daily token consumption over time.
 struct TokenLineChartView: View {

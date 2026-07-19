@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 enum Http403Renderer {
     static let item = LumiMessageRendererItem(

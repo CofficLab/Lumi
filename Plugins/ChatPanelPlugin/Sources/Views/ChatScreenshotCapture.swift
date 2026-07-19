@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 import ScreenCaptureKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 extension Notification.Name {
     static let screenshotCaptured = Notification.Name("screenshotCaptured")

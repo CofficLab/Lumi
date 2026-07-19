@@ -1,35 +1,33 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 import os
 
-public enum EditorTerminalPanelPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-terminal-panel")
+/// Editor Terminal Plugin
+@MainActor
+public final class EditorTerminalPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-terminal-panel")
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-terminal",
-        displayName: LumiPluginLocalization.string("Editor Terminal", bundle: .module),
-        description: LumiPluginLocalization.string("Terminal panel in the editor bottom area.", bundle: .module),
-        order: 100,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "terminal",
-    )
+    public let id = "com.coffic.lumi.plugin.editor-bottom-terminal"
+    public let name = "Editor Terminal"
+    public let order = 100
 
-    @MainActor
-    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome else { return [] }
+    public init() {}
 
-        return [
-            LumiPanelBottomTabItem(
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerPanelBottomTabItem(
+            PanelBottomTabItem(
                 id: "editor-bottom-terminal",
-                order: info.order,
                 title: LumiPluginLocalization.string("Terminal", bundle: .module),
-                systemImage: iconName
+                systemImage: "terminal"
             ) {
                 EditorBottomTerminalPanelView()
             }
-        ]
+        )
+    }
+
+    public func boot(kernel: LumiKernel) async throws {
+        // 设置 RuntimeBridge
+        EditorBottomTerminalBridge.kernel = kernel
     }
 }

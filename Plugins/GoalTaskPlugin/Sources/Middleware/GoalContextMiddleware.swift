@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import os
 
 /// GoalTask 中间件：在每轮对话中注入当前 Goal 的进度信息

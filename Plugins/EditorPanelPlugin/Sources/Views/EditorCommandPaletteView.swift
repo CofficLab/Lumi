@@ -1,7 +1,7 @@
 import SwiftUI
 import EditorService
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 /// 编辑器命令面板视图。
 ///

@@ -1,6 +1,6 @@
 import Testing
 @testable import ConversationTurnDurationPlugin
-import LumiCoreKit
+import LumiKernel
 import Foundation
 
 @Suite("ConversationTurnDurationPlugin Tests")

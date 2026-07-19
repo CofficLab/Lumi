@@ -16,7 +16,7 @@
 
 import Foundation
 import Testing
-import LumiCoreKit
+import LumiKernel
 @testable import LLMProviderStepFunPlugin
 
 /// 测试 `StepFunPlugin.subAgents(context:)` 的 Provider 可用性 gate 行为。

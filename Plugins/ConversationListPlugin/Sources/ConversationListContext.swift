@@ -1,7 +1,7 @@
 import Combine
 import Foundation
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 @MainActor
 public final class ConversationListContext: ObservableObject {

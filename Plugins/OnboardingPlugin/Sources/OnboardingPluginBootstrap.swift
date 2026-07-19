@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// OnboardingPlugin 的运行时桥接:持有 LumiCore 数据根目录,
 /// 供 `OnboardingPluginStore` 读取(替代旧的 nonisolated 镜像变量)。

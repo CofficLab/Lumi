@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 extension LumiToolCall {
     /// Bridges `LumiToolCall` to AgentToolKit's registry-facing `ToolCall` model.

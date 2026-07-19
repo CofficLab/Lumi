@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 struct ActivityHeatmapView: View {
     let data: [ActivityDay]

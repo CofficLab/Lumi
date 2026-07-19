@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import SwiftUI
 import os

@@ -3,7 +3,7 @@ import SuperLogKit
 import os
 import FileSystemKit
 import LibGit2Swift
-import LumiCoreKit
+import LumiKernel
 
 /// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
 private final class WeakBox<T: AnyObject>: @unchecked Sendable {

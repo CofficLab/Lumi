@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 详细级别切换插件：在 Chat 工具栏提供简洁 / 标准 / 详细回复风格选择。

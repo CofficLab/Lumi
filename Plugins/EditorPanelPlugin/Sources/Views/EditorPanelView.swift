@@ -1,6 +1,6 @@
 import Combine
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import MarkdownKit
 import SwiftUI
 import LumiUI

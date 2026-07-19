@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
 import HttpKit
-import LumiCoreKit
+import LumiKernel
 
 public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "ZhiPu"

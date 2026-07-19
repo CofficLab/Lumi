@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 用户询问插件
 ///

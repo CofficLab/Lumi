@@ -1,6 +1,6 @@
 import SwiftUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 /// 右侧栏视图
 ///

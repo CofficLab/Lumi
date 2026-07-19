@@ -3,7 +3,7 @@ import Testing
 @testable import LLMProviderMLXPlugin
 import Combine
 import AgentToolKit
-import LumiCoreKit
+import LumiKernel
 
 // MARK: - Test Helpers
 

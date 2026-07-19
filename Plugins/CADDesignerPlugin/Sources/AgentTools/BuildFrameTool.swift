@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// AI 自然语言搭框架（文档 Phase 4.1）。
 ///

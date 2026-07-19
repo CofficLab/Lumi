@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
 import HttpKit
-import LumiCoreKit
+import LumiKernel
 
 public final class XybbzProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(

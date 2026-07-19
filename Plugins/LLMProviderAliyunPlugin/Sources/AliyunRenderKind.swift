@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 enum AliyunRenderKind {
     static let prefix = "aliyun-"

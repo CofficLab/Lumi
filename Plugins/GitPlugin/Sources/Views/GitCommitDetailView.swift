@@ -1,6 +1,6 @@
 import SwiftUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 /// Git Commit 详情视图

@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 编辑器无内容状态视图。
 ///

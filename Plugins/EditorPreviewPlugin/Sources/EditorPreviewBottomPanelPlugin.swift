@@ -1,38 +1,33 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 import os
 
-public enum EditorPreviewBottomPanelPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-preview-bottom-panel")
+/// Editor Preview Bottom Panel Plugin
+@MainActor
+public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-preview-bottom-panel")
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-preview",
-        displayName: LumiPluginLocalization.string("Editor Preview", bundle: .module),
-        description: LumiPluginLocalization.string("Preview panel in the editor bottom area.", bundle: .module),
-        order: 84,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "eye",
-    )
+    public let id = "com.coffic.lumi.plugin.editor-bottom-preview"
+    public let name = "Editor Preview"
+    public let order = 84
 
-    @MainActor
-    public static func panelBottomTabItems(context: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        guard context.showsPanelChrome else { return [] }
-        guard let lumiCore = context.lumiCore else { return [] }
+    public init() {}
 
-        return [
-            LumiPanelBottomTabItem(
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerPanelBottomTabItem(
+            PanelBottomTabItem(
                 id: "editor-bottom-preview",
-                order: info.order,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
-                systemImage: iconName
+                systemImage: "eye"
             ) {
-                EditorPreviewDetailView(lumiCore: lumiCore)
+                EditorPreviewDetailView(kernel: kernel)
             }
-        ]
+        )
+    }
+
+    public func boot(kernel: LumiKernel) async throws {
+        EditorPreviewPluginRuntimeBridge.kernel = kernel
     }
 }

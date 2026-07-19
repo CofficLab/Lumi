@@ -1,6 +1,6 @@
 @testable import EditorSwiftPlugin
 @testable import EditorService
-import LumiCoreKit
+import LumiKernel
 import Testing
 
 @Test func editorSwiftPluginInfo() {

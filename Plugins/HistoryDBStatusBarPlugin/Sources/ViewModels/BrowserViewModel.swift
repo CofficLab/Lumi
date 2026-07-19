@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 @MainActor
 public final class BrowserViewModel: ObservableObject {

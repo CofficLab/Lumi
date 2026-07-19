@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftData
 import Testing
 @testable import RequestLogPlugin

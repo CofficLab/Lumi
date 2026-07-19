@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 用当前对话的模型把历史浓缩成摘要，用于在新对话中续写。
 ///

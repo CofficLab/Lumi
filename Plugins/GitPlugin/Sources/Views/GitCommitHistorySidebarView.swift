@@ -1,7 +1,7 @@
 import LibGit2Swift
 import SuperLogKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 /// Git 提交历史侧边栏视图

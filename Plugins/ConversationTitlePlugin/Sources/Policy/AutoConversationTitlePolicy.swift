@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Stateless auto conversation naming policy.
 public struct AutoConversationTitlePolicy {

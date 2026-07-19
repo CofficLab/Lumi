@@ -1,6 +1,6 @@
 
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import os
 import SwiftUI
 

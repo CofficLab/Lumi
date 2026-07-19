@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(

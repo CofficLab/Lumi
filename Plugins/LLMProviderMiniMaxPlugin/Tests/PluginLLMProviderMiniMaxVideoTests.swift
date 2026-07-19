@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 @testable import LLMProviderMiniMaxPlugin
-import LumiCoreKit
+import LumiKernel
 
 // MARK: - Mock Client
 

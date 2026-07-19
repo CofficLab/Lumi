@@ -1,5 +1,5 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 
 /// Editor Chat 插件：在编辑器右键菜单提供「Add to Chat」，
 /// 把选中代码的文件路径与行范围（或光标所在行）追加到对话输入框。

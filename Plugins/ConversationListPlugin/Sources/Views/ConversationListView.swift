@@ -1,6 +1,6 @@
 import Combine
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import LumiUI
 import SuperLogKit
 import SwiftUI

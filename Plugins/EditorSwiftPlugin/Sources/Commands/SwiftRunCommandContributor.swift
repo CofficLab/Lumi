@@ -1,6 +1,6 @@
 import EditorService
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 @MainActor

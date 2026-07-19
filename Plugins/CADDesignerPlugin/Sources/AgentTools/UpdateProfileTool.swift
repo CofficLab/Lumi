@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 修改现有型材或组件的长度/位置/旋转。
 public struct UpdateProfileTool: LumiAgentTool {

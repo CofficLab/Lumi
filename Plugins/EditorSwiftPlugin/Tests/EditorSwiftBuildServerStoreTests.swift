@@ -1,6 +1,6 @@
 @testable import EditorSwiftPlugin
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import Testing
 import XcodeKit
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 struct UpdateConversationTitleLumiTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(

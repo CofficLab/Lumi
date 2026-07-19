@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 struct ConversationTitleChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 @testable import ThemeAuroraPlugin
 

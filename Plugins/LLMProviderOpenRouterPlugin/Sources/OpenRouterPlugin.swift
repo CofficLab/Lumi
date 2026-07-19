@@ -1,6 +1,6 @@
 import LLMKit
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import os
 
 public enum OpenRouterPlugin: LumiPlugin {

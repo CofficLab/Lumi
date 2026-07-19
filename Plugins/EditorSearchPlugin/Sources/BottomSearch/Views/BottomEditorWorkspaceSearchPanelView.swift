@@ -1,7 +1,7 @@
 import EditorService
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 public struct BottomEditorWorkspaceSearchPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

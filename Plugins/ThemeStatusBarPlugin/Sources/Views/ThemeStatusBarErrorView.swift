@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 主题服务不可用时的状态栏错误视图
 struct ThemeStatusBarErrorView: View {

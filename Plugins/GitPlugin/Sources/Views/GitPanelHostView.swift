@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// Injects Git panel environment objects for the commit history workspace.

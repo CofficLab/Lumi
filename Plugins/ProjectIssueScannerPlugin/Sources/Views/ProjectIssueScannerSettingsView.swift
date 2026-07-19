@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 项目问题扫描器设置视图
 ///

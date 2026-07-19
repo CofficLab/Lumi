@@ -1,7 +1,7 @@
 import AppKit
 import SuperLogKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import FileSystemKit
 import os
 

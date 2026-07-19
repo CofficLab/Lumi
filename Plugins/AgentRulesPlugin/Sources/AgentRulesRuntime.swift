@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 @MainActor
 public enum AgentRulesRuntime {

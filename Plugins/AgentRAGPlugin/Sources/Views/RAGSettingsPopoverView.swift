@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 @MainActor
 struct RAGSettingsPopoverView: View {

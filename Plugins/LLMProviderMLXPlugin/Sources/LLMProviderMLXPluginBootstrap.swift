@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// LLMProviderMLXPlugin(MLX/MLXLumi) 的运行时桥接:持有 plugin 专属数据目录,
 /// 供 `MLXModels.cacheRootDirectory` 读取(替代旧的 nonisolated 镜像变量)。

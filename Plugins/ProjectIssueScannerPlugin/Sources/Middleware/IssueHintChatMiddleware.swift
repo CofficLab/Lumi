@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 纯逻辑的「项目问题相关性打分器」，与单例存储解耦，便于单元测试。
 ///

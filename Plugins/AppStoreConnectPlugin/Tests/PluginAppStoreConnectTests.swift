@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import CryptoKit
-import LumiCoreKit
+import LumiKernel
 @testable import AppStoreConnectPlugin
 
 @Suite(.serialized)

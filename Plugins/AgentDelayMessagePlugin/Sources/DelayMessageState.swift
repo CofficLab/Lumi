@@ -1,6 +1,6 @@
 import Foundation
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 /// 延时消息状态存储
 ///

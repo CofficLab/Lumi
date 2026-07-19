@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
     case derivedData = "Derived Data"

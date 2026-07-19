@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import XCTest
 @testable import EditorTabStripPlugin
 

@@ -1,6 +1,6 @@
 import DownloadKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// 下载单个文件工具

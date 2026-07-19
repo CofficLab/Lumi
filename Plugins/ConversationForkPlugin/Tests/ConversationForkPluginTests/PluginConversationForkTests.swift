@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiCoreKit
+import LumiKernel
 @testable import ConversationForkPlugin
 
 // MARK: - Plugin registration

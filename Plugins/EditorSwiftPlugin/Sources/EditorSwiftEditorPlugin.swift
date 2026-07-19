@@ -1,7 +1,7 @@
 import EditorService
 import Foundation
 import os
-import LumiCoreKit
+import LumiKernel
 import ShellKit
 import SwiftUI
 import XcodeKit

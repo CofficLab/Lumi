@@ -1,7 +1,7 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderDeepSeekPlugin")

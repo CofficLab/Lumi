@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 enum IconToolSupport {
     static func language(_ context: LumiToolExecutionContext) -> LumiLanguagePreference {

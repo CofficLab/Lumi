@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 public enum ThemeGithubPlugin: LumiPlugin, LumiUIThemeProviding {

@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 /// MiniMax Token Plan 错误消息的渲染类型判定。
 ///

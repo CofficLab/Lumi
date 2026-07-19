@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiCoreKit
+import LumiKernel
 @testable import DiskManagerPlugin
 
 @MainActor

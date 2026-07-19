@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 语言切换插件：在 Chat 工具栏提供语言选择，并通过中间件注入 LLM 系统提示。

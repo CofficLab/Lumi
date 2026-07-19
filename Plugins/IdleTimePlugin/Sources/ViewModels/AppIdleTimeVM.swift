@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 private final class AppIdleTimeTimerHolder: @unchecked Sendable {

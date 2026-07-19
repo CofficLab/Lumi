@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 private enum AppStoreConnectToolSupport {
     static func makeClient() -> (client: ConnectClient?, errorMessage: String?) {

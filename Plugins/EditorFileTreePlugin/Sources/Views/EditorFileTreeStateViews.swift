@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 文件树加载状态视图
 public struct EditorFileTreeLoadingView: View {

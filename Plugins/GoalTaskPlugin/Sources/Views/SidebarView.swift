@@ -1,6 +1,6 @@
 import SwiftUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 /// 右侧栏视图 - 展示当前会话的单一活跃 Goal 及其 Tasks
 public struct SidebarView: View {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct SetIconBackgroundTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(

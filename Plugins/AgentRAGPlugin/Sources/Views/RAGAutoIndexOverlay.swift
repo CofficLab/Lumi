@@ -1,6 +1,6 @@
 import SuperLogKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// RAG 自动索引覆盖层
 ///

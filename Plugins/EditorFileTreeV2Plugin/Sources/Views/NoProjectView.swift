@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 文件树无项目视图（未选择项目）
 public struct NoProjectView: View {

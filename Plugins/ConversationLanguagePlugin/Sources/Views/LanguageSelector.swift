@@ -1,5 +1,5 @@
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftUI
 
 /// 语言切换按钮：每个对话保存独立语言偏好。

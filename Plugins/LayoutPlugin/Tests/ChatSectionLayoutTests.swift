@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 import Testing
 @testable import LayoutPlugin

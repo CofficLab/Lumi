@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 /// 请求失败（网络错误等，无 HTTP 状态码）。
 enum RequestFailedRenderer {

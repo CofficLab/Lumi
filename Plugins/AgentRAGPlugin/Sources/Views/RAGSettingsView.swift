@@ -1,7 +1,7 @@
 import LumiUI
 import SuperLogKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {

@@ -1,5 +1,5 @@
 import AppKit
-import LumiCoreKit
+import LumiKernel
 
 /// 文件树操作辅助
 ///

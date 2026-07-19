@@ -4,9 +4,9 @@ import AgentToolKit
 import Combine
 import HttpKit
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 import os
 
 /// MLX 本地模型 Provider

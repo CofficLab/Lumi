@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 private final class NotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?

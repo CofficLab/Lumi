@@ -1,6 +1,6 @@
 import CryptoKit
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import Foundation
 import os

@@ -1,6 +1,6 @@
 
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Model Selector 内部对单个模型检查进度的快照。
 ///

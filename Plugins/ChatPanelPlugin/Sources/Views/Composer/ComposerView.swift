@@ -2,7 +2,7 @@ import EditorChatInputKit
 import AppKit
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 struct ComposerView: View {
     @LumiTheme private var theme

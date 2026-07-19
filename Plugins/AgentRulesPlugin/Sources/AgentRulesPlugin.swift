@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 public enum AgentRulesPlugin: LumiPlugin {
 

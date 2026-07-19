@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// AppStoreConnectPlugin 的运行时桥接:持有 LumiCore 数据根目录 + plugin 专属子目录,
 /// 供 `AppStoreConnectPluginLocalStore` / `ScreenshotImageCache` / `ConnectAPICache`

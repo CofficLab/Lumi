@@ -2,7 +2,7 @@ import SwiftUI
 import LumiUI
 import Foundation
 import AgentToolKit
-import LumiCoreKit
+import LumiKernel
 
 /// AskUser 详细模式视图
 ///

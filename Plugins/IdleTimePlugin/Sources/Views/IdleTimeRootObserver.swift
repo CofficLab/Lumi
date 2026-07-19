@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 extension Notification.Name {
     static let lumiEditorSave = Notification.Name("LumiEditorSave")

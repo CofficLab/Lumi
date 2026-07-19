@@ -1,6 +1,6 @@
 import Foundation
 import FileSystemKit
-import LumiCoreKit
+import LumiKernel
 
 /// Editor Rail 文件树本地存储
 ///

@@ -2,7 +2,7 @@ import EditorService
 import SwiftUI
 import LumiUI
 import UniformTypeIdentifiers
-import LumiCoreKit
+import LumiKernel
 
 /// 单个标签页的完整交互项
 ///

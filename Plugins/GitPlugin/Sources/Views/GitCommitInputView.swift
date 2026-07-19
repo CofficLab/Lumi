@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 /// Commit 输入视图

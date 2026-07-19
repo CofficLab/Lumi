@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 // MARK: - Package Node Row View
 

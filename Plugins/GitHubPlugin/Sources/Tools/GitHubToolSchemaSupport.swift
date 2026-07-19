@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 extension LumiJSONValue: @retroactive ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {

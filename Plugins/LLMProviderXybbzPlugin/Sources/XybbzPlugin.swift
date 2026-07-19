@@ -1,5 +1,5 @@
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 import os
 
 public enum XybbzPlugin: LumiPlugin {

@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
 import HttpKit
-import LumiCoreKit
+import LumiKernel
 
 /// 小米 API（OpenAI 兼容协议）
 public final class XiaomiAPIProvider: LumiLLMProvider, @unchecked Sendable {

@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 struct ResolvedErrorTransportDetails: Equatable {
     let summary: String

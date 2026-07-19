@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import os
 import SwiftUI

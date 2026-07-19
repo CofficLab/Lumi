@@ -1,11 +1,11 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
 @MainActor
 public enum EditorStickySymbolBarBridge {
-    public static var editorServiceProvider: ((PluginContext) -> EditorService?)?
+    public static var editorServiceProvider: (() -> EditorService?)?
 }
 
 /// 编辑器符号面包屑头部视图。

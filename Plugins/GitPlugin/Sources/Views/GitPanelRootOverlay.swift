@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 struct GitPanelRootOverlay<Content: View>: View {

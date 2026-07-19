@@ -1,5 +1,5 @@
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 struct LanguageChatMiddleware: LumiSendMiddleware {
     func prepare(_ context: LumiSendContext) async throws -> LumiSendContext {

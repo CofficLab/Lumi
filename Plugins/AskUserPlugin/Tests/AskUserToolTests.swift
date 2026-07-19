@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import AskUserPlugin
 

@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 后台索引维护视图
 ///

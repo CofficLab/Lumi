@@ -1,6 +1,6 @@
 import EditorService
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Runtime hooks supplied by the host app for package-isolated preview views.
 @MainActor

@@ -3,7 +3,7 @@ import EditorService
 import XcodeKit
 import os
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 // MARK: - Quick Open Contributor
 

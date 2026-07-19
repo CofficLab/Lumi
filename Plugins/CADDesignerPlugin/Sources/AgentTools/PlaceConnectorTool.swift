@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 放置连接件到当前项目。
 public struct PlaceConnectorTool: LumiAgentTool {

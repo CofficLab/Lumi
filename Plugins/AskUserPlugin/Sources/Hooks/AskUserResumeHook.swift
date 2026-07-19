@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import os
 
 /// AskUser 回答后自动继续 AgentTurn 的钩子

@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 会话列表空状态视图
 public struct ConversationListEmptyView: View {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 项目切换对话引导中间件：注入当前项目信息，指导 LLM 在话题切换时创建新对话。
 struct ProjectSwitchChatMiddleware: LumiSendMiddleware {

@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import os
 
 /// Collects OSLog entries to rotating on-disk log files.

@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 会话列表头部视图
 /// 显示在会话列表顶部，包含折叠按钮、图标和标题文字

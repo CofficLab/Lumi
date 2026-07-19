@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Turn 结束后检查未完成的目标和任务，并在需要时无感地自动续聊。
 @MainActor

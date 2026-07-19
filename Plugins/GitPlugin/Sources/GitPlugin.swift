@@ -1,5 +1,5 @@
 import LibGit2Swift
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 import SuperLogKit
 import os

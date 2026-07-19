@@ -3,7 +3,7 @@ import EditorPreviewPlugin
 import EditorService
 import EditorStickySymbolBarPlugin
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 @MainActor

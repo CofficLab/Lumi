@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 自动化程度切换插件：在 Chat 工具栏提供 Chat / Build / 自主 模式选择。

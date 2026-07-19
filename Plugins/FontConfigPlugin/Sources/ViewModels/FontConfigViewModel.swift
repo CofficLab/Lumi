@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 import Combine
-import LumiCoreKit
+import LumiKernel
 
 /// 等宽字体数据项
 public struct MonospacedFontItem: Identifiable, Equatable {

@@ -1,6 +1,6 @@
 import Foundation
 import GitHubKit
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// GitHub 文件内容获取工具

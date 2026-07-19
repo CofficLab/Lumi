@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 struct SwitchModelTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(

@@ -1,5 +1,5 @@
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftUI
 
 /// 历史数据库浏览器：在聊天面板状态栏展示消息/对话列表。

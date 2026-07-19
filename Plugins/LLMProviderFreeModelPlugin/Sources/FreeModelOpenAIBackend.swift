@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 
 final class FreeModelOpenAIBackend: LumiLLMProvider, @unchecked Sendable {
     static let info = FreeModelProvider.providerInfo

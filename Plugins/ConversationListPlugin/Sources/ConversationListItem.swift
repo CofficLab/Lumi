@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct ConversationListItem: Identifiable, Equatable, Sendable {
     public let id: UUID

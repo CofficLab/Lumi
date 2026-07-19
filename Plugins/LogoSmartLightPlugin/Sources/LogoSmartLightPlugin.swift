@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 public enum LogoSmartLightPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(

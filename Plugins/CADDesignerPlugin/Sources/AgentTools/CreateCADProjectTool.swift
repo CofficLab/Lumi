@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 创建新的 CAD 项目。
 public struct CreateCADProjectTool: LumiAgentTool {

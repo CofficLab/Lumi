@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 struct ChatSlashCommand: Identifiable, Equatable {
     var id: String { command }

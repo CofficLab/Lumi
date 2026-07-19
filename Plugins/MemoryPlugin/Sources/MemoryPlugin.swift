@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Memory Plugin：持久化记忆系统。
 public enum MemoryPlugin: LumiPlugin {

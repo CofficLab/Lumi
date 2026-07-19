@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
     case all

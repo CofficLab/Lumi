@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 在 Chat 工具栏显示当前对话的 LLM 上下文用量。

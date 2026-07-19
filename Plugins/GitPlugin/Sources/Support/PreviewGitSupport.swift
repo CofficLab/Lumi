@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// Preview-time stub for `LumiCoreAccessing` and `AppGitVM`.
 ///

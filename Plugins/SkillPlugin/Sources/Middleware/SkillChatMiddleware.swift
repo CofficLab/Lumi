@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 struct SkillChatMiddleware: LumiSendMiddleware, SuperLog {

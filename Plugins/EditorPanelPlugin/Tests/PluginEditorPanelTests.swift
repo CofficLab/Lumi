@@ -1,6 +1,6 @@
 @testable import EditorPanelPlugin
 @testable import EditorService
-import LumiCoreKit
+import LumiKernel
 import Testing
 
 @Test func editorPanelPluginInfo() async throws {

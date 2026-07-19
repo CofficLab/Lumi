@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 private enum CoverArtToolSupport {
     static let store = CoverArtDocumentStore()

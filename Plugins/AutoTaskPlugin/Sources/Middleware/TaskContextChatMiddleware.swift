@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import os
 
 /// AutoTask 进度注入中间件：在每轮对话中注入当前任务进度。

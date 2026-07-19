@@ -1,6 +1,6 @@
 import EditorService
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 编辑器右键菜单「添加到对话」贡献器。
 ///

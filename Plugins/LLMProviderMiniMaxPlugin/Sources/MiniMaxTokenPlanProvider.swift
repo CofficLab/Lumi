@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
+import LumiKernel
 
 /// MiniMax Token Plan 提供商
 public final class MiniMaxTokenPlanProvider: LumiLLMProvider, @unchecked Sendable {

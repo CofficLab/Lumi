@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 final class PreviewLumiCoreStub: LumiCoreAccessing {
     let storage = StorageComponent(dataRootDirectory: URL(fileURLWithPath: "/tmp/preview"))

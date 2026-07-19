@@ -2,7 +2,7 @@ import SwiftUI
 import LumiUI
 import Foundation
 import AgentToolKit
-import LumiCoreKit
+import LumiKernel
 
 /// AskUser 的 ToolCall 行级渲染器
 ///

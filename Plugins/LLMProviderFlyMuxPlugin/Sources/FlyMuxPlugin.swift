@@ -1,6 +1,6 @@
 import LLMKit
-import LumiCoreKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 public enum FlyMuxPlugin: LumiPlugin {
     public static let info = LumiPluginInfo(

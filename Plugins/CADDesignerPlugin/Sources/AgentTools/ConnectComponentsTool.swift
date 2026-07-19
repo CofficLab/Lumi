@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 在两个组件之间建立装配连接关系。
 public struct ConnectComponentsTool: LumiAgentTool {

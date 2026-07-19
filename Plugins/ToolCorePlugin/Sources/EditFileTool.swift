@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import FileSystemKit
 
 public struct EditFileTool: LumiAgentTool {

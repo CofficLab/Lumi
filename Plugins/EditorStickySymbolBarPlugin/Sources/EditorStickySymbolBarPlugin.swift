@@ -1,34 +1,36 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 import os
 
-public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar-header")
+/// Editor Sticky Symbol Bar Plugin
+@MainActor
+public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar-header")
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header",
-        displayName: LumiPluginLocalization.string("Editor Sticky Symbol Bar", bundle: .module),
-        description: LumiPluginLocalization.string("Sticky symbol bar for the editor panel.", bundle: .module),
-        order: 85,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "line.3.horizontal",
-    )
+    public let id = "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header"
+    public let name = "Editor Sticky Symbol Bar"
+    public let order = 85
 
-    @MainActor
-    public static func panelHeaderItems(context: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome else {
-            return []
-        }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
+    private var editorService: EditorService?
 
-        return [
-            LumiPanelHeaderItem(id: info.id) {
-                EditorStickySymbolBarHeaderView(service: service)
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        // 获取 EditorService
+        editorService = kernel.editor?.editorService
+
+        kernel.registerPanelHeaderItem(
+            PanelHeaderItem(id: id) {
+                if let service = editorService {
+                    EditorStickySymbolBarHeaderView(service: service)
+                } else {
+                    EmptyView()
+                }
             }
-        ]
+        )
     }
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

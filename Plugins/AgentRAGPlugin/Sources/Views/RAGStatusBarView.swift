@@ -2,7 +2,7 @@ import LumiUI
 import SuperLogKit
 import os
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// RAG 状态栏视图
 ///

@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 
 /// 布局存储键定义
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 放置型材到当前项目。
 public struct PlaceProfileTool: LumiAgentTool {

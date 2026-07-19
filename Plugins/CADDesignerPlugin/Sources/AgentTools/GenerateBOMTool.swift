@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 生成当前项目的物料清单。
 public struct GenerateBOMTool: LumiAgentTool {

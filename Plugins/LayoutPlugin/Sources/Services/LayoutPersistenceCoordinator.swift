@@ -1,5 +1,5 @@
 import CoreGraphics
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import os
 

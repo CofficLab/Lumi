@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 从 .cadproj 文件加载项目。
 public struct LoadCADProjectTool: LumiAgentTool {

@@ -1,7 +1,7 @@
 import Combine
 import EditorService
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import LumiPreviewKit
 import os
 import SuperLogKit

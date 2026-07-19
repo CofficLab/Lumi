@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 enum AppIconDesignerLocalization {
     static let table = "Localizable"

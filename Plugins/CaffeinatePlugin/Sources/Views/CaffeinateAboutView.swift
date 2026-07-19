@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 防休眠插件关于视图 - 展示插件的功能介绍和说明
 struct CaffeinateAboutView: View {

@@ -1,6 +1,6 @@
 import Foundation
 import GitHubKit
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// GitHub 添加 Issue 评论工具

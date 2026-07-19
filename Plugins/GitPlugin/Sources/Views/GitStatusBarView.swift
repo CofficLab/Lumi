@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 
 /// Git 分支状态栏视图

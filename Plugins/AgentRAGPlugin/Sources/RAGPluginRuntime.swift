@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public enum RAGPluginRuntime {
     nonisolated(unsafe) public static var databaseDirectoryProvider: @Sendable () -> URL = {

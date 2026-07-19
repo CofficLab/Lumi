@@ -1,6 +1,6 @@
 import LumiUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 会话项视图

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 enum GitHubInsightRuntimeBridge {
     nonisolated(unsafe) static var rootDirectory: URL?
