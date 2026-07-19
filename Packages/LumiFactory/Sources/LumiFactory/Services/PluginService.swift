@@ -2,6 +2,7 @@ import Foundation
 import LumiKernel
 import AgentToolPlugin
 import ChatKernelPlugin
+import ClipboardManagerPlugin
 import DeviceInfoKernelPlugin
 import EditorKernelPlugin
 import LayoutKernelPlugin
@@ -43,6 +44,9 @@ public enum PluginService {
 
         // DeviceInfoKernelPlugin
         list.append(DeviceInfoKernelPlugin())
+
+        // ClipboardManagerPlugin
+        list.append(ClipboardManagerPlugin())
 
         return list
     }()

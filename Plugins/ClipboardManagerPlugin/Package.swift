@@ -4,9 +4,7 @@ import PackageDescription
 let package = Package(
     name: "ClipboardManagerPlugin",
     defaultLocalization: "en",
-    platforms: [
-        .macOS(.v14)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
         .library(
             name: "ClipboardManagerPlugin",
@@ -14,27 +12,24 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
         .target(
             name: "ClipboardManagerPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "ClipboardManagerPluginTests",
-            dependencies: ["ClipboardManagerPlugin"],
-            path: "Tests"
         )
     ]
 )

@@ -1,64 +1,56 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import os
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum ClipboardManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
-    public static let verbose = false
+/// Clipboard Manager 内核插件
+///
+/// 向 LumiKernel 注册剪贴板管理相关的功能：
+/// - ViewContainer：剪贴板历史视图
+@MainActor
+public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
+    nonisolated public static let emoji = "📋"
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.clipboard-manager",
-        displayName: LumiPluginLocalization.string("Clipboard", bundle: .module),
-        description: LumiPluginLocalization.string("Manage clipboard history and snippets", bundle: .module),
-        order: 70,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "doc.on.clipboard",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    public let id = "com.coffic.lumi.plugin.clipboard-manager"
+    public let name = "Clipboard Manager Plugin"
+    public let order = 70  // 功能插件
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册视图容器
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: "Clipboard",
+                systemImage: "doc.on.clipboard",
+                order: order
             ) {
                 ClipboardHistoryView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 Clipboard Manager 视图容器到内核")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(ClipboardManagerAboutView())
-    }
+    public func boot(kernel: LumiKernel) async throws {
+        // 启动剪贴板监控
+        ClipboardMonitor.shared.startMonitoring()
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "clock.arrow.circlepath",
-                            title: LumiPluginLocalization.string("History", bundle: .module),
-                            description: LumiPluginLocalization.string("Browse and re-copy anything you've copied", bundle: .module)
-                        ),
-                        .init(
-                            icon: "text.append",
-                            title: LumiPluginLocalization.string("Snippets", bundle: .module),
-                            description: LumiPluginLocalization.string("Save reusable text for quick access", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Clipboard from the sidebar to revisit your history.", bundle: .module)
-                )
-            )
-        ]
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Clipboard Manager 插件启动完成")
+        }
     }
 }
