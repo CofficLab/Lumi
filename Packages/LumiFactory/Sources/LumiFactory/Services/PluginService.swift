@@ -1,5 +1,6 @@
 import Foundation
 import LumiKernel
+import ProjectPlugin
 import StoragePlugin
 import os
 
@@ -20,7 +21,8 @@ public enum PluginService {
             list.append(plugin)
         }
 
-        // 其他内置插件...
+        // ProjectPlugin
+        list.append(ProjectPlugin())
 
         return list
     }()

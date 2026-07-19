@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "StoragePlugin",
+    name: "ProjectPlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "StoragePlugin", targets: ["StoragePlugin"]),
+        .library(name: "ProjectPlugin", targets: ["ProjectPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -13,7 +13,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "StoragePlugin",
+            name: "ProjectPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

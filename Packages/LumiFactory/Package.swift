@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../LumiKernel"),
         .package(path: "../SuperLogKit"),
         .package(path: "../../Plugins/StoragePlugin"),
+        .package(path: "../../Plugins/ProjectPlugin"),
     ],
     targets: [
         .target(
@@ -19,6 +20,7 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
+                .product(name: "ProjectPlugin", package: "ProjectPlugin"),
             ]
         ),
     ]
