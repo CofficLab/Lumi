@@ -4,13 +4,13 @@ import LumiUI
 import SwiftUI
 
 public struct EditorPanelHostView: View {
-    let lumiCore: any LumiCoreAccessing
+    let kernel: LumiKernel
 
-    public init(lumiCore: any LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
     public var body: some View {
-        EditorPanelView(lumiCore: lumiCore)
+        EditorPanelView(kernel: kernel)
     }
 }

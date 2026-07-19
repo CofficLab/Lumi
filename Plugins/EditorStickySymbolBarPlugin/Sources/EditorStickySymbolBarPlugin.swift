@@ -13,17 +13,12 @@ public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     public let name = "Editor Sticky Symbol Bar"
     public let order = 85
 
-    private var editorService: EditorService?
-
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // 获取 EditorService
-        editorService = kernel.editor?.editorService
-
         kernel.registerPanelHeaderItem(
             PanelHeaderItem(id: id) {
-                if let service = editorService {
+                if let service = EditorStickySymbolBarBridge.editorServiceProvider?() {
                     EditorStickySymbolBarHeaderView(service: service)
                 } else {
                     EmptyView()

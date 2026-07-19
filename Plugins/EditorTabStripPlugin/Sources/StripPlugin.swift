@@ -16,18 +16,25 @@ public final class StripHeaderPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        let editorService = kernel.editor?.editorService
-
+        let pluginName = name
         kernel.registerPanelHeaderItem(
             PanelHeaderItem(id: id) {
-                if let service = editorService {
+                if let service = EditorTabStripBridge.editorService {
                     HeaderView(service: service, kernel: kernel)
                 } else {
-                    StripHeaderErrorView(pluginName: name)
+                    StripHeaderErrorView(pluginName: pluginName)
                 }
             }
         )
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
+    public func boot(kernel: LumiKernel) async throws {
+        EditorTabStripBridge.kernel = kernel
+    }
+}
+
+/// Bridge for accessing EditorService
+public enum EditorTabStripBridge {
+    nonisolated(unsafe) public static var kernel: LumiKernel?
+    nonisolated(unsafe) public static var editorService: EditorService?
 }

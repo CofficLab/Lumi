@@ -28,6 +28,6 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     }
 
     public func boot(kernel: LumiKernel) async throws {
-        EditorPreviewPluginRuntimeBridge.kernel = kernel
+        EditorPreviewRuntimeBridge.kernel = kernel
     }
 }

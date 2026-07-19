@@ -26,11 +26,10 @@ public struct EditorPreviewDetailView: View, SuperLog {
     public nonisolated static let emoji = "👁"
     public nonisolated static let verbose: Bool = false
 
-    // 使用 lumiCore.projectComponent 替代已移除的 WindowProjectVM
-    private let lumiCore: any LumiCoreAccessing
+    // 使用 kernel.project 替代已移除的 WindowProjectVM
+    private let kernel: LumiKernel
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
-    private let pluginContext: PluginContext
     @State private var isCleaningCurrentStringCatalog = false
     @State private var isCleaningProjectStringCatalogs = false
     @State private var isConfirmingProjectStringCatalogClean = false
@@ -40,19 +39,13 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var docPreviewWebView: WKWebView?
 
     @MainActor
-    public init(lumiCore: any LumiCoreAccessing, context: PluginContext, viewModel: EditorPreviewViewModel? = nil) {
-        self.lumiCore = lumiCore
-        self.pluginContext = context
-        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel(context: context)
-    }
-
-    @MainActor
-    public init(lumiCore: any LumiCoreAccessing, viewModel: EditorPreviewViewModel? = nil) {
-        self.init(lumiCore: lumiCore, context: PluginContext(), viewModel: viewModel)
+    public init(kernel: LumiKernel, viewModel: EditorPreviewViewModel? = nil) {
+        self.kernel = kernel
+        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel()
     }
 
     private var editorService: EditorService? {
-        EditorPreviewRuntimeBridge.editorServiceProvider?(pluginContext)
+        EditorPreviewRuntimeBridge.editorService
     }
 
     private var sourceText: String? {
@@ -266,7 +259,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             .buttonStyle(.borderless)
             .disabled(
                 isCleaningProjectStringCatalogs ||
-                (lumiCore.projectComponent.currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+                (kernel.project?.currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             )
             .help(LumiPluginLocalization.string("Clean stale keys in every String Catalog file in the current project", bundle: .module))
         }
@@ -341,7 +334,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
         }
 
         let message = parts.joined(separator: " ")
-        EditorPreviewRuntimeBridge.addToChatHandler?(message, pluginContext)
+        EditorPreviewRuntimeBridge.addToChatHandler?(message)
     }
 
     private static func summarizedKeyList(_ keys: [String]) -> String {
@@ -714,7 +707,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
 
     private func cleanProjectStringCatalogs() {
         guard !isCleaningProjectStringCatalogs else { return }
-        let projectRootPath = (lumiCore.projectComponent.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectRootPath = (kernel.project?.currentProject?.path ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !projectRootPath.isEmpty else {
             alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return
@@ -832,8 +825,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 EditorPreviewMarkdownView(
                     markdown: sourceText ?? "",
                     fileURL: currentFileURL,
-                    editorService: editorService,
-                    pluginContext: pluginContext
+                    editorService: editorService
                 )
                     .environmentObject(themeVM)
             case .stringCatalog:
@@ -999,7 +991,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             lines.append("Build log: \(buildLogURL.path)")
         }
 
-        EditorPreviewRuntimeBridge.addToChatHandler?(lines.joined(separator: "\n"), pluginContext)
+        EditorPreviewRuntimeBridge.addToChatHandler?(lines.joined(separator: "\n"))
     }
 
     private var buildingFileName: String? {
@@ -1313,7 +1305,6 @@ private struct EditorPreviewMarkdownView: View {
     public let markdown: String
     public let fileURL: URL?
     public let editorService: EditorService?
-    public let pluginContext: PluginContext
     @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
@@ -1442,7 +1433,7 @@ private struct EditorPreviewMarkdownView: View {
 
     private func addToChat(heading: MarkdownTOCHeading) {
         let text = makeDragContent(for: heading)
-        EditorPreviewRuntimeBridge.addToChatHandler?(text, pluginContext)
+        EditorPreviewRuntimeBridge.addToChatHandler?(text)
     }
 
     /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。

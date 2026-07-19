@@ -6,16 +6,17 @@ import SwiftUI
 import os
 
 /// Runtime configuration for inline preview.
-public enum EditorPreviewPlugin: LumiPlugin {
+@MainActor
+public final class EditorPreviewPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-preview")
 
-    public static let info = LumiPluginInfo(
-        id: "EditorPreview",
-        displayName: LumiPluginLocalization.string("Inline Preview", bundle: .module),
-        description: LumiPluginLocalization.string("Embedded preview powered by LumiPreviewKit", bundle: .module),
-        order: 84,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "rectangle.inset.filled",
-    )
+    public let id = "EditorPreview"
+    public let name = "Inline Preview"
+    public let order = 84
+
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {}
+
+    public func boot(kernel: LumiKernel) async throws {}
 }

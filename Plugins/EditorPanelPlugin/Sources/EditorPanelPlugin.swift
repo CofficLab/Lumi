@@ -6,88 +6,34 @@ import os
 import SwiftUI
 
 /// Unified code editor plugin for the Lumi activity bar.
-public enum EditorPanelPlugin: LumiPlugin {
-    public static var verbose: Bool { false }
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
+@MainActor
+public final class EditorPanelPlugin: LumiPlugin {
+    nonisolated static let verbose: Bool = false
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
 
-    public static let info = LumiPluginInfo(
-        id: "LumiEditor",
-        displayName: LumiPluginLocalization.string("Code Editor", bundle: .module),
-        description: String(
-            localized: "Code editor with file tree, LSP, and workspace panels.",
-            bundle: .module
-        ),
-        order: 77,
-        category: .development,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "chevron.left.forwardslash.chevron.right",
-    )
+    public let id = "LumiEditor"
+    public let name = "Code Editor"
+    public let order = 77
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        guard let lumiCore = context.lumiCore else {
-            return []
-        }
-        return [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                chatSection: .narrow,
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "chevron.left.forwardslash.chevron.right",
                 showsRail: true,
                 showsPanelChrome: true
             ) {
-                EditorPanelHostView(lumiCore: lumiCore)
+                EditorPanelHostView(kernel: kernel)
             }
-        ]
-    }
-
-    @MainActor
-    public static func agentTools(context: any LumiCoreAccessing) -> [any LumiAgentTool] {
-        [
-            GetCurrentFileTool(),
-            SetCurrentFileTool(),
-        ]
-    }
-
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
         )
+
+        // 注册 AgentTools
+        kernel.registerAgentTool(GetCurrentFileTool())
+        kernel.registerAgentTool(SetCurrentFileTool())
     }
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "folder",
-                            title: LumiPluginLocalization.string("Workspace", bundle: .module),
-                            description: LumiPluginLocalization.string("File tree, tabs, and panels for your project", bundle: .module)
-                        ),
-                        .init(
-                            icon: "text.magnifyingglass",
-                            title: LumiPluginLocalization.string("LSP", bundle: .module),
-                            description: LumiPluginLocalization.string("Diagnostics and language features built in", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open a project, then pick Code Editor from the sidebar.", bundle: .module)
-                )
-            )
-        ]
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }
