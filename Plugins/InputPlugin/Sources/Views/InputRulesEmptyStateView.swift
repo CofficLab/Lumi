@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 /// 输入源规则列表空状态视图
 public struct InputRulesEmptyStateView: View {

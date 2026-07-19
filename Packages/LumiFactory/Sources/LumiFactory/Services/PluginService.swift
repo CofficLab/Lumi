@@ -11,6 +11,7 @@ import DisplayControlPlugin
 import DockerManagerPlugin
 import EditorKernelPlugin
 import HostsManagerPlugin
+import InputPlugin
 import LayoutKernelPlugin
 import NettoPlugin
 import PortManagerPlugin
@@ -95,6 +96,9 @@ public enum PluginService {
 
         // RClickPlugin
         list.append(RClickPlugin())
+
+        // InputPlugin
+        list.append(InputPlugin())
 
         return list
     }()

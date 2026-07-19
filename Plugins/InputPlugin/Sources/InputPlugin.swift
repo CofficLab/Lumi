@@ -1,70 +1,41 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import os
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum InputPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
-    public static let verbose = false
+/// Input Manager Plugin
+@MainActor
+public final class InputPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.input-manager",
-        displayName: LumiPluginLocalization.string("Input Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Manage input-related behaviors", bundle: .module),
-        order: 70,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "keyboard",
-    )
+    public let id = "com.coffic.lumi.plugin.input-manager"
+    public let name = "Input Manager"
+    public let order = 70
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(id: id, title: "Input Manager", systemImage: "keyboard") {
                 InputSettingsView()
             }
-        ]
-    }
-
-        @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
         )
     }
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "keyboard",
-                            title: LumiPluginLocalization.string("Behaviors", bundle: .module),
-                            description: LumiPluginLocalization.string("Configure how input is handled across Lumi", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Input Manager from the sidebar to review your settings.", bundle: .module)
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+        }
     }
+}
 
+enum InputPluginRuntimeBridge {
+    nonisolated(unsafe) static var dataRootDirectory: URL?
+    static let fallbackRootDirectory: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        return appSupport.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.coffic.lumi", isDirectory: true)
+    }()
 }
