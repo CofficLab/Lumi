@@ -1,64 +1,52 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 /// Video Converter Plugin
 ///
 /// Provides a view container for video format conversion using FFmpeg.
-public enum VideoConverterPlugin: LumiPlugin {
+@MainActor
+public final class VideoConverterPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
+    nonisolated public static let emoji = "🎬"
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.video-converter",
-        displayName: VideoConverterLocalization.string("Video Converter"),
-        description: VideoConverterLocalization.string("Convert video formats using FFmpeg"),
-        order: 70,
-        category: .general,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "video",
-    )
+    // MARK: - LumiPlugin
 
-    public static var id: String { info.id }
-    public static var displayName: String { info.displayName }
-    public static var description: String { info.description }
-    public static var order: Int { info.order }
+    public let id = "com.coffic.lumi.plugin.video-converter"
+    public let name = "Video Converter Plugin"
+    public let order = 70
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册视图容器
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: VideoConverterLocalization.string("Video Converter"),
+                systemImage: "video",
+                order: order
             ) {
                 VideoConverterMainView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 Video Converter 视图容器到内核")
+        }
     }
 
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "arrow.triangle.2.circlepath",
-                            title: VideoConverterLocalization.string("Any format"),
-                            description: VideoConverterLocalization.string("Convert clips between common formats")
-                        ),
-                        .init(
-                            icon: "wand.and.stars",
-                            title: VideoConverterLocalization.string("Presets"),
-                            description: VideoConverterLocalization.string("Pick a target format and convert in bulk")
-                        ),
-                    ],
-                    tip: VideoConverterLocalization.string("FFmpeg is required. Open Video Converter from the sidebar to start.")
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Video Converter 插件启动完成")
+        }
     }
 }

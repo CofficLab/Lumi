@@ -11,6 +11,7 @@ import HostsManagerPlugin
 import LayoutKernelPlugin
 import ProjectsPlugin
 import StoragePlugin
+import VideoConverterPlugin
 import os
 
 /// 插件服务
@@ -59,6 +60,9 @@ public enum PluginService {
 
         // HostsManagerPlugin
         list.append(HostsManagerPlugin())
+
+        // VideoConverterPlugin
+        list.append(VideoConverterPlugin())
 
         return list
     }()
