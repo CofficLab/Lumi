@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Errors
-
 /// LumiKernel 错误
 public enum LumiKernelError: Error, LocalizedError {
     case pluginAlreadyRegistered(id: String)

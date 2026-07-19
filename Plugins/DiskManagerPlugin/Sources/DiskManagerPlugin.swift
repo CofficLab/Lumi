@@ -1,4 +1,5 @@
 import LumiKernel
+import SuperLogKit
 import LumiUI
 import os
 import SwiftUI
@@ -8,9 +9,9 @@ import SwiftUI
 /// 向 LumiKernel 注册磁盘管理功能：
 /// - ViewContainer：侧边栏磁盘管理视图
 @MainActor
-public final class DiskManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
+public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
-    public nonisolated public static let emoji = "💿"
+    public nonisolated static let emoji = "💿"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin

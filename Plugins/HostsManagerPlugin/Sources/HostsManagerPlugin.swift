@@ -1,4 +1,5 @@
 import LumiKernel
+import SuperLogKit
 import LumiUI
 import os
 import SwiftUI
@@ -8,9 +9,9 @@ import SwiftUI
 /// 向 LumiKernel 注册 hosts 文件管理功能：
 /// - ViewContainer：侧边栏 hosts 管理视图
 @MainActor
-public final class HostsManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
+public final class HostsManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
-    public nonisolated public static let emoji = "📝"
+    public nonisolated static let emoji = "📝"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin

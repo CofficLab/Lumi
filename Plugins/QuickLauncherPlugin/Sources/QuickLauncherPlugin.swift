@@ -1,4 +1,5 @@
 import LumiKernel
+import SuperLogKit
 import LumiUI
 import os
 import SwiftUI
@@ -8,9 +9,9 @@ import SwiftUI
 /// 向 LumiKernel 注册快速启动器：
 /// - MenuBarPopup：菜单栏快速启动弹窗
 @MainActor
-public final class QuickLauncherPlugin: LumiKernel.LumiPlugin, SuperLog {
+public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quicklauncher")
-    public nonisolated public static let emoji = "🚀"
+    public nonisolated static let emoji = "🚀"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin

@@ -6,7 +6,6 @@ import Foundation
 /// 所有具体实现通过插件注入。
 @MainActor
 public final class LumiKernel: ObservableObject {
-
     // MARK: - Plugin Registry
 
     /// 插件注册表
@@ -27,12 +26,6 @@ public final class LumiKernel: ObservableObject {
 
     /// 服务注册表
     private var services: [ObjectIdentifier: Any] = [:]
-
-    // MARK: - View Container Registry
-
-    /// 视图容器注册表
-    private var viewContainers: [String: ViewContainerItem] = [:]
-    private var viewContainerOrder: [String] = []
 
     /// 菜单栏内容注册表
     private var menuBarContents: [String: MenuBarContentItem] = [:]
@@ -158,11 +151,11 @@ public final class LumiKernel: ObservableObject {
             missingServices.append("Storage")
         }
 
-         if project == nil { missingServices.append("Project") }
-         if layout == nil { missingServices.append("Layout") }
-         if chat == nil { missingServices.append("Chat") }
-         if editor == nil { missingServices.append("Editor") }
-         if agentTool == nil { missingServices.append("AgentTool") }
+        if project == nil { missingServices.append("Project") }
+        if layout == nil { missingServices.append("Layout") }
+        if chat == nil { missingServices.append("Chat") }
+        if editor == nil { missingServices.append("Editor") }
+        if agentTool == nil { missingServices.append("AgentTool") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)
@@ -292,27 +285,16 @@ public final class LumiKernel: ObservableObject {
 
     /// 所有已注册的视图容器（按 order 排序）
     public var allViewContainers: [ViewContainerItem] {
-        viewContainerOrder.compactMap { viewContainers[$0] }
-            .sorted { $0.order < $1.order }
+        viewContainer?.allViewContainers ?? []
     }
 
     /// 注册视图容器
     public func registerViewContainer(_ container: ViewContainerItem) {
-        if viewContainers[container.id] == nil {
-            viewContainerOrder.append(container.id)
-        }
-        viewContainers[container.id] = container
-
-        // 同步到视图容器服务
         viewContainer?.register(container)
     }
 
     /// 注销视图容器
     public func unregisterViewContainer(id: String) {
-        viewContainers.removeValue(forKey: id)
-        viewContainerOrder.removeAll { $0 == id }
-
-        // 同步到视图容器服务
         viewContainer?.unregister(id: id)
     }
 
@@ -728,25 +710,5 @@ public final class LumiKernel: ObservableObject {
     public func unregisterLogoItem(id: String) {
         logoItems.removeValue(forKey: id)
         logoItemOrder.removeAll { $0 == id }
-    }
-}
-
-// MARK: - Errors
-
-/// LumiKernel 错误
-public enum LumiKernelError: Error, LocalizedError {
-    case pluginAlreadyRegistered(id: String)
-    case pluginNotFound(id: String)
-    case missingRequiredServices([String])
-
-    public var errorDescription: String? {
-        switch self {
-        case .pluginAlreadyRegistered(let id):
-            return "Plugin '\(id)' is already registered"
-        case .pluginNotFound(let id):
-            return "Plugin '\(id)' not found"
-        case .missingRequiredServices(let services):
-            return "Missing required services: \(services.joined(separator: ", "))"
-        }
     }
 }
