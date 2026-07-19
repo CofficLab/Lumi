@@ -17,10 +17,10 @@ struct StorageServiceTests {
 
         // 3. 创建并注册存储服务
         let storage = StorageService(dataRootDirectory: tempDir)
-        kernel.registerService(StorageProviding.self, storage)
+        kernel.registerStorage(storage)
 
         // 4. 验证服务可用
-        let resolved = kernel.resolveService(StorageProviding.self)
+        let resolved = kernel.storage
         #expect(resolved != nil)
 
         // 5. 测试功能
@@ -29,28 +29,6 @@ struct StorageServiceTests {
 
         let coreDir = resolved!.coreDataDirectory()
         #expect(coreDir.path.contains("Core"))
-
-        // 6. 清理
-        try? FileManager.default.removeItem(at: tempDir)
-    }
-
-    @Test("Storage service via provider")
-    func testStorageViaProvider() async throws {
-        // 1. 创建核心
-        let kernel = LumiKernel()
-
-        // 2. 准备测试数据目录
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiTest", isDirectory: true)
-
-        // 3. 创建服务提供者
-        let provider = StorageServiceProvider(dataRootDirectory: tempDir)
-
-        // 4. 通过 bootstrap 注入
-        try await kernel.bootstrap(with: [provider])
-
-        // 5. 验证服务可用
-        #expect(kernel.storage != nil)
 
         // 6. 清理
         try? FileManager.default.removeItem(at: tempDir)
@@ -74,19 +52,5 @@ private final class StorageService: StorageProviding {
 
     public func coreDataDirectory() -> URL {
         dataRootDirectory.appendingPathComponent("Core")
-    }
-}
-
-/// 测试用的存储服务提供者
-@MainActor
-private final class StorageServiceProvider: CoreServiceProvider {
-    private let storageService: StorageService
-
-    public init(dataRootDirectory: URL) {
-        self.storageService = StorageService(dataRootDirectory: dataRootDirectory)
-    }
-
-    public var storage: (any StorageProviding)? {
-        storageService
     }
 }
