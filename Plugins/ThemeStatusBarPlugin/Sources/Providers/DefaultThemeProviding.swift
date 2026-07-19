@@ -9,6 +9,7 @@ import LumiUI
 @MainActor
 public final class DefaultThemeProviding: ThemeProviding {
     public let themeRegistry: LumiUIThemeRegistry
+    private var registeredThemes: [LumiUIThemeContribution] = []
 
     public init(themeRegistry: LumiUIThemeRegistry = .shared) {
         self.themeRegistry = themeRegistry
@@ -27,13 +28,17 @@ public final class DefaultThemeProviding: ThemeProviding {
     }
 
     public func registerTheme(_ theme: LumiUIThemeContribution) {
-        // Note: LumiUIThemeRegistry does not support single theme registration
-        // Use replaceAllThemes instead
+        registeredThemes.append(theme)
+        try? replaceAllThemes(registeredThemes)
     }
 
     public func unregisterTheme(id: String) {
-        // Note: LumiUIThemeRegistry does not support single theme unregistration
-        // Use replaceAllThemes instead
+        registeredThemes.removeAll { $0.id == id }
+        if registeredThemes.isEmpty {
+            try? themeRegistry.replaceAll([.builtInFallback()])
+        } else {
+            try? replaceAllThemes(registeredThemes)
+        }
     }
 
     public func replaceAllThemes(_ themes: [LumiUIThemeContribution]) throws {
