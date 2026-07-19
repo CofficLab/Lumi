@@ -1,11 +1,10 @@
 import LumiUI
 import SwiftUI
 import Combine
-import LumiCoreKit
 
 /// Menu bar popup view for Device Info plugin
 /// Shows detailed CPU usage with progress bar and top processes
-struct DeviceInfoMenuBarPopupView: View {
+public struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Properties
 
     @LumiTheme private var theme

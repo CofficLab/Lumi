@@ -2,6 +2,7 @@ import Foundation
 import LumiKernel
 import AgentToolPlugin
 import ChatKernelPlugin
+import DeviceInfoKernelPlugin
 import EditorKernelPlugin
 import LayoutKernelPlugin
 import ProjectPlugin
@@ -39,6 +40,9 @@ public enum PluginService {
 
         // ChatKernelPlugin
         list.append(ChatKernelPlugin())
+
+        // DeviceInfoKernelPlugin
+        list.append(DeviceInfoKernelPlugin())
 
         return list
     }()

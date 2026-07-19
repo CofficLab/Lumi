@@ -1,9 +1,8 @@
 import Foundation
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
-struct DeviceInfoView: View {
+public struct DeviceInfoView: View {
     @LumiTheme private var theme
     @StateObject private var data = DeviceData()
     @ObservedObject private var gpuService = GPUService.shared

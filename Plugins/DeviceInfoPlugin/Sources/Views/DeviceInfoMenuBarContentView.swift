@@ -1,12 +1,11 @@
 import AppKit
 import Combine
 import SwiftUI
-import LumiCoreKit
 import SuperLogKit
 import os
 
 /// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）
-struct DeviceInfoMenuBarContentView: View {
+public struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 

@@ -1,8 +1,7 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
-struct MemoryMenuBarPopupView: View {
+public struct MemoryMenuBarPopupView: View {
     @LumiTheme private var theme
 
     @StateObject private var viewModel = MemoryManagerViewModel()

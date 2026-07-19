@@ -28,6 +28,20 @@ public final class LumiKernel: ObservableObject {
     /// 服务注册表
     private var services: [ObjectIdentifier: Any] = [:]
 
+    // MARK: - View Container Registry
+
+    /// 视图容器注册表
+    private var viewContainers: [String: ViewContainerItem] = [:]
+    private var viewContainerOrder: [String] = []
+
+    /// 菜单栏内容注册表
+    private var menuBarContents: [String: MenuBarContentItem] = [:]
+    private var menuBarContentOrder: [String] = []
+
+    /// 菜单栏弹出项注册表
+    private var menuBarPopups: [String: MenuBarPopupItem] = [:]
+    private var menuBarPopupOrder: [String] = []
+
     // MARK: - Service Accessors (Protocol Types)
 
     /// 存储服务
@@ -244,6 +258,72 @@ public final class LumiKernel: ObservableObject {
     /// 注销服务
     public func unregisterService<T>(_ type: T.Type) {
         services.removeValue(forKey: ObjectIdentifier(type))
+    }
+
+    // MARK: - View Container Registry
+
+    /// 所有已注册的视图容器（按 order 排序）
+    public var allViewContainers: [ViewContainerItem] {
+        viewContainerOrder.compactMap { viewContainers[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册视图容器
+    public func registerViewContainer(_ container: ViewContainerItem) {
+        if viewContainers[container.id] == nil {
+            viewContainerOrder.append(container.id)
+        }
+        viewContainers[container.id] = container
+    }
+
+    /// 注销视图容器
+    public func unregisterViewContainer(id: String) {
+        viewContainers.removeValue(forKey: id)
+        viewContainerOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Menu Bar Content Registry
+
+    /// 所有已注册的菜单栏内容（按 order 排序）
+    public var allMenuBarContents: [MenuBarContentItem] {
+        menuBarContentOrder.compactMap { menuBarContents[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册菜单栏内容
+    public func registerMenuBarContent(_ content: MenuBarContentItem) {
+        if menuBarContents[content.id] == nil {
+            menuBarContentOrder.append(content.id)
+        }
+        menuBarContents[content.id] = content
+    }
+
+    /// 注销菜单栏内容
+    public func unregisterMenuBarContent(id: String) {
+        menuBarContents.removeValue(forKey: id)
+        menuBarContentOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Menu Bar Popup Registry
+
+    /// 所有已注册的菜单栏弹出项（按 order 排序）
+    public var allMenuBarPopups: [MenuBarPopupItem] {
+        menuBarPopupOrder.compactMap { menuBarPopups[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册菜单栏弹出项
+    public func registerMenuBarPopup(_ popup: MenuBarPopupItem) {
+        if menuBarPopups[popup.id] == nil {
+            menuBarPopupOrder.append(popup.id)
+        }
+        menuBarPopups[popup.id] = popup
+    }
+
+    /// 注销菜单栏弹出项
+    public func unregisterMenuBarPopup(id: String) {
+        menuBarPopups.removeValue(forKey: id)
+        menuBarPopupOrder.removeAll { $0 == id }
     }
 }
 

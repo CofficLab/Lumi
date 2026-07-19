@@ -39,7 +39,7 @@ public final class LayoutState: ObservableObject, SuperLog {
         didSet {
             guard activeViewContainerTitle != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)activeViewContainerTitle → \(activeViewContainerTitle)")
+                Self.logger.info("\(Self.t)activeViewContainerTitle → \(self.activeViewContainerTitle)")
             }
         }
     }

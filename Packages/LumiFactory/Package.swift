@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../../Plugins/LayoutKernelPlugin"),
         .package(path: "../../Plugins/EditorKernelPlugin"),
         .package(path: "../../Plugins/ChatKernelPlugin"),
+        .package(path: "../../Plugins/DeviceInfoKernelPlugin"),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "LayoutKernelPlugin", package: "LayoutKernelPlugin"),
                 .product(name: "EditorKernelPlugin", package: "EditorKernelPlugin"),
                 .product(name: "ChatKernelPlugin", package: "ChatKernelPlugin"),
+                .product(name: "DeviceInfoKernelPlugin", package: "DeviceInfoKernelPlugin"),
             ]
         ),
     ]

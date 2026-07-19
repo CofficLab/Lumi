@@ -24,8 +24,8 @@ public struct WindowMain: View, SuperLog {
                 LoadingView()
             } else if let error = initializationError {
                 ErrorView(error: error)
-            } else if kernel != nil {
-                SuccessView()
+            } else if let kernel = kernel {
+                AppLayoutView(kernel: kernel)
             }
         }
         .task {
@@ -140,26 +140,5 @@ struct ErrorView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation { isCopied = false }
         }
-    }
-}
-
-// MARK: - Success View
-
-struct SuccessView: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.green)
-
-            Text("LumiKernel 已启动")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("所有必需服务已就绪")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(width: 400, height: 300)
     }
 }
