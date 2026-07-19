@@ -1,4 +1,3 @@
-import LumiCoreKit
 import LumiKernel
 import LumiUI
 import os
@@ -45,16 +44,5 @@ public final class BrewManagerPlugin: LumiKernel.LumiPlugin, SuperLog {
 
     public func boot(kernel: LumiKernel) async throws {
         // 无需额外启动逻辑
-    }
-}
-
-// MARK: - Localization
-
-enum PluginBrewManagerLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
     }
 }
