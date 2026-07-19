@@ -31,8 +31,24 @@ import SendMiddlewarePlugin
 import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
+import ThemeAuroraPlugin
+import ThemeAutumnPlugin
+import ThemeDraculaPlugin
+import ThemeGithubPlugin
 import ThemeLumiPlugin
+import ThemeMidnightPlugin
+import ThemeMountainPlugin
+import ThemeNebulaPlugin
+import ThemeOneDarkPlugin
+import ThemeOrchardPlugin
+import ThemeRiverPlugin
+import ThemeSkyPlugin
+import ThemeSpringPlugin
 import ThemeStatusBarPlugin
+import ThemeSummerPlugin
+import ThemeVoidPlugin
+import ThemeVscodePlugin
+import ThemeWinterPlugin
 import TitleToolbarPlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
@@ -108,6 +124,54 @@ public enum PluginService {
 
         // ThemeLumiPlugin
         list.append(ThemeLumiPlugin())
+
+        // ThemeAuroraPlugin
+        list.append(ThemeAuroraPlugin())
+
+        // ThemeAutumnPlugin
+        list.append(ThemeAutumnPlugin())
+
+        // ThemeDraculaPlugin
+        list.append(ThemeDraculaPlugin())
+
+        // ThemeGithubPlugin
+        list.append(ThemeGithubPlugin())
+
+        // ThemeMidnightPlugin
+        list.append(ThemeMidnightPlugin())
+
+        // ThemeMountainPlugin
+        list.append(ThemeMountainPlugin())
+
+        // ThemeNebulaPlugin
+        list.append(ThemeNebulaPlugin())
+
+        // ThemeOneDarkPlugin
+        list.append(ThemeOneDarkPlugin())
+
+        // ThemeOrchardPlugin
+        list.append(ThemeOrchardPlugin())
+
+        // ThemeRiverPlugin
+        list.append(ThemeRiverPlugin())
+
+        // ThemeSkyPlugin
+        list.append(ThemeSkyPlugin())
+
+        // ThemeSpringPlugin
+        list.append(ThemeSpringPlugin())
+
+        // ThemeSummerPlugin
+        list.append(ThemeSummerPlugin())
+
+        // ThemeVoidPlugin
+        list.append(ThemeVoidPlugin())
+
+        // ThemeVscodePlugin
+        list.append(ThemeVscodePlugin())
+
+        // ThemeWinterPlugin
+        list.append(ThemeWinterPlugin())
 
         // ViewContainerPlugin
         list.append(ViewContainerPlugin())
