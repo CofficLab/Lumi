@@ -7,7 +7,7 @@ import os
 /// 菜单栏插件
 ///
 /// 提供 MenuBarProviding 服务的默认实现。
-/// 负责管理所有插件的菜单栏内容、弹出项的注册、排序和查询。
+/// 负责管理所有插件的菜单栏内容和弹出项的注册、排序和查询。
 @MainActor
 public final class MenuBarPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar")

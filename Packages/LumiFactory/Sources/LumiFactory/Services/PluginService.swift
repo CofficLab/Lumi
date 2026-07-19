@@ -4,7 +4,9 @@ import AgentToolPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
 import ChatKernelPlugin
+import ChatSectionPlugin
 import ClipboardManagerPlugin
+import CommandPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -14,15 +16,23 @@ import EditorPanelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
+import LogoPlugin
 import MenuBarManagerPlugin
+import MenuBarPlugin
 import NettoPlugin
+import PanelPlugin
+import PluginManagementPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
 import RClickPlugin
 import RegistryManagerPlugin
+import SettingsPlugin
+import StatusBarPlugin
 import StoragePlugin
+import ThemePlugin
 import VideoConverterPlugin
+import ViewContainerPlugin
 import os
 
 /// 插件服务
@@ -36,6 +46,9 @@ public enum PluginService {
     /// 所有插件列表（静态）
     public static let plugins: [LumiPlugin] = {
         var list: [LumiPlugin] = []
+
+        // PluginManagementPlugin
+        list.append(PluginManagementPlugin())
 
         // StoragePlugin
         if let plugin = try? StoragePlugin() {
@@ -59,6 +72,39 @@ public enum PluginService {
 
         // ChatKernelPlugin
         list.append(ChatKernelPlugin())
+
+        // CommandPlugin
+        list.append(CommandPlugin())
+
+        // MenuBarPlugin
+        list.append(MenuBarPlugin())
+
+        // TitleToolbarPlugin
+        list.append(TitleToolbarPlugin())
+
+        // SendMiddlewarePlugin
+        list.append(SendMiddlewarePlugin())
+
+        // ChatSectionPlugin
+        list.append(ChatSectionPlugin())
+
+        // PanelPlugin
+        list.append(PanelPlugin())
+
+        // StatusBarPlugin
+        list.append(StatusBarPlugin())
+
+        // SettingsPlugin
+        list.append(SettingsPlugin())
+
+        // LogoPlugin
+        list.append(LogoPlugin())
+
+        // ThemePlugin
+        list.append(ThemePlugin())
+
+        // ViewContainerPlugin
+        list.append(ViewContainerPlugin())
 
         // DeviceInfoPlugin
         list.append(DeviceInfoPlugin())
