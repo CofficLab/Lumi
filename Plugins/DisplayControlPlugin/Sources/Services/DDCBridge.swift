@@ -4,8 +4,6 @@ import IOKit
 import os
 import SuperLogKit
 
-private let ddcLog = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control.ddc")
-
 // MARK: - Private API Declarations
 
 @_silgen_name("DisplayServicesGetBrightness")
@@ -31,7 +29,7 @@ func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePoi
 // Made optional so that missing symbol is handled gracefully instead of crashing at launch.
 private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?)? = {
     guard let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService") else {
-        ddcLog.warning("DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
+        DisplayControlPlugin.logger.warning("\(DisplayDDCBridge.t)DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
         return nil
     }
     return unsafeBitCast(sym, to: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?).self)
@@ -290,7 +288,7 @@ private final class Arm64DDCMatcher {
             }
         }
 
-        ddcLog.debug("DDC: Matched \(matched.count) services from \(registryServices.count) registry services")
+        DisplayControlPlugin.logger.debug("DDC: Matched \(matched.count) services from \(registryServices.count) registry services")
         return matched
     }
 
@@ -298,11 +296,11 @@ private final class Arm64DDCMatcher {
     /// Passes NULL for the allocator (kCFAllocatorDefault is nil on macOS, meaning "use default").
     private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
         guard let createService = ioAVServiceCreateWithService else {
-            ddcLog.warning("DDC: IOAVServiceCreateWithService unavailable — DDC control disabled")
+            DisplayControlPlugin.logger.warning("DDC: IOAVServiceCreateWithService unavailable — DDC control disabled")
             return nil
         }
         guard let rawPtr = createService(nil, entry) else {
-            ddcLog.warning("DDC: IOAVServiceCreateWithService returned nil for entry")
+            DisplayControlPlugin.logger.warning("DDC: IOAVServiceCreateWithService returned nil for entry")
             return nil
         }
         // The C function follows Create rule — returns a retained CF object.

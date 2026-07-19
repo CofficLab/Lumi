@@ -1,8 +1,7 @@
 import CoreGraphics
 import Foundation
+import SuperLogKit
 import os
-
-private let displayLog = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control.display")
 
 // MARK: - DisplayServices Bridge (built-in display)
 
@@ -23,7 +22,11 @@ private final class DisplayServicesBridge: Sendable {
 // MARK: - DisplayService
 
 @MainActor
-final class DisplayService: ObservableObject {
+final class DisplayService: ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.display")
+    nonisolated static let emoji = "🖥"
+    nonisolated static let verbose = false
+
     static let shared = DisplayService()
 
     @Published private(set) var displays: [ControlledDisplay] = []
@@ -196,8 +199,8 @@ final class DisplayService: ObservableObject {
             }
             updateLocalValue(value, for: control, displayID: key.displayID)
             fallbackValues[key.displayID, default: [:]][key.control] = value
-            displayLog.warning(
-                "Display control write failed for \(control.storageKey, privacy: .public) on display \(displayID, privacy: .public)"
+            Self.logger.warning(
+                "\(Self.t)Display control write failed for \(control.storageKey, privacy: .public) on display \(displayID, privacy: .public)"
             )
         }
 
