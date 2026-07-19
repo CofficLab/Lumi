@@ -45,6 +45,11 @@ public protocol LumiCoreAccessing: LumiCoreProviding, ObservableObject {
     /// 编辑器服务（`init(editorFactory:)` 传入工厂时创建；不传则为 nil）。
     var editorService: (any AbstractEditorServicing)? { get }
 
+    // MARK: - Layout Convenience
+
+    /// 当前是否显示 Panel Chrome（底部面板区域）。
+    var showsPanelChrome: Bool { get }
+
     // MARK: - Service Registry
 
     /// 注册一个服务实例，供启动期配置使用。
@@ -77,6 +82,25 @@ public protocol LumiCoreBootstrapping: AnyObject {
 
     /// 注册一个服务实例，供运行时解析依赖。
     func registerService<T>(_ type: T.Type, _ instance: T)
+}
+
+// MARK: - Default Implementations
+
+public extension LumiCoreAccessing {
+    /// 默认从布局组件读取 Panel Chrome 显示状态。
+    var showsPanelChrome: Bool {
+        layoutComponent.state.showsPanelChrome
+    }
+
+    /// 兼容旧代码访问 `context.lumiCore`：对自身协议来说就是 self。
+    var lumiCore: (any LumiCoreAccessing)? {
+        self
+    }
+
+    /// 兼容旧代码的 `resolve(_:)`，转发到 `resolveService(_:)`。
+    func resolve<T>(_ type: T.Type = T.self) -> T? {
+        resolveService(type)
+    }
 }
 
 // MARK: - SwiftUI Environment

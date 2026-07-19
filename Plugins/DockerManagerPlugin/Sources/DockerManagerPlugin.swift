@@ -1,72 +1,37 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import os
+import ShellKit
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum DockerManagerPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
-    public static let verbose = false
+/// Docker Manager Plugin
+@MainActor
+public final class DockerManagerPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.docker-manager",
-        displayName: PluginDockerManagerLocalization.string("Docker"),
-        description: PluginDockerManagerLocalization.string("Local Docker image management and monitoring"),
-        order: 50,
-        category: .development,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "shippingbox",
-    )
+    public let id = "com.coffic.lumi.plugin.docker-manager"
+    public let name = "Docker"
+    public let order = 50
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
+    public init() {}
+
+    public func register(kernel: LumiKernel) throws {
+        kernel.registerViewContainer(
+            ViewContainerItem(id: id, title: "Docker", systemImage: "shippingbox") {
                 DockerImagesView()
             }
-        ]
+        )
     }
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(DockerManagerAboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "shippingbox",
-                            title: PluginDockerManagerLocalization.string("Images"),
-                            description: PluginDockerManagerLocalization.string("Browse and remove local Docker images")
-                        ),
-                        .init(
-                            icon: "chart.bar.fill",
-                            title: PluginDockerManagerLocalization.string("Monitoring"),
-                            description: PluginDockerManagerLocalization.string("Keep an eye on disk usage and status")
-                        ),
-                    ],
-                    tip: PluginDockerManagerLocalization.string("Make sure Docker is running, then open Docker from the sidebar.")
-                )
-            )
-        ]
-    }
+    public func boot(kernel: LumiKernel) async throws {}
 }
 
 enum PluginDockerManagerLocalization {
     static let table = "Localizable"
     static let bundle = Bundle.module
-
     static func string(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
     }

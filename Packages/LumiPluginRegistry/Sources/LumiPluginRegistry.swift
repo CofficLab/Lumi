@@ -131,6 +131,7 @@ import ThemeWinterPlugin
 import ToolCorePlugin
 import VerbosityPlugin
 import VideoConverterPlugin
+import ViewContainerPlugin
 import WebFetchPlugin
 import WebSearchPlugin
 import os
@@ -282,6 +283,6 @@ public enum LumiPluginRegistry: SuperLog {
             PortManagerPlugin.self,
         ] +
         conversationPlugins +
-        [LayoutPlugin.self] +
+        [ViewContainerPlugin.self, LayoutPlugin.self] +
         editorPlugins
 }

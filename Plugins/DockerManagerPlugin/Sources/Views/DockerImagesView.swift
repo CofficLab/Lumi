@@ -232,7 +232,6 @@ struct DockerImagesView: View, SuperLog {
 }
 
 import UniformTypeIdentifiers
-import LumiCoreKit
 
 struct DockerImageDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.data] }

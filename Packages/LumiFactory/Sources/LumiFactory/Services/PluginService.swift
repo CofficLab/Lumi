@@ -8,6 +8,7 @@ import ClipboardManagerPlugin
 import DeviceInfoKernelPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
+import DockerManagerPlugin
 import EditorKernelPlugin
 import HostsManagerPlugin
 import LayoutKernelPlugin
@@ -87,6 +88,9 @@ public enum PluginService {
 
         // DisplayControlPlugin
         list.append(DisplayControlPlugin())
+
+        // DockerManagerPlugin
+        list.append(DockerManagerPlugin())
 
         return list
     }()

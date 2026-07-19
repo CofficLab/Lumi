@@ -1,21 +1,16 @@
+import LumiKernel
+import LumiUI
 import SwiftUI
 
-/// 设置窗口（简化版）
+/// 设置窗口
 public struct WindowSettings: View {
-    public init() {}
+    let kernel: LumiKernel
+
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
+    }
 
     public var body: some View {
-        VStack(spacing: 20) {
-            Text("设置")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("设置界面需要更多服务支持")
-                .foregroundColor(.secondary)
-
-            Spacer()
-        }
-        .frame(width: 500, height: 400)
-        .padding()
+        SettingsView(kernel: kernel)
     }
 }

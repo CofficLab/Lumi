@@ -33,6 +33,7 @@ let package = Package(
         .package(path: "../../Plugins/AppManagerPlugin"),
         .package(path: "../../Plugins/RegistryManagerPlugin"),
         .package(path: "../../Plugins/DisplayControlPlugin"),
+        .package(path: "../../Plugins/ViewContainerPlugin"),
     ],
     targets: [
         .target(

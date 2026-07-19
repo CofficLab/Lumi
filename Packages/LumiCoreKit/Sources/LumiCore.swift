@@ -31,6 +31,10 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
         projectComponent.currentProject?.path
     }
 
+    public var lumiCore: (any LumiCoreAccessing)? {
+        self
+    }
+
     // MARK: - Initialization
 
     /// 一次性初始化:接收所有依赖并完成全部字段绑定。

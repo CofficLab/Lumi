@@ -77,6 +77,11 @@ public final class LumiKernel: ObservableObject {
         resolveService(LayoutProviding.self)
     }
 
+    /// 视图容器服务
+    public var viewContainer: (any ViewContainerProviding)? {
+        resolveService(ViewContainerProviding.self)
+    }
+
     /// 聊天服务
     public var chat: (any ChatServiceProviding)? {
         resolveService(ChatServiceProviding.self)
@@ -217,6 +222,11 @@ public final class LumiKernel: ObservableObject {
         registerService(AgentToolProviding.self, agentTool)
     }
 
+    /// 注册视图容器服务
+    public func registerViewContainerService(_ service: any ViewContainerProviding) {
+        registerService(ViewContainerProviding.self, service)
+    }
+
     // MARK: - Command Registry
 
     /// 注册命令组
@@ -292,12 +302,18 @@ public final class LumiKernel: ObservableObject {
             viewContainerOrder.append(container.id)
         }
         viewContainers[container.id] = container
+
+        // 同步到视图容器服务
+        viewContainer?.register(container)
     }
 
     /// 注销视图容器
     public func unregisterViewContainer(id: String) {
         viewContainers.removeValue(forKey: id)
         viewContainerOrder.removeAll { $0 == id }
+
+        // 同步到视图容器服务
+        viewContainer?.unregister(id: id)
     }
 
     // MARK: - Menu Bar Content Registry
@@ -413,6 +429,305 @@ public final class LumiKernel: ObservableObject {
     public func unregisterAgentTool(id: String) {
         agentTools.removeValue(forKey: id)
         agentToolOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Panel Registry
+
+    /// 面板顶部标题栏项注册表
+    private var panelHeaderItems: [String: PanelHeaderItem] = [:]
+    private var panelHeaderItemOrder: [String] = []
+
+    /// 面板底部标签项注册表
+    private var panelBottomTabItems: [String: PanelBottomTabItem] = [:]
+    private var panelBottomTabItemOrder: [String] = []
+
+    /// 侧边栏标签项注册表
+    private var panelRailTabItems: [String: PanelRailTabItem] = [:]
+    private var panelRailTabItemOrder: [String] = []
+
+    // MARK: - Chat Section Registry
+
+    /// 聊天分区项注册表
+    private var chatSectionItems: [String: ChatSectionItem] = [:]
+    private var chatSectionItemOrder: [String] = []
+
+    /// 聊天分区工具栏项注册表
+    private var chatSectionToolbarItems: [String: ChatSectionToolbarItem] = [:]
+    private var chatSectionToolbarItemOrder: [String] = []
+
+    /// 聊天分区工具栏条注册表
+    private var chatSectionToolbarBarItems: [String: ChatSectionToolbarBarItem] = [:]
+    private var chatSectionToolbarBarItemOrder: [String] = []
+
+    /// 聊天分区标题项注册表
+    private var chatSectionHeaderItems: [String: ChatSectionHeaderItem] = [:]
+    private var chatSectionHeaderItemOrder: [String] = []
+
+    // MARK: - Status Bar Registry
+
+    /// 状态栏项注册表
+    private var statusBarItems: [String: StatusBarItem] = [:]
+    private var statusBarItemOrder: [String] = []
+
+    // MARK: - Settings Tab Registry
+
+    /// 设置标签项注册表
+    private var settingsTabItems: [String: SettingsTabItem] = [:]
+    private var settingsTabItemOrder: [String] = []
+
+    // MARK: - LLM Provider Settings Registry
+
+    /// LLM 提供商设置项注册表
+    private var llmProviderSettingsItems: [String: LLMProviderSettingsItem] = [:]
+    private var llmProviderSettingsItemOrder: [String] = []
+
+    // MARK: - Logo Registry
+
+    /// Logo 项注册表
+    private var logoItems: [String: LogoItem] = [:]
+    private var logoItemOrder: [String] = []
+
+    // MARK: - Panel Accessors
+
+    /// 所有已注册的面板顶部标题栏项
+    public var allPanelHeaderItems: [PanelHeaderItem] {
+        panelHeaderItemOrder.compactMap { panelHeaderItems[$0] }
+    }
+
+    /// 注册面板顶部标题栏项
+    public func registerPanelHeaderItem(_ item: PanelHeaderItem) {
+        if panelHeaderItems[item.id] == nil {
+            panelHeaderItemOrder.append(item.id)
+        }
+        panelHeaderItems[item.id] = item
+    }
+
+    /// 注销面板顶部标题栏项
+    public func unregisterPanelHeaderItem(id: String) {
+        panelHeaderItems.removeValue(forKey: id)
+        panelHeaderItemOrder.removeAll { $0 == id }
+    }
+
+    /// 所有已注册的面板底部标签项（按 order 排序）
+    public var allPanelBottomTabItems: [PanelBottomTabItem] {
+        panelBottomTabItemOrder.compactMap { panelBottomTabItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册面板底部标签项
+    public func registerPanelBottomTabItem(_ item: PanelBottomTabItem) {
+        if panelBottomTabItems[item.id] == nil {
+            panelBottomTabItemOrder.append(item.id)
+        }
+        panelBottomTabItems[item.id] = item
+    }
+
+    /// 注销面板底部标签项
+    public func unregisterPanelBottomTabItem(id: String) {
+        panelBottomTabItems.removeValue(forKey: id)
+        panelBottomTabItemOrder.removeAll { $0 == id }
+    }
+
+    /// 所有已注册的侧边栏标签项（按 order 排序）
+    public var allPanelRailTabItems: [PanelRailTabItem] {
+        panelRailTabItemOrder.compactMap { panelRailTabItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册侧边栏标签项
+    public func registerPanelRailTabItem(_ item: PanelRailTabItem) {
+        if panelRailTabItems[item.id] == nil {
+            panelRailTabItemOrder.append(item.id)
+        }
+        panelRailTabItems[item.id] = item
+    }
+
+    /// 注销侧边栏标签项
+    public func unregisterPanelRailTabItem(id: String) {
+        panelRailTabItems.removeValue(forKey: id)
+        panelRailTabItemOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Chat Section Accessors
+
+    /// 所有已注册的聊天分区项（按 order 排序）
+    public var allChatSectionItems: [ChatSectionItem] {
+        chatSectionItemOrder.compactMap { chatSectionItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 按位置获取聊天分区项
+    public func chatSectionItems(placement: ChatSectionPlacement) -> [ChatSectionItem] {
+        allChatSectionItems.filter { $0.placement == placement }
+    }
+
+    /// 注册聊天分区项
+    public func registerChatSectionItem(_ item: ChatSectionItem) {
+        if chatSectionItems[item.id] == nil {
+            chatSectionItemOrder.append(item.id)
+        }
+        chatSectionItems[item.id] = item
+    }
+
+    /// 注销聊天分区项
+    public func unregisterChatSectionItem(id: String) {
+        chatSectionItems.removeValue(forKey: id)
+        chatSectionItemOrder.removeAll { $0 == id }
+    }
+
+    /// 所有已注册的聊天分区工具栏项（按 order 排序）
+    public var allChatSectionToolbarItems: [ChatSectionToolbarItem] {
+        chatSectionToolbarItemOrder.compactMap { chatSectionToolbarItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 按位置获取聊天分区工具栏项
+    public func chatSectionToolbarItems(placement: ChatSectionToolbarPlacement) -> [ChatSectionToolbarItem] {
+        allChatSectionToolbarItems.filter { $0.placement == placement }
+    }
+
+    /// 注册聊天分区工具栏项
+    public func registerChatSectionToolbarItem(_ item: ChatSectionToolbarItem) {
+        if chatSectionToolbarItems[item.id] == nil {
+            chatSectionToolbarItemOrder.append(item.id)
+        }
+        chatSectionToolbarItems[item.id] = item
+    }
+
+    /// 注销聊天分区工具栏项
+    public func unregisterChatSectionToolbarItem(id: String) {
+        chatSectionToolbarItems.removeValue(forKey: id)
+        chatSectionToolbarItemOrder.removeAll { $0 == id }
+    }
+
+    /// 所有已注册的聊天分区工具栏条（按 order 排序）
+    public var allChatSectionToolbarBarItems: [ChatSectionToolbarBarItem] {
+        chatSectionToolbarBarItemOrder.compactMap { chatSectionToolbarBarItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册聊天分区工具栏条
+    public func registerChatSectionToolbarBarItem(_ item: ChatSectionToolbarBarItem) {
+        if chatSectionToolbarBarItems[item.id] == nil {
+            chatSectionToolbarBarItemOrder.append(item.id)
+        }
+        chatSectionToolbarBarItems[item.id] = item
+    }
+
+    /// 注销聊天分区工具栏条
+    public func unregisterChatSectionToolbarBarItem(id: String) {
+        chatSectionToolbarBarItems.removeValue(forKey: id)
+        chatSectionToolbarBarItemOrder.removeAll { $0 == id }
+    }
+
+    /// 所有已注册的聊天分区标题项（按 order 排序）
+    public var allChatSectionHeaderItems: [ChatSectionHeaderItem] {
+        chatSectionHeaderItemOrder.compactMap { chatSectionHeaderItems[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// 注册聊天分区标题项
+    public func registerChatSectionHeaderItem(_ item: ChatSectionHeaderItem) {
+        if chatSectionHeaderItems[item.id] == nil {
+            chatSectionHeaderItemOrder.append(item.id)
+        }
+        chatSectionHeaderItems[item.id] = item
+    }
+
+    /// 注销聊天分区标题项
+    public func unregisterChatSectionHeaderItem(id: String) {
+        chatSectionHeaderItems.removeValue(forKey: id)
+        chatSectionHeaderItemOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Status Bar Accessors
+
+    /// 所有已注册的状态栏项（按注册顺序）
+    public var allStatusBarItems: [StatusBarItem] {
+        statusBarItemOrder.compactMap { statusBarItems[$0] }
+    }
+
+    /// 按位置获取状态栏项
+    public func statusBarItems(placement: StatusBarPlacement) -> [StatusBarItem] {
+        allStatusBarItems.filter { $0.placement == placement }
+    }
+
+    /// 注册状态栏项
+    public func registerStatusBarItem(_ item: StatusBarItem) {
+        if statusBarItems[item.id] == nil {
+            statusBarItemOrder.append(item.id)
+        }
+        statusBarItems[item.id] = item
+    }
+
+    /// 注销状态栏项
+    public func unregisterStatusBarItem(id: String) {
+        statusBarItems.removeValue(forKey: id)
+        statusBarItemOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - Settings Tab Accessors
+
+    /// 所有已注册的设置标签项（按注册顺序）
+    public var allSettingsTabItems: [SettingsTabItem] {
+        settingsTabItemOrder.compactMap { settingsTabItems[$0] }
+    }
+
+    /// 注册设置标签项
+    public func registerSettingsTabItem(_ item: SettingsTabItem) {
+        if settingsTabItems[item.id] == nil {
+            settingsTabItemOrder.append(item.id)
+        }
+        settingsTabItems[item.id] = item
+    }
+
+    /// 注销设置标签项
+    public func unregisterSettingsTabItem(id: String) {
+        settingsTabItems.removeValue(forKey: id)
+        settingsTabItemOrder.removeAll { $0 == id }
+    }
+
+    // MARK: - LLM Provider Settings Accessors
+
+    /// 所有已注册的 LLM 提供商设置项（按注册顺序）
+    public var allLLMProviderSettingsItems: [LLMProviderSettingsItem] {
+        llmProviderSettingsItemOrder.compactMap { llmProviderSettingsItems[$0] }
+    }
+
+    /// 注册 LLM 提供商设置项
+    public func registerLLMProviderSettingsItem(_ item: LLMProviderSettingsItem) {
+        if llmProviderSettingsItems[item.providerID] == nil {
+            llmProviderSettingsItemOrder.append(item.providerID)
+        }
+        llmProviderSettingsItems[item.providerID] = item
+    }
+
+    /// 注销 LLM 提供商设置项
+    public func unregisterLLMProviderSettingsItem(providerID: String) {
+        llmProviderSettingsItems.removeValue(forKey: providerID)
+        llmProviderSettingsItemOrder.removeAll { $0 == providerID }
+    }
+
+    // MARK: - Logo Accessors
+
+    /// 所有已注册的 Logo 项（按 order 降序，order 越大优先级越高）
+    public var allLogoItems: [LogoItem] {
+        logoItemOrder.compactMap { logoItems[$0] }
+            .sorted { $0.order > $1.order }
+    }
+
+    /// 注册 Logo 项
+    public func registerLogoItem(_ item: LogoItem) {
+        if logoItems[item.id] == nil {
+            logoItemOrder.append(item.id)
+        }
+        logoItems[item.id] = item
+    }
+
+    /// 注销 Logo 项
+    public func unregisterLogoItem(id: String) {
+        logoItems.removeValue(forKey: id)
+        logoItemOrder.removeAll { $0 == id }
     }
 }
 

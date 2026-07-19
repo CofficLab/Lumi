@@ -48,7 +48,7 @@ public final class LayoutState: ObservableObject, SuperLog {
         didSet {
             guard currentChatSection != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)currentChatSection → \(currentChatSection)")
+                Self.logger.info("\(Self.t)currentChatSection → \(self.currentChatSection)")
             }
         }
     }
@@ -57,7 +57,7 @@ public final class LayoutState: ObservableObject, SuperLog {
         didSet {
             guard showsRail != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)showsRail → \(showsRail)")
+                Self.logger.info("\(Self.t)showsRail → \(self.showsRail)")
             }
         }
     }
@@ -66,7 +66,7 @@ public final class LayoutState: ObservableObject, SuperLog {
         didSet {
             guard showsPanelChrome != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)showsPanelChrome → \(showsPanelChrome)")
+                Self.logger.info("\(Self.t)showsPanelChrome → \(self.showsPanelChrome)")
             }
         }
     }
@@ -75,7 +75,7 @@ public final class LayoutState: ObservableObject, SuperLog {
         didSet {
             guard isChatSectionVisible != oldValue else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)isChatSectionVisible → \(isChatSectionVisible)")
+                Self.logger.info("\(Self.t)isChatSectionVisible → \(self.isChatSectionVisible)")
             }
         }
     }

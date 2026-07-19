@@ -31,4 +31,87 @@ public protocol LumiPlugin: AnyObject {
     /// 所有插件注册完成后调用，用于执行需要其他服务的初始化逻辑。
     /// - Parameter kernel: LumiKernel 实例
     func boot(kernel: LumiKernel) async throws
+
+    // MARK: - UI Contribution Methods (Optional)
+
+    /// 面板顶部标题栏项
+    func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem]
+
+    /// 面板底部标签项
+    func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem]
+
+    /// 侧边栏标签项
+    func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem]
+
+    /// 聊天分区项
+    func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem]
+
+    /// 聊天分区工具栏项
+    func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem]
+
+    /// 聊天分区工具栏条
+    func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem]
+
+    /// 聊天分区标题项
+    func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem]
+
+    /// 状态栏项
+    func statusBarItems(kernel: LumiKernel) -> [StatusBarItem]
+
+    /// 设置标签项
+    func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem]
+
+    /// LLM 提供商设置项
+    func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem]
+
+    /// Logo 项
+    func logoItems(kernel: LumiKernel) -> [LogoItem]
+}
+
+// MARK: - Default UI Contribution Implementations
+
+public extension LumiPlugin {
+    func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] {
+        []
+    }
+
+    func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] {
+        []
+    }
+
+    func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        []
+    }
+
+    func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] {
+        []
+    }
+
+    func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
+        []
+    }
+
+    func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
+        []
+    }
+
+    func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
+        []
+    }
+
+    func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        []
+    }
+
+    func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        []
+    }
+
+    func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
+        []
+    }
+
+    func logoItems(kernel: LumiKernel) -> [LogoItem] {
+        []
+    }
 }

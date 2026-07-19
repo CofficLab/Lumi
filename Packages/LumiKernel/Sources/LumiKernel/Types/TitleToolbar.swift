@@ -19,18 +19,35 @@ public enum TitleToolbarPlacement: Sendable {
 ///
 /// 定义一个可在窗口标题栏显示的工具栏项。
 /// 插件通过 `kernel.registerTitleToolbarItem()` 注册工具栏项。
+///
+/// 注意：`order` 由内核自动从插件继承，无需手动指定。
 public struct TitleToolbarItem: Identifiable, Sendable {
     public let id: String
     public let title: String
     public let placement: TitleToolbarPlacement
-    public let order: Int
+    public var order: Int
     public let makeView: @MainActor @Sendable () -> AnyView
 
+    /// 公开初始化器（不包含 order）
     public init<Content: View>(
         id: String,
         title: String,
         placement: TitleToolbarPlacement = .center,
-        order: Int = 200,
+        @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
+    ) {
+        self.id = id
+        self.title = title
+        self.placement = placement
+        self.order = 200  // 默认值，内核会覆盖
+        self.makeView = { AnyView(content()) }
+    }
+
+    /// 内部初始化器（用于内核设置 order）
+    internal init<Content: View>(
+        id: String,
+        title: String,
+        placement: TitleToolbarPlacement = .center,
+        order: Int,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id

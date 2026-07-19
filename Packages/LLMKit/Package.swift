@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../LocalizationKit"),
         .package(path: "../KeychainKit"),
         .package(path: "../LumiCoreMessage"),
+        .package(path: "../LumiCoreLLMProvider"),
     ],
     targets: [
         .target(
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
             ],
             path: "Sources/LLMKit",
             resources: [

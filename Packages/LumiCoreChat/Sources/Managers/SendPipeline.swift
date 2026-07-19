@@ -247,9 +247,11 @@ final class SendPipeline {
         var toolFailures: [LumiPluginContributionFailure] = []
 
         // 从 provider 收集插件工具，失败时软降级，不阻断发送。
-        if let provider = service.delegate as? any AgentToolProviding {
+        if let delegate = service.delegate,
+           let lumiCore = delegate.lumiCore,
+           let provider = delegate as? any AgentToolProviding {
             do {
-                pluginTools = try provider.agentTools(lumiCore: service.delegate?.lumiCore)
+                pluginTools = try provider.agentTools(lumiCore: lumiCore)
             } catch {
                 toolFailures.append(LumiPluginContributionFailure(
                     pluginID: "send-pipeline",

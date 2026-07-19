@@ -102,7 +102,7 @@ public enum LumiFactory: SuperLog {
 
     /// 创建设置窗口视图
     public static func makeSettingsWindow() -> some View {
-        WindowSettings()
+        WindowSettings(kernel: mainKernel ?? LumiKernel())
     }
 
     // MARK: - Commands Factory

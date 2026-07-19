@@ -1,6 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreMessage
 
 /// OpenAI 兼容供应商可用性检查工具
 public enum LumiOpenAICompatibleAvailability {
@@ -15,7 +16,7 @@ public enum LumiOpenAICompatibleAvailability {
         do {
             let apiKey = try resolveAPIKey()
             guard let url = URL(string: adapter.configuration.baseURL) else {
-                return .unavailable(error: "Invalid base URL")
+                return .unavailable(.message("Invalid base URL"))
             }
             let request = buildRequest(url, apiKey)
             let body = try adapter.buildRequestBody(
@@ -34,11 +35,11 @@ public enum LumiOpenAICompatibleAvailability {
             )
 
             if hasError != nil {
-                return .unavailable(error: hasError?.localizedDescription ?? "Unknown error")
+                return .unavailable(.message(hasError?.localizedDescription ?? "Unknown error"))
             }
             return .available
         } catch {
-            return .unavailable(error: error.localizedDescription)
+            return .unavailable(.message(error.localizedDescription))
         }
     }
 }
@@ -55,7 +56,7 @@ public enum LumiAnthropicCompatibleAvailability {
         do {
             let apiKey = try resolveAPIKey()
             guard let url = URL(string: adapter.configuration.baseURL) else {
-                return .unavailable(error: "Invalid base URL")
+                return .unavailable(.message("Invalid base URL"))
             }
             let request = buildRequest(url, apiKey)
             let body = try adapter.buildRequestBody(
@@ -74,14 +75,8 @@ public enum LumiAnthropicCompatibleAvailability {
 
             return .available
         } catch {
-            return .unavailable(error: error.localizedDescription)
+            return .unavailable(.message(error.localizedDescription))
         }
     }
 }
 
-/// 模型可用性结果
-public enum LumiModelAvailabilityResult: Sendable {
-    case available
-    case unavailable(error: String)
-    case unknown
-}

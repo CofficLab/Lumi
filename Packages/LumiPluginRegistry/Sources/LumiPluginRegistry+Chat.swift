@@ -5,7 +5,6 @@ import OnboardingPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import AppUpdateStatusBarPlugin
-import DeviceInfoPlugin
 import NetworkManagerPlugin
 import HostsManagerPlugin
 import MenuBarManagerPlugin
@@ -18,7 +17,7 @@ import ModelSelectorPlugin
 extension LumiPluginRegistry {
     /// Chat 插件数组，包含所有聊天面板相关的插件。
     ///
-    /// 包含：Onboarding、快速搜索、快速启动、设备信息、网络管理、Hosts 管理、菜单栏、聊天面板、消息列表、模型选择器
+    /// 包含：Onboarding、快速搜索、快速启动、网络管理、Hosts 管理、菜单栏、聊天面板、消息列表、模型选择器
     public static let chatPlugins: [any LumiPlugin.Type] = [
         // MARK: - Quick Access
 
@@ -29,7 +28,6 @@ extension LumiPluginRegistry {
         // MARK: - Status & Device
 
         AppUpdateStatusBarPlugin.self,
-        DeviceInfoPlugin.self,
 
         // MARK: - Managers
 

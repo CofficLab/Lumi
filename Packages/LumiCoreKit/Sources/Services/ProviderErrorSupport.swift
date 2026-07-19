@@ -3,7 +3,7 @@ import LumiCoreMessage
 import LumiCoreLLMProvider
 
 /// LLM Provider 错误消息生成工具
-public enum LumiLLMProviderErrorSupport {
+public enum ProviderErrorSupport {
 
     /// 生成用户友好的错误消息
     public static func makeErrorMessage(

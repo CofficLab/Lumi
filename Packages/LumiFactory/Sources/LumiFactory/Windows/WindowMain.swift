@@ -21,9 +21,9 @@ public struct WindowMain: View, SuperLog {
     public var body: some View {
         Group {
             if isInitializing {
-                LoadingView()
+                MainLoadingView()
             } else if let error = initializationError {
-                ErrorView(error: error)
+                MainErrorView(error: error)
             } else if let kernel = kernel {
                 AppLayoutView(kernel: kernel)
             }
@@ -55,7 +55,7 @@ public struct WindowMain: View, SuperLog {
 
 // MARK: - Loading View
 
-struct LoadingView: View {
+struct MainLoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
             ProgressView()
@@ -69,7 +69,7 @@ struct LoadingView: View {
 
 // MARK: - Error View
 
-struct ErrorView: View {
+struct MainErrorView: View {
     let error: Error
 
     @State private var isCopied = false

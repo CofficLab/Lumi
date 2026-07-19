@@ -23,11 +23,9 @@ enum EditorPreviewPluginRuntimeBridge {
 
 @MainActor
 public extension EditorPreviewBottomPanelPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
-        if let core = context.lumiCore {
-            EditorPreviewPluginRuntimeBridge.pluginDirectory = core.storage.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
-        }
+        EditorPreviewPluginRuntimeBridge.pluginDirectory = context.storage.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
         didBootstrapFromLumiCore = true
     }
 }
