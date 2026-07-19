@@ -22,15 +22,10 @@ struct RootView<Content: View>: View {
     }
 
     var body: some View {
-        let context = container.lumiCore.makePluginContext(
-            activeSectionID: "app.root",
-            activeSectionTitle: "Lumi"
-        )
-        let _ = container.pluginService.registerPluginContributions(context: context)
-        let onboardingPages = container.pluginService.onboardingPages(context: context)
+        let onboardingPages = container.pluginService.onboardingPages(lumiCore: container.lumiCore)
         let baseView = AnyView(content)
         let overlayView = appliesRootOverlays
-            ? container.pluginService.rootOverlays(context: context).reduce(baseView) { wrapped, overlay in
+            ? container.pluginService.rootOverlays(lumiCore: container.lumiCore).reduce(baseView) { wrapped, overlay in
                 overlay.apply(to: wrapped)
             }
             : baseView
