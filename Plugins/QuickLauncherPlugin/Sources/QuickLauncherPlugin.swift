@@ -1,44 +1,44 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import os
 import SwiftUI
 
-public enum QuickLauncherPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quicklauncher")
-    public static let verbose = false
+/// Quick Launcher 插件
+///
+/// 向 LumiKernel 注册快速启动器：
+/// - MenuBarPopup：菜单栏快速启动弹窗
+@MainActor
+public final class QuickLauncherPlugin: LumiKernel.LumiPlugin, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.quicklauncher")
+    public nonisolated public static let emoji = "🚀"
+    nonisolated static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.quick-launcher",
-        displayName: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
-        description: LumiPluginLocalization.string("Quick access to system apps and utilities", bundle: .module),
-        order: 8,
-        category: .system,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "app.grid",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func menuBarPopupItems(context: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
-        [
-            LumiMenuBarPopupItem(id: "\(info.id).launcher", order: info.order) {
+    public let id = "com.coffic.lumi.plugin.quick-launcher"
+    public let name = "Quick Launcher"
+    public let order = 8
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册菜单栏弹窗
+        kernel.registerMenuBarPopup(
+            MenuBarPopupItem(id: "\(id).launcher", order: order) {
                 QuickLauncherMenuBarPopupView()
             }
-        ]
-    }
-
-        @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 QuickLauncher 插件到内核")
+        }
     }
 
+    public func boot(kernel: LumiKernel) async throws {
+        // 无需额外启动逻辑
+    }
 }

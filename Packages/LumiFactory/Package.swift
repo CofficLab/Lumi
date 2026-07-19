@@ -28,6 +28,7 @@ let package = Package(
         .package(path: "../../Plugins/HostsManagerPlugin"),
         .package(path: "../../Plugins/VideoConverterPlugin"),
         .package(path: "../../Plugins/NettoPlugin"),
+        .package(path: "../../Plugins/QuickLauncherPlugin"),
     ],
     targets: [
         .target(
@@ -53,6 +54,7 @@ let package = Package(
                 .product(name: "HostsManagerPlugin", package: "HostsManagerPlugin"),
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
                 .product(name: "NettoPlugin", package: "NettoPlugin"),
+                .product(name: "QuickLauncherPlugin", package: "QuickLauncherPlugin"),
             ]
         ),
     ]

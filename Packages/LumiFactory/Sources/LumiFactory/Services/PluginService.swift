@@ -11,6 +11,7 @@ import HostsManagerPlugin
 import LayoutKernelPlugin
 import NettoPlugin
 import ProjectsPlugin
+import QuickLauncherPlugin
 import StoragePlugin
 import VideoConverterPlugin
 import os
@@ -67,6 +68,9 @@ public enum PluginService {
 
         // NettoPlugin
         list.append(NettoPlugin())
+
+        // QuickLauncherPlugin
+        list.append(QuickLauncherPlugin())
 
         return list
     }()
