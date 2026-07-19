@@ -16,6 +16,7 @@ import NettoPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
+import RClickPlugin
 import RegistryManagerPlugin
 import StoragePlugin
 import VideoConverterPlugin
@@ -91,6 +92,9 @@ public enum PluginService {
 
         // DockerManagerPlugin
         list.append(DockerManagerPlugin())
+
+        // RClickPlugin
+        list.append(RClickPlugin())
 
         return list
     }()

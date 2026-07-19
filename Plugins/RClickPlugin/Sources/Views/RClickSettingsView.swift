@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
 
 public struct RClickSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

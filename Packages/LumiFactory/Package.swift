@@ -35,6 +35,7 @@ let package = Package(
         .package(path: "../../Plugins/DisplayControlPlugin"),
         .package(path: "../../Plugins/ViewContainerPlugin"),
         .package(path: "../../Plugins/DockerManagerPlugin"),
+        .package(path: "../../Plugins/RClickPlugin"),
     ],
     targets: [
         .target(
@@ -66,6 +67,7 @@ let package = Package(
                 .product(name: "RegistryManagerPlugin", package: "RegistryManagerPlugin"),
                 .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
                 .product(name: "DockerManagerPlugin", package: "DockerManagerPlugin"),
+                .product(name: "RClickPlugin", package: "RClickPlugin"),
             ]
         ),
     ]
