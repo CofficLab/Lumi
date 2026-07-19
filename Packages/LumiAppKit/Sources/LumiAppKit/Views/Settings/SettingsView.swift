@@ -57,7 +57,7 @@ struct SettingsView: View {
     private var pluginTabs: [LumiSettingsTabItem] {
         var tabs: [LumiSettingsTabItem] = []
         for plugin in pluginService.plugins {
-            tabs.append(contentsOf: plugin.addSettingsTabs(context: settingsPluginContext))
+            tabs.append(contentsOf: plugin.addSettingsTabs(lumiCore: lumiCore))
         }
         return tabs
     }
