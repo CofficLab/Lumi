@@ -4,8 +4,9 @@ import LumiUI
 /// 主题能力协议
 ///
 /// 定义 LumiCore 需要的主题管理功能，由具体插件实现。
+/// 继承 `LumiThemeServicing` 以保持与现有代码的兼容性。
 @MainActor
-public protocol ThemeProviding: AnyObject {
+public protocol ThemeProviding: AnyObject, LumiThemeServicing {
     /// 所有已注册的主题贡献
     var allThemes: [LumiUIThemeContribution] { get }
 
@@ -19,36 +20,10 @@ public protocol ThemeProviding: AnyObject {
     func replaceAllThemes(_ themes: [LumiUIThemeContribution]) throws
 }
 
-/// 默认主题服务实现
-@MainActor
-public final class DefaultThemeProviding: ThemeProviding {
-
-    private var themes: [String: LumiUIThemeContribution] = [:]
-    private var themeOrder: [String] = []
-
-    public init() {}
-
-    public var allThemes: [LumiUIThemeContribution] {
-        themeOrder.compactMap { themes[$0] }
-    }
-
-    public func registerTheme(_ theme: LumiUIThemeContribution) {
-        if themes[theme.id] == nil {
-            themeOrder.append(theme.id)
-        }
-        themes[theme.id] = theme
-    }
-
-    public func unregisterTheme(id: String) {
-        themes.removeValue(forKey: id)
-        themeOrder.removeAll { $0 == id }
-    }
-
-    public func replaceAllThemes(_ themes: [LumiUIThemeContribution]) throws {
-        self.themes.removeAll()
-        self.themeOrder.removeAll()
-        for theme in themes {
-            registerTheme(theme)
-        }
+/// Default implementation for LumiThemeServicing compatibility
+public extension ThemeProviding {
+    /// Alias for allThemes to satisfy LumiThemeServicing
+    public var themes: [LumiUIThemeContribution] {
+        allThemes
     }
 }
