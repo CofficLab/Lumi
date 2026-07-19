@@ -9,6 +9,7 @@ import os
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
     nonisolated public static let emoji = "🪟"
+    nonisolated static let verbose = false
 
     @State private var kernel: LumiKernel?
     @State private var initializationError: Error?
@@ -33,13 +34,17 @@ public struct WindowMain: View, SuperLog {
     }
 
     private func initializeKernel() async {
-        Self.logger.info("\(Self.t)开始初始化")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)开始初始化")
+        }
 
         do {
             // 使用 LumiFactory 创建主内核
             let newKernel = try await LumiFactory.createMainKernel()
             self.kernel = newKernel
-            Self.logger.info("\(Self.t)初始化完成")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)初始化完成")
+            }
         } catch {
             Self.logger.error("\(Self.t)初始化失败: \(error.localizedDescription)")
             self.initializationError = error
