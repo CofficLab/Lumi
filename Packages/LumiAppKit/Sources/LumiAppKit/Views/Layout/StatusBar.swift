@@ -8,13 +8,12 @@ struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @ObservedObject var pluginService: PluginService
     let editorCoreService: EditorCoreService
-    let pluginContext: LumiPluginContext
+    let lumiCore: any LumiCoreAccessing
     let lumiUIService: LumiUIService
     @ObservedObject var chatService: ChatService
 
     var body: some View {
-        let context = pluginContext
-        let items = pluginService.statusBarItems(context: context)
+        let items = pluginService.statusBarItems(lumiCore: lumiCore)
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }

@@ -1,5 +1,4 @@
 import LumiCoreKit
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -8,7 +7,7 @@ import SwiftUI
 struct ChatView: View {
     @ObservedObject private var layoutState: LayoutState
     let pluginService: PluginService
-    let context: LumiPluginContext
+    let lumiCore: any LumiCoreAccessing
     let chatSectionCoordinator: ChatSectionCoordinator
     let chatSection: LumiChatSectionLayout
     let activeID: String
@@ -17,7 +16,7 @@ struct ChatView: View {
     init(
         layoutState: LayoutState,
         pluginService: PluginService,
-        context: LumiPluginContext,
+        lumiCore: any LumiCoreAccessing,
         chatSectionCoordinator: ChatSectionCoordinator,
         chatSection: LumiChatSectionLayout,
         activeID: String,
@@ -25,7 +24,7 @@ struct ChatView: View {
     ) {
         self.layoutState = layoutState
         self.pluginService = pluginService
-        self.context = context
+        self.lumiCore = lumiCore
         self.chatSectionCoordinator = chatSectionCoordinator
         self.chatSection = chatSection
         self.activeID = activeID
@@ -33,7 +32,7 @@ struct ChatView: View {
     }
 
     private var chatSectionItems: [LumiChatSectionItem] {
-        pluginService.chatSectionItems(context: context)
+        pluginService.chatSectionItems(lumiCore: lumiCore)
     }
 
     private var shouldShowChatSection: Bool {
@@ -42,33 +41,21 @@ struct ChatView: View {
         return result
     }
 
-    private var finalContext: LumiPluginContext {
-        LumiPluginContext(
-            activeSectionID: context.activeSectionID,
-            activeSectionTitle: context.activeSectionTitle,
-            chatSection: context.chatSection,
-            showsRail: context.showsRail,
-            showsPanelChrome: context.showsPanelChrome,
-            isChatSectionVisible: shouldShowChatSection,
-            dependencies: context.dependencies
-        )
-    }
-
     private var chatSectionToolbarItems: [LumiChatSectionToolbarItem] {
         shouldShowChatSection
-            ? pluginService.chatSectionToolbarItems(context: finalContext)
+            ? pluginService.chatSectionToolbarItems(lumiCore: lumiCore)
             : []
     }
 
     private var chatSectionToolbarBarItems: [LumiChatSectionToolbarBarItem] {
         shouldShowChatSection
-            ? pluginService.chatSectionToolbarBarItems(context: finalContext)
+            ? pluginService.chatSectionToolbarBarItems(lumiCore: lumiCore)
             : []
     }
 
     private var chatSectionHeaderItems: [LumiChatSectionHeaderItem] {
         shouldShowChatSection
-            ? pluginService.chatSectionHeaderItems(context: finalContext)
+            ? pluginService.chatSectionHeaderItems(lumiCore: lumiCore)
             : []
     }
 
@@ -90,7 +77,7 @@ struct ChatView: View {
                     stackItems: stackItems,
                     bottomItems: bottomItems,
                     rootContent: pluginService.chatSectionRootWrapper(
-                        context: finalContext,
+                        lumiCore: lumiCore,
                         content: ChatSectionView.makeRootContent(
                             stackItems: stackItems,
                             bottomItems: bottomItems

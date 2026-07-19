@@ -24,5 +24,5 @@ public struct LumiLLMProviderSettingsViewItem {
 /// Aggregates provider-specific settings views from enabled plugins.
 @MainActor
 public protocol LumiLLMProviderSettingsContributing: AnyObject {
-    func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem]
+    func llmProviderSettingsViews(lumiCore: any LumiCoreAccessing) -> [LumiLLMProviderSettingsViewItem]
 }

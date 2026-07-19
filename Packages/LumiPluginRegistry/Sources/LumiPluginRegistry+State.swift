@@ -144,34 +144,34 @@ extension LumiPluginRegistry {
 
     // MARK: - 聚合方法
 
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        enabledPlugins.flatMap { $0.titleToolbarItems(context: context) }
+    public static func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
+        enabledPlugins.flatMap { $0.titleToolbarItems(lumiCore: lumiCore) }
     }
 
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        enabledPlugins.flatMap { $0.statusBarItems(context: context) }
+    public static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
+        enabledPlugins.flatMap { $0.statusBarItems(lumiCore: lumiCore) }
     }
 
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        enabledPlugins.flatMap { $0.viewContainers(context: context) }
+    public static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
+        enabledPlugins.flatMap { $0.viewContainers(lumiCore: lumiCore) }
     }
 
-    public static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
-        enabledPlugins.flatMap { $0.menuBarContentItems(context: context) }
+    public static func menuBarContentItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarContentItem] {
+        enabledPlugins.flatMap { $0.menuBarContentItems(lumiCore: lumiCore) }
     }
 
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+    public static func menuBarPopupItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
         // 按 item.order 升序排序，让插件作者能通过 LumiMenuBarPopupItem.order 控制 popup
         // 展示顺序。否则 order 字段会被静默忽略，顺序完全取决于插件在 plugins 清单里的
         // 注册位置。（Swift 的 sorted 不保证稳定，故相同 order 的相对顺序未定义；当前
         // 各 popup item 的 order 互不冲突，不存在该问题。）
         enabledPlugins
-            .flatMap { $0.menuBarPopupItems(context: context) }
+            .flatMap { $0.menuBarPopupItems(lumiCore: lumiCore) }
             .sorted { $0.order < $1.order }
     }
 
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        enabledPlugins.flatMap { $0.llmProviders(context: context) }
+    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
+        enabledPlugins.flatMap { $0.llmProviders(lumiCore: lumiCore) }
     }
 
     /// 最近一次工具收集产生的插件失败快照（只读访问）。
@@ -186,13 +186,13 @@ extension LumiPluginRegistry {
     /// 照常返回。对外签名保持非 throws——所有调用点（boot 校验、运行期注册、
     /// `AgentToolProviding`）都无需改动。真正的硬错误（工具名重复）由
     /// `ToolService.registerTools` 在更上层抛出，与这里无关。
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public static func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
         var tools: [any LumiAgentTool] = []
         var failures: [LumiPluginContributionFailure] = []
 
         for plugin in enabledPlugins {
             do {
-                tools.append(contentsOf: try plugin.agentTools(context: context))
+                tools.append(contentsOf: try plugin.agentTools(lumiCore: lumiCore))
             } catch {
                 failures.append(LumiPluginContributionFailure(
                     pluginID: plugin.info.id,
@@ -209,93 +209,93 @@ extension LumiPluginRegistry {
         return tools
     }
 
-    public static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
-        enabledPlugins.flatMap { $0.subAgents(context: context) }
+    public static func subAgents(lumiCore: any LumiCoreAccessing) -> [LumiSubAgentDefinition] {
+        enabledPlugins.flatMap { $0.subAgents(lumiCore: lumiCore) }
     }
 
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        enabledPlugins.flatMap { $0.sendMiddlewares(context: context) }
+    public static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
+        enabledPlugins.flatMap { $0.sendMiddlewares(lumiCore: lumiCore) }
     }
 
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        enabledPlugins.flatMap { $0.messageRenderers(context: context) }
+    public static func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem] {
+        enabledPlugins.flatMap { $0.messageRenderers(lumiCore: lumiCore) }
     }
 
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        enabledPlugins.flatMap { $0.rootOverlays(context: context) }
+    public static func rootOverlays(lumiCore: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
+        enabledPlugins.flatMap { $0.rootOverlays(lumiCore: lumiCore) }
     }
 
-    public static func onboardingPages(context: LumiPluginContext) -> [OnboardingPageView] {
+    public static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [OnboardingPageView] {
         enabledPlugins.flatMap { plugin in
-            plugin.onboardingPages(context: context).map { view in
+            plugin.onboardingPages(lumiCore: lumiCore).map { view in
                 OnboardingPageView(order: plugin.info.order, view: view)
             }
         }
     }
 
-    public static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins.flatMap { $0.chatSectionItems(context: context) }
+    public static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible else { return [] }
+        return enabledPlugins.flatMap { $0.chatSectionItems(lumiCore: lumiCore) }
     }
 
-    public static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
-        guard context.supportsChatSection else { return content }
+    public static func chatSectionRootWrapper(lumiCore: any LumiCoreAccessing, content: AnyView) -> AnyView {
+        guard lumiCore.layoutComponent.state.chatSectionVisible else { return content }
         return enabledPlugins.reduce(content) { wrapped, plugin in
-            plugin.chatSectionRootWrapper(context: context, content: wrapped)
+            plugin.chatSectionRootWrapper(lumiCore: lumiCore, content: wrapped)
         }
     }
 
-    public static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins.flatMap { $0.chatSectionToolbarItems(context: context) }
+    public static func chatSectionToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible else { return [] }
+        return enabledPlugins.flatMap { $0.chatSectionToolbarItems(lumiCore: lumiCore) }
     }
 
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+    public static func chatSectionToolbarBarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
         // 按 item.order 升序排序，让插件作者能通过 LumiChatSectionToolbarBarItem.order 控制
         // 工具栏按钮的展示顺序。否则 order 字段会被静默忽略，顺序完全取决于插件在 plugins
         // 清单里的注册位置。（Swift 的 sorted 不保证稳定，故相同 order 的相对顺序未定义；
         // 当前各 toolbar bar item 的 order 互不冲突，不存在该问题。）
-        guard context.supportsChatSection else { return [] }
+        guard lumiCore.layoutComponent.state.chatSectionVisible else { return [] }
         return enabledPlugins
-            .flatMap { $0.chatSectionToolbarBarItems(context: context) }
+            .flatMap { $0.chatSectionToolbarBarItems(lumiCore: lumiCore) }
             .sorted { $0.order < $1.order }
     }
 
-    public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
-        guard context.supportsChatSection else { return [] }
-        return enabledPlugins.flatMap { $0.chatSectionHeaderItems(context: context) }
+    public static func chatSectionHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionHeaderItem] {
+        guard lumiCore.layoutComponent.state.chatSectionVisible else { return [] }
+        return enabledPlugins.flatMap { $0.chatSectionHeaderItems(lumiCore: lumiCore) }
     }
 
-    public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome else { return [] }
+    public static func panelHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
+        guard lumiCore.layoutComponent.state.showsPanelChrome else { return [] }
         let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
-        return plugins.flatMap { $0.panelHeaderItems(context: context) }
+        return plugins.flatMap { $0.panelHeaderItems(lumiCore: lumiCore) }
     }
 
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome else { return [] }
+    public static func panelBottomTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
+        guard lumiCore.layoutComponent.state.showsPanelChrome else { return [] }
         let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
-        return plugins.flatMap { $0.panelBottomTabItems(context: context) }
+        return plugins.flatMap { $0.panelBottomTabItems(lumiCore: lumiCore) }
     }
 
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail else { return [] }
+    public static func panelRailTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
+        guard lumiCore.layoutComponent.state.showsRail else { return [] }
         let plugins = enabledPlugins.sorted { $0.info.order < $1.info.order }
-        return plugins.flatMap { $0.panelRailTabItems(context: context) }
+        return plugins.flatMap { $0.panelRailTabItems(lumiCore: lumiCore) }
     }
 
-    public static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
-        enabledPlugins.flatMap { $0.llmProviderSettingsViews(context: context) }
+    public static func llmProviderSettingsViews(lumiCore: any LumiCoreAccessing) -> [LumiLLMProviderSettingsViewItem] {
+        enabledPlugins.flatMap { $0.llmProviderSettingsViews(lumiCore: lumiCore) }
     }
 
-    public static func logoItems(context: LumiPluginContext) -> [LogoItem] {
-        enabledPlugins.flatMap { $0.logoItems(context: context) }
+    public static func logoItems(lumiCore: any LumiCoreAccessing) -> [LogoItem] {
+        enabledPlugins.flatMap { $0.logoItems(lumiCore: lumiCore) }
     }
 
     /// 通知所有插件 agent turn 已结束
-    public static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
+    public static func onTurnFinished(lumiCore: any LumiCoreAccessing, conversationID: UUID, reason: LumiTurnEndReason) async {
         for plugin in enabledPlugins {
-            await plugin.onTurnFinished(context: context, conversationID: conversationID, reason: reason)
+            await plugin.onTurnFinished(lumiCore: lumiCore, conversationID: conversationID, reason: reason)
         }
     }
 

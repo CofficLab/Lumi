@@ -103,93 +103,93 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
 
     // MARK: - 聚合方法（委托）
 
-    func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        LumiPluginRegistry.titleToolbarItems(context: context)
+    func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
+        LumiPluginRegistry.titleToolbarItems(lumiCore: lumiCore)
     }
 
-    func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        LumiPluginRegistry.statusBarItems(context: context)
+    func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
+        LumiPluginRegistry.statusBarItems(lumiCore: lumiCore)
     }
 
-    func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        LumiPluginRegistry.viewContainers(context: context)
+    func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
+        LumiPluginRegistry.viewContainers(lumiCore: lumiCore)
     }
 
-    func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
-        LumiPluginRegistry.menuBarContentItems(context: context)
+    func menuBarContentItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarContentItem] {
+        LumiPluginRegistry.menuBarContentItems(lumiCore: lumiCore)
     }
 
-    func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        LumiPluginRegistry.menuBarPopupItems(context: context)
+    func menuBarPopupItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
+        LumiPluginRegistry.menuBarPopupItems(lumiCore: lumiCore)
             .sorted { $0.order < $1.order }
     }
 
-    func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        LumiPluginRegistry.llmProviders(context: context)
+    func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
+        LumiPluginRegistry.llmProviders(lumiCore: lumiCore)
     }
 
-    func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        LumiPluginRegistry.agentTools(context: context)
+    func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool] {
+        LumiPluginRegistry.agentTools(lumiCore: lumiCore)
     }
 
     func lastAgentToolFailures() -> [LumiPluginContributionFailure] {
         LumiPluginRegistry.agentToolFailures
     }
 
-    func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
-        LumiPluginRegistry.subAgents(context: context)
+    func subAgents(lumiCore: any LumiCoreAccessing) -> [LumiSubAgentDefinition] {
+        LumiPluginRegistry.subAgents(lumiCore: lumiCore)
     }
 
-    func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        LumiPluginRegistry.sendMiddlewares(context: context)
+    func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
+        LumiPluginRegistry.sendMiddlewares(lumiCore: lumiCore)
     }
 
-    func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        LumiPluginRegistry.messageRenderers(context: context)
+    func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem] {
+        LumiPluginRegistry.messageRenderers(lumiCore: lumiCore)
     }
 
-    func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        LumiPluginRegistry.rootOverlays(context: context)
+    func rootOverlays(lumiCore: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
+        LumiPluginRegistry.rootOverlays(lumiCore: lumiCore)
     }
 
-    func onboardingPages(context: LumiPluginContext) -> [OnboardingPageView] {
-        LumiPluginRegistry.onboardingPages(context: context)
+    func onboardingPages(lumiCore: any LumiCoreAccessing) -> [OnboardingPageView] {
+        LumiPluginRegistry.onboardingPages(lumiCore: lumiCore)
     }
 
-    func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
-        LumiPluginRegistry.chatSectionItems(context: context)
+    func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
+        LumiPluginRegistry.chatSectionItems(lumiCore: lumiCore)
     }
 
-    func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
-        LumiPluginRegistry.chatSectionRootWrapper(context: context, content: content)
+    func chatSectionRootWrapper(lumiCore: any LumiCoreAccessing, content: AnyView) -> AnyView {
+        LumiPluginRegistry.chatSectionRootWrapper(lumiCore: lumiCore, content: content)
     }
 
-    func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
-        LumiPluginRegistry.chatSectionToolbarItems(context: context)
+    func chatSectionToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem] {
+        LumiPluginRegistry.chatSectionToolbarItems(lumiCore: lumiCore)
     }
 
-    func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
-        LumiPluginRegistry.chatSectionToolbarBarItems(context: context)
+    func chatSectionToolbarBarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
+        LumiPluginRegistry.chatSectionToolbarBarItems(lumiCore: lumiCore)
     }
 
-    func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
-        LumiPluginRegistry.chatSectionHeaderItems(context: context)
+    func chatSectionHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionHeaderItem] {
+        LumiPluginRegistry.chatSectionHeaderItems(lumiCore: lumiCore)
     }
 
-    func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        LumiPluginRegistry.panelHeaderItems(context: context)
+    func panelHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
+        LumiPluginRegistry.panelHeaderItems(lumiCore: lumiCore)
     }
 
-    func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        LumiPluginRegistry.panelBottomTabItems(context: context)
+    func panelBottomTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
+        LumiPluginRegistry.panelBottomTabItems(lumiCore: lumiCore)
     }
 
-    func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        LumiPluginRegistry.panelRailTabItems(context: context)
+    func panelRailTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
+        LumiPluginRegistry.panelRailTabItems(lumiCore: lumiCore)
     }
 
-    func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
-        LumiPluginRegistry.llmProviderSettingsViews(context: context)
+    func llmProviderSettingsViews(lumiCore: any LumiCoreAccessing) -> [LumiLLMProviderSettingsViewItem] {
+        LumiPluginRegistry.llmProviderSettingsViews(lumiCore: lumiCore)
     }
 
     func themeContributions() -> [LumiUIThemeContribution] {
@@ -213,19 +213,19 @@ final class PluginService: ObservableObject, SuperLog, AgentToolProviding, LumiC
         }
     }
 
-    func registerPluginContributions(context: LumiPluginContext) {
-        let allItems = LumiPluginRegistry.logoItems(context: context)
+    func registerPluginContributions(lumiCore: any LumiCoreAccessing) {
+        let allItems = LumiPluginRegistry.logoItems(lumiCore: lumiCore)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)注册了 \(allItems.count) 个 Logo 贡献")
         }
 
-        context.lumiCore?.logoComponent.register(allItems)
+        lumiCore.logoComponent.register(allItems)
     }
 
-    func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {
+    func onTurnFinished(lumiCore: any LumiCoreAccessing, conversationID: UUID, reason: LumiTurnEndReason) async {
         await LumiPluginRegistry.onTurnFinished(
-            context: context,
+            lumiCore: lumiCore,
             conversationID: conversationID,
             reason: reason
         )

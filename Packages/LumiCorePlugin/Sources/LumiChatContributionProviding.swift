@@ -17,14 +17,14 @@ import LumiCoreMessage
 @MainActor
 public protocol LumiChatContributionProviding: AnyObject {
     /// 收集所有启用插件的 LLM Provider
-    func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider]
+    func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider]
 
     /// 收集所有启用插件的发送中间件
-    func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware]
+    func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware]
 
     /// 收集所有启用插件的消息渲染器
-    func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem]
+    func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem]
 
     /// Agent turn 结束后通知所有启用插件
-    func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async
+    func onTurnFinished(lumiCore: any LumiCoreAccessing, conversationID: UUID, reason: LumiTurnEndReason) async
 }

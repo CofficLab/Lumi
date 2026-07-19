@@ -41,30 +41,30 @@ struct AppLayoutView: View {
     }
 
     var body: some View {
-        let containers = pluginService.viewContainers(context: basePluginContext())
+        let containers = pluginService.viewContainers(lumiCore: lumiCore)
         let selectedContainer = selectedContainer(from: containers)
         let activeID = selectedContainer?.id ?? "main"
         let activeTitle = selectedContainer?.title ?? "Main"
         let chatSection = selectedContainer?.chatSection ?? .none
         let showsRail = selectedContainer?.showsRail ?? false
         let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
-        let preliminaryPluginContext = basePluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: chatSection.isVisible
-        )
-        let headerItems = pluginService.panelHeaderItems(context: preliminaryPluginContext)
-        let bottomTabs = pluginService.panelBottomTabItems(context: preliminaryPluginContext)
-        let railTabs = pluginService.panelRailTabItems(context: preliminaryPluginContext)
-        let showRail = showsRail && !railTabs.isEmpty
+        let showRail = showsRail
         let isRailOnlyPanel = showRail && !showsPanelChrome
+
+        // 同步当前布局快照到内核状态，供插件读取
+        layoutState.activeViewContainerTitle = activeTitle
+        layoutState.currentChatSection = chatSection
+        layoutState.showsRail = showsRail
+        layoutState.showsPanelChrome = showsPanelChrome
+        layoutState.isChatSectionVisible = chatSection.isVisible
+
+        let headerItems = pluginService.panelHeaderItems(lumiCore: lumiCore)
+        let bottomTabs = pluginService.panelBottomTabItems(lumiCore: lumiCore)
+        let railTabs = pluginService.panelRailTabItems(lumiCore: lumiCore)
         let chatView = ChatView(
             layoutState: layoutState,
             pluginService: pluginService,
-            context: preliminaryPluginContext,
+            lumiCore: lumiCore,
             chatSectionCoordinator: chatSectionCoordinator,
             chatSection: chatSection,
             activeID: activeID,
@@ -74,7 +74,7 @@ struct AppLayoutView: View {
         VStack(spacing: 0) {
             AppTitleToolbar(
                 pluginService: pluginService,
-                pluginContext: preliminaryPluginContext
+                lumiCore: lumiCore
             )
 
             AppDivider()
@@ -146,7 +146,7 @@ struct AppLayoutView: View {
             StatusBar(
                 pluginService: pluginService,
                 editorCoreService: editorCoreService,
-                pluginContext: preliminaryPluginContext,
+                lumiCore: lumiCore,
                 lumiUIService: lumiUIService,
                 chatService: chatService
             )
@@ -160,29 +160,6 @@ struct AppLayoutView: View {
             )
         }
         .ignoresSafeArea()
-    }
-
-    private func basePluginContext(
-        activeSectionID: String? = nil,
-        activeSectionTitle: String = "Main",
-        chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
-        isChatSectionVisible: Bool? = nil
-    ) -> LumiPluginContext {
-        lumiCore.makePluginContext(
-            activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
-            activeSectionTitle: activeSectionTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible,
-            additionalDependencies: { dependencies in
-                dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
-                dependencies.register((any LumiEditorServicing).self, editorCoreService)
-                dependencies.register(LumiThemeServicing.self, lumiUIService)
-            }
-        )
     }
 
     private func selectedContainer(from containers: [LumiViewContainerItem]) -> LumiViewContainerItem? {

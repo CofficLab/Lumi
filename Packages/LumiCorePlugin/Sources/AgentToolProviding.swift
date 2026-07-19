@@ -12,12 +12,12 @@ import LumiCoreSubAgent
 @MainActor
 public protocol AgentToolProviding: AnyObject {
     /// 收集所有启用插件的 `LumiAgentTool`
-    func agentTools(context: LumiPluginContext) -> [any LumiAgentTool]
+    func agentTools(lumiCore: any LumiCoreAccessing) -> [any LumiAgentTool]
 
     /// 收集所有启用插件的 `LumiSubAgentDefinition`
-    func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
+    func subAgents(lumiCore: any LumiCoreAccessing) -> [LumiSubAgentDefinition]
 
-    /// 返回最近一次 `agentTools(context:)` 收集过程中累积的插件失败列表。
+    /// 返回最近一次 `agentTools(lumiCore:)` 收集过程中累积的插件失败列表。
     ///
     /// 聚合层（`LumiPluginRegistry`）在收集工具时会逐插件捕获异常并包装成
     /// `LumiPluginContributionFailure`。`AgentToolComponent` 在 bootstrap 结束后

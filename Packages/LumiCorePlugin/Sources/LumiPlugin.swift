@@ -12,22 +12,22 @@ public protocol LumiPlugin {
     static var info: LumiPluginInfo { get }
 
     @MainActor
-    static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem]
+    static func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem]
 
     @MainActor
-    static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem]
+    static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem]
 
     @MainActor
-    static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem]
+    static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem]
 
     @MainActor
-    static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem]
+    static func menuBarContentItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarContentItem]
 
     @MainActor
-    static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem]
+    static func menuBarPopupItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarPopupItem]
 
     @MainActor
-    static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider]
+    static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider]
 
     /// 收集插件提供的 Agent 工具。
     ///
@@ -36,62 +36,62 @@ public protocol LumiPlugin {
     /// 会逐插件捕获异常并累积到失败列表，最终在「设置 → 插件」详情页展示给用户，
     /// 单个插件失败不影响其他插件的工具注册。
     @MainActor
-    static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool]
+    static func agentTools(lumiCore: any LumiCoreAccessing) throws -> [any LumiAgentTool]
 
     @MainActor
-    static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition]
+    static func subAgents(lumiCore: any LumiCoreAccessing) -> [LumiSubAgentDefinition]
 
     @MainActor
-    static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware]
+    static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware]
 
     @MainActor
-    static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem]
+    static func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem]
 
     @MainActor
-    static func addSettingsView(context: LumiPluginContext) -> [AnyView]
+    static func addSettingsView(lumiCore: any LumiCoreAccessing) -> [AnyView]
 
     @MainActor
-    static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem]
+    static func addSettingsTabs(lumiCore: any LumiCoreAccessing) -> [LumiSettingsTabItem]
 
     /// 插件在“设置 → 插件”管理面板右侧的「关于」详情。
     @MainActor
-    static func pluginAboutView(context: LumiPluginContext) -> AnyView?
+    static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView?
 
     @MainActor
-    static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem]
+    static func llmProviderSettingsViews(lumiCore: any LumiCoreAccessing) -> [LumiLLMProviderSettingsViewItem]
 
     @MainActor
-    static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem]
+    static func rootOverlays(lumiCore: any LumiCoreAccessing) -> [LumiRootOverlayItem]
 
     @MainActor
-    static func onboardingPages(context: LumiPluginContext) -> [AnyView]
+    static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView]
 
     @MainActor
-    static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem]
+    static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem]
 
     @MainActor
-    static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem]
+    static func chatSectionToolbarBarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem]
 
     @MainActor
-    static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem]
+    static func chatSectionHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionHeaderItem]
 
     @MainActor
-    static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView
+    static func chatSectionRootWrapper(lumiCore: any LumiCoreAccessing, content: AnyView) -> AnyView
 
     @MainActor
-    static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem]
+    static func chatSectionToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem]
 
     @MainActor
-    static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem]
+    static func panelHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelHeaderItem]
 
     @MainActor
-    static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem]
+    static func panelBottomTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelBottomTabItem]
 
     @MainActor
-    static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem]
+    static func panelRailTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelRailTabItem]
 
     @MainActor
-    static func logoItems(context: LumiPluginContext) -> [LogoItem]
+    static func logoItems(lumiCore: any LumiCoreAccessing) -> [LogoItem]
 
     // MARK: - Lifecycle
 
@@ -99,11 +99,11 @@ public protocol LumiPlugin {
     ///
     /// 允许 `throws`：插件在 `.didRegister` / `.appDidLaunch` 里初始化数据库、读取配置、
     /// 加载外部 SDK 等可能失败的操作时，应抛错而不是静默降级（典型如 in-memory 降级会
-    /// 导致"数据不落盘但用户无感"）。聚合层（`LumiPluginRegistry.registerAll` /
+    /// 导致“数据不落盘但用户无感”）。聚合层（`LumiPluginRegistry.registerAll` /
     /// `appDidLaunch`）会逐插件捕获并累积到失败列表，启动期失败经
     /// `bootstrapAfterPluginLifecycle` 走 CrashedView。
     @MainActor
-    static func lifecycle(_ event: LumiPluginLifecycle) throws
+    static func lifecycle(_ event: LumiPluginLifecycle, lumiCore: any LumiCoreAccessing) throws
 
     /// Agent Turn 结束后钩子（可选实现）
     ///
@@ -111,11 +111,11 @@ public protocol LumiPlugin {
     /// 适合用于清理状态、检查任务进度、触发自动续聊等场景。
     ///
     /// - Parameters:
-    ///   - context: 插件上下文
+    ///   - lumiCore: 内核访问入口
     ///   - conversationID: 会话 ID
     ///   - reason: turn 结束原因
     @MainActor
-    static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async
+    static func onTurnFinished(lumiCore: any LumiCoreAccessing, conversationID: UUID, reason: LumiTurnEndReason) async
 
     // MARK: - Editor Extension (Optional)
 
@@ -125,7 +125,7 @@ public protocol LumiPlugin {
 
     /// 配置编辑器运行时上下文。可选实现。
     @MainActor
-    static func configureEditorRuntime(_ context: PluginRuntimeContext) async
+    static func configureEditorRuntime(lumiCore: any LumiCoreAccessing) async
 }
 
 // MARK: - Tool Execution Hook
@@ -190,139 +190,139 @@ public extension LumiPlugin {
     }
 
     @MainActor
-    static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
+    static func titleToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiTitleToolbarItem] {
         []
     }
 
     @MainActor
-    static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
+    static func statusBarItems(lumiCore: any LumiCoreAccessing) -> [LumiStatusBarItem] {
         []
     }
 
     @MainActor
-    static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    static func viewContainers(lumiCore: any LumiCoreAccessing) -> [LumiViewContainerItem] {
         []
     }
 
     @MainActor
-    static func menuBarContentItems(context: LumiPluginContext) -> [LumiMenuBarContentItem] {
+    static func menuBarContentItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarContentItem] {
         []
     }
 
     @MainActor
-    static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
+    static func menuBarPopupItems(lumiCore: any LumiCoreAccessing) -> [LumiMenuBarPopupItem] {
         []
     }
 
     @MainActor
-    static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
+    static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
         []
     }
 
     @MainActor
-    static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
+    static func agentTools(lumiCore: any LumiCoreAccessing) throws -> [any LumiAgentTool] {
         []
     }
 
     @MainActor
-    static func subAgents(context: LumiPluginContext) -> [LumiSubAgentDefinition] {
+    static func subAgents(lumiCore: any LumiCoreAccessing) -> [LumiSubAgentDefinition] {
         []
     }
 
     @MainActor
-    static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
+    static func sendMiddlewares(lumiCore: any LumiCoreAccessing) -> [any LumiSendMiddleware] {
         []
     }
 
     @MainActor
-    static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
+    static func messageRenderers(lumiCore: any LumiCoreAccessing) -> [LumiMessageRendererItem] {
         []
     }
 
     @MainActor
-    static func addSettingsView(context: LumiPluginContext) -> [AnyView] {
+    static func addSettingsView(lumiCore: any LumiCoreAccessing) -> [AnyView] {
         []
     }
 
     @MainActor
-    static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    static func pluginAboutView(lumiCore: any LumiCoreAccessing) -> AnyView? {
         nil
     }
 
     @MainActor
-    static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
+    static func addSettingsTabs(lumiCore: any LumiCoreAccessing) -> [LumiSettingsTabItem] {
         []
     }
 
     @MainActor
-    static func llmProviderSettingsViews(context: LumiPluginContext) -> [LumiLLMProviderSettingsViewItem] {
+    static func llmProviderSettingsViews(lumiCore: any LumiCoreAccessing) -> [LumiLLMProviderSettingsViewItem] {
         []
     }
 
     @MainActor
-    static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
+    static func rootOverlays(lumiCore: any LumiCoreAccessing) -> [LumiRootOverlayItem] {
         []
     }
 
     @MainActor
-    static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    static func onboardingPages(lumiCore: any LumiCoreAccessing) -> [AnyView] {
         []
     }
 
     @MainActor
-    static func chatSectionItems(context: LumiPluginContext) -> [LumiChatSectionItem] {
+    static func chatSectionItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionItem] {
         []
     }
 
     @MainActor
-    static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
+    static func chatSectionToolbarBarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarBarItem] {
         []
     }
 
     @MainActor
-    static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
+    static func chatSectionHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionHeaderItem] {
         []
     }
 
     @MainActor
-    static func chatSectionRootWrapper(context: LumiPluginContext, content: AnyView) -> AnyView {
+    static func chatSectionRootWrapper(lumiCore: any LumiCoreAccessing, content: AnyView) -> AnyView {
         content
     }
 
     @MainActor
-    static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
+    static func chatSectionToolbarItems(lumiCore: any LumiCoreAccessing) -> [LumiChatSectionToolbarItem] {
         []
     }
 
     @MainActor
-    static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
+    static func panelHeaderItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelHeaderItem] {
         []
     }
 
     @MainActor
-    static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
+    static func panelBottomTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelBottomTabItem] {
         []
     }
 
     @MainActor
-    static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
+    static func panelRailTabItems(lumiCore: any LumiCoreAccessing) -> [LumiPanelRailTabItem] {
         []
     }
 
     @MainActor
-    static func logoItems(context: LumiPluginContext) -> [LogoItem] {
+    static func logoItems(lumiCore: any LumiCoreAccessing) -> [LogoItem] {
         []
     }
 
     // MARK: - Lifecycle Default Implementation
 
     @MainActor
-    static func lifecycle(_ event: LumiPluginLifecycle) throws {}
+    static func lifecycle(_ event: LumiPluginLifecycle, lumiCore: any LumiCoreAccessing) throws {}
 
     // MARK: - Turn Finished Hook Default Implementation
 
     @MainActor
-    static func onTurnFinished(context: LumiPluginContext, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    static func onTurnFinished(lumiCore: any LumiCoreAccessing, conversationID: UUID, reason: LumiTurnEndReason) async {}
 
     // MARK: - Editor Extension Default Implementations
 
@@ -330,5 +330,5 @@ public extension LumiPlugin {
     static func registerEditorExtensions(into registry: AnyObject) async {}
 
     @MainActor
-    static func configureEditorRuntime(_ context: PluginRuntimeContext) async {}
+    static func configureEditorRuntime(lumiCore: any LumiCoreAccessing) async {}
 }

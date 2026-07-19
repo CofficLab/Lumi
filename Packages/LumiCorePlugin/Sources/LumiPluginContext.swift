@@ -1,5 +1,7 @@
 import LumiCoreLayout
+import LumiCoreMessage
 import LumiCoreProject
+import LumiCoreStorage
 
 public struct LumiPluginDependencies {
     private var values: [ObjectIdentifier: Any]
@@ -22,12 +24,23 @@ public struct LumiPluginDependencies {
     }
 }
 
-/// Plugin context containing view state and core reference.
+/// Protocol for core functionality that LumiPluginContext needs.
+/// LumiCoreAccessing in LumiCoreKit conforms to this.
 ///
-/// This struct provides:
-/// - View state (activeSectionID, chatSection, etc.)
-/// - Service dependencies injection
-/// - Reference to core functionality via LumiCoreAccessing
+/// This protocol provides a minimal interface for plugin context,
+/// allowing access to the project component and storage.
+@MainActor
+public protocol LumiCoreProviding: AnyObject {
+    var projectComponent: ProjectComponent { get }
+    var storage: StorageComponent { get }
+}
+
+/// Minimal protocol for chat service functionality needed by LumiPluginContext.
+@MainActor
+public protocol LumiChatServiceProviding: AnyObject {
+    var selectedProviderID: String? { get }
+}
+
 public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
@@ -49,6 +62,13 @@ public struct LumiPluginContext {
     /// Whether chat section contributions should be active for this context.
     public var showsChatSection: Bool {
         isChatSectionVisible
+    }
+
+    /// The currently selected LLM provider ID, if available from chat service.
+    @MainActor
+    public var activeProviderID: String? {
+        (lumiCore?.chatService as? any LumiChatServiceProviding)?.selectedProviderID
+            ?? dependencies.resolve(LumiChatServiceProviding.self)?.selectedProviderID
     }
 
     /// 当前打开的项目（若存在）。等价于 `lumiCore?.projectComponent.currentProject`。
