@@ -27,10 +27,10 @@ public final class DefaultCommandProviding: CommandProviding {
     }
 
     public func registerCommand(menu: String, item: CommandItem) {
-        let group = commandGroups[menu] ?? CommandMenuGroup(id: menu, title: menu, items: [])
-        var updated = group
-        updated.items.append(item)
-        registerCommandGroup(updated)
+        let existingGroup = commandGroups[menu]
+        let existingItems = existingGroup?.items ?? []
+        let newGroup = CommandMenuGroup(id: menu, name: menu, items: existingItems + [item])
+        registerCommandGroup(newGroup)
     }
 
     public func unregisterCommandGroup(id: String) {

@@ -33,10 +33,10 @@ public final class DefaultSettingsProviding: SettingsProviding {
     }
 
     public func registerLLMProviderSettingsItem(_ item: LLMProviderSettingsItem) {
-        if llmProviderSettingsItems[item.id] == nil {
-            llmProviderSettingsOrder.append(item.id)
+        if llmProviderSettingsItems[item.providerID] == nil {
+            llmProviderSettingsOrder.append(item.providerID)
         }
-        llmProviderSettingsItems[item.id] = item
+        llmProviderSettingsItems[item.providerID] = item
         updateSortedLLMProviderSettings()
     }
 
