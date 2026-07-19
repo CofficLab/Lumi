@@ -22,14 +22,24 @@ public final class DefaultPluginProviding: PluginProviding {
         updateSortedPlugins()
     }
 
-    public func unregisterPlugin(id: String) {
-        plugins.removeValue(forKey: id)
-        pluginOrder.removeAll { $0 == id }
-        updateSortedPlugins()
+    public func registerPlugins(_ plugins: [LumiPlugin]) throws {
+        for plugin in plugins {
+            try registerPlugin(plugin)
+        }
+    }
+
+    public func bootstrapPlugins() async throws {
+        for plugin in allPlugins {
+            try await plugin.boot(kernel: LumiKernel())
+        }
     }
 
     public func plugin(id: String) -> LumiPlugin? {
         plugins[id]
+    }
+
+    public func plugin<T: LumiPlugin>(ofType type: T.Type) -> T? {
+        allPlugins.first(where: { $0 is T }) as? T
     }
 
     private func updateSortedPlugins() {
