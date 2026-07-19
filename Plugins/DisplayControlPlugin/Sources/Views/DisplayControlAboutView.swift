@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 // MARK: - About View
 
@@ -66,7 +65,11 @@ struct DisplayControlAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
+        switch key {
+        case "about.section.howItWorks": return LumiPluginLocalization.string("How It Works", bundle: .module, locale: locale)
+        case "about.section.tips": return LumiPluginLocalization.string("Tips", bundle: .module, locale: locale)
+        default: return key
+        }
     }
 }
 

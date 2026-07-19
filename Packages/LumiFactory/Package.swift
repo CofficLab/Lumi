@@ -32,6 +32,7 @@ let package = Package(
         .package(path: "../../Plugins/PortManagerPlugin"),
         .package(path: "../../Plugins/AppManagerPlugin"),
         .package(path: "../../Plugins/RegistryManagerPlugin"),
+        .package(path: "../../Plugins/DisplayControlPlugin"),
     ],
     targets: [
         .target(
@@ -61,6 +62,7 @@ let package = Package(
                 .product(name: "PortManagerPlugin", package: "PortManagerPlugin"),
                 .product(name: "AppManagerPlugin", package: "AppManagerPlugin"),
                 .product(name: "RegistryManagerPlugin", package: "RegistryManagerPlugin"),
+                .product(name: "DisplayControlPlugin", package: "DisplayControlPlugin"),
             ]
         ),
     ]

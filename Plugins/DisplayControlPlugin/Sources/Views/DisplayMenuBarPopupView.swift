@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 struct DisplayMenuBarPopupView: View {
     @Environment(\.locale) private var locale

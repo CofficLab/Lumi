@@ -7,6 +7,7 @@ import ChatKernelPlugin
 import ClipboardManagerPlugin
 import DeviceInfoKernelPlugin
 import DiskManagerPlugin
+import DisplayControlPlugin
 import EditorKernelPlugin
 import HostsManagerPlugin
 import LayoutKernelPlugin
@@ -83,6 +84,9 @@ public enum PluginService {
 
         // RegistryManagerPlugin
         list.append(RegistryManagerPlugin())
+
+        // DisplayControlPlugin
+        list.append(DisplayControlPlugin())
 
         return list
     }()
