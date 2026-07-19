@@ -15,6 +15,14 @@ public final class LumiKernel: ObservableObject {
     /// 插件注册顺序（用于按顺序启动）
     private var pluginOrder: [String] = []
 
+    // MARK: - Command Registry
+
+    /// 命令组注册表
+    private var commandGroups: [String: CommandMenuGroup] = [:]
+
+    /// 命令组注册顺序
+    private var commandGroupOrder: [String] = []
+
     // MARK: - Service Registry
 
     /// 服务注册表
@@ -113,12 +121,11 @@ public final class LumiKernel: ObservableObject {
             missingServices.append("Storage")
         }
 
-        // 其他服务暂时不检查，等后续插件实现后再添加
          if project == nil { missingServices.append("Project") }
-        // if layout == nil { missingServices.append("Layout") }
-        // if chat == nil { missingServices.append("Chat") }
-        // if editor == nil { missingServices.append("Editor") }
-        // if agentTool == nil { missingServices.append("AgentTool") }
+         if layout == nil { missingServices.append("Layout") }
+         if chat == nil { missingServices.append("Chat") }
+         if editor == nil { missingServices.append("Editor") }
+         if agentTool == nil { missingServices.append("AgentTool") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)
@@ -176,6 +183,50 @@ public final class LumiKernel: ObservableObject {
     /// 注册 Agent 工具服务
     public func registerAgentTool(_ agentTool: any AgentToolProviding) {
         registerService(AgentToolProviding.self, agentTool)
+    }
+
+    // MARK: - Command Registry
+
+    /// 注册命令组
+    ///
+    /// 插件可以注册多个命令组，每个组对应一个菜单。
+    /// - Parameter group: 命令组
+    public func registerCommandGroup(_ group: CommandMenuGroup) {
+        if commandGroups[group.id] == nil {
+            commandGroupOrder.append(group.id)
+        }
+        commandGroups[group.id] = group
+    }
+
+    /// 注册单个命令项（自动分组）
+    ///
+    /// 便捷方法，自动将命令添加到指定菜单组。
+    /// - Parameters:
+    ///   - menu: 菜单名称
+    ///   - item: 命令项
+    public func registerCommand(menu: String, item: CommandItem) {
+        let groupId = "menu.\(menu.lowercased())"
+
+        if let existingGroup = commandGroups[groupId] {
+            // 已存在该菜单组，追加命令项
+            var items = existingGroup.items
+            items.append(item)
+            commandGroups[groupId] = CommandMenuGroup(id: groupId, name: menu, items: items)
+        } else {
+            // 创建新的菜单组
+            commandGroups[groupId] = CommandMenuGroup(id: groupId, name: menu, items: [item])
+            commandGroupOrder.append(groupId)
+        }
+    }
+
+    /// 所有已注册的命令组
+    public var allCommandGroups: [CommandMenuGroup] {
+        commandGroupOrder.compactMap { commandGroups[$0] }
+    }
+
+    /// 按菜单名查询命令组
+    public func commandGroup(named name: String) -> CommandMenuGroup? {
+        commandGroups["menu.\(name.lowercased())"]
     }
 
     // MARK: - Generic Service Registry
