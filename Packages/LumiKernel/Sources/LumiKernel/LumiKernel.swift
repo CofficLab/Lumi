@@ -248,7 +248,12 @@ public final class LumiKernel: ObservableObject {
 
     /// Register a plugin
     public func registerPlugin(_ plugin: LumiPlugin) throws {
+        // 1. Call plugin's register method to register services
         try plugin.register(kernel: self)
+
+        // 2. Register plugin instance to PluginProviding service (if available)
+        // Note: PluginManagementPlugin registers PluginProviding service, so this will be nil for the first plugin
+        try self.plugin?.registerPlugin(plugin)
     }
 
     /// Register multiple plugins
