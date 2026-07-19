@@ -24,7 +24,7 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
                     title: "Theme",
                     systemImage: "exclamationmark.triangle.fill",
                     placement: .trailing,
-                    statusBarView: { ThemeStatusBarErrorView(pluginName: name) }
+                    statusBarView: { ThemeStatusBarErrorView(pluginName: self.name) }
                 )
             ]
         }
