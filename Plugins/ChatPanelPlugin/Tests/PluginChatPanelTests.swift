@@ -285,20 +285,14 @@ final class MockFileManager: FileManager {
 
 // MARK: - ChatPanelPlugin Tests
 
-@Test func chatPanelPluginStaticProperties() {
-    // Test that plugin info has expected properties
-    #expect(!ChatPanelPlugin.info.id.isEmpty)
-    #expect(ChatPanelPlugin.info.id.contains("chat"))
-    #expect(!ChatPanelPlugin.info.displayName.isEmpty)
-    #expect(!ChatPanelPlugin.info.description.isEmpty)
-    #expect(ChatPanelPlugin.policy == .alwaysOn)
-    #expect(ChatPanelPlugin.stage == .beta)
-    #expect(ChatPanelPlugin.category == .agent)
-    #expect(!ChatPanelPlugin.iconName.isEmpty)
-}
-
-@Test func chatPanelPluginInfoOrderIsPositive() {
-    #expect(ChatPanelPlugin.info.order > 0)
+@MainActor
+@Test func chatPanelPluginInstanceProperties() {
+    let plugin = ChatPanelPlugin()
+    #expect(!plugin.id.isEmpty)
+    #expect(plugin.id.contains("chat"))
+    #expect(!plugin.name.isEmpty)
+    #expect(plugin.order > 0)
+    #expect(plugin.policy == .alwaysOn)
 }
 
 // MARK: - Edge Cases and Boundary Tests

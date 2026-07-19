@@ -26,4 +26,9 @@ public protocol PluginProviding: ObservableObject {
 
     /// 启动所有插件
     func bootstrapPlugins() async throws
+
+    /// 注册所有插件的 UI 贡献项
+    ///
+    /// - Parameter kernel: LumiKernel 实例，用于将 UI 贡献注册到对应服务
+    func registerPluginUIContributions(in kernel: LumiKernel)
 }

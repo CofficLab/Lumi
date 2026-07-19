@@ -4,6 +4,7 @@ import AgentToolPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
 import ChatKernelPlugin
+import ChatPanelPlugin
 import ChatSectionPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
@@ -106,6 +107,14 @@ public enum PluginService {
 
         // ChatSectionPlugin
         list.append(ChatSectionPlugin())
+
+        // ChatPanelPlugin
+        list.append(ChatPanelPlugin())
+
+        // ChatPanel section plugins
+        list.append(ChatPendingSectionPlugin())
+        list.append(ChatAttachmentSectionPlugin())
+        list.append(ChatComposerSectionPlugin())
 
         // PanelPlugin
         list.append(PanelPlugin())
