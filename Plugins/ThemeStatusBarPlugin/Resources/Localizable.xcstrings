@@ -15,6 +15,7 @@
       }
     },
     "Adds a status bar theme switcher." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
