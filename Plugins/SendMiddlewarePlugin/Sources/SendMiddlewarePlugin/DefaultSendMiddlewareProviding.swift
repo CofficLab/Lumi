@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 // MARK: - Default Send Middleware Provider
 

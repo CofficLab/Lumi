@@ -27,10 +27,12 @@ import ProjectsPlugin
 import QuickLauncherPlugin
 import RClickPlugin
 import RegistryManagerPlugin
+import SendMiddlewarePlugin
 import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
 import ThemePlugin
+import TitleToolbarPlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
 import os

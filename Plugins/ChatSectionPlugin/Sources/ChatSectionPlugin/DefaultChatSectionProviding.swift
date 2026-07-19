@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 import SwiftUI
 
 // MARK: - Default Chat Section Provider
