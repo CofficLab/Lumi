@@ -1,7 +1,6 @@
 import Foundation
 import LumiCoreKit
 import LLMKit
-import LumiCoreKit
 
 enum AvailabilityService {
     private static let openAICache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-OpenAI")

@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../../Packages/LumiCoreKit"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiLLMProviderSupport"),
     ],
     targets: [
         .target(
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "LumiCoreKit", package: "LumiCoreKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
             ],
             path: "Sources",
             resources: [

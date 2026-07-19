@@ -1,8 +1,6 @@
 import Foundation
+import LLMKit
 import HttpKit
-import LLMKit
-import LumiCoreKit
-import LLMKit
 import LumiCoreKit
 
 /// 智谱 API（OpenAI 兼容协议）

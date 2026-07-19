@@ -1,17 +1,17 @@
 import SwiftTerm
 import SwiftUI
-import LumiCoreKit
+import LumiCorePlugin
 import LumiUI
 import TerminalCoreKit
 
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: any LumiCoreAccessing
+    let lumiCore: any LumiCoreProviding
 
     /// 使用全局单例，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
     @ObservedObject private var viewModel = TerminalTabsViewModel.shared
 
-    public init(lumiCore: any LumiCoreAccessing) {
+    public init(lumiCore: any LumiCoreProviding) {
         self.lumiCore = lumiCore
     }
 
