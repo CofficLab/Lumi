@@ -1,6 +1,8 @@
 import Foundation
 import LumiKernel
 import AgentToolPlugin
+import ChatKernelPlugin
+import EditorKernelPlugin
 import LayoutKernelPlugin
 import ProjectPlugin
 import StoragePlugin
@@ -31,6 +33,12 @@ public enum PluginService {
 
         // LayoutKernelPlugin
         list.append(LayoutKernelPlugin())
+
+        // EditorKernelPlugin
+        list.append(EditorKernelPlugin())
+
+        // ChatKernelPlugin
+        list.append(ChatKernelPlugin())
 
         return list
     }()
