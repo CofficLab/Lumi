@@ -1,11 +1,21 @@
 import Foundation
 
-/// Lumi 核心
+/// Lumi 轻量级核心
 ///
 /// 只持有协议类型，不依赖具体实现。
 /// 所有具体实现通过插件注入。
 @MainActor
 public final class LumiKernel: ObservableObject {
+
+    // MARK: - Plugin Registry
+
+    /// 插件注册表
+    private var plugins: [String: LumiPlugin] = [:]
+
+    /// 插件注册顺序（用于按顺序启动）
+    private var pluginOrder: [String] = []
+
+    // MARK: - Service Registry
 
     /// 服务注册表
     private var services: [ObjectIdentifier: Any] = [:]
@@ -48,7 +58,101 @@ public final class LumiKernel: ObservableObject {
         // 轻量级初始化，不创建任何具体实现
     }
 
-    // MARK: - Service Registration
+    // MARK: - Plugin Management
+
+    /// 注册插件
+    ///
+    /// 注册后会立即调用插件的 `register(kernel:)` 方法。
+    /// - Parameter plugin: 要注册的插件
+    /// - Throws: 如果插件已注册或注册过程中出错
+    public func registerPlugin(_ plugin: LumiPlugin) throws {
+        let id = plugin.id
+        guard plugins[id] == nil else {
+            throw LumiKernelError.pluginAlreadyRegistered(id: id)
+        }
+
+        plugins[id] = plugin
+        pluginOrder.append(id)
+
+        // 立即调用注册方法
+        try plugin.register(kernel: self)
+    }
+
+    /// 批量注册插件
+    ///
+    /// - Parameter plugins: 要注册的插件列表
+    /// - Throws: 如果任一插件注册失败
+    public func registerPlugins(_ plugins: [LumiPlugin]) throws {
+        for plugin in plugins {
+            try registerPlugin(plugin)
+        }
+    }
+
+    /// 启动所有插件
+    ///
+    /// 调用所有已注册插件的 `boot(kernel:)` 方法。
+    /// - Throws: 如果任一插件启动失败
+    public func bootstrapPlugins() async throws {
+        for id in pluginOrder {
+            guard let plugin = plugins[id] else { continue }
+            try await plugin.boot(kernel: self)
+        }
+    }
+
+    /// 查询已注册的插件
+    ///
+    /// - Parameter type: 插件类型
+    /// - Returns: 匹配的插件实例，或 nil
+    public func plugin<T: LumiPlugin>(ofType type: T.Type) -> T? {
+        plugins.values.first(where: { $0 is T }) as? T
+    }
+
+    /// 查询已注册的插件
+    ///
+    /// - Parameter id: 插件 ID
+    /// - Returns: 匹配的插件实例，或 nil
+    public func plugin(id: String) -> LumiPlugin? {
+        plugins[id]
+    }
+
+    /// 所有已注册的插件
+    public var allPlugins: [LumiPlugin] {
+        pluginOrder.compactMap { plugins[$0] }
+    }
+
+    // MARK: - Service Registration (Direct & Simple)
+
+    /// 注册存储服务
+    public func registerStorage(_ storage: any StorageProviding) {
+        registerService(StorageProviding.self, storage)
+    }
+
+    /// 注册项目管理服务
+    public func registerProject(_ project: any ProjectProviding) {
+        registerService(ProjectProviding.self, project)
+    }
+
+    /// 注册布局服务
+    public func registerLayout(_ layout: any LayoutProviding) {
+        registerService(LayoutProviding.self, layout)
+    }
+
+    /// 注册聊天服务
+    public func registerChat(_ chat: any ChatServiceProviding) {
+        registerService(ChatServiceProviding.self, chat)
+    }
+
+    /// 注册编辑器服务
+    public func registerEditor(_ editor: any EditorServiceProviding) {
+        registerService(EditorServiceProviding.self, editor)
+    }
+
+    /// 注册 Agent 工具服务
+    public func registerAgentTool(_ agentTool: any AgentToolProviding) {
+        registerService(AgentToolProviding.self, agentTool)
+    }
+
+    // MARK: - Generic Service Registry
 
     /// 注册服务实现
     public func registerService<T>(_ type: T.Type, _ instance: T) {
@@ -64,36 +168,21 @@ public final class LumiKernel: ObservableObject {
     public func unregisterService<T>(_ type: T.Type) {
         services.removeValue(forKey: ObjectIdentifier(type))
     }
+}
 
-    // MARK: - Bootstrap
+// MARK: - Errors
 
-    /// 启动核心，从插件注入服务
-    ///
-    /// 此方法应该：
-    /// 1. 发现所有插件
-    /// 2. 调用插件的 provideServices()
-    /// 3. 注册到服务表
-    public func bootstrap(with providers: [any CoreServiceProvider]) async throws {
-        for provider in providers {
-            // 注册所有提供的服务
-            if let storage = provider.storage {
-                registerService(StorageProviding.self, storage)
-            }
-            if let project = provider.project {
-                registerService(ProjectProviding.self, project)
-            }
-            if let layout = provider.layout {
-                registerService(LayoutProviding.self, layout)
-            }
-            if let chat = provider.chat {
-                registerService(ChatServiceProviding.self, chat)
-            }
-            if let editor = provider.editor {
-                registerService(EditorServiceProviding.self, editor)
-            }
-            if let agentTool = provider.agentTool {
-                registerService(AgentToolProviding.self, agentTool)
-            }
+/// LumiKernel 错误
+public enum LumiKernelError: Error, LocalizedError {
+    case pluginAlreadyRegistered(id: String)
+    case pluginNotFound(id: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .pluginAlreadyRegistered(let id):
+            return "Plugin '\(id)' is already registered"
+        case .pluginNotFound(let id):
+            return "Plugin '\(id)' not found"
         }
     }
 }
