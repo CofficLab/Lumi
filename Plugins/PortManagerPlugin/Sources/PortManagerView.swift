@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 public struct PortManagerView: View {
     @State private var ports: [PortInfo] = []
@@ -193,7 +192,7 @@ public struct PortRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .navigationTitle(PortManagerPlugin.info.displayName)
+        .navigationTitle("Port Manager")
     }
 }
 

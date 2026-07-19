@@ -10,6 +10,7 @@ import EditorKernelPlugin
 import HostsManagerPlugin
 import LayoutKernelPlugin
 import NettoPlugin
+import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
 import StoragePlugin
@@ -71,6 +72,9 @@ public enum PluginService {
 
         // QuickLauncherPlugin
         list.append(QuickLauncherPlugin())
+
+        // PortManagerPlugin
+        list.append(PortManagerPlugin())
 
         return list
     }()
