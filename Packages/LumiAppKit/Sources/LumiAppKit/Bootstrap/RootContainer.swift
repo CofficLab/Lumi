@@ -1,5 +1,6 @@
 import LumiAppKit
 import LumiCoreKit
+import LumiKernel
 import LumiPluginRegistry
 import LumiUI
 import SuperLogKit
@@ -24,6 +25,8 @@ final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
+    // MARK: - Legacy Core (旧内核，暂时保留)
+
     let lumiCore: LumiCore
     let pluginService: PluginService
     let chatService: ChatService
@@ -31,6 +34,11 @@ final class RootContainer: ObservableObject, SuperLog {
     let chatSectionCoordinator: ChatSectionCoordinator
     let lumiUIService: LumiUIService
     let menuBarService: MenuBarService
+
+    // MARK: - New Kernel (新内核，逐步迁移)
+
+    /// 新的轻量级内核
+    let kernel: LumiKernel
 
     /// 工具/子 Agent/Chat 贡献源。保留引用以便运行期插件启用状态变化时
     /// 重新应用 Chat 维度贡献 + 重编排工具贡献。
@@ -48,6 +56,17 @@ final class RootContainer: ObservableObject, SuperLog {
         // —— 2. 物化数据根目录 ——
         let dataRootDirectory = try StorageService.makeDataRootDirectory()
         let coreDatabaseDirectory = try StorageService.makeCoreDatabaseDirectory(in: dataRootDirectory)
+
+        // —— 2.5. 初始化新内核 LumiKernel 并注入 Storage ——
+        let kernel = LumiKernel()
+        self.kernel = kernel
+
+        let storageProvider = try StorageServiceProvider(dataRootDirectory: dataRootDirectory)
+        try await kernel.bootstrap(with: [storageProvider])
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)✅ LumiKernel 初始化完成，Storage 服务已注入")
+        }
 
         // —— 3. 创建 AgentToolComponent（组合根创建，注入 LumiCore 和 ChatService）——
         let agentToolComponent = AgentToolComponent()

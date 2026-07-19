@@ -22,6 +22,7 @@ let package = Package(
         .package(name: "LocalizationKit", path: "../LocalizationKit"),
         .package(name: "EditorService", path: "../EditorService"),
         .package(name: "EditorTextView", path: "../EditorTextView"),
+        .package(name: "LumiKernel", path: "../LumiKernel"),
         .package(name: "EditorPanelPlugin", path: "../../Plugins/EditorPanelPlugin"),
         // 远程包依赖
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
@@ -38,6 +39,7 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "EditorTextView", package: "EditorTextView"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
