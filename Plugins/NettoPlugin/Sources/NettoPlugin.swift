@@ -1,61 +1,52 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
-public enum NettoPlugin: LumiPlugin {
+/// Netto Firewall Plugin
+///
+/// Manage network permissions for macOS applications.
+@MainActor
+public final class NettoPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
+    nonisolated public static let emoji = "🛡️"
+    nonisolated public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.netto",
-        displayName: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
-        description: LumiPluginLocalization.string("Manage network permissions for macOS applications.", bundle: .module),
-        order: 99,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "shield.lefthalf.filled",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(context: any LumiCoreAccessing) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
+    public let id = "com.coffic.lumi.plugin.netto"
+    public let name = "Netto Firewall Plugin"
+    public let order = 99
+
+    // MARK: - Initialization
+
+    public init() {}
+
+    // MARK: - LumiPlugin
+
+    public func register(kernel: LumiKernel) throws {
+        // 注册视图容器
+        kernel.registerViewContainer(
+            ViewContainerItem(
+                id: id,
+                title: "Netto Firewall",
+                systemImage: "shield.lefthalf.filled",
+                order: order
             ) {
                 NettoDashboardView()
             }
-        ]
+        )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 Netto Firewall 视图容器到内核")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(context: any LumiCoreAccessing) -> AnyView? {
-        AnyView(NettoAboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(context: any LumiCoreAccessing) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "shield.lefthalf.filled",
-                            title: LumiPluginLocalization.string("Per-app rules", bundle: .module),
-                            description: LumiPluginLocalization.string("Allow or block network access for each app", bundle: .module)
-                        ),
-                        .init(
-                            icon: "eye",
-                            title: LumiPluginLocalization.string("Visibility", bundle: .module),
-                            description: LumiPluginLocalization.string("See which apps are reaching the network", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Netto Firewall from the sidebar to review permissions.", bundle: .module)
-                )
-            )
-        ]
+    public func boot(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Netto Firewall 插件启动完成")
+        }
     }
 }

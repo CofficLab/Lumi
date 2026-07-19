@@ -27,6 +27,7 @@ let package = Package(
         .package(path: "../../Plugins/DiskManagerPlugin"),
         .package(path: "../../Plugins/HostsManagerPlugin"),
         .package(path: "../../Plugins/VideoConverterPlugin"),
+        .package(path: "../../Plugins/NettoPlugin"),
     ],
     targets: [
         .target(
@@ -51,6 +52,7 @@ let package = Package(
                 .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
                 .product(name: "HostsManagerPlugin", package: "HostsManagerPlugin"),
                 .product(name: "VideoConverterPlugin", package: "VideoConverterPlugin"),
+                .product(name: "NettoPlugin", package: "NettoPlugin"),
             ]
         ),
     ]

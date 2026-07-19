@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiUI
 
 public struct NettoDashboardView: View {
     @StateObject private var service = FirewallService.shared

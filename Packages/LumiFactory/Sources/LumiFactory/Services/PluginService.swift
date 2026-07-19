@@ -9,6 +9,7 @@ import DiskManagerPlugin
 import EditorKernelPlugin
 import HostsManagerPlugin
 import LayoutKernelPlugin
+import NettoPlugin
 import ProjectsPlugin
 import StoragePlugin
 import VideoConverterPlugin
@@ -63,6 +64,9 @@ public enum PluginService {
 
         // VideoConverterPlugin
         list.append(VideoConverterPlugin())
+
+        // NettoPlugin
+        list.append(NettoPlugin())
 
         return list
     }()

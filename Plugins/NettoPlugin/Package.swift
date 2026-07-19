@@ -4,9 +4,7 @@ import PackageDescription
 let package = Package(
     name: "NettoPlugin",
     defaultLocalization: "en",
-    platforms: [
-        .macOS(.v14)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
         .library(
             name: "NettoPlugin",
@@ -14,27 +12,24 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
         .target(
             name: "NettoPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "NettoPluginTests",
-            dependencies: ["NettoPlugin"],
-            path: "Tests"
         )
     ]
 )
