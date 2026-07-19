@@ -17,7 +17,11 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
     public let storage: StorageComponent
     public let agentToolComponent: AgentToolComponent
 
-    public let chatService: (any LumiChatServicing)
+    public let chatService: any ObservableObject
+    /// Typed accessor for chatService as LumiChatServicing
+    public var chatServiceTyped: (any LumiChatServicing) {
+        chatService as! any LumiChatServicing
+    }
     public var editorService: (any AbstractEditorServicing)?
     private var services: [ObjectIdentifier: Any] = [:]
 
@@ -66,9 +70,11 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
         // 3. 创建并注册 ChatService(不依赖 self:工厂传 nil lumiCore,稍后由调用方回填)
         let chatService = try chatServiceFactory(coreDatabaseDirectory)
         self.chatService = chatService
-        registerService((any LumiChatServicing).self, chatService)
-        if let history = chatService as? any HistoryQueryService {
-            registerService((any HistoryQueryService).self, history)
+        if let chatServiceTyped = chatService as? any LumiChatServicing {
+            registerService((any LumiChatServicing).self, chatServiceTyped)
+            if let history = chatServiceTyped as? any HistoryQueryService {
+                registerService((any HistoryQueryService).self, history)
+            }
         }
 
         // 4. 可选:创建并注册 EditorService(不依赖 self)
@@ -101,44 +107,4 @@ public final class LumiCore: LumiCoreAccessing, LumiCoreBootstrapping, ChatServi
         services[ObjectIdentifier(type)] as? T
     }
 
-    /// 带默认参数的便利方法（供 SwiftUI 视图等使用最常用参数子集）。
-    public func makePluginContext(
-        activeSectionID: String,
-        activeSectionTitle: String,
-        chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
-        isChatSectionVisible: Bool? = nil,
-        additionalDependencies: (inout LumiPluginDependencies) -> Void = { _ in }
-    ) -> LumiPluginContext {
-        var dependencies = LumiPluginDependencies()
-
-        // 基础服务自动注入（仅 LumiCoreKit 内部定义的服务）
-        if let chat = resolveService((any LumiChatServicing).self) {
-            dependencies.register((any LumiChatServicing).self, chat)
-        }
-        if let toolService = resolveService((any LumiToolServicing).self) {
-            dependencies.register((any LumiToolServicing).self, toolService)
-        }
-        if let history = resolveService((any HistoryQueryService).self) {
-            dependencies.register((any HistoryQueryService).self, history)
-        }
-        if let providerSettings = resolveService((any LumiLLMProviderSettingsContributing).self) {
-            dependencies.register((any LumiLLMProviderSettingsContributing).self, providerSettings)
-        }
-
-        // 外部服务由调用者手动注入
-        additionalDependencies(&dependencies)
-
-        return LumiPluginContext(
-            activeSectionID: activeSectionID,
-            activeSectionTitle: activeSectionTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible,
-            dependencies: dependencies,
-            lumiCore: self
-        )
-    }
 }

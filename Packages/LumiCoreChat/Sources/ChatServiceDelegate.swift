@@ -17,14 +17,6 @@ public protocol ChatServiceDelegate: AnyObject {
     /// 当前项目路径（如果有的话）。
     var currentProjectPath: String? { get }
 
-    /// 统一创建 `LumiPluginContext`。
-    func makePluginContext(
-        activeSectionID: String,
-        activeSectionTitle: String,
-        chatSection: LumiChatSectionLayout,
-        showsRail: Bool,
-        showsPanelChrome: Bool,
-        isChatSectionVisible: Bool?,
-        additionalDependencies: (inout LumiPluginDependencies) -> Void
-    ) -> LumiPluginContext
+    /// LumiCore 访问入口，供 ChatService 在需要时直接访问内核能力。
+    var lumiCore: (any LumiCoreAccessing)? { get }
 }

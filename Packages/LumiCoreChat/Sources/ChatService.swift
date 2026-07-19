@@ -189,41 +189,26 @@ public final class ChatService: ObservableObject, LumiChatServicing {
         toolExecutionHook: ((String, String, UUID) async -> Bool)? = nil
     ) {
         self.contributionProvider = provider
-        let context = makeChatPluginContext()
-        registerProviders(provider.llmProviders(context: context))
-        registerMiddlewares(provider.sendMiddlewares(context: context))
-        registerMessageRenderers(provider.messageRenderers(context: context))
+        guard let lumiCore = delegate?.lumiCore else {
+            self.toolExecutionHook = toolExecutionHook
+            return
+        }
+        registerProviders(provider.llmProviders(lumiCore: lumiCore))
+        registerMiddlewares(provider.sendMiddlewares(lumiCore: lumiCore))
+        registerMessageRenderers(provider.messageRenderers(lumiCore: lumiCore))
         turnFinishedHook = { [weak self, weak provider] conversationID, reason in
             // 每次回调重建 context：贡献源可能在运行期变化（插件启用/禁用），
             // 回调发生时拉取最新快照，而不是复用注册时的陈旧 context。
             guard let self, let provider else { return }
+            let core = self.delegate?.lumiCore
+            guard let core else { return }
             await provider.onTurnFinished(
-                context: self.makeChatPluginContext(),
+                lumiCore: core,
                 conversationID: conversationID,
                 reason: reason
             )
         }
         self.toolExecutionHook = toolExecutionHook
-    }
-
-    /// 构造 Chat 作用域的插件上下文快照。
-    private func makeChatPluginContext() -> LumiPluginContext {
-        if let delegate {
-            return delegate.makePluginContext(
-                activeSectionID: "chat.core",
-                activeSectionTitle: "Chat Core",
-                chatSection: .none,
-                showsRail: false,
-                showsPanelChrome: false,
-                isChatSectionVisible: nil,
-                additionalDependencies: { _ in }
-            )
-        }
-        // delegate 理论上必非空（由 RootContainer 工厂注入），此分支仅作防御兜底。
-        return LumiPluginContext(
-            activeSectionID: "chat.core",
-            activeSectionTitle: "Chat Core"
-        )
     }
 
     // MARK: - Conversation Lifecycle (delegated)

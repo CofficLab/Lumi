@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreAgentTool
+import LumiCoreChat
 import LumiCoreMessage
 
 /// ToolService 运行时环境桥接器（CoreKit 内部使用）
@@ -21,6 +22,9 @@ final class ToolServiceEnvironmentBridge: ToolServiceEnvironment {
     }
 
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
-        lumiCore.chatService.verbosity(for: conversationID)
+        guard let chatService = lumiCore.chatService as? any LumiChatServicing else {
+            return .standard
+        }
+        return chatService.verbosity(for: conversationID)
     }
 }

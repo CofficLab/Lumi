@@ -117,6 +117,16 @@ public typealias LumiLLMRequest = LumiCoreLLMProvider.LumiLLMRequest
 public typealias LumiLLMProviderStatus = LumiCoreLLMProvider.LumiLLMProviderStatus
 public typealias LumiProviderState = LumiCoreLLMProvider.LumiProviderState
 
+// MARK: - Streaming Request Support
+
+/// 流式请求支持工具（兼容旧命名）
+public typealias LumiStreamingRequestSupport = StreamingRequestSupport
+
+// MARK: - Provider Error Support
+
+/// 错误消息生成工具（兼容旧命名）
+public typealias LumiLLMProviderErrorSupport = ProviderErrorSupport
+
 @_exported import LumiCorePlugin
 
 // MARK: - Plugin Types
@@ -126,8 +136,6 @@ public typealias LumiProviderState = LumiCoreLLMProvider.LumiProviderState
 
 public typealias LumiPlugin = LumiCorePlugin.LumiPlugin
 public typealias LumiPluginInfo = LumiCorePlugin.LumiPluginInfo
-public typealias LumiPluginContext = LumiCorePlugin.LumiPluginContext
-public typealias LumiPluginDependencies = LumiCorePlugin.LumiPluginDependencies
 public typealias LumiPluginContributionFailure = LumiCorePlugin.LumiPluginContributionFailure
 public typealias AgentToolProviding = LumiCorePlugin.AgentToolProviding
 public typealias LumiStatusBarItem = LumiCorePlugin.LumiStatusBarItem
