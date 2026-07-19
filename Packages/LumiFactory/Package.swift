@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../../Plugins/StoragePlugin"),
         .package(path: "../../Plugins/ProjectPlugin"),
         .package(path: "../../Plugins/AgentToolPlugin"),
+        .package(path: "../../Plugins/LayoutKernelPlugin"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
                 .product(name: "ProjectPlugin", package: "ProjectPlugin"),
                 .product(name: "AgentToolPlugin", package: "AgentToolPlugin"),
+                .product(name: "LayoutKernelPlugin", package: "LayoutKernelPlugin"),
             ]
         ),
     ]

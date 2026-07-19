@@ -1,6 +1,7 @@
 import Foundation
 import LumiKernel
 import AgentToolPlugin
+import LayoutKernelPlugin
 import ProjectPlugin
 import StoragePlugin
 import os
@@ -27,6 +28,9 @@ public enum PluginService {
 
         // AgentToolPlugin
         list.append(AgentToolPlugin())
+
+        // LayoutKernelPlugin
+        list.append(LayoutKernelPlugin())
 
         return list
     }()
