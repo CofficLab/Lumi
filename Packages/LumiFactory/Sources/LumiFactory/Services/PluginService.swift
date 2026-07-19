@@ -1,10 +1,13 @@
 import Foundation
 import LumiKernel
 import AgentToolPlugin
+import BrewManagerPlugin
 import ChatKernelPlugin
 import ClipboardManagerPlugin
 import DeviceInfoKernelPlugin
+import DiskManagerPlugin
 import EditorKernelPlugin
+import HostsManagerPlugin
 import LayoutKernelPlugin
 import ProjectsPlugin
 import StoragePlugin
@@ -47,6 +50,15 @@ public enum PluginService {
 
         // ClipboardManagerPlugin
         list.append(ClipboardManagerPlugin())
+
+        // BrewManagerPlugin
+        list.append(BrewManagerPlugin())
+
+        // DiskManagerPlugin
+        list.append(DiskManagerPlugin())
+
+        // HostsManagerPlugin
+        list.append(HostsManagerPlugin())
 
         return list
     }()

@@ -23,6 +23,9 @@ let package = Package(
         .package(path: "../../Plugins/ChatKernelPlugin"),
         .package(path: "../../Plugins/DeviceInfoKernelPlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
+        .package(path: "../../Plugins/BrewManagerPlugin"),
+        .package(path: "../../Plugins/DiskManagerPlugin"),
+        .package(path: "../../Plugins/HostsManagerPlugin"),
     ],
     targets: [
         .target(
@@ -43,6 +46,9 @@ let package = Package(
                 .product(name: "ChatKernelPlugin", package: "ChatKernelPlugin"),
                 .product(name: "DeviceInfoKernelPlugin", package: "DeviceInfoKernelPlugin"),
                 .product(name: "ClipboardManagerPlugin", package: "ClipboardManagerPlugin"),
+                .product(name: "BrewManagerPlugin", package: "BrewManagerPlugin"),
+                .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
+                .product(name: "HostsManagerPlugin", package: "HostsManagerPlugin"),
             ]
         ),
     ]
