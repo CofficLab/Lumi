@@ -31,7 +31,7 @@ let package = Package(
         .package(path: "../../Plugins/StatusBarPlugin"),
         .package(path: "../../Plugins/SettingsPlugin"),
         .package(path: "../../Plugins/LogoPlugin"),
-        .package(path: "../../Plugins/ThemePlugin"),
+        .package(path: "../../Plugins/ThemeStatusBarPlugin"),
         .package(path: "../../Plugins/PluginManagementPlugin"),
         // Editor and UI plugins
         .package(path: "../../Plugins/EditorPanelPlugin"),
@@ -79,7 +79,7 @@ let package = Package(
                 .product(name: "StatusBarPlugin", package: "StatusBarPlugin"),
                 .product(name: "SettingsPlugin", package: "SettingsPlugin"),
                 .product(name: "LogoPlugin", package: "LogoPlugin"),
-                .product(name: "ThemePlugin", package: "ThemePlugin"),
+                .product(name: "ThemeStatusBarPlugin", package: "ThemeStatusBarPlugin"),
                 .product(name: "PluginManagementPlugin", package: "PluginManagementPlugin"),
                 // Editor and UI plugins
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
