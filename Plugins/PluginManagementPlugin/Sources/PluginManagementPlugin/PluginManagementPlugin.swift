@@ -20,10 +20,6 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
     public let name = "PluginManagement Plugin"
     public let order = 5  // 核心插件，最先注册
 
-    // MARK: - State
-
-    private var pluginService: DefaultPluginProviding?
-
     // MARK: - Initialization
 
     public init() {}
@@ -34,7 +30,6 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
         // 1. 注册 PluginService（内核服务）
         let pluginServiceInstance = DefaultPluginProviding()
         kernel.registerPluginService(pluginServiceInstance)
-        self.pluginService = pluginServiceInstance
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 PluginManagement 插件到内核")
