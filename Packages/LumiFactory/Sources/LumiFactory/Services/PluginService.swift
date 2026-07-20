@@ -9,6 +9,7 @@ import ChatSectionPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
+import ConversationManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -76,6 +77,7 @@ public enum PluginService {
             EditorPanelPlugin(),
             ChatKernelPlugin(),
             ConversationListPlugin(),
+            ConversationManagerPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
             TitleToolbarPlugin(),

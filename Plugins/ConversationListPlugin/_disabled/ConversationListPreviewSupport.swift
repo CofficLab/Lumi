@@ -1,5 +1,6 @@
 #if DEBUG
 import LumiKernel
+import LumiCoreChat
 import Foundation
 
 enum ConversationListPreviewSupport {

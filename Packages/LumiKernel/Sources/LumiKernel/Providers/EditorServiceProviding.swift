@@ -37,9 +37,17 @@ public protocol EditorServiceProviding: AnyObject {
     /// 注销编辑器主题
     /// - Parameter themeId: 主题唯一标识符
     func unregisterEditorTheme(themeId: String)
+}
 
-    /// 根据主题 ID 获取语法调色板
-    /// - Parameter themeId: 主题唯一标识符
-    /// - Returns: 对应的编辑器语法调色板，如果未找到则返回 nil
-    func editorSyntaxPalette(for themeId: String) -> EditorSyntaxPalette?
+// MARK: - Raw EditorService Access
+
+/// 扩展用于获取底层 EditorService 实例
+/// 实现者可通过此方法返回原始的 EditorService 实例
+@MainActor
+public extension EditorServiceProviding {
+    /// 返回底层 EditorService 实例（如果有）
+    /// 默认返回 nil
+    var rawEditorService: AnyObject? {
+        nil
+    }
 }

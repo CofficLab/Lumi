@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreMessage
 
 /// 对话管理能力协议
 ///
@@ -12,8 +11,11 @@ public protocol ConversationManaging: ObservableObject {
     /// 当前选中的对话 ID
     var selectedConversationID: UUID? { get }
 
+    /// 数据存储目录
+    var dataDirectory: URL { get }
+
     /// 创建新对话
-    func createConversation(title: String?) -> UUID
+    func createConversation(title: String?) throws -> UUID
 
     /// 选择对话
     func selectConversation(id: UUID)

@@ -50,13 +50,13 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
 /// Thin adapter that bridges EditorService (EditorService module) to EditorServiceProviding.
 @MainActor
 private final class EditorServiceProvidingAdapter: EditorServiceProviding {
-    private let editorService: EditorService
+    private let service: EditorService
 
     @Published var currentFilePath: String?
     @Published var currentThemeId: String = "xcode-dark"
 
     init(wrapping service: EditorService) {
-        self.editorService = service
+        self.service = service
     }
 
     func openFile(at path: String) async throws {
@@ -70,7 +70,7 @@ private final class EditorServiceProvidingAdapter: EditorServiceProviding {
     }
 
     func setCurrentTheme(_ themeId: String) throws {
-        editorService.theme.syncInitialThemeFromExternal(themeId)
+        service.theme.syncInitialThemeFromExternal(themeId)
         currentThemeId = themeId
     }
 
@@ -85,5 +85,9 @@ private final class EditorServiceProvidingAdapter: EditorServiceProviding {
         nil
     }
 
-    // MARK: - EditorServiceProviding default implementations (unused)
+    // MARK: - Raw EditorService Access
+
+    var rawEditorService: AnyObject? {
+        service
+    }
 }
