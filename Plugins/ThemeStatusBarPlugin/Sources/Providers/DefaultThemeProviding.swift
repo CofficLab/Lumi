@@ -1,20 +1,27 @@
 import Foundation
 import LumiKernel
 import LumiUI
+import os
 
-/// 默认主题服务实现
+/// Default theme service implementation
 ///
-/// 实现 LumiUI.LumiThemeServicing 协议。
-/// 负责管理所有插件的主题贡献的注册和查询。
-/// 通过 LumiUIThemeRegistry 实现主题管理功能。
+/// Implements LumiUI.LumiThemeServicing protocol.
+/// Responsible for managing theme contributions from plugins, persisting theme selection,
+/// and syncing with the editor syntax theme system.
 @MainActor
 public final class DefaultThemeProviding: LumiThemeServicing {
-    public let themeRegistry: LumiUIThemeRegistry
-    private var registeredThemes: [LumiUIThemeContribution] = []
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
+    nonisolated static let verbose = false
 
-    public init(themeRegistry: LumiUIThemeRegistry = .shared) {
-        self.themeRegistry = themeRegistry
-    }
+    public let themeRegistry: LumiUIThemeRegistry
+    private var themeSelectionStore: ThemeSelectionStore
+    private var pluginsChangedObserver: NSObjectProtocol?
+
+    /// Reference to the plugin service for collecting theme contributions.
+    private weak var pluginService: PluginProviding?
+
+    /// Reference to the editor core service for syntax theme sync.
+    private weak var editorCoreService: EditorCoreServiceType?
 
     public var themes: [LumiUIThemeContribution] {
         themeRegistry.themes
@@ -30,24 +37,148 @@ public final class DefaultThemeProviding: LumiThemeServicing {
 
     public func selectTheme(id: String) throws {
         try themeRegistry.select(themeId: id)
+        themeSelectionStore.save(selectedThemeID: id)
     }
 
-    /// 兼容旧版 API,实际功能由 LumiUIThemeRegistry 提供
-    public func registerTheme(_ theme: LumiUIThemeContribution) {
-        registeredThemes.append(theme)
-        try? replaceAllThemes(registeredThemes)
-    }
+    public init(
+        themeRegistry: LumiUIThemeRegistry = .shared,
+        pluginService: PluginProviding? = nil,
+        editorCoreService: EditorCoreServiceType? = nil
+    ) {
+        self.themeRegistry = themeRegistry
+        self.themeSelectionStore = ThemeSelectionStore.shared
+        self.pluginService = pluginService
+        self.editorCoreService = editorCoreService
 
-    public func unregisterTheme(id: String) {
-        registeredThemes.removeAll { $0.id == id }
-        if registeredThemes.isEmpty {
-            try? themeRegistry.replaceAll([.builtInFallback()])
-        } else {
-            try? replaceAllThemes(registeredThemes)
+        if Self.verbose {
+            Self.logger.info("Initializing DefaultThemeProviding")
+        }
+
+        // Restore saved theme selection
+        restoreSavedThemeIfPossible()
+
+        // Subscribe to system appearance changes
+        themeRegistry.onSystemAppearanceDidChange = { [weak self] in
+            self?.syncEditorTheme()
+        }
+
+        // Subscribe to plugin enable/disable changes: reload themes when plugins change
+        pluginsChangedObserver = NotificationCenter.default.addObserver(
+            forName: .lumiEnabledPluginsDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadThemes()
+        }
+
+        if Self.verbose {
+            Self.logger.info("DefaultThemeProviding initialized")
         }
     }
 
+    /// Reload themes from all enabled plugins' theme contributions.
+    public func reloadThemes() {
+        guard let pluginService else {
+            // Fallback: use built-in theme only
+            if Self.verbose {
+                Self.logger.info("No plugin service available; using built-in theme")
+            }
+            return
+        }
+
+        var contributions: [LumiUIThemeContribution] = []
+        for plugin in pluginService.allPlugins {
+            if let themeProvider = plugin as? any UIThemeProviding {
+                contributions.append(contentsOf: themeProvider.themeContributions())
+            }
+        }
+
+        if contributions.isEmpty {
+            if Self.verbose {
+                Self.logger.info("No theme contributions found; using built-in fallback")
+            }
+            try? themeRegistry.replaceAll([.builtInFallback()])
+        } else {
+            do {
+                try themeRegistry.replaceAll(contributions)
+                if Self.verbose {
+                    Self.logger.info("Reloaded \(contributions.count) theme contributions")
+                }
+            } catch {
+                Self.logger.error("Failed to replace themes: \(error)")
+            }
+        }
+
+        // After reloading, restore the previously saved theme selection if possible
+        restoreSavedThemeSelection()
+    }
+
+    /// Connect to the editor core service for syntax theme synchronization.
+    public func connectEditorThemeSync(_ service: EditorCoreServiceType) {
+        self.editorCoreService = service
+        syncEditorTheme()
+    }
+
+    /// Register a theme contribution (compatibility with legacy API).
+    public func registerTheme(_ theme: LumiUIThemeContribution) {
+        try? themeRegistry.replaceAll(themeRegistry.themes + [theme])
+    }
+
+    /// Unregister a theme contribution (compatibility with legacy API).
+    public func unregisterTheme(id: String) {
+        let remaining = themeRegistry.themes.filter { $0.id != id }
+        if remaining.isEmpty {
+            try? themeRegistry.replaceAll([.builtInFallback()])
+        } else {
+            try? themeRegistry.replaceAll(remaining)
+        }
+    }
+
+    /// Replace all theme contributions (compatibility with legacy API).
     public func replaceAllThemes(_ themes: [LumiUIThemeContribution]) throws {
         try themeRegistry.replaceAll(themes)
     }
+
+    // MARK: - Private
+
+    /// Restore the saved theme selection on initialization.
+    private func restoreSavedThemeIfPossible() {
+        guard let savedThemeID = themeSelectionStore.selectedThemeID else {
+            return
+        }
+        // The theme will be available after reloadThemes() is called.
+        // We store the preference and apply it after themes are loaded.
+        if Self.verbose {
+            Self.logger.info("Saved theme ID: \(savedThemeID)")
+        }
+    }
+
+    /// After themes are reloaded, select the previously saved theme if it exists.
+    private func restoreSavedThemeSelection() {
+        guard let savedThemeID = themeSelectionStore.selectedThemeID else {
+            return
+        }
+        // Check if the saved theme is now available
+        if themeRegistry.themes.contains(where: { $0.id == savedThemeID }) {
+            do {
+                try themeRegistry.select(themeId: savedThemeID)
+                if Self.verbose {
+                    Self.logger.info("Restored saved theme: \(savedThemeID)")
+                }
+            } catch {
+                Self.logger.error("Failed to select saved theme: \(error)")
+            }
+        }
+    }
+
+    /// Sync the editor syntax theme to match the current UI theme.
+    private func syncEditorTheme() {
+        editorCoreService?.syncAppSyntaxThemes()
+    }
+}
+
+/// Minimal protocol for editor core service dependency.
+/// Avoids importing the full EditorCoreService type into this module.
+public protocol EditorCoreServiceType: AnyObject {
+    func syncAppSyntaxThemes()
 }

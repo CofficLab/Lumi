@@ -55,8 +55,11 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
     // Tool execution hook registry
     private var toolExecutionHooks: [ObjectIdentifier: any LumiToolExecutionHook] = [:]
 
-    /// 插件启用状态变化回调（供 Kernel 监听）
-    var onEnabledPluginsChanged: (() -> Void)?
+    /// 插件启用状态变化时广播 `.lumiEnabledPluginsDidChange` 通知。
+    /// 供外部（如 Settings UI）在启用/禁用插件后调用。
+    public func notifyEnabledPluginsDidChange() {
+        NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: self)
+    }
 
     public init() {}
 
