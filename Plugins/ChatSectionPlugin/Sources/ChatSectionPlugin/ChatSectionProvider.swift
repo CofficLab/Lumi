@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 负责管理所有插件的聊天分区项、工具栏、标题项的注册、排序和查询。
 @MainActor
-public final class DefaultChatSectionProviding: ChatSectionProviding {
+public final class ChatSectionProvider: ChatSectionProviding {
     public private(set) var allChatSectionItems: [ChatSectionItem] = []
     public private(set) var allChatSectionToolbarItems: [ChatSectionToolbarItem] = []
     public private(set) var allChatSectionToolbarBarItems: [ChatSectionToolbarBarItem] = []

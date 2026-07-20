@@ -30,6 +30,7 @@ public static let policy: LumiPluginPolicy = .disabled
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
+        guard Self.policy.shouldRegister else { return }
         kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,

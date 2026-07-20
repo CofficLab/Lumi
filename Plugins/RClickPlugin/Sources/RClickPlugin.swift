@@ -1,24 +1,25 @@
 import Foundation
 import LumiKernel
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// Right Click Plugin
 @MainActor
 public final class RClickPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
-    nonisolated public static let verbose = false
+    public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.rclick"
     public let name = "Right Click"
     public let order = 50
-public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
+        guard Self.policy.shouldRegister else { return }
         kernel.viewContainer?.register(
             ViewContainerItem(id: id, title: "Right Click", systemImage: "cursorarrow.click.2") {
                 RClickSettingsView()
