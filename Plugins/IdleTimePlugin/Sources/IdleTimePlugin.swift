@@ -7,6 +7,8 @@ public final class IdleTimePlugin: LumiPlugin {
     public let name = "Idle Time"
     public let order = 96
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

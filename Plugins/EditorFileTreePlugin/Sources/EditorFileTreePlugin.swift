@@ -7,6 +7,8 @@ public final class EditorFileTreePlugin: LumiPlugin {
     public let name = "Editor File Tree"
     public let order = 0
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

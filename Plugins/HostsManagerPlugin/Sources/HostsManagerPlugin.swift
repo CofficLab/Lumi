@@ -20,6 +20,8 @@ public final class HostsManagerPlugin: LumiPlugin, SuperLog {
     public let name = "Hosts Manager"
     public let order = 21
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     // MARK: - Initialization
 
     public init() {}

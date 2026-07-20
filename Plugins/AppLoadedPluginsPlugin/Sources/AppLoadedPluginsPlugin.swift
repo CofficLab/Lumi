@@ -7,6 +7,8 @@ public final class AppLoadedPluginsPlugin: LumiPlugin {
     public let name = "AppLoadeds"
     public let order = 79
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

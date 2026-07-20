@@ -21,7 +21,7 @@ import SwiftUI
 /// - ChatContributionProviding: Chat 贡献聚合
 /// - UIThemeProviding: Theme 贡献
 @MainActor
-public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding, AgentToolProviding, ChatContributionProviding, UIThemeProviding {
+public final class PluginManagerProvider: PluginProviding, LLMProviderProviding, AgentToolProviding, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -99,6 +99,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
         self.kernel = kernel
 
         for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
             let pluginOrder = plugin.order
 
             // LLM Providers
@@ -357,6 +358,31 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
         for plugin in allPlugins {
             await plugin.onTurnFinished(kernel: kernel, conversationID: conversationID, reason: reason)
         }
+    }
+
+    // MARK: - LumiChatContributionProviding (新 API)
+    //
+    // 适配 `LumiCoreChat.ChatService.applyPluginContributions(from:)` 的调用形式。
+    // 老 API（ChatContributionProviding.allXxx()）保留以便旧代码继续工作。
+
+    public func llmProviders(lumiCore: any LumiCoreProviding) -> [any LumiLLMProvider] {
+        allLLMProviders()
+    }
+
+    public func sendMiddlewares(lumiCore: any LumiCoreProviding) -> [any LumiSendMiddleware] {
+        allSendMiddlewares()
+    }
+
+    public func messageRenderers(lumiCore: any LumiCoreProviding) -> [LumiMessageRendererItem] {
+        allMessageRenderers()
+    }
+
+    public func onTurnFinished(
+        lumiCore: any LumiCoreProviding,
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) async {
+        await dispatchTurnFinished(conversationID: conversationID, reason: reason)
     }
 
     // MARK: - Send Middleware Registry

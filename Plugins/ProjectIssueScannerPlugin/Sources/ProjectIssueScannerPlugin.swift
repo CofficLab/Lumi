@@ -7,6 +7,8 @@ public final class ProjectIssueScannerPlugin: LumiPlugin {
     public let name = "Project Issue Scanner"
     public let order = 97
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

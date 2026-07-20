@@ -20,6 +20,8 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
     public let name = "Registry Manager"
     public let order = 80
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     // MARK: - Initialization
 
     public init() {}

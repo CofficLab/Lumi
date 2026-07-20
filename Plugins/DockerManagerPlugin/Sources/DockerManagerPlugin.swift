@@ -16,6 +16,8 @@ public final class DockerManagerPlugin: LumiPlugin {
     public let name = "Docker"
     public let order = 50
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

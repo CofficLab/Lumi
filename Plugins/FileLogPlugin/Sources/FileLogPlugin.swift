@@ -7,6 +7,8 @@ public final class FileLogPlugin: LumiPlugin {
     public let name = "File Log"
     public let order = 1
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {

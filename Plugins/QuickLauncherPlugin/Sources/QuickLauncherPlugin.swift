@@ -20,6 +20,8 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     public let name = "Quick Launcher"
     public let order = 8
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     // MARK: - Initialization
 
     public init() {}

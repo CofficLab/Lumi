@@ -7,6 +7,8 @@ public final class Plugin: LumiPlugin {
     public let name = "Auto Task (Deprecated)"
     public let order = 90
 
+    public var policy: LumiPluginPolicy { .disabled }
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
