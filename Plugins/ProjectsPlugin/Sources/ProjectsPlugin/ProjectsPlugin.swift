@@ -29,6 +29,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     private var store: ProjectsStore?
     private var viewModel: ProjectsViewModel?
     private var syncCoordinator: ProjectsSyncCoordinator?
+    private var storageError: String?
 
     // MARK: - Initialization
 
@@ -42,11 +43,22 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         kernel.registerProject(projectServiceInstance)
         self.projectService = projectServiceInstance
 
-        // 2. 初始化存储
-        let storageDirectory = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first!
-            .appendingPathComponent("Lumi/Projects", isDirectory: true)
+        // 2. 初始化存储（StoragePlugin order=10 先于本插件 order=20 加载）
+        guard let storage = kernel.storage else {
+            self.storageError = "Storage service not available"
+            let errorView = Self.makeErrorView(message: self.storageError!)
+            kernel.registerTitleToolbarItem(
+                TitleToolbarItem(
+                    id: "\(id).toolbar",
+                    title: "Projects",
+                    placement: .center
+                ) {
+                    errorView
+                }
+            )
+            return
+        }
+        let storageDirectory = storage.pluginDataDirectory(for: "Projects")
 
         let storeInstance = ProjectsStore(pluginDirectory: storageDirectory)
         self.store = storeInstance
@@ -100,5 +112,18 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)Projects 插件启动完成")
         }
+    }
+
+    // MARK: - Error View
+
+    private static func makeErrorView(message: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            Text("Projects Error")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .help(message)
     }
 }

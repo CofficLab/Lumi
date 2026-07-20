@@ -19,7 +19,7 @@ public final class ProjectsStore: SuperLog {
 
     // MARK: - Properties
 
-    private let settingsDirectory: URL
+    public let settingsDirectory: URL
 
     // MARK: - Init
 

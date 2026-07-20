@@ -31,7 +31,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     // MARK: - Dependencies
 
-    private let store: ProjectsStore
+    public let store: ProjectsStore
 
     // MARK: - Init
 
