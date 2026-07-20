@@ -337,6 +337,6 @@ public final class LumiKernelContainer: ObservableObject {
     }
 }
 
-
 /// 兼容旧代码: 用 LumiKernel 实例化时,使用 LumiKernelContainer。
 public typealias LumiKernel = LumiKernelContainer
+
