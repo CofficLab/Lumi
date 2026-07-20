@@ -76,6 +76,19 @@ public final class DefaultThemeProviding: LumiThemeServicing {
         }
     }
 
+    /// Inject the plugin service after `LumiKernel.plugin` becomes available.
+    ///
+    /// `DefaultThemeProviding.init` runs during `ThemeStatusBarPlugin.register(kernel:)`,
+    /// but `kernel.plugin` is `nil` at that point (PluginManagementPlugin hasn't been
+    /// registered yet). The plugin service is wired up in `boot(kernel:)` and the
+    /// themes are reloaded then.
+    public func setPluginService(_ service: PluginProviding) {
+        self.pluginService = service
+        if Self.verbose {
+            Self.logger.info("Plugin service injected")
+        }
+    }
+
     /// Reload themes from all enabled plugins' theme contributions.
     public func reloadThemes() {
         guard let pluginService else {

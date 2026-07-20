@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../LumiCoreSubAgent"),
         .package(path: "../LumiKernel"),
         .package(path: "../LumiUI"),
+        .package(path: "../LumiLocalizationKit"),
         .package(path: "../LocalizationKit"),
         .package(path: "../SuperLogKit"),
         .package(path: "../EditorService"),
@@ -92,6 +93,7 @@ let package = Package(
                 .product(name: "LumiCoreSubAgent", package: "LumiCoreSubAgent"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 // Core plugins - provide required services
@@ -151,6 +153,9 @@ let package = Package(
                 .product(name: "RClickPlugin", package: "RClickPlugin"),
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
+            ],
+            resources: [
+                .process("Resources")
             ]
         )
     ]

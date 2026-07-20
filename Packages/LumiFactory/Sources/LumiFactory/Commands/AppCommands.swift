@@ -24,9 +24,6 @@ public struct AppCommands: Commands {
         // Editor save: Cmd+S
         EditorSaveCommands()
 
-        // Editor focus keys: Cmd+1/2/3 for panel focus
-        EditorFocusKeys()
-
         // Debug menu
         DebugCommand(kernel: kernel)
 

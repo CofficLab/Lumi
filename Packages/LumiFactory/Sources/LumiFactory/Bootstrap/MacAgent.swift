@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import EditorPanelPlugin
 import EditorService
 import Foundation
 import SuperLogKit

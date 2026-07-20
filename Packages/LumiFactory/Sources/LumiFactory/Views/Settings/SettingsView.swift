@@ -1,4 +1,5 @@
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 struct SettingsView: View {

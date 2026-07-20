@@ -1,3 +1,4 @@
+import LumiCoreChat
 import LumiCoreMessage
 import LumiLocalizationKit
 import LumiUI

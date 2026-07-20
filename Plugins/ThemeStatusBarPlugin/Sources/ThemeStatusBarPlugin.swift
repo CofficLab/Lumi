@@ -13,12 +13,19 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
 
     public func register(kernel: LumiKernel) throws {
         // 1. 注册 ThemeService（内核服务）
+        // pluginService 稍后在 boot 阶段注入（PluginManagementPlugin 之后才注册好）
         let themeServiceInstance = DefaultThemeProviding()
         kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
+    public func boot(kernel: LumiKernel) async throws {
+        // 注入 pluginService 并立即重载所有插件的主题贡献
+        if let pluginProviding = kernel.plugin, let themeService {
+            themeService.setPluginService(pluginProviding)
+            themeService.reloadThemes()
+        }
+    }
 
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
         // ThemeProviding 不可用时显示错误视图
