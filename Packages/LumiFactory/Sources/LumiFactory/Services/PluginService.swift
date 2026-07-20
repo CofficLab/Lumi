@@ -65,173 +65,71 @@ public enum PluginService {
 
     /// 所有插件列表（静态）
     public static let plugins: [LumiPlugin] = {
-        var list: [LumiPlugin] = []
+        var list: [LumiPlugin] = [
+            // Core
+            PluginManagementPlugin(),
+            ProjectsPlugin(),
+            AgentToolPlugin(),
+            LayoutKernelPlugin(),
+            EditorKernelPlugin(),
+            EditorPanelPlugin(),
+            ChatKernelPlugin(),
+            CommandPlugin(),
+            MenuBarPlugin(),
+            TitleToolbarPlugin(),
+            SendMiddlewarePlugin(),
+            ChatSectionPlugin(),
+            ChatPanelPlugin(),
+            // ChatPanel section plugins
+            ChatPendingSectionPlugin(),
+            ChatAttachmentSectionPlugin(),
+            ChatComposerSectionPlugin(),
+            PanelPlugin(),
+            StatusBarPlugin(),
+            SettingsPlugin(),
+            LogoPlugin(),
+            ViewContainerPlugin(),
+            DeviceInfoPlugin(),
+            ClipboardManagerPlugin(),
+            BrewManagerPlugin(),
+            DiskManagerPlugin(),
+            HostsManagerPlugin(),
+            VideoConverterPlugin(),
+            NettoPlugin(),
+            QuickLauncherPlugin(),
+            PortManagerPlugin(),
+            AppManagerPlugin(),
+            RegistryManagerPlugin(),
+            DisplayControlPlugin(),
+            DockerManagerPlugin(),
+            RClickPlugin(),
+            InputPlugin(),
+            MenuBarManagerPlugin(),
+            // Themes
+            ThemeStatusBarPlugin(),
+            ThemeLumiPlugin(),
+            ThemeAuroraPlugin(),
+            ThemeAutumnPlugin(),
+            ThemeDraculaPlugin(),
+            ThemeGithubPlugin(),
+            ThemeMidnightPlugin(),
+            ThemeMountainPlugin(),
+            ThemeNebulaPlugin(),
+            ThemeOneDarkPlugin(),
+            ThemeOrchardPlugin(),
+            ThemeRiverPlugin(),
+            ThemeSkyPlugin(),
+            ThemeSpringPlugin(),
+            ThemeSummerPlugin(),
+            ThemeVoidPlugin(),
+            ThemeVscodePlugin(),
+            ThemeWinterPlugin(),
+        ]
 
-        // PluginManagementPlugin
-        list.append(PluginManagementPlugin())
-
-        // StoragePlugin
+        // StoragePlugin (requires initialization)
         if let plugin = try? StoragePlugin() {
             list.append(plugin)
         }
-
-        // ProjectsPlugin
-        list.append(ProjectsPlugin())
-
-        // AgentToolPlugin
-        list.append(AgentToolPlugin())
-
-        // LayoutKernelPlugin
-        list.append(LayoutKernelPlugin())
-
-        // EditorKernelPlugin
-        list.append(EditorKernelPlugin())
-
-        // EditorPanelPlugin
-        list.append(EditorPanelPlugin())
-
-        // ChatKernelPlugin
-        list.append(ChatKernelPlugin())
-
-        // CommandPlugin
-        list.append(CommandPlugin())
-
-        // MenuBarPlugin
-        list.append(MenuBarPlugin())
-
-        // TitleToolbarPlugin
-        list.append(TitleToolbarPlugin())
-
-        // SendMiddlewarePlugin
-        list.append(SendMiddlewarePlugin())
-
-        // ChatSectionPlugin
-        list.append(ChatSectionPlugin())
-
-        // ChatPanelPlugin
-        list.append(ChatPanelPlugin())
-
-        // ChatPanel section plugins
-        list.append(ChatPendingSectionPlugin())
-        list.append(ChatAttachmentSectionPlugin())
-        list.append(ChatComposerSectionPlugin())
-
-        // PanelPlugin
-        list.append(PanelPlugin())
-
-        // StatusBarPlugin
-        list.append(StatusBarPlugin())
-
-        // SettingsPlugin
-        list.append(SettingsPlugin())
-
-        // LogoPlugin
-        list.append(LogoPlugin())
-
-        // ThemeStatusBarPlugin (合并了原 ThemePlugin 功能)
-        list.append(ThemeStatusBarPlugin())
-
-        // ThemeLumiPlugin
-        list.append(ThemeLumiPlugin())
-
-        // ThemeAuroraPlugin
-        list.append(ThemeAuroraPlugin())
-
-        // ThemeAutumnPlugin
-        list.append(ThemeAutumnPlugin())
-
-        // ThemeDraculaPlugin
-        list.append(ThemeDraculaPlugin())
-
-        // ThemeGithubPlugin
-        list.append(ThemeGithubPlugin())
-
-        // ThemeMidnightPlugin
-        list.append(ThemeMidnightPlugin())
-
-        // ThemeMountainPlugin
-        list.append(ThemeMountainPlugin())
-
-        // ThemeNebulaPlugin
-        list.append(ThemeNebulaPlugin())
-
-        // ThemeOneDarkPlugin
-        list.append(ThemeOneDarkPlugin())
-
-        // ThemeOrchardPlugin
-        list.append(ThemeOrchardPlugin())
-
-        // ThemeRiverPlugin
-        list.append(ThemeRiverPlugin())
-
-        // ThemeSkyPlugin
-        list.append(ThemeSkyPlugin())
-
-        // ThemeSpringPlugin
-        list.append(ThemeSpringPlugin())
-
-        // ThemeSummerPlugin
-        list.append(ThemeSummerPlugin())
-
-        // ThemeVoidPlugin
-        list.append(ThemeVoidPlugin())
-
-        // ThemeVscodePlugin
-        list.append(ThemeVscodePlugin())
-
-        // ThemeWinterPlugin
-        list.append(ThemeWinterPlugin())
-
-        // ViewContainerPlugin
-        list.append(ViewContainerPlugin())
-
-        // DeviceInfoPlugin
-        list.append(DeviceInfoPlugin())
-
-        // ClipboardManagerPlugin
-        list.append(ClipboardManagerPlugin())
-
-        // BrewManagerPlugin
-        list.append(BrewManagerPlugin())
-
-        // DiskManagerPlugin
-        list.append(DiskManagerPlugin())
-
-        // HostsManagerPlugin
-        list.append(HostsManagerPlugin())
-
-        // VideoConverterPlugin
-        list.append(VideoConverterPlugin())
-
-        // NettoPlugin
-        list.append(NettoPlugin())
-
-        // QuickLauncherPlugin
-        list.append(QuickLauncherPlugin())
-
-        // PortManagerPlugin
-        list.append(PortManagerPlugin())
-
-        // AppManagerPlugin
-        list.append(AppManagerPlugin())
-
-        // RegistryManagerPlugin
-        list.append(RegistryManagerPlugin())
-
-        // DisplayControlPlugin
-        list.append(DisplayControlPlugin())
-
-        // DockerManagerPlugin
-        list.append(DockerManagerPlugin())
-
-        // RClickPlugin
-        list.append(RClickPlugin())
-
-        // InputPlugin
-        list.append(InputPlugin())
-
-        // MenuBarManagerPlugin
-        list.append(MenuBarManagerPlugin())
 
         return list
     }()
