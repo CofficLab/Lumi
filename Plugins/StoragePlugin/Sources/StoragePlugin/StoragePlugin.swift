@@ -52,6 +52,8 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
 
     // MARK: - Factory Methods
 
+    /// 创建默认数据根目录
+    /// 路径格式：<Application Support>/<bundleID>/db_<debug|production>_v<majorVersion>
     private static func makeDefaultDataRootDirectory() throws -> URL {
         let appSupport = try FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -59,7 +61,21 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
             appropriateFor: nil,
             create: true
         )
-        let dataRoot = appSupport.appendingPathComponent("Lumi", isDirectory: true)
+
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "4"
+        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 4
+
+        #if DEBUG
+        let dbDirectoryName = "db_debug_v\(majorVersion)"
+        #else
+        let dbDirectoryName = "db_production_v\(majorVersion)"
+        #endif
+
+        let dataRoot = appSupport
+            .appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent(dbDirectoryName, isDirectory: true)
+
         try FileManager.default.createDirectory(at: dataRoot, withIntermediateDirectories: true)
         return dataRoot
     }

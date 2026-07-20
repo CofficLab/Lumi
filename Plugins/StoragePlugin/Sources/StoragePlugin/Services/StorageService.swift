@@ -12,7 +12,6 @@ public final class StorageService: StorageProviding {
 
     public func pluginDataDirectory(for pluginID: String) -> URL {
         let pluginDir = dataRootDirectory
-            .appendingPathComponent("Plugins", isDirectory: true)
             .appendingPathComponent(pluginID, isDirectory: true)
 
         try? FileManager.default.createDirectory(
