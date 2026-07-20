@@ -6,6 +6,7 @@ public final class FileLogPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.file-log"
     public let name = "File Log"
     public let order = 1
+public static let policy: LumiPluginPolicy = .disabled
 
     public var policy: LumiPluginPolicy { .disabled }
 

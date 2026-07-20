@@ -6,6 +6,7 @@ public final class AgentTempStoragePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.agent-temp-storage"
     public let name = "Agent Temp Storage"
     public let order = 80
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

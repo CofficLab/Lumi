@@ -8,6 +8,7 @@ public final class EditorOutlinePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-rail-outline"
     public let name = "Editor Outline"
     public let order = 1
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

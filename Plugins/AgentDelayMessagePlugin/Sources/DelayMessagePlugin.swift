@@ -6,6 +6,7 @@ public final class DelayMessagePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.delay-message"
     public let name = "Delay Message"
     public let order = 98
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

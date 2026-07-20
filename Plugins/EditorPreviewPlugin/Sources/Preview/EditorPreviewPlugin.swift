@@ -13,6 +13,7 @@ public final class EditorPreviewPlugin: LumiPlugin {
     public let id = "EditorPreview"
     public let name = "Inline Preview"
     public let order = 84
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

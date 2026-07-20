@@ -16,6 +16,7 @@ public final class DisplayControlPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.display-control"
     public let name = "Display Control"
     public let order = 21
+public static let policy: LumiPluginPolicy = .disabled
 
     // MARK: - Initialization
 

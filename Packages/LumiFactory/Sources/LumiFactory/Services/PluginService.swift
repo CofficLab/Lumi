@@ -70,6 +70,7 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             PluginManagementPlugin(),
             PanelPlugin(),
+            TitleToolbarPlugin(),
             ProjectsPlugin(),
             AgentToolPlugin(),
             LayoutKernelPlugin(),
@@ -80,7 +81,6 @@ public enum PluginService {
             ConversationListPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
-            TitleToolbarPlugin(),
             SendMiddlewarePlugin(),
             ChatSectionPlugin(),
             ChatPanelPlugin(),

@@ -7,6 +7,7 @@ public final class ConversationTitlePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-title"
     public let name = "Auto Conversation Title"
     public let order = 77
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

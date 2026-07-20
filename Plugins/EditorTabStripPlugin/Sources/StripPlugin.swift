@@ -12,6 +12,7 @@ public final class StripHeaderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-tab-strip-header"
     public let name = "Editor Tab Strip"
     public let order = 70
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

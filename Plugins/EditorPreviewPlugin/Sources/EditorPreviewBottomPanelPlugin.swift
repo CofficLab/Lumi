@@ -12,6 +12,7 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-preview"
     public let name = "Editor Preview"
     public let order = 84
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

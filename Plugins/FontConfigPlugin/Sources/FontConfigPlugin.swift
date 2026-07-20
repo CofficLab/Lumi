@@ -6,6 +6,7 @@ public final class FontConfigPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.font-config"
     public let name = "Font Config"
     public let order = 78
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

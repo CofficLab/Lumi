@@ -6,6 +6,7 @@ public final class ThemeMountainPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.mountain"
     public let name = "Mountain Theme"
     public let order = 129
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

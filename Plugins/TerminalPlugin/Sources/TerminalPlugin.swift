@@ -6,6 +6,7 @@ public final class TerminalPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.terminal"
     public let name = "Terminal"
     public let order = 90
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

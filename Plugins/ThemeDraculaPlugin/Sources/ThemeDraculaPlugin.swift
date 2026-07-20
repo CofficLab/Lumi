@@ -6,6 +6,7 @@ public final class ThemeDraculaPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.dracula"
     public let name = "Dracula Theme"
     public let order = 132
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -8,6 +8,7 @@ public final class SublyxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.sublyx"
     public let name = "Sublyx"
     public let order = 104
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

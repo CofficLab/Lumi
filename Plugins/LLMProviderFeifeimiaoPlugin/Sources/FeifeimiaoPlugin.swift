@@ -8,6 +8,7 @@ public final class FeifeimiaoPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.feifeimiao"
     public let name = "Feifeimiao"
     public let order = 104
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

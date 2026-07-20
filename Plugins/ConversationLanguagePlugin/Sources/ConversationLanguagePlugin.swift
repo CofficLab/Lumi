@@ -7,6 +7,7 @@ public final class ConversationLanguagePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-language"
     public let name = "Language Selector"
     public let order = 83
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

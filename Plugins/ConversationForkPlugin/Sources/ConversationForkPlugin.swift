@@ -7,6 +7,7 @@ public final class ConversationForkPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-fork"
     public let name = "Continue in New Chat"
     public let order = 61
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

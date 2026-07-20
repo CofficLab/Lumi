@@ -16,7 +16,8 @@ public final class AgentToolPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.agent-tool"
     public let name = "AgentTool Plugin"
-    public let order = 30  // 核心插件，在 Storage、Project 之后加载
+    public let order = 30
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，在 Storage、Project 之后加载
 
     // MARK: - Initialization
 

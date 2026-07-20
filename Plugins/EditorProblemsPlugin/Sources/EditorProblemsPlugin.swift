@@ -8,6 +8,7 @@ public final class EditorProblemsPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-problems"
     public let name = "Editor Problems"
     public let order = 1
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -6,6 +6,7 @@ public final class Plugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.auto-task"
     public let name = "Auto Task (Deprecated)"
     public let order = 90
+public static let policy: LumiPluginPolicy = .disabled
 
     public var policy: LumiPluginPolicy { .disabled }
 

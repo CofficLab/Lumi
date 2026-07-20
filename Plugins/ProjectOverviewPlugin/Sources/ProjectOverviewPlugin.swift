@@ -6,6 +6,7 @@ public final class ProjectOverviewPlugin: LumiPlugin {
     public let id = "ProjectOverview"
     public let name = "ProjectOverview"
     public let order = 14
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

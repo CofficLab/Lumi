@@ -6,6 +6,7 @@ public final class BrowserPlugin: LumiPlugin {
     public let id = "Browser"
     public let name = "Browser"
     public let order = 102
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

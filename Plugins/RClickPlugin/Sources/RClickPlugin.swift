@@ -14,6 +14,7 @@ public final class RClickPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.rclick"
     public let name = "Right Click"
     public let order = 50
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

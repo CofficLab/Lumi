@@ -6,6 +6,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.model-selector"
     public let name = "Model Selector"
     public let order = 82
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

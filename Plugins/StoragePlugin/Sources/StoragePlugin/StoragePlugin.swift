@@ -16,7 +16,8 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.storage"
     public let name = "Storage Plugin"
-    public let order = 10  // 核心插件，最先加载
+    public let order = 10
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，最先加载
 
     /// 数据根目录
     private let dataRootDirectory: URL

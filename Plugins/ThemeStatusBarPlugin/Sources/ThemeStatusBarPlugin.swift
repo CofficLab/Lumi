@@ -5,7 +5,8 @@ import LumiUI
 public final class ThemeStatusBarPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme-status-bar"
     public let name = "Theme Status Bar"
-    public let order = 22  // 提前加载顺序，作为核心插件
+    public let order = 22
+public static let policy: LumiPluginPolicy = .disabled  // 提前加载顺序，作为核心插件
 
     private var themeService: DefaultThemeProviding?
 

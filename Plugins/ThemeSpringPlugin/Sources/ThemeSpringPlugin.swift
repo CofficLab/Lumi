@@ -6,6 +6,7 @@ public final class ThemeSpringPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.spring"
     public let name = "Spring Theme"
     public let order = 124
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

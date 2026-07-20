@@ -8,6 +8,7 @@ public final class EditorCallHierarchyPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-call-hierarchy"
     public let name = "Editor Call Hierarchy"
     public let order = 6
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -6,6 +6,7 @@ public final class ThemeMidnightPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.midnight"
     public let name = "Midnight Theme"
     public let order = 120
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -19,6 +19,7 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.disk-manager"
     public let name = "Disk Manager"
     public let order = 44
+public static let policy: LumiPluginPolicy = .disabled
 
     // MARK: - Initialization
 

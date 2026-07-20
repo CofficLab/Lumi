@@ -6,6 +6,7 @@ public final class LogoCofficPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-coffic"
     public let name = "Coffic Logo"
     public let order = 100
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

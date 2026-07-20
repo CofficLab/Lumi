@@ -14,6 +14,7 @@ public final class EditorPanelPlugin: LumiPlugin {
     public let id = "LumiEditor"
     public let name = "Code Editor"
     public let order = 77
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

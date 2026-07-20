@@ -18,7 +18,8 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.settings"
     public let name = "Settings Plugin"
-    public let order = 20  // 核心插件，优先注册
+    public let order = 20
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
 
     // MARK: - State
 

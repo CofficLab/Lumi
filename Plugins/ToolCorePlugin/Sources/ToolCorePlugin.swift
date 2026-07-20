@@ -6,6 +6,7 @@ public final class ToolCorePlugin: LumiPlugin {
     public let id = "ToolCore"
     public let name = "Tool Core"
     public let order = 0
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

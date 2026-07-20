@@ -18,7 +18,8 @@ public final class LogoPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.logo"
     public let name = "Logo Plugin"
-    public let order = 21  // 核心插件，优先注册
+    public let order = 21
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
 
     // MARK: - State
 

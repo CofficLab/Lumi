@@ -8,6 +8,7 @@ public final class XiaomiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.xiaomi"
     public let name = "Xiaomi"
     public let order = 102
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

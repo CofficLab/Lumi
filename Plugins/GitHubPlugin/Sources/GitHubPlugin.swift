@@ -6,6 +6,7 @@ public final class GitHubPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.github"
     public let name = "GitHub"
     public let order = 16
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

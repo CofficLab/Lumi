@@ -6,6 +6,7 @@ public final class WebSearchPlugin: LumiPlugin {
     public let id = "WebSearch"
     public let name = "WebSearch"
     public let order = 101
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

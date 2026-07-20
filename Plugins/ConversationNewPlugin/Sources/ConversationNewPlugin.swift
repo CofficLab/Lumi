@@ -7,6 +7,7 @@ public final class ConversationNewPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-new"
     public let name = "New Chat Button"
     public let order = 60
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

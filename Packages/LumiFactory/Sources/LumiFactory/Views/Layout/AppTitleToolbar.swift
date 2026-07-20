@@ -41,6 +41,7 @@ struct AppTitleToolbar: View {
             }
         }
         .foregroundStyle(theme.textPrimary)
+        .background(.red)
     }
 
     private func toolbarGroup(_ items: [TitleToolbarItem]) -> some View {

@@ -12,6 +12,7 @@ public final class MessageRendererPlugin: LumiPlugin {
     public let id = "CoreMessageRenderer"
     public let name = "核心消息渲染器"
     public let order = 10
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

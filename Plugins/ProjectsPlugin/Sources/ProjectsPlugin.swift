@@ -21,7 +21,8 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.projects"
     public let name = "Projects Plugin"
-    public let order = 20  // 核心插件
+    public let order = 20
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件
 
     // MARK: - State
 

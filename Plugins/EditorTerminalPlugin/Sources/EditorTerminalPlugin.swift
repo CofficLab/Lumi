@@ -11,6 +11,7 @@ public final class EditorTerminalPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-terminal"
     public let name = "Editor Terminal"
     public let order = 100
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

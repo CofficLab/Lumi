@@ -6,6 +6,7 @@ public final class MessageListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-messages-section"
     public let name = "Chat Messages"
     public let order = 82
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

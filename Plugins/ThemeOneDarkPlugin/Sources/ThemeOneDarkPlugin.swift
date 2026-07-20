@@ -7,6 +7,7 @@ public final class ThemeOneDarkPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.one-dark"
     public let name = "One Dark Theme"
     public let order = 131
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

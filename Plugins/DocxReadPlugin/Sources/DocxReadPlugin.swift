@@ -6,6 +6,7 @@ public final class DocxReadPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.docx-read"
     public let name = "Docx Read"
     public let order = 90
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

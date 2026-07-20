@@ -8,6 +8,7 @@ public final class EditorSymbolsPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-symbols"
     public let name = "Editor Symbols"
     public let order = 3
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

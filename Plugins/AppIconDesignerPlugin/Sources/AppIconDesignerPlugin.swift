@@ -6,6 +6,7 @@ public final class AppIconDesignerPlugin: LumiPlugin {
     public let id = "AppIconDesigner"
     public let name = "AppIconDesigner"
     public let order = 79
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

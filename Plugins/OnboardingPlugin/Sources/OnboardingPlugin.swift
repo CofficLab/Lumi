@@ -6,6 +6,7 @@ public final class OnboardingPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.onboarding"
     public let name = "Onboarding"
     public let order = 10
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -6,6 +6,7 @@ public final class AgentOpenRemotePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-remote"
     public let name = "Open Remote"
     public let order = 62
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

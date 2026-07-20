@@ -6,6 +6,7 @@ public final class ThemeSummerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.summer"
     public let name = "Summer Theme"
     public let order = 125
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

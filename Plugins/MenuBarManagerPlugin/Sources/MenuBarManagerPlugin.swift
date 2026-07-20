@@ -14,6 +14,7 @@ public final class MenuBarManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.menubar-manager"
     public let name = "Menu Bar Manager"
     public let order = 20
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

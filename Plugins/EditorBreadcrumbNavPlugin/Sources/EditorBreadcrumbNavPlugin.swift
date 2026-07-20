@@ -8,6 +8,7 @@ public final class EditorBreadcrumbNavPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-breadcrumb-header"
     public let name = "Editor Breadcrumb Header"
     public let order = 80
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

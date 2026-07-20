@@ -19,7 +19,8 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
     public let name = "Clipboard Manager Plugin"
-    public let order = 70  // 功能插件
+    public let order = 70
+public static let policy: LumiPluginPolicy = .disabled  // 功能插件
 
     // MARK: - Initialization
 

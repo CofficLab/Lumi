@@ -18,7 +18,8 @@ public final class PanelPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.panel"
     public let name = "Panel Plugin"
-    public let order = 18  // 核心插件，优先注册
+    public let order = 18
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
 
     // MARK: - State
 

@@ -14,6 +14,7 @@ public final class InputPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.input-manager"
     public let name = "Input Manager"
     public let order = 70
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

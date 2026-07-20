@@ -7,6 +7,7 @@ public final class ConversationTimelinePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-timeline"
     public let name = "Conversation Timeline"
     public let order = 82
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

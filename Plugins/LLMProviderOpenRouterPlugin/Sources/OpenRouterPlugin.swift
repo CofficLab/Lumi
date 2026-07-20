@@ -8,6 +8,7 @@ public final class OpenRouterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.openrouter"
     public let name = "OpenRouter"
     public let order = 101
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -19,7 +19,8 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.plugin-management"
     public let name = "PluginManagement Plugin"
-    public let order = 5  // 核心插件，最先注册
+    public let order = 5
+public static let policy: LumiPluginPolicy = .disabled  // 核心插件，最先注册
 
     // MARK: - Initialization
 

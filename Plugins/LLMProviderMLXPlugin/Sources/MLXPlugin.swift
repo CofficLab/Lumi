@@ -11,7 +11,7 @@ public enum MLXPlugin: LumiPlugin {
         description: LumiPluginLocalization.string("Local LLM via Apple MLX", bundle: .module),
         order: 10,
         category: .llmProvider,
-        policy: .alwaysOn,
+        policy: .disabled,
         stage: .beta,
         iconName: "desktopcomputer",
     )

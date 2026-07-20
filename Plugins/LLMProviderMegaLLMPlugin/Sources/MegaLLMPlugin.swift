@@ -8,6 +8,7 @@ public final class MegaLLMPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.megallm"
     public let name = "MegaLLM"
     public let order = 99
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

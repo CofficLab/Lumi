@@ -6,6 +6,7 @@ public final class LogoSmartLightPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-smart-light"
     public let name = "Smart Light Logo"
     public let order = 200
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

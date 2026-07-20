@@ -6,6 +6,7 @@ public final class ShowImagePlugin: LumiPlugin {
     public let id = "ShowImage"
     public let name = "ShowImage"
     public let order = 97
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -6,6 +6,7 @@ public final class DatabaseManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.database-manager"
     public let name = "Database"
     public let order = 50
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

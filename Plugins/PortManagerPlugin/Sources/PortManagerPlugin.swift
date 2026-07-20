@@ -20,6 +20,7 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.port-manager"
     public let name = "Port Manager"
     public let order = 43
+public static let policy: LumiPluginPolicy = .disabled
 
     // MARK: - Initialization
 

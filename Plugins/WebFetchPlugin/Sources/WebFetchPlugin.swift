@@ -6,6 +6,7 @@ public final class WebFetchPlugin: LumiPlugin {
     public let id = "WebFetch"
     public let name = "WebFetch"
     public let order = 100
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -8,6 +8,7 @@ public final class DeepSeekPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.deepseek"
     public let name = "DeepSeek"
     public let order = 92
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -7,6 +7,7 @@ public final class ConversationTurnDurationPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-turn-duration"
     public let name = "Turn Duration"
     public let order = 86
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

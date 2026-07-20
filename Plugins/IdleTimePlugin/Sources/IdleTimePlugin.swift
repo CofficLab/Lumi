@@ -6,6 +6,7 @@ public final class IdleTimePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let name = "Idle Time"
     public let order = 96
+public static let policy: LumiPluginPolicy = .disabled
 
     public var policy: LumiPluginPolicy { .disabled }
 

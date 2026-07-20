@@ -9,6 +9,7 @@ public final class ConversationListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-list"
     public let name = "Conversation List"
     public let order = 76
+public static let policy: LumiPluginPolicy = .disabled
 
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")

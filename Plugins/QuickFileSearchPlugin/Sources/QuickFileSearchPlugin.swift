@@ -6,6 +6,7 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     public let id = "QuickFileSearch"
     public let name = "Quick File Search"
     public let order = 50
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

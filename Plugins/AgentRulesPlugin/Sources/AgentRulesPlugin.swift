@@ -6,6 +6,7 @@ public final class AgentRulesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let name = "Agent Rules"
     public let order = 50
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

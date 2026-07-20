@@ -8,6 +8,7 @@ public final class FlyMuxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.flymux"
     public let name = "FlyMux"
     public let order = 94
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -8,6 +8,7 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-search"
     public let name = "Editor Search"
     public let order = 2
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

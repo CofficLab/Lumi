@@ -8,6 +8,7 @@ public final class OpenAIPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.openai"
     public let name = "OpenAI"
     public let order = 100
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

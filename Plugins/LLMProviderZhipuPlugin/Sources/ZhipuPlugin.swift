@@ -8,6 +8,7 @@ public final class ZhipuPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.zhipu"
     public let name = "智谱 Coding Plan"
     public let order = 110
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

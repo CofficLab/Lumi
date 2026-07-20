@@ -21,7 +21,7 @@ public enum EditorSwiftEditorPlugin: LumiPlugin {
         description: LumiPluginLocalization.string("Provides Swift language support, Xcode project identity, build context, and sourcekit-lsp integration.", bundle: .module),
         order: 4,
         category: .development,
-        policy: .alwaysOn,
+        policy: .disabled,
         stage: .beta,
         iconName: "swift",
     )

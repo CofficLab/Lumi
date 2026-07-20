@@ -7,6 +7,7 @@ public final class CodexLumiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.codex"
     public let name = "Codex CLI"
     public let order = 105
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

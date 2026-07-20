@@ -6,6 +6,7 @@ public final class RAGPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.rag"
     public let name = "RAG"
     public let order = 200
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

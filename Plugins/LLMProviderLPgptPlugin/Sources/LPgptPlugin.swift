@@ -8,6 +8,7 @@ public final class LPgptPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.lpgpt"
     public let name = "LPgpt"
     public let order = 98
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

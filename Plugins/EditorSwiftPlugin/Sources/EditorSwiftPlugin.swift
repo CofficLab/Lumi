@@ -6,6 +6,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public let id = "EditorSwiftIntegration"
     public let name = "Swift Integration"
     public let order = 5
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

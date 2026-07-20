@@ -6,6 +6,7 @@ public final class ThemeOrchardPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.orchard"
     public let name = "Orchard Theme"
     public let order = 128
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

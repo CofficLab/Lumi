@@ -19,6 +19,7 @@ public final class LayoutPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Persistence"
     public let order = 99
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

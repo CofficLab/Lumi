@@ -18,7 +18,8 @@ public final class ConversationManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-manager"
     public let name = "Conversation Manager"
-    public let order = 61  // After ChatKernelPlugin
+    public let order = 61
+public static let policy: LumiPluginPolicy = .disabled  // After ChatKernelPlugin
 
     // MARK: - Initialization
 

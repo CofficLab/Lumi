@@ -12,6 +12,7 @@ public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header"
     public let name = "Editor Sticky Symbol Bar"
     public let order = 85
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 

@@ -6,6 +6,7 @@ public final class GitPlugin: LumiPlugin {
     public let id = "GitPlugin"
     public let name = "Git"
     public let order = 11
+public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
