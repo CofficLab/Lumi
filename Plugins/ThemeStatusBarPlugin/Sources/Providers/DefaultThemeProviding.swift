@@ -99,6 +99,9 @@ public final class DefaultThemeProviding: LumiThemeServicing {
             return
         }
 
+        // Collect theme contributions from plugins that implement UIThemeProviding.
+        // Note: Theme plugins register themes via kernel.registerTheme() which adds
+        // directly to themeRegistry. Those themes are preserved here.
         var contributions: [LumiUIThemeContribution] = []
         for plugin in pluginService.allPlugins {
             if let themeProvider = plugin as? any UIThemeProviding {
@@ -107,15 +110,25 @@ public final class DefaultThemeProviding: LumiThemeServicing {
         }
 
         if contributions.isEmpty {
+            // No UIThemeProviding plugins found. Preserve existing registered themes
+            // (from kernel.registerTheme calls) instead of wiping them.
             if Self.verbose {
-                Self.logger.info("No theme contributions found; using built-in fallback")
+                Self.logger.info("No UIThemeProviding contributions; preserving \(self.themeRegistry.themes.count) existing themes")
             }
-            try? themeRegistry.replaceAll([.builtInFallback()])
         } else {
             do {
-                try themeRegistry.replaceAll(contributions)
+                // Merge UIThemeProviding contributions with existing registered themes,
+                // avoiding duplicates by theme ID.
+                let existingThemes = self.themeRegistry.themes
+                var merged = contributions
+                for existing in existingThemes {
+                    if !merged.contains(where: { $0.id == existing.id }) {
+                        merged.append(existing)
+                    }
+                }
+                try themeRegistry.replaceAll(merged)
                 if Self.verbose {
-                    Self.logger.info("Reloaded \(contributions.count) theme contributions")
+                    Self.logger.info("Reloaded \(merged.count) theme contributions (merged with existing)")
                 }
             } catch {
                 Self.logger.error("Failed to replace themes: \(error)")
