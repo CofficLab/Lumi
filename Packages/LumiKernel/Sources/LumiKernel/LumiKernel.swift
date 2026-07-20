@@ -701,13 +701,12 @@ public final class LumiKernelContainer: ObservableObject {
 
     /// Register theme
     public func registerTheme(_ contribution: LumiUIThemeContribution) {
-        // LumiThemeServicing 不直接支持注册 - 通过 plugin 注册
-        // 此处为兼容性保留,实际功能由 ThemeStatusBarPlugin.DefaultThemeProviding 提供
+        theme?.registerTheme(contribution)
     }
 
     /// Unregister theme
     public func unregisterTheme(id: String) {
-        // 见 registerTheme
+        theme?.unregisterTheme(id: id)
     }
 
     // MARK: - Startup & Validation

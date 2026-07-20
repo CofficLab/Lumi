@@ -7,4 +7,10 @@ public protocol LumiThemeServicing: AnyObject {
     var selectedContribution: LumiUIThemeContribution? { get }
 
     func selectTheme(id: String) throws
+
+    /// 注册一个主题贡献
+    func registerTheme(_ contribution: LumiUIThemeContribution)
+
+    /// 注销一个主题贡献
+    func unregisterTheme(id: String)
 }
