@@ -1,9 +1,9 @@
 import LumiKernel
 import SwiftUI
 
-/// 应用命令菜单
+/// Application command menu.
 ///
-/// 从 LumiKernel 获取插件注册的命令并渲染。
+/// Wires all command sub-groups together and injects the kernel where needed.
 public struct AppCommands: Commands {
     let kernel: LumiKernel
 
@@ -12,28 +12,37 @@ public struct AppCommands: Commands {
     }
 
     public var body: some Commands {
-        // 渲染插件注册的命令组到工具菜单
+        // Chat commands: Cmd+Shift+L focus chat, Cmd+Return send, Esc stop
+        ChatCommands()
+
+        // Settings: Cmd+,
+        SettingsCommand()
+
+        // Window: Cmd+Shift+N new window
+        WindowCommand()
+
+        // Editor save: Cmd+S
+        EditorSaveCommands()
+
+        // Editor focus keys: Cmd+1/2/3 for panel focus
+        EditorFocusKeys()
+
+        // Debug menu
+        DebugCommand(kernel: kernel)
+
+        // Check for updates (stub until UpdateService is restored)
+        CheckForUpdatesCommand()
+
+        // Plugin-registered command groups
         CommandGroup(after: .toolbar) {
-            ForEach(kernel.allCommandGroups.first?.items ?? []) { item in
-                Button(item.title) {
-                    item.action()
+            ForEach(kernel.allCommandGroups) { group in
+                ForEach(group.items) { item in
+                    Button(item.title) {
+                        item.action()
+                    }
+                    .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
                 }
-                .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
             }
-        }
-
-        // 默认命令
-        CommandGroup(replacing: .appInfo) {
-            Button("关于 Lumi") {
-                // TODO: 显示关于对话框
-            }
-        }
-
-        CommandGroup(replacing: .appSettings) {
-            Button("设置...") {
-                // TODO: 打开设置窗口
-            }
-            .keyboardShortcut(",", modifiers: .command)
         }
     }
 }

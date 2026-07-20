@@ -1,10 +1,6 @@
 import LumiKernel
-import LumiUI
 import SwiftUI
 
-/// 设置页面（最小实现）
-///
-/// 提供核心设置标签页，插件贡献的设置页将在后续插件迁移中恢复。
 struct SettingsView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
@@ -54,7 +50,7 @@ struct SettingsView: View {
         case .general:
             GeneralSettingsPage()
         case .appearance:
-            AppearanceSettingsPage()
+            AppearanceSettingsPage(kernel: kernel)
         case .plugins:
             PluginSettingsPage(kernel: kernel)
         case .about:

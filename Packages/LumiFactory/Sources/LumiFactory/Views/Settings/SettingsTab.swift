@@ -1,4 +1,5 @@
 import Foundation
+import LumiLocalizationKit
 
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general
@@ -10,10 +11,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: "通用"
-        case .appearance: "外观"
-        case .plugins: "插件"
-        case .about: "关于"
+        case .general: LumiLocalization.string("General", bundle: .module)
+        case .appearance: LumiLocalization.string("Appearance", bundle: .module)
+        case .plugins: LumiLocalization.string("Plugins", bundle: .module)
+        case .about: LumiLocalization.string("About", bundle: .module)
         }
     }
 
