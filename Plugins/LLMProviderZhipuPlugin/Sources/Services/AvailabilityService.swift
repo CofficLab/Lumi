@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
-import LumiKernel
 import LLMKit
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderZhipuPlugin")
@@ -81,7 +82,7 @@ enum AvailabilityService {
         if case let HTTPClientError.httpError(statusCode, _) = error, statusCode == 429 {
             return true
         }
-        return isRateLimitedFailure(LLMFailureDetailResolver.resolve(from: error))
+        return isRateLimitedFailure(LumiLLMFailureDetailResolver.resolve(from: error))
     }
 
     static func parsedAPIErrorMessage(from text: String) -> String? {

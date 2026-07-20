@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreMessage
 import LumiKernel
-import LLMKit
-import LumiKernel
+import LumiLLMProviderSupport
 import SuperLogKit
 
 enum AvailabilityService: SuperLog {
@@ -25,7 +25,7 @@ enum AvailabilityService: SuperLog {
         if Self.verbose {
             StepFunPlugin.logger.info("\(Self.t)开始检查可用性 model=\(model)")
         }
-        let result = await OpenAICompatibleAvailability.chatPing(
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

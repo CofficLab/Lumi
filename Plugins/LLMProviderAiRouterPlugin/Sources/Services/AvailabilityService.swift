@@ -1,6 +1,8 @@
 import Foundation
-import LumiKernel
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
+import LumiLLMProviderSupport
 import LumiKernel
 
 enum AvailabilityService {
@@ -15,7 +17,7 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await OpenAICompatibleAvailability.chatPing(
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

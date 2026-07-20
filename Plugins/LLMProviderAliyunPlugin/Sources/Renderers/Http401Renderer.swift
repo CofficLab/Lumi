@@ -1,9 +1,12 @@
+import LumiCoreMessage
 import LumiKernel
+
+private let rendererOrder = 305
 
 enum Http401Renderer {
     static let item = LumiMessageRendererItem(
         id: "aliyun-http-401",
-        order: AliyunPlugin.info.order + 200,
+        order: rendererOrder,
         canRender: { message in
             AliyunRenderKind.matchesHttp(statusCode: 401, message: message)
         },

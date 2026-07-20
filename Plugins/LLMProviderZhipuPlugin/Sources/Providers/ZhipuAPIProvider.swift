@@ -1,7 +1,10 @@
 import Foundation
-import LLMKit
 import HttpKit
+import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 
 /// 智谱 API（OpenAI 兼容协议）
 public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
@@ -112,7 +115,7 @@ public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
     }
     
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await OpenAICompatibleAvailability.chatPing(
+        await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: adapter,
             apiService: apiService,
@@ -136,7 +139,7 @@ public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
             return ZhipuRenderKind.apiKeyMissing
         }
         
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
             return ZhipuRenderKind.http(statusCode)
         }
         

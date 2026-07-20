@@ -1,6 +1,9 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
+
+public typealias LumiLLMFailureDetail = LumiCoreMessage.LumiLLMFailureDetail
 
 public enum LumiLLMFailureDetailResolver {
     public static func resolve(from error: Error, locale: Locale = .current) -> LumiLLMFailureDetail {
@@ -110,8 +113,8 @@ public enum LumiLLMFailureDetailResolver {
     private static func resolveStreamingFailed(_ message: String) -> LumiLLMFailureDetail {
         let split = LumiLLMTransportDetails.split(message)
         let summary = split.summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: summary)
-            ?? LumiLLMHTTPErrorParsing.statusCode(from: message)
+        let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: summary)
+            ?? LumiProviderHTTPErrorParsing.statusCode(from: message)
 
         if split.hasTransportDetails {
             return LumiLLMFailureDetail(

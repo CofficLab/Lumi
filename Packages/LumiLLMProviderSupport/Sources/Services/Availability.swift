@@ -1,60 +1,8 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LLMKit
-import LumiCoreKit
-
-public enum LumiOpenAICompatibleAvailability {
-    public static func chatPing(
-        model: String,
-        adapter: OpenAICompatibleProviderAdapter,
-        apiService: LLMAPIService,
-        buildRequest: (URL, String) -> URLRequest,
-        resolveAPIKey: () throws -> String
-    ) async -> LumiModelAvailabilityResult {
-        await LumiLLMProviderAvailabilitySupport.chatPing(
-            model: model,
-            baseURL: adapter.configuration.baseURL,
-            apiService: apiService,
-            buildRequestBody: { model in
-                try adapter.buildRequestBody(
-                    messages: [ChatMessage(role: .user, content: "ping")],
-                    model: model,
-                    tools: nil,
-                    systemPrompt: ""
-                )
-            },
-            buildRequest: buildRequest,
-            resolveAPIKey: resolveAPIKey
-        )
-    }
-}
-
-public enum LumiAnthropicCompatibleAvailability {
-    public static func chatPing(
-        model: String,
-        adapter: AnthropicCompatibleProviderAdapter,
-        apiService: LLMAPIService,
-        buildRequest: (URL, String) -> URLRequest,
-        resolveAPIKey: () throws -> String
-    ) async -> LumiModelAvailabilityResult {
-        await LumiLLMProviderAvailabilitySupport.chatPing(
-            model: model,
-            baseURL: adapter.configuration.baseURL,
-            apiService: apiService,
-            buildRequestBody: { model in
-                try adapter.buildRequestBody(
-                    messages: [ChatMessage(role: .user, content: "ping")],
-                    model: model,
-                    tools: nil,
-                    systemPrompt: ""
-                )
-            },
-            buildRequest: buildRequest,
-            resolveAPIKey: resolveAPIKey
-        )
-    }
-}
+import LumiCoreLLMProvider
+import LumiCoreMessage
 
 enum LumiLLMProviderAvailabilitySupport {
     static let pingMaxTokens = 1
@@ -75,11 +23,11 @@ enum LumiLLMProviderAvailabilitySupport {
         do {
             apiKeyValue = try resolveAPIKey()
         } catch {
-            return .unavailable( LumiLLMFailureDetailResolver.resolve(from: error))
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
         }
 
         guard let url = URL(string: baseURL) else {
-            return .unavailable( .message("无效的 Base URL"))
+            return .unavailable(.message("Invalid Base URL"))
         }
 
         let body: [String: Any]
@@ -101,7 +49,7 @@ enum LumiLLMProviderAvailabilitySupport {
             return .available
         } catch {
             let detail = LumiLLMFailureDetailResolver.resolve(from: error)
-            return .unavailable( detail)
+            return .unavailable(detail)
         }
     }
 }

@@ -1,22 +1,19 @@
 import LumiKernel
 import os
 
-public enum CodexPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.codex")
+@MainActor
+public final class CodexPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.codex"
+    public let name = "Codex"
+    public let order = 105
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.codex",
-        displayName: LumiPluginLocalization.string("Codex", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes Codex models to Lumi Chat.", bundle: .module),
-        order: 105,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(lumiCore: any LumiCoreAccessing) -> [any LumiLLMProvider] {
-        return [CodexProvider()]
+    public func register(kernel: LumiKernel) throws {}
+
+    public func boot(kernel: LumiKernel) async throws {}
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [CodexProvider()]
     }
 }

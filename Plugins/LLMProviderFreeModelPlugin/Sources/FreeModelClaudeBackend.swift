@@ -1,7 +1,10 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 import os
 
 final class FreeModelClaudeBackend: LumiLLMProvider, @unchecked Sendable {

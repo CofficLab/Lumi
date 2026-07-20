@@ -1,6 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiLLMProviderSupport
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 
 public final class AiRouterProvider: LumiLLMProvider, @unchecked Sendable {

@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreSubAgent
 import LumiKernel
 
 /// 代码审查子Agent

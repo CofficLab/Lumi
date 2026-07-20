@@ -1,9 +1,10 @@
+import LumiCoreMessage
 import LumiKernel
 
 enum Http403Renderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-http-403",
-        order: ZhipuPlugin.info.order + 200,
+        order: 305,
         canRender: { message in
             ZhipuRenderKind.matchesHttp(statusCode: 403, message: message)
         },

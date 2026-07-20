@@ -1,5 +1,6 @@
 import Foundation
-import LumiCoreKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 
 /// `AvailabilityDiskCache` 的目录解析器。
 ///

@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreMessage
 import LumiKernel
-import LLMKit
-import LumiKernel
+import LumiLLMProviderSupport
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXiaomiPlugin")
@@ -38,7 +38,7 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await OpenAICompatibleAvailability.chatPing(
+            await LumiOpenAICompatibleAvailability.chatPing(
                 model: model,
                 adapter: provider.internalAdapter,
                 apiService: provider.internalApiService,
@@ -64,7 +64,7 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await OpenAICompatibleAvailability.chatPing(
+            await LumiOpenAICompatibleAvailability.chatPing(
                 model: model,
                 adapter: provider.internalAdapter,
                 apiService: provider.internalApiService,

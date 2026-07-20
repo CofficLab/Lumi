@@ -1,6 +1,7 @@
 import Foundation
 import LLMKit
-import HttpKit
+import LumiLLMProviderSupport
+import  HttpKit
 import LumiKernel
 
 /// 小米 API（OpenAI 兼容协议）

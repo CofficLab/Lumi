@@ -1,4 +1,5 @@
 import LLMKit
+import LumiCoreLLMProvider
 import LumiKernel
 import LumiUI
 
@@ -16,4 +17,8 @@ public final class AnthropicPlugin: LumiPlugin {
     }
 
     public func boot(kernel: LumiKernel) async throws {}
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [AnthropicProvider()]
+    }
 }

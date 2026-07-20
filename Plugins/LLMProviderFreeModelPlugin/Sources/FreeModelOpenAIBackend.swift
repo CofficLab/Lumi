@@ -1,7 +1,10 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 
 final class FreeModelOpenAIBackend: LumiLLMProvider, @unchecked Sendable {
     static let info = FreeModelProvider.providerInfo
@@ -72,7 +75,7 @@ final class FreeModelOpenAIBackend: LumiLLMProvider, @unchecked Sendable {
     }
     
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await OpenAICompatibleAvailability.chatPing(
+        await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: adapter,
             apiService: apiService,

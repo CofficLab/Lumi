@@ -1,6 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiLLMProviderSupport
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 
 /// MiniMax Token Plan 提供商

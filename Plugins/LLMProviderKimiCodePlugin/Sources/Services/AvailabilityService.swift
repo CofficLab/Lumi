@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
 import LLMKit
-
+import LumiLLMProviderSupport
 enum AvailabilityService {
     private static let openAICache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-OpenAI")
     private static let anthropicCache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-Anthropic")
@@ -15,7 +15,7 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await OpenAICompatibleAvailability.chatPing(
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

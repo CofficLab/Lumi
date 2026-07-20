@@ -1,8 +1,10 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 
 // MARK: - Platform Detection
 

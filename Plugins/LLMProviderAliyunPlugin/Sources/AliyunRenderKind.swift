@@ -1,3 +1,5 @@
+import LLMKit
+import LumiCoreMessage
 import LumiKernel
 
 enum AliyunRenderKind {

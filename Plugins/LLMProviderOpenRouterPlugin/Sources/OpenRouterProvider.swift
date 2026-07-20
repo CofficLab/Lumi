@@ -1,6 +1,9 @@
 import Foundation
-import LLMKit
 import HttpKit
+import LLMKit
+import LumiLLMProviderSupport
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 
 public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {

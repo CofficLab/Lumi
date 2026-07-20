@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreSubAgent
 import LumiKernel
 
 /// Git 提交助手子Agent

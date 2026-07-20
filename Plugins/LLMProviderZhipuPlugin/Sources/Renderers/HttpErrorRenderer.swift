@@ -1,9 +1,10 @@
+import LumiCoreMessage
 import LumiKernel
 
 enum HttpErrorRenderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-http-error",
-        order: ZhipuPlugin.info.order + 200,
+        order: 305,
         canRender: { message in
             ZhipuRenderKind.matchesOtherHttpError(message)
         },

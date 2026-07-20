@@ -1,12 +1,13 @@
-import LumiKernel
 import LLMKit
+import LumiCoreMessage
+import LumiKernel
 import LumiUI
 import SwiftUI
 
 enum ApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "zhipu-api-key-missing",
-        order: ZhipuPlugin.info.order + 200,
+        order: 305,
         canRender: { message in
             ZhipuRenderKind.matchesApiKeyMissing(message)
         },

@@ -16,4 +16,8 @@ public final class MLXLumiPlugin: LumiPlugin {
     }
 
     public func boot(kernel: LumiKernel) async throws {}
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [MLXProvider()]
+    }
 }

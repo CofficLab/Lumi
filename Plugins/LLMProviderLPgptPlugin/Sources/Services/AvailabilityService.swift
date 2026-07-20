@@ -1,7 +1,8 @@
 import Foundation
-import LumiKernel
 import LLMKit
+import LumiCoreMessage
 import LumiKernel
+import LumiLLMProviderSupport
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderLPgptPlugin")
@@ -15,7 +16,7 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await OpenAICompatibleAvailability.chatPing(
+        let result = await LumiOpenAICompatibleAvailability.chatPing(
             model: model,
             adapter: provider.internalAdapter,
             apiService: provider.internalApiService,

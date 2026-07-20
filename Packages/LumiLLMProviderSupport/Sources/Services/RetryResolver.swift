@@ -1,8 +1,8 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LLMKit
-import LumiCoreKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 
 public enum ErrorDispositionResolver {
     public static func disposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
@@ -36,13 +36,13 @@ public enum ErrorDispositionResolver {
             return statusCode
         }
         if case let LumiLLMProviderSupportError.streamingFailed(message) = error {
-            return LumiLLMHTTPErrorParsing.statusCode(from: message)
+            return LumiProviderHTTPErrorParsing.statusCode(from: message)
         }
         return nil
     }
 }
 
-public enum LumiLLMHTTPErrorParsing {
+public enum LumiProviderHTTPErrorParsing {
     public static func statusCode(from error: Error) -> Int? {
         if case LumiLLMProviderSupportError.missingAPIKey = error {
             return nil
@@ -98,8 +98,8 @@ public enum LumiLLMProviderErrorSupport {
             let split = LumiLLMTransportDetails.split(message)
             detail = LumiLLMFailureDetail(
                 summary: split.summary,
-                httpStatusCode: LumiLLMHTTPErrorParsing.statusCode(from: split.summary)
-                    ?? LumiLLMHTTPErrorParsing.statusCode(from: message),
+                httpStatusCode: LumiProviderHTTPErrorParsing.statusCode(from: split.summary)
+                    ?? LumiProviderHTTPErrorParsing.statusCode(from: message),
                 transportDetails: nil
             )
             metadata = LumiLLMTransportDetails.metadata(from: split)

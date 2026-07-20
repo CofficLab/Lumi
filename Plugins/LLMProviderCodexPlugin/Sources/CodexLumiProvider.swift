@@ -1,4 +1,6 @@
 import Foundation
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 
 public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
