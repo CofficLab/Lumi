@@ -23,6 +23,7 @@ public final class EditorPanelPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "chevron.left.forwardslash.chevron.right",
+                chatSection: .narrow,
                 showsRail: true,
                 showsPanelChrome: true
             ) {
