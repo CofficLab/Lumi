@@ -32,11 +32,9 @@ struct ChatView: View {
 
     /// 是否在当前视口里展示 Chat 区域。
     ///
-    /// 两个条件都满足才显示：
-    /// 1. `chatSection` 布局档位非 `.none`（用户/视图容器启用了 Chat 区域）
-    /// 2. `layoutState.chatSectionVisible`（用户没手动隐藏）
+    /// 始终返回 true，Chat 区域始终显示。
     private var shouldShowChatSection: Bool {
-        chatSection.isVisible && layoutState.chatSectionVisible
+        true
     }
 
     private var chatSectionItems: [ChatSectionItem] {

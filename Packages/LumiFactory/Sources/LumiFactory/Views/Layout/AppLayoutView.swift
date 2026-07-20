@@ -1,223 +1,179 @@
-import EditorService
-import LumiCoreKit
-import LumiChatKit
+import LumiCoreLayout
+import LumiCorePanelChrome
+import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// 新版应用主布局
+///
+/// 基于 `LumiKernel` 构建，消费插件注册的视图容器。右侧始终展示 Chat 区域，
+/// 支持插件通过 `kernel.registerChatSectionItem` 注入 Chat UI。
 struct AppLayoutView: View {
     @LumiTheme private var theme
-    @ObservedObject var lumiCore: LumiCore
-    @ObservedObject var pluginService: PluginService
-    let editorCoreService: EditorCoreService
-    let lumiUIService: LumiUIService
-    let chatService: ChatService
-    let chatSectionCoordinator: ChatSectionCoordinator
+    @ObservedObject var kernel: LumiKernel
 
-    init(
-        lumiCore: LumiCore,
-        pluginService: PluginService,
-        editorCoreService: EditorCoreService,
-        lumiUIService: LumiUIService,
-        chatService: ChatService,
-        chatSectionCoordinator: ChatSectionCoordinator
-    ) {
-        self.lumiCore = lumiCore
-        self.pluginService = pluginService
-        self.editorCoreService = editorCoreService
-        self.lumiUIService = lumiUIService
-        self.chatService = chatService
-        self.chatSectionCoordinator = chatSectionCoordinator
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
-    /// 优先使用 boot() 之后的 layoutState;未就绪时退化到 fresh 实例。
-    ///
-    /// 刷新链路：`LumiLayoutState` 内部属性变化 → `LumiLayoutState.objectWillChange` →
-    /// `LumiCore` 中 `subscribeToChild` 的订阅转发 → `LumiCore.objectWillChange` →
-    /// 本视图 `@ObservedObject` 监听 → body 重绘。所以点 activity bar 切换 view container
-    /// 时右侧内容会同步刷新。如果未来 LumiCore 不再转发，body 会停在旧值上，需在
-    /// `LumiCore` 侧的转发逻辑上修。
-    private var layoutState: LayoutState {
-        lumiCore.layoutComponent.state
+    /// 当前布局服务提供的激活分区信息。
+    private var layoutInfo: LayoutStateInfo {
+        kernel.layout?.state ?? LayoutStateInfo()
     }
 
     var body: some View {
-        let containers = pluginService.viewContainers(context: basePluginContext())
-        let selectedContainer = selectedContainer(from: containers)
-        let activeID = selectedContainer?.id ?? "main"
-        let activeTitle = selectedContainer?.title ?? "Main"
-        let chatSection = selectedContainer?.chatSection ?? .none
-        let showsRail = selectedContainer?.showsRail ?? false
-        let showsPanelChrome = selectedContainer?.showsPanelChrome ?? false
-        let preliminaryPluginContext = basePluginContext(
-            activeSectionID: activeID,
-            activeSectionTitle: activeTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: chatSection.isVisible
-        )
-        let headerItems = pluginService.panelHeaderItems(context: preliminaryPluginContext)
-        let bottomTabs = pluginService.panelBottomTabItems(context: preliminaryPluginContext)
-        let railTabs = pluginService.panelRailTabItems(context: preliminaryPluginContext)
-        let showRail = showsRail && !railTabs.isEmpty
-        let isRailOnlyPanel = showRail && !showsPanelChrome
+        let containers = kernel.viewContainer?.allViewContainers ?? []
+        let selected = selectedContainer(from: containers)
+
+        let activeID = selected?.id ?? "main"
+        let chatSection = selected?.chatSection ?? .narrow
+        let showsRail = selected?.showsRail ?? false
+        let layoutState = kernel.layout?.state ?? LayoutStateInfo()
         let chatView = ChatView(
             layoutState: layoutState,
-            pluginService: pluginService,
-            context: preliminaryPluginContext,
-            chatSectionCoordinator: chatSectionCoordinator,
-            chatSection: chatSection,
+            kernel: kernel,
+            chatSection: .narrow,  // 始终显示 chat
             activeID: activeID,
-            isRailOnlyPanel: isRailOnlyPanel
+            isRailOnlyPanel: false
         )
 
+        // Get rail tabs
+        let railTabs = kernel.panel?.allPanelRailTabItems ?? []
+        let showRail = showsRail && !railTabs.isEmpty
+
         VStack(spacing: 0) {
-            AppTitleToolbar(
-                pluginService: pluginService,
-                pluginContext: preliminaryPluginContext
-            )
+            AppTitleToolbar(kernel: kernel)
 
             AppDivider()
 
             HStack(spacing: 0) {
                 ActivityBar(
-                    layoutState: layoutState,
+                    kernel: kernel,
                     containers: containers
                 )
 
-                if chatSection.isVisible || showRail {
+                AppDivider(.vertical)
+
+                if showRail {
+                    // Rail view + panel content
                     HSplitView {
-                        PanelColumnView(
-                            container: selectedContainer,
-                            headerItems: headerItems,
-                            bottomTabs: bottomTabs,
-                            showsPanelChrome: showsPanelChrome,
-                            showRail: showRail,
-                            railTabs: railTabs,
-                            layoutState: layoutState,
-                            lumiCore: lumiCore,
-                            editor: editorCoreService
-                        )
-                        .layoutPriority(isRailOnlyPanel ? 0 : 1)
-                        .frame(
-                            maxWidth: isRailOnlyPanel ? nil : .infinity,
-                            maxHeight: .infinity
-                        )
-                        .borderTrailing()
+                        SimpleRailView(tabs: railTabs)
+                            .frame(minWidth: 200, maxWidth: 300)
 
-                        chatView
-                    }
-                    .background(
-                        Group {
-                            if chatSection.isVisible {
-                                SplitViewDividerPersistence.chatSection(
-                                    layoutState: layoutState,
-                                    viewContainerID: activeID,
-                                    layout: chatSection
-                                )
-                            }
+                        if let selected {
+                            selected.makeView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            emptyState
                         }
-                    )
+                        
+                        chatView.privacySensitive()
+                    }
                 } else {
-                    AppDivider(.vertical)
+                    HSplitView {
+                        if let selected {
+                            selected.makeView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            emptyState
+                        }
 
-                    PanelColumnView(
-                        container: selectedContainer,
-                        headerItems: headerItems,
-                        bottomTabs: bottomTabs,
-                        showsPanelChrome: showsPanelChrome,
-                        showRail: showRail,
-                        railTabs: railTabs,
-                        layoutState: layoutState,
-                        lumiCore: lumiCore,
-                        editor: editorCoreService
-                    )
+                        // 始终显示 ChatView（忽略 chatSection.isVisible）
+                        chatView.privacySensitive()
+                    }
                 }
+
+                ChatSectionToolbarSync(
+                    items: chatView.toolbarItems
+                )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear {
-                selectDefaultContainerIfNeeded(containers)
-            }
-            .onChange(of: containers.map(\.id)) { _, _ in
-                selectDefaultContainerIfNeeded(containers)
-            }
 
             AppDivider()
-            StatusBar(
-                pluginService: pluginService,
-                editorCoreService: editorCoreService,
-                pluginContext: preliminaryPluginContext,
-                lumiUIService: lumiUIService,
-                chatService: chatService
-            )
+
+            StatusBar(kernel: kernel)
         }
         .frame(minWidth: 1180, minHeight: 560)
         .background(theme.background)
-        .background {
-            ChatSectionToolbarSync(
-                items: chatView.toolbarItems,
-                coordinator: chatSectionCoordinator
-            )
-        }
         .ignoresSafeArea()
     }
 
-    private func basePluginContext(
-        activeSectionID: String? = nil,
-        activeSectionTitle: String = "Main",
-        chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
-        isChatSectionVisible: Bool? = nil
-    ) -> LumiPluginContext {
-        lumiCore.makePluginContext(
-            activeSectionID: activeSectionID ?? layoutState.activeViewContainerID ?? "main",
-            activeSectionTitle: activeSectionTitle,
-            chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
-            isChatSectionVisible: isChatSectionVisible,
-            additionalDependencies: { dependencies in
-                dependencies.register(ChatSectionCoordinator.self, chatSectionCoordinator)
-                dependencies.register((any LumiEditorServicing).self, editorCoreService)
-                dependencies.register(LumiThemeServicing.self, lumiUIService)
-            }
-        )
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "cube.box")
+                .font(.system(size: 48))
+                .foregroundStyle(theme.textTertiary)
+
+            Text("没有可用的视图容器")
+                .font(.appBodyEmphasized)
+                .foregroundStyle(theme.textSecondary)
+
+            Text("请启用至少一个提供视图容器的插件")
+                .font(.appCaption)
+                .foregroundStyle(theme.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func selectedContainer(from containers: [LumiViewContainerItem]) -> LumiViewContainerItem? {
-        if let activeID = layoutState.activeViewContainerID,
+    private func selectedContainer(from containers: [ViewContainerItem]) -> ViewContainerItem? {
+        let activeID = layoutInfo.activeSectionID
+        if !activeID.isEmpty,
            let container = containers.first(where: { $0.id == activeID }) {
             return container
         }
-
         return containers.first
     }
+}
 
-    private func selectDefaultContainerIfNeeded(_ containers: [LumiViewContainerItem]) -> Void {
-        // 布局尚未从磁盘恢复时，不写默认选择——否则首帧默认值会覆盖即将恢复的持久化值。
-        // restore 通常已在 RootContainer.init 同步阶段完成（isLayoutRestored == true），
-        // 此守卫作防御性兜底，防止未来 restore 时序被改回异步后再次踩坑。
-        guard layoutState.isLayoutRestored else { return }
+// MARK: - Simple Rail View
 
-        guard !containers.isEmpty else {
-            layoutState.activeViewContainerID = nil
-            return
-        }
+/// 简化版 Rail 视图，仅显示 rail tabs
+struct SimpleRailView: View {
+    let tabs: [PanelRailTabItem]
 
-        if let activeID = layoutState.activeViewContainerID {
-            if containers.contains(where: { $0.id == activeID }) {
-                return
+    @LumiTheme private var theme
+    @ObservedObject private var layoutState = LayoutState()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Tab bar
+            if tabs.count > 1 {
+                ForEach(tabs) { tab in
+                    railTabButton(tab)
+                }
             }
-            if isViewContainerExpected(activeID) {
-                return
+
+            Divider()
+
+            // Active tab content
+            let activeTabID = layoutState.activeRailTabID
+            if let tab = tabs.first(where: { $0.id == activeTabID }) {
+                tab.makeView()
+            } else if let firstTab = tabs.first {
+                firstTab.makeView()
             }
         }
-
-        layoutState.activeViewContainerID = containers[0].id
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(theme.surface)
     }
 
-    private func isViewContainerExpected(_ containerID: String) -> Bool {
-        pluginService.enabledPlugins.contains { $0.info.id == containerID }
+    private func railTabButton(_ tab: PanelRailTabItem) -> some View {
+        let isSelected = layoutState.activeRailTabID == tab.id
+        return Button {
+            layoutState.activeRailTabID = tab.id
+        } label: {
+            HStack {
+                Image(systemName: tab.systemImage)
+                    .frame(width: 20)
+                Text(tab.title)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
+            .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
+        }
+        .buttonStyle(.plain)
     }
 }
