@@ -1,3 +1,4 @@
+import LumiCoreLayout
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -24,6 +25,15 @@ struct AppLayoutView: View {
         let selected = selectedContainer(from: containers)
 
         let activeID = selected?.id ?? "main"
+        let chatSection = selected?.chatSection ?? .none
+        let layoutState = kernel.layout?.state ?? LayoutStateInfo()
+        let chatView = ChatView(
+            layoutState: layoutState,
+            kernel: kernel,
+            chatSection: chatSection,
+            activeID: activeID,
+            isRailOnlyPanel: false
+        )
 
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
@@ -46,15 +56,11 @@ struct AppLayoutView: View {
                         emptyState
                     }
 
-                    ChatView(
-                        kernel: kernel,
-                        activeID: activeID,
-                        isRailOnlyPanel: false
-                    )
+                    chatView
                 }
 
                 ChatSectionToolbarSync(
-                    items: PluginService.chatSectionToolbarItems(kernel: kernel)
+                    items: chatView.toolbarItems
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
