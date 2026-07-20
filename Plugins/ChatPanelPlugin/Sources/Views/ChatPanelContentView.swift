@@ -9,7 +9,9 @@ struct ChatPanelContentView: View {
     var body: some View {
         if let chatService = ChatService.shared,
            let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id {
-            ConversationContentView(chatService: chatService, conversationID: conversationID)
+//            ConversationContentView(chatService: chatService, conversationID: conversationID)
+//            EmptyView()
+            Text("ChatPanel")
         } else {
             emptyState
         }

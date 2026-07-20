@@ -37,6 +37,7 @@ public final class ChatPanelPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "bubble.left.and.bubble.right.fill",
+                chatSection: .narrow,
                 showsRail: true,
                 showsPanelChrome: true
             ) {

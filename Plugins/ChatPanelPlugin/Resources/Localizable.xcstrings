@@ -550,6 +550,9 @@
         }
       }
     },
+    "ChatPanel" : {
+
+    },
     "Clear chat history" : {
       "localizations" : {
         "en" : {

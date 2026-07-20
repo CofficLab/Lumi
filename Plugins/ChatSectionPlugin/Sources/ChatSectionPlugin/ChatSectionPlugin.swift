@@ -19,11 +19,11 @@ public final class ChatSectionPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.chatsection"
     public let name = "ChatSection Plugin"
     public let order = 17
-public static let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
+public static let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 
-    private var chatSectionService: DefaultChatSectionProviding?
+    private var chatSectionService: ChatSectionProvider?
 
     // MARK: - Initialization
 
@@ -33,7 +33,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件，优先
 
     public func register(kernel: LumiKernel) throws {
         // 1. 注册 ChatSectionService（内核服务）
-        let chatSectionServiceInstance = DefaultChatSectionProviding()
+        let chatSectionServiceInstance = ChatSectionProvider()
         kernel.registerChatSectionService(chatSectionServiceInstance)
         self.chatSectionService = chatSectionServiceInstance
 
