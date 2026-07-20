@@ -1,4 +1,7 @@
 import Foundation
+import LumiCoreAgentTool
+import LumiCoreMessage
+import LumiCoreSubAgent
 import LumiKernel
 
 /// Agent 工具服务实现
@@ -15,24 +18,30 @@ public final class AgentToolService: AgentToolProviding {
 
     // MARK: - AgentToolProviding
 
-    public var allAgentTools: [any LumiAgentTool] {
+    public func allAgentTools() -> [any LumiAgentTool] {
         toolOrder.compactMap { registeredTools[$0] }
     }
 
-    public func register(_ tool: any LumiAgentTool) {
+    public func add(_ tool: any LumiAgentTool) {
         if registeredTools[tool.name] == nil {
             toolOrder.append(tool.name)
         }
         registeredTools[tool.name] = tool
     }
 
-    public func unregister(id: String) {
+    public func remove(id: String) {
         registeredTools.removeValue(forKey: id)
         toolOrder.removeAll { $0 == id }
     }
 
+    public func allSubAgents() -> [LumiSubAgentDefinition] {
+        []
+    }
+
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {}
+
     public func collectTools() async throws -> [any LumiAgentTool] {
-        allAgentTools
+        allAgentTools()
     }
 
     public func executeTool(name: String, arguments: String, context: LumiToolExecutionContext) async throws -> String {

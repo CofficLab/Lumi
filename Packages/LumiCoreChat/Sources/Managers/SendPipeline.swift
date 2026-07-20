@@ -2,7 +2,7 @@ import Foundation
 import LumiCoreAgentTool
 import LumiCoreLLMProvider
 import LumiCoreMessage
-import LumiCorePlugin
+import LumiKernel
 
 /// Manages the send queue, pending messages, and tool approval.
 @MainActor
@@ -249,7 +249,7 @@ final class SendPipeline {
         // 从 provider 收集插件工具，失败时软降级，不阻断发送。
         if let delegate = service.delegate,
            let lumiCore = delegate.lumiCore,
-           let provider = delegate as? any AgentToolProviding {
+           let provider = delegate as? any LumiPluginAgentToolProviding {
             do {
                 pluginTools = try provider.agentTools(lumiCore: lumiCore)
             } catch {

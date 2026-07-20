@@ -1,6 +1,6 @@
 import SwiftTerm
 import SwiftUI
-import LumiCorePlugin
+import LumiKernel
 import LumiUI
 import TerminalCoreKit
 

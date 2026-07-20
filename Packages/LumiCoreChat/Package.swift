@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiCoreMessage"),
         .package(path: "../LumiCoreAgentTool"),
-        .package(path: "../LumiCorePlugin"),
+        .package(path: "../LumiKernel"),
         .package(path: "../LumiCoreLayout"),
         .package(path: "../LumiCoreLLMProvider"),
         .package(path: "../LLMKit"),
@@ -24,7 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
                 .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
-                .product(name: "LumiCorePlugin", package: "LumiCorePlugin"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
                 .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "LLMKit", package: "LLMKit"),

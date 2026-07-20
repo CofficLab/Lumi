@@ -1,5 +1,6 @@
 import Foundation
-import LumiCoreKit
+import LumiCoreMessage
+import LumiKernel
 
 /// 将 legacy `SuperAgentTool` 适配为 `LumiAgentTool`，便于插件系统注册。
 public struct SuperAgentToolBridge: LumiAgentTool, @unchecked Sendable {

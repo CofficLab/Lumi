@@ -1,7 +1,6 @@
 import EditorChatInputKit
 import AppKit
 import LumiCoreLayout
-import LumiCorePlugin
 import LumiUI
 import SwiftUI
 import LumiKernel

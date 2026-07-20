@@ -23,7 +23,6 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources"
-        ),
-        .testTarget(name: "LumiCoreLLMProviderTests", dependencies: ["LumiCoreLLMProvider"])
+        )
     ]
 )

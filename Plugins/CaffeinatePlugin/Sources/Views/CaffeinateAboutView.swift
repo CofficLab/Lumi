@@ -88,7 +88,7 @@ struct CaffeinateAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
+        LumiPluginLocalization.string(key, bundle: LumiKernelResources.bundle, locale: locale)
     }
 }
 

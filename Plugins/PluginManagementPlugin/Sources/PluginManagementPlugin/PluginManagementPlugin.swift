@@ -7,6 +7,7 @@ import os
 /// 插件管理插件
 ///
 /// 提供 PluginProviding 服务的默认实现。
+/// 同时充当 LLMProviderProviding、AgentToolProviding、ChatContributionProviding、UIThemeProviding 的实现。
 /// 负责管理所有插件的注册、启动、查询和排序。
 @MainActor
 public final class PluginManagementPlugin: LumiPlugin, SuperLog {
@@ -31,6 +32,12 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
         let pluginServiceInstance = DefaultPluginProviding()
         pluginServiceInstance.kernel = kernel
         kernel.registerPluginService(pluginServiceInstance)
+        // 2. 同一个实例还充当多个 Provider 服务的实现
+        kernel.registerLLMProviderService(pluginServiceInstance)
+        kernel.registerAgentToolService(pluginServiceInstance)
+        kernel.registerChatContributionService(pluginServiceInstance)
+        // 主题贡献由 UIThemeProviding 收集,通过 LumiKernel.plugin 访问
+        // （不需要单独注册 ThemeProviding,因为 LumiKernel 自身从 plugin 读取）
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 PluginManagement 插件到内核")

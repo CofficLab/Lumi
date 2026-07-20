@@ -1,7 +1,7 @@
 import Foundation
 import LumiCoreAgentTool
 import LumiCoreLayout
-import LumiCorePlugin
+import LumiKernel
 
 // MARK: - ChatServiceDelegate
 
@@ -18,5 +18,5 @@ public protocol ChatServiceDelegate: AnyObject {
     var currentProjectPath: String? { get }
 
     /// LumiCore 访问入口，供 ChatService 在需要时直接访问内核能力。
-    var lumiCore: (any LumiCoreAccessing)? { get }
+    var lumiCore: (any LumiCoreProviding)? { get }
 }

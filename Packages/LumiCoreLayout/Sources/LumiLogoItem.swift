@@ -13,13 +13,13 @@ import SwiftUI
 @MainActor
 public struct LogoItem: Identifiable, Sendable {
     public let id: String
-    let order: Int
+    public var order: Int
     public let makeView: @MainActor (LogoScene) -> AnyView
     public let makeOverlay: (@MainActor (LogoScene) -> AnyView)?
 
     public init<V: View>(
         id: String,
-        order: Int,
+        order: Int = 200,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V
     ) {
         self.id = id
@@ -30,7 +30,7 @@ public struct LogoItem: Identifiable, Sendable {
 
     public init<V: View, O: View>(
         id: String,
-        order: Int,
+        order: Int = 200,
         @ViewBuilder makeView: @escaping @MainActor (LogoScene) -> V,
         @ViewBuilder makeOverlay: @escaping @MainActor (LogoScene) -> O
     ) {

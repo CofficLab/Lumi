@@ -4,7 +4,7 @@ import LumiCoreAgentTool
 import LumiCoreLayout
 import LumiCoreLLMProvider
 import LumiCoreMessage
-import LumiCorePlugin
+import LumiKernel
 import SwiftData
 
 @MainActor
