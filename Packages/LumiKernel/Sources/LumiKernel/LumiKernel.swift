@@ -84,6 +84,11 @@ public final class LumiKernelContainer: ObservableObject {
         resolveService(ChatServiceProviding.self)
     }
 
+    /// Conversation management service
+    public var conversations: (any ConversationManaging)? {
+        resolveService(ConversationManaging.self)
+    }
+
     /// Chat section service
     public var chatSection: (any ChatSectionProviding)? {
         resolveService(ChatSectionProviding.self)
@@ -236,6 +241,11 @@ public final class LumiKernelContainer: ObservableObject {
     /// Register chat service
     public func registerChat(_ chat: any ChatServiceProviding) {
         registerService(ChatServiceProviding.self, chat)
+    }
+
+    /// Register conversation managing service
+    public func registerConversations(_ conversations: any ConversationManaging) {
+        registerService(ConversationManaging.self, conversations)
     }
 
     /// Register chat section service
