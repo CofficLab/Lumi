@@ -26,7 +26,7 @@ public static let policy: LumiPluginPolicy = .disabled
         ) {
             ConversationListToolbarButton(kernel: kernel)
         }
-        kernel.titleToolbar?.registerTitleToolbarItem(toolbarItem)
+        kernel.toolbarProvider?.registerTitleToolbarItem(toolbarItem)
     }
 
     public func boot(kernel: LumiKernel) async throws {}

@@ -48,7 +48,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
         guard let storage = kernel.storage else {
             self.storageError = "Storage service not available"
             let errorView = Self.makeErrorView(message: self.storageError!)
-            kernel.titleToolbar?.registerTitleToolbarItem(
+            kernel.toolbarProvider?.registerTitleToolbarItem(
                 TitleToolbarItem(
                     id: "\(id).toolbar",
                     title: "Projects",
@@ -74,7 +74,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
         self.syncCoordinator = coordinator
 
         // 5. 注册标题栏工具栏项（order 自动从插件继承）
-        kernel.titleToolbar?.registerTitleToolbarItem(
+        kernel.toolbarProvider?.registerTitleToolbarItem(
             TitleToolbarItem(
                 id: "\(id).toolbar",
                 title: "Projects",

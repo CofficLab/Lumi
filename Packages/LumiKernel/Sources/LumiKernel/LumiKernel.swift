@@ -70,7 +70,7 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Title toolbar service
-    public var titleToolbar: (any TitleToolbarProviding)? {
+    public var toolbarProvider: (any TitleToolbarProviding)? {
         resolveService(TitleToolbarProviding.self)
     }
 
@@ -318,7 +318,7 @@ public final class LumiKernelContainer: ObservableObject {
         if viewContainer == nil { missingServices.append("ViewContainer") }
         if command == nil { missingServices.append("Command") }
         if menuBar == nil { missingServices.append("MenuBar") }
-        if titleToolbar == nil { missingServices.append("TitleToolbar") }
+        if toolbarProvider == nil { missingServices.append("TitleToolbar") }
         if sendMiddleware == nil { missingServices.append("SendMiddleware") }
         if chat == nil { missingServices.append("Chat") }
         if chatSection == nil { missingServices.append("ChatSection") }

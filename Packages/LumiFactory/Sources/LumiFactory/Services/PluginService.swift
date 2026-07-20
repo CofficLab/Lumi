@@ -6,6 +6,7 @@ import BrewManagerPlugin
 import ChatKernelPlugin
 import ChatPanelPlugin
 import ChatSectionPlugin
+import ChatComposerPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
@@ -84,7 +85,8 @@ public enum PluginService {
             SendMiddlewarePlugin(),
             ChatSectionPlugin(),
             ChatPanelPlugin(),
-            // ChatPanel section plugins
+            ChatComposerPlugin(),
+            // ChatPanel section plugins (legacy, now replaced by ChatComposerPlugin)
             ChatPendingSectionPlugin(),
             ChatAttachmentSectionPlugin(),
             ChatComposerSectionPlugin(),
