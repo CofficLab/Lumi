@@ -20,6 +20,11 @@ struct ChatSectionView: View {
                 .frame(maxHeight: .infinity)
         }
         .frame(maxHeight: .infinity)
+        // 不要设 idealWidth。HSplitView 看到 idealWidth 后会按它算 divider 位置（narrow=320, wide=480），
+        // 后续 layout pass 会反向覆盖 SplitDividerPersistenceView 写进去的位置——导致切 view container
+        // 切回来时 chat section 宽度被强制回弹到 idealWidth，丢掉了用户拖出来的窄值。
+        // divider 位置由 SplitDividerPersistenceView 完全决定，这里只保留下界（minWidth 防缩成 0）
+        // 和上界（maxWidth = .infinity 不限制）。
         .frame(
             minWidth: minWidth,
             maxWidth: maxWidth ?? .infinity

@@ -58,16 +58,33 @@ public enum LumiFactory: SuperLog {
         // 5. 注册插件的 UI 贡献
         kernel.plugin?.registerPluginUIContributions(in: kernel)
 
-        // 6. 内核自检
+        // 6. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
+        subscribeToPluginChanges(kernel: kernel)
+
+        // 7. 内核自检
         try kernel.startup()
 
-        // 7. 保存到内核列表
+        // 8. 保存到内核列表
         kernels.append(kernel)
 
         if verbose {
             logger.info("\(t)内核创建完成，已注册 \(kernel.plugin?.allPlugins.count ?? 0) 个插件")
         }
         return kernel
+    }
+
+    /// 订阅 `.lumiEnabledPluginsDidChange` 通知，
+    /// 在运行期插件启用/禁用时重新注册 UI 贡献。
+    private static func subscribeToPluginChanges(kernel: LumiKernel) {
+        NotificationCenter.default.addObserver(
+            forName: .lumiEnabledPluginsDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak kernel] _ in
+            guard let kernel else { return }
+            // 重新注册插件的 UI 贡献
+            kernel.plugin?.registerPluginUIContributions(in: kernel)
+        }
     }
 
     /// 创建主内核（如果尚未创建）
