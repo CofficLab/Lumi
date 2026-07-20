@@ -1,4 +1,5 @@
 import LumiCoreLayout
+import LumiCorePanelChrome
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -26,6 +27,7 @@ struct AppLayoutView: View {
 
         let activeID = selected?.id ?? "main"
         let chatSection = selected?.chatSection ?? .none
+        let showsRail = selected?.showsRail ?? false
         let layoutState = kernel.layout?.state ?? LayoutStateInfo()
         let chatView = ChatView(
             layoutState: layoutState,
@@ -34,6 +36,10 @@ struct AppLayoutView: View {
             activeID: activeID,
             isRailOnlyPanel: false
         )
+
+        // Get rail tabs
+        let railTabs = kernel.panel?.allPanelRailTabItems ?? []
+        let showRail = showsRail && !railTabs.isEmpty
 
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
@@ -48,15 +54,30 @@ struct AppLayoutView: View {
 
                 AppDivider(.vertical)
 
-                HSplitView {
-                    if let selected {
-                        selected.makeView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        emptyState
-                    }
+                if showRail {
+                    // Rail view + panel content
+                    HSplitView {
+                        SimpleRailView(tabs: railTabs)
+                            .frame(minWidth: 200, maxWidth: 300)
 
-                    chatView
+                        if let selected {
+                            selected.makeView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            emptyState
+                        }
+                    }
+                } else {
+                    HSplitView {
+                        if let selected {
+                            selected.makeView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            emptyState
+                        }
+
+                        chatView
+                    }
                 }
 
                 ChatSectionToolbarSync(
@@ -98,5 +119,58 @@ struct AppLayoutView: View {
             return container
         }
         return containers.first
+    }
+}
+
+// MARK: - Simple Rail View
+
+/// 简化版 Rail 视图，仅显示 rail tabs
+struct SimpleRailView: View {
+    let tabs: [PanelRailTabItem]
+
+    @LumiTheme private var theme
+    @ObservedObject private var layoutState = LayoutState()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Tab bar
+            if tabs.count > 1 {
+                ForEach(tabs) { tab in
+                    railTabButton(tab)
+                }
+            }
+
+            Divider()
+
+            // Active tab content
+            let activeTabID = layoutState.activeRailTabID
+            if let tab = tabs.first(where: { $0.id == activeTabID }) {
+                tab.makeView()
+            } else if let firstTab = tabs.first {
+                firstTab.makeView()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(theme.surface)
+    }
+
+    private func railTabButton(_ tab: PanelRailTabItem) -> some View {
+        let isSelected = layoutState.activeRailTabID == tab.id
+        return Button {
+            layoutState.activeRailTabID = tab.id
+        } label: {
+            HStack {
+                Image(systemName: tab.systemImage)
+                    .frame(width: 20)
+                Text(tab.title)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
+            .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
+        }
+        .buttonStyle(.plain)
     }
 }

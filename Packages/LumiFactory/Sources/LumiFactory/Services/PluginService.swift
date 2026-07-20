@@ -68,16 +68,17 @@ public enum PluginService {
     /// 所有插件列表（静态）
     public static let plugins: [LumiPlugin] = {
         var list: [LumiPlugin] = [
-            // Core
+            // Core (order matters! PanelPlugin must register early for rail tabs)
             PluginManagementPlugin(),
+            PanelPlugin(),
             ProjectsPlugin(),
             AgentToolPlugin(),
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),
             ChatKernelPlugin(),
-            ConversationListPlugin(),
             ConversationManagerPlugin(),
+            ConversationListPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
             TitleToolbarPlugin(),
@@ -88,7 +89,6 @@ public enum PluginService {
             ChatPendingSectionPlugin(),
             ChatAttachmentSectionPlugin(),
             ChatComposerSectionPlugin(),
-            PanelPlugin(),
             StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
