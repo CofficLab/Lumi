@@ -143,7 +143,7 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
 
             // Title Toolbar
             for item in plugin.titleToolbarItems(kernel: kernel) {
-                kernel.titleToolbar?.registerTitleToolbarItem(item)
+                kernel.toolbarProvider?.registerTitleToolbarItem(item)
             }
 
             // Panel
@@ -177,6 +177,7 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
                     id: container.id,
                     title: container.title,
                     systemImage: container.systemImage,
+                    chatSection: container.chatSection,
                     showsRail: container.showsRail,
                     showsPanelChrome: container.showsPanelChrome,
                     content: container.makeView

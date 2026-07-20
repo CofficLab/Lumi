@@ -1,63 +1,69 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// Chat 消息列表 section 视图（占位实现）
 struct ChatMessagesSectionView: View {
     @ObservedObject var coordinator: ChatSectionCoordinator
 
     var body: some View {
-        let selectedID = coordinator.selectedConversationID
-        let messages = selectedID.map { coordinator.displayedMessages(for: $0) } ?? []
-        let isSending = coordinator.chatService.isSending(for: selectedID)
+        ScrollView {
+            VStack(spacing: 12) {
+                // Placeholder message bubbles
+                ForEach(0..<3, id: \.self) { index in
+                    MessageBubblePlaceholder(role: index == 0 ? .user : .assistant, index: index)
+                }
+            }
+            .padding(12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.green.opacity(0.05))
+    }
+}
 
-        VStack(spacing: 0) {
-            ChatMessageListView(
-                messages: messages,
-                isSending: isSending,
-                hasEarlierMessages: selectedID.map {
-                    coordinator.chatService.hasEarlierMessages(for: $0, beforeMessageID: coordinator.oldestVisibleMessageID)
-                } ?? false,
-                rendererForMessage: { coordinator.chatService.renderer(for: $0) },
-                rawMessageBinding: coordinator.rawMessageBinding(for:),
-                onUseAsDraft: { message in
-                    coordinator.draft = message.content
-                },
-                onResend: { message in
-                    guard let selectedID else { return }
-                    Task {
-                        await coordinator.chatService.resendMessage(id: message.id, in: selectedID)
-                    }
-                },
-                onDelete: { message in
-                    guard let selectedID else { return }
-                    coordinator.chatService.deleteMessage(id: message.id, in: selectedID)
-                },
-                onLoadEarlier: coordinator.loadEarlierMessages,
-                onQuickStart: { prompt in
-                    coordinator.draft = prompt
-                    coordinator.send()
-                },
-                automationLevel: coordinator.chatService.automationLevel(for: selectedID),
-                verbosity: coordinator.chatService.verbosity(for: selectedID)
-            )
-            .environment(\.lumiResponseVerbosity, coordinator.chatService.verbosity(for: selectedID))
-            .id(selectedID)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .onChange(of: coordinator.chatService.selectedConversationID) { _, _ in
-            coordinator.resetOldestVisibleMessageID()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiResendMessage)) { notification in
-            guard let messageID = notification.userInfo?[LumiMessageSavedNotification.messageIDKey] as? UUID,
-                  let conversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID
-            else {
-                return
+// MARK: - Message Bubble Placeholder
+
+private struct MessageBubblePlaceholder: View {
+    let role: MessageRole
+    let index: Int
+
+    enum MessageRole {
+        case user
+        case assistant
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(role == .user ? "You" : "Assistant")
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Text("12:3\(index)")
+                    .font(.appMicro)
+                    .foregroundColor(.secondary)
             }
-            Task {
-                await coordinator.chatService.resendMessage(id: messageID, in: conversationID)
-            }
+
+            Text(placeholderText)
+                .font(.appBody)
+                .foregroundColor(.primary)
+                .textSelection(.enabled)
+        }
+        .padding(12)
+        .frame(maxWidth: 680, alignment: .leading)
+        .background(role == .user ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var placeholderText: String {
+        switch index {
+        case 0:
+            return "Hello! How can I help you today?"
+        case 1:
+            return "This is a sample message from the \(role == .user ? "user" : "assistant"). It demonstrates how messages are displayed in the chat interface."
+        default:
+            return "Another message in the conversation thread."
         }
     }
 }
