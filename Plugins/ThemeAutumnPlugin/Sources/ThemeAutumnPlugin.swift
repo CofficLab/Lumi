@@ -10,7 +10,7 @@ public final class ThemeAutumnPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: AutumnTheme(),
                 editorThemeId: "autumn"

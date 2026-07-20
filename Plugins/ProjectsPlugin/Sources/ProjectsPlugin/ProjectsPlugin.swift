@@ -47,7 +47,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         guard let storage = kernel.storage else {
             self.storageError = "Storage service not available"
             let errorView = Self.makeErrorView(message: self.storageError!)
-            kernel.registerTitleToolbarItem(
+            kernel.titleToolbar?.registerTitleToolbarItem(
                 TitleToolbarItem(
                     id: "\(id).toolbar",
                     title: "Projects",
@@ -73,7 +73,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         self.syncCoordinator = coordinator
 
         // 5. 注册标题栏工具栏项（order 自动从插件继承）
-        kernel.registerTitleToolbarItem(
+        kernel.titleToolbar?.registerTitleToolbarItem(
             TitleToolbarItem(
                 id: "\(id).toolbar",
                 title: "Projects",
@@ -88,12 +88,12 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         )
 
         // 6. 注册 Agent 工具
-        kernel.registerAgentTool(ListProjectsTool())
-        kernel.registerAgentTool(AddProjectTool())
-        kernel.registerAgentTool(GetCurrentProjectTool())
+        kernel.agentTool?.add(ListProjectsTool())
+        kernel.agentTool?.add(AddProjectTool())
+        kernel.agentTool?.add(GetCurrentProjectTool())
 
         // 7. 注册发送中间件
-        kernel.registerSendMiddleware(ConversationHintMiddleware(), id: "\(id).middleware")
+        kernel.sendMiddleware?.registerSendMiddleware(ConversationHintMiddleware(), id: "\(id).middleware")
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 Projects 插件到内核")

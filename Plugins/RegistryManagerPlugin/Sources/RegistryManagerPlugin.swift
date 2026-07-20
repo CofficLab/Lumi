@@ -27,7 +27,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: "Registry Manager",

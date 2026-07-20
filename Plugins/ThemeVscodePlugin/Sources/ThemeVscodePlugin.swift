@@ -11,19 +11,19 @@ public final class ThemeVscodePlugin: LumiPlugin {
 
     public func register(kernel: LumiKernel) throws {
         // Register VS Code themes
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeAutoTheme(),
                 editorThemeId: "vscode-auto"
             )
         )
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeDarkTheme(),
                 editorThemeId: "vscode-dark"
             )
         )
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light"

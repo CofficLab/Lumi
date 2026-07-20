@@ -21,7 +21,7 @@ struct AppLayoutView: View {
     }
 
     var body: some View {
-        let containers = kernel.allViewContainers
+        let containers = kernel.viewContainer?.allViewContainers ?? []
         let selected = selectedContainer(from: containers)
 
         let activeID = selected?.id ?? "main"

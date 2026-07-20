@@ -18,7 +18,7 @@ public final class EditorPanelPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: name,
@@ -32,8 +32,8 @@ public final class EditorPanelPlugin: LumiPlugin {
         )
 
         // 注册 AgentTools
-        kernel.registerAgentTool(GetCurrentFileTool())
-        kernel.registerAgentTool(SetCurrentFileTool())
+        kernel.agentTool?.add(GetCurrentFileTool())
+        kernel.agentTool?.add(SetCurrentFileTool())
     }
 
     public func boot(kernel: LumiKernel) async throws {}

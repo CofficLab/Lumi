@@ -27,7 +27,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         // 注册主视图容器（order 自动从插件继承）
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: "Device Info",
@@ -38,7 +38,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         )
 
         // 注册菜单栏内容（order 自动从插件继承）
-        kernel.registerMenuBarContent(
+        kernel.menuBar?.registerMenuBarContent(
             MenuBarContentItem(
                 id: "\(id).metrics"
             ) {
@@ -47,7 +47,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         )
 
         // 注册菜单栏弹出项（order 自动从插件继承）
-        kernel.registerMenuBarPopup(
+        kernel.menuBar?.registerMenuBarPopup(
             MenuBarPopupItem(
                 id: "\(id).cpu"
             ) {
@@ -55,7 +55,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
             }
         )
 
-        kernel.registerMenuBarPopup(
+        kernel.menuBar?.registerMenuBarPopup(
             MenuBarPopupItem(
                 id: "\(id).memory"
             ) {

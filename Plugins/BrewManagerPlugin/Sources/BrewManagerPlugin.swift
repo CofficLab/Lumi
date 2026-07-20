@@ -28,7 +28,7 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         // 注册视图容器
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: name,

@@ -18,7 +18,7 @@ public final class InputPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(id: id, title: "Input Manager", systemImage: "keyboard") {
                 InputSettingsView()
             }

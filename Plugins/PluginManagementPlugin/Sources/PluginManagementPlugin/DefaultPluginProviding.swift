@@ -134,20 +134,20 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
 
             // Menu Bar
             for content in plugin.menuBarContentItems(kernel: kernel) {
-                kernel.registerMenuBarContent(content)
+                kernel.menuBar?.registerMenuBarContent(content)
             }
             for popup in plugin.menuBarPopupItems(kernel: kernel) {
-                kernel.registerMenuBarPopup(popup)
+                kernel.menuBar?.registerMenuBarPopup(popup)
             }
 
             // Title Toolbar
             for item in plugin.titleToolbarItems(kernel: kernel) {
-                kernel.registerTitleToolbarItem(item)
+                kernel.titleToolbar?.registerTitleToolbarItem(item)
             }
 
             // Panel
             for item in plugin.panelHeaderItems(kernel: kernel) {
-                kernel.registerPanelHeaderItem(item)
+                kernel.panel?.registerPanelHeaderItem(item)
             }
             for item in plugin.panelBottomTabItems(kernel: kernel) {
                 var tabItem = PanelBottomTabItem(
@@ -157,7 +157,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 tabItem.order = pluginOrder
-                kernel.registerPanelBottomTabItem(tabItem)
+                kernel.panel?.registerPanelBottomTabItem(tabItem)
             }
             for item in plugin.panelRailTabItems(kernel: kernel) {
                 var railItem = PanelRailTabItem(
@@ -167,7 +167,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
-                kernel.registerPanelRailTabItem(railItem)
+                kernel.panel?.registerPanelRailTabItem(railItem)
             }
 
             // View Containers
@@ -181,7 +181,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: container.makeView
                 )
                 viewContainer.order = pluginOrder
-                kernel.registerViewContainer(viewContainer)
+                kernel.viewContainer?.register(viewContainer)
             }
 
             // Chat Section
@@ -194,7 +194,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 chatItem.order = pluginOrder
-                kernel.registerChatSectionItem(chatItem)
+                kernel.chatSection?.registerChatSectionItem(chatItem)
             }
             for item in plugin.chatSectionToolbarItems(kernel: kernel) {
                 var toolbarItem = ChatSectionToolbarItem(
@@ -203,7 +203,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 toolbarItem.order = pluginOrder
-                kernel.registerChatSectionToolbarItem(toolbarItem)
+                kernel.chatSection?.registerChatSectionToolbarItem(toolbarItem)
             }
             for item in plugin.chatSectionToolbarBarItems(kernel: kernel) {
                 var barItem = ChatSectionToolbarBarItem(
@@ -211,7 +211,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 barItem.order = pluginOrder
-                kernel.registerChatSectionToolbarBarItem(barItem)
+                kernel.chatSection?.registerChatSectionToolbarBarItem(barItem)
             }
             for item in plugin.chatSectionHeaderItems(kernel: kernel) {
                 var headerItem = ChatSectionHeaderItem(
@@ -219,20 +219,20 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: item.makeView
                 )
                 headerItem.order = pluginOrder
-                kernel.registerChatSectionHeaderItem(headerItem)
+                kernel.chatSection?.registerChatSectionHeaderItem(headerItem)
             }
 
             // Status Bar
             for item in plugin.statusBarItems(kernel: kernel) {
-                kernel.registerStatusBarItem(item)
+                kernel.statusBar?.registerStatusBarItem(item)
             }
 
             // Settings
             for item in plugin.settingsTabItems(kernel: kernel) {
-                kernel.registerSettingsTabItem(item)
+                kernel.settings?.registerSettingsTabItem(item)
             }
             for item in plugin.llmProviderSettingsItems(kernel: kernel) {
-                kernel.registerLLMProviderSettingsItem(item)
+                kernel.settings?.registerLLMProviderSettingsItem(item)
             }
 
             // Logo
@@ -251,7 +251,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     )
                 }
                 logoItem.order = pluginOrder
-                kernel.registerLogoItem(logoItem)
+                kernel.logo?.registerLogoItem(logoItem)
             }
 
             // Onboarding
@@ -261,7 +261,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
                     content: page.makeView
                 )
                 pageItem.order = pluginOrder
-                kernel.registerOnboardingPage(pageItem)
+                kernel.onboarding?.registerOnboardingPage(pageItem)
             }
 
             // Theme contributions
@@ -273,7 +273,7 @@ public final class DefaultPluginProviding: PluginProviding, LLMProviderProviding
         }
 
         // Sync layout active section with registered view containers.
-        let containers = kernel.allViewContainers
+        let containers = kernel.viewContainer?.allViewContainers ?? []
         if let first = containers.first,
            let layoutService = kernel.layout,
            layoutService.state.activeSectionID.isEmpty {

@@ -8,6 +8,7 @@ import ChatPanelPlugin
 import ChatSectionPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
+import ConversationListPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -74,6 +75,7 @@ public enum PluginService {
             EditorKernelPlugin(),
             EditorPanelPlugin(),
             ChatKernelPlugin(),
+            ConversationListPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
             TitleToolbarPlugin(),
@@ -138,25 +140,25 @@ public enum PluginService {
 
     /// 从 kernel 读取聊天分区项，按 order 排序
     static func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] {
-        let items = kernel.allChatSectionItems
+        let items = kernel.chatSection?.allChatSectionItems ?? []
         return items.sorted { $0.order < $1.order }
     }
 
     /// 从 kernel 读取聊天分区工具栏项，按 order 排序
     static func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
-        let items = kernel.allChatSectionToolbarItems
+        let items = kernel.chatSection?.allChatSectionToolbarItems ?? []
         return items.sorted { $0.order < $1.order }
     }
 
     /// 从 kernel 读取聊天分区工具栏条项，按 order 排序
     static func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
-        let items = kernel.allChatSectionToolbarBarItems
+        let items = kernel.chatSection?.allChatSectionToolbarBarItems ?? []
         return items.sorted { $0.order < $1.order }
     }
 
     /// 从 kernel 读取聊天分区标题项，按 order 排序
     static func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
-        let items = kernel.allChatSectionHeaderItems
+        let items = kernel.chatSection?.allChatSectionHeaderItems ?? []
         return items.sorted { $0.order < $1.order }
     }
 }

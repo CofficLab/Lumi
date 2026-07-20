@@ -28,7 +28,7 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: "Port Manager",

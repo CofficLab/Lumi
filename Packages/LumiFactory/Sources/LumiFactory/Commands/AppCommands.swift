@@ -32,7 +32,7 @@ public struct AppCommands: Commands {
 
         // Plugin-registered command groups
         CommandGroup(after: .toolbar) {
-            ForEach(kernel.allCommandGroups) { group in
+            ForEach(kernel.command?.allCommandGroups ?? []) { group in
                 ForEach(group.items) { item in
                     Button(item.title) {
                         item.action()

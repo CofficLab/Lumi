@@ -29,7 +29,7 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         // 注册视图容器（order 自动从插件继承）
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: "Clipboard",

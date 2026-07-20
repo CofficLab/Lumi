@@ -11,7 +11,7 @@ public final class ThemeOneDarkPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: OneDarkTheme(),
                 editorThemeId: "one-dark"

@@ -10,7 +10,7 @@ public final class ThemeMountainPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: MountainTheme(),
                 editorThemeId: "mountain"

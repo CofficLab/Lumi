@@ -15,7 +15,7 @@ public final class EditorTerminalPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerPanelBottomTabItem(
+        kernel.panel?.registerPanelBottomTabItem(
             PanelBottomTabItem(
                 id: "editor-bottom-terminal",
                 title: LumiPluginLocalization.string("Terminal", bundle: .module),

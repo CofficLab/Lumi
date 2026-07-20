@@ -16,7 +16,7 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerPanelBottomTabItem(
+        kernel.panel?.registerPanelBottomTabItem(
             PanelBottomTabItem(
                 id: "editor-bottom-preview",
                 title: LumiPluginLocalization.string("Preview", bundle: .module),

@@ -10,7 +10,7 @@ public final class ThemeNebulaPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerTheme(
+        kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: NebulaTheme(),
                 editorThemeId: "nebula"

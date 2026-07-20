@@ -18,7 +18,7 @@ public final class MenuBarManagerPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(id: id, title: "Menu Bar Manager", systemImage: "menubar.rectangle") {
                 MenuBarSettingsView()
             }

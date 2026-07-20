@@ -19,7 +19,7 @@ public final class DockerManagerPlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(id: id, title: "Docker", systemImage: "shippingbox") {
                 DockerImagesView()
             }

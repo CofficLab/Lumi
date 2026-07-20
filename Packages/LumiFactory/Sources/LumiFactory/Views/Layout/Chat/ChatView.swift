@@ -40,19 +40,19 @@ struct ChatView: View {
     }
 
     private var chatSectionItems: [ChatSectionItem] {
-        kernel.allChatSectionItems
+        kernel.chatSection?.allChatSectionItems ?? []
     }
 
     private var chatSectionToolbarItems: [ChatSectionToolbarItem] {
-        shouldShowChatSection ? kernel.allChatSectionToolbarItems : []
+        shouldShowChatSection ? (kernel.chatSection?.allChatSectionToolbarItems ?? []) : []
     }
 
     private var chatSectionToolbarBarItems: [ChatSectionToolbarBarItem] {
-        shouldShowChatSection ? kernel.allChatSectionToolbarBarItems : []
+        shouldShowChatSection ? (kernel.chatSection?.allChatSectionToolbarBarItems ?? []) : []
     }
 
     private var chatSectionHeaderItems: [ChatSectionHeaderItem] {
-        shouldShowChatSection ? kernel.allChatSectionHeaderItems : []
+        shouldShowChatSection ? (kernel.chatSection?.allChatSectionHeaderItems ?? []) : []
     }
 
     private var stackItems: [ChatSectionItem] {

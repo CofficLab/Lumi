@@ -30,9 +30,12 @@ struct StatusBar: View {
 
     private var statusBarResult: Result<StatusBarItems, Error> {
         do {
-            let leading = try kernel.statusBarItemsChecked(placement: .leading)
-            let center = try kernel.statusBarItemsChecked(placement: .center)
-            let trailing = try kernel.statusBarItemsChecked(placement: .trailing)
+            guard let statusBarService = kernel.statusBar else {
+                throw LumiKernelError.serviceNotAvailable(service: "StatusBar")
+            }
+            let leading = try statusBarService.statusBarItems(placement: .leading)
+            let center = try statusBarService.statusBarItems(placement: .center)
+            let trailing = try statusBarService.statusBarItems(placement: .trailing)
             return .success(StatusBarItems(leading: leading, center: center, trailing: trailing))
         } catch {
             return .failure(error)

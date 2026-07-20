@@ -24,7 +24,7 @@ public final class DisplayControlPlugin: LumiPlugin {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        kernel.registerViewContainer(
+        kernel.viewContainer?.register(
             ViewContainerItem(
                 id: id,
                 title: "Display Control",
