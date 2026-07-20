@@ -1,23 +1,29 @@
 import Foundation
+import LumiCoreAgentTool
+import LumiCoreMessage
+import LumiCoreSubAgent
 
-/// Agent 工具能力协议
+// Type aliases to avoid ambiguity with LumiCoreAgentTool.LumiAgentTool / LumiSubAgentDefinition
+public typealias _AgentTool = LumiCoreAgentTool.LumiAgentTool
+public typealias _SubAgentDefinition = LumiCoreSubAgent.LumiSubAgentDefinition
+
+/// Agent 工具注册服务
 ///
-/// 定义 LumiCore 需要的 Agent 工具功能。
-/// 由具体实现（如插件）提供，不在 LumiKernel 中实现。
+/// 由 Agent Tool 插件实现,负责把 AgentTool / SubAgent 实例注册到内核。
 @MainActor
 public protocol AgentToolProviding: AnyObject {
-    /// 所有已注册的 Agent 工具
-    var allAgentTools: [any LumiAgentTool] { get }
+    /// 收集所有已启用的 Agent Tool
+    func allAgentTools() -> [any LumiAgentTool]
 
-    /// 注册单个 Agent 工具
-    func register(_ tool: any LumiAgentTool)
+    /// 注册单个 Agent Tool
+    func add(_ tool: any LumiAgentTool)
 
-    /// 注销 Agent 工具
-    func unregister(id: String)
+    /// 注销单个 Agent Tool
+    func remove(id: String)
 
-    /// 收集工具
-    func collectTools() async throws -> [any LumiAgentTool]
+    /// 收集所有 SubAgent 定义
+    func allSubAgents() -> [LumiSubAgentDefinition]
 
-    /// 执行工具
-    func executeTool(name: String, arguments: String, context: LumiToolExecutionContext) async throws -> String
+    /// 注册 SubAgent 定义
+    func addSubAgent(_ subAgent: LumiSubAgentDefinition)
 }

@@ -1,13 +1,24 @@
 import Combine
 import Foundation
+import LumiCoreAgentTool
+import LumiCoreLayout
+import LumiCoreLLMProvider
+import LumiCoreMenuBar
+import LumiCoreMessage
+import LumiCoreOverlay
+import LumiCorePanelChrome
+import LumiCoreProject
+import LumiCoreStorage
+import LumiCoreSubAgent
 import LumiUI
+import SwiftUI
 
 /// Lumi lightweight core
 ///
 /// Only holds protocol types, does not depend on concrete implementations.
 /// All concrete implementations are injected via plugins.
 @MainActor
-public final class LumiKernel: ObservableObject {
+public final class LumiKernelContainer: ObservableObject {
     // MARK: - Service Registry
 
     /// Service registry
@@ -21,6 +32,11 @@ public final class LumiKernel: ObservableObject {
     /// Plugin management service
     public var plugin: (any PluginProviding)? {
         resolveService(PluginProviding.self)
+    }
+
+    /// LumiCore service (storage, project, layout, logo, agentTool, chat, editor)
+    public var lumiCore: (any LumiCoreProviding)? {
+        resolveService(LumiCoreProviding.self)
     }
 
     /// Storage service
@@ -83,6 +99,16 @@ public final class LumiKernel: ObservableObject {
         resolveService(AgentToolProviding.self)
     }
 
+    /// LLM Provider service
+    public var llmProvider: (any LLMProviderProviding)? {
+        resolveService(LLMProviderProviding.self)
+    }
+
+    /// Chat contribution service (middlewares, renderers, turn hooks)
+    public var chatContribution: (any ChatContributionProviding)? {
+        resolveService(ChatContributionProviding.self)
+    }
+
     /// Panel service
     public var panel: (any PanelProviding)? {
         resolveService(PanelProviding.self)
@@ -104,8 +130,8 @@ public final class LumiKernel: ObservableObject {
     }
 
     /// Theme service
-    public var theme: (any ThemeProviding)? {
-        resolveService(ThemeProviding.self)
+    public var theme: (any LumiThemeServicing)? {
+        resolveService(LumiThemeServicing.self)
     }
 
     /// Onboarding service
@@ -160,6 +186,11 @@ public final class LumiKernel: ObservableObject {
     /// Register plugin management service
     public func registerPluginService(_ plugin: any PluginProviding) {
         registerService(PluginProviding.self, plugin)
+    }
+
+    /// Register LumiCore service
+    public func registerLumiCore(_ core: any LumiCoreProviding) {
+        registerService(LumiCoreProviding.self, core)
     }
 
     /// Register storage service
@@ -222,6 +253,16 @@ public final class LumiKernel: ObservableObject {
         registerService(AgentToolProviding.self, agentTool)
     }
 
+    /// Register LLM Provider service
+    public func registerLLMProviderService(_ llmProvider: any LLMProviderProviding) {
+        registerService(LLMProviderProviding.self, llmProvider)
+    }
+
+    /// Register Chat contribution service
+    public func registerChatContributionService(_ chatContribution: any ChatContributionProviding) {
+        registerService(ChatContributionProviding.self, chatContribution)
+    }
+
     /// Register panel service
     public func registerPanelService(_ panel: any PanelProviding) {
         registerService(PanelProviding.self, panel)
@@ -243,8 +284,8 @@ public final class LumiKernel: ObservableObject {
     }
 
     /// Register theme service
-    public func registerThemeService(_ theme: any ThemeProviding) {
-        registerService(ThemeProviding.self, theme)
+    public func registerThemeService(_ theme: any LumiThemeServicing) {
+        registerService(LumiThemeServicing.self, theme)
     }
 
     /// Register onboarding service
@@ -366,17 +407,39 @@ public final class LumiKernel: ObservableObject {
 
     /// All registered agent tools
     public var allAgentTools: [any LumiAgentTool] {
-        agentTool?.allAgentTools ?? []
+        agentTool?.allAgentTools() ?? []
     }
 
     /// Register agent tool
     public func registerAgentTool(_ tool: any LumiAgentTool) {
-        agentTool?.register(tool)
+        agentTool?.add(tool)
     }
 
     /// Unregister agent tool
     public func unregisterAgentTool(id: String) {
-        agentTool?.unregister(id: id)
+        agentTool?.remove(id: id)
+    }
+
+    /// All sub-agent definitions
+    public var allSubAgents: [LumiSubAgentDefinition] {
+        agentTool?.allSubAgents() ?? []
+    }
+
+    // MARK: - LLM Provider Convenience Accessors
+
+    /// All registered LLM providers
+    public var allLLMProviders: [any LumiLLMProvider] {
+        llmProvider?.allLLMProviders() ?? []
+    }
+
+    /// Register LLM provider
+    public func registerLLMProvider(_ provider: any LumiLLMProvider) {
+        llmProvider?.registerLLMProvider(provider)
+    }
+
+    /// Unregister LLM provider
+    public func unregisterLLMProvider(id: String) {
+        llmProvider?.unregisterLLMProvider(id: id)
     }
 
     // MARK: - Editor Convenience Accessors
@@ -633,17 +696,18 @@ public final class LumiKernel: ObservableObject {
 
     /// All registered themes
     public var allThemes: [LumiUIThemeContribution] {
-        theme?.allThemes ?? []
+        theme?.themes ?? []
     }
 
     /// Register theme
     public func registerTheme(_ contribution: LumiUIThemeContribution) {
-        theme?.registerTheme(contribution)
+        // LumiThemeServicing 不直接支持注册 - 通过 plugin 注册
+        // 此处为兼容性保留,实际功能由 ThemeStatusBarPlugin.DefaultThemeProviding 提供
     }
 
     /// Unregister theme
     public func unregisterTheme(id: String) {
-        theme?.unregisterTheme(id: id)
+        // 见 registerTheme
     }
 
     // MARK: - Startup & Validation
@@ -679,3 +743,7 @@ public final class LumiKernel: ObservableObject {
         }
     }
 }
+
+
+/// 兼容旧代码: 用 LumiKernel 实例化时,使用 LumiKernelContainer。
+public typealias LumiKernel = LumiKernelContainer
