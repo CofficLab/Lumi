@@ -1,6 +1,6 @@
 import EditorPanelPlugin
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
@@ -35,9 +35,7 @@ struct EditorScopeView<Content: View>: View {
                 WindowToolbarSuppressor()
             }
             .onAppear {
-                editor.currentProjectPathProvider = {
-                    lumiCore.projectComponent.currentProject?.path ?? ""
-                }
+                // Editor currentProjectPath 通过 lumiCore.projectComponent 获取
                 EditorRuntimeBridge.configure(editor: editor)
                 syncEditorTheme()
             }

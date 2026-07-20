@@ -8,7 +8,14 @@ let package = Package(
         .library(name: "LumiFactory", targets: ["LumiFactory"]),
     ],
     dependencies: [
-        .package(path: "../LumiCoreKit"),
+        .package(path: "../LumiCoreAgentTool"),
+        .package(path: "../LumiCoreChat"),
+        .package(path: "../LumiCoreLayout"),
+        .package(path: "../LumiCoreLLMProvider"),
+        .package(path: "../LumiCoreMessage"),
+        .package(path: "../LumiCoreProject"),
+        .package(path: "../LumiCoreStorage"),
+        .package(path: "../LumiCoreSubAgent"),
         .package(path: "../LumiKernel"),
         .package(path: "../LumiUI"),
         .package(path: "../LocalizationKit"),
@@ -75,7 +82,14 @@ let package = Package(
         .target(
             name: "LumiFactory",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
+                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
+                .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
+                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
+                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LumiCoreProject", package: "LumiCoreProject"),
+                .product(name: "LumiCoreStorage", package: "LumiCoreStorage"),
+                .product(name: "LumiCoreSubAgent", package: "LumiCoreSubAgent"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -138,6 +152,6 @@ let package = Package(
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
             ]
-        ),
+        )
     ]
 )

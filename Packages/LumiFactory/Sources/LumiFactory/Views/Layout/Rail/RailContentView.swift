@@ -1,4 +1,6 @@
-import LumiCoreKit
+import LumiCoreLayout
+import LumiCorePanelChrome
+import LumiKernel
 import SwiftUI
 
 // MARK: - Rail Content View

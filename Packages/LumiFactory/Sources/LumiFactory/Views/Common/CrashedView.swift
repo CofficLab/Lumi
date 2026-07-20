@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// Displays a fatal error screen when the app cannot continue running.
