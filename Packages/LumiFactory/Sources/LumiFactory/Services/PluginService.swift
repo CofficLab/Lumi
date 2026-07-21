@@ -12,6 +12,7 @@ import CommandPlugin
 import ConversationListPlugin
 import ConversationManagerPlugin
 import ConversationTitlePlugin
+import ConversationInputPlugin
 import MessageManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
@@ -98,6 +99,7 @@ public enum PluginService {
             ChatPanelPlugin(),
             ChatComposerPlugin(),
             MessageListPlugin(),
+            ConversationInputPlugin(),
             StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
