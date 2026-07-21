@@ -102,17 +102,6 @@ public final class PluginManagerProvider: PluginProviding, AgentToolProviding, C
             guard plugin.policy.shouldRegister else { continue }
             let pluginOrder = plugin.order
 
-            // Agent Tools
-            do {
-                let tools = try plugin.agentTools(kernel: kernel)
-                for tool in tools {
-                    add(tool)
-                }
-            } catch {
-                // Aggregate failure silently for now; the UI can read failures
-                // via LumiKernel.plugin?.allAgentTools() and display errors.
-            }
-
             // Sub Agents
             for subAgent in plugin.subAgents(kernel: kernel) {
                 addSubAgent(subAgent)

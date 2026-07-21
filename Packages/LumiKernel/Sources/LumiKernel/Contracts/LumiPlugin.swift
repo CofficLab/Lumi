@@ -56,11 +56,6 @@ public protocol LumiPlugin: AnyObject {
     /// 提供 LLM Provider 实现
     func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider]
 
-    /// 提供 Agent 工具
-    /// 允许 `throws`：插件在产出工具时若依赖外部资源（配置、凭证、SDK 初始化等）
-    /// 失败,应抛错而不是静默返回空数组。聚合层会逐插件捕获异常并累积到失败列表。
-    func agentTools(kernel: LumiKernel) throws -> [any LumiAgentTool]
-
     /// 提供子 Agent 定义
     func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition]
 
@@ -196,10 +191,6 @@ public extension LumiPlugin {
     }
 
     func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        []
-    }
-
-    func agentTools(kernel: LumiKernel) throws -> [any LumiAgentTool] {
         []
     }
 

@@ -34,14 +34,17 @@ public final class ChatPanelPlugin: LumiPlugin {
     // MARK: - Status Bar
 
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        [
+        // Read tools from kernel.agentTool (AgentToolService)
+        let tools = kernel.agentTool?.allAgentTools() ?? []
+        print("ChatPanelPlugin.statusBarItems: kernel.agentTool = \(String(describing: kernel.agentTool)), tools count = \(tools.count)")
+        return [
             StatusBarItem(
                 id: "\(id).tools",
                 title: "Available Tools",
                 systemImage: "wrench.and.screwdriver",
                 placement: .trailing,
                 popover: {
-                    ChatAvailableToolsDetailView(tools: kernel.agentTool?.allAgentTools() ?? [])
+                    ChatAvailableToolsDetailView(tools: tools)
                 }
             )
         ]

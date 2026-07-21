@@ -1,6 +1,7 @@
 import LumiCoreAgentTool
 import LumiKernel
 import LumiUI
+import os
 
 @MainActor
 public final class ToolCorePlugin: LumiPlugin {
@@ -9,17 +10,30 @@ public final class ToolCorePlugin: LumiPlugin {
     public let order = 0
     public static let policy: LumiPluginPolicy = .alwaysOn
 
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
+    nonisolated static let emoji = "🔧"
+
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Register core tools via PluginManagerProvider (AgentToolProviding)
-        guard let pluginProvider = kernel.plugin as? (any AgentToolProviding) else { return }
-        pluginProvider.add(ListDirectoryTool())
-        pluginProvider.add(ReadFileTool())
-        pluginProvider.add(WriteFileTool())
-        pluginProvider.add(EditFileTool())
-        pluginProvider.add(ShellTool())
+        // Register tools via kernel.agentTool (AgentToolService)
+        guard let agentTool = kernel.agentTool else {
+            Self.logger.error("ToolCorePlugin.register: kernel.agentTool is nil")
+            return
+        }
+
+        Self.logger.info("ToolCorePlugin.register: Adding 5 core tools...")
+        agentTool.add(ListDirectoryTool())
+        agentTool.add(ReadFileTool())
+        agentTool.add(WriteFileTool())
+        agentTool.add(EditFileTool())
+        agentTool.add(ShellTool())
+
+        let tools = agentTool.allAgentTools()
+        Self.logger.info("ToolCorePlugin.register: Total tools now = \(tools.count)")
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
+    public func boot(kernel: LumiKernel) async throws {
+        Self.logger.info("ToolCorePlugin.boot called")
+    }
 }
