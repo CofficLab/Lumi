@@ -25,6 +25,15 @@ public protocol LLMProviderManaging: AnyObject {
     /// 设置当前选中的 Provider
     func selectProvider(id: String)
 
+    /// 获取指定 provider 下的模型列表
+    func models(for providerID: String) -> [String]
+
+    /// 当前选中的模型
+    var selectedModel: String? { get }
+
+    /// 选择 Provider 和 Model
+    func selectModel(providerID: String, model: String)
+
     /// 发送一条请求到「第一个可用」的 LLM provider
     ///
     /// - Parameter request: LLM 请求(消息历史 + 模型名 + 可选工具列表)
