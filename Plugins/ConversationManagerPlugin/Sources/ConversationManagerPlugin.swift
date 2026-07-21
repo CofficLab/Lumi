@@ -10,7 +10,7 @@ import os
 public final class ConversationManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
-    public static let verbose = false
+    public static let verbose = true
 
     // MARK: - LumiPlugin
 
