@@ -23,6 +23,7 @@ import LayoutKernelPlugin
 import LogoPlugin
 import MenuBarManagerPlugin
 import MenuBarPlugin
+import MessageListPlugin
 import NettoPlugin
 import PanelPlugin
 import PluginManagementPlugin
@@ -86,6 +87,7 @@ public enum PluginService {
             ChatSectionPlugin(),
             ChatPanelPlugin(),
             ChatComposerPlugin(),
+            MessageListPlugin(),
             // ChatPanel section plugins (legacy, now replaced by ChatComposerPlugin)
             ChatPendingSectionPlugin(),
             ChatAttachmentSectionPlugin(),
