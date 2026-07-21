@@ -15,6 +15,10 @@ import SwiftUI
 
 /// Lumi lightweight core
 ///
+/// Architecture principle: Kernel 只持有各类能力（Provider），不进行能力转发。
+/// 错误示例: kernel.getMessageList() — 这会让 Kernel 无限膨胀
+/// 正确示例: kernel.messageManager.getMessageList() — 能力委托给具体 Provider
+///
 /// Only holds protocol types, does not depend on concrete implementations.
 /// All concrete implementations are injected via plugins.
 @MainActor
@@ -87,6 +91,11 @@ public final class LumiKernelContainer: ObservableObject {
     /// Conversation management service
     public var conversations: (any ConversationManaging)? {
         resolveService(ConversationManaging.self)
+    }
+
+    /// Message management service
+    public var messageManager: (any MessageManaging)? {
+        resolveService(MessageManaging.self)
     }
 
     /// Chat section service
@@ -246,6 +255,11 @@ public final class LumiKernelContainer: ObservableObject {
     /// Register conversation managing service
     public func registerConversations(_ conversations: any ConversationManaging) {
         registerService(ConversationManaging.self, conversations)
+    }
+
+    /// Register message managing service
+    public func registerMessageManager(_ messageManager: any MessageManaging) {
+        registerService(MessageManaging.self, messageManager)
     }
 
     /// Register chat section service
