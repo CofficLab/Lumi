@@ -24,7 +24,10 @@ public final class ModelSelectorPlugin: LumiPlugin {
 
         return [
             ChatSectionActionBarItem(id: "\(id).action-bar-button") {
-                ModelSelectorActionBarButton(llmProvider: llmProvider)
+                ModelSelectorActionBarButton(
+                    llmProvider: llmProvider,
+                    conversationManaging: kernel.conversations
+                )
             }
         ]
     }

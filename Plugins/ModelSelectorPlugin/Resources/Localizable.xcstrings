@@ -1,12 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "  %@" : {
-
-    },
-    "%lld" : {
-
-    },
     "%lld cloud providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -93,9 +87,6 @@
           }
         }
       }
-    },
-    "✓" : {
-
     },
     "Active" : {
       "extractionState" : "stale",
@@ -920,7 +911,6 @@
       }
     },
     "Models" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1310,7 +1300,6 @@
       }
     },
     "Providers" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1501,6 +1490,9 @@
         }
       }
     },
+    "Search models" : {
+
+    },
     "Search providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1564,6 +1556,9 @@
           }
         }
       }
+    },
+    "Select a provider" : {
+
     },
     "Select Model" : {
 

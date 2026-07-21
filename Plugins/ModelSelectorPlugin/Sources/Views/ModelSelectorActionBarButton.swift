@@ -8,8 +8,22 @@ import SwiftUI
 struct ModelSelectorActionBarButton: View {
     @LumiTheme private var theme
     let llmProvider: any LLMProviderManaging
+    let conversationManaging: (any ConversationManaging)?
 
     @State private var isPopoverPresented = false
+
+    /// Initial selection: conversation provider/model if exists, else from LLMProviderManaging
+    private var initialSelection: (providerID: String?, model: String?) {
+        // Check conversation first
+        if let conversations = conversationManaging,
+           let convID = conversations.selectedConversationID,
+           let convProviderID = conversations.providerID(for: convID) {
+            let convModel = conversations.modelName(for: convID)
+            return (convProviderID, convModel)
+        }
+        // Fallback to LLMProviderManaging
+        return (llmProvider.selectedProviderID, llmProvider.selectedModel)
+    }
 
     var body: some View {
         Button {
@@ -37,20 +51,25 @@ struct ModelSelectorActionBarButton: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
-            ModelSelectorPopoverContent(llmProvider: llmProvider, isPresented: $isPopoverPresented)
-                .frame(width: 600, height: 400)
+            ModelSelectorPopoverContent(
+                llmProvider: llmProvider,
+                conversationManaging: conversationManaging,
+                isPresented: $isPopoverPresented
+            )
+            .frame(width: 600, height: 400)
         }
         .accessibilityLabel("Select Model")
     }
 
     private var buttonLabel: String {
-        guard let providerID = llmProvider.selectedProviderID,
+        let selection = initialSelection
+        guard let providerID = selection.providerID,
               let provider = llmProvider.allLLMProviders().first(where: { type(of: $0).info.id == providerID })
         else {
             return "Select Provider"
         }
         let info = type(of: provider).info
-        if let model = llmProvider.selectedModel {
+        if let model = selection.model {
             let displayModel = info.modelDisplayNames[model] ?? model
             return "\(info.displayName) · \(displayModel)"
         }
@@ -63,7 +82,19 @@ struct ModelSelectorActionBarButton: View {
 private struct ModelSelectorPopoverContent: View {
     @LumiTheme private var theme
     let llmProvider: any LLMProviderManaging
+    let conversationManaging: (any ConversationManaging)?
     @Binding var isPresented: Bool
+
+    /// Initial selection from conversation or LLMProviderManaging
+    private var initialSelection: (providerID: String?, model: String?) {
+        if let conversations = conversationManaging,
+           let convID = conversations.selectedConversationID,
+           let convProviderID = conversations.providerID(for: convID) {
+            let convModel = conversations.modelName(for: convID)
+            return (convProviderID, convModel)
+        }
+        return (llmProvider.selectedProviderID, llmProvider.selectedModel)
+    }
 
     @State private var selectedProviderID: String?
     @State private var searchText = ""
@@ -81,9 +112,9 @@ private struct ModelSelectorPopoverContent: View {
         }
         .frame(width: 600, height: 400)
         .onAppear {
-            // Select current provider or first available
+            // Use initial selection if available
             if selectedProviderID == nil {
-                selectedProviderID = llmProvider.selectedProviderID
+                selectedProviderID = initialSelection.providerID
                     ?? llmProvider.allLLMProviders().first.map { type(of: $0).info.id }
             }
         }
@@ -217,10 +248,16 @@ private struct ModelSelectorPopoverContent: View {
                             let info = llmProvider.allLLMProviders()
                                 .first { type(of: $0).info.id == providerID }.map { type(of: $0).info }
                             let displayName = info?.modelDisplayNames[model] ?? model
-                            let isSelected = model == llmProvider.selectedModel
+                            let isSelected = model == initialSelection.model
 
                             Button {
+                                // Update LLMProviderManaging (global selection)
                                 llmProvider.selectModel(providerID: providerID, model: model)
+                                // Update ConversationManaging if conversation is selected
+                                if let conversations = conversationManaging,
+                                   let convID = conversations.selectedConversationID {
+                                    conversations.selectProvider(id: providerID, model: model, for: convID)
+                                }
                                 isPresented = false
                             } label: {
                                 HStack {

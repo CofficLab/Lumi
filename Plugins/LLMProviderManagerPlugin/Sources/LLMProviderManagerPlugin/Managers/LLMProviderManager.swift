@@ -21,9 +21,20 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     private var _selectedProviderID: String?
     private var _selectedModel: String?
 
+    // MARK: - UserDefaults Keys
+
+    private enum UserDefaultsKeys {
+        static let selectedProviderID = "com.coffic.lumi.llmProviderManager.selectedProviderID"
+        static let selectedModel = "com.coffic.lumi.llmProviderManager.selectedModel"
+    }
+
     public init() {
+        // Restore persisted selection from UserDefaults
+        _selectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
+        _selectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
+
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)LLMProviderManager")
+            Self.logger.info("\(Self.t)\(Self.onInit)LLMProviderManager restored: provider=\(self._selectedProviderID ?? "nil"), model=\(self._selectedModel ?? "nil")")
         }
     }
 
@@ -78,6 +89,7 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
             return
         }
         _selectedProviderID = id
+        UserDefaults.standard.set(id, forKey: UserDefaultsKeys.selectedProviderID)
         if Self.verbose {
             Self.logger.info("\(Self.t)selectProvider ➡️ 已选择 id=\(id)")
         }
@@ -102,6 +114,7 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     public func selectModel(providerID: String, model: String) {
         selectProvider(id: providerID)
         _selectedModel = model
+        UserDefaults.standard.set(model, forKey: UserDefaultsKeys.selectedModel)
         if Self.verbose {
             Self.logger.info("\(Self.t)selectModel ➡️ 已选择 provider=\(providerID), model=\(model)")
         }
