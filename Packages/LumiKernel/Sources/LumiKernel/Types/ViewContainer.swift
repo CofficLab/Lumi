@@ -11,6 +11,7 @@ import SwiftUI
 /// 插件通过 `kernel.registerViewContainer()` 注册视图容器。
 ///
 /// 注意：`order` 由内核自动从插件继承，无需手动指定。
+/// 注意：`makeView` 为可选，插件可仅注册图标而不提供视图内容。
 public struct ViewContainerItem: Identifiable, Sendable {
     public let id: String
     public let title: String
@@ -19,9 +20,13 @@ public struct ViewContainerItem: Identifiable, Sendable {
     public var order: Int
     public let showsRail: Bool
     public let showsPanelChrome: Bool
-    public let makeView: @MainActor @Sendable () -> AnyView
+    /// 可选的视图工厂闭包。如果为 nil，表示该容器仅在 ActivityBar 中显示图标，不提供视图内容。
+    public let makeView: (@MainActor @Sendable () -> AnyView)?
 
     /// 公开初始化器（不包含 order，由内核自动设置）
+    ///
+    /// - Parameters:
+    ///   - content: 视图内容闭包，传入空闭包 `{ EmptyView() }` 可表示无视图
     public init<Content: View>(
         id: String,
         title: String,
@@ -60,6 +65,27 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.showsRail = showsRail
         self.showsPanelChrome = showsPanelChrome
         self.makeView = { AnyView(content()) }
+    }
+
+    /// 仅注册图标的初始化器（无视图内容）
+    ///
+    /// 适用于插件仅需在 ActivityBar 中显示图标，而不提供实际视图的场景。
+    public init(
+        id: String,
+        title: String,
+        systemImage: String,
+        chatSection: LumiChatSectionLayout = .none,
+        showsRail: Bool = false,
+        showsPanelChrome: Bool = false
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.chatSection = chatSection
+        self.order = 200
+        self.showsRail = showsRail
+        self.showsPanelChrome = showsPanelChrome
+        self.makeView = nil
     }
 }
 

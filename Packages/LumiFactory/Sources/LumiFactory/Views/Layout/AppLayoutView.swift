@@ -60,8 +60,8 @@ struct AppLayoutView: View {
                         SimpleRailView(tabs: railTabs)
                             .frame(minWidth: 200, maxWidth: 300)
 
-                        if let selected {
-                            selected.makeView()
+                        if let selected, let makeView = selected.makeView {
+                            makeView()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             emptyState
@@ -71,8 +71,8 @@ struct AppLayoutView: View {
                     }
                 } else {
                     HSplitView {
-                        if let selected {
-                            selected.makeView()
+                        if let selected, let makeView = selected.makeView {
+                            makeView()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             emptyState
