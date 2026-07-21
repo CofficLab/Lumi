@@ -1,8 +1,13 @@
+import LumiCoreChat
 import LumiKernel
 import LumiUI
+import os
 
 @MainActor
 public final class ModelSelectorPlugin: LumiPlugin {
+    public static let verbose: Bool = true
+    public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
+
     public let id = "com.coffic.lumi.plugin.model-selector"
     public let name = "Model Selector"
     public let order = 82
@@ -19,7 +24,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
     // MARK: - Chat Action Bar
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
-        guard let chatService = kernel.resolveService(ChatServiceProviding.self) else {
+        guard let chatService = kernel.resolveService((any LumiChatServicing).self) else {
             return []
         }
 

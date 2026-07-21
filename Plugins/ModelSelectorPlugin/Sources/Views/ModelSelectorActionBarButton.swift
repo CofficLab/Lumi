@@ -1,3 +1,4 @@
+import LumiCoreChat
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -7,8 +8,6 @@ struct ModelSelectorActionBarButton: View {
     @LumiTheme private var theme
     @ObservedObject private var chatService: ChatService
 
-    @State private var isPresented = false
-
     init(chatService: any LumiChatServicing) {
         guard let chatService = chatService as? ChatService else {
             preconditionFailure("ModelSelectorActionBarButton requires ChatService")
@@ -17,39 +16,21 @@ struct ModelSelectorActionBarButton: View {
     }
 
     var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "globe")
-                    .font(.system(size: 13, weight: .medium))
-                Text(providerLabel)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(theme.textTertiary)
-            }
-            .foregroundColor(theme.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(theme.tertiary.opacity(0.5))
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        HStack(spacing: 6) {
+            Image(systemName: "globe")
+                .font(.system(size: 13, weight: .medium))
+            Text(providerLabel)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPresented, arrowEdge: .top) {
-            ModelSelectorView(
-                chatService: chatService,
-                conversationID: chatService.selectedConversationID,
-                onClose: {
-                    isPresented = false
-                }
-            )
-        }
+        .foregroundColor(theme.textSecondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(theme.textTertiary.opacity(0.2))
+        )
         .accessibilityLabel("Select Model")
     }
 

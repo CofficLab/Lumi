@@ -54,6 +54,7 @@ import MenuBarPlugin
 import MessageListPlugin
 import MessageRendererManagerPlugin
 import MessageRendererPlugin
+import ModelSelectorPlugin
 import NettoPlugin
 import PanelPlugin
 import PluginManagementPlugin
@@ -149,6 +150,7 @@ public enum PluginService {
             ChatSectionPlugin(),
             ChatPanelPlugin(),
             ChatComposerPlugin(),
+            ModelSelectorPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
             ConversationMessageCountPlugin(),

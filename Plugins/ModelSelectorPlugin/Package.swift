@@ -14,16 +14,16 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/LumiCoreChat"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "ModelSelectorPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
@@ -35,7 +35,6 @@ let package = Package(
             name: "ModelSelectorPluginTests",
             dependencies: [
                 "ModelSelectorPlugin",
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Tests"
         )
