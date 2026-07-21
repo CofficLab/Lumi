@@ -12,13 +12,13 @@ public final class ToolCorePlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Register core tools via AgentTool service
-        guard let agentTool = kernel.agentTool else { return }
-        agentTool.add(ListDirectoryTool())
-        agentTool.add(ReadFileTool())
-        agentTool.add(WriteFileTool())
-        agentTool.add(EditFileTool())
-        agentTool.add(ShellTool())
+        // Register core tools via PluginManagerProvider (AgentToolProviding)
+        guard let pluginProvider = kernel.plugin as? (any AgentToolProviding) else { return }
+        pluginProvider.add(ListDirectoryTool())
+        pluginProvider.add(ReadFileTool())
+        pluginProvider.add(WriteFileTool())
+        pluginProvider.add(EditFileTool())
+        pluginProvider.add(ShellTool())
     }
 
     public func boot(kernel: LumiKernel) async throws {}
