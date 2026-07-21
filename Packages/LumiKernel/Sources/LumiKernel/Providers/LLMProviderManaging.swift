@@ -40,4 +40,12 @@ public protocol LLMProviderManaging: AnyObject {
     /// - Returns: 完整 assistant 消息
     /// - Throws: `LumiKernelError.llmProviderUnavailable` 当内核未注册任何 provider 时
     func sendToFirstProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage
+
+    /// 发送一条请求到「当前选中」的 LLM provider 和 model
+    ///
+    /// - Parameter request: LLM 请求(消息历史 + 模型名 + 可选工具列表)
+    /// - Returns: 完整 assistant 消息
+    /// - Throws: `LumiKernelError.llmProviderUnavailable` 当内核未注册任何 provider 时
+    /// - Throws: `LumiKernelError.invalidProviderOrModel` 当没有选中的 provider 或 model 时
+    func sendToSelectedProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage
 }

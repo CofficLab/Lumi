@@ -8,6 +8,7 @@ public enum LumiKernelError: Error, LocalizedError {
     case serviceNotAvailable(service: String)
     case noActiveConversation
     case llmProviderUnavailable
+    case invalidProviderOrModel
 
     public var errorDescription: String? {
         switch self {
@@ -23,6 +24,8 @@ public enum LumiKernelError: Error, LocalizedError {
             return "No active conversation — create one or pass an explicit conversationID"
         case .llmProviderUnavailable:
             return "No LLM provider is registered with the kernel"
+        case .invalidProviderOrModel:
+            return "No valid LLM provider or model selected"
         }
     }
 }

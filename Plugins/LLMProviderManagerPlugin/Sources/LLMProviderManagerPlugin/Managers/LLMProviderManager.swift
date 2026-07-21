@@ -135,4 +135,20 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         }
         return try await provider.send(request)
     }
+
+    public func sendToSelectedProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        guard let providerID = _selectedProviderID,
+              let provider = llmProviders[providerID] else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)sendToSelectedProvider ➡️ 没有选中的 provider, 抛 invalidProviderOrModel")
+            }
+            throw LumiKernelError.invalidProviderOrModel
+        }
+        let model = _selectedModel ?? type(of: provider).info.defaultModel
+        if Self.verbose {
+            Self.logger.info("\(Self.t)sendToSelectedProvider ➡️ 选 provider id=\(providerID), model=\(model), messages=\(request.messages.count), tools=\(request.tools.count)")
+        }
+        let selectedRequest = LumiLLMRequest(messages: request.messages, model: model, tools: request.tools)
+        return try await provider.send(selectedRequest)
+    }
 }
