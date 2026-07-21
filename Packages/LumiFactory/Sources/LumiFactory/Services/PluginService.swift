@@ -92,10 +92,6 @@ public enum PluginService {
             ChatPanelPlugin(),
             ChatComposerPlugin(),
             MessageListPlugin(),
-            // ChatPanel section plugins (legacy, now replaced by ChatComposerPlugin)
-            ChatPendingSectionPlugin(),
-            ChatAttachmentSectionPlugin(),
-            ChatComposerSectionPlugin(),
             StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
