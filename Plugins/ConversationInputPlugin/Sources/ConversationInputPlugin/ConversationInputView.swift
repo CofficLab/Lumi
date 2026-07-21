@@ -125,13 +125,13 @@ struct ConversationInputView: View, SuperLog {
             Self.logger.info("\(Self.t)send ➡️ text.len=\(trimmed.count), conversationID=nil (由实现选 selected)")
         }
         let payload = trimmed
+        text = ""  // Clear immediately for better UX
         Task { @MainActor in
             do {
                 try await messageSend.sendMessage(payload, conversationID: nil)
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)send ➡️ sendMessage 返回成功, 清空输入")
+                    Self.logger.info("\(Self.t)send ➡️ sendMessage 返回成功")
                 }
-                text = ""
             } catch {
                 Self.logger.error("\(Self.t)send ➡️ sendMessage 抛出: \(error.localizedDescription)")
             }
