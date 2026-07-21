@@ -11,7 +11,7 @@ import os
 /// LLM Provider plugins. Lookup is O(1) by id; iteration preserves the
 /// insertion order so that the provider UI shows a stable list.
 @MainActor
-public final class LLMProviderManager: LLMProviderProviding, SuperLog {
+public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.service")
     public nonisolated static let emoji = "🧠"
     nonisolated static let verbose = false

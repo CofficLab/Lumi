@@ -12,8 +12,9 @@ public static let policy: LumiPluginPolicy = .disabled
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // LLM Providers will be registered by old mechanism temporarily
-        // TODO: Migrate to new registration method when available
+        for provider in llmProviders(kernel: kernel) {
+            kernel.llmProvider?.registerLLMProvider(provider)
+        }
     }
 
     public func boot(kernel: LumiKernel) async throws {}

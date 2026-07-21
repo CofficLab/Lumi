@@ -26,6 +26,28 @@ import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
 import LLMProviderManagerPlugin
+import LLMProviderAiRouterPlugin
+import LLMProviderAliyunPlugin
+import LLMProviderAnthropicPlugin
+import LLMProviderCodexPlugin
+import LLMProviderDeepSeekPlugin
+import LLMProviderFeifeimiaoPlugin
+import LLMProviderFlyMuxPlugin
+import LLMProviderFreeModelPlugin
+import LLMProviderHappyCodePlugin
+import LLMProviderHyperAPIPlugin
+import LLMProviderKimiCodePlugin
+import LLMProviderLPgptPlugin
+import LLMProviderMegaLLMPlugin
+import LLMProviderMiniMaxPlugin
+import LLMProviderMLXPlugin
+import LLMProviderOpenAIPlugin
+import LLMProviderOpenRouterPlugin
+import LLMProviderStepFunPlugin
+import LLMProviderSublyxPlugin
+import LLMProviderXiaomiPlugin
+import LLMProviderXybbzPlugin
+import LLMProviderZhipuPlugin
 import LogoPlugin
 import MenuBarManagerPlugin
 import MenuBarPlugin
@@ -57,7 +79,6 @@ import ThemeOrchardPlugin
 import ThemeRiverPlugin
 import ThemeSkyPlugin
 import ThemeSpringPlugin
-import ThemeStatusBarPlugin
 import ThemeSummerPlugin
 import ThemeVoidPlugin
 import ThemeVscodePlugin
@@ -82,6 +103,30 @@ public enum PluginService {
             WorkspaceStatePlugin(),
             PluginManagementPlugin(),
             LLMProviderManagerPlugin(),
+            // LLM Providers (order 91-110)
+            AiRouterPlugin(order: 91),
+            DeepSeekPlugin(order: 92),
+            StepFunPlugin(order: 93),
+            FlyMuxPlugin(order: 94),
+            FreeModelPlugin(order: 95),
+            MLXLumiPlugin(order: 95),
+            HappyCodePlugin(order: 96),
+            HyperAPIPlugin(order: 97),
+            LPgptPlugin(order: 98),
+            MegaLLMPlugin(order: 99),
+            OpenAIPlugin(order: 100),
+            OpenRouterPlugin(order: 101),
+            XiaomiPlugin(order: 102),
+            KimiCodePlugin(order: 103),
+            XybbzPlugin(order: 103),
+            AnthropicPlugin(order: 104),
+            FeifeimiaoPlugin(order: 104),
+            MiniMaxPlugin(order: 104),
+            SublyxPlugin(order: 104),
+            AliyunPlugin(order: 105),
+            CodexLumiPlugin(order: 105),
+            ZhipuPlugin(order: 110),
+            // UI & Features
             PanelPlugin(),
             TitleToolbarPlugin(),
             ProjectsPlugin(),

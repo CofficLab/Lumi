@@ -119,8 +119,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// LLM Provider service
-    public var llmProvider: (any LLMProviderProviding)? {
-        resolveService(LLMProviderProviding.self)
+    public var llmProvider: (any LLMProviderManaging)? {
+        resolveService(LLMProviderManaging.self)
     }
 
     /// Chat contribution service (middlewares, renderers, turn hooks)
@@ -298,8 +298,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Register LLM Provider service
-    public func registerLLMProviderService(_ llmProvider: any LLMProviderProviding) {
-        registerService(LLMProviderProviding.self, llmProvider)
+    public func registerLLMProviderService(_ llmProvider: any LLMProviderManaging) {
+        registerService(LLMProviderManaging.self, llmProvider)
     }
 
     /// Register Chat contribution service
