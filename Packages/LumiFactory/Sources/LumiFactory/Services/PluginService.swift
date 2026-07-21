@@ -15,6 +15,7 @@ import ConversationTitlePlugin
 import ConversationInputPlugin
 import ConversationMessageCountPlugin
 import MessageManagerPlugin
+import MessageSendManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -89,6 +90,7 @@ public enum PluginService {
             ChatKernelPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            MessageSendManagerPlugin(),
             MessageRendererManagerPlugin(),
             MessageRendererPlugin(),
             ConversationTitlePlugin(),

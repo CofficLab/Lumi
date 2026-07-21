@@ -88,6 +88,11 @@ public final class LumiKernelContainer: ObservableObject {
         resolveService(ChatServiceProviding.self)
     }
 
+    /// Message send service (user input → persist + dispatch)
+    public var messageSend: (any MessageSendManaging)? {
+        resolveService(MessageSendManaging.self)
+    }
+
     /// Conversation management service
     public var conversations: (any ConversationManaging)? {
         resolveService(ConversationManaging.self)
@@ -262,6 +267,11 @@ public final class LumiKernelContainer: ObservableObject {
         registerService(ChatServiceProviding.self, chat)
     }
 
+    /// Register message send service
+    public func registerMessageSend(_ messageSend: any MessageSendManaging) {
+        registerService(MessageSendManaging.self, messageSend)
+    }
+
     /// Register conversation managing service
     public func registerConversations(_ conversations: any ConversationManaging) {
         registerService(ConversationManaging.self, conversations)
@@ -355,6 +365,7 @@ public final class LumiKernelContainer: ObservableObject {
         if toolbarProvider == nil { missingServices.append("TitleToolbar") }
         if sendMiddleware == nil { missingServices.append("SendMiddleware") }
         if chat == nil { missingServices.append("Chat") }
+        if messageSend == nil { missingServices.append("MessageSend") }
         if chatSection == nil { missingServices.append("ChatSection") }
         if editor == nil { missingServices.append("Editor") }
         if agentTool == nil { missingServices.append("AgentTool") }

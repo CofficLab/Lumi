@@ -6,6 +6,7 @@ public enum LumiKernelError: Error, LocalizedError {
     case pluginNotFound(id: String)
     case missingRequiredServices([String])
     case serviceNotAvailable(service: String)
+    case noActiveConversation
 
     public var errorDescription: String? {
         switch self {
@@ -17,6 +18,8 @@ public enum LumiKernelError: Error, LocalizedError {
             return "Missing required services: \(services.joined(separator: ", "))"
         case .serviceNotAvailable(let service):
             return "\(service) service is not available"
+        case .noActiveConversation:
+            return "No active conversation — create one or pass an explicit conversationID"
         }
     }
 }
