@@ -1093,9 +1093,6 @@
         }
       }
     },
-    "创建对话失败" : {
-
-    },
     "创建新对话" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1200,9 +1197,6 @@
           }
         }
       }
-    },
-    "确定" : {
-
     },
     "获取最近的对话列表" : {
       "extractionState" : "stale",

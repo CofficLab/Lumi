@@ -10,6 +10,7 @@ import ChatComposerPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
+import ConversationNewPlugin
 import ConversationStorePlugin
 import ConversationTitlePlugin
 import ConversationInputPlugin
@@ -144,6 +145,7 @@ public enum PluginService {
             MessageRendererPlugin(),
             ConversationTitlePlugin(),
             ConversationListPlugin(),
+            ConversationNewPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
             SendMiddlewarePlugin(),
