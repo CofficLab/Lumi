@@ -11,6 +11,7 @@ import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
 import ConversationManagerPlugin
+import ConversationTitlePlugin
 import MessageManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
@@ -82,6 +83,7 @@ public enum PluginService {
             ChatKernelPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            ConversationTitlePlugin(),
             ConversationListPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
