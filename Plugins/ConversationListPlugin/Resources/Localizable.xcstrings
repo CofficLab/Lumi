@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "·" : {
+
+    },
     "%@/%@" : {
       "extractionState" : "stale",
       "localizations" : {

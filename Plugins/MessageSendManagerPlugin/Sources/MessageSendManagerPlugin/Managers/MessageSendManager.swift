@@ -66,10 +66,20 @@ public final class MessageSendManager: MessageSendManaging, SuperLog {
                 Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用 selectedConversationID=\(targetID.uuidString.prefix(8))…")
             }
         } else {
+            // No conversation selected - auto-create one
             if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 没有可用的 conversationID，也没有 selectedConversationID")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话，自动创建新对话")
             }
-            throw LumiKernelError.noActiveConversation
+            guard let newID = try? kernel?.conversations?.createConversation(title: nil) else {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
+                }
+                throw LumiKernelError.noActiveConversation
+            }
+            targetID = newID
+            if Self.verbose {
+                Self.logger.info("\(Self.t)自动创建对话成功 ➡️ id=\(targetID.uuidString.prefix(8))…")
+            }
         }
 
         // 3. Persist user message into the message history
