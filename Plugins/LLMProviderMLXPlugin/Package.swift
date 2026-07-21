@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
@@ -41,6 +42,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),

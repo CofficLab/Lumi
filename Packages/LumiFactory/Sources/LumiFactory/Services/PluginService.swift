@@ -67,6 +67,7 @@ import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
 import ThemeAuroraPlugin
+import ThemeStatusBarPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
 import ThemeGithubPlugin
@@ -104,28 +105,28 @@ public enum PluginService {
             PluginManagementPlugin(),
             LLMProviderManagerPlugin(),
             // LLM Providers (order 91-110)
-            AiRouterPlugin(order: 91),
-            DeepSeekPlugin(order: 92),
-            StepFunPlugin(order: 93),
-            FlyMuxPlugin(order: 94),
-            FreeModelPlugin(order: 95),
-            MLXLumiPlugin(order: 95),
-            HappyCodePlugin(order: 96),
-            HyperAPIPlugin(order: 97),
-            LPgptPlugin(order: 98),
-            MegaLLMPlugin(order: 99),
-            OpenAIPlugin(order: 100),
-            OpenRouterPlugin(order: 101),
-            XiaomiPlugin(order: 102),
-            KimiCodePlugin(order: 103),
-            XybbzPlugin(order: 103),
-            AnthropicPlugin(order: 104),
-            FeifeimiaoPlugin(order: 104),
-            MiniMaxPlugin(order: 104),
-            SublyxPlugin(order: 104),
-            AliyunPlugin(order: 105),
-            CodexLumiPlugin(order: 105),
-            ZhipuPlugin(order: 110),
+            AiRouterPlugin(),
+            DeepSeekPlugin(),
+            StepFunPlugin(),
+            FlyMuxPlugin(),
+            FreeModelPlugin(),
+            MLXLumiPlugin(),
+            HappyCodePlugin(),
+            HyperAPIPlugin(),
+            LPgptPlugin(),
+            MegaLLMPlugin(),
+            OpenAIPlugin(),
+            OpenRouterPlugin(),
+            XiaomiPlugin(),
+            KimiCodePlugin(),
+            XybbzPlugin(),
+            AnthropicPlugin(),
+            FeifeimiaoPlugin(),
+            MiniMaxPlugin(),
+            SublyxPlugin(),
+            AliyunPlugin(),
+            CodexLumiPlugin(),
+            ZhipuPlugin(),
             // UI & Features
             PanelPlugin(),
             TitleToolbarPlugin(),

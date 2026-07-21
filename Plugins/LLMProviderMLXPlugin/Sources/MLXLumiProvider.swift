@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LLMKit
+import LumiCoreChat
 import LumiCoreLLMProvider
 import LumiCoreMessage
 import LumiKernel
@@ -194,7 +195,7 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             try await service.loadModel(id: request.model)
         }
 
-        let preparedMessages = VisionMessageSupport.preparedMessages(for: request)
+        let preparedMessages = LumiVisionMessageSupport.preparedMessages(for: request)
         let mlxMessages = preparedMessages.compactMap { message -> MLXChatMessage? in
             switch message.role {
             case .system:
