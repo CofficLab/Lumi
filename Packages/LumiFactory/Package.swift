@@ -70,6 +70,7 @@ let package = Package(
         .package(path: "../../Plugins/ThemeVscodePlugin"),
         .package(path: "../../Plugins/ThemeWinterPlugin"),
         .package(path: "../../Plugins/PluginManagementPlugin"),
+        .package(path: "../../Plugins/LLMProviderManagerPlugin"),
         .package(path: "../../Plugins/WorkspaceStatePlugin"),
         // Editor and UI plugins
         .package(path: "../../Plugins/EditorPanelPlugin"),
@@ -156,6 +157,7 @@ let package = Package(
                 .product(name: "ThemeVscodePlugin", package: "ThemeVscodePlugin"),
                 .product(name: "ThemeWinterPlugin", package: "ThemeWinterPlugin"),
                 .product(name: "PluginManagementPlugin", package: "PluginManagementPlugin"),
+                .product(name: "LLMProviderManagerPlugin", package: "LLMProviderManagerPlugin"),
                 .product(name: "WorkspaceStatePlugin", package: "WorkspaceStatePlugin"),
                 // Editor and UI plugins
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),

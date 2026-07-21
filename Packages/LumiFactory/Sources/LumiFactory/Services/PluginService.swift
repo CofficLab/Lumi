@@ -25,6 +25,7 @@ import EditorPanelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
+import LLMProviderManagerPlugin
 import LogoPlugin
 import MenuBarManagerPlugin
 import MenuBarPlugin
@@ -80,6 +81,7 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
             PluginManagementPlugin(),
+            LLMProviderManagerPlugin(),
             PanelPlugin(),
             TitleToolbarPlugin(),
             ProjectsPlugin(),

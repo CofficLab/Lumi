@@ -17,12 +17,14 @@ import SwiftUI
 /// 负责管理所有插件的注册、启动、查询和排序。
 /// 同时充当多个 Provider 服务的实现：
 /// - PluginProviding: 插件管理
-/// - LLMProviderProviding: LLM Provider 收集
 /// - AgentToolProviding: Agent Tool 收集
 /// - ChatContributionProviding: Chat 贡献聚合
 /// - UIThemeProviding: Theme 贡献
+///
+/// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 实现,
+/// 不再在本类中聚合。
 @MainActor
-public final class PluginManagerProvider: PluginProviding, LLMProviderProviding, AgentToolProviding, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
+public final class PluginManagerProvider: PluginProviding, AgentToolProviding, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -31,9 +33,6 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
     /// Kernel 引用,用于插件启动和 UI 贡献注册
     weak var kernel: LumiKernel?
 
-    // LLM Provider registry
-    private var llmProviders: [String: any LumiLLMProvider] = [:]
-    private var llmProviderOrder: [String] = []
     private var themeRegistry: [LumiUIThemeContribution] = []
 
     // Agent Tool registry
@@ -102,11 +101,6 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
         for plugin in allPlugins {
             guard plugin.policy.shouldRegister else { continue }
             let pluginOrder = plugin.order
-
-            // LLM Providers
-            for provider in plugin.llmProviders(kernel: kernel) {
-                registerLLMProvider(provider)
-            }
 
             // Agent Tools
             do {
@@ -325,27 +319,13 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
             .sorted { $0.order < $1.order }
     }
 
-    // MARK: - LLMProviderProviding
+    // MARK: - ChatContributionProviding (LLM Provider passthrough)
 
+    /// 旧 `ChatContributionProviding` 协议要求 `allLLMProviders()`。
+    /// LLM Provider 收集已搬到 `LLMProviderManagerPlugin`,本方法把
+    /// 收集结果转调过去;调用方拿不到数据时返回空数组。
     public func allLLMProviders() -> [any LumiLLMProvider] {
-        llmProviderOrder.compactMap { llmProviders[$0] }
-    }
-
-    public func registerLLMProvider(_ provider: any LumiLLMProvider) {
-        let id = type(of: provider).info.id
-        if llmProviders[id] == nil {
-            llmProviderOrder.append(id)
-        }
-        llmProviders[id] = provider
-    }
-
-    public func unregisterLLMProvider(id: String) {
-        llmProviders.removeValue(forKey: id)
-        llmProviderOrder.removeAll { $0 == id }
-    }
-
-    public func llmProvider(id: String) -> (any LumiLLMProvider)? {
-        llmProviders[id]
+        kernel?.llmProvider?.allLLMProviders() ?? []
     }
 
     // MARK: - AgentToolProviding
@@ -401,7 +381,10 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
     // 老 API（ChatContributionProviding.allXxx()）保留以便旧代码继续工作。
 
     public func llmProviders(lumiCore: any LumiCoreProviding) -> [any LumiLLMProvider] {
-        allLLMProviders()
+        // LLM Provider 收集已由 LLMProviderManagerPlugin 负责。
+        // 本方法保留以便 `LumiCoreChat.ChatService.applyPluginContributions`
+        // 仍然能调用,但目前没有 LLM Provider 插件接入 App,返回空数组。
+        []
     }
 
     public func sendMiddlewares(lumiCore: any LumiCoreProviding) -> [any LumiSendMiddleware] {

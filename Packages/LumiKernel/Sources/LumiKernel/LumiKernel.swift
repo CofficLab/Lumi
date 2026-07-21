@@ -366,6 +366,7 @@ public final class LumiKernelContainer: ObservableObject {
         if sendMiddleware == nil { missingServices.append("SendMiddleware") }
         if chat == nil { missingServices.append("Chat") }
         if messageSend == nil { missingServices.append("MessageSend") }
+        if llmProvider == nil { missingServices.append("LLMProvider") }
         if chatSection == nil { missingServices.append("ChatSection") }
         if editor == nil { missingServices.append("Editor") }
         if agentTool == nil { missingServices.append("AgentTool") }

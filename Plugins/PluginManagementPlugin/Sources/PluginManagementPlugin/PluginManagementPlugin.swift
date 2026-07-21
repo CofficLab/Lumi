@@ -8,12 +8,14 @@ import os
 /// 插件管理插件
 ///
 /// 提供 PluginProviding 服务的默认实现。
-/// 同时充当 LLMProviderProviding、AgentToolProviding、ChatContributionProviding、UIThemeProviding 的实现。
+/// 同时充当 AgentToolProviding、ChatContributionProviding、UIThemeProviding 的实现。
 /// 负责管理所有插件的注册、启动、查询和排序。
+///
+/// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 提供。
 @MainActor
 public final class PluginManagementPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.plugin-management")
-    nonisolated public static let emoji = "🔌"
+    public nonisolated static let emoji = "🔌"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
@@ -35,7 +37,6 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
         pluginServiceInstance.kernel = kernel
         kernel.registerPluginService(pluginServiceInstance)
         // 2. 同一个实例还充当多个 Provider 服务的实现
-        kernel.registerLLMProviderService(pluginServiceInstance)
         kernel.registerAgentToolService(pluginServiceInstance)
         kernel.registerChatContributionService(pluginServiceInstance)
         // 主题贡献由 UIThemeProviding 收集,通过 LumiKernel.plugin 访问
