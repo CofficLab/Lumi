@@ -14,16 +14,16 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LumiCoreLLMProvider"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "ModelSelectorPlugin",
             dependencies: [
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

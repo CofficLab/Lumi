@@ -1,28 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%1$@ · %2$@ tokens (in %3$@ / out %4$@)" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@ tokens（输入 %3$@ / 输出 %4$@）"
-          }
-        }
-      }
-    },
-    "%1$@, total %2$@ tokens, peak %3$@" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@，共 %2$@ tokens，峰值 %3$@"
-          }
-        }
-      }
-    },
     "%lld cloud providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -146,7 +124,7 @@
       }
     },
     "All" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -181,7 +159,7 @@
       }
     },
     "Auto" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -321,7 +299,7 @@
       }
     },
     "Check Model Availability" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -496,7 +474,7 @@
       }
     },
     "Current Provider" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -630,7 +608,7 @@
       }
     },
     "Fast" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -665,7 +643,7 @@
       }
     },
     "Frequent" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -823,17 +801,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用中"
-          }
-        }
-      }
-    },
-    "last %lld days" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "最近 %lld 天"
           }
         }
       }
@@ -1170,17 +1137,6 @@
         }
       }
     },
-    "No Usage Data" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "暂无使用数据"
-          }
-        }
-      }
-    },
     "No Usage History" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1235,17 +1191,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打開供應商頁面"
-          }
-        }
-      }
-    },
-    "peak %@" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "峰值 %@"
           }
         }
       }
@@ -1356,7 +1301,7 @@
       }
     },
     "Providers" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1391,6 +1336,7 @@
       }
     },
     "Re-check availability" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1546,9 +1492,6 @@
         }
       }
     },
-    "Saved" : {
-
-    },
     "Search providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1613,8 +1556,11 @@
         }
       }
     },
+    "Select Model" : {
+
+    },
     "Switch Model" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -1,4 +1,4 @@
-import LumiCoreChat
+import LumiCoreLLMProvider
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -6,20 +6,15 @@ import SwiftUI
 /// Action Bar 上的模型选择按钮
 struct ModelSelectorActionBarButton: View {
     @LumiTheme private var theme
-    @ObservedObject private var chatService: ChatService
-
-    init(chatService: any LumiChatServicing) {
-        guard let chatService = chatService as? ChatService else {
-            preconditionFailure("ModelSelectorActionBarButton requires ChatService")
-        }
-        _chatService = ObservedObject(wrappedValue: chatService)
-    }
+    let llmProvider: any LLMProviderManaging
 
     var body: some View {
+        let providers = llmProvider.allLLMProviders()
+
         HStack(spacing: 6) {
             Image(systemName: "globe")
                 .font(.system(size: 13, weight: .medium))
-            Text(providerLabel)
+            Text(providerLabel(providers: providers))
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -34,22 +29,15 @@ struct ModelSelectorActionBarButton: View {
         .accessibilityLabel("Select Model")
     }
 
-    private var providerLabel: String {
-        if chatService.routingMode == .auto {
-            return "Auto · Router"
+    private func providerLabel(providers: [any LumiLLMProvider]) -> String {
+        guard let first = providers.first else {
+            return "No Provider"
         }
-
-        let conversationID = chatService.selectedConversationID
-        guard let providerID = chatService.providerID(for: conversationID),
-              let provider = chatService.providerInfos.first(where: { $0.id == providerID })
-        else {
-            return "Select Model"
+        let info = type(of: first).info
+        if let model = info.availableModels.first {
+            let displayModel = info.modelDisplayNames[model] ?? model
+            return "\(info.displayName) · \(displayModel)"
         }
-
-        if let model = chatService.modelName(for: conversationID) {
-            let displayModel = provider.modelDisplayNames[model] ?? model
-            return "\(provider.displayName) · \(displayModel)"
-        }
-        return provider.displayName
+        return info.displayName
     }
 }
