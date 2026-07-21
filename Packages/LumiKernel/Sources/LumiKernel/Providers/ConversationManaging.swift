@@ -31,4 +31,15 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 返回模拟对话 ID 列表（用于测试数据关联）
     func mockConversationIDs() -> [UUID]
+
+    // MARK: - Provider/Model Selection
+
+    /// 获取指定对话的 Provider ID
+    func providerID(for conversationID: UUID?) -> String?
+
+    /// 获取指定对话的 Model 名称
+    func modelName(for conversationID: UUID?) -> String?
+
+    /// 设置指定对话的 Provider 和 Model
+    func selectProvider(id: String, model: String?, for conversationID: UUID?)
 }

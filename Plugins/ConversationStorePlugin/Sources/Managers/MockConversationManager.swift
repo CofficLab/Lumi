@@ -138,4 +138,31 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     public func mockConversationIDs() -> [UUID] {
         return [Self.welcomeID, Self.projectID, Self.codeReviewID]
     }
+
+    // MARK: - Provider/Model Selection
+
+    public func providerID(for conversationID: UUID?) -> String? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.providerID
+    }
+
+    public func modelName(for conversationID: UUID?) -> String? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.modelName
+    }
+
+    public func selectProvider(id: String, model: String?, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].providerID = id
+        conversations[index].modelName = model
+    }
 }

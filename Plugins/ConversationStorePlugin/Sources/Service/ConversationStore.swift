@@ -219,6 +219,25 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新活动时间")
     }
 
+    /// Update conversation provider and model
+    func updateConversationProvider(id: UUID, providerID: String, modelName: String?) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        model.providerId = providerID
+        model.modelName = modelName
+        model.updatedAt = Date().timeIntervalSince1970
+        return save(context, operation: "更新供应商")
+    }
+
     // MARK: - Delete
 
     /// Delete a conversation by ID
