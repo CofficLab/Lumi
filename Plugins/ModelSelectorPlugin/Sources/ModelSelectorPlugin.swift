@@ -19,7 +19,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
     // MARK: - Chat Action Bar
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
-        guard let chatService = kernel.chatSection as? any LumiChatServicing else {
+        guard let chatService = kernel.resolveService(ChatServiceProviding.self) else {
             return []
         }
 
