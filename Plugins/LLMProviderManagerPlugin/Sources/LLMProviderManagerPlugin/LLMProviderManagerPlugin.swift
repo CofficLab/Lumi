@@ -39,9 +39,14 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         let service = LLMProviderManager()
+        // Self-register the bundled mock provider so the kernel always
+        // has at least one usable LLM provider out of the box. Real
+        // providers (Anthropic, OpenAI, …) will be registered by their
+        // own plugins via `kernel.llmProvider?.registerLLMProvider(...)`.
+        service.registerLLMProvider(MockLLMProvider())
         kernel.registerLLMProviderService(service)
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
+            Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核, 并自注册 MockLLMProvider")
         }
     }
 
