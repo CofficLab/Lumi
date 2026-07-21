@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// Displays the chat message list for the selected conversation.
 struct MessageListView: View {
-    let kernel: LumiKernel
+    @ObservedObject var kernel: LumiKernel
 
     @LumiTheme private var theme
     @State private var messages: [LumiChatMessage] = []
@@ -32,7 +32,7 @@ struct MessageListView: View {
         .onAppear {
             loadMessages()
         }
-        .task(id: kernel.conversations?.selectedConversationID) {
+        .onChange(of: kernel.conversations?.selectedConversationID) { _, _ in
             loadMessages()
         }
     }
