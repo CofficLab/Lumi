@@ -5,6 +5,8 @@ import LumiKernel
 import SuperLogKit
 import os
 
+private let selectedProviderIDKey = "com.coffic.lumi.selectedLLMProviderID"
+
 /// Default `LLMProviderProviding` implementation.
 ///
 /// Acts as a registry of `LumiLLMProvider` instances contributed by
@@ -18,11 +20,14 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
 
     private var llmProviders: [String: any LumiLLMProvider] = [:]
     private var llmProviderOrder: [String] = []
+    private var _selectedProviderID: String?
 
     public init() {
         if Self.verbose {
             Self.logger.info("\(Self.t)\(Self.onInit)LLMProviderManager")
         }
+        // Load persisted selected provider ID
+        _selectedProviderID = UserDefaults.standard.string(forKey: selectedProviderIDKey)
     }
 
     // MARK: - LLMProviderProviding
@@ -60,6 +65,26 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
             Self.logger.info("\(Self.t)llmProvider(id:) ➡️ id=\(id), hit=\(found)")
         }
         return llmProviders[id]
+    }
+
+    // MARK: - Provider Selection
+
+    public var selectedProviderID: String? {
+        get { _selectedProviderID }
+    }
+
+    public func selectProvider(id: String) {
+        guard llmProviders[id] != nil else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)selectProvider ➡️ 未找到 provider id=\(id)")
+            }
+            return
+        }
+        _selectedProviderID = id
+        UserDefaults.standard.set(id, forKey: selectedProviderIDKey)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)selectProvider ➡️ 已选择 id=\(id)")
+        }
     }
 
     // MARK: - Send
