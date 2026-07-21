@@ -45,7 +45,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
 
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] {
         if Self.verbose {
-            Self.logger.info("\(Self.t)chatSectionItems ➡️ 注册 1 个 .bottomFixed item")
+            Self.logger.info("\(Self.t)chatSectionItems ➡️ 注册 1 个 .bottomFixed item (注入 kernel)")
         }
         return [
             ChatSectionItem(
@@ -54,7 +54,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView()
+                ConversationInputView(kernel: kernel)
             }
         ]
     }
