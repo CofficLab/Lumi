@@ -120,10 +120,27 @@ public final class MessageSendManager: MessageSendManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)sendMessage ➡️ 调 LLM provider, model=\(model), messages=\(history.count)")
         }
-        let assistantMessage = try await kernel.llmProvider!.sendToSelectedProvider(request)
-        kernel.messageManager?.insertMessage(assistantMessage, to: targetID)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)assistant 消息已落库 ➡️ id=\(assistantMessage.id.uuidString.prefix(8))…, content.len=\(assistantMessage.content.count)")
+
+        do {
+            let assistantMessage = try await kernel.llmProvider!.sendToSelectedProvider(request)
+            kernel.messageManager?.insertMessage(assistantMessage, to: targetID)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)assistant 消息已落库 ➡️ id=\(assistantMessage.id.uuidString.prefix(8))…, content.len=\(assistantMessage.content.count)")
+            }
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)sendMessage ➡️ provider 抛出 error: \(error.localizedDescription)")
+            }
+            // Insert error message into conversation
+            let errorMessage = LumiChatMessage(
+                conversationID: targetID,
+                role: .error,
+                content: error.localizedDescription
+            )
+            kernel.messageManager?.insertMessage(errorMessage, to: targetID)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)error 消息已落库 ➡️ id=\(errorMessage.id.uuidString.prefix(8))…")
+            }
         }
     }
 
