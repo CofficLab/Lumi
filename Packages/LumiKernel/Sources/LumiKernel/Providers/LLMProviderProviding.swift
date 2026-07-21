@@ -18,4 +18,11 @@ public protocol LLMProviderProviding: AnyObject {
 
     /// 按 ID 查询
     func llmProvider(id: String) -> (any LumiLLMProvider)?
+
+    /// 发送一条请求到「第一个可用」的 LLM provider
+    ///
+    /// - Parameter request: LLM 请求(消息历史 + 模型名 + 可选工具列表)
+    /// - Returns: 完整 assistant 消息
+    /// - Throws: `LumiKernelError.llmProviderUnavailable` 当内核未注册任何 provider 时
+    func sendToFirstProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage
 }

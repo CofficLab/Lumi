@@ -1,4 +1,5 @@
 import Foundation
+import LumiCoreLLMProvider
 import LumiCoreMessage
 import LumiKernel
 import os
@@ -90,6 +91,28 @@ public final class MockMessageSendManager: MessageSendManaging, SuperLog {
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
         if Self.verbose {
             Self.logger.info("\(Self.t)user 消息已落库 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, content.len=\(trimmed.count)")
+        }
+
+        // 4. Hand off the full conversation history to the first
+        //    available LLM provider; the returned assistant message is
+        //    persisted back into the message history.
+        guard let kernel else { return }
+        let history = kernel.messageManager?.messages(for: targetID) ?? []
+        guard let provider = kernel.llmProvider?.allLLMProviders().first else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)sendMessage ➡️ 内核没有 LLM provider, 抛 llmProviderUnavailable")
+            }
+            throw LumiKernelError.llmProviderUnavailable
+        }
+        let model = type(of: provider).info.defaultModel
+        let request = LumiLLMRequest(messages: history, model: model)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)sendMessage ➡️ 调 LLM provider id=\(type(of: provider).info.id), model=\(model), messages=\(history.count)")
+        }
+        let assistantMessage = try await kernel.llmProvider!.sendToFirstProvider(request)
+        kernel.messageManager?.insertMessage(assistantMessage, to: targetID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)assistant 消息已落库 ➡️ id=\(assistantMessage.id.uuidString.prefix(8))…, content.len=\(assistantMessage.content.count)")
         }
     }
 

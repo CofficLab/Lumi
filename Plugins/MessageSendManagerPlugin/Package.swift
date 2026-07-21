@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiCoreMessage"),
+        .package(path: "../../Packages/LumiCoreLLMProvider"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -18,6 +19,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources"

@@ -1,5 +1,6 @@
 import Foundation
 import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 import SuperLogKit
 import os
@@ -59,5 +60,21 @@ public final class LLMProviderManager: LLMProviderProviding, SuperLog {
             Self.logger.info("\(Self.t)llmProvider(id:) ➡️ id=\(id), hit=\(found)")
         }
         return llmProviders[id]
+    }
+
+    // MARK: - Send
+
+    public func sendToFirstProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        guard let provider = allLLMProviders().first else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)sendToFirstProvider ➡️ 没有可用的 LLM provider, 抛 llmProviderUnavailable")
+            }
+            throw LumiKernelError.llmProviderUnavailable
+        }
+        let providerID = type(of: provider).info.id
+        if Self.verbose {
+            Self.logger.info("\(Self.t)sendToFirstProvider ➡️ 选 provider id=\(providerID), model=\(request.model), messages=\(request.messages.count), tools=\(request.tools.count)")
+        }
+        return try await provider.send(request)
     }
 }
