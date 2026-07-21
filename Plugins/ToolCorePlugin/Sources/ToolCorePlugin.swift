@@ -7,7 +7,7 @@ import os
 public final class ToolCorePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.tool-core"
     public let name = "Tool Core"
-    public let order = 0
+    public let order = 35  // After AgentToolPlugin (order = 30)
     public static let policy: LumiPluginPolicy = .alwaysOn
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
