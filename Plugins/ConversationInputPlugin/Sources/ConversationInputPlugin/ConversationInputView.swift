@@ -57,10 +57,11 @@ struct ConversationInputView: View, SuperLog {
                         .background(Color.clear)
                         .frame(minHeight: 36, maxHeight: 160)
                         .disabled(isSending)
-                        .onSubmit {
+                        .onKeyPress(.return) {
                             if canSend {
                                 send()
                             }
+                            return .ignored
                         }
                 }
                 .padding(.horizontal, 8)
