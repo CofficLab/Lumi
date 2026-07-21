@@ -106,7 +106,6 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
             PluginManagementPlugin(),
-            ToolCorePlugin(),
             LLMProviderManagerPlugin(),
             // LLM Providers (order 91-110)
             AiRouterPlugin(),
@@ -136,6 +135,7 @@ public enum PluginService {
             TitleToolbarPlugin(),
             ProjectsPlugin(),
             AgentToolPlugin(),
+            ToolCorePlugin(),
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),

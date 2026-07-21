@@ -1,414 +1,415 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Edit File": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit File"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Edit File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit File"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit File"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit File"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit File"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit File"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit File"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit File"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit File"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit File"
           }
         }
       }
     },
-    "Execute a shell command in the terminal.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execute a shell command in the terminal."
+    "Execute a shell command in the terminal." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execute a shell command in the terminal."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execute a shell command in the terminal."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execute a shell command in the terminal."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execute a shell command in the terminal."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execute a shell command in the terminal."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execute a shell command in the terminal."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execute a shell command in the terminal."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execute a shell command in the terminal."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execute a shell command in the terminal."
           }
         }
       }
     },
-    "List Directory": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List Directory"
+    "List Directory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List Directory"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List Directory"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List Directory"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List Directory"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List Directory"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List Directory"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List Directory"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List Directory"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List Directory"
           }
         }
       }
     },
-    "List files and directories at a given path. Useful for exploring the project structure.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+    "List files and directories at a given path. Useful for exploring the project structure." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List files and directories at a given path. Useful for exploring the project structure."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List files and directories at a given path. Useful for exploring the project structure."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List files and directories at a given path. Useful for exploring the project structure."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List files and directories at a given path. Useful for exploring the project structure."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List files and directories at a given path. Useful for exploring the project structure."
           }
         }
       }
     },
-    "Perform exact string replacements in a file.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform exact string replacements in a file."
+    "Perform exact string replacements in a file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perform exact string replacements in a file."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform exact string replacements in a file."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perform exact string replacements in a file."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform exact string replacements in a file."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perform exact string replacements in a file."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform exact string replacements in a file."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perform exact string replacements in a file."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform exact string replacements in a file."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perform exact string replacements in a file."
           }
         }
       }
     },
-    "Read File": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read File"
+    "Read File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read File"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read File"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read File"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read File"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read File"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read File"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read File"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read File"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read File"
           }
         }
       }
     },
-    "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+    "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
           }
         }
       }
     },
-    "Run Command": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Command"
+    "Run Command" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Command"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Command"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Command"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Command"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Command"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Command"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Command"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Command"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Command"
           }
         }
       }
     },
-    "Tool Core": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tool Core"
+    "Tool Core" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tool Core"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "核心工具"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心工具"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "核心工具"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心工具"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "核心工具"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心工具"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "核心工具"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心工具"
           }
         }
       }
     },
-    "Write File": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write File"
+    "Write File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write File"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write File"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write File"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write File"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write File"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write File"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write File"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write File"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write File"
           }
         }
       }
     },
-    "Write UTF-8 text content to a file.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+    "Write UTF-8 text content to a file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write UTF-8 text content to a file."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write UTF-8 text content to a file."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write UTF-8 text content to a file."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write UTF-8 text content to a file."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write UTF-8 text content to a file."
           }
         }
       }
     },
-    "提供 Lumi 的基础工具（文件/命令）。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides Lumi's core tools (file/command)."
+    "提供 Lumi 的基础工具（文件/命令）。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides Lumi's core tools (file/command)."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供 Lumi 的基础工具（文件/命令）。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Lumi 的基础工具（文件/命令）。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供 Lumi 的基礎工具（檔案/命令）。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Lumi 的基礎工具（檔案/命令）。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供 Lumi 的基礎工具（文件/命令）。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Lumi 的基礎工具（文件/命令）。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供 Lumi 的基礎工具（檔案/命令）。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供 Lumi 的基礎工具（檔案/命令）。"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }
