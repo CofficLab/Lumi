@@ -5,9 +5,11 @@ import LumiUI
 import SwiftUI
 
 enum HttpErrorRenderer {
+    private static let pluginOrder = 93 // StepFunPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "stepfun-http-error",
-        order: StepFunPlugin.info.order + 230,
+        order: pluginOrder + 230,
         canRender: { message in
             StepFunRenderKind.matchesOtherHttpError(message)
         },

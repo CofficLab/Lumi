@@ -1,9 +1,12 @@
 import LumiKernel
+import LumiCoreMessage
 
 enum ApiKeyMissingRenderer {
+    private static let pluginOrder = 104 // MiniMaxPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "minimax-api-key-missing",
-        order: MiniMaxPlugin.info.order + 200,
+        order: pluginOrder + 200,
         canRender: { message in
             MiniMaxRenderKind.matchesApiKeyMissing(message)
         },

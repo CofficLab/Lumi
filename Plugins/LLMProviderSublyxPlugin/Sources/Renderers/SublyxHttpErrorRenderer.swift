@@ -1,12 +1,14 @@
 import LumiKernel
+import LumiCoreMessage
 import LLMKit
-import LumiKernel
 import SwiftUI
 
 enum SublyxHttpErrorRenderer {
+    private static let pluginOrder = 104 // SublyxPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "sublyx-http-error",
-        order: SublyxPlugin.info.order + 210,
+        order: pluginOrder + 210,
         canRender: { message in
             SublyxRenderKind.isSublyxError(message) && SublyxRenderKind.httpStatusCode(from: message.renderKind) != nil
         },

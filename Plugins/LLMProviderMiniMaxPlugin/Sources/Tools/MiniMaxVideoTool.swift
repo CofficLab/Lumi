@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
+import LumiCoreMessage
 import LLMKit
-import LumiKernel
 
 /// MiniMax 视频生成工具：通过 MiniMax API 生成视频并返回 mp4 文件。
 ///
@@ -25,7 +25,7 @@ public struct MiniMaxVideoTool: LumiAgentTool {
         )
     )
 
-    public static let tags: Set<LumiToolTag> = [
+    public static let tags: Set<LumiCoreMessage.LumiToolTag> = [
         .network,
         "generative",
         "expensive",

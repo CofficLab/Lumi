@@ -1,10 +1,13 @@
 import LumiKernel
+import LumiCoreMessage
 
 /// 请求失败（网络错误等，无 HTTP 状态码）。
 enum RequestFailedRenderer {
+    private static let pluginOrder = 102 // XiaomiPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "xiaomi-request-failed",
-        order: XiaomiPlugin.info.order + 200,
+        order: pluginOrder + 200,
         canRender: { message in
             XiaomiRenderKind.matches(renderKind: XiaomiRenderKind.requestFailed, message: message)
         },

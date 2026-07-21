@@ -1,10 +1,13 @@
 import LumiKernel
+import LumiCoreMessage
 
 /// 其它 HTTP 错误（非 401/403，如 429 限流、500 服务器错误等）。
 enum HttpErrorRenderer {
+    private static let pluginOrder = 102 // XiaomiPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "xiaomi-http-error",
-        order: XiaomiPlugin.info.order + 200,
+        order: pluginOrder + 200,
         canRender: { message in
             XiaomiRenderKind.matchesOtherHttpError(message)
         },

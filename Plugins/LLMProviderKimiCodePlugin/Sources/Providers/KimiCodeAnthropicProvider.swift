@@ -1,8 +1,10 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiLLMProviderSupport
-import  LumiKernel
+import LumiKernel
 
 public final class KimiCodeAnthropicProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(

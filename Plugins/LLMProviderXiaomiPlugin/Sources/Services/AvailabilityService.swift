@@ -1,9 +1,13 @@
 import Foundation
 import HttpKit
 import LLMKit
+import LumiCoreLLMProvider
 import LumiCoreMessage
 import LumiKernel
 import LumiLLMProviderSupport
+
+// Type aliases to disambiguate between LumiCoreMessage and LumiCoreLLMProvider types
+typealias F = LumiCoreMessage.LumiLLMFailureDetail
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXiaomiPlugin")
@@ -124,7 +128,7 @@ enum AvailabilityService {
         return result
     }
 
-    static func isUnsupportedModelFailure(_ failure: LumiLLMFailureDetail) -> Bool {
+    static func isUnsupportedModelFailure(_ failure: F) -> Bool {
         if failure.reason == .unsupportedModel {
             return true
         }
@@ -148,7 +152,7 @@ enum AvailabilityService {
         return false
     }
 
-    static func isInvalidAPIKeyFailure(_ failure: LumiLLMFailureDetail) -> Bool {
+    static func isInvalidAPIKeyFailure(_ failure: F) -> Bool {
         if failure.httpStatusCode == 401 {
             return true
         }
@@ -159,7 +163,7 @@ enum AvailabilityService {
             || lower.contains("api key not valid")
     }
 
-    static func isQuotaExhaustedFailure(_ failure: LumiLLMFailureDetail) -> Bool {
+    static func isQuotaExhaustedFailure(_ failure: F) -> Bool {
         if failure.httpStatusCode == 429 {
             return true
         }
@@ -173,16 +177,16 @@ enum AvailabilityService {
         if case let HTTPClientError.httpError(_, message) = error {
             return isUnsupportedModelResponse(message)
         }
-        return isUnsupportedModelFailure(LLMFailureDetailResolver.resolve(from: error))
+        return isUnsupportedModelFailure(LumiLLMFailureDetailResolver.resolve(from: error))
     }
 
-    private static func combinedText(from failure: LumiLLMFailureDetail) -> String {
+    private static func combinedText(from failure: F) -> String {
         [failure.summary, failure.transportDetails]
             .compactMap { $0 }
             .joined(separator: "\n")
     }
 
-    private static func friendlySummary(from failure: LumiLLMFailureDetail) -> String? {
+    private static func friendlySummary(from failure: F) -> String? {
         for source in [failure.summary, failure.transportDetails].compactMap({ $0 }) {
             let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }

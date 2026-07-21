@@ -1,5 +1,6 @@
 import Foundation
 import LumiKernel
+import LumiCoreLLMProvider
 import LLMKit
 
 enum XiaomiErrorHandling {

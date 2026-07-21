@@ -1,4 +1,6 @@
 import LLMKit
+import LumiCoreLLMProvider
+import LumiCoreMessage
 import LumiKernel
 import LumiUI
 

@@ -1,10 +1,13 @@
 import LumiKernel
+import LumiCoreMessage
 
 /// 403 禁止访问：权限不足或 Key 无权访问该模型。
 enum Http403Renderer {
+    private static let pluginOrder = 102 // XiaomiPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "xiaomi-http-403",
-        order: XiaomiPlugin.info.order + 200,
+        order: pluginOrder + 200,
         canRender: { message in
             XiaomiRenderKind.matchesHttp(statusCode: 403, message: message)
         },
