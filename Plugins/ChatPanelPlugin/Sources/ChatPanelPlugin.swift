@@ -1,4 +1,6 @@
+import LumiCoreAgentTool
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// Chat Panel 插件
@@ -29,6 +31,22 @@ public final class ChatPanelPlugin: LumiPlugin {
         ]
     }
 
+    // MARK: - Status Bar
+
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        [
+            StatusBarItem(
+                id: "\(id).tools",
+                title: "Available Tools",
+                systemImage: "wrench.and.screwdriver",
+                placement: .trailing,
+                popover: {
+                    ChatAvailableToolsDetailView(tools: kernel.agentTool?.allAgentTools() ?? [])
+                }
+            )
+        ]
+    }
+
     // MARK: - Workspace State
 
     public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
@@ -50,6 +68,43 @@ public final class ChatPanelPlugin: LumiPlugin {
             content: false,
             activityBar: true,
             panel: false
+        )
+    }
+}
+
+// MARK: - Status Bar Views
+
+private struct ChatAvailableToolsDetailView: View {
+    @LumiTheme private var theme
+    let tools: [any LumiAgentTool]
+
+    var body: some View {
+        StatusBarPopoverScaffold(
+            title: "Available Tools",
+            systemImage: "wrench.and.screwdriver",
+            subtitle: "\(tools.count) tools",
+            headerAccessory: { EmptyView() },
+            content: {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(tools, id: \.name) { tool in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(tool.name)
+                                    .font(.appMonoCaption)
+                                Text(tool.toolDescription)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                                    .lineLimit(2)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            Divider()
+                        }
+                    }
+                }
+                .frame(minHeight: 280, maxHeight: 420)
+            },
+            footer: { EmptyView() }
         )
     }
 }
