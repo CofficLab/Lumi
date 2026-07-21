@@ -1,7 +1,6 @@
 import AppKit
 import LumiKernel
 import LumiUI
-import os
 import SwiftUI
 
 @MainActor
@@ -10,10 +9,6 @@ public final class ConversationListPlugin: LumiPlugin {
     public let name = "Conversation List"
     public let order = 76
     public static let policy: LumiPluginPolicy = .alwaysOn
-
-    public nonisolated static let verbose = false
-    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
-    public nonisolated static let t = "💬"
 
     public init() {}
 
@@ -77,6 +72,8 @@ struct ConversationListPopoverContent: View {
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
     @State private var refreshTrigger = 0
+
+    private static let notifications = Notification.Name("com.coffic.lumi.conversationsDidChange")
 
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
@@ -188,141 +185,8 @@ struct ConversationListPopoverContent: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Rail View
-
-/// Rail 面板视图
-struct ConversationRailView: View {
-    let kernel: LumiKernel
-    @State private var errorMessage: String?
-    @State private var showErrorAlert = false
-    @State private var refreshTrigger = 0
-
-    private var conversations: (any ConversationManaging)? {
-        kernel.conversations
-    }
-
-    private var conversationList: [LumiConversationSummary] {
-        _ = refreshTrigger
-        return conversations?.conversations ?? []
-    }
-
-    private func handleCreateConversation() {
-        guard let conv = conversations else { return }
-        do {
-            _ = try conv.createConversation(title: nil)
+        .onReceive(NotificationCenter.default.publisher(for: Self.notifications)) { _ in
             refreshTrigger += 1
-        } catch {
-            errorMessage = error.localizedDescription
-            showErrorAlert = true
-        }
-    }
-
-    var body: some View {
-        contentView
-            .alert("创建对话失败", isPresented: $showErrorAlert) {
-                Button("确定", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "未知错误")
-            }
-    }
-
-    @ViewBuilder
-    private var contentView: some View {
-        if let conv = conversations {
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Chats")
-                        .font(.headline)
-                    Spacer()
-                    Button(action: handleCreateConversation) {
-                        Image(systemName: "plus")
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-
-                Divider()
-
-                let list = conversationList
-                if list.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "message")
-                            .font(.system(size: 24))
-                            .foregroundColor(.secondary)
-                        Text("No conversations")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(list) { conversation in
-                        ConversationRow(
-                            conversation: conversation,
-                            isSelected: conv.selectedConversationID == conversation.id,
-                            onSelect: {
-                                conv.selectConversation(id: conversation.id)
-                                refreshTrigger += 1
-                            },
-                            onDelete: {
-                                conv.deleteConversation(id: conversation.id)
-                                refreshTrigger += 1
-                            }
-                        )
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        } else {
-            VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.title2)
-                    .foregroundColor(.orange)
-                Text("Service unavailable")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-        }
-    }
-}
-
-// MARK: - Conversation Row
-
-/// 对话行
-struct ConversationRow: View {
-    let conversation: LumiConversationSummary
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(conversation.title.isEmpty ? "Untitled" : conversation.title)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                Text(conversation.updatedAt.formatted())
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            Spacer()
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .foregroundColor(.accentColor)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onSelect()
-        }
-        .contextMenu {
-            Button("Delete", role: .destructive) {
-                onDelete()
-            }
         }
     }
 }

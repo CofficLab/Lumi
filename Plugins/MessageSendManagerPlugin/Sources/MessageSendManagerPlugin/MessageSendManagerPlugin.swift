@@ -20,7 +20,7 @@ public final class MessageSendManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.message-send-manager"
     public let name = "Message Send Manager"
-    public let order = 63  // After MessageManagerPlugin (62)
+    public let order = 63  // After MessageStorePlugin (62)
     public static let policy: LumiPluginPolicy = .disabled // 核心插件
 
     // MARK: - Initialization

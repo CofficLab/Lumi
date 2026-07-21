@@ -84,7 +84,7 @@ struct ConversationInputView: View, SuperLog {
         .background(theme.background)
         .onAppear {
             if Self.verbose {
-                Self.logger.info("\(Self.t)\(Self.onAppear)ConversationInputView (hasSendCapability=\(hasSendCapability))")
+                Self.logger.info("\(Self.t)ConversationInputView (hasSendCapability=\(hasSendCapability))")
             }
         }
         .onDisappear {
