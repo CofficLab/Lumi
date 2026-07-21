@@ -10,11 +10,11 @@ import ChatComposerPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
-import ConversationManagerPlugin
+import ConversationStorePlugin
 import ConversationTitlePlugin
 import ConversationInputPlugin
 import ConversationMessageCountPlugin
-import MessageManagerPlugin
+import MessageStorePlugin
 import MessageSendManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
@@ -90,8 +90,8 @@ public enum PluginService {
             EditorKernelPlugin(),
             EditorPanelPlugin(),
             ChatKernelPlugin(),
-            ConversationManagerPlugin(),
-            MessageManagerPlugin(),
+            ConversationStorePlugin(),
+            MessageStorePlugin(),
             MessageSendManagerPlugin(),
             MessageRendererManagerPlugin(),
             MessageRendererPlugin(),
