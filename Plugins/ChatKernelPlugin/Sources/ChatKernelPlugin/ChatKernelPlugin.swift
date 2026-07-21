@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// 聊天插件
 ///
@@ -9,7 +9,7 @@ import os
 @MainActor
 public final class ChatKernelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat")
-    nonisolated public static let emoji = "💬"
+    public nonisolated static let emoji = "💬"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
@@ -17,7 +17,7 @@ public final class ChatKernelPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.chat"
     public let name = "Chat Plugin"
     public let order = 60
-public static let policy: LumiPluginPolicy = .disabled  // 核心插件
+    public static let policy: LumiPluginPolicy = .disabled // 核心插件
 
     // MARK: - Initialization
 
