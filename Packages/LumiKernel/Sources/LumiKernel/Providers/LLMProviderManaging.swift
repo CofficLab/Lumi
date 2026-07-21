@@ -6,7 +6,7 @@ import LumiCoreMessage
 ///
 /// 由 LLM Provider 插件实现,负责把 LLMProvider 实例注册到内核。
 @MainActor
-public protocol LLMProviderProviding: AnyObject {
+public protocol LLMProviderManaging: AnyObject {
     /// 收集所有已启用的 LLM Provider
     func allLLMProviders() -> [any LumiLLMProvider]
 
