@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/ConversationInputPlugin"
         )

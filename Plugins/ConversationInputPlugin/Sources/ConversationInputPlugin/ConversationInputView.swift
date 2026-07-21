@@ -1,8 +1,13 @@
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 /// 输入框视图（仅 UI 展示）
-struct ConversationInputView: View {
+struct ConversationInputView: View, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-input.view")
+    nonisolated static let verbose = true
+
     @LumiTheme private var theme
     @State private var text: String = ""
 
@@ -11,6 +16,9 @@ struct ConversationInputView: View {
             AppDivider()
             HStack(alignment: .bottom, spacing: 8) {
                 Button {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)点击 ➡️ 附件按钮（占位）")
+                    }
                     // 附件按钮（占位）
                 } label: {
                     Image(systemName: "paperclip")
@@ -36,6 +44,11 @@ struct ConversationInputView: View {
                         .scrollContentBackground(.hidden)
                         .background(Color.clear)
                         .frame(minHeight: 36, maxHeight: 160)
+                        .onSubmit {
+                            if Self.verbose {
+                                Self.logger.info("\(Self.t)回车提交 ➡️ text.len=\(text.count)")
+                            }
+                        }
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -46,6 +59,10 @@ struct ConversationInputView: View {
                 )
 
                 Button {
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)点击 ➡️ 发送按钮（占位）➡️ text.len=\(trimmed.count), will be wired to kernel.messageSend in a follow-up")
+                    }
                     // 发送按钮（占位）
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
@@ -60,5 +77,15 @@ struct ConversationInputView: View {
             .padding(.vertical, 10)
         }
         .background(theme.background)
+        .onAppear {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)\(Self.onAppear)ConversationInputView")
+            }
+        }
+        .onDisappear {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)onDisappear ➡️ ConversationInputView")
+            }
+        }
     }
 }
