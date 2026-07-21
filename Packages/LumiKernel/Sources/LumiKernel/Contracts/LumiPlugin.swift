@@ -162,6 +162,19 @@ public protocol LumiPlugin: AnyObject {
     ///   - reason: turn 结束原因
     func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async
 
+    // MARK: - Workspace State (Optional)
+
+    /// 插件注册时调用，声明插件默认的工作区可见性偏好。
+    /// - Parameter kernel: LumiKernel 实例
+    /// - Returns: 可见性偏好；nil 字段表示不修改
+    func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility
+
+    /// 容器激活时被回调。插件可在此调整工作区状态以反映自身需要。
+    /// - Parameters:
+    ///   - kernel: LumiKernel 实例
+    ///   - containerID: 刚被激活的容器 ID
+    func onContainerActivated(kernel: LumiKernel, containerID: String)
+
     // MARK: - Editor Extension (Optional)
 
     /// 注册编辑器扩展（语言支持、LSP 等）。可选实现。
@@ -290,6 +303,14 @@ public extension LumiPlugin {
     // MARK: - Turn Finished Hook Default Implementation
 
     func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+
+    // MARK: - Workspace State Default Implementations
+
+    func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
+        WorkspaceVisibility()
+    }
+
+    func onContainerActivated(kernel: LumiKernel, containerID: String) {}
 
     // MARK: - Editor Extension Default Implementations
 

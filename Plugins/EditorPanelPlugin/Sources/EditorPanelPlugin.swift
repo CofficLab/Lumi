@@ -24,10 +24,7 @@ public static let policy: LumiPluginPolicy = .disabled
             ViewContainerItem(
                 id: id,
                 title: name,
-                systemImage: "chevron.left.forwardslash.chevron.right",
-                chatSection: .narrow,
-                showsRail: true,
-                showsPanelChrome: true
+                systemImage: "chevron.left.forwardslash.chevron.right"
             ) {
                 EditorPanelHostView(kernel: kernel)
             }
@@ -39,4 +36,28 @@ public static let policy: LumiPluginPolicy = .disabled
     }
 
     public func boot(kernel: LumiKernel) async throws {}
+
+    // MARK: - Workspace State
+
+    public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
+        // Editor 容器：显示 rail + content + panel，不显示 chat
+        WorkspaceVisibility(
+            rail: true,
+            chat: false,
+            content: true,
+            activityBar: true,
+            panel: true
+        )
+    }
+
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        guard containerID == id else { return }
+        kernel.workspaceState?.applyVisibility(
+            rail: true,
+            chat: false,
+            content: true,
+            activityBar: true,
+            panel: true
+        )
+    }
 }

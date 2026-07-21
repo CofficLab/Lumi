@@ -9,6 +9,7 @@ import LumiCorePanelChrome
 import LumiCoreSubAgent
 import LumiKernel
 import LumiUI
+import WorkspaceStatePlugin
 import SwiftUI
 
 /// 默认插件服务实现
@@ -179,19 +180,13 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
-                        chatSection: container.chatSection,
-                        showsRail: container.showsRail,
-                        showsPanelChrome: container.showsPanelChrome,
                         content: makeView
                     )
                 } else {
                     viewContainer = ViewContainerItem(
                         id: container.id,
                         title: container.title,
-                        systemImage: container.systemImage,
-                        chatSection: container.chatSection,
-                        showsRail: container.showsRail,
-                        showsPanelChrome: container.showsPanelChrome
+                        systemImage: container.systemImage
                     )
                 }
                 var containerWithOrder = viewContainer
@@ -295,6 +290,32 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
             layoutService.updateLayout { state in
                 state.activeSectionID = first.id
                 state.activeSectionTitle = ""
+            }
+        }
+
+        // 应用每个插件声明的工作区可见性偏好
+        for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
+            let visibility = plugin.workspaceVisibility(kernel: kernel)
+            kernel.workspaceState?.applyVisibility(
+                rail: visibility.rail,
+                chat: visibility.chat,
+                content: visibility.content,
+                activityBar: visibility.activityBar,
+                panel: visibility.panel
+            )
+        }
+
+        // 注册容器激活观察器：每个插件在容器激活时收到回调
+        if let workspacePlugin = allPlugins.first(where: { $0 is WorkspaceStatePlugin }) as? WorkspaceStatePlugin,
+           let stateProvider = workspacePlugin.instance {
+            for plugin in allPlugins {
+                guard plugin.policy.shouldRegister else { continue }
+                let pluginID = plugin.id
+                stateProvider.addContainerObserver { containerID in
+                    plugin.onContainerActivated(kernel: kernel, containerID: containerID)
+                    _ = pluginID
+                }
             }
         }
     }

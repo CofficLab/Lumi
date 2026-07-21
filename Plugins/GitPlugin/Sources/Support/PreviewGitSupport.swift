@@ -20,8 +20,6 @@ final class PreviewLumiCoreStub: LumiCoreAccessing {
         activeSectionID: String,
         activeSectionTitle: String,
         chatSection: LumiChatSectionLayout,
-        showsRail: Bool,
-        showsPanelChrome: Bool,
         isChatSectionVisible: Bool?,
         additionalDependencies: (inout LumiPluginDependencies) -> Void
     ) -> LumiPluginContext {
@@ -31,8 +29,6 @@ final class PreviewLumiCoreStub: LumiCoreAccessing {
             activeSectionID: activeSectionID,
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible ?? chatSection.isVisible,
             dependencies: deps,
             lumiCore: self

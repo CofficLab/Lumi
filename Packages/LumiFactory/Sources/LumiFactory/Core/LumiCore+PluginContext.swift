@@ -19,8 +19,6 @@ extension LumiCoreProviding {
         activeSectionID: String,
         activeSectionTitle: String,
         chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil,
         additionalDependencies: (inout LumiPluginDependencies) -> Void = { _ in }
     ) -> LumiPluginContext {
@@ -43,8 +41,6 @@ extension LumiCoreProviding {
             activeSectionID: activeSectionID,
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
             dependencies: dependencies,
             lumiCore: lumiCore

@@ -10,7 +10,6 @@ struct PanelColumnView: View {
     let container: LumiViewContainerItem?
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
-    let showsPanelChrome: Bool
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
     @ObservedObject var layoutState: LayoutState
@@ -19,6 +18,11 @@ struct PanelColumnView: View {
 
     private var viewContainerID: String {
         container?.id ?? "main"
+    }
+
+    /// 是否显示底部 panel chrome（来自 WorkspaceState）
+    private var showsPanelChrome: Bool {
+        lumiCore.workspaceState?.isPanelVisible ?? true
     }
 
     var body: some View {
@@ -30,7 +34,6 @@ struct PanelColumnView: View {
                     container: container,
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
-                    showsPanelChrome: showsPanelChrome,
                     viewContainerID: viewContainerID,
                     layoutState: layoutState
                 )
@@ -56,7 +59,6 @@ struct PanelColumnView: View {
                     container: container,
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
-                    showsPanelChrome: showsPanelChrome,
                     viewContainerID: viewContainerID,
                     layoutState: layoutState
                 )

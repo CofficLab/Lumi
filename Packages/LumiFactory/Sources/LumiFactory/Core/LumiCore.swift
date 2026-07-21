@@ -33,8 +33,14 @@ public final class LumiCoreConcrete: ObservableObject, LumiCoreProviding {
         chatService as! any LumiChatServicing
     }
 
+    /// 工作区状态服务（rail/chat/content/panel 可见性）
+    public var workspaceState: (any WorkspaceStateProviding)? {
+        resolveService(WorkspaceStateProviding.self)
+    }
+
+    /// Panel Chrome 可见性，优先从 `WorkspaceState` 读取
     public var showsPanelChrome: Bool {
-        layoutComponent.state.showsPanelChrome
+        workspaceState?.isPanelVisible ?? layoutComponent.state.showsPanelChrome
     }
 
     fileprivate var services: [ObjectIdentifier: Any] = [:]

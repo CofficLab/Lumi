@@ -158,6 +158,11 @@ public final class LumiKernelContainer: ObservableObject {
         resolveService(MessageRendererManaging.self)
     }
 
+    /// Workspace state service (controls rail/chat/content/activityBar visibility)
+    public var workspaceState: (any WorkspaceStateProviding)? {
+        resolveService(WorkspaceStateProviding.self)
+    }
+
     // MARK: - Initialization
 
     public init() {
@@ -327,6 +332,11 @@ public final class LumiKernelContainer: ObservableObject {
         registerService(MessageRendererManaging.self, manager)
     }
 
+    /// Register workspace state service
+    public func registerWorkspaceStateService(_ state: any WorkspaceStateProviding) {
+        registerService(WorkspaceStateProviding.self, state)
+    }
+
     // MARK: - Startup & Validation
 
     /// Startup kernel and perform self-check
@@ -355,6 +365,7 @@ public final class LumiKernelContainer: ObservableObject {
         if theme == nil { missingServices.append("Theme") }
         if plugin == nil { missingServices.append("Plugin") }
         if messageRendererManager == nil { missingServices.append("MessageRendererManager") }
+        if workspaceState == nil { missingServices.append("WorkspaceState") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)

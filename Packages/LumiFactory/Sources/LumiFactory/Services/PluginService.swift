@@ -61,6 +61,7 @@ import ThemeWinterPlugin
 import TitleToolbarPlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
+import WorkspaceStatePlugin
 
 /// 插件服务
 ///
@@ -74,6 +75,7 @@ public enum PluginService {
     public static let plugins: [LumiPlugin] = {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
+            WorkspaceStatePlugin(),
             PluginManagementPlugin(),
             PanelPlugin(),
             TitleToolbarPlugin(),

@@ -42,10 +42,6 @@ public protocol LumiCoreProviding: AnyObject, ObservableObject {
     /// 编辑器服务
     var editorService: (any AbstractEditorServicing)? { get }
 
-    // MARK: - Layout Convenience
-
-    var showsPanelChrome: Bool { get }
-
     // MARK: - Service Registry
 
     /// 注册一个服务实例
@@ -56,11 +52,6 @@ public protocol LumiCoreProviding: AnyObject, ObservableObject {
 }
 
 public extension LumiCoreProviding {
-    /// 默认从布局组件读取 Panel Chrome 显示状态
-    var showsPanelChrome: Bool {
-        layoutComponent.state.showsPanelChrome
-    }
-
     /// 兼容旧代码访问 `context.lumiCore`：对自身协议来说就是 self
     var lumiCore: (any LumiCoreProviding)? {
         self
@@ -122,8 +113,6 @@ public struct LumiPluginContext {
     public let activeSectionID: String
     public let activeSectionTitle: String
     public let chatSection: LumiChatSectionLayout
-    public let showsRail: Bool
-    public let showsPanelChrome: Bool
     public let isChatSectionVisible: Bool
     public let dependencies: LumiPluginDependencies
     public let lumiCore: (any LumiCoreProviding)?
@@ -142,8 +131,6 @@ public struct LumiPluginContext {
         activeSectionID: String = "main",
         activeSectionTitle: String = "Main",
         chatSection: LumiChatSectionLayout = .none,
-        showsRail: Bool = false,
-        showsPanelChrome: Bool = false,
         isChatSectionVisible: Bool? = nil,
         dependencies: LumiPluginDependencies = LumiPluginDependencies(),
         lumiCore: (any LumiCoreProviding)? = nil
@@ -151,8 +138,6 @@ public struct LumiPluginContext {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
         self.chatSection = chatSection
-        self.showsRail = showsRail
-        self.showsPanelChrome = showsPanelChrome
         self.isChatSectionVisible = isChatSectionVisible ?? chatSection.isVisible
         self.dependencies = dependencies
         self.lumiCore = lumiCore
@@ -168,8 +153,6 @@ public struct LumiPluginContext {
             activeSectionID: activeSectionID,
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible,
             dependencies: dependencies,
             lumiCore: lumiCore
