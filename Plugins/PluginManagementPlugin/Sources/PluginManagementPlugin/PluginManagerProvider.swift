@@ -173,17 +173,30 @@ public final class PluginManagerProvider: PluginProviding, LLMProviderProviding,
 
             // View Containers
             for container in plugin.viewContainers(kernel: kernel) {
-                var viewContainer = ViewContainerItem(
-                    id: container.id,
-                    title: container.title,
-                    systemImage: container.systemImage,
-                    chatSection: container.chatSection,
-                    showsRail: container.showsRail,
-                    showsPanelChrome: container.showsPanelChrome,
-                    content: container.makeView
-                )
-                viewContainer.order = pluginOrder
-                kernel.viewContainer?.register(viewContainer)
+                let viewContainer: ViewContainerItem
+                if let makeView = container.makeView {
+                    viewContainer = ViewContainerItem(
+                        id: container.id,
+                        title: container.title,
+                        systemImage: container.systemImage,
+                        chatSection: container.chatSection,
+                        showsRail: container.showsRail,
+                        showsPanelChrome: container.showsPanelChrome,
+                        content: makeView
+                    )
+                } else {
+                    viewContainer = ViewContainerItem(
+                        id: container.id,
+                        title: container.title,
+                        systemImage: container.systemImage,
+                        chatSection: container.chatSection,
+                        showsRail: container.showsRail,
+                        showsPanelChrome: container.showsPanelChrome
+                    )
+                }
+                var containerWithOrder = viewContainer
+                containerWithOrder.order = pluginOrder
+                kernel.viewContainer?.register(containerWithOrder)
             }
 
             // Chat Section
