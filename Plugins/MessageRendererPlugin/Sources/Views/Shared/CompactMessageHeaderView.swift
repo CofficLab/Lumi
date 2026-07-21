@@ -1,3 +1,4 @@
+import LumiCoreMessage
 import LumiUI
 import SwiftUI
 

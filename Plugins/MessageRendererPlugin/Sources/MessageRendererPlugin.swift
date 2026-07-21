@@ -12,13 +12,13 @@ public final class MessageRendererPlugin: LumiPlugin {
     public let id = "CoreMessageRenderer"
     public let name = "核心消息渲染器"
     public let order = 10
-public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
         // 直接向内核注册消息渲染器
-        guard let manager = kernel.resolveService(MessageRendererManagerProviding.self) else {
+        guard let manager = kernel.resolveService(MessageRendererManaging.self) else {
             return
         }
 
@@ -26,42 +26,39 @@ public static let policy: LumiPluginPolicy = .disabled
 
         // 优先级最高：turn-completed / status 特殊渲染
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-turn-completed",
                 order: base + 320,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.renderKind == "turn-completed" || message.content == LumiChatMarkers.turnCompleted
+                canRender: { message in
+                    message.renderKind == "turn-completed" || message.content == LumiChatMarkers.turnCompleted
                 },
                 render: { message, _ in
-                    TurnCompletedMessageView(message: message as! LumiChatMessage)
+                    TurnCompletedMessageView(message: message)
                 }
             )
         )
 
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-status-message",
                 order: base + 310,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.role == .status
+                canRender: { message in
+                    message.role == .status
                         && message.renderKind != "turn-completed"
                         && message.content != LumiChatMarkers.turnCompleted
                 },
                 render: { message, _ in
-                    StatusMessageView(message: message as! LumiChatMessage)
+                    StatusMessageView(message: message)
                 }
             )
         )
 
         // 错误消息：让 Provider 特定渲染器优先
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-error-message",
                 order: base + 290,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
+                canRender: { message in
                     guard message.role == .error || message.isError else { return false }
                     if let renderKind = message.renderKind,
                        ProviderRenderKindManager.shared.isProviderSpecificRenderKind(renderKind) {
@@ -70,82 +67,77 @@ public static let policy: LumiPluginPolicy = .disabled
                     return true
                 },
                 render: { message, showRawMessage in
-                    ErrorMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    ErrorMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )
 
         // 工具结果
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-tool-message",
                 order: base + 240,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.role == .tool
+                canRender: { message in
+                    message.role == .tool
                 },
                 render: { message, showRawMessage in
-                    ToolMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    ToolMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )
 
         // 用户消息
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-user-message",
                 order: base + 190,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.role == .user
+                canRender: { message in
+                    message.role == .user
                 },
                 render: { message, showRawMessage in
-                    UserMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    UserMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )
 
         // 助手消息
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-assistant-message",
                 order: base + 180,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.role == .assistant
+                canRender: { message in
+                    message.role == .assistant
                 },
                 render: { message, showRawMessage in
-                    AssistantMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    AssistantMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )
 
         // 系统消息
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-system-message",
                 order: base + 150,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return message.role == .system
+                canRender: { message in
+                    message.role == .system
                 },
                 render: { message, showRawMessage in
-                    SystemMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    SystemMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )
 
         // 兜底 Markdown 渲染
         manager.registerMessageRenderer(
-            MessageRendererItem(
+            LumiMessageRendererItem(
                 id: "core-default-markdown",
                 order: base - 10,
-                canRender: { msg in
-                    guard let message = msg as? LumiChatMessage else { return false }
-                    return !message.content.isEmpty
+                canRender: { message in
+                    !message.content.isEmpty
                 },
                 render: { message, showRawMessage in
-                    DefaultMessageView(message: message as! LumiChatMessage, showRawMessage: showRawMessage)
+                    DefaultMessageView(message: message, showRawMessage: showRawMessage)
                 }
             )
         )

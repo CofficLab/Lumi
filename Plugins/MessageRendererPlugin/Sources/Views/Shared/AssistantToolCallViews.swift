@@ -1,3 +1,4 @@
+import LumiCoreMessage
 import AgentToolKit
 import LumiKernel
 import LumiUI

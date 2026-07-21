@@ -26,6 +26,8 @@ import LogoPlugin
 import MenuBarManagerPlugin
 import MenuBarPlugin
 import MessageListPlugin
+import MessageRendererManagerPlugin
+import MessageRendererPlugin
 import NettoPlugin
 import PanelPlugin
 import PluginManagementPlugin
@@ -83,6 +85,8 @@ public enum PluginService {
             ChatKernelPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            MessageRendererManagerPlugin(),
+            MessageRendererPlugin(),
             ConversationTitlePlugin(),
             ConversationListPlugin(),
             CommandPlugin(),

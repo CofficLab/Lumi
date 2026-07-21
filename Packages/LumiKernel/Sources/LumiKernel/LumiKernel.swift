@@ -153,6 +153,11 @@ public final class LumiKernelContainer: ObservableObject {
         resolveService(OnboardingProviding.self)
     }
 
+    /// Message renderer management service
+    public var messageRendererManager: (any MessageRendererManaging)? {
+        resolveService(MessageRendererManaging.self)
+    }
+
     // MARK: - Initialization
 
     public init() {
@@ -317,6 +322,11 @@ public final class LumiKernelContainer: ObservableObject {
         registerService(OnboardingProviding.self, onboarding)
     }
 
+    /// Register message renderer management service
+    public func registerMessageRendererManagerService(_ manager: any MessageRendererManaging) {
+        registerService(MessageRendererManaging.self, manager)
+    }
+
     // MARK: - Startup & Validation
 
     /// Startup kernel and perform self-check
@@ -344,6 +354,7 @@ public final class LumiKernelContainer: ObservableObject {
         if logo == nil { missingServices.append("Logo") }
         if theme == nil { missingServices.append("Theme") }
         if plugin == nil { missingServices.append("Plugin") }
+        if messageRendererManager == nil { missingServices.append("MessageRendererManager") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)

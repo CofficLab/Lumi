@@ -1,3 +1,4 @@
+import LumiCoreMessage
 import LumiKernel
 
 struct ResolvedErrorTransportDetails: Equatable {
