@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "(%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -36,6 +37,7 @@
       }
     },
     "%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -140,6 +142,7 @@
       }
     },
     "Approve" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -174,6 +177,7 @@
       }
     },
     "Approve high-risk tool?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -278,6 +282,7 @@
       }
     },
     "Cancel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -346,6 +351,7 @@
       }
     },
     "Chat Attachment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -380,6 +386,7 @@
       }
     },
     "Chat Composer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -449,6 +456,7 @@
       }
     },
     "Chat Pending Messages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -483,6 +491,7 @@
       }
     },
     "Chat surface with conversation rail" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -517,6 +526,7 @@
       }
     },
     "Chat with local and cloud LLMs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -550,10 +560,8 @@
         }
       }
     },
-    "ChatPanel" : {
-
-    },
     "Clear chat history" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -623,6 +631,7 @@
       }
     },
     "Conversations" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -762,6 +771,7 @@
       }
     },
     "Drag to select a screenshot region. Press ESC to cancel." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -866,6 +876,7 @@
       }
     },
     "Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1004,9 +1015,6 @@
         }
       }
     },
-    "No conversation selected" : {
-
-    },
     "No Conversations" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1043,6 +1051,7 @@
       }
     },
     "OK" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1077,6 +1086,7 @@
       }
     },
     "Open model selector" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1111,6 +1121,7 @@
       }
     },
     "Open System Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1145,6 +1156,7 @@
       }
     },
     "Parallel sessions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1214,6 +1226,7 @@
       }
     },
     "Pick Chat from the sidebar to start a new conversation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1246,9 +1259,6 @@
           }
         }
       }
-    },
-    "Pick or start a conversation from the sidebar." : {
-
     },
     "Providers" : {
       "extractionState" : "stale",
@@ -1356,6 +1366,7 @@
       }
     },
     "Reject" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1460,6 +1471,7 @@
       }
     },
     "Run multiple independent tasks side by side" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1494,6 +1506,7 @@
       }
     },
     "Screen Recording Permission Required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1528,6 +1541,7 @@
       }
     },
     "Screen Recording Permission Required Hint" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1562,6 +1576,7 @@
       }
     },
     "Screenshot Failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1596,6 +1611,7 @@
       }
     },
     "Screenshot Failed Generic" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1630,6 +1646,7 @@
       }
     },
     "Screenshot Failed No Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1664,6 +1681,7 @@
       }
     },
     "Screenshot Failed No Screens" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1768,6 +1786,7 @@
       }
     },
     "Send" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1802,6 +1821,7 @@
       }
     },
     "Show available commands" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1906,6 +1926,7 @@
       }
     },
     "Stop" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1940,6 +1961,7 @@
       }
     },
     "The current model does not support images" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2114,6 +2136,7 @@
       }
     },
     "Waiting to Send" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
