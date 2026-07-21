@@ -37,8 +37,8 @@ struct ModelSelectorActionBarButton: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
-            ProviderModelPopover(llmProvider: llmProvider, isPresented: $isPopoverPresented)
-                .frame(width: 320, height: 350)
+            ModelSelectorPopoverContent(llmProvider: llmProvider, isPresented: $isPopoverPresented)
+                .frame(width: 600, height: 400)
         }
         .accessibilityLabel("Select Model")
     }
@@ -58,18 +58,44 @@ struct ModelSelectorActionBarButton: View {
     }
 }
 
-// MARK: - Provider Model Popover
+// MARK: - Model Selector Popover Content
 
-private struct ProviderModelPopover: View {
+private struct ModelSelectorPopoverContent: View {
     @LumiTheme private var theme
     let llmProvider: any LLMProviderManaging
     @Binding var isPresented: Bool
 
+    @State private var selectedProviderID: String?
+    @State private var searchText = ""
+
     var body: some View {
+        HStack(spacing: 0) {
+            // Left: Provider List
+            providerList
+                .frame(width: 200)
+
+            Divider()
+
+            // Right: Model List for selected provider
+            modelList
+        }
+        .frame(width: 600, height: 400)
+        .onAppear {
+            // Select current provider or first available
+            if selectedProviderID == nil {
+                selectedProviderID = llmProvider.selectedProviderID
+                    ?? llmProvider.allLLMProviders().first.map { type(of: $0).info.id }
+            }
+        }
+    }
+
+    // MARK: - Provider List
+
+    private var providerList: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Select Model")
+                Text("Providers")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 Button {
@@ -87,11 +113,41 @@ private struct ProviderModelPopover: View {
 
             Divider()
 
-            // Provider/Model List
+            // Search
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 12))
+                    .foregroundColor(theme.textTertiary)
+                TextField("Search providers", text: $searchText)
+                    .font(.system(size: 13))
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(theme.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(theme.surface.opacity(0.5))
+
+            Divider()
+
+            // Provider items
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(providerViewModels, id: \.providerID) { vm in
-                        ProviderModelSection(vm: vm)
+                    ForEach(filteredProviders, id: \.id) { info in
+                        ProviderListItem(
+                            info: info,
+                            isSelected: info.id == selectedProviderID,
+                            onSelect: {
+                                selectedProviderID = info.id
+                            }
+                        )
                     }
                 }
                 .padding(8)
@@ -100,108 +156,148 @@ private struct ProviderModelPopover: View {
         .background(theme.background)
     }
 
-    private var providerViewModels: [ProviderViewModel] {
-        llmProvider.allLLMProviders().map { provider in
-            let info = type(of: provider).info
-            let models = llmProvider.models(for: info.id)
-            let isSelectedProvider = info.id == llmProvider.selectedProviderID
-            let selectedModel = isSelectedProvider ? llmProvider.selectedModel : nil
-            return ProviderViewModel(
-                providerID: info.id,
-                providerName: info.displayName,
-                models: models,
-                modelDisplayNames: info.modelDisplayNames,
-                isSelectedProvider: isSelectedProvider,
-                selectedModel: selectedModel,
-                onSelect: { model in
-                    llmProvider.selectModel(providerID: info.id, model: model)
-                    isPresented = false
-                }
-            )
+    private var filteredProviders: [LumiLLMProviderInfo] {
+        let providers = llmProvider.allLLMProviders().map { type(of: $0).info }
+        if searchText.isEmpty {
+            return providers
         }
+        return providers.filter {
+            $0.displayName.localizedCaseInsensitiveContains(searchText)
+                || $0.id.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    // MARK: - Model List
+
+    private var modelList: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                if let providerID = selectedProviderID,
+                   let provider = llmProvider.allLLMProviders().first(where: { type(of: $0).info.id == providerID }) {
+                    let info = type(of: provider).info
+                    Text(info.displayName)
+                        .font(.system(size: 13, weight: .semibold))
+                } else {
+                    Text("Models")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(theme.surface)
+
+            Divider()
+
+            // Search
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 12))
+                    .foregroundColor(theme.textTertiary)
+                TextField("Search models", text: $searchText)
+                    .font(.system(size: 13))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(theme.surface.opacity(0.5))
+
+            Divider()
+
+            // Model items
+            if let providerID = selectedProviderID {
+                let models = llmProvider.models(for: providerID)
+                let filteredModels = searchText.isEmpty ? models : models.filter {
+                    $0.localizedCaseInsensitiveContains(searchText)
+                }
+
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(filteredModels, id: \.self) { model in
+                            let info = llmProvider.allLLMProviders()
+                                .first { type(of: $0).info.id == providerID }.map { type(of: $0).info }
+                            let displayName = info?.modelDisplayNames[model] ?? model
+                            let isSelected = model == llmProvider.selectedModel
+
+                            Button {
+                                llmProvider.selectModel(providerID: providerID, model: model)
+                                isPresented = false
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(displayName)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
+
+                                        Text(model)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(theme.textTertiary)
+                                    }
+
+                                    Spacer()
+
+                                    if isSelected {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(theme.primary)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
+                                .cornerRadius(6)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(8)
+                }
+            } else {
+                Spacer()
+                Text("Select a provider")
+                    .font(.system(size: 13))
+                    .foregroundColor(theme.textTertiary)
+                Spacer()
+            }
+        }
+        .background(theme.background)
     }
 }
 
-private struct ProviderViewModel: Identifiable {
-    let providerID: String
-    let providerName: String
-    let models: [String]
-    let modelDisplayNames: [String: String]
-    let isSelectedProvider: Bool
-    let selectedModel: String?
-    let onSelect: (String) -> Void
+// MARK: - Provider List Item
 
-    var id: String { providerID }
-}
-
-private struct ProviderModelSection: View {
+private struct ProviderListItem: View {
     @LumiTheme private var theme
-    let vm: ProviderViewModel
-
-    @State private var isExpanded: Bool = true
+    let info: LumiLLMProviderInfo
+    let isSelected: Bool
+    let onSelect: () -> Void
 
     var body: some View {
-        VStack(spacing: 4) {
-            // Provider header
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .frame(width: 12)
-                        .foregroundColor(theme.textTertiary)
-
-                    Text(vm.providerName)
+        Button(action: onSelect) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(info.displayName)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(theme.textPrimary)
+                        .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
 
-                    if vm.isSelectedProvider {
-                        Text("✓")
-                            .font(.system(size: 11))
-                            .foregroundColor(theme.primary)
-                    }
-
-                    Spacer()
-
-                    Text("\(vm.models.count)")
+                    Text("\(info.availableModels.count) models")
                         .font(.system(size: 11))
                         .foregroundColor(theme.textTertiary)
                 }
-            }
-            .buttonStyle(.plain)
 
-            // Models
-            if isExpanded {
-                ForEach(vm.models, id: \.self) { model in
-                    let isSelected = vm.isSelectedProvider && model == vm.selectedModel
-                    Button {
-                        vm.onSelect(model)
-                    } label: {
-                        HStack {
-                            Text("  \(vm.modelDisplayNames[model] ?? model)")
-                                .font(.system(size: 12))
-                                .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
+                Spacer()
 
-                            Spacer()
-
-                            if isSelected {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(theme.primary)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
-                        .cornerRadius(4)
-                    }
-                    .buttonStyle(.plain)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(theme.primary)
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
+            .cornerRadius(6)
         }
-        .padding(.vertical, 4)
+        .buttonStyle(.plain)
     }
 }

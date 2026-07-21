@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "  %@" : {
+
+    },
+    "%lld" : {
+
+    },
     "%lld cloud providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -87,6 +93,9 @@
           }
         }
       }
+    },
+    "✓" : {
+
     },
     "Active" : {
       "extractionState" : "stale",
