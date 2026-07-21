@@ -8,8 +8,6 @@ import os
 /// Rail 面板视图
 struct ConversationRailView: View, SuperLog {
     let kernel: LumiKernel
-    @State private var errorMessage: String?
-    @State private var showErrorAlert = false
     @State private var refreshTrigger = 0
 
     private let conversationsDidChangeNotification = Notification.Name("com.coffic.lumi.conversationsDidChange")
@@ -29,42 +27,14 @@ struct ConversationRailView: View, SuperLog {
         return conversations?.conversations ?? []
     }
 
-    private func handleCreateConversation() {
-        guard let conv = conversations else { return }
-        do {
-            _ = try conv.createConversation(title: nil)
-            refreshTrigger += 1
-        } catch {
-            errorMessage = error.localizedDescription
-            showErrorAlert = true
-        }
-    }
-
     var body: some View {
         contentView
-            .alert("创建对话失败", isPresented: $showErrorAlert) {
-                Button("确定", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "未知错误")
-            }
     }
 
     @ViewBuilder
     private var contentView: some View {
         if let conv = conversations {
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Chats")
-                        .font(.headline)
-                    Spacer()
-                    Button(action: handleCreateConversation) {
-                        Image(systemName: "plus")
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-
                 Divider()
 
                 let list = conversationList

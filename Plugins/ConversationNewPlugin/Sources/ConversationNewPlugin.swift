@@ -7,12 +7,19 @@ public final class ConversationNewPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-new"
     public let name = "New Chat Button"
     public let order = 60
-public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Services are registered via convenience methods
+        let toolbarItem = TitleToolbarItem(
+            id: "\(id).new-chat",
+            title: "New Chat",
+            placement: .trailing
+        ) {
+            NewChatButton(kernel: kernel)
+        }
+        kernel.toolbarProvider?.registerTitleToolbarItem(toolbarItem)
     }
 
     public func boot(kernel: LumiKernel) async throws {}
