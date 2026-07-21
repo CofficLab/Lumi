@@ -61,7 +61,7 @@ struct ConversationInputView: View, SuperLog {
                             if canSend {
                                 send()
                             }
-                            return .ignored
+                            return .handled
                         }
                 }
                 .padding(.horizontal, 8)
