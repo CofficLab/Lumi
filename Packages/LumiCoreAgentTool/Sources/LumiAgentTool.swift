@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreMessage
+@_exported import LumiCoreMessage
 
 // MARK: - LumiAgentToolInfo
 

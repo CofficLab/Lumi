@@ -87,6 +87,7 @@ import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
 import TitleToolbarPlugin
+import ToolCorePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
 import WorkspaceStatePlugin
@@ -105,6 +106,7 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
             PluginManagementPlugin(),
+            ToolCorePlugin(),
             LLMProviderManagerPlugin(),
             // LLM Providers (order 91-110)
             AiRouterPlugin(),

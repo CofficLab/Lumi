@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import LumiCoreAgentTool
 import ShellKit
 
 public struct ShellTool: LumiAgentTool {

@@ -37,6 +37,7 @@
       }
     },
     "Create new chat from header" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
