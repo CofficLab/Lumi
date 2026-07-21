@@ -37,6 +37,7 @@
       }
     },
     "Contributes FlyMux models to Lumi Chat." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

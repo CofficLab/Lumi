@@ -1332,6 +1332,7 @@
       }
     },
     "Local MLX models for offline chat." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
