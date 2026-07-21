@@ -76,7 +76,7 @@ struct ChatView: View {
                         bottomItems: bottomItems
                     )
                 )
-                .id("\(activeID)-\(chatSection.persistenceKeySuffix)")
+                .id("\(activeID)-\(chatSection.persistenceKeySuffix)-\(kernel.conversations?.selectedConversationID?.uuidString.prefix(8) ?? "nil")")
                 .layoutPriority(isRailOnlyPanel ? 1 : 0)
             }
         }
