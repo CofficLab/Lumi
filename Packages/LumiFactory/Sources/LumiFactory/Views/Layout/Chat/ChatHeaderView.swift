@@ -3,7 +3,11 @@ import LumiUI
 import SwiftUI
 
 struct ChatHeaderView: View {
-    let items: [ChatSectionHeaderItem]
+    @ObservedObject var kernel: LumiKernel
+
+    private var items: [ChatSectionHeaderItem] {
+        kernel.chatSection?.allChatSectionHeaderItems ?? []
+    }
 
     var body: some View {
         AppToolbarContainer(

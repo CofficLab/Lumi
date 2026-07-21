@@ -13,6 +13,7 @@ import ConversationListPlugin
 import ConversationManagerPlugin
 import ConversationTitlePlugin
 import ConversationInputPlugin
+import ConversationMessageCountPlugin
 import MessageManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
@@ -100,6 +101,7 @@ public enum PluginService {
             ChatComposerPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
+            ConversationMessageCountPlugin(),
             StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),

@@ -27,13 +27,7 @@ struct AppLayoutView: View {
             ?? containers.first { $0.makeView != nil }
 
         let layoutState = kernel.layout?.state ?? LayoutStateInfo()
-        let chatView = ChatView(
-            layoutState: layoutState,
-            kernel: kernel,
-            chatSection: .narrow,
-            activeID: activeID,
-            isRailOnlyPanel: false
-        )
+        let chatView = ChatView(kernel: kernel)
 
         let railTabs = kernel.panel?.allPanelRailTabItems ?? []
         let isRailVisible = workspace?.isRailVisible ?? true
@@ -59,8 +53,6 @@ struct AppLayoutView: View {
                     isChatVisible: isChatVisible,
                     isContentVisible: isContentVisible
                 )
-
-                ChatSectionToolbarSync(items: chatView.toolbarItems)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
