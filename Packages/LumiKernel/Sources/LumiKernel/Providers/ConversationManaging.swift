@@ -11,6 +11,9 @@ public protocol ConversationManaging: ObservableObject {
     /// 当前选中的对话 ID
     var selectedConversationID: UUID? { get }
 
+    /// 当前选中对话的标题
+    var currentTitle: String { get }
+
     /// 数据存储目录
     var dataDirectory: URL { get }
 

@@ -1,26 +1,40 @@
 import Foundation
 import LumiKernel
+import SuperLogKit
+import os
 
 /// Mock conversation manager with sample data for testing
 @MainActor
-public final class MockConversationManager: ObservableObject, ConversationManaging {
+public final class MockConversationManager: ObservableObject, ConversationManaging, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager.mock")
+    nonisolated public static let emoji = "💬"
+    public static let verbose = true
+
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
+    @Published public private(set) var currentTitle: String = "No conversation"
 
     public var dataDirectory: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("MockConversations")
     }
 
     // Fixed mock IDs for testing - MessageManager uses these same IDs
-    private static let welcomeID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
-    private static let projectID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
-    private static let codeReviewID = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+    private static let welcomeID = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
+    private static let projectID = UUID(uuidString: "20000000-0000-0000-0000-000000000002")!
+    private static let codeReviewID = UUID(uuidString: "30000000-0000-0000-0000-000000000003")!
 
     public init() {
         setupMockData()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)MockConversationManager initialized")
+        }
     }
 
     private func setupMockData() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Setting up mock conversations")
+        }
+
         conversations = [
             LumiConversationSummary(
                 id: Self.welcomeID,
@@ -46,11 +60,37 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         ]
 
         selectedConversationID = Self.welcomeID
+        updateCurrentTitle()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Created \(self.conversations.count) mock conversations")
+        }
+    }
+
+    private func updateCurrentTitle() {
+        guard let selectedID = selectedConversationID,
+              let conversation = conversations.first(where: { $0.id == selectedID })
+        else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)updateCurrentTitle - no conversation selected, setting to 'No conversation'")
+            }
+            currentTitle = "No conversation"
+            return
+        }
+        let newTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateCurrentTitle - setting title to: '\(newTitle)'")
+        }
+        currentTitle = newTitle
     }
 
     public func createConversation(title: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Creating conversation: \(title ?? "Untitled")")
+        }
 
         let conversation = LumiConversationSummary(
             id: id,
@@ -62,19 +102,32 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
 
         conversations.insert(conversation, at: 0)
         selectedConversationID = id
+        updateCurrentTitle()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Created conversation \(id.uuidString.prefix(8))...")
+        }
 
         return id
     }
 
     public func selectConversation(id: UUID) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Selecting conversation \(id.uuidString.prefix(8))...")
+        }
         selectedConversationID = id
+        updateCurrentTitle()
     }
 
     public func deleteConversation(id: UUID) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")
+        }
         conversations.removeAll { $0.id == id }
 
         if selectedConversationID == id {
             selectedConversationID = conversations.first?.id
+            updateCurrentTitle()
         }
     }
 
@@ -83,6 +136,6 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     }
 
     public func mockConversationIDs() -> [UUID] {
-        [Self.welcomeID, Self.projectID, Self.codeReviewID]
+        return [Self.welcomeID, Self.projectID, Self.codeReviewID]
     }
 }

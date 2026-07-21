@@ -11,6 +11,7 @@ public final class ConversationService: ConversationManaging {
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
+    @Published public private(set) var currentTitle: String = "No conversation"
 
     public var dataDirectory: URL { storageDirectory }
 
@@ -100,12 +101,24 @@ public final class ConversationService: ConversationManaging {
         }
 
         selectConversation(id: id)
+        updateCurrentTitle()
         return id
     }
 
     public func selectConversation(id: UUID) {
         selectedConversationID = id
+        updateCurrentTitle()
         try? saveState()
+    }
+
+    private func updateCurrentTitle() {
+        guard let selectedID = selectedConversationID,
+              let conversation = conversations.first(where: { $0.id == selectedID })
+        else {
+            currentTitle = "No conversation"
+            return
+        }
+        currentTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
     }
 
     public func deleteConversation(id: UUID) {
