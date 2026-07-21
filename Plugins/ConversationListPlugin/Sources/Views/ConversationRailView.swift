@@ -82,6 +82,7 @@ struct ConversationRailView: View, SuperLog {
                     List(list) { conversation in
                         ConversationRow(
                             conversation: conversation,
+                            llmProvider: kernel.llmProvider,
                             isSelected: conv.selectedConversationID == conversation.id,
                             onSelect: {
                                 conv.selectConversation(id: conversation.id)
