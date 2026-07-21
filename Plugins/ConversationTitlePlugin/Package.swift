@@ -15,18 +15,24 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiCoreChat"),
+        .package(path: "../../Packages/LumiCoreMessage"),
+        .package(path: "../../Packages/LumiCoreAgentTool"),
     ],
     targets: [
         .target(
             name: "ConversationTitlePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
+                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
             ],
             path: "Sources",
             resources: [

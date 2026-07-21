@@ -1,34 +1,36 @@
+import LumiCoreChat
 import LumiKernel
-import LumiUI
-import SwiftUI
+import SuperLogKit
+import os
 
 @MainActor
-public final class ConversationTitlePlugin: LumiPlugin {
+public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-title")
+    nonisolated public static let emoji = "✏️"
+    public static let verbose = true
+
     public let id = "com.coffic.lumi.plugin.conversation-title"
-    public let name = "Auto Conversation Title"
+    public let name = "Conversation Title"
     public let order = 77
     public static let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Services are registered via convenience methods
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Registered conversation title header")
+        }
     }
 
     public func boot(kernel: LumiKernel) async throws {}
 
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
-        guard let coordinator = kernel.resolveService(ChatSectionCoordinator.self) else {
-            return [
-                ChatSectionHeaderItem(id: id) {
-                    ChatSectionCoordinatorErrorButton()
-                }
-            ]
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Providing chat section header item")
         }
-
         return [
             ChatSectionHeaderItem(id: id) {
-                ConversationTitleSectionView(coordinator: coordinator)
+                ConversationTitleHeaderView(kernel: kernel)
             }
         ]
     }
