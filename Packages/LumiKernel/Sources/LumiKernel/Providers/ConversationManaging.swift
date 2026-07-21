@@ -25,4 +25,7 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
+
+    /// 返回模拟对话 ID 列表（用于测试数据关联）
+    func mockConversationIDs() -> [UUID]
 }

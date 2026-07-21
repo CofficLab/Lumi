@@ -123,6 +123,11 @@ public final class ConversationService: ConversationManaging {
         // TODO: Implement based on actual sending state
         return false
     }
+
+    public func mockConversationIDs() -> [UUID] {
+        // Return actual conversation IDs for mock message data association
+        conversations.map(\.id)
+    }
 }
 
 // MARK: - State

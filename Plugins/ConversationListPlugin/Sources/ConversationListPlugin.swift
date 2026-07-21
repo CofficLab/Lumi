@@ -1,15 +1,15 @@
 import AppKit
 import LumiKernel
 import LumiUI
-import SwiftUI
 import os
+import SwiftUI
 
 @MainActor
 public final class ConversationListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-list"
     public let name = "Conversation List"
     public let order = 76
-public static let policy: LumiPluginPolicy = .disabled
+    public static let policy: LumiPluginPolicy = .alwaysOn
 
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
@@ -41,7 +41,7 @@ public static let policy: LumiPluginPolicy = .disabled
                 systemImage: "message.fill"
             ) {
                 ConversationRailView(kernel: kernel)
-            }
+            },
         ]
     }
 }
@@ -83,7 +83,7 @@ struct ConversationListPopoverContent: View {
     }
 
     private var conversationList: [LumiConversationSummary] {
-        let _ = refreshTrigger
+        _ = refreshTrigger
         return conversations?.conversations ?? []
     }
 
@@ -205,7 +205,7 @@ struct ConversationRailView: View {
     }
 
     private var conversationList: [LumiConversationSummary] {
-        let _ = refreshTrigger
+        _ = refreshTrigger
         return conversations?.conversations ?? []
     }
 
