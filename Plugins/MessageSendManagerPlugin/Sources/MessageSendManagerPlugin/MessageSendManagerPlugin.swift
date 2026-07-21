@@ -6,9 +6,10 @@ import SuperLogKit
 /// Message Send Manager Plugin
 ///
 /// Registers a `MessageSendManaging` implementation with the kernel.
-/// The mock implementation lives in `Managers/MockMessageSendManager.swift`
-/// and only persists the user message into `MessageManaging` — it does not
-/// call any LLM. The real implementation will be plugged in later.
+/// The implementation lives in `Managers/MessageSendManager.swift`
+/// and persists the user message into `MessageManaging` before
+/// dispatching the conversation history to the first registered
+/// LLM provider and writing the assistant message back.
 @MainActor
 public final class MessageSendManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager")
@@ -33,10 +34,10 @@ public final class MessageSendManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        let service = MockMessageSendManager(kernel: kernel)
+        let service = MessageSendManager(kernel: kernel)
         kernel.registerMessageSend(service)
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 MockMessageSendManager")
+            Self.logger.info("\(Self.t)已注册 MessageSendManager")
         }
     }
 

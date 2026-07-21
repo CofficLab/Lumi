@@ -5,7 +5,7 @@ import LumiKernel
 import os
 import SuperLogKit
 
-/// Mock implementation of `MessageSendManaging`.
+/// Default implementation of `MessageSendManaging`.
 ///
 /// Responsibilities (per `MessageSendManaging` contract):
 /// 1. Trim `content`; return early on empty input.
@@ -15,15 +15,16 @@ import SuperLogKit
 ///    - else throw `LumiKernelError.noActiveConversation`.
 /// 3. Insert a `LumiChatMessage(role: .user, ...)` via
 ///    `kernel.messageManager?.insertMessage(_:to:)`.
+/// 4. Hand the full conversation history to the first registered
+///    LLM provider via `kernel.llmProvider?.sendToFirstProvider(_:)`,
+///    using that provider's `defaultModel` for the request. Insert
+///    the returned assistant message back into the message history.
 ///
-/// Out of scope (placeholder behavior for now):
-/// - No LLM call is made.
-/// - No assistant reply is generated.
-/// - `isSending` flips true → false synchronously; the field exists for
-///   the UI to read but does not yet reflect long-running work.
+/// `isSending` flips true → false around steps 3-4 via `defer`, so it
+/// always settles back to `false` whether the call completes or throws.
 @MainActor
-public final class MockMessageSendManager: MessageSendManaging, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.mock")
+public final class MessageSendManager: MessageSendManaging, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.service")
     public nonisolated static let emoji = "📤"
     nonisolated static let verbose = true
 
@@ -34,7 +35,7 @@ public final class MockMessageSendManager: MessageSendManaging, SuperLog {
     public init(kernel: LumiKernel) {
         self.kernel = kernel
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)MockMessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
+            Self.logger.info("\(Self.t)\(Self.onInit)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
         }
     }
 
