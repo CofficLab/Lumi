@@ -21,6 +21,9 @@ public protocol ChatSectionProviding: ObservableObject {
     /// 所有聊天分区标题项（按 order 排序）
     var allChatSectionHeaderItems: [ChatSectionHeaderItem] { get }
 
+    /// 所有聊天分区动作栏项（按 order 排序）
+    var allChatSectionActionBarItems: [ChatSectionActionBarItem] { get }
+
     /// 按位置获取聊天分区项
     func chatSectionItems(placement: ChatSectionPlacement) -> [ChatSectionItem]
 
@@ -50,4 +53,10 @@ public protocol ChatSectionProviding: ObservableObject {
 
     /// 注销聊天分区标题项
     func unregisterChatSectionHeaderItem(id: String)
+
+    /// 注册聊天分区动作栏项
+    func registerChatSectionActionBarItem(_ item: ChatSectionActionBarItem)
+
+    /// 注销聊天分区动作栏项
+    func unregisterChatSectionActionBarItem(id: String)
 }

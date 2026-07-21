@@ -13,6 +13,7 @@ public final class ChatSectionProvider: ChatSectionProviding {
     public private(set) var allChatSectionToolbarItems: [ChatSectionToolbarItem] = []
     public private(set) var allChatSectionToolbarBarItems: [ChatSectionToolbarBarItem] = []
     public private(set) var allChatSectionHeaderItems: [ChatSectionHeaderItem] = []
+    public private(set) var allChatSectionActionBarItems: [ChatSectionActionBarItem] = []
 
     private var chatSectionItems: [String: ChatSectionItem] = [:]
     private var chatSectionItemOrder: [String] = []
@@ -22,6 +23,8 @@ public final class ChatSectionProvider: ChatSectionProviding {
     private var chatSectionToolbarBarOrder: [String] = []
     private var chatSectionHeaders: [String: ChatSectionHeaderItem] = [:]
     private var chatSectionHeaderOrder: [String] = []
+    private var chatSectionActionBars: [String: ChatSectionActionBarItem] = [:]
+    private var chatSectionActionBarOrder: [String] = []
 
     public init() {}
 
@@ -89,6 +92,20 @@ public final class ChatSectionProvider: ChatSectionProviding {
         updateSortedChatSectionHeaders()
     }
 
+    public func registerChatSectionActionBarItem(_ item: ChatSectionActionBarItem) {
+        if chatSectionActionBars[item.id] == nil {
+            chatSectionActionBarOrder.append(item.id)
+        }
+        chatSectionActionBars[item.id] = item
+        updateSortedChatSectionActionBars()
+    }
+
+    public func unregisterChatSectionActionBarItem(id: String) {
+        chatSectionActionBars.removeValue(forKey: id)
+        chatSectionActionBarOrder.removeAll { $0 == id }
+        updateSortedChatSectionActionBars()
+    }
+
     private func updateSortedChatSectionItems() {
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
             .sorted { $0.order < $1.order }
@@ -106,6 +123,11 @@ public final class ChatSectionProvider: ChatSectionProviding {
 
     private func updateSortedChatSectionHeaders() {
         allChatSectionHeaderItems = chatSectionHeaderOrder.compactMap { chatSectionHeaders[$0] }
+            .sorted { $0.order < $1.order }
+    }
+
+    private func updateSortedChatSectionActionBars() {
+        allChatSectionActionBarItems = chatSectionActionBarOrder.compactMap { chatSectionActionBars[$0] }
             .sorted { $0.order < $1.order }
     }
 }

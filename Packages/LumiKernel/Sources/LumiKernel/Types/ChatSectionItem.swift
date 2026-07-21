@@ -9,6 +9,8 @@ public enum ChatSectionPlacement: Sendable {
     case stack
     /// 底部固定
     case bottomFixed
+    /// 底部动作栏（位于 stack 和 bottomFixed 之间）
+    case actionBar
 }
 
 // MARK: - Chat Section Item
@@ -140,6 +142,42 @@ public enum ChatSectionToolbarPlacement: Sendable {
     case leading
     /// 右侧
     case trailing
+}
+
+// MARK: - Chat Section Action Bar Item
+
+/// 聊天分区动作栏项
+///
+/// 插件通过 `kernel.registerChatSectionActionBarItem()` 注册聊天分区底部动作栏按钮。
+/// 动作栏显示在消息列表与输入框之间，适合放置模型选择、快捷操作等功能按钮。
+///
+/// 注意：`order` 由内核自动从插件继承，无需手动指定。
+@MainActor
+public struct ChatSectionActionBarItem: Identifiable, Sendable {
+    public let id: String
+    public var order: Int
+    public let makeView: @MainActor @Sendable () -> AnyView
+
+    /// 公开初始化器（不包含 order）
+    public init<Content: View>(
+        id: String,
+        @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
+    ) {
+        self.id = id
+        self.order = 200  // 默认值，内核会覆盖
+        self.makeView = { AnyView(content()) }
+    }
+
+    /// 内部初始化器（用于内核设置 order）
+    internal init<Content: View>(
+        id: String,
+        order: Int,
+        @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
+    ) {
+        self.id = id
+        self.order = order
+        self.makeView = { AnyView(content()) }
+    }
 }
 
 // MARK: - Chat Section Toolbar Item

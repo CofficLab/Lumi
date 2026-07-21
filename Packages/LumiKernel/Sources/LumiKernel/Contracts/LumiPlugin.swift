@@ -112,6 +112,9 @@ public protocol LumiPlugin: AnyObject {
     /// 聊天分区标题项
     func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem]
 
+    /// 聊天分区动作栏项
+    func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem]
+
     /// 聊天分区根视图包装器
     func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView
 
@@ -257,6 +260,10 @@ public extension LumiPlugin {
     }
 
     func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
+        []
+    }
+
+    func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
         []
     }
 

@@ -225,6 +225,14 @@ public final class PluginManagerProvider: PluginProviding, AgentToolProviding, C
                 headerItem.order = pluginOrder
                 kernel.chatSection?.registerChatSectionHeaderItem(headerItem)
             }
+            for item in plugin.chatSectionActionBarItems(kernel: kernel) {
+                var actionBarItem = ChatSectionActionBarItem(
+                    id: item.id,
+                    content: item.makeView
+                )
+                actionBarItem.order = pluginOrder
+                kernel.chatSection?.registerChatSectionActionBarItem(actionBarItem)
+            }
 
             // Status Bar
             for item in plugin.statusBarItems(kernel: kernel) {
