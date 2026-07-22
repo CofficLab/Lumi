@@ -33,7 +33,7 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
 
     public func register(kernel: LumiKernel) throws {
         // 1. 注册 PluginService（内核服务）
-        let pluginServiceInstance = PluginManagerProvider()
+        let pluginServiceInstance = PluginManager()
         pluginServiceInstance.kernel = kernel
         kernel.registerPluginService(pluginServiceInstance)
         // 2. 同一个实例还充当多个 Provider 服务的实现

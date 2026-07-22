@@ -20,7 +20,7 @@ import SwiftUI
 /// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 实现,
 /// 不再在本类中聚合。
 @MainActor
-public final class PluginManagerProvider: PluginManaging, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
+public final class PluginManager: PluginManaging, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
