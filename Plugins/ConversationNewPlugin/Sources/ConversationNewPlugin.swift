@@ -11,7 +11,7 @@ public final class ConversationNewPlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let toolbarItem = TitleToolbarItem(
             id: "\(id).new-chat",
             title: "New Chat",

@@ -2,6 +2,7 @@ import AppKit
 import LumiKernel
 import LumiUI
 import SwiftUI
+import os
 
 @MainActor
 public final class ConversationListPlugin: LumiPlugin {
@@ -10,9 +11,12 @@ public final class ConversationListPlugin: LumiPlugin {
     public let order = 76
     public static let policy: LumiPluginPolicy = .alwaysOn
 
+    public static let verbose = false
+    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
+
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // 注册工具栏会话列表按钮
         let toolbarItem = TitleToolbarItem(
             id: "\(id).conversation-list",
@@ -151,6 +155,7 @@ struct ConversationListPopoverContent: View {
                 List(list) { conversation in
                     ConversationRow(
                         conversation: conversation,
+                        isProcessing: conv.isSending(for: conversation.id),
                         llmProvider: kernel.llmProvider,
                         isSelected: conv.selectedConversationID == conversation.id,
                         onSelect: {

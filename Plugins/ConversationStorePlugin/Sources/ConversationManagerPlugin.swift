@@ -24,7 +24,7 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let manager = ConversationManager(kernel: kernel)
         kernel.registerConversations(manager)
 

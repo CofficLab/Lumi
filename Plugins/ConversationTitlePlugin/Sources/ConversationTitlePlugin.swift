@@ -16,7 +16,7 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         if Self.verbose {
             Self.logger.info("\(Self.t)Registered conversation title header")
         }
