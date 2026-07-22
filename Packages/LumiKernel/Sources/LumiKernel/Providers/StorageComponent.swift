@@ -1,6 +1,9 @@
 import Foundation
 
 /// LumiCore 的"存储"功能组件。
+///
+/// 负责管理数据根目录，提供核心数据目录和插件专属数据目录的路径计算。
+/// 目录会在首次访问时自动创建。
 @MainActor
 public final class StorageComponent {
     /// 数据根目录。init 时物化,始终不变。

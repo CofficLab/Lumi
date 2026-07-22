@@ -2,7 +2,6 @@ import AppKit
 import Combine
 import SwiftUI
 import LumiKernel
-import LumiCoreLayout
 
 @MainActor
 public final class ChatSectionCoordinator: ObservableObject {

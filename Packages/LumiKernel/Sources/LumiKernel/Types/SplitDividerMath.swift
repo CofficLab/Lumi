@@ -77,60 +77,34 @@ public func classifyDividerDrag(
     suppressionCount: Int,
     jitterThreshold: CGFloat = 0.5
 ) -> DividerDragClassification {
-    // 1. 首次观测：只记录基线。
     guard let prevBounds, let prevPosition else {
         return .firstBaseline
     }
 
-    // 2. 整体尺寸变了 → 窗口/外层 resize。
     if currentBounds != prevBounds {
         return .windowResize
     }
 
-    // 3. 尺寸不变但 divider 没动 → 抖动。
     let delta = currentPosition - prevPosition
     if abs(delta) < jitterThreshold {
         return .jitter
     }
 
-    // 4. 抑制窗口内 → 不持久化。
     if suppressionCount > 0 {
         return .suppressed
     }
 
-    // 5. 用户拖拽 → 持久化。
     return .dragConfirmed(position: currentPosition)
 }
 
-// MARK: - role 切换恢复校验
-
 /// role 切换后的位置校验：实际 divider 位置是否偏离存档值超过容差，需要重新应用。
-///
-/// 对应视图层 `scheduleRoleChangeRecheck` 中 `abs(currentPosition - clampedSaved) > 1` 的判定。
-/// 容差为**严格大于**：差值恰好等于 `tolerance` 时返回 false（与原 `> 1` 一致）。
 public func shouldReapplyDivider(current: CGFloat, saved: CGFloat, tolerance: CGFloat = 1) -> Bool {
     abs(current - saved) > tolerance
 }
 
-// MARK: - divider 位置读取
-
 /// 从 pane 的边界极值推算 divider 位置。
-///
-/// NSSplitView 没有 divider 位置的 getter，只能从 `arrangedSubviews[i].frame` 反推：
-/// HSplitView（isVertical==true）取 pane i 的 `maxX`，VSplitView 取 pane i 的 `maxY`。
-/// 这里把"取哪个极值"交给调用方（NSView 层算好后传 `paneMax`），纯函数只做越界保护。
-///
-/// - Parameters:
-///   - index: pane 下标。
-///   - count: arrangedSubviews 数量。
-///   - paneMax: pane frame 沿分隔轴的极值（HSplitView→maxX，VSplitView→maxY）。
-///   - isVertical: split view 是否为左右分栏（`NSSplitView.isVertical`）。
-/// - Returns: 越界时返回 0；否则返回 `paneMax`。
-///
-/// 注意：当前实现里 `paneMax` 已由调用方按 `isVertical` 选好，此函数保留 `isVertical`
-/// 参数仅为语义自洽与未来若需同时接收原始 frame 时的扩展点。
 public func dividerPositionValue(index: Int, count: Int, paneMax: CGFloat, isVertical: Bool) -> CGFloat {
     guard index >= 0, index < count else { return 0 }
-    _ = isVertical  // 当前 paneMax 已选好极值，轴向仅作文档语义保留。
+    _ = isVertical
     return paneMax
 }

@@ -117,9 +117,6 @@ let package = Package(
         .target(
             name: "LumiFactory",
             dependencies: [
-                .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
-                .product(name: "LumiCoreProject", package: "LumiCoreProject"),
-                .product(name: "LumiCoreStorage", package: "LumiCoreStorage"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),

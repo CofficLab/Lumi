@@ -15,18 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiUI"),
-        .package(path: "../LumiCoreLayout"),
-        .package(path: "../LumiCoreProject"),
-        .package(path: "../LumiCoreStorage"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "LumiKernel",
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
-                .product(name: "LumiCoreProject", package: "LumiCoreProject"),
-                .product(name: "LumiCoreStorage", package: "LumiCoreStorage"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/LumiKernel",
             resources: [

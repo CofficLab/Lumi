@@ -31,7 +31,6 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorChatInputKit", package: "EditorChatInputKit"),
-                .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
             ],
             path: "Sources",
             resources: [

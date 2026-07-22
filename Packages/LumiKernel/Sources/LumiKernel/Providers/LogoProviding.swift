@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreLayout
 import SwiftUI
 
 // MARK: - Logo Capability Protocol

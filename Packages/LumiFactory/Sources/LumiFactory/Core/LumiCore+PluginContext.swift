@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreLayout
 import LumiKernel
 
 // MARK: - LumiCoreProviding extension for makePluginContext

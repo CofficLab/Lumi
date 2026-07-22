@@ -2,7 +2,6 @@ import Combine
 import Foundation
 import LumiKernel
 import LumiKernel
-import LumiCoreProject
 
 @MainActor
 public final class ConversationListContext: ObservableObject {
