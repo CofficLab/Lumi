@@ -18,7 +18,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         guard Self.policy.shouldRegister else { return }
         kernel.viewContainer?.register(
             ViewContainerItem(id: id, title: "Menu Bar Manager", systemImage: "menubar.rectangle") {
