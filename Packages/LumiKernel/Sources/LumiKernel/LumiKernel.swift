@@ -28,7 +28,7 @@ public final class LumiKernelContainer: ObservableObject {
         resolveService(PluginProviding.self)
     }
 
-    /// LumiCore service (storage, project, layout, logo, agentTool, chat, editor)
+    /// LumiCore service (storage, project, layout, logo, toolManager, chat, editor)
     public var lumiCore: (any LumiCoreProviding)? {
         resolveService(LumiCoreProviding.self)
     }
@@ -104,8 +104,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Agent tool service
-    public var agentTool: (any AgentToolProviding)? {
-        resolveService(AgentToolProviding.self)
+    public var toolManager: (any ToolManaging)? {
+        resolveService(ToolManaging.self)
     }
 
     /// LLM Provider service
@@ -283,8 +283,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Register agent tool service
-    public func registerAgentToolService(_ agentTool: any AgentToolProviding) {
-        registerService(AgentToolProviding.self, agentTool)
+    public func registerToolManagerService(_ toolManager: any ToolManaging) {
+        registerService(ToolManaging.self, toolManager)
     }
 
     /// Register LLM Provider service
@@ -359,7 +359,7 @@ public final class LumiKernelContainer: ObservableObject {
         if llmProvider == nil { missingServices.append("LLMProvider") }
         if chatSection == nil { missingServices.append("ChatSection") }
         if editor == nil { missingServices.append("Editor") }
-        if agentTool == nil { missingServices.append("AgentTool") }
+        if toolManager == nil { missingServices.append("AgentTool") }
         if panel == nil { missingServices.append("Panel") }
         if statusBar == nil { missingServices.append("StatusBar") }
         if settings == nil { missingServices.append("Settings") }

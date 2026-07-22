@@ -13,14 +13,14 @@ import SwiftUI
 /// 负责管理所有插件的注册、启动、查询和排序。
 /// 同时充当多个 Provider 服务的实现：
 /// - PluginProviding: 插件管理
-/// - AgentToolProviding: Agent Tool 收集
+/// - ToolManaging: Agent Tool 收集
 /// - ChatContributionProviding: Chat 贡献聚合
 /// - UIThemeProviding: Theme 贡献
 ///
 /// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 实现,
 /// 不再在本类中聚合。
 @MainActor
-public final class PluginManagerProvider: PluginProviding, AgentToolProviding, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
+public final class PluginManagerProvider: PluginProviding, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -321,7 +321,7 @@ public final class PluginManagerProvider: PluginProviding, AgentToolProviding, C
         kernel?.llmProvider?.allLLMProviders() ?? []
     }
 
-    // MARK: - AgentToolProviding
+    // MARK: - ToolManaging
 
     public func allAgentTools() -> [any LumiAgentTool] {
         agentToolOrder.compactMap { agentTools[$0] }

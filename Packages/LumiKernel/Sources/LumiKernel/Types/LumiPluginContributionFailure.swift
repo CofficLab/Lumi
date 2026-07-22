@@ -3,7 +3,7 @@ import Foundation
 /// 插件贡献（如 `agentTools`）收集失败时的承载结构。
 ///
 /// 当某个插件在产出贡献时抛错,聚合层会捕获并把异常包装成本结构累积到副本属性,
-/// 随后经 `AgentToolProviding.lastAgentToolFailures()` 透传到
+/// 随后经 `ToolManaging.lastAgentToolFailures()` 透传到
 /// `AgentToolComponent.toolContributionFailures`,最终由 UI 在「设置 → 插件」详情页
 /// 以红色 banner 呈现给用户。
 ///

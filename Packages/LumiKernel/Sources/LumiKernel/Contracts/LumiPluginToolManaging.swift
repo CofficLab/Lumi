@@ -10,7 +10,7 @@ import Foundation
 /// 实现者通常是 App 层的 `PluginService`。`AgentToolComponent.buildToolSet`
 /// 会调用这两个方法完成所有工具编排。
 @MainActor
-public protocol LumiPluginAgentToolProviding: AnyObject {
+public protocol LumiPluginToolManaging: AnyObject {
     /// 收集所有启用插件的 `LumiAgentTool`
     func agentTools(lumiCore: any LumiCoreProviding) -> [any LumiAgentTool]
 
@@ -27,7 +27,7 @@ public protocol LumiPluginAgentToolProviding: AnyObject {
     func lastAgentToolFailures() -> [LumiPluginContributionFailure]
 }
 
-public extension LumiPluginAgentToolProviding {
+public extension LumiPluginToolManaging {
     /// 默认实现：无聚合能力的 provider 不会产生失败。
     func lastAgentToolFailures() -> [LumiPluginContributionFailure] { [] }
 }

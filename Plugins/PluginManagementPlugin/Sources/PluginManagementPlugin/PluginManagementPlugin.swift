@@ -8,7 +8,7 @@ import os
 /// 插件管理插件
 ///
 /// 提供 PluginProviding 服务的默认实现。
-/// 同时充当 AgentToolProviding、ChatContributionProviding、UIThemeProviding 的实现。
+/// 同时充当 ToolManaging、ChatContributionProviding、UIThemeProviding 的实现。
 /// 负责管理所有插件的注册、启动、查询和排序。
 ///
 /// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 提供。

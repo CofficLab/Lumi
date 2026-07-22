@@ -52,11 +52,11 @@ public final class LumiCoreConcrete: ObservableObject, LumiCoreProviding {
 
     public init(
         dataRootDirectory: URL,
-        provider: any LumiPluginAgentToolProviding,
+        provider: any LumiPluginToolManaging,
         builtInTools: [any LumiAgentTool] = [],
         agentToolComponent: AgentToolComponent,
         chatServiceFactory: @MainActor (URL) throws -> any ObservableObject,
-        editorFactory: (@MainActor (any LumiPluginAgentToolProviding) throws -> any AbstractEditorServicing)? = nil
+        editorFactory: (@MainActor (any LumiPluginToolManaging) throws -> any AbstractEditorServicing)? = nil
     ) throws {
         self.projectComponent = ProjectComponent()
         self.layoutComponent = LayoutComponent()
@@ -93,7 +93,7 @@ public final class LumiCoreConcrete: ObservableObject, LumiCoreProviding {
             }
         }
 
-        registerService((any LumiPluginAgentToolProviding).self, provider)
+        registerService((any LumiPluginToolManaging).self, provider)
     }
 }
 

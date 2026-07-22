@@ -8,9 +8,9 @@ import Foundation
 /// `PluginService` 提供的 LLM Provider / 发送中间件 / 消息渲染器 / turn 结束钩子，
 /// 而不需要 App 层在 `RootContainer` 里手工拼装这些注册调用。
 ///
-/// 与 `LumiAgentToolProviding`（工具/子 Agent 贡献）是并列关系：
+/// 与 `LumiPluginToolManaging`（工具/子 Agent 贡献）是并列关系：
 /// - 本协议负责 ChatService 维度的贡献（providers/middlewares/renderers/turn hook）；
-/// - `LumiAgentToolProviding` 负责工具维度，由 `AgentToolComponent.buildToolSet` 消费。
+/// - `LumiPluginToolManaging` 负责工具维度，由 `AgentToolComponent.buildToolSet` 消费。
 ///
 /// 实现者通常是 App 层的 `PluginService`。`ChatService.applyPluginContributions`
 /// 会调用这些方法完成贡献物的注册。

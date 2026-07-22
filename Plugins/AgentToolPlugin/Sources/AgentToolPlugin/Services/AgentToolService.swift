@@ -6,7 +6,7 @@ import LumiKernel
 
 /// Agent 工具服务实现
 @MainActor
-public final class AgentToolService: AgentToolProviding {
+public final class AgentToolService: ToolManaging {
 
     /// 已注册的工具
     private var registeredTools: [String: any LumiAgentTool] = [:]
@@ -16,7 +16,7 @@ public final class AgentToolService: AgentToolProviding {
 
     public init() {}
 
-    // MARK: - AgentToolProviding
+    // MARK: - ToolManaging
 
     public func allAgentTools() -> [any LumiAgentTool] {
         toolOrder.compactMap { registeredTools[$0] }
