@@ -87,7 +87,6 @@ import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
 import TitleToolbarPlugin
-import ToolCorePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
 import WorkspaceStatePlugin
@@ -135,7 +134,6 @@ public enum PluginService {
             TitleToolbarPlugin(),
             ProjectsPlugin(),
             ToolManagerPlugin(),
-            ToolCorePlugin(),
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),
