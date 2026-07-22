@@ -16,7 +16,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let pluginName = name
         kernel.panel?.registerPanelHeaderItem(
             PanelHeaderItem(id: id) {
