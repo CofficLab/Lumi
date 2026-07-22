@@ -12,7 +12,7 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         for provider in llmProviders(kernel: kernel) {
             kernel.llmProvider?.registerLLMProvider(provider)
         }
