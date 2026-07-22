@@ -35,15 +35,23 @@ public protocol LumiPlugin: AnyObject {
     /// - disabled: 禁用,不可启用
     var policy: LumiPluginPolicy { get }
 
-    /// 注册服务到内核
+    /// 阶段 1: 注入核心服务
     ///
-    /// 在此方法中调用 `kernel.registerXxx()` 注册服务。
+    /// 在此方法中调用 `kernel.registerXxx()` 注册核心 Providing 实现。
+    /// 按 order 顺序调用，order 小的插件先注入，后续插件可以依赖前面的服务。
     /// - Parameter kernel: LumiKernel 实例
-    func register(kernel: LumiKernel) throws
+    func onBoot(kernel: LumiKernel) throws
+
+    /// 阶段 2: 所有服务就绪后注册功能
+    ///
+    /// 所有插件的 onBoot 完成后调用，此时所有核心服务都已可用。
+    /// 在此方法中注册工具、UI 贡献等需要依赖其他服务的功能。
+    /// - Parameter kernel: LumiKernel 实例
+    func onReady(kernel: LumiKernel) throws
 
     /// 启动后回调（可选）
     ///
-    /// 所有插件注册完成后调用,用于执行需要其他服务的初始化逻辑。
+    /// 所有插件 onReady 完成后调用，用于执行异步初始化逻辑。
     /// - Parameter kernel: LumiKernel 实例
     func boot(kernel: LumiKernel) async throws
 
@@ -185,6 +193,12 @@ public extension LumiPlugin {
     var policy: LumiPluginPolicy {
         .optOut
     }
+
+    /// 默认 onBoot 实现：空操作
+    func onBoot(kernel: LumiKernel) throws {}
+
+    /// 默认 onReady 实现：空操作
+    func onReady(kernel: LumiKernel) throws {}
 
     func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         []
