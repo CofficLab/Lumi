@@ -41,29 +41,26 @@ public enum LumiFactory: SuperLog {
         // 2. 获取插件列表
         let plugins = PluginService.plugins
         if verbose {
-            logger.info("\(t)注册 \(plugins.count) 个插件")
+            logger.info("\(t)初始化 \(plugins.count) 个插件")
         }
 
-        // 3. 注册所有插件（PluginManaging 内部会按 order 排序并逐个注册）
-        try kernel.plugin?.registerPlugins(plugins, kernel: kernel)
+        // 3. 初始化插件（存储插件实例）
+        try await kernel.pluginManager.initializePlugins(plugins, kernel: kernel)
 
-        // 4. 启动插件
-        try await kernel.plugin?.bootstrapPlugins()
-
-        // 5. 注册插件的 UI 贡献
-        kernel.plugin?.registerPluginUIContributions(in: kernel)
-
-        // 6. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
+        // 4. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
         subscribeToPluginChanges(kernel: kernel)
 
-        // 7. 内核自检
-        try kernel.startup()
+        // 5. 启动内核（调用插件生命周期 + 服务校验）
+        try await kernel.startup()
 
-        // 8. 保存到内核列表
+        // 6. 注册所有插件的 UI 贡献
+        kernel.pluginManager.registerPluginUIContributions(in: kernel)
+
+        // 7. 保存到内核列表
         kernels.append(kernel)
 
         if verbose {
-            logger.info("\(t)内核创建完成，已注册 \(kernel.plugin?.allPlugins.count ?? 0) 个插件")
+            logger.info("\(t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
         }
         return kernel
     }
@@ -78,7 +75,7 @@ public enum LumiFactory: SuperLog {
         ) { [weak kernel] _ in
             guard let kernel else { return }
             // 重新注册插件的 UI 贡献
-            kernel.plugin?.registerPluginUIContributions(in: kernel)
+            kernel.pluginManager.registerPluginUIContributions(in: kernel)
         }
     }
 
