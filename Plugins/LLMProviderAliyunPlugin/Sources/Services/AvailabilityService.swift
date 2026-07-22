@@ -2,7 +2,6 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiKernel
-import LumiLLMProviderSupport
 import LumiKernel
 
 // MARK: - AvailabilityService

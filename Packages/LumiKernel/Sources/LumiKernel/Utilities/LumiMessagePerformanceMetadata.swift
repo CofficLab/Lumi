@@ -1,5 +1,4 @@
 import Foundation
-import LumiKernel
 
 public enum LumiMessagePerformanceMetadata {
     public static let latencyKey = "latencyMs"

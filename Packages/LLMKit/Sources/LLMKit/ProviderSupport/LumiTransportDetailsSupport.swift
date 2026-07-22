@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LLMKit
+import LumiKernel
 
 /// 传输详情工具函数
 ///

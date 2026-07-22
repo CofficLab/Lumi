@@ -3,7 +3,6 @@ import HttpKit
 import LLMKit
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 import LumiKernel
 
 public final class KimiCodeAnthropicProvider: LumiLLMProvider, @unchecked Sendable {

@@ -4,7 +4,6 @@ import LLMKit
 import LumiKernel
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 
 public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "Aliyun"

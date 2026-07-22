@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
     ],
     targets: [
         .target(
@@ -26,7 +25,6 @@ let package = Package(
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
             ],
             path: "Sources",
             resources: [

@@ -1,5 +1,4 @@
 import Foundation
-import LumiKernel
 
 public enum LumiMessageTokenMetadata {
     public static let inputKey = "inputTokens"

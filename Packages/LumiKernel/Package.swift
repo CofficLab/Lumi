@@ -16,6 +16,8 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../SuperLogKit"),
+        .package(name: "HttpKit", path: "../HttpKit"),
+        .package(path: "../KeychainKit"),
     ],
     targets: [
         .target(
@@ -23,6 +25,8 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "KeychainKit", package: "KeychainKit"),
             ],
             path: "Sources/LumiKernel",
             resources: [

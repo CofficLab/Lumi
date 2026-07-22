@@ -3,7 +3,6 @@ import LLMKit
 import LumiKernel
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderOpenAIPlugin")

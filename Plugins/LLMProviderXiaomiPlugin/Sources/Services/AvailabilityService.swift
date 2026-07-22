@@ -4,7 +4,6 @@ import LLMKit
 import LumiKernel
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 
 // Type aliases to disambiguate between LumiCoreMessage and LumiCoreLLMProvider types
 typealias F = LumiLLMFailureDetail

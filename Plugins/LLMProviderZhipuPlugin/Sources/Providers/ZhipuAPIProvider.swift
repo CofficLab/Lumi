@@ -4,7 +4,6 @@ import LLMKit
 import LumiKernel
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 
 /// 智谱 API（OpenAI 兼容协议）
 public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {

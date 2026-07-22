@@ -3,7 +3,6 @@ import LumiKernel
 import LumiKernel
 import LumiKernel
 import LLMKit
-import LumiLLMProviderSupport
 enum AvailabilityService {
     private static let openAICache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-OpenAI")
     private static let anthropicCache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-Anthropic")

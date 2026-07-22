@@ -1,8 +1,13 @@
 import Foundation
-import LLMKit
-import LumiKernel
 import LumiKernel
 
+// MARK: - LumiVisionMessageSupport
+
+/// Converts LumiKernel messages → LLMKit ChatMessage for provider consumption.
+///
+/// LumiVisionMessageSupport.preparedMessages(for:) is the central entry-point used by
+/// LumiStreamingRequestSupport to transform a LumiLLMRequest into the provider-specific
+/// message array.
 public enum LumiVisionMessageSupport {
     public static func preparedMessages(for request: LumiLLMRequest) -> [ChatMessage] {
         var messages = request.messages.map(convert)
@@ -29,7 +34,6 @@ public enum LumiVisionMessageSupport {
         else {
             return []
         }
-
         return attachments.compactMap { attachment in
             guard let imageData = Data(base64Encoded: attachment.base64Data) else {
                 return nil
@@ -50,7 +54,6 @@ public enum LumiVisionMessageSupport {
         else {
             return
         }
-
         if messages[lastUserIndex].images.isEmpty {
             messages[lastUserIndex].images = images
         }
@@ -59,24 +62,43 @@ public enum LumiVisionMessageSupport {
     private static func encodeAttachments(_ attachments: [LumiImageAttachment]) -> String? {
         guard let data = try? JSONEncoder().encode(attachments),
               let json = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
+        else { return nil }
         return json
     }
 
     private static func convertRole(_ role: LumiChatMessageRole) -> MessageRole {
         switch role {
-        case .system:
-            .system
-        case .user:
-            .user
-        case .assistant:
-            .assistant
-        case .tool:
-            .tool
-        case .error, .status:
-            .error
+        case .system:   return .system
+        case .user:     return .user
+        case .assistant: return .assistant
+        case .tool:     return .tool
+        case .error, .status: return .error
         }
+    }
+}
+
+// MARK: - LumiLLMRequestMessages
+
+/// Thin bridge: LumiLLMRequest → provider-ready ChatMessage array.
+///
+/// Delegates to LumiVisionMessageSupport for the actual conversion.
+public enum LumiLLMRequestMessages {
+    public static func preparedForProvider(_ request: LumiLLMRequest) -> [ChatMessage] {
+        LumiVisionMessageSupport.preparedMessages(for: request)
+    }
+}
+
+// MARK: - LumiToolSchema
+
+/// Wraps a LumiAgentTool (LumiKernel) as LLMToolSchemaProviding (LLMKit).
+public struct LumiToolSchema: LLMToolSchemaProviding {
+    public let name: String
+    public let toolDescription: String
+    public let inputSchema: [String: Any]
+
+    public init(_ tool: any LumiAgentTool) {
+        self.name = tool.name
+        self.toolDescription = tool.toolDescription
+        self.inputSchema = tool.inputSchema.anyValue as? [String: Any] ?? [:]
     }
 }

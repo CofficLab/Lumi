@@ -17,8 +17,7 @@ let package = Package(
         .package(name: "HttpKit", path: "../HttpKit"),
         .package(path: "../LocalizationKit"),
         .package(path: "../KeychainKit"),
-        .package(path: "../LumiCoreMessage"),
-        .package(path: "../LumiCoreLLMProvider"),
+        .package(path: "../LumiKernel"),
     ],
     targets: [
         .target(
@@ -27,6 +26,7 @@ let package = Package(
                 "HttpKit",
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
             ],
             path: "Sources/LLMKit",
             resources: [

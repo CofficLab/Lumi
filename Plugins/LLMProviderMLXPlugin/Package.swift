@@ -18,7 +18,6 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
         .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(
@@ -41,7 +40,6 @@ let package = Package(
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),

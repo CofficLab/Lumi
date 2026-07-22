@@ -4,7 +4,6 @@ import LLMKit
 import LumiKernel
 import LumiKernel
 import LumiKernel
-import LumiLLMProviderSupport
 import os
 
 final class FreeModelClaudeBackend: LumiLLMProvider, @unchecked Sendable {
