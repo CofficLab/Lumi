@@ -16,9 +16,6 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../LumiCoreLayout"),
-        .package(path: "../LumiCoreMenuBar"),
-        .package(path: "../LumiCoreOverlay"),
-        .package(path: "../LumiCorePanelChrome"),
         .package(path: "../LumiCoreProject"),
         .package(path: "../LumiCoreStorage"),
     ],
@@ -28,9 +25,6 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiCoreLayout", package: "LumiCoreLayout"),
-                .product(name: "LumiCoreMenuBar", package: "LumiCoreMenuBar"),
-                .product(name: "LumiCoreOverlay", package: "LumiCoreOverlay"),
-                .product(name: "LumiCorePanelChrome", package: "LumiCorePanelChrome"),
                 .product(name: "LumiCoreProject", package: "LumiCoreProject"),
                 .product(name: "LumiCoreStorage", package: "LumiCoreStorage"),
             ],

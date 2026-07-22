@@ -1,6 +1,5 @@
 import EditorService
 import LumiCoreLayout
-import LumiCorePanelChrome
 import LumiKernel
 import LumiUI
 import SwiftUI

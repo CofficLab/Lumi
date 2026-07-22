@@ -1,4 +1,3 @@
-import LumiCoreMenuBar
 import LumiKernel
 import SwiftUI
 

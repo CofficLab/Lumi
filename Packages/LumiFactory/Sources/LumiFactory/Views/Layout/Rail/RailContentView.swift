@@ -1,5 +1,4 @@
 import LumiCoreLayout
-import LumiCorePanelChrome
 import LumiKernel
 import SwiftUI
 

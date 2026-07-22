@@ -1,6 +1,5 @@
 import Foundation
 import LumiCoreLayout
-import LumiCoreMenuBar
 import SwiftUI
 
 // MARK: - View Container Item

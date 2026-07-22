@@ -27,8 +27,6 @@ let package = Package(
                 "HttpKit",
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
             ],
             path: "Sources/LLMKit",
             resources: [

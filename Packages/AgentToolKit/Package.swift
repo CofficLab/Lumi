@@ -25,7 +25,6 @@ let package = Package(
             dependencies: [
                 "SuperLogKit",
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",

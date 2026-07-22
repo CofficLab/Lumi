@@ -28,10 +28,6 @@ let package = Package(
             name: "LumiLLMProviderSupport",
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
-                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
