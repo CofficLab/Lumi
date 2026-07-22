@@ -17,7 +17,7 @@ import ConversationTitlePlugin
 import ConversationInputPlugin
 import ConversationMessageCountPlugin
 import MessageStorePlugin
-import MessageSendManagerPlugin
+import MessageSenderPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -133,15 +133,15 @@ public enum PluginService {
             // UI & Features
             PanelPlugin(),
             TitleToolbarPlugin(),
-            ProjectsPlugin(),
             ToolManagerPlugin(),
+            ProjectsPlugin(),
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),
             ChatKernelPlugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
-            MessageSendManagerPlugin(),
+            MessageSenderPlugin(),
             AgentTurnRunnerPlugin(),
             MessageRendererManagerPlugin(),
             MessageRendererPlugin(),

@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "MessageSendManagerPlugin",
+    name: "MessageSenderPlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "MessageSendManagerPlugin", targets: ["MessageSendManagerPlugin"]),
+        .library(name: "MessageSenderPlugin", targets: ["MessageSenderPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -15,7 +15,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MessageSendManagerPlugin",
+            name: "MessageSenderPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
