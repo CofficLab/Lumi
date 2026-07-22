@@ -44,7 +44,7 @@ struct MessageListView: View, SuperLog {
     // MARK: - SuperLog
 
     nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) public static var verbose = true
+    nonisolated(unsafe) public static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message-list.view")
 
     var body: some View {
