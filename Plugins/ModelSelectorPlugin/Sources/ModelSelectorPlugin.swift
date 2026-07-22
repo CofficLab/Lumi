@@ -11,7 +11,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {}
+    public func onReady(kernel: LumiKernel) throws {}
 
     public func boot(kernel: LumiKernel) async throws {}
 

@@ -15,7 +15,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         kernel.panel?.registerPanelBottomTabItem(
             PanelBottomTabItem(
                 id: "editor-bottom-terminal",
