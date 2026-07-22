@@ -49,11 +49,6 @@ extension LumiKernelContainer {
         resolveService(SendMiddlewareProviding.self)
     }
 
-    /// Chat service
-    public var chat: (any ChatServiceProviding)? {
-        resolveService(ChatServiceProviding.self)
-    }
-
     /// Message send service (user input → persist + dispatch)
     public var messageSend: (any MessageSending)? {
         resolveService(MessageSending.self)
@@ -92,11 +87,6 @@ extension LumiKernelContainer {
     /// Agent turn runner service (executes LLM loop including tool calls)
     public var agentTurnRunner: (any AgentTurnRunning)? {
         resolveService(AgentTurnRunning.self)
-    }
-
-    /// Chat contribution service (middlewares, renderers, turn hooks)
-    public var chatContribution: (any ChatContributionProviding)? {
-        resolveService(ChatContributionProviding.self)
     }
 
     /// Panel service

@@ -26,7 +26,6 @@ struct LumiKernelUsageExample {
         // 方式二：直接创建并注册（一行搞定）
         kernel.registerProject(ProjectService())
         kernel.registerLayout(LayoutService())
-        kernel.registerChat(ChatService())
 
         // ========== 4. 使用服务 ==========
         if let storage = kernel.storage {
@@ -77,13 +76,6 @@ private final class ProjectService: ProjectProviding {
 private final class LayoutService: LayoutProviding {
     var state: LayoutStateInfo { LayoutStateInfo() }
     func updateLayout(_ update: (inout LayoutStateInfo) -> Void) {}
-}
-
-@MainActor
-private final class ChatService: ChatServiceProviding {
-    var selectedProviderID: String? { nil }
-    func sendMessage(_ content: String, conversationID: UUID) async throws {}
-    func cancelCurrentRequest() {}
 }
 
 @MainActor

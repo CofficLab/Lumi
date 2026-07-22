@@ -49,11 +49,6 @@ extension LumiKernelContainer {
         registerService(SendMiddlewareProviding.self, sendMiddleware)
     }
 
-    /// Register chat service
-    public func registerChat(_ chat: any ChatServiceProviding) {
-        registerService(ChatServiceProviding.self, chat)
-    }
-
     /// Register message send service
     public func registerMessageSend(_ messageSend: any MessageSending) {
         registerService(MessageSending.self, messageSend)
@@ -92,11 +87,6 @@ extension LumiKernelContainer {
     /// Register agent turn runner service
     public func registerAgentTurnRunnerService(_ agentTurnRunner: any AgentTurnRunning) {
         registerService(AgentTurnRunning.self, agentTurnRunner)
-    }
-
-    /// Register Chat contribution service
-    public func registerChatContributionService(_ chatContribution: any ChatContributionProviding) {
-        registerService(ChatContributionProviding.self, chatContribution)
     }
 
     /// Register panel service

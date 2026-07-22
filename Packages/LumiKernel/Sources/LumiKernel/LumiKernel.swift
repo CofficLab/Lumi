@@ -32,8 +32,6 @@ public final class LumiKernelContainer: ObservableObject {
         self.pluginManager.kernel = self
         // 注册其他服务
         registerService(ToolManaging.self, pluginManager)
-        registerService(ChatContributionProviding.self, pluginManager)
-        registerService(LumiChatContributionProviding.self, pluginManager)
         registerService(UIThemeProviding.self, pluginManager)
     }
 
@@ -95,7 +93,6 @@ public final class LumiKernelContainer: ObservableObject {
         if menuBar == nil { missingServices.append("MenuBar") }
         if toolbarProvider == nil { missingServices.append("TitleToolbar") }
         if sendMiddleware == nil { missingServices.append("SendMiddleware") }
-        if chat == nil { missingServices.append("Chat") }
         if messageSend == nil { missingServices.append("MessageSend") }
         if llmProvider == nil { missingServices.append("LLMProvider") }
         if agentTurnRunner == nil { missingServices.append("AgentTurnRunner") }
