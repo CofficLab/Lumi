@@ -9,7 +9,7 @@ import os
 /// Responsible for managing theme contributions from plugins, persisting theme selection,
 /// and syncing with the editor syntax theme system.
 @MainActor
-public final class DefaultThemeProviding: LumiThemeServicing {
+public final class ThemeManager: LumiThemeServicing {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
     nonisolated static let verbose = false
 
@@ -18,7 +18,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
     private var pluginsChangedObserver: NSObjectProtocol?
 
     /// Reference to the plugin service for collecting theme contributions.
-    private weak var pluginService: PluginManaging?
+    private weak var pluginService: PluginRegistry?
 
     /// Reference to the editor core service for syntax theme sync.
     private weak var editorCoreService: EditorCoreServiceType?
@@ -42,7 +42,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
 
     public init(
         themeRegistry: LumiUIThemeRegistry = .shared,
-        pluginService: PluginManaging? = nil,
+        pluginService: PluginRegistry? = nil,
         editorCoreService: EditorCoreServiceType? = nil
     ) {
         self.themeRegistry = themeRegistry
@@ -82,7 +82,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
     /// but `kernel.plugin` is `nil` at that point (PluginManagementPlugin hasn't been
     /// registered yet). The plugin service is wired up in `boot(kernel:)` and the
     /// themes are reloaded then.
-    public func setPluginService(_ service: PluginManaging) {
+    public func setPluginService(_ service: PluginRegistry) {
         self.pluginService = service
         if Self.verbose {
             Self.logger.info("Plugin service injected")

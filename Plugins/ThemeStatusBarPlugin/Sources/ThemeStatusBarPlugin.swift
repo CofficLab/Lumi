@@ -8,21 +8,21 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
     public let order = 22
 public static let policy: LumiPluginPolicy = .disabled  // 提前加载顺序，作为核心插件
 
-    private var themeService: DefaultThemeProviding?
+    private var themeService: ThemeManager?
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // 1. 注册 ThemeService（内核服务）
         // pluginService 稍后在 boot 阶段注入（PluginManagementPlugin 之后才注册好）
-        let themeServiceInstance = DefaultThemeProviding()
+        let themeServiceInstance = ThemeManager()
         kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
     }
 
     public func boot(kernel: LumiKernel) async throws {
         // 注入 pluginService 并立即重载所有插件的主题贡献
-        if let pluginProviding = kernel.plugin, let themeService {
+        if let pluginProviding = kernel.pluginManager as? PluginRegistry, let themeService {
             themeService.setPluginService(pluginProviding)
             themeService.reloadThemes()
         }
