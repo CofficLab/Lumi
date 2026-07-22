@@ -35,7 +35,7 @@ public final class MessageSender: MessageSending, SuperLog {
     public init(kernel: LumiKernel) {
         self.kernel = kernel
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
+            Self.logger.info("\(Self.t)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
         }
     }
 

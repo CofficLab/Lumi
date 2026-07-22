@@ -171,9 +171,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
 
                 // Execute tool
                 guard let toolManager = kernel.toolManager else {
-                    if Self.verbose {
-                        Self.logger.error("\(Self.t)ToolManager 不可用")
-                    }
+                    Self.logger.error("\(Self.t)ToolManager 不可用")
                     continue
                 }
 
@@ -187,6 +185,17 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     assistantMessageID: assistantMessage.id,
                     in: conversationID
                 )
+
+                // Insert tool result as a new message so LLM can see it in the next turn
+                let toolResultMessage = LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .tool,
+                    content: result.content,
+                    isError: result.isError,
+                    toolCallID: toolCall.id
+                )
+                kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)
+                postMessageSavedNotification(message: toolResultMessage, conversationID: conversationID)
 
                 if Self.verbose {
                     Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name), isError=\(result.isError)")

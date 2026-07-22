@@ -14,7 +14,7 @@ import os
 public final class MockLLMProvider: LumiLLMProvider, @unchecked Sendable, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.mock")
     public nonisolated static let emoji = "🧪"
-    nonisolated(unsafe) public static var verbose = true
+    nonisolated(unsafe) public static var verbose = false
 
     public static let info = LumiLLMProviderInfo(
         id: "mock",
@@ -34,7 +34,7 @@ public final class MockLLMProvider: LumiLLMProvider, @unchecked Sendable, SuperL
 
     public init() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)MockLLMProvider")
+            Self.logger.info("\(Self.t)MockLLMProvider")
         }
     }
 
