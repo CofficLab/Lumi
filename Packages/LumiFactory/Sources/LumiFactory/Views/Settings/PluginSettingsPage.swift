@@ -10,7 +10,7 @@ struct PluginSettingsPage: View {
     @State private var searchText = ""
 
     private var plugins: [LumiPlugin] {
-        kernel.plugin?.allPlugins ?? []
+        kernel.pluginManager.allPlugins
     }
 
     private var filteredPlugins: [LumiPlugin] {
