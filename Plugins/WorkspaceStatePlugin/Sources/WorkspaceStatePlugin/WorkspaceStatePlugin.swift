@@ -17,7 +17,7 @@ public final class WorkspaceStatePlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let service = DefaultWorkspaceStateProviding()
         kernel.registerWorkspaceStateService(service)
         self.instance = service
