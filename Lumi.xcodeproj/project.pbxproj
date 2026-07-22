@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = 0B3231D230111C1600423DC1 /* LumiFactory */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		F5D928B73010BC2E00259F19 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = F5D928B63010BC2E00259F19 /* LumiFactory */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F5D928B73010BC2E00259F19 /* LumiFactory in Frameworks */,
+				0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,7 +87,7 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				F5D928B63010BC2E00259F19 /* LumiFactory */,
+				0B3231D230111C1600423DC1 /* LumiFactory */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -121,7 +121,7 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F5D6293B3010B88700E7EF5E /* XCLocalSwiftPackageReference "Packages/LumiFactory" */,
+				0B3231D130111C1600423DC1 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -393,16 +393,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		F5D6293B3010B88700E7EF5E /* XCLocalSwiftPackageReference "Packages/LumiFactory" */ = {
+		0B3231D130111C1600423DC1 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiFactory;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F5D928B63010BC2E00259F19 /* LumiFactory */ = {
+		0B3231D230111C1600423DC1 /* LumiFactory */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F5D6293B3010B88700E7EF5E /* XCLocalSwiftPackageReference "Packages/LumiFactory" */;
 			productName = LumiFactory;
 		};
 /* End XCSwiftPackageProductDependency section */
