@@ -6,11 +6,9 @@ import SwiftUI
 /// 负责管理所有插件的注册、启动、查询和排序。
 /// 同时充当多个 Provider 服务的实现：
 /// - ToolManaging: Agent Tool 收集
-/// - ChatContributionProviding: Chat 贡献聚合
-/// - LumiChatContributionProviding: Lumi Chat 贡献聚合
 /// - UIThemeProviding: Theme 贡献
 @MainActor
-public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
+public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolManaging, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -297,15 +295,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             .sorted { $0.order < $1.order }
     }
 
-    // MARK: - ChatContributionProviding (LLM Provider passthrough)
-
-    /// 旧 `ChatContributionProviding` 协议要求 `allLLMProviders()`。
-    /// LLM Provider 收集已搬到 `LLMProviderManagerPlugin`,本方法把
-    /// 收集结果转调过去;调用方拿不到数据时返回空数组。
-    public func allLLMProviders() -> [any LumiLLMProvider] {
-        kernel?.llmProvider?.allLLMProviders() ?? []
-    }
-
     // MARK: - ToolManaging
 
     public func allAgentTools() -> [any LumiAgentTool] {
@@ -344,51 +333,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
     public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
         await kernel?.toolManager?.execute(toolCall, conversationID: conversationID) ?? LumiToolResult(content: "Tool service unavailable", isError: true)
-    }
-
-    // MARK: - ChatContributionProviding
-
-    public func allSendMiddlewares() -> [any LumiSendMiddleware] {
-        sendMiddlewareOrder.compactMap { sendMiddlewares[$0] }
-    }
-
-    public func allMessageRenderers() -> [LumiMessageRendererItem] {
-        messageRendererOrder.compactMap { messageRenderers[$0] }
-    }
-
-    public func dispatchTurnFinished(conversationID: UUID, reason: LumiTurnEndReason) async {
-        guard let kernel else { return }
-        for plugin in allPlugins {
-            await plugin.onTurnFinished(kernel: kernel, conversationID: conversationID, reason: reason)
-        }
-    }
-
-    // MARK: - LumiChatContributionProviding (新 API)
-    //
-    // 适配 `LumiCoreChat.ChatService.applyPluginContributions(from:)` 的调用形式。
-    // 老 API（ChatContributionProviding.allXxx()）保留以便旧代码继续工作。
-
-    public func llmProviders(lumiCore: any LumiCoreProviding) -> [any LumiLLMProvider] {
-        // LLM Provider 收集已由 LLMProviderManagerPlugin 负责。
-        // 本方法保留以便 `LumiCoreChat.ChatService.applyPluginContributions`
-        // 仍然能调用,但目前没有 LLM Provider 插件接入 App,返回空数组。
-        []
-    }
-
-    public func sendMiddlewares(lumiCore: any LumiCoreProviding) -> [any LumiSendMiddleware] {
-        allSendMiddlewares()
-    }
-
-    public func messageRenderers(lumiCore: any LumiCoreProviding) -> [LumiMessageRendererItem] {
-        allMessageRenderers()
-    }
-
-    public func onTurnFinished(
-        lumiCore: any LumiCoreProviding,
-        conversationID: UUID,
-        reason: LumiTurnEndReason
-    ) async {
-        await dispatchTurnFinished(conversationID: conversationID, reason: reason)
     }
 
     // MARK: - Send Middleware Registry
