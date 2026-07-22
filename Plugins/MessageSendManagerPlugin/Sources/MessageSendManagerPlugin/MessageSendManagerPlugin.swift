@@ -34,7 +34,7 @@ public final class MessageSendManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        let service = MessageSendManager(kernel: kernel)
+        let service = MessageSender(kernel: kernel)
         kernel.registerMessageSend(service)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 MessageSendManager")

@@ -79,8 +79,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Message send service (user input → persist + dispatch)
-    public var messageSend: (any MessageSendManaging)? {
-        resolveService(MessageSendManaging.self)
+    public var messageSend: (any MessageSending)? {
+        resolveService(MessageSending.self)
     }
 
     /// Conversation management service
@@ -111,6 +111,11 @@ public final class LumiKernelContainer: ObservableObject {
     /// LLM Provider service
     public var llmProvider: (any LLMProviderManaging)? {
         resolveService(LLMProviderManaging.self)
+    }
+
+    /// Agent turn runner service (executes LLM loop including tool calls)
+    public var agentTurnRunner: (any AgentTurnRunning)? {
+        resolveService(AgentTurnRunning.self)
     }
 
     /// Chat contribution service (middlewares, renderers, turn hooks)
@@ -258,8 +263,8 @@ public final class LumiKernelContainer: ObservableObject {
     }
 
     /// Register message send service
-    public func registerMessageSend(_ messageSend: any MessageSendManaging) {
-        registerService(MessageSendManaging.self, messageSend)
+    public func registerMessageSend(_ messageSend: any MessageSending) {
+        registerService(MessageSending.self, messageSend)
     }
 
     /// Register conversation managing service
@@ -290,6 +295,11 @@ public final class LumiKernelContainer: ObservableObject {
     /// Register LLM Provider service
     public func registerLLMProviderService(_ llmProvider: any LLMProviderManaging) {
         registerService(LLMProviderManaging.self, llmProvider)
+    }
+
+    /// Register agent turn runner service
+    public func registerAgentTurnRunnerService(_ agentTurnRunner: any AgentTurnRunning) {
+        registerService(AgentTurnRunning.self, agentTurnRunner)
     }
 
     /// Register Chat contribution service
@@ -357,6 +367,7 @@ public final class LumiKernelContainer: ObservableObject {
         if chat == nil { missingServices.append("Chat") }
         if messageSend == nil { missingServices.append("MessageSend") }
         if llmProvider == nil { missingServices.append("LLMProvider") }
+        if agentTurnRunner == nil { missingServices.append("AgentTurnRunner") }
         if chatSection == nil { missingServices.append("ChatSection") }
         if editor == nil { missingServices.append("Editor") }
         if toolManager == nil { missingServices.append("AgentTool") }
