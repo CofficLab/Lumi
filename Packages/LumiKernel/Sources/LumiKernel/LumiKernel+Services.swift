@@ -1,0 +1,141 @@
+import Foundation
+import LumiUI
+
+// MARK: - Service Accessors
+
+extension LumiKernelContainer {
+    /// LumiCore service (storage, project, layout, logo, toolManager, chat, editor)
+    public var lumiCore: (any LumiCoreProviding)? {
+        resolveService(LumiCoreProviding.self)
+    }
+
+    /// Storage service
+    public var storage: (any StorageProviding)? {
+        resolveService(StorageProviding.self)
+    }
+
+    /// Project management service
+    public var project: (any ProjectProviding)? {
+        resolveService(ProjectProviding.self)
+    }
+
+    /// Layout service
+    public var layout: (any LayoutProviding)? {
+        resolveService(LayoutProviding.self)
+    }
+
+    /// View container service
+    public var viewContainer: (any ViewContainerProviding)? {
+        resolveService(ViewContainerProviding.self)
+    }
+
+    /// Command menu service
+    public var command: (any CommandProviding)? {
+        resolveService(CommandProviding.self)
+    }
+
+    /// Menu bar service
+    public var menuBar: (any MenuBarProviding)? {
+        resolveService(MenuBarProviding.self)
+    }
+
+    /// Title toolbar service
+    public var toolbarProvider: (any TitleToolbarProviding)? {
+        resolveService(TitleToolbarProviding.self)
+    }
+
+    /// Send middleware service
+    public var sendMiddleware: (any SendMiddlewareProviding)? {
+        resolveService(SendMiddlewareProviding.self)
+    }
+
+    /// Chat service
+    public var chat: (any ChatServiceProviding)? {
+        resolveService(ChatServiceProviding.self)
+    }
+
+    /// Message send service (user input → persist + dispatch)
+    public var messageSend: (any MessageSending)? {
+        resolveService(MessageSending.self)
+    }
+
+    /// Conversation management service
+    public var conversations: (any ConversationManaging)? {
+        resolveService(ConversationManaging.self)
+    }
+
+    /// Message management service
+    public var messageManager: (any MessageManaging)? {
+        resolveService(MessageManaging.self)
+    }
+
+    /// Chat section service
+    public var chatSection: (any ChatSectionProviding)? {
+        resolveService(ChatSectionProviding.self)
+    }
+
+    /// Editor service
+    public var editor: (any EditorServiceProviding)? {
+        resolveService(EditorServiceProviding.self)
+    }
+
+    /// Agent tool service
+    public var toolManager: (any ToolManaging)? {
+        resolveService(ToolManaging.self)
+    }
+
+    /// LLM Provider service
+    public var llmProvider: (any LLMProviderManaging)? {
+        resolveService(LLMProviderManaging.self)
+    }
+
+    /// Agent turn runner service (executes LLM loop including tool calls)
+    public var agentTurnRunner: (any AgentTurnRunning)? {
+        resolveService(AgentTurnRunning.self)
+    }
+
+    /// Chat contribution service (middlewares, renderers, turn hooks)
+    public var chatContribution: (any ChatContributionProviding)? {
+        resolveService(ChatContributionProviding.self)
+    }
+
+    /// Panel service
+    public var panel: (any PanelProviding)? {
+        resolveService(PanelProviding.self)
+    }
+
+    /// Status bar service
+    public var statusBar: (any StatusBarProviding)? {
+        resolveService(StatusBarProviding.self)
+    }
+
+    /// Settings service
+    public var settings: (any SettingsProviding)? {
+        resolveService(SettingsProviding.self)
+    }
+
+    /// Logo service
+    public var logo: (any LogoProviding)? {
+        resolveService(LogoProviding.self)
+    }
+
+    /// Theme service
+    public var theme: (any LumiThemeServicing)? {
+        resolveService(LumiThemeServicing.self)
+    }
+
+    /// Onboarding service
+    public var onboarding: (any OnboardingProviding)? {
+        resolveService(OnboardingProviding.self)
+    }
+
+    /// Message renderer management service
+    public var messageRendererManager: (any MessageRendererManaging)? {
+        resolveService(MessageRendererManaging.self)
+    }
+
+    /// Workspace state service (controls rail/chat/content/activityBar visibility)
+    public var workspaceState: (any WorkspaceStateProviding)? {
+        resolveService(WorkspaceStateProviding.self)
+    }
+}
