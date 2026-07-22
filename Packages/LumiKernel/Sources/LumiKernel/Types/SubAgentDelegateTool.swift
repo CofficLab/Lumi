@@ -10,13 +10,13 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
     private let definition: LumiSubAgentDefinition
     private let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)?
     private let availableTools: [any LumiAgentTool]
-    private let executionToolService: any LumiToolServicing
+    private let executionToolService: any ToolManaging
 
     public init(
         definition: LumiSubAgentDefinition,
         providerResolver: @escaping @MainActor @Sendable (String) -> (any LumiLLMProvider)?,
         availableTools: [any LumiAgentTool],
-        executionToolService: any LumiToolServicing
+        executionToolService: any ToolManaging
     ) {
         self.definition = definition
         self.providerResolver = providerResolver
@@ -148,7 +148,7 @@ public struct SubAgentLoopRunner {
         systemPrompt: String,
         task: String,
         tools: [any LumiAgentTool],
-        toolService: any LumiToolServicing,
+        toolService: any ToolManaging,
         conversationID: UUID,
         maxTurns: Int = 10
     ) async -> SubAgentLoopResult {

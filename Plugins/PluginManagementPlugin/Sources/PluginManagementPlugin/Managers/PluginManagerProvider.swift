@@ -351,6 +351,16 @@ public final class PluginManagerProvider: PluginProviding, ToolManaging, ChatCon
         subAgents[subAgent.id] = subAgent
     }
 
+    // MARK: - ToolManaging Execution
+
+    public func tool(named name: String) -> (any LumiAgentTool)? {
+        kernel?.toolManager?.tool(named: name)
+    }
+
+    public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
+        await kernel?.toolManager?.execute(toolCall, conversationID: conversationID) ?? LumiToolResult(content: "Tool service unavailable", isError: true)
+    }
+
     // MARK: - ChatContributionProviding
 
     public func allSendMiddlewares() -> [any LumiSendMiddleware] {

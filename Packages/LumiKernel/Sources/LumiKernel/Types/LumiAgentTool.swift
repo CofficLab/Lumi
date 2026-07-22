@@ -171,16 +171,6 @@ public extension LumiAgentTool {
     func displayDescription(arguments: [String: LumiJSONValue]) -> String { Self.info.displayName }
 }
 
-// MARK: - LumiToolServicing Protocol
-
-@MainActor
-public protocol LumiToolServicing: AnyObject {
-    var tools: [any LumiAgentTool] { get }
-    func registerTools(_ tools: [any LumiAgentTool]) throws
-    func tool(named name: String) -> (any LumiAgentTool)?
-    func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
-}
-
 // MARK: - Argument Accessors
 
 public extension [String: LumiJSONValue] {

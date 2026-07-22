@@ -21,8 +21,8 @@ extension LumiCoreProviding {
         if let chat = lumiCore.resolveService((any LumiChatServicing).self) {
             dependencies.register((any LumiChatServicing).self, chat)
         }
-        if let toolService = lumiCore.resolveService((any LumiToolServicing).self) {
-            dependencies.register((any LumiToolServicing).self, toolService)
+        if let toolService = lumiCore.resolveService((any ToolManaging).self) {
+            dependencies.register((any ToolManaging).self, toolService)
         }
         if let providerSettings = lumiCore.resolveService((any LumiLLMProviderSettingsContributing).self) {
             dependencies.register((any LumiLLMProviderSettingsContributing).self, providerSettings)

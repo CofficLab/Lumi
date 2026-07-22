@@ -3,7 +3,7 @@ import os
 
 /// 工具服务
 @MainActor
-public final class ToolService: LumiToolServicing {
+public final class ToolService: ToolManaging {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.tool")
     nonisolated public static let emoji = "🛠️"
     nonisolated public static let verbose = false
@@ -24,7 +24,31 @@ public final class ToolService: LumiToolServicing {
         }
     }
 
-    // MARK: - Registration
+    // MARK: - ToolManaging Registration
+
+    public func allAgentTools() -> [any LumiAgentTool] {
+        tools
+    }
+
+    public func add(_ tool: any LumiAgentTool) {
+        if toolsByName[tool.name] == nil {
+            toolsByName[tool.name] = tool
+            reindex()
+        }
+    }
+
+    public func remove(id: String) {
+        toolsByName.removeValue(forKey: id)
+        reindex()
+    }
+
+    public func allSubAgents() -> [LumiSubAgentDefinition] {
+        []
+    }
+
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
+        // Sub-agents not supported in per-request ToolService
+    }
 
     public func registerTools(_ tools: [any LumiAgentTool]) throws {
         if Self.verbose {
