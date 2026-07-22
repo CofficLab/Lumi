@@ -29,7 +29,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // 注册菜单栏弹窗（order 自动从插件继承）
         kernel.menuBar?.registerMenuBarPopup(
             MenuBarPopupItem(id: "\(id).launcher") {
