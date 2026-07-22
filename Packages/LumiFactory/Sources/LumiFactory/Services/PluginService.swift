@@ -4,10 +4,8 @@ import AgentTurnRunnerPlugin
 import ToolManagerPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
-import ChatKernelPlugin
 import ChatPanelPlugin
 import ChatSectionPlugin
-import ChatComposerPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
@@ -87,6 +85,7 @@ import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
 import TitleToolbarPlugin
+import VerbosityPlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
 import WorkspaceStatePlugin
@@ -136,7 +135,6 @@ public enum PluginService {
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),
-            ChatKernelPlugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
             MessageSenderPlugin(),
@@ -151,7 +149,6 @@ public enum PluginService {
             SendMiddlewarePlugin(),
             ChatSectionPlugin(),
             ChatPanelPlugin(),
-            ChatComposerPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
@@ -165,6 +162,7 @@ public enum PluginService {
             BrewManagerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
+            VerbosityPlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
             QuickLauncherPlugin(),

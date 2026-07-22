@@ -23,10 +23,8 @@ let package = Package(
         .package(path: "../../Plugins/MenuBarPlugin"),
         .package(path: "../../Plugins/TitleToolbarPlugin"),
         .package(path: "../../Plugins/SendMiddlewarePlugin"),
-        .package(path: "../../Plugins/ChatKernelPlugin"),
         .package(path: "../../Plugins/ChatPanelPlugin"),
         .package(path: "../../Plugins/ChatSectionPlugin"),
-        .package(path: "../../Plugins/ChatComposerPlugin"),
         .package(path: "../../Plugins/MessageListPlugin"),
         .package(path: "../../Plugins/ModelSelectorPlugin"),
         .package(path: "../../Plugins/ConversationListPlugin"),
@@ -108,6 +106,7 @@ let package = Package(
         .package(path: "../../Plugins/RClickPlugin"),
         .package(path: "../../Plugins/InputPlugin"),
         .package(path: "../../Plugins/MenuBarManagerPlugin"),
+        .package(path: "../../Plugins/VerbosityPlugin"),
     ],
     targets: [
         .target(
@@ -127,10 +126,8 @@ let package = Package(
                 .product(name: "MenuBarPlugin", package: "MenuBarPlugin"),
                 .product(name: "TitleToolbarPlugin", package: "TitleToolbarPlugin"),
                 .product(name: "SendMiddlewarePlugin", package: "SendMiddlewarePlugin"),
-                .product(name: "ChatKernelPlugin", package: "ChatKernelPlugin"),
                 .product(name: "ChatPanelPlugin", package: "ChatPanelPlugin"),
                 .product(name: "ChatSectionPlugin", package: "ChatSectionPlugin"),
-                .product(name: "ChatComposerPlugin", package: "ChatComposerPlugin"),
                 .product(name: "MessageListPlugin", package: "MessageListPlugin"),
                 .product(name: "ModelSelectorPlugin", package: "ModelSelectorPlugin"),
                 .product(name: "ConversationListPlugin", package: "ConversationListPlugin"),
@@ -213,6 +210,7 @@ let package = Package(
                 .product(name: "RClickPlugin", package: "RClickPlugin"),
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
+                .product(name: "VerbosityPlugin", package: "VerbosityPlugin"),
             ],
             resources: [
                 .process("Resources")
