@@ -17,7 +17,28 @@ struct MessageListView: View, SuperLog {
     @State private var showRawMessage = false
 
     private var isEmpty: Bool {
-        messages.isEmpty
+        messages.isEmpty && !isSending
+    }
+
+    private var isSending: Bool {
+        kernel.messageSend?.isSending ?? false
+    }
+
+    /// Display messages with a transient status message appended when sending
+    private var displayMessages: [LumiChatMessage] {
+        guard let conversationID = kernel.conversations?.selectedConversationID else {
+            return messages
+        }
+        if isSending {
+            let statusMessage = LumiChatMessage(
+                conversationID: conversationID,
+                role: .status,
+                content: "正在发送消息…",
+                metadata: ["isTransientStatus": "true"]
+            )
+            return messages + [statusMessage]
+        }
+        return messages
     }
 
     // MARK: - SuperLog
@@ -63,7 +84,7 @@ struct MessageListView: View, SuperLog {
     private var messageListView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
-                ForEach(messages) { message in
+                ForEach(displayMessages) { message in
                     MessageRowView(
                         message: message,
                         renderer: kernel.messageRendererManager?.renderer(for: message),

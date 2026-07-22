@@ -31,8 +31,6 @@ public final class MessageSender: MessageSending, SuperLog {
     @Published public private(set) var isSending: Bool = false
 
     private weak var kernel: LumiKernel?
-    /// Tracks the status message ID for each conversation to replace it with the final response
-    private var statusMessageIDByConversation: [UUID: UUID] = [:]
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -100,21 +98,6 @@ public final class MessageSender: MessageSending, SuperLog {
             Self.logger.info("\(Self.t)user 消息已落库 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, content.len=\(trimmed.count)")
         }
 
-        // Insert status message to show sending state
-        let statusID = UUID()
-        statusMessageIDByConversation[targetID] = statusID
-        let statusMessage = LumiChatMessage(
-            id: statusID,
-            conversationID: targetID,
-            role: .status,
-            content: "正在发送消息…",
-            metadata: ["isTransientStatus": "true"]
-        )
-        kernel?.messageManager?.insertMessage(statusMessage, to: targetID)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)status 消息已落库 ➡️ id=\(statusID.uuidString.prefix(8))…")
-        }
-
         // 4. Delegate to AgentTurnRunner to execute the full agent loop.
         guard let kernelInstance = kernel else {
             isSending = false
@@ -142,12 +125,8 @@ public final class MessageSender: MessageSending, SuperLog {
             }
         }
 
-        // 5. Clean up status message and sending state (after turn completes)
+        // 5. Clean up sending state (after turn completes)
         isSending = false
-        if let statusID = statusMessageIDByConversation[targetID] {
-            kernel?.messageManager?.deleteMessage(id: statusID, in: targetID)
-            statusMessageIDByConversation[targetID] = nil
-        }
         if Self.verbose {
             Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束")
         }
@@ -159,12 +138,6 @@ public final class MessageSender: MessageSending, SuperLog {
             // Cancel the agent turn if one is running
             if let conversationID = kernel?.conversations?.selectedConversationID {
                 kernel?.agentTurnRunner?.cancelTurn(in: conversationID)
-            }
-            // Clear any pending status message
-            if let conversationID = kernel?.conversations?.selectedConversationID,
-               let statusID = statusMessageIDByConversation[conversationID] {
-                kernel?.messageManager?.deleteMessage(id: statusID, in: conversationID)
-                statusMessageIDByConversation[conversationID] = nil
             }
             if Self.verbose {
                 Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ isSending -> false, turn cancelled")

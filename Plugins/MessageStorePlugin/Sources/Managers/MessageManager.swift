@@ -36,9 +36,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// Load messages for a conversation from store
     public func loadMessages(for conversationID: UUID) {
         guard let store else {
-            if Self.verbose {
-                Self.logger.warning("\(Self.t)Store not available")
-            }
+            Self.logger.error("\(Self.t)Store not available")
             return
         }
 
@@ -76,6 +74,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public func deleteMessage(id: UUID, in conversationID: UUID) {
         // Remove from cache
         messageCache[conversationID]?.removeAll { $0.id == id }
+
+        // Notify observers that messages changed
+        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
 
         // Delete from store async
         Task {
