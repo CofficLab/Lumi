@@ -25,7 +25,7 @@ public final class ChatKernelPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let chatService = ChatService()
         kernel.registerChat(chatService)
         if Self.verbose {

@@ -31,7 +31,7 @@ public static let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // 1. 注册 ChatSectionService（内核服务）
         let chatSectionServiceInstance = ChatSectionProvider()
         kernel.registerChatSectionService(chatSectionServiceInstance)
