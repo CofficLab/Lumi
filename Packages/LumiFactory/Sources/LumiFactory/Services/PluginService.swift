@@ -59,7 +59,6 @@ import MessageRendererPlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import PanelPlugin
-import PluginManagementPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
@@ -105,7 +104,6 @@ public enum PluginService {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
-            PluginManagementPlugin(),
             LLMProviderManagerPlugin(),
             // LLM Providers (order 91-110)
             AiRouterPlugin(),

@@ -64,7 +64,6 @@ let package = Package(
         .package(path: "../../Plugins/ThemeVoidPlugin"),
         .package(path: "../../Plugins/ThemeVscodePlugin"),
         .package(path: "../../Plugins/ThemeWinterPlugin"),
-        .package(path: "../../Plugins/PluginManagementPlugin"),
         .package(path: "../../Plugins/LLMProviderManagerPlugin"),
         // LLM Providers
         .package(path: "../../Plugins/LLMProviderAiRouterPlugin"),
@@ -169,7 +168,6 @@ let package = Package(
                 .product(name: "ThemeVoidPlugin", package: "ThemeVoidPlugin"),
                 .product(name: "ThemeWinterPlugin", package: "ThemeWinterPlugin"),
                 .product(name: "ThemeVscodePlugin", package: "ThemeVscodePlugin"),
-                .product(name: "PluginManagementPlugin", package: "PluginManagementPlugin"),
                 .product(name: "LLMProviderManagerPlugin", package: "LLMProviderManagerPlugin"),
                 // LLM Providers
                 .product(name: "LLMProviderAiRouterPlugin", package: "LLMProviderAiRouterPlugin"),
