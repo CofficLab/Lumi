@@ -26,7 +26,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onBoot(kernel: LumiKernel) throws {
         let toolManagerService = ToolManagerService()
         kernel.registerToolManagerService(toolManagerService)
 
