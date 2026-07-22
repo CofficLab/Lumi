@@ -174,15 +174,6 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     if Self.verbose {
                         Self.logger.error("\(Self.t)ToolManager 不可用")
                     }
-                    // Append error result
-                    let errorResult = LumiChatMessage(
-                        conversationID: conversationID,
-                        role: .tool,
-                        content: "Tool service not available",
-                        toolCallID: toolCall.id
-                    )
-                    kernel.messageManager?.insertMessage(errorResult, to: conversationID)
-                    postMessageSavedNotification(message: errorResult, conversationID: conversationID)
                     continue
                 }
 
@@ -196,16 +187,6 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     assistantMessageID: assistantMessage.id,
                     in: conversationID
                 )
-
-                // Append tool result as a special message
-                let toolResultMessage = LumiChatMessage(
-                    conversationID: conversationID,
-                    role: .tool,
-                    content: result.content,
-                    toolCallID: toolCall.id
-                )
-                kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)
-                postMessageSavedNotification(message: toolResultMessage, conversationID: conversationID)
 
                 if Self.verbose {
                     Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name), isError=\(result.isError)")
