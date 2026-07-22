@@ -25,7 +25,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let layoutService = LayoutService()
         kernel.registerLayout(layoutService)
         if Self.verbose {

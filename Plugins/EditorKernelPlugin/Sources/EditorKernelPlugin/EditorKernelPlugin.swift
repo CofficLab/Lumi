@@ -28,7 +28,7 @@ public static let policy: LumiPluginPolicy = .disabled  // Core plugin
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // Register the EditorService with an extension registry.
         // EditorService from the EditorService module doesn't conform to
         // EditorServiceProviding, so we use a thin adapter.

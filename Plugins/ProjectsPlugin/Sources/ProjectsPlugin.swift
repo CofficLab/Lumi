@@ -38,7 +38,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         // 1. 注册 ProjectService（内核服务）
         let projectServiceInstance = ProjectService()
         kernel.registerProject(projectServiceInstance)
