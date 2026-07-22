@@ -3,8 +3,8 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiLLMProviderSupport
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import SuperLogKit
 import os

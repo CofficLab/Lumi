@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 import SuperLogKit
-import LumiCoreMessage
+import LumiKernel
 import os
 
 // MARK: - Error

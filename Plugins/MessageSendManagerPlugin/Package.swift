@@ -18,8 +18,6 @@ let package = Package(
             name: "MessageSendManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources"

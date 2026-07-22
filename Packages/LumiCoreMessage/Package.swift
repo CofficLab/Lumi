@@ -7,9 +7,16 @@ let package = Package(
     products: [
         .library(name: "LumiCoreMessage", targets: ["LumiCoreMessage"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../LumiKernel"),
+    ],
     targets: [
-        .target(name: "LumiCoreMessage", path: "Sources"),
-        .testTarget(name: "LumiCoreMessageTests", dependencies: ["LumiCoreMessage"])
+        .target(
+            name: "LumiCoreMessage",
+            dependencies: [
+                .product(name: "LumiKernel", package: "LumiKernel"),
+            ],
+            path: "Sources"
+        )
     ]
 )

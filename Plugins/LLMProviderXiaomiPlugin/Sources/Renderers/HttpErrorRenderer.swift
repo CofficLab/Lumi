@@ -1,5 +1,5 @@
 import LumiKernel
-import LumiCoreMessage
+import LumiKernel
 
 /// 其它 HTTP 错误（非 401/403，如 429 限流、500 服务器错误等）。
 enum HttpErrorRenderer {

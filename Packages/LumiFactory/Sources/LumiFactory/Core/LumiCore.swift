@@ -1,12 +1,8 @@
 import Combine
 import Foundation
-import LumiCoreChat
 import LumiCoreLayout
-import LumiCoreLLMProvider
-import LumiCoreMessage
 import LumiCoreProject
 import LumiCoreStorage
-import LumiCoreSubAgent
 import LumiKernel
 import SwiftUI
 
@@ -108,12 +104,6 @@ public final class LumiCoreConcrete: ObservableObject, LumiCoreProviding {
 
 /// 兼容旧 API - 旧代码用 `LumiCore` 指代具体类。
 public typealias LumiCore = LumiCoreConcrete
-
-// MARK: - ChatServiceDelegate Conformance
-
-extension LumiCoreConcrete: ChatServiceDelegate {
-    public var lumiCore: (any LumiCoreProviding)? { self }
-}
 
 // MARK: - LumiCore.ChatServiceFactory type alias
 

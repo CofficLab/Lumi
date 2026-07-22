@@ -1,6 +1,6 @@
 import Foundation
 import LumiKernel
-import LumiCoreMessage
+import LumiKernel
 import SuperLogKit
 import os
 

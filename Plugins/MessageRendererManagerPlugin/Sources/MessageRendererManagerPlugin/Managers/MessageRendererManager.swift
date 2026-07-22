@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreMessage
+import LumiKernel
 import LumiKernel
 
 /// 消息渲染器管理器

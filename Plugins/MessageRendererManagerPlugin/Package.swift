@@ -20,7 +20,6 @@ let package = Package(
             name: "MessageRendererManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
             ],
             path: "Sources/MessageRendererManagerPlugin"
         )

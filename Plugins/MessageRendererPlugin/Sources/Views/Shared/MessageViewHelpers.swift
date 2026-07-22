@@ -1,4 +1,4 @@
-import LumiCoreMessage
+import LumiKernel
 import AppKit
 import LumiKernel
 import LumiUI

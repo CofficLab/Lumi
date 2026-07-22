@@ -1,12 +1,12 @@
 import Foundation
-import LumiCoreAgentTool
+
 import LumiCoreLayout
-import LumiCoreLLMProvider
+
 import LumiCoreMenuBar
-import LumiCoreMessage
+
 import LumiCoreOverlay
 import LumiCorePanelChrome
-import LumiCoreSubAgent
+
 import SwiftUI
 
 /// Lumi 插件协议

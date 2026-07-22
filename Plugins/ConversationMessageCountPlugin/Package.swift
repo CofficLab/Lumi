@@ -21,7 +21,6 @@ let package = Package(
             name: "ConversationMessageCountPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources/ConversationMessageCountPlugin"

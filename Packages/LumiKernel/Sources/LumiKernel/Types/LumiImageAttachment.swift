@@ -1,5 +1,20 @@
 import Foundation
-import LumiCoreMessage
 
-/// 图片附件
-public typealias LumiImageAttachment = LumiCoreMessage.LumiImageAttachment
+public struct LumiImageAttachment: Identifiable, Codable, Equatable, Sendable {
+    public let id: UUID
+    public let mimeType: String
+    public let base64Data: String
+    public let fileName: String?
+
+    public init(
+        id: UUID = UUID(),
+        mimeType: String,
+        base64Data: String,
+        fileName: String? = nil
+    ) {
+        self.id = id
+        self.mimeType = mimeType
+        self.base64Data = base64Data
+        self.fileName = fileName
+    }
+}

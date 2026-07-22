@@ -1,5 +1,5 @@
 import LumiKernel
-import LumiCoreMessage
+import LumiKernel
 
 /// 403 禁止访问：权限不足或 Key 无权访问该模型。
 enum Http403Renderer {

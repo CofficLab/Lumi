@@ -22,7 +22,6 @@ let package = Package(
             name: "ConversationInputPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

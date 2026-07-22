@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LLMKit
 import LumiLLMProviderSupport
 enum AvailabilityService {

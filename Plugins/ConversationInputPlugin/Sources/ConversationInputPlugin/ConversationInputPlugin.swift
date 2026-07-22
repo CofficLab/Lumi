@@ -1,4 +1,4 @@
-import LumiCoreChat
+import LumiKernel
 import LumiKernel
 import LumiUI
 import SuperLogKit

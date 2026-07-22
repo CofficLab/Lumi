@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreAgentTool
+import LumiKernel
 
 public struct WriteFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(

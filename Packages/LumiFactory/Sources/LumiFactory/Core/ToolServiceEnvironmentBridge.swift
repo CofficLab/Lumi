@@ -1,7 +1,7 @@
 import Foundation
-import LumiCoreAgentTool
-import LumiCoreChat
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import LumiKernel
 
 /// ToolService 运行时环境桥接器（LumiFactory 内部使用）

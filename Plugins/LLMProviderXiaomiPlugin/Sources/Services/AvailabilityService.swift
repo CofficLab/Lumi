@@ -1,13 +1,13 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import LumiLLMProviderSupport
 
 // Type aliases to disambiguate between LumiCoreMessage and LumiCoreLLMProvider types
-typealias F = LumiCoreMessage.LumiLLMFailureDetail
+typealias F = LumiLLMFailureDetail
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXiaomiPlugin")

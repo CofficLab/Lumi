@@ -8,20 +8,15 @@ let package = Package(
         .library(name: "LumiCoreSubAgent", targets: ["LumiCoreSubAgent"])
     ],
     dependencies: [
-        .package(path: "../LumiCoreMessage"),
-        .package(path: "../LumiCoreAgentTool"),
-        .package(path: "../LumiCoreLLMProvider"),
+        .package(path: "../LumiKernel"),
     ],
     targets: [
         .target(
             name: "LumiCoreSubAgent",
             dependencies: [
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
-                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
             ],
             path: "Sources"
-        ),
-        .testTarget(name: "LumiCoreSubAgentTests", dependencies: ["LumiCoreSubAgent"])
+        )
     ]
 )

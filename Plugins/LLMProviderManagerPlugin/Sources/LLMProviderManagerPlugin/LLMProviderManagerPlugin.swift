@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreLLMProvider
+import LumiKernel
 import LumiKernel
 import SuperLogKit
 import os

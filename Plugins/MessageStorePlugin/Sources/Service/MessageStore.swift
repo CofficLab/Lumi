@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreMessage
+import LumiKernel
 import os
 import SuperLogKit
 import SwiftData

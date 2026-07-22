@@ -1,5 +1,5 @@
 import LumiKernel
-import LumiCoreMessage
+import LumiKernel
 
 enum Http401Renderer {
     private static let pluginOrder = 104 // MiniMaxPlugin.order

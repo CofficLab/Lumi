@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LumiKernel
 
 final class ChunkCounter: @unchecked Sendable {

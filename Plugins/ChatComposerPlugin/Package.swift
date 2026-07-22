@@ -23,7 +23,6 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
             ],
             path: "Sources"
         ),

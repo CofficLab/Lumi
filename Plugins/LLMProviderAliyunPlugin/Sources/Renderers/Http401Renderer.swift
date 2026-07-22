@@ -1,4 +1,4 @@
-import LumiCoreMessage
+import LumiKernel
 import LumiKernel
 
 private let rendererOrder = 305

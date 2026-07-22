@@ -1,11 +1,5 @@
 import Foundation
-import LumiCoreAgentTool
-import LumiCoreChat
 import LumiCoreLayout
-import LumiCoreLLMProvider
-import LumiCoreMessage
-import LumiCoreProject
-import LumiCoreStorage
 import LumiKernel
 
 // MARK: - LumiCoreProviding extension for makePluginContext

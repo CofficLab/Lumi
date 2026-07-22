@@ -1,12 +1,12 @@
 import Foundation
-import LumiCoreAgentTool
+import LumiKernel
 import LumiCoreLayout
-import LumiCoreLLMProvider
+import LumiKernel
 import LumiCoreMenuBar
-import LumiCoreMessage
+import LumiKernel
 import LumiCoreOverlay
 import LumiCorePanelChrome
-import LumiCoreSubAgent
+import LumiKernel
 import LumiKernel
 import LumiUI
 import WorkspaceStatePlugin

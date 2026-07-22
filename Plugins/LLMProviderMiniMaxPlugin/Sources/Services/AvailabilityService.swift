@@ -1,15 +1,15 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import LumiLLMProviderSupport
 
 // MARK: - AvailabilityService
 
 // Type alias to disambiguate (no access control for enum methods compatibility)
-typealias FailureDetail = LumiCoreMessage.LumiLLMFailureDetail
+typealias FailureDetail = LumiLLMFailureDetail
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderMiniMax")

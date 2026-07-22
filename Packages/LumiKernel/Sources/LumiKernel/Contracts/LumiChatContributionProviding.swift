@@ -1,6 +1,6 @@
 import Foundation
-import LumiCoreLLMProvider
-import LumiCoreMessage
+
+
 
 /// Chat 贡献协议 (LumiCoreChat 消费版本)
 ///

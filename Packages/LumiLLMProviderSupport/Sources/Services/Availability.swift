@@ -1,8 +1,8 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 
 enum LumiLLMProviderAvailabilitySupport {
     static let pingMaxTokens = 1

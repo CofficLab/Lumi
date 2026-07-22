@@ -30,9 +30,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
-                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
-                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
             ],
             path: "Sources",
             resources: [

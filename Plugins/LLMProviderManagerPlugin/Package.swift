@@ -17,7 +17,6 @@ let package = Package(
             name: "LLMProviderManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources"

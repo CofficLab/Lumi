@@ -1,4 +1,4 @@
-import LumiCoreMessage
+import LumiKernel
 import LumiLocalizationKit
 import SwiftUI
 

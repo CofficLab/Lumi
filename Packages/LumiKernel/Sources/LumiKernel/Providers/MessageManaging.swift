@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreMessage
+
 
 /// 消息管理能力协议
 ///

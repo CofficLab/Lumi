@@ -23,7 +23,6 @@ let package = Package(
             name: "ModelSelectorPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreLLMProvider", package: "LumiCoreLLMProvider"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

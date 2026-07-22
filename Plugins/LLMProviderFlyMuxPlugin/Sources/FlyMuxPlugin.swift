@@ -1,5 +1,5 @@
 import LLMKit
-import LumiCoreLLMProvider
+import LumiKernel
 import LumiKernel
 import LumiUI
 

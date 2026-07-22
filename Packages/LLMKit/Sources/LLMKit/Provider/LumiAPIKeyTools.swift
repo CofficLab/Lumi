@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreLLMProvider
+import LumiKernel
 
 /// API Key 管理工具集
 ///

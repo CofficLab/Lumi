@@ -1,9 +1,6 @@
 import Foundation
 import HttpKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
-
-public typealias LumiLLMFailureDetail = LumiCoreMessage.LumiLLMFailureDetail
+import LumiKernel
 
 public enum LumiLLMFailureDetailResolver {
     public static func resolve(from error: Error, locale: Locale = .current) -> LumiLLMFailureDetail {

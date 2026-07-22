@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreAgentTool
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 enum LumiLLMRequestMessages {
     static func preparedForProvider(_ request: LumiLLMRequest) -> [LLMKit.ChatMessage] {

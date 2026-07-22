@@ -1,8 +1,8 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 
 public enum ErrorDispositionResolver {
     public static func disposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {

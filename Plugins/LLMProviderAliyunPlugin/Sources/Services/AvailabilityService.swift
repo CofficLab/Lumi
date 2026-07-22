@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreMessage
+import LumiKernel
 import LumiLLMProviderSupport
 import LumiKernel
 

@@ -1,6 +1,6 @@
 import Foundation
-import LumiCoreAgentTool
-import LumiCoreChat
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import Testing
 @testable import ChatPanelPlugin

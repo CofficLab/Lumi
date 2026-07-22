@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import LumiCoreMessage
+import LumiKernel
 
 /// SwiftData model for conversations
 ///

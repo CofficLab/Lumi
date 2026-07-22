@@ -42,7 +42,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
-                .product(name: "LumiCoreChat", package: "LumiCoreChat"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),

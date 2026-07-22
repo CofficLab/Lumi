@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreSubAgent
+import LumiKernel
 import LumiKernel
 
 /// 文档生成子Agent

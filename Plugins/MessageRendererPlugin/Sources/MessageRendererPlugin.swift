@@ -1,6 +1,6 @@
-import LumiCoreChat
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import LumiUI
 import SwiftUI

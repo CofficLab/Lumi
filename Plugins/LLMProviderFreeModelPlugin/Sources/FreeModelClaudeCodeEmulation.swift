@@ -1,6 +1,6 @@
 import CryptoKit
 import Foundation
-import LumiCoreMessage
+import LumiKernel
 import LumiKernel
 
 /// 按 Claude Code 源码模拟 Anthropic 网关请求（独立实现，不与 Zhipu 共享）。

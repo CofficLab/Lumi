@@ -1,4 +1,4 @@
-import LumiCoreMessage
+import LumiKernel
 import LumiKernel
 
 /// 小米供应商错误消息的渲染类型判定。

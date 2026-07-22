@@ -1,9 +1,9 @@
 import AgentToolKit
 import Foundation
 import LLMKit
-import LumiCoreChat
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import LumiKernel
 import LumiLLMProviderSupport
 
@@ -67,7 +67,8 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         guard isAppleSiliconMac else {
             return LumiLLMProviderStatus(
                 message: "MLX 仅支持 Apple Silicon Mac",
-                level: .error
+                level: .error,
+                isBlocking: false
             )
         }
         return nil

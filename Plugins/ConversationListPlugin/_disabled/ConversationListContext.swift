@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import LumiKernel
-import LumiCoreChat
+import LumiKernel
 import LumiCoreProject
 
 @MainActor

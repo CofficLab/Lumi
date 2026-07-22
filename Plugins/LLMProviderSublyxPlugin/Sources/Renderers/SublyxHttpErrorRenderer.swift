@@ -1,5 +1,5 @@
 import LumiKernel
-import LumiCoreMessage
+import LumiKernel
 import LLMKit
 import SwiftUI
 

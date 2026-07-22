@@ -1,4 +1,4 @@
-import LumiCoreChat
+import LumiKernel
 import LumiCoreLayout
 import LumiKernel
 import LumiUI

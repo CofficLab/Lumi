@@ -36,4 +36,8 @@ public enum LumiLanguagePreference: String, Sendable, Equatable, CaseIterable {
         case .english: en
         }
     }
+
+    public var iconName: String {
+        "character.book.closed"
+    }
 }

@@ -1,7 +1,7 @@
 import Foundation
 import LLMKit
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 
 public enum LumiVisionMessageSupport {
     public static func preparedMessages(for request: LumiLLMRequest) -> [ChatMessage] {

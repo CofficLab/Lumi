@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreAgentTool
+import LumiKernel
 
 public struct ListDirectoryTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(

@@ -26,7 +26,6 @@ let package = Package(
             name: "ToolCorePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiCoreAgentTool", package: "LumiCoreAgentTool"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "FileSystemKit", package: "FileSystemKit"),

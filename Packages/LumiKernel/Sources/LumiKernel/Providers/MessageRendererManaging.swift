@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreMessage
+
 
 /// 消息渲染器注册服务
 ///

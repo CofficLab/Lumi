@@ -1,5 +1,5 @@
 import LumiKernel
-import LumiCoreChat
+import LumiKernel
 import LumiCoreProject
 import LumiUI
 import SwiftUI

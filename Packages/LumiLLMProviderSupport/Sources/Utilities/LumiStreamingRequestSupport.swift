@@ -1,10 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreAgentTool
-import LumiCoreChat
-import LumiCoreLLMProvider
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 /// 流式请求处理工具函数
 ///

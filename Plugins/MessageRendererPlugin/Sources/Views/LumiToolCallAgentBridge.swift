@@ -1,7 +1,7 @@
 import AgentToolKit
 import Foundation
-import LumiCoreChat
-import LumiCoreMessage
+import LumiKernel
+import LumiKernel
 import LumiKernel
 
 extension LumiToolCall {
@@ -25,13 +25,13 @@ extension LumiToolCall {
 }
 
 extension LumiChatMessage {
-    func decodedImageAttachments() -> [LumiCoreMessage.LumiImageAttachment] {
+    func decodedImageAttachments() -> [LumiImageAttachment] {
         guard metadata["hasImages"] == "true",
               let json = metadata["imageAttachments"],
               let data = json.data(using: .utf8) else {
             return []
         }
-        return (try? JSONDecoder().decode([LumiCoreMessage.LumiImageAttachment].self, from: data)) ?? []
+        return (try? JSONDecoder().decode([LumiImageAttachment].self, from: data)) ?? []
     }
 
     var userImageData: [Data] {

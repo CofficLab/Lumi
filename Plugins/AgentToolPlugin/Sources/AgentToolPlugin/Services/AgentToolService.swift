@@ -1,7 +1,7 @@
 import Foundation
-import LumiCoreAgentTool
-import LumiCoreMessage
-import LumiCoreSubAgent
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import LumiKernel
 
 /// Agent 工具服务实现
