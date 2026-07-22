@@ -81,9 +81,46 @@ public final class ToolManagerService: ToolManaging {
         default: return .null
         }
     }
-}
 
-// MARK: - Errors
+    // MARK: - Argument Decoding
+
+    private static func decodeArguments(_ json: String) throws -> [String: LumiJSONValue] {
+        guard let data = json.data(using: .utf8), !data.isEmpty else { return [:] }
+        return try JSONDecoder().decode([String: LumiJSONValue].self, from: data)
+    }
+
+    // MARK: - ToolManaging Execution
+
+    public func tool(named name: String) -> (any LumiAgentTool)? {
+        registeredTools[name]
+    }
+
+    public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
+        guard let tool = registeredTools[toolCall.name] else {
+            return LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
+        }
+
+        let startedAt = Date()
+        do {
+            let arguments = try Self.decodeArguments(toolCall.arguments)
+            let output = try await tool.execute(arguments: arguments, context: LumiToolExecutionContext(
+                conversationID: conversationID,
+                toolCallID: toolCall.id,
+                toolName: toolCall.name
+            ))
+            let duration = Date().timeIntervalSince(startedAt)
+            return LumiToolResult(content: output, duration: duration)
+        } catch {
+            return LumiToolResult(
+                content: "Tool execution failed: \(error.localizedDescription)",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Errors
+}
 
 /// Agent 工具错误
 public enum AgentToolError: Error, LocalizedError {

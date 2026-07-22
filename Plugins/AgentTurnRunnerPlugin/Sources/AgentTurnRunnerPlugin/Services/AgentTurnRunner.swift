@@ -20,7 +20,7 @@ import SuperLogKit
 /// - `.lumiTurnCompleted` when turn ends normally (completed)
 /// - `.lumiTurnFinished` when turn ends (any reason)
 @MainActor
-public final class AgentTurnRunnerService: AgentTurnRunning, SuperLog {
+public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
     nonisolated static let verbose = true
