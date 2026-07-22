@@ -26,7 +26,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 功能插件
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         guard Self.policy.shouldRegister else { return }
         // 注册主视图容器（order 自动从插件继承）
         kernel.viewContainer?.register(
