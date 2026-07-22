@@ -178,6 +178,73 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             await store?.deleteAllMessages(conversationId: conversationID)
         }
     }
+
+    // MARK: - Tool Call Result Update
+
+    public func updateToolCallResult(
+        _ result: LumiToolResult,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        in conversationID: UUID
+    ) {
+        guard let index = messageCache[conversationID]?.firstIndex(where: { $0.id == assistantMessageID }) else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)updateToolCallResult: message \(assistantMessageID) not found")
+            }
+            return
+        }
+
+        let old = messageCache[conversationID]![index]
+        guard var toolCalls = old.toolCalls else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)updateToolCallResult: message has no toolCalls")
+            }
+            return
+        }
+
+        // Update the specific tool call's result
+        for i in toolCalls.indices {
+            if toolCalls[i].id == toolCallID {
+                toolCalls[i].result = result
+                break
+            }
+        }
+
+        // Rebuild the message with updated toolCalls
+        let updatedMessage = LumiChatMessage(
+            id: old.id,
+            conversationID: old.conversationID,
+            role: old.role,
+            content: old.content,
+            createdAt: old.createdAt,
+            providerID: old.providerID,
+            modelName: old.modelName,
+            isError: old.isError,
+            rawErrorDetail: old.rawErrorDetail,
+            renderKind: old.renderKind,
+            metadata: old.metadata,
+            toolCalls: toolCalls,
+            toolCallID: old.toolCallID,
+            reasoningContent: old.reasoningContent,
+            inputTokenCount: old.inputTokenCount,
+            outputTokenCount: old.outputTokenCount,
+            latencyMs: old.latencyMs,
+            timeToFirstTokenMs: old.timeToFirstTokenMs,
+            streamingDurationMs: old.streamingDurationMs
+        )
+
+        messageCache[conversationID]![index] = updatedMessage
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateToolCallResult: updated toolCall \(toolCallID) in message \(assistantMessageID)")
+        }
+
+        // Notify UI to refresh
+        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+
+        // Note: Store persistence for tool call result updates can be optimized later.
+        // The cache is the primary source of truth for UI rendering.
+    }
 }
 
 // MARK: - Notification
