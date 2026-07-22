@@ -10,7 +10,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         kernel.theme?.registerTheme(
             LumiUIThemeContribution(
                 appTheme: NebulaTheme(),
