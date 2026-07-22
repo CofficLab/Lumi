@@ -23,7 +23,7 @@ public final class MessageRendererManagerPlugin: LumiPlugin {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
 
         if Self.verbose {

@@ -32,7 +32,7 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let service = MessageSender(kernel: kernel)
         kernel.registerMessageSend(service)
         if Self.verbose {

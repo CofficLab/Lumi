@@ -31,7 +31,7 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let service = AgentTurnRunner(kernel: kernel)
         kernel.registerAgentTurnRunnerService(service)
         if Self.verbose {
