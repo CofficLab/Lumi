@@ -189,6 +189,26 @@ public final class ConversationService: ConversationManaging {
         conversations[index].verbosity = verbosity
         try? saveConversations()
     }
+
+    // MARK: - Automation Level
+
+    public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
+        guard let conversationID else {
+            return .build
+        }
+        return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
+    }
+
+    public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].automationLevel = automationLevel
+        try? saveConversations()
+    }
 }
 
 // MARK: - State

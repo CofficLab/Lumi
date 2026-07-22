@@ -229,6 +229,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    // MARK: - Automation Level
+
+    public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
+        guard let conversationID else {
+            return .build
+        }
+        return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
+    }
+
+    public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].automationLevel = automationLevel
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setAutomationLevel: conversation=\(conversationID.uuidString.prefix(8)), level=\(automationLevel.rawValue)")
+        }
+    }
+
     // MARK: - Private
 
     private func updateCurrentTitle() {

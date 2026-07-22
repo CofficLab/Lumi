@@ -107,6 +107,7 @@ let package = Package(
         .package(path: "../../Plugins/InputPlugin"),
         .package(path: "../../Plugins/MenuBarManagerPlugin"),
         .package(path: "../../Plugins/VerbosityPlugin"),
+        .package(path: "../../Plugins/ChatModePlugin"),
     ],
     targets: [
         .target(
@@ -211,6 +212,7 @@ let package = Package(
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
                 .product(name: "VerbosityPlugin", package: "VerbosityPlugin"),
+                .product(name: "ChatModePlugin", package: "ChatModePlugin"),
             ],
             resources: [
                 .process("Resources")

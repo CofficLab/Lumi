@@ -50,4 +50,12 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的详细程度
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
+
+    // MARK: - Automation Level
+
+    /// 获取指定对话的自动化程度
+    func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel
+
+    /// 设置指定对话的自动化程度
+    func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?)
 }
