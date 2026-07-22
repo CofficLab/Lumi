@@ -274,6 +274,7 @@
       }
     },
     "Tool Core" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
