@@ -1,6 +1,6 @@
 import Foundation
 import LumiKernel
-import AgentToolPlugin
+import ToolManagerPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
 import ChatKernelPlugin
@@ -134,7 +134,7 @@ public enum PluginService {
             PanelPlugin(),
             TitleToolbarPlugin(),
             ProjectsPlugin(),
-            AgentToolPlugin(),
+            ToolManagerPlugin(),
             ToolCorePlugin(),
             LayoutKernelPlugin(),
             EditorKernelPlugin(),

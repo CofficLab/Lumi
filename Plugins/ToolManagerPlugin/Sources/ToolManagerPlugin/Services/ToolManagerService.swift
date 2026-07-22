@@ -6,7 +6,7 @@ import LumiKernel
 
 /// Agent 工具服务实现
 @MainActor
-public final class AgentToolService: ToolManaging {
+public final class ToolManagerService: ToolManaging {
 
     /// 已注册的工具
     private var registeredTools: [String: any LumiAgentTool] = [:]

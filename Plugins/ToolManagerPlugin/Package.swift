@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentToolPlugin",
+    name: "ToolManagerPlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "AgentToolPlugin", targets: ["AgentToolPlugin"]),
+        .library(name: "ToolManagerPlugin", targets: ["ToolManagerPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -13,7 +13,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AgentToolPlugin",
+            name: "ToolManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

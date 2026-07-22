@@ -7,7 +7,7 @@ import os
 public final class ToolCorePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.tool-core"
     public let name = "Tool Core"
-    public let order = 35  // After AgentToolPlugin (order = 30)
+    public let order = 35  // After ToolManagerPlugin (order = 30)
     public static let policy: LumiPluginPolicy = .alwaysOn
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-core")
@@ -16,9 +16,9 @@ public final class ToolCorePlugin: LumiPlugin {
     public init() {}
 
     public func register(kernel: LumiKernel) throws {
-        // Register tools via kernel.agentTool (AgentToolService)
-        guard let agentTool = kernel.agentTool else {
-            Self.logger.error("ToolCorePlugin.register: kernel.agentTool is nil")
+        // Register tools via kernel.toolManager (AgentToolService)
+        guard let agentTool = kernel.toolManager else {
+            Self.logger.error("ToolCorePlugin.register: kernel.toolManager is nil")
             return
         }
 

@@ -31,8 +31,8 @@ public static let policy: LumiPluginPolicy = .disabled
         )
 
         // 注册 AgentTools
-        kernel.agentTool?.add(GetCurrentFileTool())
-        kernel.agentTool?.add(SetCurrentFileTool())
+        kernel.toolManager?.add(GetCurrentFileTool())
+        kernel.toolManager?.add(SetCurrentFileTool())
     }
 
     public func boot(kernel: LumiKernel) async throws {}

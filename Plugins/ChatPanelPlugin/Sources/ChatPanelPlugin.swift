@@ -34,9 +34,9 @@ public final class ChatPanelPlugin: LumiPlugin {
     // MARK: - Status Bar
 
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        // Read tools from kernel.agentTool (AgentToolService)
-        let tools = kernel.agentTool?.allAgentTools() ?? []
-        print("ChatPanelPlugin.statusBarItems: kernel.agentTool = \(String(describing: kernel.agentTool)), tools count = \(tools.count)")
+        // Read tools from kernel.toolManager (AgentToolService)
+        let tools = kernel.toolManager?.allAgentTools() ?? []
+        print("ChatPanelPlugin.statusBarItems: kernel.toolManager = \(String(describing: kernel.toolManager)), tools count = \(tools.count)")
         return [
             StatusBarItem(
                 id: "\(id).tools",

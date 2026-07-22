@@ -89,9 +89,9 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
         )
 
         // 6. 注册 Agent 工具
-        kernel.agentTool?.add(ListProjectsTool())
-        kernel.agentTool?.add(AddProjectTool())
-        kernel.agentTool?.add(GetCurrentProjectTool())
+        kernel.toolManager?.add(ListProjectsTool())
+        kernel.toolManager?.add(AddProjectTool())
+        kernel.toolManager?.add(GetCurrentProjectTool())
 
         // 7. 注册发送中间件
         kernel.sendMiddleware?.registerSendMiddleware(ConversationHintMiddleware(), id: "\(id).middleware")

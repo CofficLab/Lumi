@@ -138,7 +138,7 @@ public final class MessageSendManager: MessageSendManaging, SuperLog {
             throw LumiKernelError.llmProviderUnavailable
         }
         let model = kernel.llmProvider?.selectedModel ?? type(of: provider).info.defaultModel
-        let tools = kernel.agentTool?.allAgentTools() ?? []
+        let tools = kernel.toolManager?.allAgentTools() ?? []
         let request = LumiLLMRequest(messages: history, model: model, tools: tools)
         if Self.verbose {
             Self.logger.info("\(Self.t)sendMessage ➡️ 调 LLM provider, model=\(model), messages=\(history.count), tools=\(tools.count)")

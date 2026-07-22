@@ -37,7 +37,7 @@ public final class PluginManagementPlugin: LumiPlugin, SuperLog {
         pluginServiceInstance.kernel = kernel
         kernel.registerPluginService(pluginServiceInstance)
         // 2. 同一个实例还充当多个 Provider 服务的实现
-        kernel.registerAgentToolService(pluginServiceInstance)
+        kernel.registerToolManagerService(pluginServiceInstance)
         kernel.registerChatContributionService(pluginServiceInstance)
         // 主题贡献由 UIThemeProviding 收集,通过 LumiKernel.plugin 访问
         // （不需要单独注册 ThemeProviding,因为 LumiKernel 自身从 plugin 读取）

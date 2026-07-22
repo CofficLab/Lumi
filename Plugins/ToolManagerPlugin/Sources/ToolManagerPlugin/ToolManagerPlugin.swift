@@ -5,9 +5,9 @@ import os
 
 /// Agent 工具插件
 ///
-/// 向 LumiKernel 注册 AgentTool 服务。
+/// 向 LumiKernel 注册 ToolManager 服务。
 @MainActor
-public final class AgentToolPlugin: LumiPlugin, SuperLog {
+public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-tool")
     nonisolated public static let emoji = "🔧"
     nonisolated static let verbose = false
@@ -15,7 +15,7 @@ public final class AgentToolPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.agent-tool"
-    public let name = "AgentTool Plugin"
+    public let name = "ToolManager Plugin"
     public let order = 30
     public static let policy: LumiPluginPolicy = .alwaysOn
 
@@ -26,10 +26,10 @@ public final class AgentToolPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func register(kernel: LumiKernel) throws {
-        let agentToolService = AgentToolService()
-        kernel.registerAgentToolService(agentToolService)
+        let agentToolService = ToolManagerService()
+        kernel.registerToolManagerService(agentToolService)
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 AgentTool 服务")
+            Self.logger.info("\(Self.t)已注册 ToolManager 服务")
         }
     }
 
