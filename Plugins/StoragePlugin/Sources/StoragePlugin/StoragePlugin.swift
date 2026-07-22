@@ -39,7 +39,7 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件，最先
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onBoot(kernel: LumiKernel) throws {
         let storage = StorageService(dataRootDirectory: dataRootDirectory)
         kernel.registerStorage(storage)
         if Self.verbose {
