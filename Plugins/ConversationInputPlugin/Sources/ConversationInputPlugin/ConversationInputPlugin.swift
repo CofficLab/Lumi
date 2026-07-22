@@ -35,7 +35,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         if Self.verbose {
             Self.logger.info("\(Self.t)register ➡️ kernel=\(String(describing: ObjectIdentifier(kernel)))")
         }

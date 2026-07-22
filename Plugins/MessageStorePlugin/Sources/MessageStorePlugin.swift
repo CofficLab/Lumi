@@ -12,7 +12,7 @@ public final class MessageStorePlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {
+    public func onReady(kernel: LumiKernel) throws {
         let manager = MessageManager(kernel: kernel)
         kernel.registerMessageManager(manager)
     }
