@@ -169,6 +169,26 @@ public final class ConversationService: ConversationManaging {
         conversations[index].modelName = model
         try? saveConversations()
     }
+
+    // MARK: - Verbosity
+
+    public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+        guard let conversationID else {
+            return .detailed
+        }
+        return conversations.first { $0.id == conversationID }?.verbosity ?? .detailed
+    }
+
+    public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].verbosity = verbosity
+        try? saveConversations()
+    }
 }
 
 // MARK: - State

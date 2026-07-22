@@ -42,4 +42,12 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的 Provider 和 Model
     func selectProvider(id: String, model: String?, for conversationID: UUID?)
+
+    // MARK: - Verbosity
+
+    /// 获取指定对话的详细程度
+    func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity
+
+    /// 设置指定对话的详细程度
+    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
 }

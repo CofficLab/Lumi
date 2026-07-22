@@ -206,6 +206,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    // MARK: - Verbosity
+
+    public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+        guard let conversationID else {
+            return .detailed
+        }
+        return conversations.first { $0.id == conversationID }?.verbosity ?? .detailed
+    }
+
+    public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].verbosity = verbosity
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
+        }
+    }
+
     // MARK: - Private
 
     private func updateCurrentTitle() {
