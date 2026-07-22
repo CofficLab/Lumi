@@ -46,7 +46,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
     }
 
     init(
-        pluginService: PluginManaging,
+        pluginService: PluginRegistry,
         themeRegistry: LumiUIThemeRegistry = .shared
     ) {
         if Self.verbose {
@@ -98,7 +98,7 @@ final class EditorCoreService: LumiEditorServicing, SuperLog {
 
     private static func registerEditorExtensions(
         into registry: EditorExtensionRegistry,
-        pluginService: PluginManaging
+        pluginService: PluginRegistry
     ) async {
         registry.uninstallAll()
 
