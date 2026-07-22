@@ -17,7 +17,7 @@ public static let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws {}
+    public func onReady(kernel: LumiKernel) throws {}
 
     public func boot(kernel: LumiKernel) async throws {}
 }
