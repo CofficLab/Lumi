@@ -13,7 +13,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
