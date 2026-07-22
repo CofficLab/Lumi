@@ -4,14 +4,14 @@ import SuperLogKit
 import SwiftUI
 import os
 
-/// 输入框视图（仅 UI 展示）
+/// 输入框视图
 struct ConversationInputView: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-input.view")
     nonisolated static let verbose = true
 
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
-    @State private var text: String = ""
+    @ObservedObject var inputState: InputState
     @State private var errorMessage: String?
 
     /// 当前是否在向内核发送中
@@ -30,7 +30,7 @@ struct ConversationInputView: View, SuperLog {
                 .padding(.bottom, 4)
             }
 
-            TextField("Send a message...", text: $text)
+            TextField("Send a message...", text: $inputState.text)
                 .textFieldStyle(.plain)
                 .font(.body)
                 .foregroundColor(theme.textPrimary)
@@ -45,14 +45,14 @@ struct ConversationInputView: View, SuperLog {
     }
 
     private func send() {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = inputState.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard let messageSend = kernel.messageSend else {
             errorMessage = "Message service is not available"
             return
         }
 
-        text = ""
+        inputState.text = ""
         errorMessage = nil
 
         Task { @MainActor in

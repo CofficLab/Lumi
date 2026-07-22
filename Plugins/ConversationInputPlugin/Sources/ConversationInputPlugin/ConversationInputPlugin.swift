@@ -1,5 +1,4 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -7,7 +6,7 @@ import os
 
 /// Conversation Input Plugin
 ///
-/// 向 Chat 区域底部添加一个输入框（仅 UI 展示，尚未接入发送逻辑）。
+/// 向 Chat 区域添加输入框和发送按钮。
 @MainActor
 public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-input")
@@ -20,6 +19,11 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     public let name = "Conversation Input"
     public let order = 83
     public static let policy: LumiPluginPolicy = .optOut
+
+    // MARK: - 内部状态
+
+    /// 输入状态（供输入视图和发送按钮共享）
+    let inputState = InputState()
 
     // MARK: - Initialization
 
@@ -54,7 +58,17 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView(kernel: kernel)
+                ConversationInputView(kernel: kernel, inputState: self.inputState)
+            }
+        ]
+    }
+
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
+        [
+            ChatSectionActionBarItem(
+                id: "\(id).send-button"
+            ) {
+                SendButtonView(kernel: kernel, inputState: self.inputState)
             }
         ]
     }
