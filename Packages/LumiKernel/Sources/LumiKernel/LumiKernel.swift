@@ -24,8 +24,8 @@ public final class LumiKernelContainer: ObservableObject {
     // MARK: - Service Accessors (Protocol Types)
 
     /// Plugin management service
-    public var plugin: (any PluginProviding)? {
-        resolveService(PluginProviding.self)
+    public var plugin: (any PluginManaging)? {
+        resolveService(PluginManaging.self)
     }
 
     /// LumiCore service (storage, project, layout, logo, toolManager, chat, editor)
@@ -208,8 +208,8 @@ public final class LumiKernelContainer: ObservableObject {
     // MARK: - Service Registration
 
     /// Register plugin management service
-    public func registerPluginService(_ plugin: any PluginProviding) {
-        registerService(PluginProviding.self, plugin)
+    public func registerPluginService(_ plugin: any PluginManaging) {
+        registerService(PluginManaging.self, plugin)
     }
 
     /// Register LumiCore service

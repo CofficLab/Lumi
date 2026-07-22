@@ -20,7 +20,7 @@ import SwiftUI
 /// `LLMProviderProviding` 由独立的 `LLMProviderManagerPlugin` 实现,
 /// 不再在本类中聚合。
 @MainActor
-public final class PluginManagerProvider: PluginProviding, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
+public final class PluginManagerProvider: PluginManaging, ToolManaging, ChatContributionProviding, LumiChatContributionProviding, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -61,7 +61,11 @@ public final class PluginManagerProvider: PluginProviding, ToolManaging, ChatCon
 
     // MARK: - PluginProviding
 
-    public func registerPlugin(_ plugin: LumiPlugin) throws {
+    public func registerPlugin(_ plugin: LumiPlugin, kernel: LumiKernel) throws {
+        self.kernel = kernel
+        // 调用插件的 register 方法
+        try plugin.register(kernel: kernel)
+        // 存储插件实例
         if plugins[plugin.id] == nil {
             pluginOrder.append(plugin.id)
         }
@@ -69,9 +73,11 @@ public final class PluginManagerProvider: PluginProviding, ToolManaging, ChatCon
         updateSortedPlugins()
     }
 
-    public func registerPlugins(_ plugins: [LumiPlugin]) throws {
-        for plugin in plugins {
-            try registerPlugin(plugin)
+    public func registerPlugins(_ plugins: [LumiPlugin], kernel: LumiKernel) throws {
+        // 按 order 排序后逐个注册
+        let sortedPlugins = plugins.sorted { $0.order < $1.order }
+        for plugin in sortedPlugins {
+            try registerPlugin(plugin, kernel: kernel)
         }
     }
 

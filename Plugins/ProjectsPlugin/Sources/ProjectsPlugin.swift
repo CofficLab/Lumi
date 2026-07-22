@@ -89,12 +89,18 @@ public static let policy: LumiPluginPolicy = .disabled  // 核心插件
         )
 
         // 6. 注册 Agent 工具
-        kernel.toolManager?.add(ListProjectsTool())
-        kernel.toolManager?.add(AddProjectTool())
-        kernel.toolManager?.add(GetCurrentProjectTool())
+        guard let toolManager = kernel.toolManager else {
+            throw ProjectsPluginError.toolManagerNotAvailable
+        }
+        toolManager.add(ListProjectsTool())
+        toolManager.add(AddProjectTool())
+        toolManager.add(GetCurrentProjectTool())
 
         // 7. 注册发送中间件
-        kernel.sendMiddleware?.registerSendMiddleware(ConversationHintMiddleware(), id: "\(id).middleware")
+        guard let sendMiddleware = kernel.sendMiddleware else {
+            throw ProjectsPluginError.sendMiddlewareNotAvailable
+        }
+        sendMiddleware.registerSendMiddleware(ConversationHintMiddleware(), id: "\(id).middleware")
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 Projects 插件到内核")

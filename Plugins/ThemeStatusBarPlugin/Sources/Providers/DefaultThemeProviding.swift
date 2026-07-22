@@ -18,7 +18,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
     private var pluginsChangedObserver: NSObjectProtocol?
 
     /// Reference to the plugin service for collecting theme contributions.
-    private weak var pluginService: PluginProviding?
+    private weak var pluginService: PluginManaging?
 
     /// Reference to the editor core service for syntax theme sync.
     private weak var editorCoreService: EditorCoreServiceType?
@@ -42,7 +42,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
 
     public init(
         themeRegistry: LumiUIThemeRegistry = .shared,
-        pluginService: PluginProviding? = nil,
+        pluginService: PluginManaging? = nil,
         editorCoreService: EditorCoreServiceType? = nil
     ) {
         self.themeRegistry = themeRegistry
@@ -82,7 +82,7 @@ public final class DefaultThemeProviding: LumiThemeServicing {
     /// but `kernel.plugin` is `nil` at that point (PluginManagementPlugin hasn't been
     /// registered yet). The plugin service is wired up in `boot(kernel:)` and the
     /// themes are reloaded then.
-    public func setPluginService(_ service: PluginProviding) {
+    public func setPluginService(_ service: PluginManaging) {
         self.pluginService = service
         if Self.verbose {
             Self.logger.info("Plugin service injected")

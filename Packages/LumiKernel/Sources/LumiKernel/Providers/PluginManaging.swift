@@ -8,7 +8,7 @@ import SwiftUI
 /// 定义 LumiCore 需要的插件管理功能，由具体布局插件实现。
 /// 负责管理所有插件的注册、启动、查询和排序。
 @MainActor
-public protocol PluginProviding: ObservableObject {
+public protocol PluginManaging: ObservableObject {
     /// 所有已注册的插件（按 order 排序）
     var allPlugins: [LumiPlugin] { get }
 
@@ -18,11 +18,19 @@ public protocol PluginProviding: ObservableObject {
     /// 按类型查询插件
     func plugin<T: LumiPlugin>(ofType type: T.Type) -> T?
 
-    /// 注册插件（内部使用，调用插件的 register 方法）
-    func registerPlugin(_ plugin: LumiPlugin) throws
+    /// 注册插件（调用插件的 register 方法并存储实例）
+    ///
+    /// - Parameters:
+    ///   - plugin: 要注册的插件
+    ///   - kernel: LumiKernel 实例
+    func registerPlugin(_ plugin: LumiPlugin, kernel: LumiKernel) throws
 
-    /// 批量注册插件
-    func registerPlugins(_ plugins: [LumiPlugin]) throws
+    /// 批量注册插件（按 order 排序后逐个注册）
+    ///
+    /// - Parameters:
+    ///   - plugins: 要注册的插件列表
+    ///   - kernel: LumiKernel 实例
+    func registerPlugins(_ plugins: [LumiPlugin], kernel: LumiKernel) throws
 
     /// 启动所有插件
     func bootstrapPlugins() async throws
