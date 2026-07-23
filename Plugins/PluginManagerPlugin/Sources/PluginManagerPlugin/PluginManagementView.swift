@@ -17,10 +17,11 @@ struct PluginManagementView: View {
     @State private var searchText = ""
     @State private var selectedCategory: LumiPluginCategory?
 
-    /// 列表数据源:仅显示可配置插件(对齐 4.19.0 的行为)。
-    /// `alwaysOn` 插件不可禁用、不可配置,展示在管理列表中无意义,故过滤掉。
+    /// 列表数据源:仅显示用户可配置的插件(对齐 4.19.0 的行为)。
+    /// `alwaysOn`(不可禁用)与 `disabled`(不可启用)都不可配置,
+    /// 展示在管理列表中没有可操作控件,故一并过滤掉,只保留 `optOut` / `optIn`。
     private var plugins: [LumiPlugin] {
-        kernel.pluginManager.allPlugins.filter { $0.policy != .alwaysOn }
+        kernel.pluginManager.allPlugins.filter { $0.policy.isConfigurable }
     }
 
     /// 列表上出现的分类(按 sortOrder 排序),用于筛选标签栏。
