@@ -209,23 +209,7 @@ struct PluginManagementView: View {
                         .lineLimit(2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 44)
             }
-            .overlay(alignment: .topTrailing) {
-                policyBadge(for: plugin)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func policyBadge(for plugin: LumiPlugin) -> some View {
-        switch plugin.policy {
-        case .alwaysOn:
-            AppTag(PluginManagerText.string(PluginManagerText.alwaysOn), style: .accent)
-        case .disabled:
-            AppTag(PluginManagerText.string(PluginManagerText.disabled))
-        case .optOut, .optIn:
-            EmptyView()
         }
     }
 
