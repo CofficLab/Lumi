@@ -40,14 +40,9 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
-        // Self-register the bundled mock provider so the kernel always
-        // has at least one usable LLM provider out of the box. Real
-        // providers (Anthropic, OpenAI, …) will be registered by their
-        // own plugins via `kernel.llmProvider?.registerLLMProvider(...)`.
-        service.registerLLMProvider(MockLLMProvider())
         kernel.registerLLMProviderService(service)
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核, 并自注册 MockLLMProvider")
+            Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
             Self.logger.info("\(Self.t)LLMProviderManagerPlugin boot 完成")
         }
     }
@@ -55,9 +50,14 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {}
 
 
-    // MARK: - LumiPlugin stubs
+    // MARK: - LLM Provider Contributions
 
-    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    /// 自带一个 `MockLLMProvider`,保证内核启动后至少有 1 个可用的 LLM provider。
+    /// 真实 provider(Anthropic、OpenAI、…)由各自插件通过实现 `llmProviders(kernel:)`
+    /// 贡献,统一在 `BuiltinPluginManager.registerLLMProviders(in:)` 阶段注册。
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [MockLLMProvider()]
+    }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }

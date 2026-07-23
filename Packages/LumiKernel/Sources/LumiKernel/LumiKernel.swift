@@ -80,6 +80,10 @@ public final class LumiKernelContainer: ObservableObject {
     ///    to be registered in onBoot per the LumiPlugin contract).
     /// 3. Call pluginManager.onReady() to perform async initialization that
     ///    depends on registered services.
+    /// 4. Collect all plugin-contributed LLM providers and register them with
+    ///    the kernel's `LLMProviderManaging` service. This runs after onReady
+    ///    so that every plugin's `llmProviders(kernel:)` is evaluated against
+    ///    a fully-initialized kernel.
     /// - Throws: If required services are missing
     public func startup() async throws {
         // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
@@ -115,6 +119,11 @@ public final class LumiKernelContainer: ObservableObject {
 
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
+
+        // 4. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
+        //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
+        //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
+        pluginManager.registerLLMProviders(in: self)
     }
 }
 

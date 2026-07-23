@@ -59,6 +59,23 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         }
     }
 
+    public func registerLLMProviders(_ providers: [any LumiLLMProvider]) {
+        for provider in providers {
+            let id = type(of: provider).info.id
+            let isNew = llmProviders[id] == nil
+            if isNew {
+                llmProviderOrder.append(id)
+            }
+            llmProviders[id] = provider
+            if Self.verbose {
+                Self.logger.info("\(Self.t)registerLLMProviders ➡️ id=\(id) (new=\(isNew))")
+            }
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)registerLLMProviders ➡️ 批量完成, 总计 \(self.llmProviderOrder.count) 个 provider")
+        }
+    }
+
     public func unregisterLLMProvider(id: String) {
         let existed = llmProviders.removeValue(forKey: id) != nil
         llmProviderOrder.removeAll { $0 == id }

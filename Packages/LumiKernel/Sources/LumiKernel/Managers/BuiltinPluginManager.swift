@@ -279,6 +279,33 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         }
     }
 
+    /// 收集所有插件贡献的 LLM Provider,并注册到内核的 `LLMProviderManaging` 服务。
+    ///
+    /// 调用时机:在 `LumiKernel.startup()` 的 `onReady` 之后。每个 LLM Provider 插件
+    /// (Anthropic、OpenAI、…)只需实现 `LumiPlugin.llmProviders(kernel:)` 返回其实例,
+    /// 无需再在 `onBoot/onReady` 里主动调用 `kernel.llmProvider?.registerLLMProvider(...)`。
+    ///
+    /// `LLMProviderManagerPlugin` 必须已经注册(其 `order = 10`,在内核启动时最先
+    /// 完成),因此这里 `kernel.llmProvider` 一定可用。
+    public func registerLLMProviders(in kernel: LumiKernel) {
+        self.kernel = kernel
+
+        guard let manager = kernel.llmProvider else {
+            // 理论上 onBoot 阶段 `LLMProviderManagerPlugin` 已注册 manager;
+            // 若缺少,跳过,避免崩溃。
+            return
+        }
+
+        // 先按 order 收集所有已启用插件的 LLM Provider,保持插件顺序,
+        // 再一次性批量注册,避免逐个调用的日志噪声和潜在的多次副作用。
+        var collected: [any LumiLLMProvider] = []
+        for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
+            collected.append(contentsOf: plugin.llmProviders(kernel: kernel))
+        }
+        manager.registerLLMProviders(collected)
+    }
+
     private func updateSortedPlugins() {
         allPlugins = pluginOrder.compactMap { plugins[$0] }
             .sorted { $0.order < $1.order }

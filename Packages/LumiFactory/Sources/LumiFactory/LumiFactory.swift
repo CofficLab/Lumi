@@ -50,7 +50,7 @@ public enum LumiFactory: SuperLog {
         // 4. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
         subscribeToPluginChanges(kernel: kernel)
 
-        // 5. 启动内核（调用插件生命周期 + 服务校验）
+        // 5. 启动内核（调用插件生命周期 + 服务校验 + LLM Provider 收集）
         try await kernel.startup()
 
         // 6. 注册所有插件的 UI 贡献

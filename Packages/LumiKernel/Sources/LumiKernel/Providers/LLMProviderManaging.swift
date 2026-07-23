@@ -1,7 +1,5 @@
 import Foundation
 
-
-
 /// LLM Provider 注册服务
 ///
 /// 由 LLM Provider 插件实现,负责把 LLMProvider 实例注册到内核。
@@ -12,6 +10,17 @@ public protocol LLMProviderManaging: AnyObject {
 
     /// 注册单个 LLM Provider
     func registerLLMProvider(_ provider: any LumiLLMProvider)
+
+    /// 批量注册 LLM Provider
+    ///
+    /// 按数组顺序逐个调用 `registerLLMProvider(_:)`,等价于:
+    ///
+    ///     for provider in providers {
+    ///         registerLLMProvider(provider)
+    ///     }
+    ///
+    /// - Parameter providers: 待注册的 provider 列表
+    func registerLLMProviders(_ providers: [any LumiLLMProvider])
 
     /// 注销单个 LLM Provider
     func unregisterLLMProvider(id: String)
@@ -48,4 +57,14 @@ public protocol LLMProviderManaging: AnyObject {
     /// - Throws: `LumiKernelError.llmProviderUnavailable` 当内核未注册任何 provider 时
     /// - Throws: `LumiKernelError.invalidProviderOrModel` 当没有选中的 provider 或 model 时
     func sendToSelectedProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage
+}
+
+public extension LLMProviderManaging {
+    /// 默认实现:按数组顺序逐个调用 `registerLLMProvider(_:)`。
+    /// 已有实现可以重写此方法以获得更好的性能(例如单次日志输出、原子更新等)。
+    func registerLLMProviders(_ providers: [any LumiLLMProvider]) {
+        for provider in providers {
+            registerLLMProvider(provider)
+        }
+    }
 }
