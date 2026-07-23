@@ -62,7 +62,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     public func onBoot(kernel: LumiKernel) async throws {
         for plugin in allPlugins {
             guard plugin.policy.shouldRegister else { continue }
-            try plugin.onBoot(kernel: kernel)
+            try await plugin.onBoot(kernel: kernel)
         }
     }
 

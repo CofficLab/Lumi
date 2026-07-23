@@ -27,7 +27,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         guard policy.shouldRegister else { return }

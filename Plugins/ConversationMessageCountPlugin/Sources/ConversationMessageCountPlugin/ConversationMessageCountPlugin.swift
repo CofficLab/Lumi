@@ -15,7 +15,7 @@ public final class ConversationMessageCountPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {}
 

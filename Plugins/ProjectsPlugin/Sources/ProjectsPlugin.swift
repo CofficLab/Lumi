@@ -22,11 +22,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {
-        
-    }
-
-    public func onReady(kernel: LumiKernel) async throws {
+    public func onBoot(kernel: LumiKernel) async throws {
         try ProjectsOnReadyHook(pluginID: id).execute(kernel)
         try await ProjectsOnBootHook().execute(kernel)
     }

@@ -26,13 +26,13 @@ public protocol LumiPlugin: AnyObject {
 
     /// 阶段 1: 注入核心服务
     ///
-    /// 在此方法中调用 `kernel.registerXxx()` 注册核心 Providing 实现。
-    func onBoot(kernel: LumiKernel) throws
+    /// 在此方法中调用 `kernel.registerXxx()` 注册核心 Providing 实现，
+    /// 以及注册工具、UI 贡献等所有需要内核提供的功能。
+    func onBoot(kernel: LumiKernel) async throws
 
-    /// 阶段 2: 所有服务就绪后注册功能并执行异步初始化
+    /// 阶段 2: 所有服务就绪后执行异步初始化
     ///
-    /// 在此方法中注册工具、UI 贡献等需要依赖其他服务的功能，
-    /// 以及执行异步初始化逻辑。
+    /// 在此方法中执行需要依赖其他服务的异步初始化逻辑。
     func onReady(kernel: LumiKernel) async throws
 
     // MARK: - LLM / Agent Contributions

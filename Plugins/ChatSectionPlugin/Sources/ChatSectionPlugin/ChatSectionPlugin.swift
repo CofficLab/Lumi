@@ -31,7 +31,7 @@ public final class ChatSectionPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         // 1. 注册 ChatSectionService（内核服务）

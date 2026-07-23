@@ -70,7 +70,7 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         let storage = StorageService(dataRootDirectory: dataRootDirectory)

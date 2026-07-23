@@ -27,7 +27,7 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         // 注册菜单栏弹窗（order 自动从插件继承）

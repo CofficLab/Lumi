@@ -38,7 +38,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {
+    public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
         // Self-register the bundled mock provider so the kernel always
         // has at least one usable LLM provider out of the box. Real

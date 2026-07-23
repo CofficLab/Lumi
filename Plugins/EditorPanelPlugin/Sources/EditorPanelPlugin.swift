@@ -18,7 +18,7 @@ public final class EditorPanelPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         guard policy.shouldRegister else { return }

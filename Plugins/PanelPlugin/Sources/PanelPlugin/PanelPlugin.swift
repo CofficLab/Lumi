@@ -27,7 +27,7 @@ public final class PanelPlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         // 1. 注册 PanelService（内核服务）

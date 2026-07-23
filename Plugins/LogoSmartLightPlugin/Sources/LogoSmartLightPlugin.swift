@@ -11,7 +11,7 @@ public final class LogoSmartLightPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         // Logo items are registered in logoItems method
