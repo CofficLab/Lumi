@@ -17,8 +17,10 @@ struct PluginManagementView: View {
     @State private var searchText = ""
     @State private var selectedCategory: LumiPluginCategory?
 
+    /// 列表数据源:仅显示可配置插件(对齐 4.19.0 的行为)。
+    /// `alwaysOn` 插件不可禁用、不可配置,展示在管理列表中无意义,故过滤掉。
     private var plugins: [LumiPlugin] {
-        kernel.pluginManager.allPlugins
+        kernel.pluginManager.allPlugins.filter { $0.policy != .alwaysOn }
     }
 
     /// 列表上出现的分类(按 sortOrder 排序),用于筛选标签栏。
@@ -88,13 +90,19 @@ struct PluginManagementView: View {
         }
     }
 
+    /// 当前列表中处于有效启用状态的可配置插件数。
+    /// 基于 `plugins`(已过滤 alwaysOn),与列表项数口径一致。
+    private var enabledCount: Int {
+        plugins.reduce(0) { $0 + (kernel.pluginManager.effectiveEnabled(for: $1) ? 1 : 0) }
+    }
+
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label(
                 String(format: PluginManagerText.string(PluginManagerText.pluginsCount), plugins.count),
                 systemImage: "puzzlepiece.extension"
             )
-            Text(String(format: PluginManagerText.string(PluginManagerText.enabledCount), kernel.pluginManager.enabledPluginCount))
+            Text(String(format: PluginManagerText.string(PluginManagerText.enabledCount), enabledCount))
             Spacer()
         }
         .font(.appCaption)
