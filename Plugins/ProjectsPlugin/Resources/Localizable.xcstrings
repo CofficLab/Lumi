@@ -421,6 +421,7 @@
       }
     },
     "Projects Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
