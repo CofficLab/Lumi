@@ -14,6 +14,8 @@ import ConversationStorePlugin
 import ConversationTitlePlugin
 import ConversationInputPlugin
 import ConversationMessageCountPlugin
+import ChatAttachmentPreviewPlugin
+import ChatScreenshotPlugin
 import MessageStorePlugin
 import MessageSenderPlugin
 import DeviceInfoPlugin
@@ -154,6 +156,8 @@ public enum PluginService {
             ModelSelectorPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
+            ChatAttachmentPreviewPlugin(),
+            ChatScreenshotPlugin(),
             ConversationMessageCountPlugin(),
             StatusBarPlugin(),
             SettingsPlugin(),
