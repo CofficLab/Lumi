@@ -1,5 +1,6 @@
 import AgentToolKit
 import Foundation
+import SwiftUI
 import LumiKernel
 import Testing
 @testable import AskUserPlugin

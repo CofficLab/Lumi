@@ -34,9 +34,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     // Theme registry
     private var themeRegistryStorage: [LumiUIThemeContribution] = []
 
-    // Tool execution hook registry
-    private var toolExecutionHooks: [ObjectIdentifier: any LumiToolExecutionHook] = [:]
-
     /// 插件启用状态变化时广播通知
     public func notifyEnabledPluginsDidChange() {
         NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: self)
@@ -69,16 +66,10 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             try plugin.onBoot(kernel: kernel)
         }
 
-        // 阶段 2: onReady - 所有服务就绪后注册工具、UI 等
+        // 阶段 2: onReady - 所有服务就绪后注册功能并执行异步初始化
         for plugin in allPlugins {
             guard plugin.policy.shouldRegister else { continue }
-            try plugin.onReady(kernel: kernel)
-        }
-
-        // 阶段 3: boot - 异步启动
-        for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
-            try await plugin.boot(kernel: kernel)
+            try await plugin.onReady(kernel: kernel)
         }
     }
 
@@ -364,21 +355,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
     public func themeContributions() -> [LumiUIThemeContribution] {
         themeRegistryStorage
-    }
-
-    // MARK: - Tool Execution Hook
-
-    public func registerToolExecutionHook(_ hook: any LumiToolExecutionHook) {
-        toolExecutionHooks[ObjectIdentifier(type(of: hook))] = hook
-    }
-
-    public func dispatchToolExecution(toolName: String, result: String, conversationID: UUID) async -> Bool {
-        for hook in toolExecutionHooks.values {
-            if await hook.handleToolResult(toolName: toolName, result: result, conversationID: conversationID) {
-                return true
-            }
-        }
-        return false
     }
 
     // MARK: - Plugin Management
