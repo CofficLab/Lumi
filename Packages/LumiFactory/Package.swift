@@ -112,6 +112,14 @@ let package = Package(
         .package(path: "../../Plugins/VerbosityPlugin"),
         .package(path: "../../Plugins/ConversationSpeedPlugin"),
         .package(path: "../../Plugins/ChatModePlugin"),
+        // Open-in external apps
+        .package(path: "../../Plugins/OpenInFinderPlugin"),
+        .package(path: "../../Plugins/OpenInXcodePlugin"),
+        .package(path: "../../Plugins/OpenInCursorPlugin"),
+        .package(path: "../../Plugins/OpenInAntigravityPlugin"),
+        .package(path: "../../Plugins/OpenInGitHubDesktopPlugin"),
+        .package(path: "../../Plugins/OpenInGitOKPlugin"),
+        .package(path: "../../Plugins/OpenRemotePlugin"),
     ],
     targets: [
         .target(
@@ -221,6 +229,14 @@ let package = Package(
                 .product(name: "VerbosityPlugin", package: "VerbosityPlugin"),
                 .product(name: "ConversationSpeedPlugin", package: "ConversationSpeedPlugin"),
                 .product(name: "ChatModePlugin", package: "ChatModePlugin"),
+                // Open-in external apps
+                .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
+                .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),
+                .product(name: "OpenInCursorPlugin", package: "OpenInCursorPlugin"),
+                .product(name: "OpenInAntigravityPlugin", package: "OpenInAntigravityPlugin"),
+                .product(name: "OpenInGitHubDesktopPlugin", package: "OpenInGitHubDesktopPlugin"),
+                .product(name: "OpenInGitOKPlugin", package: "OpenInGitOKPlugin"),
+                .product(name: "OpenRemotePlugin", package: "OpenRemotePlugin"),
             ],
             resources: [
                 .process("Resources")

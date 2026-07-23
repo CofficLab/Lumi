@@ -94,6 +94,13 @@ import ChatModePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
 import WorkspaceStatePlugin
+import OpenInFinderPlugin
+import OpenInXcodePlugin
+import OpenInCursorPlugin
+import OpenInAntigravityPlugin
+import OpenInGitHubDesktopPlugin
+import OpenInGitOKPlugin
+import OpenRemotePlugin
 
 /// 插件服务
 ///
@@ -203,6 +210,14 @@ public enum PluginService {
             ThemeVoidPlugin(),
             ThemeVscodePlugin(),
             ThemeWinterPlugin(),
+            // Open in external apps
+            AgentOpenInFinderPlugin(),
+            AgentOpenInXcodePlugin(),
+            AgentOpenInCursorPlugin(),
+            AgentOpenInAntigravityPlugin(),
+            AgentOpenInGitHubDesktopPlugin(),
+            AgentOpenInGitOKPlugin(),
+            AgentOpenRemotePlugin(),
         ]
 
         // StoragePlugin (requires initialization)
