@@ -20,7 +20,7 @@ public struct ConversationStoreOnReadyHook {
 
         // Register initial (empty) state - will be loaded properly in boot()
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 ConversationManager")
+            Self.logger.info("已注册 ConversationManager")
         }
 
         // Initialize ConversationStore with proper database root URL
@@ -46,7 +46,7 @@ public struct ConversationStoreOnReadyHook {
             }
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)ConversationStorePlugin 启动完成，数据库路径: \(databaseRootURL.path)")
+                Self.logger.info("ConversationStorePlugin 启动完成，数据库路径: \(databaseRootURL.path)")
             }
         } catch {
             throw ConversationStoreError.initializationFailed("ConversationStorePlugin 数据库初始化失败: \(error.localizedDescription)")
