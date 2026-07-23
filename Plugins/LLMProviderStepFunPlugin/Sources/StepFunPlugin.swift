@@ -8,7 +8,7 @@ public final class StepFunPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.stepfun"
     public let name = "StepFun StepPlan"
     public let order = 93
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

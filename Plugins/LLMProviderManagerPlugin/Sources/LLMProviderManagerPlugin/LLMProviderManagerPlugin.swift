@@ -1,9 +1,8 @@
 import Foundation
-import SwiftUI
 import LumiKernel
-import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
 /// LLM Provider Manager Plugin
 ///
@@ -19,38 +18,24 @@ import os
 public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager")
     public nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = false
-
-    // MARK: - LumiPlugin
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.llm-provider-manager"
     public let name = "LLM Provider Manager"
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
-
-    // MARK: - Initialization
-
-    public init() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)LLMProviderManagerPlugin")
-        }
-    }
-
-    // MARK: - LumiPlugin
+    
+    public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
         kernel.registerLLMProviderService(service)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
-            Self.logger.info("\(Self.t)LLMProviderManagerPlugin boot 完成")
         }
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
-
-
-    // MARK: - LLM Provider Contributions
 
     /// 自带一个 `MockLLMProvider`,保证内核启动后至少有 1 个可用的 LLM provider。
     /// 真实 provider(Anthropic、OpenAI、…)由各自插件通过实现 `llmProviders(kernel:)`
@@ -58,6 +43,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [MockLLMProvider()]
     }
+
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }

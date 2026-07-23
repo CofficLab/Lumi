@@ -13,11 +13,7 @@ public final class CodexPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        for provider in llmProviders(kernel: kernel) {
-            kernel.llmProvider?.registerLLMProvider(provider)
-        }
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {

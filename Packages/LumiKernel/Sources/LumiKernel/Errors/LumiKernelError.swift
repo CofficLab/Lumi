@@ -9,6 +9,7 @@ public enum LumiKernelError: Error, LocalizedError {
     case noActiveConversation
     case llmProviderUnavailable
     case invalidProviderOrModel
+    case llmProviderRegistrationFailed(providerType: String, reason: String)
 
     public var errorDescription: String? {
         switch self {
@@ -26,6 +27,8 @@ public enum LumiKernelError: Error, LocalizedError {
             return "No LLM provider is registered with the kernel"
         case .invalidProviderOrModel:
             return "No valid LLM provider or model selected"
+        case .llmProviderRegistrationFailed(let providerType, let reason):
+            return "Failed to register LLM provider '\(providerType)': \(reason)"
         }
     }
 }

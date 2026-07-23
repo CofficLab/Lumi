@@ -10,7 +10,7 @@ import os
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) public static var verbose = true
+    nonisolated(unsafe) public static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?

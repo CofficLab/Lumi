@@ -1,9 +1,7 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// Default `LLMProviderProviding` implementation.
 ///
@@ -14,7 +12,7 @@ import os
 public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.service")
     public nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private var llmProviders: [String: any LumiLLMProvider] = [:]
     private var llmProviderOrder: [String] = []
@@ -34,7 +32,7 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         _selectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)LLMProviderManager restored: provider=\(self._selectedProviderID ?? "nil"), model=\(self._selectedModel ?? "nil")")
+            Self.logger.info("\(Self.t)LLMProviderManager restored: provider=\(self._selectedProviderID ?? "nil"), model=\(self._selectedModel ?? "nil")")
         }
     }
 
@@ -47,8 +45,14 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         return llmProviderOrder.compactMap { llmProviders[$0] }
     }
 
-    public func registerLLMProvider(_ provider: any LumiLLMProvider) {
+    public func registerLLMProvider(_ provider: any LumiLLMProvider) throws {
         let id = type(of: provider).info.id
+        guard !id.isEmpty else {
+            throw LumiKernelError.llmProviderRegistrationFailed(
+                providerType: String(describing: type(of: provider)),
+                reason: "provider 声明的 info.id 为空"
+            )
+        }
         let isNew = llmProviders[id] == nil
         if isNew {
             llmProviderOrder.append(id)
@@ -59,9 +63,15 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         }
     }
 
-    public func registerLLMProviders(_ providers: [any LumiLLMProvider]) {
+    public func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws {
         for provider in providers {
             let id = type(of: provider).info.id
+            guard !id.isEmpty else {
+                throw LumiKernelError.llmProviderRegistrationFailed(
+                    providerType: String(describing: type(of: provider)),
+                    reason: "provider 声明的 info.id 为空"
+                )
+            }
             let isNew = llmProviders[id] == nil
             if isNew {
                 llmProviderOrder.append(id)
@@ -94,9 +104,7 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
 
     // MARK: - Provider Selection
 
-    public var selectedProviderID: String? {
-        get { _selectedProviderID }
-    }
+    public var selectedProviderID: String? { _selectedProviderID }
 
     public func selectProvider(id: String) {
         guard llmProviders[id] != nil else {
@@ -124,9 +132,7 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         return type(of: provider).info.availableModels
     }
 
-    public var selectedModel: String? {
-        get { _selectedModel }
-    }
+    public var selectedModel: String? { _selectedModel }
 
     public func selectModel(providerID: String, model: String) {
         selectProvider(id: providerID)

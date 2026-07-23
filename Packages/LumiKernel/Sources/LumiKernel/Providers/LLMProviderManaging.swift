@@ -9,18 +9,23 @@ public protocol LLMProviderManaging: AnyObject {
     func allLLMProviders() -> [any LumiLLMProvider]
 
     /// 注册单个 LLM Provider
-    func registerLLMProvider(_ provider: any LumiLLMProvider)
+    ///
+    /// - Throws: `LumiKernelError.llmProviderRegistrationFailed` 当 provider 的
+    ///   `info.id` 为空时。
+    func registerLLMProvider(_ provider: any LumiLLMProvider) throws
 
     /// 批量注册 LLM Provider
     ///
     /// 按数组顺序逐个调用 `registerLLMProvider(_:)`,等价于:
     ///
     ///     for provider in providers {
-    ///         registerLLMProvider(provider)
+    ///         try registerLLMProvider(provider)
     ///     }
     ///
     /// - Parameter providers: 待注册的 provider 列表
-    func registerLLMProviders(_ providers: [any LumiLLMProvider])
+    /// - Throws: 转发自单个 `registerLLMProvider(_:)` 的错误。批量过程中遇到失败
+    ///   会立即停止,已注册的 provider 保留。
+    func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws
 
     /// 注销单个 LLM Provider
     func unregisterLLMProvider(id: String)
@@ -62,9 +67,9 @@ public protocol LLMProviderManaging: AnyObject {
 public extension LLMProviderManaging {
     /// 默认实现:按数组顺序逐个调用 `registerLLMProvider(_:)`。
     /// 已有实现可以重写此方法以获得更好的性能(例如单次日志输出、原子更新等)。
-    func registerLLMProviders(_ providers: [any LumiLLMProvider]) {
+    func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws {
         for provider in providers {
-            registerLLMProvider(provider)
+            try registerLLMProvider(provider)
         }
     }
 }

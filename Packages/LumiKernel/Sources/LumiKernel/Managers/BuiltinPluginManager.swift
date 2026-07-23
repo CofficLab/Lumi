@@ -286,14 +286,18 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     /// 无需再在 `onBoot/onReady` 里主动调用 `kernel.llmProvider?.registerLLMProvider(...)`。
     ///
     /// `LLMProviderManagerPlugin` 必须已经注册(其 `order = 10`,在内核启动时最先
-    /// 完成),因此这里 `kernel.llmProvider` 一定可用。
-    public func registerLLMProviders(in kernel: LumiKernel) {
+    /// 完成),因此这里 `kernel.llmProvider` 一定可用;若不可用则抛错,不再静默。
+    ///
+    /// - Throws:
+    ///   - `LumiKernelError.serviceNotAvailable("LLMProvider")` 当 manager 服务
+    ///     未注册时。
+    ///   - `LumiKernelError.llmProviderRegistrationFailed` 当某个 provider 的
+    ///     `info.id` 为空时。
+    public func registerLLMProviders(in kernel: LumiKernel) throws {
         self.kernel = kernel
 
         guard let manager = kernel.llmProvider else {
-            // 理论上 onBoot 阶段 `LLMProviderManagerPlugin` 已注册 manager;
-            // 若缺少,跳过,避免崩溃。
-            return
+            throw LumiKernelError.serviceNotAvailable(service: "LLMProvider")
         }
 
         // 先按 order 收集所有已启用插件的 LLM Provider,保持插件顺序,
@@ -303,7 +307,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             guard plugin.policy.shouldRegister else { continue }
             collected.append(contentsOf: plugin.llmProviders(kernel: kernel))
         }
-        manager.registerLLMProviders(collected)
+        try manager.registerLLMProviders(collected)
     }
 
     private func updateSortedPlugins() {

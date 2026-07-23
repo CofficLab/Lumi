@@ -23,7 +23,7 @@ import SuperLogKit
 public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Properties
 
@@ -36,7 +36,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     public init(kernel: LumiKernel) {
         self.kernel = kernel
         if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)AgentTurnRunnerService")
+            Self.logger.info("\(Self.t)AgentTurnRunnerService")
         }
     }
 
