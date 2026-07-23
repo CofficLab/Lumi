@@ -8,9 +8,11 @@ import os
 ///
 /// 负责 onReady 阶段的所有注册逻辑：
 /// - ProjectsStore / ProjectsViewModel / ProjectsSyncCoordinator 初始化
-/// - TitleToolbarItem
 /// - Agent Tools
+/// - 设置 RuntimeBridge 供 titleToolbarItems 声明式访问与工具使用
 ///
+/// 标题栏工具栏项由 `LumiPlugin.titleToolbarItems(kernel:)` 声明式提供，
+/// 由 BuiltinPluginManager 在 registerPluginUIContributions 阶段收集。
 /// ProjectService 的注册已在 OnBoot 阶段完成。
 @MainActor
 public struct ProjectsOnReadyHook {
@@ -27,7 +29,7 @@ public struct ProjectsOnReadyHook {
     public func execute(_ kernel: LumiKernel) throws {
         // 1. 初始化存储
         guard let storage = kernel.storage else {
-            registerErrorToolbar(kernel: kernel, message: "Storage service not available")
+            Self.logger.error("📂 Storage service not available，跳过 Projects 插件初始化")
             return
         }
         let storageDirectory = storage.pluginDataDirectory(for: "Projects")
@@ -52,20 +54,10 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Initialized ProjectsSyncCoordinator")
         }
 
-        // 4. 注册标题栏工具栏项
-        kernel.toolbarProvider?.registerTitleToolbarItem(
-            TitleToolbarItem(
-                id: "\(pluginID).toolbar",
-                title: "Projects",
-                placement: .center
-            ) {
-                ProjectControlView(viewModel: viewModel)
-            }
-        )
-
-        if Self.verbose {
-            Self.logger.info("📂 Registered TitleToolbarItem")
-        }
+        // 4. 设置 RuntimeBridge — 供 Agent 工具使用，并供
+        //    `titleToolbarItems(kernel:)` 声明式访问 viewModel（在 onReady 之后
+        //    由 BuiltinPluginManager.registerPluginUIContributions 收集）。
+        ProjectsToolRuntimeBridge.viewModel = viewModel
 
         // 5. 注册 Agent Tools
         guard let toolManager = kernel.toolManager else {
@@ -79,34 +71,8 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Registered Agent Tools: list_projects, add_project, get_current_project")
         }
 
-        // 6. 设置 RuntimeBridge 供工具使用（boot 阶段会读取）
-        ProjectsToolRuntimeBridge.viewModel = viewModel
-
         if Self.verbose {
             Self.logger.info("📂 Projects 插件 onReady 完成")
-        }
-    }
-
-    private func registerErrorToolbar(kernel: LumiKernel, message: String) {
-        kernel.toolbarProvider?.registerTitleToolbarItem(
-            TitleToolbarItem(
-                id: "\(pluginID).toolbar",
-                title: "Projects",
-                placement: .center
-            ) {
-                VStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                    Text("Projects Error")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .help(message)
-            }
-        )
-
-        if Self.verbose {
-            Self.logger.info("📂 Registered error TitleToolbarItem")
         }
     }
 }

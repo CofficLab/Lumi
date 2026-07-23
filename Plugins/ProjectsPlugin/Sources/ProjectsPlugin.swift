@@ -1,26 +1,21 @@
 import Foundation
-import SwiftUI
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
-/// Projects 插件
 @MainActor
 public final class ProjectsPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
-    nonisolated public static let emoji = "📂"
+    public nonisolated static let emoji = "📂"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.projects"
     public let name = "Projects Plugin"
     public let order = 20
-    public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件
-
-    // MARK: - Initialization
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await ProjectsOnBootHook().execute(kernel)
@@ -29,16 +24,32 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try ProjectsOnReadyHook(pluginID: id).execute(kernel)
     }
-    
+
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
         await ProjectsWillSendToLLMHook(pluginID: id).execute(kernel: kernel, messages: messages)
     }
+
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        guard let viewModel = ProjectsToolRuntimeBridge.viewModel else {
+            return []
+        }
+
+        return [
+            LumiTitleToolbarItem(
+                id: "\(id).toolbar",
+                title: "Projects",
+                placement: .center
+            ) {
+                ProjectControlView(viewModel: viewModel)
+            }
+        ]
+    }
+
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
