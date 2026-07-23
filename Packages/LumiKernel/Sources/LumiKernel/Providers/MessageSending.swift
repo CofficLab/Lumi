@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// 消息发送能力协议
@@ -20,7 +21,7 @@ import Foundation
 /// 4. （可选）触发下游行为：例如异步调用 LLM、流式回复、Agent loop 等。
 ///    本协议**不**规定这些行为的细节;mock 实现可以只完成第 1-3 步。
 @MainActor
-public protocol MessageSending: ObservableObject {
+public protocol MessageSending: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 是否有正在进行的发送任务
     var isSending: Bool { get }
 

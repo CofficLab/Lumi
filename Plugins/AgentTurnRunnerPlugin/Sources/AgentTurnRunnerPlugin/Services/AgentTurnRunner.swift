@@ -127,7 +127,17 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             }
 
             let model = kernel.llmProvider?.selectedModel ?? type(of: provider).info.defaultModel
-            let request = LumiLLMRequest(messages: history, model: model, tools: tools)
+
+            // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
+            // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
+            let pendingImages = LumiImageAttachmentMetadata.extract(from: history)
+
+            let request = LumiLLMRequest(
+                messages: history,
+                model: model,
+                tools: tools,
+                imageAttachments: pendingImages
+            )
 
             // Call LLM
             let assistantMessage: LumiChatMessage

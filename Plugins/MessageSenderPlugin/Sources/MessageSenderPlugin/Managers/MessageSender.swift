@@ -30,6 +30,10 @@ public final class MessageSender: MessageSending, SuperLog {
 
     @Published public private(set) var isSending: Bool = false
 
+    /// 当前挂起、等待下次发送时随消息一起送出的图片附件。
+    /// `addAttachment / removeAttachment / clearAttachments` 维护此集合。
+    @Published public private(set) var pendingAttachments: [LumiImageAttachment] = []
+
     private weak var kernel: LumiKernel?
 
     public init(kernel: LumiKernel) {
@@ -39,9 +43,58 @@ public final class MessageSender: MessageSending, SuperLog {
         }
     }
 
-    public func sendMessage(_ content: String, conversationID: UUID?) async throws {
+    // MARK: - 附件挂起池
+
+    /// 添加附件。幂等:同 `id` 已存在则忽略。
+    public func addAttachment(_ attachment: LumiImageAttachment) {
+        guard !pendingAttachments.contains(where: { $0.id == attachment.id }) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
+            }
+            return
+        }
+        pendingAttachments.append(attachment)
         if Self.verbose {
-            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString ?? "nil"), content.len=\(content.count)")
+            Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, mime=\(attachment.mimeType), pool.size=\(pendingAttachments.count)")
+        }
+    }
+
+    /// 按 id 移除挂起附件。id 不存在则 no-op。
+    public func removeAttachment(id: UUID) {
+        let before = pendingAttachments.count
+        pendingAttachments.removeAll { $0.id == id }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)removeAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(pendingAttachments.count)")
+        }
+    }
+
+    /// 清空所有挂起附件。
+    public func clearAttachments() {
+        let count = pendingAttachments.count
+        pendingAttachments.removeAll()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
+        }
+    }
+
+    // MARK: - 发送
+
+    public func sendMessage(_ content: String, conversationID: UUID?) async throws {
+        // 委托给带 attachments 的重载,使用当前挂起池快照。
+        try await sendMessage(
+            content,
+            imageAttachments: pendingAttachments,
+            conversationID: conversationID
+        )
+    }
+
+    public func sendMessage(
+        _ content: String,
+        imageAttachments: [LumiImageAttachment],
+        conversationID: UUID?
+    ) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString ?? "nil"), content.len=\(content.count), attachments=\(imageAttachments.count)")
         }
 
         // 1. Trim & early-return on empty input
@@ -88,14 +141,28 @@ public final class MessageSender: MessageSending, SuperLog {
             Self.logger.info("\(Self.t)isSending -> true, 准备写入 user 消息到会话 \(targetID.uuidString.prefix(8))…")
         }
 
+        // 把 attachments 序列化进 metadata["imageAttachments"] JSON(如有)
+        var metadata: [String: String] = [:]
+        if !imageAttachments.isEmpty {
+            do {
+                let data = try JSONEncoder().encode(imageAttachments)
+                metadata["imageAttachments"] = String(data: data, encoding: .utf8) ?? ""
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)sendMessage ➡️ 编码 attachments 失败: \(error.localizedDescription)")
+                }
+            }
+        }
+
         let userMessage = LumiChatMessage(
             conversationID: targetID,
             role: .user,
-            content: trimmed
+            content: trimmed,
+            metadata: metadata
         )
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
         if Self.verbose {
-            Self.logger.info("\(Self.t)user 消息已落库 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, content.len=\(trimmed.count)")
+            Self.logger.info("\(Self.t)user 消息已落库 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, content.len=\(trimmed.count), attachments=\(imageAttachments.count)")
         }
 
         // 4. Delegate to AgentTurnRunner to execute the full agent loop.

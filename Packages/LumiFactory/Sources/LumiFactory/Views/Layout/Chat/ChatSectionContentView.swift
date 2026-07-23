@@ -41,7 +41,7 @@ struct ChatSectionContentView: View {
                 item.makeView()
                     .frame(maxWidth: .infinity, alignment: .bottom)
 
-                if index < bottomItems.count - 1 {
+                if index < bottomItems.count - 1, item.showsTrailingDivider {
                     AppDivider()
                 }
             }
