@@ -36,7 +36,6 @@ let package = Package(
         .package(path: "../../Plugins/MessageRendererPlugin"),
         .package(path: "../../Plugins/ConversationInputPlugin"),
         .package(path: "../../Plugins/ConversationMessageCountPlugin"),
-        .package(path: "../../Plugins/MessageRendererManagerPlugin"),
         .package(path: "../../Plugins/ConversationTitlePlugin"),
         .package(path: "../../Plugins/EditorKernelPlugin"),
         .package(path: "../../Plugins/ToolManagerPlugin"),
@@ -107,6 +106,7 @@ let package = Package(
         .package(path: "../../Plugins/InputPlugin"),
         .package(path: "../../Plugins/MenuBarManagerPlugin"),
         .package(path: "../../Plugins/VerbosityPlugin"),
+        .package(path: "../../Plugins/ConversationSpeedPlugin"),
         .package(path: "../../Plugins/ChatModePlugin"),
     ],
     targets: [
@@ -140,7 +140,6 @@ let package = Package(
                 .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
                 .product(name: "ConversationInputPlugin", package: "ConversationInputPlugin"),
                 .product(name: "ConversationMessageCountPlugin", package: "ConversationMessageCountPlugin"),
-                .product(name: "MessageRendererManagerPlugin", package: "MessageRendererManagerPlugin"),
                 .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin"),
                 .product(name: "EditorKernelPlugin", package: "EditorKernelPlugin"),
                 .product(name: "ToolManagerPlugin", package: "ToolManagerPlugin"),
@@ -212,6 +211,7 @@ let package = Package(
                 .product(name: "InputPlugin", package: "InputPlugin"),
                 .product(name: "MenuBarManagerPlugin", package: "MenuBarManagerPlugin"),
                 .product(name: "VerbosityPlugin", package: "VerbosityPlugin"),
+                .product(name: "ConversationSpeedPlugin", package: "ConversationSpeedPlugin"),
                 .product(name: "ChatModePlugin", package: "ChatModePlugin"),
             ],
             resources: [
