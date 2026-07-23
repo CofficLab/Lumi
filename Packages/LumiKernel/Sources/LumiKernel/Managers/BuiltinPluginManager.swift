@@ -65,16 +65,19 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     public func onBoot(kernel: LumiKernel) async throws {
         // 阶段 1: onBoot - 按 order 顺序注入核心服务
         for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
             try plugin.onBoot(kernel: kernel)
         }
 
         // 阶段 2: onReady - 所有服务就绪后注册工具、UI 等
         for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
             try plugin.onReady(kernel: kernel)
         }
 
         // 阶段 3: boot - 异步启动
         for plugin in allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
             try await plugin.boot(kernel: kernel)
         }
     }
