@@ -8,7 +8,7 @@ public final class ThemeSkyPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.sky"
     public let name = "Sky Theme"
     public let order = 120
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

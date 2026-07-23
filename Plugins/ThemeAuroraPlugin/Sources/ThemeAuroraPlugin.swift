@@ -8,7 +8,7 @@ public final class ThemeAuroraPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.aurora"
     public let name = "Aurora Theme"
     public let order = 121
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
@@ -22,9 +22,6 @@ public final class ThemeAuroraPlugin: LumiPlugin {
             )
         )
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

@@ -8,7 +8,7 @@ public final class ThemeVoidPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.void"
     public let name = "Void Theme"
     public let order = 123
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

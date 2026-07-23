@@ -8,7 +8,7 @@ public final class ThemeMountainPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.mountain"
     public let name = "Mountain Theme"
     public let order = 129
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

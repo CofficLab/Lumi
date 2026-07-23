@@ -8,7 +8,7 @@ public final class ThemeVscodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.vscode"
     public let name = "VS Code Theme"
     public let order = 129
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

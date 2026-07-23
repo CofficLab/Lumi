@@ -8,7 +8,7 @@ public final class ThemeWinterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.winter"
     public let name = "Winter Theme"
     public let order = 127
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
