@@ -65,6 +65,10 @@ struct ConversationRailView: View, SuperLog {
                             }
                         )
                     }
+                    // 隐藏 List 默认的不透明系统背景，透出外层 `theme.surface`。
+                    // 否则该背景仅跟随窗口 effective appearance 解析，启动期会停留在
+                    // 暗色，直到下一次 effective appearance 变更（如移动窗口）才纠正。
+                    .scrollContentBackground(.hidden)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

@@ -146,6 +146,10 @@ struct SimpleRailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(theme.surface)
+        // 让 SwiftUI 控件（含 List/NSTableView 的默认背景、Picker 等）按当前
+        // Lumi 主题解析明暗，而不是仅依赖 NSWindow.appearance 的异步同步——
+        // 后者在启动期无法及时穿透到内嵌 List，会导致列表背景初显暗色。
+        .appThemedAppearance()
     }
 
     private func railTabButton(_ tab: PanelRailTabItem) -> some View {
