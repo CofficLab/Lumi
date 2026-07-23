@@ -12,13 +12,6 @@ import Testing
 }
 
 @MainActor
-@Test func requestLogPluginContributesSendMiddleware() {
-    let context = LumiPluginContext(activeSectionID: ChatPanelSection.id, activeSectionTitle: "Chat")
-    let middlewares = RequestLogPlugin.sendMiddlewares(context: context)
-    #expect(middlewares.count == 1)
-}
-
-@MainActor
 @Test func requestLogPluginContributesStatusBarOnChatPanel() {
     let context = LumiPluginContext(
         activeSectionID: "editor",

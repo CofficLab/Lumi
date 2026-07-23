@@ -55,7 +55,7 @@ public final class MessageSender: MessageSending, SuperLog {
         }
         pendingAttachments.append(attachment)
         if Self.verbose {
-            Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, mime=\(attachment.mimeType), pool.size=\(pendingAttachments.count)")
+            Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, mime=\(attachment.mimeType), pool.size=\(self.pendingAttachments.count)")
         }
     }
 
@@ -64,7 +64,7 @@ public final class MessageSender: MessageSending, SuperLog {
         let before = pendingAttachments.count
         pendingAttachments.removeAll { $0.id == id }
         if Self.verbose {
-            Self.logger.info("\(Self.t)removeAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(pendingAttachments.count)")
+            Self.logger.info("\(Self.t)removeAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingAttachments.count)")
         }
     }
 

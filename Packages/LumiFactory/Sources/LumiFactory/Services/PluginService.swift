@@ -22,6 +22,8 @@ import DisplayControlPlugin
 import DockerManagerPlugin
 import EditorKernelPlugin
 import EditorPanelPlugin
+import EditorFileTreePlugin
+import EditorFileTreeV2Plugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -61,7 +63,6 @@ import ProjectsPlugin
 import QuickLauncherPlugin
 import RClickPlugin
 import RegistryManagerPlugin
-import SendMiddlewarePlugin
 import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
@@ -136,6 +137,8 @@ public enum PluginService {
             LayoutKernelPlugin(),
             EditorKernelPlugin(),
             EditorPanelPlugin(),
+            EditorFileTreePanelPlugin(),
+            EditorFileTreeV2Plugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
             MessageSenderPlugin(),
@@ -146,7 +149,6 @@ public enum PluginService {
             ConversationNewPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
-            SendMiddlewarePlugin(),
             ChatSectionPlugin(),
             ChatPanelPlugin(),
             ModelSelectorPlugin(),

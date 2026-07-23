@@ -132,8 +132,30 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
             let pendingImages = LumiImageAttachmentMetadata.extract(from: history)
 
+            // 调用所有插件的 willSendToLLM 钩子,让插件可注入/修改 system prompt 等内容。
+            // 钩子按插件 order 升序串行执行,每个插件拿到上一个插件处理后的 messages。
+            var preparedMessages = history
+            for plugin in kernel.pluginManager.allPlugins {
+                guard plugin.policy.shouldRegister else { continue }
+                preparedMessages = await plugin.willSendToLLM(kernel: kernel, messages: preparedMessages)
+            }
+
+            // 拼接策略:把所有插件注入的 system 消息合并为单条,放在 messages 首位,
+            // 以最大化 LLM provider 的 prompt cache 命中率。
+            let systemFragments = preparedMessages.filter { $0.role == .system }.map(\.content)
+            if !systemFragments.isEmpty {
+                let mergedSystem = systemFragments.joined(separator: "\n\n")
+                let nonSystem = preparedMessages.filter { $0.role != .system }
+                let systemMessage = LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .system,
+                    content: mergedSystem
+                )
+                preparedMessages = [systemMessage] + nonSystem
+            }
+
             let request = LumiLLMRequest(
-                messages: history,
+                messages: preparedMessages,
                 model: model,
                 tools: tools,
                 imageAttachments: pendingImages

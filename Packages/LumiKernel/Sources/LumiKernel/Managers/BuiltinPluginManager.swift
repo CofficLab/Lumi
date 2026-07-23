@@ -23,9 +23,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     private var subAgents: [String: LumiSubAgentDefinition] = [:]
     private var subAgentOrder: [String] = []
 
-    // Send middleware registry
-    private var sendMiddlewares: [String: any LumiSendMiddleware] = [:]
-    private var sendMiddlewareOrder: [String] = []
+    // Send middleware registry (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     // Message renderer registry
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
@@ -93,10 +91,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
                 addSubAgent(subAgent)
             }
 
-            // Send Middlewares
-            for middleware in plugin.sendMiddlewares(kernel: kernel) {
-                registerSendMiddleware(middleware)
-            }
+            // Send Middlewares: now handled via LumiPlugin.willSendToLLM hook in AgentTurnRunner
 
             // Message Renderers
             for renderer in plugin.messageRenderers(kernel: kernel) {
@@ -329,20 +324,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         await kernel?.toolManager?.execute(toolCall, conversationID: conversationID) ?? LumiToolResult(content: "Tool service unavailable", isError: true)
     }
 
-    // MARK: - Send Middleware Registry
-
-    public func registerSendMiddleware(_ middleware: any LumiSendMiddleware, id: String? = nil) {
-        let key = id ?? String(describing: type(of: middleware))
-        if sendMiddlewares[key] == nil {
-            sendMiddlewareOrder.append(key)
-        }
-        sendMiddlewares[key] = middleware
-    }
-
-    public func unregisterSendMiddleware(id: String) {
-        sendMiddlewares.removeValue(forKey: id)
-        sendMiddlewareOrder.removeAll { $0 == id }
-    }
+    // MARK: - Send Middleware Registry (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     public func registerMessageRenderer(_ renderer: LumiMessageRendererItem) {
         if messageRenderers[renderer.id] == nil {

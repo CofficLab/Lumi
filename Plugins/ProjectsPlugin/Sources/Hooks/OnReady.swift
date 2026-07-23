@@ -10,7 +10,6 @@ import os
 /// - ProjectService
 /// - TitleToolbarItem
 /// - Agent Tools
-/// - SendMiddleware
 @MainActor
 public struct ProjectsOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
@@ -86,17 +85,7 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Registered Agent Tools: list_projects, add_project, get_current_project")
         }
 
-        // 7. 注册发送中间件
-        guard let sendMiddleware = kernel.sendMiddleware else {
-            throw ProjectsPluginError.sendMiddlewareNotAvailable
-        }
-        sendMiddleware.registerSendMiddleware(ConversationHintMiddleware(), id: "\(pluginID).middleware")
-
-        if Self.verbose {
-            Self.logger.info("📂 Registered ConversationHintMiddleware")
-        }
-
-        // 8. 设置 RuntimeBridge 供工具使用（boot 阶段会读取）
+        // 7. 设置 RuntimeBridge 供工具使用（boot 阶段会读取）
         ProjectsToolRuntimeBridge.viewModel = viewModel
 
         if Self.verbose {

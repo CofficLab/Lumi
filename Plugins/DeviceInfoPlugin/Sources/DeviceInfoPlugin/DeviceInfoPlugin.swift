@@ -18,7 +18,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"
     public let order = 200
-	public let policy: LumiPluginPolicy = .disabled  // 功能插件
+	public let policy: LumiPluginPolicy = .alwaysOn  // 功能插件
 
     // MARK: - Initialization
 
@@ -78,7 +78,6 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
-    public func sendMiddlewares(kernel: LumiKernel) -> [any LumiSendMiddleware] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

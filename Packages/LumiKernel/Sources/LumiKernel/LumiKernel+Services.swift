@@ -44,10 +44,7 @@ extension LumiKernelContainer {
         resolveService(TitleToolbarProviding.self)
     }
 
-    /// Send middleware service
-    public var sendMiddleware: (any SendMiddlewareProviding)? {
-        resolveService(SendMiddlewareProviding.self)
-    }
+    /// Send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     /// Message send service (user input → persist + dispatch)
     public var messageSend: (any MessageSending)? {

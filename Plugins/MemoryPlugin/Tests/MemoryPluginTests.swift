@@ -28,12 +28,6 @@ struct PluginMemoryTests {
     }
 
     @MainActor
-    @Test("plugin registers send middleware")
-    func pluginRegistersSendMiddleware() {
-        let context = LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
-        #expect(MemoryPlugin.sendMiddlewares(context: context).count == 1)
-    }
-
     @Test("save memory tool schema has required fields")
     func saveMemoryToolSchema() {
         let tool = SaveMemoryTool()

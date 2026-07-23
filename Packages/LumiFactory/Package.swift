@@ -22,7 +22,6 @@ let package = Package(
         .package(path: "../../Plugins/CommandPlugin"),
         .package(path: "../../Plugins/MenuBarPlugin"),
         .package(path: "../../Plugins/TitleToolbarPlugin"),
-        .package(path: "../../Plugins/SendMiddlewarePlugin"),
         .package(path: "../../Plugins/ChatPanelPlugin"),
         .package(path: "../../Plugins/ChatSectionPlugin"),
         .package(path: "../../Plugins/MessageListPlugin"),
@@ -88,6 +87,8 @@ let package = Package(
         .package(path: "../../Plugins/WorkspaceStatePlugin"),
         // Editor and UI plugins
         .package(path: "../../Plugins/EditorPanelPlugin"),
+        .package(path: "../../Plugins/EditorFileTreePlugin"),
+        .package(path: "../../Plugins/EditorFileTreeV2Plugin"),
         // Utility plugins
         .package(path: "../../Plugins/DeviceInfoPlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
@@ -126,7 +127,6 @@ let package = Package(
                 .product(name: "CommandPlugin", package: "CommandPlugin"),
                 .product(name: "MenuBarPlugin", package: "MenuBarPlugin"),
                 .product(name: "TitleToolbarPlugin", package: "TitleToolbarPlugin"),
-                .product(name: "SendMiddlewarePlugin", package: "SendMiddlewarePlugin"),
                 .product(name: "ChatPanelPlugin", package: "ChatPanelPlugin"),
                 .product(name: "ChatSectionPlugin", package: "ChatSectionPlugin"),
                 .product(name: "MessageListPlugin", package: "MessageListPlugin"),
@@ -192,6 +192,8 @@ let package = Package(
                 .product(name: "WorkspaceStatePlugin", package: "WorkspaceStatePlugin"),
                 // Editor and UI plugins
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
+                .product(name: "EditorFileTreePlugin", package: "EditorFileTreePlugin"),
+                .product(name: "EditorFileTreeV2Plugin", package: "EditorFileTreeV2Plugin"),
                 .product(name: "EditorService", package: "EditorService"),
                 // Utility plugins
                 .product(name: "DeviceInfoPlugin", package: "DeviceInfoPlugin"),

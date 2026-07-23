@@ -1,20 +1,66 @@
+import Foundation
+import os
 import SwiftUI
 import LumiKernel
 import LumiUI
 
+/// File tree plugin V2 (NSCollectionView bridge).
+///
+/// Provides a high-performance file tree rendered via AppKit's NSCollectionView
+/// bridge (`TreeViewV2` / `FileTreeNSViewBridge`). Static feature flags and the
+/// SuperLog logger exposed here are consumed by `TreeViewV2` and the supporting
+/// services in `Services/`.
 @MainActor
 public final class EditorFileTreeV2Plugin: LumiPlugin {
+
+    // MARK: - Feature flags
+
+    /// 是否启用 Git 状态显示功能（禁用可提升文件树滚动性能）。
+    public nonisolated static let gitStatusEnabled: Bool = true
+
+    /// 是否启用文件树行拖拽和目录 drop target。
+    public nonisolated static let dragAndDropEnabled: Bool = true
+
+    /// 是否启用定位文件时的闪烁高亮。
+    public nonisolated static let flashHighlightEnabled: Bool = true
+
+    // MARK: - SuperLog Configuration
+
+    public nonisolated static let emoji = "🌲"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.file-tree-v2"
+    )
+
+    // MARK: - LumiPlugin identity
+
     public let id = "com.coffic.lumi.plugin.editor-file-tree-v2"
     public let name = "Editor File Tree V2"
-    public let order = 0
-	public let policy: LumiPluginPolicy = .disabled
+    public let order = 51
+    public let policy: LumiPluginPolicy = .optOut
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if let lumiCore = kernel.lumiCore {
+            EditorFileTreeV2Plugin.bootstrapFromLumiCoreIfNeeded(context: lumiCore)
+        }
+    }
+
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        guard let lumiCore = kernel.lumiCore else { return [] }
+        return [
+            PanelRailTabItem(
+                id: "explorer-v2",
+                title: LumiPluginLocalization.string("Explorer V2", bundle: .module),
+                systemImage: "square.grid.2x2.fill"
+            ) {
+                TreeViewV2(lumiCore: lumiCore)
+            },
+        ]
     }
 
 
@@ -22,14 +68,12 @@ public final class EditorFileTreeV2Plugin: LumiPlugin {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
-    public func sendMiddlewares(kernel: LumiKernel) -> [any LumiSendMiddleware] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
