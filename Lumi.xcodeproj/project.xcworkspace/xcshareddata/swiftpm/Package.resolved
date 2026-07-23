@@ -65,12 +65,30 @@
       }
     },
     {
+      "identity" : "libgit2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/LibGit2Swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3ee5a06e9bd69a4c4d75599dce12cef95bf76582"
+      }
+    },
+    {
       "identity" : "magicalert",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicAlert.git",
       "state" : {
         "revision" : "c01ea99ac87530ecc804f082c9311d884bc53418",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5"
       }
     },
     {

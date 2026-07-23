@@ -70,14 +70,12 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await StorageOnBootHook(dataRootDirectory: dataRootDirectory).execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let storage = StorageService(dataRootDirectory: dataRootDirectory)
-        kernel.registerStorage(storage)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Storage 服务: \(self.dataRootDirectory.path)")
-        }
+        try StorageOnReadyHook(dataRootDirectory: dataRootDirectory).execute(kernel)
     }
 
     // MARK: - LumiPlugin stubs

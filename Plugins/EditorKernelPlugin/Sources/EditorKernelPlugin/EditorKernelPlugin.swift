@@ -29,20 +29,12 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await EditorKernelOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register the EditorService with an extension registry.
-        // EditorService from the EditorService module doesn't conform to
-        // EditorServiceProviding, so we use a thin adapter.
-        let extensionRegistry = EditorExtensionRegistry()
-        let editorService = EditorService(editorExtensionRegistry: extensionRegistry)
-        let adapter = EditorServiceProvidingAdapter(wrapping: editorService)
-        kernel.registerEditor(adapter)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)Registered Editor service")
-            Self.logger.info("\(Self.t)Editor plugin booted")
-        }
+        try EditorKernelOnReadyHook().execute(kernel)
     }
 
 
@@ -78,49 +70,4 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-}
-
-/// Thin adapter that bridges EditorService (EditorService module) to EditorServiceProviding.
-@MainActor
-private final class EditorServiceProvidingAdapter: EditorServiceProviding {
-    private let service: EditorService
-
-    @Published var currentFilePath: String?
-    @Published var currentThemeId: String = "xcode-dark"
-
-    init(wrapping service: EditorService) {
-        self.service = service
-    }
-
-    func openFile(at path: String) async throws {
-        currentFilePath = path
-    }
-
-    func closeFile(at path: String) async {
-        if currentFilePath == path {
-            currentFilePath = nil
-        }
-    }
-
-    func setCurrentTheme(_ themeId: String) throws {
-        service.theme.syncInitialThemeFromExternal(themeId)
-        currentThemeId = themeId
-    }
-
-    var allEditorThemes: [EditorThemeInfo] {
-        []
-    }
-
-    func registerEditorTheme(_ theme: EditorThemeInfo) {}
-    func unregisterEditorTheme(themeId: String) {}
-
-    func editorSyntaxPalette(for themeId: String) -> EditorSyntaxPalette? {
-        nil
-    }
-
-    // MARK: - Raw EditorService Access
-
-    var rawEditorService: AnyObject? {
-        service
-    }
 }

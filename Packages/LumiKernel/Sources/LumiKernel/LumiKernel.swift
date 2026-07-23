@@ -75,14 +75,17 @@ public final class LumiKernelContainer: ObservableObject {
 
     /// Startup kernel and perform self-check
     ///
-    /// 1. Call pluginManager.onBoot() to orchestrate plugin lifecycle
-    /// 2. Check if all required services are registered
+    /// 1. Call pluginManager.onBoot() to register all kernel services + UI contributions
+    /// 2. Validate that all required services are registered (services are expected
+    ///    to be registered in onBoot per the LumiPlugin contract).
+    /// 3. Call pluginManager.onReady() to perform async initialization that
+    ///    depends on registered services.
     /// - Throws: If required services are missing
     public func startup() async throws {
-        // 1. 插件系统On Boot
+        // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
         try await pluginManager.onBoot(kernel: self)
 
-        // 2. 服务校验
+        // 2. 服务校验 — 必需的内核服务必须在 OnBoot 阶段注册完毕
         var missingServices: [String] = []
 
         if storage == nil { missingServices.append("Storage") }
@@ -109,8 +112,8 @@ public final class LumiKernelContainer: ObservableObject {
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)
         }
-        
-        // 3. 插件系统On Ready
+
+        // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
     }
 }

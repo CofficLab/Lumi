@@ -7,9 +7,11 @@ import os
 /// Projects 插件 OnReady 阶段钩子
 ///
 /// 负责 onReady 阶段的所有注册逻辑：
-/// - ProjectService
+/// - ProjectsStore / ProjectsViewModel / ProjectsSyncCoordinator 初始化
 /// - TitleToolbarItem
 /// - Agent Tools
+///
+/// ProjectService 的注册已在 OnBoot 阶段完成。
 @MainActor
 public struct ProjectsOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
@@ -23,15 +25,7 @@ public struct ProjectsOnReadyHook {
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        // 1. 注册 ProjectService（内核服务）
-        let projectService = ProjectService()
-        kernel.registerProject(projectService)
-
-        if Self.verbose {
-            Self.logger.info("📂 Registered ProjectService")
-        }
-
-        // 2. 初始化存储
+        // 1. 初始化存储
         guard let storage = kernel.storage else {
             registerErrorToolbar(kernel: kernel, message: "Storage service not available")
             return
@@ -43,14 +37,14 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Initialized ProjectsStore")
         }
 
-        // 3. 初始化 ViewModel
+        // 2. 初始化 ViewModel
         let viewModel = ProjectsViewModel(store: store)
 
         if Self.verbose {
             Self.logger.info("📂 Initialized ProjectsViewModel")
         }
 
-        // 4. 初始化同步协调器
+        // 3. 初始化同步协调器
         let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
         coordinator.kernel = kernel
 
@@ -58,7 +52,7 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Initialized ProjectsSyncCoordinator")
         }
 
-        // 5. 注册标题栏工具栏项
+        // 4. 注册标题栏工具栏项
         kernel.toolbarProvider?.registerTitleToolbarItem(
             TitleToolbarItem(
                 id: "\(pluginID).toolbar",
@@ -73,7 +67,7 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Registered TitleToolbarItem")
         }
 
-        // 6. 注册 Agent Tools
+        // 5. 注册 Agent Tools
         guard let toolManager = kernel.toolManager else {
             throw ProjectsPluginError.toolManagerNotAvailable
         }
@@ -85,7 +79,7 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Registered Agent Tools: list_projects, add_project, get_current_project")
         }
 
-        // 7. 设置 RuntimeBridge 供工具使用（boot 阶段会读取）
+        // 6. 设置 RuntimeBridge 供工具使用（boot 阶段会读取）
         ProjectsToolRuntimeBridge.viewModel = viewModel
 
         if Self.verbose {

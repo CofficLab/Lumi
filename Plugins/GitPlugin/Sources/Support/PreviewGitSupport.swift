@@ -7,14 +7,23 @@ import LumiKernel
 /// For SwiftUI Previews we don't want to spin up the entire boot sequence,
 /// so we provide a minimal stub that satisfies the protocol surface used by
 /// Git plugin views (only `projectState` is touched at preview time).
+
+/// Minimal `ObservableObject` stub used for SwiftUI `#Preview` blocks.
+@MainActor
+private final class PreviewChatServiceStub: ObservableObject {}
+
+@MainActor
 final class PreviewLumiCoreStub: LumiCoreAccessing {
     let storage = StorageComponent(dataRootDirectory: URL(fileURLWithPath: "/tmp/preview"))
     let logoComponent = LogoComponent()
     let projectComponent = ProjectComponent()
     let layoutComponent = LayoutComponent(state: LayoutState())
-    let chatService: any LumiChatServicing = PreviewChatServicing()
+    let chatService: any ObservableObject = PreviewChatServiceStub()
     let agentToolComponent = AgentToolComponent()
     var editorService: (any AbstractEditorServicing)? { nil }
+
+    func registerService<T>(_ type: T.Type, _ instance: T) {}
+    func resolveService<T>(_ type: T.Type) -> T? { nil }
 
     func makePluginContext(
         activeSectionID: String,

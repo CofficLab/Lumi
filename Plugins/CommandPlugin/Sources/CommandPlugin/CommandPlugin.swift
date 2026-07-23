@@ -31,18 +31,12 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await CommandOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 CommandService（内核服务）
-        let commandServiceInstance = DefaultCommandProviding()
-        kernel.registerCommandService(commandServiceInstance)
-        self.commandService = commandServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Command 插件到内核")
-            Self.logger.info("\(Self.t)Command 插件启动完成")
-        }
+        try CommandOnReadyHook().execute(kernel)
     }
 
 

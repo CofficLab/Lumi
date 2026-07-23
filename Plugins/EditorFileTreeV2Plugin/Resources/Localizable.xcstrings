@@ -565,6 +565,7 @@
       }
     },
     "Native rendering file tree using NSCollectionView for better performance." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

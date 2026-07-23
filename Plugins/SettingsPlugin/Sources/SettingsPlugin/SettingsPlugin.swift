@@ -31,18 +31,12 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await SettingsOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 SettingsService（内核服务）
-        let settingsServiceInstance = DefaultSettingsProviding()
-        kernel.registerSettingsService(settingsServiceInstance)
-        self.settingsService = settingsServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Settings 插件到内核")
-            Self.logger.info("\(Self.t)Settings 插件启动完成")
-        }
+        try SettingsOnReadyHook().execute(kernel)
     }
 
 

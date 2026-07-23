@@ -26,14 +26,12 @@ public final class ChatKernelPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await ChatKernelOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let chatService = ChatService()
-        kernel.registerChat(chatService)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Chat 服务")
-        }
+        try ChatKernelOnReadyHook().execute(kernel)
     }
 
 

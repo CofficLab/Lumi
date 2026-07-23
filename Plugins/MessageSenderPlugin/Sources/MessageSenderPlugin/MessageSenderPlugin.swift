@@ -33,9 +33,7 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
+    public func onBoot(kernel: LumiKernel) async throws {
         let service = MessageSender(kernel: kernel)
         kernel.registerMessageSend(service)
         if Self.verbose {
@@ -43,6 +41,8 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
             Self.logger.info("\(Self.t)MessageSenderPlugin boot 完成")
         }
     }
+
+    public func onReady(kernel: LumiKernel) async throws {}
 
 
     // MARK: - LumiPlugin stubs

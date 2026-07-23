@@ -26,14 +26,12 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await LayoutKernelOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let layoutService = LayoutService()
-        kernel.registerLayout(layoutService)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Layout 服务")
-        }
+        try LayoutKernelOnReadyHook().execute(kernel)
     }
 
 

@@ -1,13 +1,45 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import SuperLogKit
+import os
 
 @MainActor
-public final class GitPlugin: LumiPlugin {
-    public let id = "GitPlugin"
-    public let name = "Git"
-    public let order = 11
-	public let policy: LumiPluginPolicy = .disabled
+public final class GitPlugin: LumiPlugin, SuperLog {
+    // MARK: - SuperLog Configuration
+    //
+    // `Services/`, `Tools/`, and `Views/` reference `GitPlugin.logger`,
+    // `GitPlugin.verbose`, `GitPlugin.t`, and `GitPlugin.info`. They used to
+    // come from a `LumiPlugin, SuperLog` conformance; the LumiPlugin protocol
+    // no longer requires them so we expose them as plain static members and
+    // re-add the SuperLog conformance.
+
+    public nonisolated static let emoji = "🟢"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.git"
+    )
+
+    /// Plugin metadata. The view layer (e.g. `GitCommitHistoryRootOverlay`)
+    /// reads `GitPlugin.info.id` when deciding which container to activate.
+    public static let info = LumiPluginInfo(
+        id: "GitPlugin",
+        displayName: "Git",
+        description: "Git integration: history, commit details, branches, diffs.",
+        order: 11,
+        category: .editor,
+        policy: .optOut,
+        stage: .stable,
+        iconName: "git.branch"
+    )
+
+    // MARK: - LumiPlugin identity
+
+    public let id = GitPlugin.info.id
+    public let name = GitPlugin.info.displayName
+    public let order = GitPlugin.info.order
+    public let policy: LumiPluginPolicy = GitPlugin.info.policy
 
     public init() {}
 

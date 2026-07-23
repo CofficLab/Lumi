@@ -18,12 +18,12 @@ public final class WorkspaceStatePlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await WorkspaceStateOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let service = DefaultWorkspaceStateProviding()
-        kernel.registerWorkspaceStateService(service)
-        self.instance = service
+        try WorkspaceStateOnReadyHook().execute(kernel)
     }
 
     // MARK: - LumiPlugin stubs

@@ -31,18 +31,12 @@ public final class LogoPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await LogoOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 LogoService（内核服务）
-        let logoServiceInstance = DefaultLogoProviding()
-        kernel.registerLogoService(logoServiceInstance)
-        self.logoService = logoServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Logo 插件到内核")
-            Self.logger.info("\(Self.t)Logo 插件启动完成")
-        }
+        try LogoOnReadyHook().execute(kernel)
     }
 
 

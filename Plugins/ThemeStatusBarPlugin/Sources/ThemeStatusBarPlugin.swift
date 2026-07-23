@@ -14,9 +14,7 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
+    public func onBoot(kernel: LumiKernel) async throws {
         let themeServiceInstance = ThemeManager()
         kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
@@ -26,6 +24,8 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
             themeServiceInstance.reloadThemes()
         }
     }
+
+    public func onReady(kernel: LumiKernel) async throws {}
 
 
     // MARK: - LumiPlugin stubs

@@ -138,7 +138,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             updateWatcher()
 
             // 检测是否为 Git 仓库并启动首次 Git 状态刷新
-            isGitRepo = EditorFileTreeV2Plugin.gitStatusEnabled && GitAccessCoordinator.performSync { LibGit2.isGitRepository(at: path) }
+            isGitRepo = EditorFileTreeV2Plugin.gitStatusEnabled && LibGit2.isGitRepository(at: path)
             if isGitRepo {
                 refreshGitStatus()
             }

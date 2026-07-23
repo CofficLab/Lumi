@@ -31,18 +31,12 @@ public final class StatusBarPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await StatusBarOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 StatusBarService（内核服务）
-        let statusBarServiceInstance = DefaultStatusBarProviding()
-        kernel.registerStatusBarService(statusBarServiceInstance)
-        self.statusBarService = statusBarServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 StatusBar 插件到内核")
-            Self.logger.info("\(Self.t)StatusBar 插件启动完成")
-        }
+        try StatusBarOnReadyHook().execute(kernel)
     }
 
 

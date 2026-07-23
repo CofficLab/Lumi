@@ -344,6 +344,12 @@
     "Editor Rail File Tree" : {
       "extractionState" : "stale",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Rail File Tree"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -366,12 +372,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯器檔案樹側邊欄"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editor Rail File Tree"
           }
         }
       }
@@ -547,7 +547,14 @@
       }
     },
     "Explorer tab in the editor rail." : {
+      "extractionState" : "stale",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explorer tab in the editor rail."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -570,12 +577,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯器側欄中的資源管理器標籤。"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Explorer tab in the editor rail."
           }
         }
       }

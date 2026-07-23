@@ -31,18 +31,12 @@ public final class MenuBarPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await MenuBarOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 MenuBarService（内核服务）
-        let menuBarServiceInstance = DefaultMenuBarProviding()
-        kernel.registerMenuBarService(menuBarServiceInstance)
-        self.menuBarService = menuBarServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 MenuBar 插件到内核")
-            Self.logger.info("\(Self.t)MenuBar 插件启动完成")
-        }
+        try MenuBarOnReadyHook().execute(kernel)
     }
 
 

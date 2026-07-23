@@ -32,15 +32,12 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await AgentTurnRunnerOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let service = AgentTurnRunner(kernel: kernel)
-        kernel.registerAgentTurnRunnerService(service)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 AgentTurnRunner")
-            Self.logger.info("\(Self.t)AgentTurnRunnerPlugin boot 完成")
-        }
+        try AgentTurnRunnerOnReadyHook().execute(kernel)
     }
 
 

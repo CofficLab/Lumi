@@ -31,17 +31,12 @@ public final class ViewContainerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await ViewContainerOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let viewContainerServiceInstance = DefaultViewContainerProviding()
-        kernel.registerViewContainerService(viewContainerServiceInstance)
-        self.viewContainerService = viewContainerServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 ViewContainer 插件到内核")
-            Self.logger.info("\(Self.t)ViewContainer 插件启动完成")
-        }
+        try ViewContainerOnReadyHook().execute(kernel)
     }
 
     // MARK: - LumiPlugin stubs

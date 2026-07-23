@@ -31,17 +31,12 @@ public final class TitleToolbarPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await TitleToolbarOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        let titleToolbarServiceInstance = DefaultTitleToolbarProviding()
-        kernel.registerTitleToolbarService(titleToolbarServiceInstance)
-        self.titleToolbarService = titleToolbarServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 TitleToolbar 插件到内核")
-            Self.logger.info("\(Self.t)TitleToolbar 插件启动完成")
-        }
+        try TitleToolbarOnReadyHook().execute(kernel)
     }
 
     // MARK: - LumiPlugin stubs

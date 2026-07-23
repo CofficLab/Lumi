@@ -27,18 +27,12 @@ public final class PanelPlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await PanelOnBootHook().execute(kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 注册 PanelService（内核服务）
-        let panelServiceInstance = DefaultPanelProviding()
-        kernel.registerPanelService(panelServiceInstance)
-        self.panelService = panelServiceInstance
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Panel 插件到内核")
-            Self.logger.info("\(Self.t)Panel 插件启动完成")
-        }
+        try PanelOnReadyHook().execute(kernel)
     }
 
 
