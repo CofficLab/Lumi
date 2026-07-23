@@ -30,16 +30,15 @@ struct ConversationInputView: View, SuperLog {
                 .padding(.bottom, 4)
             }
 
-            TextField("Send a message...", text: $inputState.text)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .foregroundColor(theme.textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .disabled(isSending)
-                .onSubmit {
-                    send()
-                }
+            ComposerView(
+                text: $inputState.text,
+                inputHeight: $inputState.inputHeight,
+                isInputFocused: $inputState.isInputFocused,
+                inputCursorPosition: $inputState.inputCursorPosition,
+                isSending: isSending,
+                onSend: send,
+                onStop: stop
+            )
         }
         .background(theme.background)
     }
@@ -62,5 +61,9 @@ struct ConversationInputView: View, SuperLog {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func stop() {
+        kernel.messageSender?.cancelCurrentRequest()
     }
 }

@@ -60,15 +60,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
         ]
     }
 
-    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
-        [
-            ChatSectionActionBarItem(
-                id: "\(id).send-button"
-            ) {
-                SendButtonView(kernel: kernel, inputState: self.inputState)
-            }
-        ]
-    }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
 
 
     // MARK: - LumiPlugin stubs
