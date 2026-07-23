@@ -85,6 +85,7 @@ import ThemeVscodePlugin
 import ThemeWinterPlugin
 import TitleToolbarPlugin
 import VerbosityPlugin
+import ConversationSpeedPlugin
 import ChatModePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
@@ -162,6 +163,7 @@ public enum PluginService {
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             VerbosityPlugin(),
+            ConversationSpeedPlugin(),
             ChatModePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),

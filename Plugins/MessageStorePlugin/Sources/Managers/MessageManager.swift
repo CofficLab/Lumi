@@ -180,6 +180,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
     }
 
+    // MARK: - Message Query
+
+    public func message(id: UUID, in conversationID: UUID) -> LumiChatMessage? {
+        messageCache[conversationID]?.first { $0.id == id }
+    }
+
+    public func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
+        messageCache[conversationID]?.last
+    }
+
     // MARK: - Tool Call Result Update
 
     public func updateToolCallResult(

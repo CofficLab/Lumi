@@ -31,4 +31,10 @@ public protocol MessageManaging: ObservableObject {
 
     /// 清空指定对话的所有消息
     func clearMessages(in conversationID: UUID)
+
+    /// 获取指定消息
+    func message(id: UUID, in conversationID: UUID) -> LumiChatMessage?
+
+    /// 获取指定对话的最后一个消息
+    func lastMessage(in conversationID: UUID) -> LumiChatMessage?
 }
