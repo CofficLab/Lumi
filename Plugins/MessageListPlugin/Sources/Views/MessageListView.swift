@@ -21,7 +21,7 @@ struct MessageListView: View, SuperLog {
     }
 
     private var isSending: Bool {
-        kernel.messageSend?.isSending ?? false
+        kernel.messageSender?.isSending ?? false
     }
 
     /// Display messages with a transient status message appended when sending

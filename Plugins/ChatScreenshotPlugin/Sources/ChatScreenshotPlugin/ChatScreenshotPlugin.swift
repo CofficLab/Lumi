@@ -97,7 +97,7 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
             onComplete: { [weak kernel] cropped in
                 guard let cropped else { return }
                 let attachment = ScreenCaptureImageProcessor.makeAttachment(from: cropped)
-                kernel?.messageSend?.addAttachment(attachment)
+                kernel?.messageSender?.addAttachment(attachment)
                 if Self.verbose {
                     Self.logger.info("\(Self.t)截图完成 ➡️ 已加入附件池")
                 }

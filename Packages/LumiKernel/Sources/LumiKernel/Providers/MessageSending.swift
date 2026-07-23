@@ -50,6 +50,24 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     /// 清空所有挂起附件
     func clearAttachments()
 
+    // MARK: - 文件附件挂起池(可观察、可修改)
+
+    /// 当前挂起、等待下次发送时随消息一起送出的**文件**附件。
+    ///
+    /// 与 `pendingAttachments`(图片)并行的另一条链路:支持任意文件。
+    /// 文本类文件的正文会在发送时注入用户消息;二进制文件仅作可见 chip。
+    /// 由实现以 `@Published` 暴露。
+    var pendingFileAttachments: [LumiFileAttachment] { get }
+
+    /// 添加一个文件附件到挂起池(幂等:同 `id` 已存在则忽略)。
+    func addFileAttachment(_ attachment: LumiFileAttachment)
+
+    /// 按 `id` 移除一个挂起文件附件(id 不存在时为 no-op)。
+    func removeFileAttachment(id: UUID)
+
+    /// 清空所有挂起文件附件。
+    func clearFileAttachments()
+
     // MARK: - 发送
 
     /// text-only 发送的便利方法(向后兼容)
@@ -72,7 +90,8 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     ///    `kernel.conversations?.selectedConversationID`,否则自动创建);
     /// 3. 构造 `LumiChatMessage(role: .user, content: ..., metadata: ...)` 并通过
     ///    `kernel.messageManager?.insertMessage(_:to:)` 落库;若 `imageAttachments`
-    ///    非空,应编码为 JSON 写入 `metadata["imageAttachments"]`;
+    ///    非空,应编码为 JSON 写入 `metadata["imageAttachments"]`;此外,实现通常会把
+    ///    当前 `pendingFileAttachments` 也编码进 `metadata["fileAttachments"]`(文件链路);
     /// 4. 触发 `kernel.agentTurnRunner?.runTurn(in:)` 执行完整 agent loop。
     /// - Parameter content: 用户输入文本(由实现 trim)
     /// - Parameter imageAttachments: 本次随文本一起送出的图片附件;为 `[]` 时等同纯文本
@@ -90,8 +109,10 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 // MARK: - 默认实现
 
 public extension MessageSending {
-    /// text-only 路径的默认转发:复用当前 `pendingAttachments` 作为本次发送的附件。
-    /// 具体实现可在重写时自由决定是否清空 `pendingAttachments`(默认行为:不清空)。
+    /// text-only 路径的默认转发:复用当前 `pendingAttachments` 作为本次发送的图片附件。
+    /// (文件附件 `pendingFileAttachments` 不走此重载签名,由具体实现如 `MessageSender`
+    /// 在落库时直接读取自己的文件挂起池并序列化进 metadata。)
+    /// 具体实现可在重写时自由决定是否清空挂起池(默认行为:不清空)。
     func sendMessage(_ content: String, conversationID: UUID?) async throws {
         try await sendMessage(
             content,

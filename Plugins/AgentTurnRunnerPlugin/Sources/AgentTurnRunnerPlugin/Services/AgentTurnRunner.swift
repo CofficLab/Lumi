@@ -132,6 +132,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
             let pendingImages = LumiImageAttachmentMetadata.extract(from: history)
 
+            // 抽取最近一条 user message 的文件附件(由 MessageSender 写入 metadata["fileAttachments"])。
+            // 文本类文件正文在下游 MessageBridge 注入用户消息文本。
+            let pendingFiles = LumiFileAttachmentMetadata.extract(from: history)
+
             // 调用所有插件的 willSendToLLM 钩子,让插件可注入/修改 system prompt 等内容。
             // 钩子按插件 order 升序串行执行,每个插件拿到上一个插件处理后的 messages。
             var preparedMessages = history
@@ -158,7 +162,8 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 messages: preparedMessages,
                 model: model,
                 tools: tools,
-                imageAttachments: pendingImages
+                imageAttachments: pendingImages,
+                fileAttachments: pendingFiles
             )
 
             // Call LLM

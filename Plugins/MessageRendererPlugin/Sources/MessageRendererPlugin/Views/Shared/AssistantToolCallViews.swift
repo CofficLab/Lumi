@@ -340,11 +340,18 @@ private struct ToolCallResultView: View {
                     ToolFailureNoticeView()
                 }
 
+                // 工具返回的图片附件(如截图/抓图工具),在文本之前以网格展示
+                if !resultImageData.isEmpty {
+                    AppImagePreviewGrid(imageDataList: resultImageData)
+                }
+
                 if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    EmptyToolSectionView(
-                        systemImage: "info.circle",
-                        text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
-                    )
+                    if resultImageData.isEmpty {
+                        EmptyToolSectionView(
+                            systemImage: "info.circle",
+                            text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
+                        )
+                    }
                 } else {
                     ToolTextSectionView(content: result.content, isError: visualState.isFailure)
                 }
@@ -352,6 +359,11 @@ private struct ToolCallResultView: View {
         } else {
             EmptyToolSectionView(systemImage: "info.circle", text: "暂无工具输出")
         }
+    }
+
+    /// 把工具结果的图片附件解码为 `[Data]`,供 `AppImagePreviewGrid` 展示。
+    private var resultImageData: [Data] {
+        result?.imageAttachments.compactMap { Data(base64Encoded: $0.base64Data) } ?? []
     }
 }
 

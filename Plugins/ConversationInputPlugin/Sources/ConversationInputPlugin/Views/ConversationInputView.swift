@@ -16,7 +16,7 @@ struct ConversationInputView: View, SuperLog {
 
     /// 当前是否在向内核发送中
     private var isSending: Bool {
-        kernel.messageSend?.isSending ?? false
+        kernel.messageSender?.isSending ?? false
     }
 
     var body: some View {
@@ -47,7 +47,7 @@ struct ConversationInputView: View, SuperLog {
     private func send() {
         let trimmed = inputState.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard let messageSend = kernel.messageSend else {
+        guard let messageSend = kernel.messageSender else {
             errorMessage = "Message service is not available"
             return
         }

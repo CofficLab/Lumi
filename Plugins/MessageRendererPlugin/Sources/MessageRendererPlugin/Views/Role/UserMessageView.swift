@@ -14,6 +14,10 @@ struct UserMessageView: View {
                     AppImagePreviewGrid(imageDataList: message.userImageData)
                 }
 
+                if !message.decodedFileAttachments.isEmpty {
+                    MessageFileAttachmentChips(attachments: message.decodedFileAttachments)
+                }
+
                 if !message.content.isEmpty {
                     CollapsiblePlainText(text: message.content)
                 }

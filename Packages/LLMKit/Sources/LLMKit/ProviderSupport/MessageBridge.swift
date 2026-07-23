@@ -12,6 +12,7 @@ public enum LumiVisionMessageSupport {
     public static func preparedMessages(for request: LumiLLMRequest) -> [ChatMessage] {
         var messages = request.messages.map(convert)
         attachRequestImages(&messages, attachments: request.imageAttachments)
+        injectFileAttachments(&messages, attachments: request.fileAttachments)
         return LLMMessagePreparer.prepare(messages)
     }
 
@@ -64,6 +65,33 @@ public enum LumiVisionMessageSupport {
               let json = String(data: data, encoding: .utf8)
         else { return nil }
         return json
+    }
+
+    /// 把文件附件的文本内容注入最后一条 user 消息。
+    ///
+    /// 文本类文件(代码/配置/文本等可 UTF-8 解码的文件)用围栏块前置到用户消息正文,
+    /// 这样对任何 provider 都能立即工作(无需扩展 content part / adapter)。
+    /// 二进制文件(`textContent == nil`)在此处只放一个简短的占位标注,告知模型有该文件。
+    private static func injectFileAttachments(
+        _ messages: inout [ChatMessage],
+        attachments: [LumiFileAttachment]
+    ) {
+        guard !attachments.isEmpty,
+              let lastUserIndex = messages.lastIndex(where: { $0.role == .user })
+        else {
+            return
+        }
+
+        let blocks = attachments.map { attachment -> String in
+            if let text = attachment.textContent {
+                return "<file name=\"\(attachment.fileName)\">\n\(text)\n</file>"
+            } else {
+                return "<file name=\"\(attachment.fileName)\">\n[Binary file: \(attachment.mimeType), \(attachment.base64Data.count) base64 chars — content not inlined]\n</file>"
+            }
+        }
+        let injected = blocks.joined(separator: "\n\n")
+        let original = messages[lastUserIndex].content
+        messages[lastUserIndex].content = injected + "\n\n" + original
     }
 
     private static func convertRole(_ role: LumiChatMessageRole) -> MessageRole {

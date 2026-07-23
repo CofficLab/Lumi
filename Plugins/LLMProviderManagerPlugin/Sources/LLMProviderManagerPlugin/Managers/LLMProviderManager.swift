@@ -171,7 +171,13 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)sendToSelectedProvider ➡️ 选 provider id=\(providerID), model=\(model), messages=\(request.messages.count), tools=\(request.tools.count)")
         }
-        let selectedRequest = LumiLLMRequest(messages: request.messages, model: model, tools: request.tools)
+        let selectedRequest = LumiLLMRequest(
+            messages: request.messages,
+            model: model,
+            tools: request.tools,
+            imageAttachments: request.imageAttachments,
+            fileAttachments: request.fileAttachments
+        )
         return try await provider.send(selectedRequest)
     }
 }

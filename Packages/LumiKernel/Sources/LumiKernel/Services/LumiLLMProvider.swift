@@ -5,17 +5,20 @@ public struct LumiLLMRequest: Sendable {
     public let model: String
     public let tools: [any LumiAgentTool]
     public let imageAttachments: [LumiImageAttachment]
+    public let fileAttachments: [LumiFileAttachment]
 
     public init(
         messages: [LumiChatMessage],
         model: String,
         tools: [any LumiAgentTool] = [],
-        imageAttachments: [LumiImageAttachment] = []
+        imageAttachments: [LumiImageAttachment] = [],
+        fileAttachments: [LumiFileAttachment] = []
     ) {
         self.messages = messages
         self.model = model
         self.tools = tools
         self.imageAttachments = imageAttachments
+        self.fileAttachments = fileAttachments
     }
 }
 

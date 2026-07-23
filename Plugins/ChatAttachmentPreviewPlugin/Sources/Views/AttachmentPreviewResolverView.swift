@@ -14,7 +14,7 @@ struct AttachmentPreviewResolverView: View {
     @StateObject private var boxHolder = BoxHolder()
 
     var body: some View {
-        if let messageSend = kernel.messageSend {
+        if let messageSend = kernel.messageSender {
             // 在 messageSend 变化时重建 box(很少发生)
             let box = boxHolder.box(for: messageSend)
             AttachmentPreviewView(box: box)

@@ -9,7 +9,7 @@ struct SendButtonView: View {
     @ObservedObject var inputState: InputState
 
     private var isSending: Bool {
-        kernel.messageSend?.isSending ?? false
+        kernel.messageSender?.isSending ?? false
     }
 
     private var canSend: Bool {
@@ -54,7 +54,7 @@ struct SendButtonView: View {
     private func send() {
         let trimmed = inputState.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard let messageSend = kernel.messageSend else { return }
+        guard let messageSend = kernel.messageSender else { return }
 
         inputState.text = ""
 
@@ -64,6 +64,6 @@ struct SendButtonView: View {
     }
 
     private func stop() {
-        kernel.messageSend?.cancelCurrentRequest()
+        kernel.messageSender?.cancelCurrentRequest()
     }
 }

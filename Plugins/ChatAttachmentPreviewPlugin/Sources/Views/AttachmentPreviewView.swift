@@ -22,8 +22,12 @@ struct AttachmentPreviewView: View {
         messageSend.pendingAttachments
     }
 
+    private var fileAttachments: [LumiFileAttachment] {
+        messageSend.pendingFileAttachments
+    }
+
     var body: some View {
-        if !attachments.isEmpty {
+        if !attachments.isEmpty || !fileAttachments.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(attachments) { attachment in
@@ -31,6 +35,14 @@ struct AttachmentPreviewView: View {
                             attachment: attachment,
                             onRemove: {
                                 messageSend.removeAttachment(id: attachment.id)
+                            }
+                        )
+                    }
+                    ForEach(fileAttachments) { attachment in
+                        FileAttachmentChip(
+                            attachment: attachment,
+                            onRemove: {
+                                messageSend.removeFileAttachment(id: attachment.id)
                             }
                         )
                     }
@@ -86,5 +98,61 @@ private struct AttachmentThumbnail: View {
             return nil
         }
         return NSImage(data: data)
+    }
+}
+
+/// 文件附件 chip:文档图标 + 文件名 + 右上角"×"删除按钮(高度对齐图片缩略图)
+private struct FileAttachmentChip: View {
+    @LumiTheme private var theme
+    let attachment: LumiFileAttachment
+    let onRemove: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            chipBody
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white, .black.opacity(0.55))
+            }
+            .buttonStyle(.plain)
+            .offset(x: 6, y: -6)
+        }
+    }
+
+    private var chipBody: some View {
+        HStack(spacing: 6) {
+            Image(systemName: iconName)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(theme.textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(kindLabel)
+                    .font(.system(size: 10))
+                    .foregroundColor(theme.textTertiary)
+                    .lineLimit(1)
+            }
+        }
+        .frame(height: 72)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(theme.textPrimary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(theme.textPrimary.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var iconName: String {
+        attachment.textContent == nil ? "doc.fill" : "doc.text"
+    }
+
+    private var kindLabel: String {
+        attachment.textContent == nil ? "Binary file" : "Text file"
     }
 }

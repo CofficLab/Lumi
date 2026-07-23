@@ -34,6 +34,10 @@ public final class MessageSender: MessageSending, SuperLog {
     /// `addAttachment / removeAttachment / clearAttachments` 维护此集合。
     @Published public private(set) var pendingAttachments: [LumiImageAttachment] = []
 
+    /// 当前挂起、等待下次发送时随消息一起送出的**文件**附件(与图片并行的链路)。
+    /// `addFileAttachment / removeFileAttachment / clearFileAttachments` 维护此集合。
+    @Published public private(set) var pendingFileAttachments: [LumiFileAttachment] = []
+
     private weak var kernel: LumiKernel?
 
     public init(kernel: LumiKernel) {
@@ -74,6 +78,40 @@ public final class MessageSender: MessageSending, SuperLog {
         pendingAttachments.removeAll()
         if Self.verbose {
             Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
+        }
+    }
+
+    // MARK: - 文件附件挂起池
+
+    /// 添加文件附件。幂等:同 `id` 已存在则忽略。
+    public func addFileAttachment(_ attachment: LumiFileAttachment) {
+        guard !pendingFileAttachments.contains(where: { $0.id == attachment.id }) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
+            }
+            return
+        }
+        pendingFileAttachments.append(attachment)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, name=\(attachment.fileName), pool.size=\(self.pendingFileAttachments.count)")
+        }
+    }
+
+    /// 按 id 移除挂起文件附件。id 不存在则 no-op。
+    public func removeFileAttachment(id: UUID) {
+        let before = pendingFileAttachments.count
+        pendingFileAttachments.removeAll { $0.id == id }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)removeFileAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingFileAttachments.count)")
+        }
+    }
+
+    /// 清空所有挂起文件附件。
+    public func clearFileAttachments() {
+        let count = pendingFileAttachments.count
+        pendingFileAttachments.removeAll()
+        if Self.verbose {
+            Self.logger.info("\(Self.t)clearFileAttachments ➡️ cleared \(count) items")
         }
     }
 
@@ -154,6 +192,12 @@ public final class MessageSender: MessageSending, SuperLog {
             }
         }
 
+        // 把文件附件序列化进 metadata["fileAttachments"] JSON(如有)。
+        // 文件链路与图片并行:取当前文件挂起池快照,文本类文件正文在下游注入用户消息。
+        if !pendingFileAttachments.isEmpty {
+            metadata = LumiFileAttachmentMetadata.encode(pendingFileAttachments, into: metadata)
+        }
+
         let userMessage = LumiChatMessage(
             conversationID: targetID,
             role: .user,
@@ -194,6 +238,10 @@ public final class MessageSender: MessageSending, SuperLog {
 
         // 5. Clean up sending state (after turn completes)
         isSending = false
+        // 附件已在步骤 3 序列化进消息 metadata,与该消息绑定;回合期间 AgentTurnRunner
+        // 从 metadata(而非挂起池)读取附件,故此处可安全清空预览池,避免发送后残留。
+        clearAttachments()
+        clearFileAttachments()
         if Self.verbose {
             Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束")
         }

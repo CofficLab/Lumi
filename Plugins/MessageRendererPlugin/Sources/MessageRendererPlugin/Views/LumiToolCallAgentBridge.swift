@@ -26,15 +26,15 @@ extension LumiToolCall {
 
 extension LumiChatMessage {
     func decodedImageAttachments() -> [LumiImageAttachment] {
-        guard metadata["hasImages"] == "true",
-              let json = metadata["imageAttachments"],
-              let data = json.data(using: .utf8) else {
-            return []
-        }
-        return (try? JSONDecoder().decode([LumiImageAttachment].self, from: data)) ?? []
+        LumiImageAttachmentMetadata.decode(from: metadata)
     }
 
     var userImageData: [Data] {
         decodedImageAttachments().compactMap { Data(base64Encoded: $0.base64Data) }
+    }
+
+    /// 该消息携带的文件附件(解码自 metadata["fileAttachments"])。
+    var decodedFileAttachments: [LumiFileAttachment] {
+        LumiFileAttachmentMetadata.decode(from: metadata)
     }
 }

@@ -166,7 +166,8 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             messages: request.messages,
             model: request.model,
             tools: mappedTools,
-            imageAttachments: request.imageAttachments
+            imageAttachments: request.imageAttachments,
+            fileAttachments: request.fileAttachments
         )
         
         // 日志：输出原始和适配后的工具名称

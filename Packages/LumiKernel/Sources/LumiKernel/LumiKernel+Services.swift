@@ -47,7 +47,7 @@ extension LumiKernelContainer {
     /// Send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     /// Message send service (user input → persist + dispatch)
-    public var messageSend: (any MessageSending)? {
+    public var messageSender: (any MessageSending)? {
         resolveService(MessageSending.self)
     }
 
