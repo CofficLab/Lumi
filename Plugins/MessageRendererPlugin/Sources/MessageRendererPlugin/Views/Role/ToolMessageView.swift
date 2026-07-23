@@ -21,6 +21,10 @@ struct ToolMessageView: View {
                             .foregroundColor(theme.textPrimary)
                     }
 
+                    if !message.userImageData.isEmpty {
+                        AppImagePreviewGrid(imageDataList: message.userImageData)
+                    }
+
                     Text(message.content)
                         .font(.appMonoCaption)
                         .foregroundColor(theme.textPrimary)

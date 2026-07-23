@@ -165,6 +165,28 @@ public actor MessageStore: SuperLog {
         return save(context, operation: "更新消息")
     }
 
+    /// Update the tool calls (incl. nested tool results) of a message.
+    ///
+    /// `LumiToolCall` (and its nested `LumiToolResult.imageAttachments`) is `Codable`,
+    /// so encoding the rebuilt `toolCalls` array preserves tool-result images across
+    /// restarts — `updateToolCallResult` previously only mutated the in-memory cache.
+    func updateToolCalls(id: UUID, toolCalls: [LumiToolCall]) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        let data = try? JSONEncoder().encode(toolCalls)
+        model.toolCallsJson = data.flatMap { String(data: $0, encoding: .utf8) }
+        return save(context, operation: "更新 toolCalls")
+    }
+
     // MARK: - Delete
 
     /// Delete a message by ID

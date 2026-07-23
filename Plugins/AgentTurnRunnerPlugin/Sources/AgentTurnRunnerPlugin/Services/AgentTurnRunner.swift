@@ -223,12 +223,17 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     in: conversationID
                 )
 
-                // Insert tool result as a new message so LLM can see it in the next turn
+                // Insert tool result as a new message so LLM can see it in the next turn.
+                // Encode any tool-result images into metadata["imageAttachments"] so that
+                // (a) the model receives them on the next turn (MessageBridge attaches them),
+                // and (b) the .tool bubble can render them. Previously the images were dropped.
+                let toolMetadata = LumiImageAttachmentMetadata.encode(result.imageAttachments)
                 let toolResultMessage = LumiChatMessage(
                     conversationID: conversationID,
                     role: .tool,
                     content: result.content,
                     isError: result.isError,
+                    metadata: toolMetadata,
                     toolCallID: toolCall.id
                 )
                 kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)

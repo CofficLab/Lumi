@@ -253,8 +253,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // Notify UI to refresh
         NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
 
-        // Note: Store persistence for tool call result updates can be optimized later.
-        // The cache is the primary source of truth for UI rendering.
+        // Persist the rebuilt tool calls (incl. nested tool-result images) so they
+        // survive a restart. Previously only the in-memory cache was updated.
+        Task {
+            await store?.updateToolCalls(id: old.id, toolCalls: toolCalls)
+        }
     }
 }
 
