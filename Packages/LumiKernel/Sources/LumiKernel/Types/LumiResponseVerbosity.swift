@@ -5,6 +5,10 @@ public enum LumiResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepre
     case standard
     case detailed
 
+    /// 未显式指定时使用的默认级别（单一事实来源）。
+    /// 所有回退到默认值的位置都应引用此处，避免各处不一致。
+    public static let defaultVerbosity: LumiResponseVerbosity = .detailed
+
     public var id: String { rawValue }
 
     public var rawValue: String {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 private struct LumiResponseVerbosityKey: EnvironmentKey {
-    static let defaultValue: LumiResponseVerbosity = .detailed
+    static let defaultValue: LumiResponseVerbosity = .defaultVerbosity
 }
 
 extension EnvironmentValues {

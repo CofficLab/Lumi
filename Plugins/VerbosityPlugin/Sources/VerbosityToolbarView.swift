@@ -13,7 +13,7 @@ struct VerbosityToolbarView: View {
     }
 
     private var selectedLevel: LumiResponseVerbosity {
-        conversations?.verbosity(for: selectedConversationID) ?? .standard
+        conversations?.verbosity(for: selectedConversationID) ?? .defaultVerbosity
     }
 
     @State private var isPopoverPresented = false

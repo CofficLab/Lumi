@@ -27,7 +27,7 @@ struct MessageListView: View, SuperLog {
     /// 当前会话的回复详细级别
     private var currentVerbosity: LumiResponseVerbosity {
         let conversationID = kernel.conversations?.selectedConversationID
-        return kernel.conversations?.verbosity(for: conversationID) ?? .detailed
+        return kernel.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
     }
 
     /// 工具调用结果消息（role == .tool）仅在「详细」(V3) 级别下展示。

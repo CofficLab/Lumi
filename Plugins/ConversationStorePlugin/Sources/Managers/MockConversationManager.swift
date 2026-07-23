@@ -170,9 +170,9 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
         guard let conversationID else {
-            return .detailed
+            return .defaultVerbosity
         }
-        return conversations.first { $0.id == conversationID }?.verbosity ?? .detailed
+        return conversations.first { $0.id == conversationID }?.verbosity ?? .defaultVerbosity
     }
 
     public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
