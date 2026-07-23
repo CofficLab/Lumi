@@ -1,7 +1,4 @@
 import LumiKernel
-import LumiKernel
-import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
@@ -16,8 +13,13 @@ public final class MessageRendererPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onReady(kernel: LumiKernel) throws {
-        // 直接向内核注册消息渲染器
+    public func onReady(kernel: LumiKernel) throws {}
+
+    public func boot(kernel: LumiKernel) async throws {
+        // 注册 Manager
+        kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
+
+        // 注册内置渲染器
         guard let manager = kernel.resolveService(MessageRendererManaging.self) else {
             return
         }
@@ -142,6 +144,4 @@ public final class MessageRendererPlugin: LumiPlugin {
             )
         )
     }
-
-    public func boot(kernel: LumiKernel) async throws {}
 }
