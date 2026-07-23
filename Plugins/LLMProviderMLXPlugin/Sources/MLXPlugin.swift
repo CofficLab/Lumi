@@ -4,7 +4,6 @@ import SwiftUI
 
 /// MLX 本地 LLM 供应商插件
 public enum MLXPlugin: LumiPlugin {
-
     public static let info = LumiPluginInfo(
         id: "LLMProviderMLX",
         displayName: LumiPluginLocalization.string("MLX", bundle: .module),

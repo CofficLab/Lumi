@@ -1,33 +1,24 @@
-import SwiftUI
 import LLMKit
 import LumiKernel
-import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class OpenAIPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.openai"
     public let name = "OpenAI"
     public let order = 100
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .disabled
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        for provider in llmProviders(kernel: kernel) {
-            kernel.llmProvider?.registerLLMProvider(provider)
-        }
-    }
-
+    public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [OpenAIProvider()]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
