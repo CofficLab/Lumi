@@ -1,8 +1,9 @@
-import LumiLocalizationKit
+import LocalizationKit
 import LumiUI
 import SwiftUI
 
-struct AboutPage: View {
+/// "关于"设置页(原 LumiFactory 的 AboutPage)。
+struct AboutSettingsView: View {
     private let bundleInfo = AppBundleInfo()
 
     var body: some View {

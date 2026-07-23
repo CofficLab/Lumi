@@ -17,6 +17,7 @@ import ConversationMessageCountPlugin
 import ChatAttachmentPreviewPlugin
 import ChatScreenshotPlugin
 import PluginManagerPlugin
+import HostSettingsPlugin
 import MessageStorePlugin
 import MessageSenderPlugin
 import DeviceInfoPlugin
@@ -116,6 +117,8 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
             LLMProviderManagerPlugin(),
+            // Host settings tabs (General/Appearance/About) — order 1, lead the sidebar
+            HostSettingsPlugin(),
             // LLM Providers (order 91-110)
             AiRouterPlugin(),
             DeepSeekPlugin(),

@@ -228,7 +228,9 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
             // Settings
             for item in plugin.settingsTabItems(kernel: kernel) {
-                kernel.settings?.registerSettingsTabItem(item)
+                var settingsTab = item
+                settingsTab.order = pluginOrder
+                kernel.settings?.registerSettingsTabItem(settingsTab)
             }
             for item in plugin.llmProviderSettingsItems(kernel: kernel) {
                 kernel.settings?.registerLLMProviderSettingsItem(item)

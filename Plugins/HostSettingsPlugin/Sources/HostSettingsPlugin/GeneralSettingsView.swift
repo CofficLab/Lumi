@@ -1,10 +1,10 @@
+import LocalizationKit
 import LumiKernel
-import LumiKernel
-import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
-struct GeneralSettingsPage: View {
+/// "通用"设置页(原 LumiFactory 的 GeneralSettingsPage)。
+struct GeneralSettingsView: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {

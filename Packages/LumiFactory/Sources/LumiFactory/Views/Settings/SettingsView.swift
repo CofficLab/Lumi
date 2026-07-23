@@ -10,7 +10,7 @@ struct SettingsView: View {
     /// 注销时驱动 UI 重渲染(LumiKernelContainer 转发服务的 objectWillChange)。
     @ObservedObject var kernel: LumiKernel
 
-    @State private var selectedTab: SettingsTabID = .builtin(.general)
+    @State private var selectedTab: SettingsTabID?
 
     /// 设置界面渲染所必需的内核服务。任一缺失则整屏显示错误界面,
     /// 而不是用 `?? []` 静默降级成残缺的 UI。
@@ -36,6 +36,12 @@ struct SettingsView: View {
         .frame(minWidth: 720, minHeight: 520)
         .background(theme.background)
         .ignoresSafeArea()
+        .onAppear {
+            // 首次进入若无选中,选第一个标签(按 order 最前者)。
+            if selectedTab == nil {
+                selectedTab = descriptors.first?.id
+            }
+        }
     }
 
     private var sidebar: some View {
@@ -62,40 +68,37 @@ struct SettingsView: View {
         }
     }
 
-    /// 把内置标签和插件贡献的 `SettingsTabItem` 平铺合并。
+    /// 所有设置标签均由插件通过 `settingsTabItems(kernel:)` 贡献;
+    /// 此处统一按 `order` 升序排序(同 order 时保持注册顺序)。
     ///
     /// 此处能安全强解包 `kernel.settings`,是因为 `body` 已在
     /// `missingServices` 非空时改显示 `SettingsUnavailableView`,不会进入此分支。
     private var descriptors: [SettingsTabDescriptor] {
-        var items: [SettingsTabDescriptor] = SettingsTab.allCases.map {
-            SettingsTabDescriptor(
-                id: .builtin($0),
-                title: $0.title,
-                systemImage: $0.systemImage
-            )
-        }
-        guard let settings = kernel.settings else { return items }
-        for item in settings.allSettingsTabItems {
-            items.append(SettingsTabDescriptor(
-                id: .plugin(item.id),
-                title: item.title,
-                systemImage: item.systemImage
-            ))
-        }
-        return items
+        guard let settings = kernel.settings else { return [] }
+        return settings.allSettingsTabItems
+            .sorted { lhs, rhs in
+                if lhs.order != rhs.order { return lhs.order < rhs.order }
+                return false // 同 order 保持稳定注册顺序
+            }
+            .map {
+                SettingsTabDescriptor(
+                    id: $0.id,
+                    title: $0.title,
+                    systemImage: $0.systemImage
+                )
+            }
     }
 
     @ViewBuilder
     private var detail: some View {
-        switch selectedTab {
-        case .builtin(.general):
-            GeneralSettingsPage()
-        case .builtin(.appearance):
-            AppearanceSettingsPage(kernel: kernel)
-        case .builtin(.about):
-            AboutPage()
-        case .plugin(let id):
-            pluginTabDetail(id: id)
+        if let selectedTab {
+            pluginTabDetail(id: selectedTab)
+        } else {
+            AppEmptyState(
+                icon: "gearshape",
+                title: LumiLocalization.string("Select a tab", bundle: .module)
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

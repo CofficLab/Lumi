@@ -1,9 +1,11 @@
+import LocalizationKit
 import LumiKernel
-import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
-struct AppearanceSettingsPage: View {
+/// "外观"设置页(原 LumiFactory 的 AppearanceSettingsPage)。
+/// 依赖 `kernel.theme` 服务展示与切换主题。
+struct AppearanceSettingsView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
     @State private var selectedThemeID: String?
