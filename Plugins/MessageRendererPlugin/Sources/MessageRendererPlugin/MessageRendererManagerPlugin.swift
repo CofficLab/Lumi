@@ -24,16 +24,16 @@ public final class MessageRendererManagerPlugin: LumiPlugin {
     // MARK: - LumiPlugin
 
     public func onReady(kernel: LumiKernel) throws {
-        kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
-
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 MessageRendererManager 插件到内核")
+            Self.logger.info("\(Self.t)MessageRendererManager 插件已就绪")
         }
     }
 
     public func boot(kernel: LumiKernel) async throws {
+        kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
+
         if Self.verbose {
-            Self.logger.info("\(Self.t)MessageRendererManager 插件启动完成")
+            Self.logger.info("\(Self.t)已注册 MessageRendererManager 插件到内核")
         }
     }
 }
