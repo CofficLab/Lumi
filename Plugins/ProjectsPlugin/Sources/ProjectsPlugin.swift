@@ -33,19 +33,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
-        // 注入当前项目路径提示词(在首位插入 system 消息,
-        // AgentTurnRunner 会把所有 system 消息合并为单条以最大化缓存命中率)
-        if let projectPath = kernel.project?.currentProject?.path,
-           !projectPath.isEmpty {
-            let hint = "Current project path: \(projectPath)"
-            let systemMessage = LumiChatMessage(
-                conversationID: UUID(),
-                role: .system,
-                content: hint
-            )
-            return [systemMessage] + messages
-        }
-        return messages
+        await ProjectsWillSendToLLMHook(pluginID: id).execute(kernel: kernel, messages: messages)
     }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
