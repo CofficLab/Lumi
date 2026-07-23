@@ -9,7 +9,7 @@ import Foundation
 /// 4. Repeating until the LLM produces a final response (no more tool calls)
 ///
 /// This protocol is typically exposed by a plugin and called by
-/// `MessageSendManaging` after a user message is persisted.
+/// `MessageSending` after a user message is persisted.
 @MainActor
 public protocol AgentTurnRunning: AnyObject {
     /// Runs a complete agent turn for the given conversation.

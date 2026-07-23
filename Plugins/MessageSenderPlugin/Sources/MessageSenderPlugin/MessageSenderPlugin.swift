@@ -6,7 +6,7 @@ import SuperLogKit
 
 /// Message Sender Plugin
 ///
-/// Registers a `MessageSendManaging` implementation with the kernel.
+/// Registers a `MessageSending` implementation with the kernel.
 /// The implementation lives in `Managers/MessageSender.swift`
 /// and persists the user message into `MessageManaging` before
 /// delegating to `AgentTurnRunner` for the full agent loop.

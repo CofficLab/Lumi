@@ -5,9 +5,9 @@ import LumiKernel
 import os
 import SuperLogKit
 
-/// Default implementation of `MessageSendManaging`.
+/// Default implementation of `MessageSending`.
 ///
-/// Responsibilities (per `MessageSendManaging` contract):
+/// Responsibilities (per `MessageSending` contract):
 /// 1. Trim `content`; return early on empty input.
 /// 2. Resolve the target conversation:
 ///    - `conversationID` if non-nil,
