@@ -8,7 +8,7 @@ public final class XybbzPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.xybbz"
     public let name = "Xybbz"
     public let order = 103
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

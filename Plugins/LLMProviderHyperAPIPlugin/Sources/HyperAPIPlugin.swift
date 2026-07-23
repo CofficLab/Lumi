@@ -8,7 +8,7 @@ public final class HyperAPIPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.hyperapi"
     public let name = "HyperAPI"
     public let order = 97
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

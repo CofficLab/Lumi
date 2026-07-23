@@ -9,7 +9,7 @@ public final class MLXLumiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.mlx"
     public let name = "MLX"
     public let order = 95
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

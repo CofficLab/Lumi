@@ -9,7 +9,7 @@ public final class HappyCodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.happycode"
     public let name = "HappyCode"
     public let order = 96
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

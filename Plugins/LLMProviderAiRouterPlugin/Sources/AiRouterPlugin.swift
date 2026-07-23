@@ -9,7 +9,7 @@ public final class AiRouterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
     public let name = "AiRouter"
     public let order = 91
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

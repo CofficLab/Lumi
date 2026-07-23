@@ -12,7 +12,7 @@ public final class AliyunPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.aliyun"
     public let name = "阿里云 CodingPlan"
     public let order = 105
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

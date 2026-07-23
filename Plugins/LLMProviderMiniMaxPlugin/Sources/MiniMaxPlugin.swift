@@ -8,7 +8,7 @@ public final class MiniMaxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.minimax"
     public let name = "MiniMax"
     public let order = 104
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 

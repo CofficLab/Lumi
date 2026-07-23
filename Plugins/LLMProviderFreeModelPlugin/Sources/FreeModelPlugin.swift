@@ -9,7 +9,7 @@ public final class FreeModelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.freemodel"
     public let name = "FreeModel"
     public let order = 95
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
