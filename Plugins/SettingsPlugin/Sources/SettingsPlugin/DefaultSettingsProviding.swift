@@ -7,10 +7,15 @@ import SwiftUI
 /// 默认设置服务实现
 ///
 /// 负责管理所有插件的设置标签项和 LLM 提供商设置项的注册和查询。
+///
+/// 已发布 (`@Published`) — `LumiKernelContainer.subscribeToObjectWillChange`
+/// 会把本服务的 `objectWillChange` 转发到 kernel,从而让
+/// `@ObservedObject var kernel: LumiKernel` 的宿主 UI 在 register/unregister
+/// 后自动重渲染。
 @MainActor
 public final class DefaultSettingsProviding: SettingsProviding {
-    public private(set) var allSettingsTabItems: [SettingsTabItem] = []
-    public private(set) var allLLMProviderSettingsItems: [LLMProviderSettingsItem] = []
+    @Published public private(set) var allSettingsTabItems: [SettingsTabItem] = []
+    @Published public private(set) var allLLMProviderSettingsItems: [LLMProviderSettingsItem] = []
 
     private var settingsTabItems: [String: SettingsTabItem] = [:]
     private var settingsTabOrder: [String] = []

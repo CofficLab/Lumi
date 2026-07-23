@@ -43,9 +43,6 @@ public protocol LumiPlugin: AnyObject {
     /// 提供子 Agent 定义
     func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition]
 
-    /// 提供发送中间件
-    func sendMiddlewares(kernel: LumiKernel) -> [any LumiSendMiddleware]
-
     /// 提供消息渲染器
     func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem]
 
@@ -99,19 +96,22 @@ public protocol LumiPlugin: AnyObject {
 
     // MARK: - Settings Contributions
 
-    /// 设置标签项
+    /// 设置标签项。已接入宿主 UI;插件可注册任意数量,会平铺显示在设置
+    /// 侧边栏的内置标签(General / Appearance / Plugins / About)之后。
+    /// 应返回带稳定 `id` / `title` / `systemImage` 的项目,内容由 `makeContent()` 渲染。
     func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem]
 
-    /// 在设置标签里加入视图
+    /// (当前未接入宿主 UI;保留 API 以备扩展。新插件建议使用 `settingsTabItems`。)
     func addSettingsView(kernel: LumiKernel) -> [AnyView]
 
-    /// 插件关于视图
+    /// 插件关于视图。在 "Plugins" 标签页的每个插件详情面板中呈现;
+    /// 返回 `nil` 时显示空状态。
     func pluginAboutView(kernel: LumiKernel) -> AnyView?
 
-    /// LLM Provider 设置项
+    /// LLM Provider 设置项,已由 `LLMProviderManagerPlugin` 等路由器使用。
     func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem]
 
-    /// LLM Provider 设置视图项
+    /// LLM Provider 设置视图项(目前未被宿主 UI 渲染,保留供插件自查)。
     func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem]
 
     // MARK: - Overlay Contributions
@@ -147,5 +147,16 @@ public protocol LumiPlugin: AnyObject {
 
     /// 配置编辑器运行时上下文
     func configureEditorRuntime(kernel: LumiKernel) async
+}
+
+// MARK: - Default Implementations
+
+public extension LumiPlugin {
+    /// LLM 发送前钩子的默认实现:不做任何修改,直接返回原 messages。
+    /// 需要注入提示词的插件可重写此方法。
+    @MainActor
+    func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
+        messages
+    }
 }
 
