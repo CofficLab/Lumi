@@ -26,7 +26,6 @@ public final class FreeModelPlugin: LumiPlugin {
         [FreeModelProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

@@ -18,7 +18,6 @@ public final class EditorOutlinePlugin: LumiPlugin {
         // Panel items are registered via panelBottomTabItems/panelRailTabItems
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

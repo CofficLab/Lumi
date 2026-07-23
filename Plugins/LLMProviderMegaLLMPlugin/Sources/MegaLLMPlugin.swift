@@ -26,7 +26,6 @@ public final class MegaLLMPlugin: LumiPlugin {
         [MegaLLMProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

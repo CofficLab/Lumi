@@ -26,7 +26,6 @@ public final class XiaomiPlugin: LumiPlugin {
         [XiaomiProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

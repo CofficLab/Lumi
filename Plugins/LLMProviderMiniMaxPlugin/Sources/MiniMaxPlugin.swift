@@ -26,7 +26,6 @@ public final class MiniMaxPlugin: LumiPlugin {
         [MiniMaxTokenPlanProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

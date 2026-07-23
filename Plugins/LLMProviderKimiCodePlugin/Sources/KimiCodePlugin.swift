@@ -27,7 +27,6 @@ public final class KimiCodePlugin: LumiPlugin {
         [KimiCodeOpenAIProvider(), KimiCodeAnthropicProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

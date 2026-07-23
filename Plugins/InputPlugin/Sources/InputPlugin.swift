@@ -33,7 +33,6 @@ public final class InputPlugin: LumiPlugin {
         )
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

@@ -29,7 +29,6 @@ public final class AliyunPlugin: LumiPlugin {
         [AliyunProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

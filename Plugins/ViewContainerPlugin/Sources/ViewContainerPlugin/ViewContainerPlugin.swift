@@ -78,5 +78,4 @@ public final class ViewContainerPlugin: LumiPlugin, SuperLog {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 
-    public func boot(kernel: LumiKernel) async throws {}
 }

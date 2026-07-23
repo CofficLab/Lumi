@@ -43,7 +43,6 @@ public final class ConversationSpeedPlugin: LumiPlugin, SuperLog {
         return items
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

@@ -26,7 +26,6 @@ public final class AnthropicPlugin: LumiPlugin {
         [AnthropicProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

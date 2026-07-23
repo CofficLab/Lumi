@@ -20,7 +20,6 @@ public final class RAGPlugin: LumiPlugin {
         RAGPluginBootstrap.bootstrapRuntime(context: kernel)
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

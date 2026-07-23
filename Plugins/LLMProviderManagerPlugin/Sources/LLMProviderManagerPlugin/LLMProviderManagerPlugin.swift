@@ -54,7 +54,6 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

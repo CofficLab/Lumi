@@ -74,7 +74,6 @@ public final class ChatPanelPlugin: LumiPlugin {
         )
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

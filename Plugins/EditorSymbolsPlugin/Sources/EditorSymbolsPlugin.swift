@@ -18,7 +18,6 @@ public final class EditorSymbolsPanelPlugin: LumiPlugin {
         // Panel items are registered in panelBottomTabItems/panelRailTabItems methods
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

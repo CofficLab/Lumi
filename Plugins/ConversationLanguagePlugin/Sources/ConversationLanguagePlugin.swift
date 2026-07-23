@@ -17,7 +17,6 @@ public final class ConversationLanguagePlugin: LumiPlugin {
         // Services are registered via convenience methods
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

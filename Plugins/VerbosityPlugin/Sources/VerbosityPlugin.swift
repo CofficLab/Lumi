@@ -59,5 +59,4 @@ public final class VerbosityPlugin: LumiPlugin {
         ]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 }

@@ -46,7 +46,6 @@ public final class LayoutPlugin: LumiPlugin {
         ]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

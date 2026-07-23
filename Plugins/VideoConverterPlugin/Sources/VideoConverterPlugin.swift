@@ -47,7 +47,6 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
         }
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

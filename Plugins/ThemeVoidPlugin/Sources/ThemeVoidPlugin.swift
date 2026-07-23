@@ -57,5 +57,4 @@ public final class ThemeVoidPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 
-    public func boot(kernel: LumiKernel) async throws {}
 }

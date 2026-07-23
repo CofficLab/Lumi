@@ -23,7 +23,6 @@ public final class ThemeSummerPlugin: LumiPlugin {
         )
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

@@ -24,7 +24,6 @@ public final class ConversationNewPlugin: LumiPlugin {
         kernel.toolbarProvider?.registerTitleToolbarItem(toolbarItem)
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

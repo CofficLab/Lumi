@@ -26,7 +26,6 @@ public final class OpenRouterPlugin: LumiPlugin {
         [OpenRouterProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

@@ -45,7 +45,6 @@ public final class ConversationListPlugin: LumiPlugin {
         ]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

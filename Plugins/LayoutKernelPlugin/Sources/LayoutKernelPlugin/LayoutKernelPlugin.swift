@@ -36,7 +36,6 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
         }
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

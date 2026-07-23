@@ -44,7 +44,6 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
         }
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

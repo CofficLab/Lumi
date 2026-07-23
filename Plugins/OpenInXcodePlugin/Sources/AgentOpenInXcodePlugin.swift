@@ -17,7 +17,6 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
         // Register services here
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

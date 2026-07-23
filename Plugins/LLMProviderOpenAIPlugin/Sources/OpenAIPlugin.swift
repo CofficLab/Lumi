@@ -26,7 +26,6 @@ public final class OpenAIPlugin: LumiPlugin {
         [OpenAIProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

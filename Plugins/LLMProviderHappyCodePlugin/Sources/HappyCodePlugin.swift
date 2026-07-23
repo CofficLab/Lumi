@@ -26,7 +26,6 @@ public final class HappyCodePlugin: LumiPlugin {
         [HappyCodeProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

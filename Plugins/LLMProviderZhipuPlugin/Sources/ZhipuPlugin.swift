@@ -26,7 +26,6 @@ public final class ZhipuPlugin: LumiPlugin {
         [ZhipuProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

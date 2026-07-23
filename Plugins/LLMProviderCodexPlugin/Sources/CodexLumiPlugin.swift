@@ -19,7 +19,6 @@ public final class CodexLumiPlugin: LumiPlugin {
         // TODO: Migrate to new registration method when available
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

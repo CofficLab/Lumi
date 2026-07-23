@@ -26,7 +26,6 @@ public final class FeifeimiaoPlugin: LumiPlugin {
         [FeifeimiaoProvider()]
     }
 
-    public func boot(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 
