@@ -15,11 +15,16 @@ public protocol ToolManaging: AnyObject {
     /// All registered agent tools
     func allAgentTools() -> [any LumiAgentTool]
 
-    /// Add a single tool
-    func add(_ tool: any LumiAgentTool)
+    /// Add a single tool, attributing it to a plugin (used to group tools in the UI).
+    func add(_ tool: any LumiAgentTool, pluginID: String)
 
     /// Remove a tool by name
     func remove(id: String)
+
+    /// Tools grouped by the plugin that registered them, in registration order.
+    /// Each entry is `(pluginID, tools)`; the fallback `"Built-in"` bucket
+    /// collects tools registered without a plugin id.
+    func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])]
 
     /// All sub-agent definitions
     func allSubAgents() -> [LumiSubAgentDefinition]
@@ -34,4 +39,18 @@ public protocol ToolManaging: AnyObject {
 
     /// Execute a tool call and return the result
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
+}
+
+// MARK: - Default registration
+
+public extension ToolManaging {
+    /// The plugin id used for tools registered without an explicit owner.
+    static var builtInPluginID: String { "Built-in" }
+
+    /// Add a single tool without attributing it to a plugin.
+    /// Routes to `add(_:pluginID:)` with the `"Built-in"` group so the status-bar
+    /// popover still surfaces it (e.g. for unmigrated third-party plugins).
+    func add(_ tool: any LumiAgentTool) {
+        add(tool, pluginID: Self.builtInPluginID)
+    }
 }

@@ -30,7 +30,7 @@ public final class ToolService: ToolManaging {
         tools
     }
 
-    public func add(_ tool: any LumiAgentTool) {
+    public func add(_ tool: any LumiAgentTool, pluginID: String) {
         if toolsByName[tool.name] == nil {
             toolsByName[tool.name] = tool
             reindex()
@@ -40,6 +40,10 @@ public final class ToolService: ToolManaging {
     public func remove(id: String) {
         toolsByName.removeValue(forKey: id)
         reindex()
+    }
+
+    public func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])] {
+        tools.isEmpty ? [] : [("Built-in", tools)]
     }
 
     public func allSubAgents() -> [LumiSubAgentDefinition] {

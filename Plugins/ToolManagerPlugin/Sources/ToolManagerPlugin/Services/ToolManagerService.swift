@@ -14,6 +14,13 @@ public final class ToolManagerService: ToolManaging {
     /// 工具注册顺序
     private var toolOrder: [String] = []
 
+    /// 工具归属插件的反向索引：pluginID -> [tool.name]
+    /// 用于状态栏「可用工具」按插件分组展示。
+    private var pluginToolIndex: [String: [String]] = [:]
+
+    /// 插件首次出现顺序，决定分组在 UI 中的排列。
+    private var pluginOrder: [String] = []
+
     public init() {}
 
     // MARK: - ToolManaging
@@ -22,16 +29,42 @@ public final class ToolManagerService: ToolManaging {
         toolOrder.compactMap { registeredTools[$0] }
     }
 
-    public func add(_ tool: any LumiAgentTool) {
+    public func add(_ tool: any LumiAgentTool, pluginID: String) {
         if registeredTools[tool.name] == nil {
             toolOrder.append(tool.name)
         }
         registeredTools[tool.name] = tool
+
+        // 迁移归属：若该工具此前属于其它插件分组，先从原分组移除。
+        for (existingPlugin, names) in pluginToolIndex where names.contains(tool.name) {
+            pluginToolIndex[existingPlugin]?.removeAll { $0 == tool.name }
+        }
+
+        if pluginToolIndex[pluginID] == nil, !pluginOrder.contains(pluginID) {
+            pluginOrder.append(pluginID)
+        }
+        pluginToolIndex[pluginID, default: []].append(tool.name)
     }
 
     public func remove(id: String) {
         registeredTools.removeValue(forKey: id)
         toolOrder.removeAll { $0 == id }
+
+        for (pluginID, names) in pluginToolIndex where names.contains(id) {
+            pluginToolIndex[pluginID]?.removeAll { $0 == id }
+            if pluginToolIndex[pluginID]?.isEmpty == true {
+                pluginToolIndex.removeValue(forKey: pluginID)
+                pluginOrder.removeAll { $0 == pluginID }
+            }
+        }
+    }
+
+    public func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])] {
+        pluginOrder.compactMap { pluginID in
+            let names = pluginToolIndex[pluginID] ?? []
+            let tools = names.compactMap { registeredTools[$0] }
+            return tools.isEmpty ? nil : (pluginID, tools)
+        }
     }
 
     public func allSubAgents() -> [LumiSubAgentDefinition] {

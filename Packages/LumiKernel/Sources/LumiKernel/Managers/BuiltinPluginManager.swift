@@ -371,7 +371,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         agentToolOrder.compactMap { agentTools[$0] }
     }
 
-    public func add(_ tool: any LumiAgentTool) {
+    public func add(_ tool: any LumiAgentTool, pluginID: String) {
         let id = tool.name
         if agentTools[id] == nil {
             agentToolOrder.append(id)
@@ -382,6 +382,11 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     public func remove(id: String) {
         agentTools.removeValue(forKey: id)
         agentToolOrder.removeAll { $0 == id }
+    }
+
+    public func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])] {
+        let tools = agentToolOrder.compactMap { agentTools[$0] }
+        return tools.isEmpty ? [] : [("Built-in", tools)]
     }
 
     public func allSubAgents() -> [LumiSubAgentDefinition] {

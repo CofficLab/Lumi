@@ -23,10 +23,11 @@ public struct ToolManagerOnBootHook {
         }
 
         // Register 5 core tools
-        toolManagerService.add(ListDirectoryTool())
-        toolManagerService.add(ReadFileTool())
-        toolManagerService.add(WriteFileTool())
-        toolManagerService.add(EditFileTool())
-        toolManagerService.add(ShellTool())
+        let pluginID = "com.coffic.lumi.plugin.tool-manager"
+        toolManagerService.add(ListDirectoryTool(), pluginID: pluginID)
+        toolManagerService.add(ReadFileTool(), pluginID: pluginID)
+        toolManagerService.add(WriteFileTool(), pluginID: pluginID)
+        toolManagerService.add(EditFileTool(), pluginID: pluginID)
+        toolManagerService.add(ShellTool(), pluginID: pluginID)
     }
 }

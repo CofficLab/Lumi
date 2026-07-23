@@ -71,9 +71,9 @@ public struct ProjectsOnReadyHook {
         guard let toolManager = kernel.toolManager else {
             throw ProjectsPluginError.toolManagerNotAvailable
         }
-        toolManager.add(ListProjectsTool())
-        toolManager.add(AddProjectTool())
-        toolManager.add(GetCurrentProjectTool())
+        toolManager.add(ListProjectsTool(), pluginID: pluginID)
+        toolManager.add(AddProjectTool(), pluginID: pluginID)
+        toolManager.add(GetCurrentProjectTool(), pluginID: pluginID)
 
         if Self.verbose {
             Self.logger.info("📂 Registered Agent Tools: list_projects, add_project, get_current_project")

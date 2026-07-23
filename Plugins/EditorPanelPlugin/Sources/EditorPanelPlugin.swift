@@ -33,8 +33,8 @@ public final class EditorPanelPlugin: LumiPlugin {
         )
 
         // 注册 AgentTools
-        kernel.toolManager?.add(GetCurrentFileTool())
-        kernel.toolManager?.add(SetCurrentFileTool())
+        kernel.toolManager?.add(GetCurrentFileTool(), pluginID: id)
+        kernel.toolManager?.add(SetCurrentFileTool(), pluginID: id)
     }
 
 

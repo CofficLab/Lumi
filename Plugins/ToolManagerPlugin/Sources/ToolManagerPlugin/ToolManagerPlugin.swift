@@ -36,11 +36,11 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
         }
 
         // Register 5 core tools
-        toolManagerService.add(ListDirectoryTool())
-        toolManagerService.add(ReadFileTool())
-        toolManagerService.add(WriteFileTool())
-        toolManagerService.add(EditFileTool())
-        toolManagerService.add(ShellTool())
+        toolManagerService.add(ListDirectoryTool(), pluginID: id)
+        toolManagerService.add(ReadFileTool(), pluginID: id)
+        toolManagerService.add(WriteFileTool(), pluginID: id)
+        toolManagerService.add(EditFileTool(), pluginID: id)
+        toolManagerService.add(ShellTool(), pluginID: id)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
