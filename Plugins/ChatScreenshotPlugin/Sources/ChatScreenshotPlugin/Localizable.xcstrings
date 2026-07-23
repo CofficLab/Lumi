@@ -1,0 +1,160 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Capture Screenshot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture Screenshot"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截取屏幕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "擷取螢幕"
+          }
+        }
+      }
+    },
+    "Capture screenshot (⌘⇧S)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture screenshot (⌘⇧S)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截取屏幕 (⌘⇧S)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "擷取螢幕 (⌘⇧S)"
+          }
+        }
+      }
+    },
+    "Screen Recording Permission Required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen Recording Permission Required"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要屏幕录制权限"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要螢幕錄製權限"
+          }
+        }
+      }
+    },
+    "Lumi needs Screen Recording permission to capture screenshots. Please grant access in System Settings, then try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi needs Screen Recording permission to capture screenshots. Please grant access in System Settings, then try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 需要屏幕录制权限才能截图。请在系统设置中授予权限后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi 需要螢幕錄製權限才能擷取螢幕。請在系統設定中授予權限後重試。"
+          }
+        }
+      }
+    },
+    "Open System Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开系统设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開系統設定"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Chat Screenshot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat Screenshot"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话截图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對話擷圖"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
