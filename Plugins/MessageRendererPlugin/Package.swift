@@ -4,9 +4,7 @@ import PackageDescription
 let package = Package(
     name: "MessageRendererPlugin",
     defaultLocalization: "en",
-    platforms: [
-        .macOS(.v14)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
         .library(
             name: "MessageRendererPlugin",
@@ -16,7 +14,9 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiCoreMessage"),
+        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
     ],
     targets: [
@@ -25,10 +25,12 @@ let package = Package(
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
             ],
-            path: "Sources",
+            path: "Sources/MessageRendererPlugin",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
@@ -38,7 +40,9 @@ let package = Package(
             dependencies: [
                 "MessageRendererPlugin",
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiCoreMessage", package: "LumiCoreMessage"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
             ],
             path: "Tests"
