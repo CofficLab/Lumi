@@ -8,7 +8,7 @@ public final class ThemeStatusBarPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme-status-bar"
     public let name = "Theme Status Bar"
     public let order = 22
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     private var themeService: ThemeManager?
 

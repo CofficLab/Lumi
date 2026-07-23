@@ -21,7 +21,7 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.editor"
     public let name = "Editor Plugin"
     public let order = 50
-	public let policy: LumiPluginPolicy = .disabled  // Core plugin
+	public let policy: LumiPluginPolicy = .alwaysOn  // Core plugin
 
     // MARK: - Initialization
 

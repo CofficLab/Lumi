@@ -19,7 +19,7 @@ public final class MenuBarPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.menubar"
     public let name = "MenuBar Plugin"
     public let order = 16
-	public let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
+	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 

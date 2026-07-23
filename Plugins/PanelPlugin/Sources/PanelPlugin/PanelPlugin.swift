@@ -14,12 +14,10 @@ public final class PanelPlugin: LumiPlugin, SuperLog {
     nonisolated public static let emoji = "🧩"
     nonisolated static let verbose = false
 
-    // MARK: - LumiPlugin
-
     public let id = "com.coffic.lumi.plugin.panel"
     public let name = "Panel Plugin"
     public let order = 18
-	public let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
+	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 
@@ -28,8 +26,6 @@ public final class PanelPlugin: LumiPlugin, SuperLog {
     // MARK: - Initialization
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) throws {}
 

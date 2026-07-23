@@ -19,7 +19,7 @@ public final class SendMiddlewarePlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.send-middleware"
     public let name = "SendMiddleware Plugin"
     public let order = 17
-	public let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
+	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 

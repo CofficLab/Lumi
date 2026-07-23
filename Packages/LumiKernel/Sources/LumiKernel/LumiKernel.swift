@@ -79,7 +79,7 @@ public final class LumiKernelContainer: ObservableObject {
     /// 2. Check if all required services are registered
     /// - Throws: If required services are missing
     public func startup() async throws {
-        // 1. 启动插件生命周期（两阶段）
+        // 1. 插件系统On Boot
         try await pluginManager.onBoot(kernel: self)
 
         // 2. 服务校验
@@ -110,6 +110,9 @@ public final class LumiKernelContainer: ObservableObject {
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)
         }
+        
+        // 3. 插件系统On Ready
+        try await pluginManager.onReady(kernel: self)
     }
 }
 

@@ -18,7 +18,7 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Plugin"
     public let order = 40
-	public let policy: LumiPluginPolicy = .disabled  // 核心插件
+	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件
 
     // MARK: - Initialization
 

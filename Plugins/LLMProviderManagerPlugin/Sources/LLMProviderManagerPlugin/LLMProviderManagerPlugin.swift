@@ -26,7 +26,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.llm-provider-manager"
     public let name = "LLM Provider Manager"
     public let order = 10
-    public let policy: LumiPluginPolicy = .disabled // 核心插件
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
     // MARK: - Initialization
 

@@ -19,7 +19,7 @@ public final class StatusBarPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.statusbar"
     public let name = "StatusBar Plugin"
     public let order = 19
-	public let policy: LumiPluginPolicy = .disabled  // 核心插件，优先注册
+	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 

@@ -5,24 +5,16 @@ import SuperLogKit
 import os
 
 /// Projects 插件
-///
-/// 向 LumiKernel 注册项目管理相关的功能：
-/// - ProjectService：项目状态管理服务
-/// - TitleToolbarItem：标题栏项目控制视图
-/// - AgentTools：list_projects, add_project, get_current_project
-/// - SendMiddleware：ConversationHintMiddleware
 @MainActor
 public final class ProjectsPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
     nonisolated public static let emoji = "📂"
     nonisolated static let verbose = false
 
-    // MARK: - LumiPlugin
-
     public let id = "com.coffic.lumi.plugin.projects"
     public let name = "Projects Plugin"
     public let order = 20
-    public let policy: LumiPluginPolicy = .disabled  // 核心插件
+    public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件
 
     // MARK: - Initialization
 
@@ -30,17 +22,15 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) throws {}
+    public func onBoot(kernel: LumiKernel) throws {
+        
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         try ProjectsOnReadyHook(pluginID: id).execute(kernel)
         try await ProjectsOnBootHook().execute(kernel)
     }
-
-    public func boot(kernel: LumiKernel) async throws {}
-
-    // MARK: - LumiPlugin stubs
-
+    
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func sendMiddlewares(kernel: LumiKernel) -> [any LumiSendMiddleware] { [] }

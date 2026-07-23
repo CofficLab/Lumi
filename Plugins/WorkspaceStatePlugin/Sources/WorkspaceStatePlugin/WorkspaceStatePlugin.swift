@@ -11,7 +11,7 @@ public final class WorkspaceStatePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.workspace-state"
     public let name = "WorkspaceState Plugin"
     public let order = 1
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     /// 由 PluginManagerProvider 持有，供其他插件通知容器激活
     public weak var instance: DefaultWorkspaceStateProviding?

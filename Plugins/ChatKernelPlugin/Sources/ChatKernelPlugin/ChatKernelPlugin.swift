@@ -18,7 +18,7 @@ public final class ChatKernelPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.chat"
     public let name = "Chat Plugin"
     public let order = 60
-	public let policy: LumiPluginPolicy = .disabled // 核心插件
+	public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
     // MARK: - Initialization
 
