@@ -32,6 +32,9 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     // Theme registry
     private var themeRegistryStorage: [LumiUIThemeContribution] = []
 
+    // 插件启用状态覆盖(用户在设置界面切换的值,持久化跨启动)
+    private let stateStore = PluginEnabledStateStore()
+
     /// 插件启用状态变化时广播通知
     public func notifyEnabledPluginsDidChange() {
         NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: self)
@@ -59,14 +62,14 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
     public func onBoot(kernel: LumiKernel) async throws {
         for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
+            guard effectiveEnabled(for: plugin) else { continue }
             try await plugin.onBoot(kernel: kernel)
         }
     }
 
     public func onReady(kernel: LumiKernel) async throws {
         for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
+            guard effectiveEnabled(for: plugin) else { continue }
             try await plugin.onReady(kernel: kernel)
         }
     }
@@ -82,8 +85,22 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     public func registerPluginUIContributions(in kernel: LumiKernel) {
         self.kernel = kernel
 
+        // 全量重建:先清空各 Provider 服务与 manager 自身的内部 registry,
+        // 再按"有效启用"状态重新注册。这样禁用某插件时,其贡献会即时撤回。
+        // 首次启动时各 registry 为空,清空为 no-op,不影响行为。
+        clearInternalContributions()
+        kernel.settings?.clearAllContributions()
+        kernel.chatSection?.clearAllContributions()
+        kernel.panel?.clearAllContributions()
+        kernel.menuBar?.clearAllContributions()
+        kernel.toolbarProvider?.clearAllContributions()
+        kernel.statusBar?.clearAllContributions()
+        kernel.viewContainer?.clearAllContributions()
+        kernel.logo?.clearAllContributions()
+        // onboarding 服务当前未注册(kernel.onboarding == nil),无需处理。
+
         for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
+            guard effectiveEnabled(for: plugin) else { continue }
             let pluginOrder = plugin.order
 
             // Sub Agents
@@ -267,7 +284,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
         // 应用每个插件声明的工作区可见性偏好
         for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
+            guard effectiveEnabled(for: plugin) else { continue }
             let visibility = plugin.workspaceVisibility(kernel: kernel)
             kernel.workspaceState?.applyVisibility(
                 rail: visibility.rail,
@@ -304,10 +321,43 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         // 再一次性批量注册,避免逐个调用的日志噪声和潜在的多次副作用。
         var collected: [any LumiLLMProvider] = []
         for plugin in allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
+            guard effectiveEnabled(for: plugin) else { continue }
             collected.append(contentsOf: plugin.llmProviders(kernel: kernel))
         }
         try manager.registerLLMProviders(collected)
+    }
+
+    /// 全量重建所有插件贡献(UI + LLM Provider)。
+    ///
+    /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,
+    /// 使被禁用插件的贡献即时撤回、被启用插件的贡献即时加入。
+    ///
+    /// - UI 贡献:先 clear 各 Provider 再按有效启用状态重新注册。
+    /// - LLM Provider:采用 diff 策略——注销已注册但不再属于有效集合的 provider,
+    ///   再幂等注册有效集合,以保留用户当前选中的 provider/model(若仍可用)。
+    public func rebuildAllContributions(in kernel: LumiKernel) {
+        self.kernel = kernel
+
+        // 1. UI 贡献重建
+        registerPluginUIContributions(in: kernel)
+
+        // 2. LLM Provider 重建(diff)
+        guard let manager = kernel.llmProvider else { return }
+        let effectiveIDs = Set(
+            allPlugins
+                .filter { effectiveEnabled(for: $0) }
+                .flatMap { $0.llmProviders(kernel: kernel).map { type(of: $0).info.id } }
+        )
+        for registered in manager.allLLMProviders() {
+            let id = type(of: registered).info.id
+            if !effectiveIDs.contains(id) {
+                manager.unregisterLLMProvider(id: id)
+            }
+        }
+        let collected = allPlugins
+            .filter { effectiveEnabled(for: $0) }
+            .flatMap { $0.llmProviders(kernel: kernel) }
+        try? manager.registerLLMProviders(collected)
     }
 
     private func updateSortedPlugins() {
@@ -364,6 +414,20 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         messageRenderers[renderer.id] = renderer
     }
 
+    /// 清空 manager 自身维护的内部贡献 registry(供全量重建使用)。
+    ///
+    /// 与各 Provider 服务的 `clearAllContributions()` 配合,在
+    /// `registerPluginUIContributions(in:)` 开头调用,使禁用插件的贡献即时撤回。
+    public func clearInternalContributions() {
+        agentTools.removeAll()
+        agentToolOrder.removeAll()
+        subAgents.removeAll()
+        subAgentOrder.removeAll()
+        messageRenderers.removeAll()
+        messageRendererOrder.removeAll()
+        themeRegistryStorage.removeAll()
+    }
+
     // MARK: - UIThemeProviding
 
     public func themeContributions() -> [LumiUIThemeContribution] {
@@ -382,5 +446,62 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             .filter { $0.value.count > 1 }
             .map { (id: $0.key, plugins: $0.value) }
             .sorted { $0.id < $1.id }
+    }
+
+    // MARK: - Plugin Enabled State
+
+    /// 解析某个插件的"有效启用状态"。
+    ///
+    /// - `alwaysOn`:始终启用(忽略用户覆盖)。
+    /// - `disabled`:始终禁用(忽略用户覆盖)。
+    /// - `optOut` / `optIn`:读取用户覆盖,缺省时回落到 `policy.enabledByDefault`。
+    public func effectiveEnabled(for plugin: LumiPlugin) -> Bool {
+        switch plugin.policy {
+        case .alwaysOn:
+            return true
+        case .disabled:
+            return false
+        case .optOut, .optIn:
+            if let override = stateStore.override(for: plugin.id) {
+                return override
+            }
+            return plugin.policy.enabledByDefault
+        }
+    }
+
+    /// 按 ID 查询插件是否处于有效启用状态。
+    public func isPluginEnabled(id: String) -> Bool {
+        guard let plugin = plugin(id: id) else { return false }
+        return effectiveEnabled(for: plugin)
+    }
+
+    /// 当前处于有效启用状态的插件数量(用于统计展示)。
+    public var enabledPluginCount: Int {
+        allPlugins.reduce(0) { $0 + (effectiveEnabled(for: $1) ? 1 : 0) }
+    }
+
+    /// 设置某个插件的启用状态(用户操作)。
+    ///
+    /// 仅对可配置插件(`policy.isConfigurable`)生效;`alwaysOn` / `disabled` 为 no-op。
+    /// 更新后持久化覆盖值、驱动 SwiftUI 重渲染并广播 `.lumiEnabledPluginsDidChange`,
+    /// 从而触发 `LumiFactory` 重新注册 UI 贡献(禁用的插件贡献即时撤回)。
+    public func setPlugin(id: String, enabled: Bool) {
+        guard let plugin = plugin(id: id) else { return }
+        guard plugin.policy.isConfigurable else { return }
+        let current = effectiveEnabled(for: plugin)
+        guard current != enabled else { return }
+
+        stateStore.setOverride(enabled, for: id)
+        objectWillChange.send()
+        notifyEnabledPluginsDidChange()
+    }
+
+    /// 清除某个插件的用户覆盖(回落到 policy 默认)。
+    public func resetPlugin(id: String) {
+        guard let plugin = plugin(id: id) else { return }
+        guard plugin.policy.isConfigurable else { return }
+        stateStore.clearOverride(for: id)
+        objectWillChange.send()
+        notifyEnabledPluginsDidChange()
     }
 }

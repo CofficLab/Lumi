@@ -40,6 +40,13 @@ public final class DefaultViewContainerProviding: ViewContainerProviding {
         updateSortedContainers()
     }
 
+    public func clearAllContributions() {
+        viewContainers.removeAll()
+        viewContainerOrder.removeAll()
+        activeContainerID = nil
+        updateSortedContainers()
+    }
+
     private func updateSortedContainers() {
         allViewContainers = viewContainerOrder.compactMap { viewContainers[$0] }
             .sorted { $0.order < $1.order }

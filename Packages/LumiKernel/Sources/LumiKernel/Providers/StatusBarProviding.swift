@@ -20,4 +20,11 @@ public protocol StatusBarProviding: ObservableObject {
 
     /// 注销状态栏项
     func unregisterStatusBarItem(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension StatusBarProviding {
+    func clearAllContributions() {}
 }

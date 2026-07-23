@@ -1,2377 +1,2435 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@"
+  "sourceLanguage": "en",
+  "strings": {
+    "%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@"
           }
         }
       }
     },
-    "%lld enabled" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld enabled"
+    "%lld enabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld enabled"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个已启用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个已启用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個已啟用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個已啟用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個已啟用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個已啟用"
           }
         }
       }
     },
-    "%lld 个主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld themes"
+    "%lld 个主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld themes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個主題"
           }
         }
       }
     },
-    "%lld 个插件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld plugins"
+    "%lld 个插件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld plugins"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個插件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個插件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個插件"
           }
         }
       }
     },
-    "About" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+    "About": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         }
       }
     },
-    "Accent" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accent"
+    "Accent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accent"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强调"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "强调"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "強調"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "強調"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "強調"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "強調"
           }
         }
       }
     },
-    "Always On" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Always On"
+    "Always On": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always On"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "始终启用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始终启用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "始終啟用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終啟用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "始終啓用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終啓用"
           }
         }
       }
     },
-    "App Support" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Support"
+    "App Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Support"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Support"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Support"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Support"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Support"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Support"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Support"
           }
         }
       }
     },
-    "Appearance" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appearance"
+    "Appearance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外观"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外觀"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外觀"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外觀"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外觀"
           }
         }
       }
     },
-    "Build" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Build"
+    "Build": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "構建"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構建"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "構建"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構建"
           }
         }
       }
     },
-    "Bundle ID" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bundle ID"
+    "Bundle ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bundle ID"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包名"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包名"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包名"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包名"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包名"
           }
         }
       }
     },
-    "Check for Updates..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for Updates..."
+    "Check for Updates...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新..."
           }
         }
       }
     },
-    "Copied" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copied"
+    "Copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已复制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已複製"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已複製"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已複製"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已複製"
           }
         }
       }
     },
-    "Copy Error Details" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy Error Details"
+    "Copy Error Details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Error Details"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制错误详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制错误详情"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製錯誤詳情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製錯誤詳情"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製錯誤詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製錯誤詳情"
           }
         }
       }
     },
-    "Destructive" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Destructive"
+    "Destructive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destructive"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "危险"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "危险"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "危險"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "危險"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "危險"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "危險"
           }
         }
       }
     },
-    "Disabled" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disabled"
+    "Disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已禁用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已禁用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已禁用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已禁用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已禁用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已禁用"
           }
         }
       }
     },
-    "Error" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error"
+    "Error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
           }
         }
       }
     },
-    "Focus Chat Input" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Focus Chat Input"
+    "Focus Chat Input": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus Chat Input"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "聚焦聊天输入"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦聊天输入"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "聚焦聊天輸入"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦聊天輸入"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "聚焦聊天輸入"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦聊天輸入"
           }
         }
       }
     },
-    "Folders" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folders"
+    "Folders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folders"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料夾"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料夾"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料夾"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料夾"
           }
         }
       }
     },
-    "General" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "General"
+    "General": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         }
       }
     },
-    "Logo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logo"
+    "Logo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logo"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logo"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logo"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo"
           }
         }
       }
     },
-    "MLX local models require macOS 14 or later." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX local models require macOS 14 or later."
+    "MLX local models require macOS 14 or later.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLX local models require macOS 14 or later."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX 本地模型需要 macOS 14 或更高版本。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX 本地模型需要 macOS 14 或更高版本。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX 本地模型需要 macOS 14 或更高版本。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
           }
         }
       }
     },
-    "Name" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "Name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名稱"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名稱"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名稱"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名稱"
           }
         }
       }
     },
-    "No local providers available" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No local providers available"
+    "No local providers available": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No local providers available"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前没有可用的本地供应商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前没有可用的本地供应商"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前沒有可用的本地供應商"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前沒有可用的本地供應商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前沒有可用的本地供應商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前沒有可用的本地供應商"
           }
         }
       }
     },
-    "Not Set" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not Set"
+    "Not Set": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Set"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未设置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未設置"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未設置"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未設置"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未設置"
           }
         }
       }
     },
-    "Onboarding" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onboarding"
+    "Onboarding": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onboarding"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新手引导"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新手引导"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新手引導"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新手引導"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新手引導"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新手引導"
           }
         }
       }
     },
-    "Please quit and reopen the app, or check logs for more details." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please quit and reopen the app, or check logs for more details."
+    "Please quit and reopen the app, or check logs for more details.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please quit and reopen the app, or check logs for more details."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请退出并重新打开应用，或查看日志获取更多详情。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请退出并重新打开应用，或查看日志获取更多详情。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請退出並重新打開應用，或查看日誌獲取更多詳情。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請退出並重新打開應用，或查看日誌獲取更多詳情。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請退出並重新打開應用，或查看日誌獲取更多詳情。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請退出並重新打開應用，或查看日誌獲取更多詳情。"
           }
         }
       }
     },
-    "Plugin Description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin Description"
+    "Plugin Description": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin Description"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件说明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件说明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件說明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件說明"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件說明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件說明"
           }
         }
       }
     },
-    "Plugins" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugins"
+    "Plugins": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugins"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件"
           }
         }
       }
     },
-    "Primary" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Primary"
+    "Primary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primary"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要"
           }
         }
       }
     },
-    "Quit" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit"
+    "Quit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
           }
         }
       }
     },
-    "Replay Onboarding" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Replay Onboarding"
+    "Replay Onboarding": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replay Onboarding"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新查看新手引导"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新查看新手引导"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新查看新手引導"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新查看新手引導"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新查看新手引導"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新查看新手引導"
           }
         }
       }
     },
-    "Replay the first-run onboarding flow." : {
-
-    },
-    "Save" : {
-
-    },
-    "Saved" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved"
+    "Replay the first-run onboarding flow.": {},
+    "Save": {},
+    "Saved": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已儲存"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已儲存"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
           }
         }
       }
     },
-    "Search Plugins" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Plugins"
+    "Search Plugins": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Plugins"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋插件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋插件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋插件"
           }
         }
       }
     },
-    "Secondary" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Secondary"
+    "Secondary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secondary"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要"
           }
         }
       }
     },
-    "Send Message" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send Message"
+    "Send Message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Message"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发送消息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送消息"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送訊息"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送訊息"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送訊息"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送訊息"
           }
         }
       }
     },
-    "Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+    "Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         }
       }
     },
-    "Start" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start"
+    "Start": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开始"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开始"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始"
           }
         }
       }
     },
-    "Stop Generation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop Generation"
+    "Stop Generation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Generation"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止生成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止生成"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止生成"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止生成"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止生成"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止生成"
           }
         }
       }
     },
-    "Subtle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subtle"
+    "Subtle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtle"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "柔和"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "柔和"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "柔和"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "柔和"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "柔和"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "柔和"
           }
         }
       }
     },
-    "Success" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Success"
+    "Success": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "成功"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "成功"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "成功"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功"
           }
         }
       }
     },
-    "Unable to continue" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to continue"
+    "Unable to continue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to continue"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法继续"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法继续"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無法繼續"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法繼續"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無法繼續"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法繼續"
           }
         }
       }
     },
-    "Version" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version"
+    "Version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         }
       }
     },
-    "Warning" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warning"
+    "Warning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warning"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "警告"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "警告"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "警告"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
           }
         }
       }
     },
-    "主要文字 Primary" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Primary Text"
+    "主要文字 Primary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primary Text"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要文字 Primary"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要文字 Primary"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要文字 Primary"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要文字 Primary"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要文字 Primary"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要文字 Primary"
           }
         }
       }
     },
-    "使用中" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In Use"
+    "使用中": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Use"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用中"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         }
       }
     },
-    "使用此主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use This Theme"
+    "使用此主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use This Theme"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用此主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用此主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用此主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用此主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用此主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用此主題"
           }
         }
       }
     },
-    "全部" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
+    "全部": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         }
       }
     },
-    "卡片" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Card"
+    "卡片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片"
           }
         }
       }
     },
-    "卡片标题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Card Title"
+    "卡片标题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card Title"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片标题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片标题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片標題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片標題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卡片標題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卡片標題"
           }
         }
       }
     },
-    "启用" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable"
+    "启用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啓用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啓用"
           }
         }
       }
     },
-    "常见 UI 组件在此主题下的样式" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Common UI component styles under this theme"
+    "常见 UI 组件在此主题下的样式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common UI component styles under this theme"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常见 UI 组件在此主题下的样式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常见 UI 组件在此主题下的样式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常見 UI 組件在此主題下的樣式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常見 UI 組件在此主題下的樣式"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常見 UI 組件在此主題下的樣式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常見 UI 組件在此主題下的樣式"
           }
         }
       }
     },
-    "当前：%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current: %@"
+    "当前：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前：%@"
           }
         }
       }
     },
-    "打开 App Support 目录" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open App Support Directory"
+    "打开 App Support 目录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open App Support Directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 App Support 目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 App Support 目录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開 App Support 目錄"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 App Support 目錄"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開 App Support 目錄"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 App Support 目錄"
           }
         }
       }
     },
-    "打开 Lumi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Lumi"
+    "打开 Lumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Lumi"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 Lumi"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Lumi"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開 Lumi"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Lumi"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開 Lumi"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Lumi"
           }
         }
       }
     },
-    "打开容器目录" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Container Directory"
+    "打开容器目录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Container Directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开容器目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开容器目录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開容器目錄"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開容器目錄"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開容器目錄"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開容器目錄"
           }
         }
       }
     },
-    "打开数据库目录" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Database Directory"
+    "打开数据库目录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Database Directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开数据库目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开数据库目录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開資料庫目錄"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開資料庫目錄"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開資料庫目錄"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開資料庫目錄"
           }
         }
       }
     },
-    "打开文档目录" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Documents Directory"
+    "打开文档目录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Documents Directory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开文档目录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开文档目录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開文件目錄"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開文件目錄"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開文件目錄"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開文件目錄"
           }
         }
       }
     },
-    "按钮" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buttons"
+    "按钮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buttons"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按钮"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按钮"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按鈕"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按鈕"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按鈕"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按鈕"
           }
         }
       }
     },
-    "插件管理" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin Management"
+    "插件管理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin Management"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件管理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件管理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件管理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件管理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插件管理"
           }
         }
       }
     },
-    "搜索主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Themes"
+    "搜索主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Themes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋主題"
           }
         }
       }
     },
-    "搜索插件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Plugins"
+    "搜索插件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Plugins"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋插件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋插件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋插件"
           }
         }
       }
     },
-    "文字" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Text"
+    "文字": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字"
           }
         }
       }
     },
-    "新建窗口" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Window"
+    "新建窗口": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Window"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新建窗口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建窗口"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新開視窗"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新開視窗"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新開視窗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新開視窗"
           }
         }
       }
     },
-    "未找到主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Themes Found"
+    "未找到主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Themes Found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到主題"
           }
         }
       }
     },
-    "未找到插件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Plugins Found"
+    "未找到插件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Plugins Found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到插件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到插件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到插件"
           }
         }
       }
     },
-    "标签" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tags"
+    "标签": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "标签"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "標籤"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標籤"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "標籤"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標籤"
           }
         }
       }
     },
-    "检查更新" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for Updates"
+    "检查更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新"
           }
         }
       }
     },
-    "次要文字 Secondary" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Secondary Text"
+    "次要文字 Secondary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secondary Text"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要文字 Secondary"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要文字 Secondary"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要文字 Secondary"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要文字 Secondary"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次要文字 Secondary"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次要文字 Secondary"
           }
         }
       }
-    },
-    "正在初始化" : {
-
     },
-    "正在初始化..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Initializing..."
+    "正在初始化": {},
+    "正在初始化...": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Initializing..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在初始化..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在初始化..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在初始化..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在初始化..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在初始化..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在初始化..."
           }
         }
       }
     },
-    "正在加载组件和插件..." : {
-
+    "正在加载组件和插件...": {},
+    "浅色主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light Theme"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浅色主题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "淺色主題"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "淺色主題"
+          }
+        }
+      }
     },
-    "浅色主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Light Theme"
+    "深色主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark Theme"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浅色主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "淺色主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "淺色主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色主題"
           }
         }
       }
     },
-    "深色主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dark Theme"
+    "组件预览": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Component Preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "深色主题"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件预览"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "深色主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "組件預覽"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "深色主題"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "組件預覽"
           }
         }
       }
     },
-    "组件预览" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Component Preview"
+    "色板": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palette"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "色板"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "組件預覽"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "色板"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "組件預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "色板"
           }
         }
       }
     },
-    "色板" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Palette"
+    "设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "色板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "色板"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "色板"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         }
       }
     },
-    "设置" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+    "设置...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定..."
           }
         }
       }
     },
-    "设置..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings..."
+    "该插件暂未提供设置页面。": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This plugin does not provide a settings page."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该插件暂未提供设置页面。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該插件尚未提供設定頁面。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該插件尚未提供設定頁面。"
           }
         }
       }
     },
-    "该插件暂未提供设置页面。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This plugin does not provide a settings page."
+    "调试": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debug"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "该插件暂未提供设置页面。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调试"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "該插件尚未提供設定頁面。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除錯"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "該插件尚未提供設定頁面。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除錯"
           }
         }
       }
     },
-    "调试" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Debug"
+    "跟随系统外观": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow System Appearance"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "调试"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统外观"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "除錯"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟隨系統外觀"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "除錯"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟隨系統外觀"
           }
         }
       }
     },
-    "跟随系统外观" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Follow System Appearance"
+    "辅助文字 Tertiary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tertiary Text"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟随系统外观"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "辅助文字 Tertiary"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟隨系統外觀"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助文字 Tertiary"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟隨系統外觀"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助文字 Tertiary"
           }
         }
       }
     },
-    "辅助文字 Tertiary" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tertiary Text"
+    "这是卡片中的说明文字，用于展示表面色与层级。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is the description text in the card, used to display surface colors and hierarchy."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辅助文字 Tertiary"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是卡片中的说明文字，用于展示表面色与层级。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助文字 Tertiary"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這是卡片中的說明文字，用於展示表面色與層級。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助文字 Tertiary"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這是卡片中的說明文字，用於展示表面色與層級。"
           }
         }
       }
     },
-    "这是卡片中的说明文字，用于展示表面色与层级。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This is the description text in the card, used to display surface colors and hierarchy."
+    "退出 Lumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Lumi"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这是卡片中的说明文字，用于展示表面色与层级。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 Lumi"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這是卡片中的說明文字，用於展示表面色與層級。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 Lumi"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這是卡片中的說明文字，用於展示表面色與層級。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 Lumi"
           }
         }
       }
     },
-    "退出 Lumi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit Lumi"
+    "选择一个主题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a Theme"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出 Lumi"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个主题"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出 Lumi"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個主題"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出 Lumi"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個主題"
           }
         }
       }
     },
-    "选择一个主题" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a Theme"
+    "选择一个插件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a Plugin"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个插件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個插件"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个主题"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇一個插件"
+          }
+        }
+      }
+    },
+    "Settings Unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings Unavailable"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個主題"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定不可用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個主題"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置不可用"
           }
         }
       }
     },
-    "选择一个插件" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a Plugin"
+    "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内核尚未完成初始化。部分必需服务缺失,因此无法显示设置界面。请重启应用;若问题持续,请查看日志。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心尚未完成初始化。部分必要服務缺失,因此無法顯示設定介面。請重啟應用;若問題持續,請查看日誌。"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs."
+          }
+        }
+      }
+    },
+    "Missing services:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺失的服务:"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing services:"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個插件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺失的服務:"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

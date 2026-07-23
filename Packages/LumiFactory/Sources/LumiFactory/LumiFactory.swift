@@ -66,7 +66,7 @@ public enum LumiFactory: SuperLog {
     }
 
     /// 订阅 `.lumiEnabledPluginsDidChange` 通知，
-    /// 在运行期插件启用/禁用时重新注册 UI 贡献。
+    /// 在运行期插件启用/禁用时全量重建插件贡献(UI + LLM Provider)。
     private static func subscribeToPluginChanges(kernel: LumiKernel) {
         NotificationCenter.default.addObserver(
             forName: .lumiEnabledPluginsDidChange,
@@ -74,8 +74,8 @@ public enum LumiFactory: SuperLog {
             queue: .main
         ) { [weak kernel] _ in
             guard let kernel else { return }
-            // 重新注册插件的 UI 贡献
-            kernel.pluginManager.registerPluginUIContributions(in: kernel)
+            // 全量重建:禁用插件的贡献即时撤回,启用插件的贡献即时加入。
+            kernel.pluginManager.rebuildAllContributions(in: kernel)
         }
     }
 
@@ -121,7 +121,7 @@ public enum LumiFactory: SuperLog {
 
     /// 创建设置窗口视图
     public static func makeSettingsWindow() -> some View {
-        WindowSettings(kernel: mainKernel ?? LumiKernel())
+        WindowSettings()
     }
 
     // MARK: - Commands Factory

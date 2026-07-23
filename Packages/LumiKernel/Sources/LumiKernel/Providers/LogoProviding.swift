@@ -17,4 +17,11 @@ public protocol LogoProviding: ObservableObject {
 
     /// 注销 Logo 项
     func unregisterLogoItem(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension LogoProviding {
+    func clearAllContributions() {}
 }

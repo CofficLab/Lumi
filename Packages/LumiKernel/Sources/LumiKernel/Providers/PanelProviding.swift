@@ -35,4 +35,11 @@ public protocol PanelProviding: ObservableObject {
 
     /// 注销侧边栏标签项
     func unregisterPanelRailTabItem(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension PanelProviding {
+    func clearAllContributions() {}
 }

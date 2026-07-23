@@ -12,7 +12,24 @@ struct SettingsView: View {
 
     @State private var selectedTab: SettingsTabID = .builtin(.general)
 
+    /// 设置界面渲染所必需的内核服务。任一缺失则整屏显示错误界面,
+    /// 而不是用 `?? []` 静默降级成残缺的 UI。
+    private var missingServices: [String] {
+        var missing: [String] = []
+        if kernel.settings == nil { missing.append("Settings") }
+        if kernel.theme == nil { missing.append("Theme") }
+        return missing
+    }
+
     var body: some View {
+        if !missingServices.isEmpty {
+            SettingsUnavailableView(missingServices: missingServices)
+        } else {
+            settingsBody
+        }
+    }
+
+    private var settingsBody: some View {
         AppSettingsSidebarShell { sidebar } detail: {
             AppSettingsDetailPane { detail }
         }
@@ -45,7 +62,10 @@ struct SettingsView: View {
         }
     }
 
-    /// 把内置 4 个标签和插件贡献的 `SettingsTabItem` 平铺合并。
+    /// 把内置标签和插件贡献的 `SettingsTabItem` 平铺合并。
+    ///
+    /// 此处能安全强解包 `kernel.settings`,是因为 `body` 已在
+    /// `missingServices` 非空时改显示 `SettingsUnavailableView`,不会进入此分支。
     private var descriptors: [SettingsTabDescriptor] {
         var items: [SettingsTabDescriptor] = SettingsTab.allCases.map {
             SettingsTabDescriptor(
@@ -54,7 +74,8 @@ struct SettingsView: View {
                 systemImage: $0.systemImage
             )
         }
-        for item in kernel.settings?.allSettingsTabItems ?? [] {
+        guard let settings = kernel.settings else { return items }
+        for item in settings.allSettingsTabItems {
             items.append(SettingsTabDescriptor(
                 id: .plugin(item.id),
                 title: item.title,
@@ -71,8 +92,6 @@ struct SettingsView: View {
             GeneralSettingsPage()
         case .builtin(.appearance):
             AppearanceSettingsPage(kernel: kernel)
-        case .builtin(.plugins):
-            PluginSettingsPage(kernel: kernel)
         case .builtin(.about):
             AboutPage()
         case .plugin(let id):
@@ -82,6 +101,8 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func pluginTabDetail(id: String) -> some View {
+        // settings 已在 body 中校验非 nil;此处对单个 tab 仍保留解包兜底,
+        // 避免运行期某个 tab 被插件取消贡献后强解包崩溃。
         if let item = kernel.settings?.allSettingsTabItems.first(where: { $0.id == id }) {
             item.makeContent()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -203,14 +203,109 @@ public enum LumiPluginCategory: String, Sendable, Codable, CaseIterable {
     case general
     case menu
     case status
+    case agent
+    case system
+    case development
+
+    /// 本地化显示名(用于插件管理界面分组/筛选)
+    public var displayName: String {
+        switch self {
+        case .core: "核心"
+        case .theme: "主题"
+        case .llmProvider: "模型供应商"
+        case .editor: "编辑器"
+        case .conversation: "对话"
+        case .tool: "工具"
+        case .general: "通用"
+        case .menu: "菜单"
+        case .status: "状态"
+        case .agent: "智能体"
+        case .system: "系统"
+        case .development: "开发"
+        }
+    }
+
+    /// 侧边栏/列表使用的 SF Symbol 图标
+    public var systemImage: String {
+        switch self {
+        case .core: "cog"
+        case .theme: "paintbrush"
+        case .llmProvider: "cpu"
+        case .editor: "doc.text"
+        case .conversation: "bubble.left.and.bubble.right"
+        case .tool: "wrench.and.screwdriver"
+        case .general: "puzzlepiece.extension"
+        case .menu: "menubar.rectangle"
+        case .status: "meter"
+        case .agent: "brain.head.profile"
+        case .system: "desktopcomputer"
+        case .development: "chevron.left.forwardslash.chevron.right"
+        }
+    }
+
+    /// 排序权重,数值越小越靠前
+    public var sortOrder: Int {
+        switch self {
+        case .core: 5
+        case .system: 10
+        case .general: 15
+        case .menu: 20
+        case .status: 25
+        case .agent: 30
+        case .conversation: 35
+        case .llmProvider: 40
+        case .theme: 45
+        case .tool: 50
+        case .editor: 55
+        case .development: 60
+        }
+    }
 }
 
 /// 插件开发阶段
-public enum LumiPluginStage: String, Sendable, Codable {
+public enum LumiPluginStage: String, Sendable, Codable, CaseIterable, Comparable {
+    case dev
     case alpha
     case beta
     case stable
     case deprecated
+
+    /// 徽标显示名(英文短标签,如 "Stable"、"Beta")
+    public var displayName: String {
+        switch self {
+        case .dev: "Dev"
+        case .alpha: "Alpha"
+        case .beta: "Beta"
+        case .stable: "Stable"
+        case .deprecated: "Deprecated"
+        }
+    }
+
+    /// 中文说明(详情页副标题用)
+    public var descriptionText: String {
+        switch self {
+        case .dev: "内部开发版本"
+        case .alpha: "早期测试版本"
+        case .beta: "公测版本"
+        case .stable: "稳定版本"
+        case .deprecated: "已废弃"
+        }
+    }
+
+    /// 阶段顺序值,用于排序和比较
+    private var order: Int {
+        switch self {
+        case .dev: 0
+        case .alpha: 1
+        case .beta: 2
+        case .stable: 3
+        case .deprecated: 4
+        }
+    }
+
+    public static func < (lhs: LumiPluginStage, rhs: LumiPluginStage) -> Bool {
+        lhs.order < rhs.order
+    }
 }
 
 // MARK: - Plugin Eligibility

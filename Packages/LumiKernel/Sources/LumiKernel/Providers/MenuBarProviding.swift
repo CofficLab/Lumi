@@ -26,4 +26,11 @@ public protocol MenuBarProviding: ObservableObject {
 
     /// 注销菜单栏弹出项
     func unregisterMenuBarPopup(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension MenuBarProviding {
+    func clearAllContributions() {}
 }

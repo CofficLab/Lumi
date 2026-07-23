@@ -106,6 +106,24 @@ public final class ChatSectionProvider: ChatSectionProviding {
         updateSortedChatSectionActionBars()
     }
 
+    public func clearAllContributions() {
+        chatSectionItems.removeAll()
+        chatSectionItemOrder.removeAll()
+        chatSectionToolbarItems.removeAll()
+        chatSectionToolbarItemOrder.removeAll()
+        chatSectionToolbarBars.removeAll()
+        chatSectionToolbarBarOrder.removeAll()
+        chatSectionHeaders.removeAll()
+        chatSectionHeaderOrder.removeAll()
+        chatSectionActionBars.removeAll()
+        chatSectionActionBarOrder.removeAll()
+        updateSortedChatSectionItems()
+        updateSortedChatSectionToolbarItems()
+        updateSortedChatSectionToolbarBars()
+        updateSortedChatSectionHeaders()
+        updateSortedChatSectionActionBars()
+    }
+
     private func updateSortedChatSectionItems() {
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
             .sorted { $0.order < $1.order }

@@ -30,6 +30,12 @@ public final class DefaultLogoProviding: LogoProviding {
         updateSortedItems()
     }
 
+    public func clearAllContributions() {
+        logoItems.removeAll()
+        logoItemOrder.removeAll()
+        updateSortedItems()
+    }
+
     private func updateSortedItems() {
         allLogoItems = logoItemOrder.compactMap { logoItems[$0] }
             .sorted { $0.order > $1.order }

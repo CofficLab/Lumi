@@ -52,6 +52,15 @@ public final class DefaultSettingsProviding: SettingsProviding {
         updateSortedLLMProviderSettings()
     }
 
+    public func clearAllContributions() {
+        settingsTabItems.removeAll()
+        settingsTabOrder.removeAll()
+        llmProviderSettingsItems.removeAll()
+        llmProviderSettingsOrder.removeAll()
+        updateSortedSettingsTabs()
+        updateSortedLLMProviderSettings()
+    }
+
     private func updateSortedSettingsTabs() {
         allSettingsTabItems = settingsTabOrder.compactMap { settingsTabItems[$0] }
     }

@@ -47,6 +47,15 @@ public final class DefaultMenuBarProviding: MenuBarProviding {
         updateSortedPopups()
     }
 
+    public func clearAllContributions() {
+        menuBarContents.removeAll()
+        menuBarContentOrder.removeAll()
+        menuBarPopups.removeAll()
+        menuBarPopupOrder.removeAll()
+        updateSortedContents()
+        updateSortedPopups()
+    }
+
     private func updateSortedContents() {
         allMenuBarContents = menuBarContentOrder.compactMap { menuBarContents[$0] }
             .sorted { $0.order < $1.order }

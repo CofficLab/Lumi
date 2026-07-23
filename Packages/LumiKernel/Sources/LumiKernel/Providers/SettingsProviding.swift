@@ -26,4 +26,12 @@ public protocol SettingsProviding: ObservableObject {
 
     /// 注销 LLM 提供商设置项
     func unregisterLLMProviderSettingsItem(providerID: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。
+    /// 默认 no-op;支持运行时启停的实现应覆盖。
+    func clearAllContributions()
+}
+
+public extension SettingsProviding {
+    func clearAllContributions() {}
 }

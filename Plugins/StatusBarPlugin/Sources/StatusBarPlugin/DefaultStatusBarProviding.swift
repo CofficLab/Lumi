@@ -34,6 +34,12 @@ public final class DefaultStatusBarProviding: StatusBarProviding {
         updateSortedItems()
     }
 
+    public func clearAllContributions() {
+        statusBarItems.removeAll()
+        statusBarItemOrder.removeAll()
+        updateSortedItems()
+    }
+
     private func updateSortedItems() {
         allStatusBarItems = statusBarItemOrder.compactMap { statusBarItems[$0] }
     }

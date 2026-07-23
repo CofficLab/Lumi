@@ -20,4 +20,11 @@ public protocol TitleToolbarProviding: ObservableObject {
 
     /// 注销标题栏工具栏项
     func unregisterTitleToolbarItem(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension TitleToolbarProviding {
+    func clearAllContributions() {}
 }

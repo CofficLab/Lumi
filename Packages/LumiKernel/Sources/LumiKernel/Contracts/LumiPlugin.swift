@@ -24,6 +24,22 @@ public protocol LumiPlugin: AnyObject {
     /// 定义插件的启用行为和用户可配置性。
     var policy: LumiPluginPolicy { get }
 
+    /// 插件分类
+    ///
+    /// 用于在插件管理界面分组与筛选。默认 `.general`。
+    var category: LumiPluginCategory { get }
+
+    /// 插件开发阶段
+    ///
+    /// 用于在管理界面以徽标提示成熟度。默认 `.stable`。
+    var stage: LumiPluginStage { get }
+
+    /// 插件描述
+    ///
+    /// 展示在插件管理界面列表与详情页。默认空字符串。
+    /// 命名为 `pluginDescription` 以避免与 `CustomStringConvertible.description` 冲突。
+    var pluginDescription: String { get }
+
     /// 阶段 1: 注入核心服务
     ///
     /// 在此方法中调用 `kernel.registerXxx()` 注册核心 Providing 实现，
@@ -97,15 +113,15 @@ public protocol LumiPlugin: AnyObject {
     // MARK: - Settings Contributions
 
     /// 设置标签项。已接入宿主 UI;插件可注册任意数量,会平铺显示在设置
-    /// 侧边栏的内置标签(General / Appearance / Plugins / About)之后。
+    /// 侧边栏的内置标签(General / Appearance / About)之后。
     /// 应返回带稳定 `id` / `title` / `systemImage` 的项目,内容由 `makeContent()` 渲染。
     func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem]
 
     /// (当前未接入宿主 UI;保留 API 以备扩展。新插件建议使用 `settingsTabItems`。)
     func addSettingsView(kernel: LumiKernel) -> [AnyView]
 
-    /// 插件关于视图。在 "Plugins" 标签页的每个插件详情面板中呈现;
-    /// 返回 `nil` 时显示空状态。
+    /// 插件关于视图。在由 `PluginManagerPlugin` 贡献的"插件管理"标签页的
+    /// 每个插件详情面板中呈现;返回 `nil` 时显示空状态。
     func pluginAboutView(kernel: LumiKernel) -> AnyView?
 
     /// LLM Provider 设置项,已由 `LLMProviderManagerPlugin` 等路由器使用。
@@ -158,5 +174,14 @@ public extension LumiPlugin {
     func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
         messages
     }
+
+    /// 默认分类:通用。
+    var category: LumiPluginCategory { .general }
+
+    /// 默认阶段:稳定。
+    var stage: LumiPluginStage { .stable }
+
+    /// 默认描述:空字符串。
+    var pluginDescription: String { "" }
 }
 

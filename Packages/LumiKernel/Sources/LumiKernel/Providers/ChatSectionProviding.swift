@@ -59,4 +59,11 @@ public protocol ChatSectionProviding: ObservableObject {
 
     /// 注销聊天分区动作栏项
     func unregisterChatSectionActionBarItem(id: String)
+
+    /// 清空所有插件贡献(供全量重建使用)。默认 no-op。
+    func clearAllContributions()
+}
+
+public extension ChatSectionProviding {
+    func clearAllContributions() {}
 }

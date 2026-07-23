@@ -34,6 +34,12 @@ public final class DefaultTitleToolbarProviding: TitleToolbarProviding {
         updateSortedItems()
     }
 
+    public func clearAllContributions() {
+        titleToolbarItems.removeAll()
+        titleToolbarItemOrder.removeAll()
+        updateSortedItems()
+    }
+
     private func updateSortedItems() {
         allTitleToolbarItems = titleToolbarItemOrder.compactMap { titleToolbarItems[$0] }
             .sorted { $0.order < $1.order }

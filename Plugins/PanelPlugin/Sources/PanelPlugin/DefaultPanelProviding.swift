@@ -64,6 +64,18 @@ public final class DefaultPanelProviding: PanelProviding {
         updateSortedRailTabs()
     }
 
+    public func clearAllContributions() {
+        headerItems.removeAll()
+        headerItemOrder.removeAll()
+        bottomTabItems.removeAll()
+        bottomTabOrder.removeAll()
+        railTabItems.removeAll()
+        railTabOrder.removeAll()
+        updateSortedHeaders()
+        updateSortedBottomTabs()
+        updateSortedRailTabs()
+    }
+
     private func updateSortedHeaders() {
         allPanelHeaderItems = headerItemOrder.compactMap { headerItems[$0] }
     }
