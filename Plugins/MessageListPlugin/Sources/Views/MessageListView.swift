@@ -83,7 +83,7 @@ struct MessageListView: View, SuperLog {
 
     private var messageListView: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 ForEach(displayMessages) { message in
                     MessageRowView(
                         message: message,
