@@ -25,7 +25,6 @@ struct ActivityBar: View {
                 ) {
                     // 激活容器
                     kernel.layout?.layoutState.activateContainer(id: container.id)
-                    // 兼容旧 LayoutState（仍在被读取）
                     kernel.layout?.updateLayout { state in
                         state.activeSectionID = container.id
                         state.activeSectionTitle = container.title

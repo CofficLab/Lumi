@@ -14,4 +14,49 @@ public protocol LayoutProviding: ObservableObject {
 
     /// 更新布局
     func updateLayout(_ update: (inout LayoutStateInfo) -> Void)
+
+    // MARK: - Workspace Visibility
+
+    var isRailVisible: Bool { get }
+    var isChatVisible: Bool { get }
+    var isContentVisible: Bool { get }
+    var isActivityBarVisible: Bool { get }
+    var isPanelVisible: Bool { get }
+
+    // MARK: - Workspace Commands
+
+    func setRailVisible(_ visible: Bool)
+    func setChatVisible(_ visible: Bool)
+    func setContentVisible(_ visible: Bool)
+    func setActivityBarVisible(_ visible: Bool)
+    func setPanelVisible(_ visible: Bool)
+
+    func activateContainer(id: String)
+    func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, activityBar: Bool?, panel: Bool?)
+    func addContainerObserver(_ observer: @escaping (String) -> Void)
+
+    // MARK: - Container
+
+    var activeViewContainerID: String? { get }
+
+    // MARK: - Rail Tabs
+
+    var activeRailTabID: String { get }
+    func presentRailTab(id: String)
+
+    // MARK: - Bottom Panel
+
+    var bottomPanelVisible: Bool { get }
+    func presentBottomTab(id: String, viewContainerID: String)
+
+    // MARK: - Dividers
+
+    func railDivider(for viewContainerID: String, fallback: CGFloat?) -> CGFloat
+    func setRailDivider(_ position: CGFloat, for viewContainerID: String)
+
+    func chatSectionDivider(for viewContainerID: String, layout: LumiChatSectionLayout, fallback: CGFloat?) -> CGFloat
+    func setChatSectionDivider(_ position: CGFloat, for viewContainerID: String, layout: LumiChatSectionLayout)
+
+    func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat?) -> CGFloat
+    func setBottomPanelDivider(_ position: CGFloat, for viewContainerID: String)
 }
