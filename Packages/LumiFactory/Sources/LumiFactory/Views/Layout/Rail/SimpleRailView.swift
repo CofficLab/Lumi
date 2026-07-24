@@ -4,13 +4,32 @@ import LumiUI
 import SwiftUI
 
 /// 简化版 Rail 视图，仅显示 rail tabs
+///
+/// 自己从 kernel 获取 tabs 和可见性状态，AppLayoutView 不需要了解其内部细节。
 struct SimpleRailView: View {
-    let tabs: [PanelRailTabItem]
-    @ObservedObject var layoutState: LayoutState
+    @ObservedObject var kernel: LumiKernel
 
     @LumiTheme private var theme
 
+    private var tabs: [PanelRailTabItem] {
+        kernel.panel?.allPanelRailTabItems ?? []
+    }
+
+    private var isRailVisible: Bool {
+        kernel.layout?.isRailVisible ?? true
+    }
+
+    private var activeRailTabID: String {
+        kernel.layout?.activeRailTabID ?? "explorer"
+    }
+
     var body: some View {
+        if isRailVisible {
+            railContent
+        }
+    }
+
+    private var railContent: some View {
         VStack(spacing: 0) {
             // Tab bar
             if tabs.count > 1 {
@@ -24,8 +43,7 @@ struct SimpleRailView: View {
             }
 
             // Active tab content
-            let activeTabID = layoutState.activeRailTabID
-            if let tab = tabs.first(where: { $0.id == activeTabID }) {
+            if let tab = tabs.first(where: { $0.id == activeRailTabID }) {
                 tab.makeView()
             } else if let firstTab = tabs.first {
                 firstTab.makeView()
@@ -38,16 +56,13 @@ struct SimpleRailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(theme.surface)
-        // 让 SwiftUI 控件（含 List/NSTableView 的默认背景、Picker 等）按当前
-        // Lumi 主题解析明暗，而不是仅依赖 NSWindow.appearance 的异步同步——
-        // 后者在启动期无法及时穿透到内嵌 List，会导致列表背景初显暗色。
         .appThemedAppearance()
     }
 
     private func railTabButton(_ tab: PanelRailTabItem) -> some View {
-        let isSelected = layoutState.activeRailTabID == tab.id
+        let isSelected = activeRailTabID == tab.id
         return Button {
-            layoutState.activeRailTabID = tab.id
+            kernel.layout?.presentRailTab(id: tab.id)
         } label: {
             HStack {
                 Image(systemName: tab.systemImage)
