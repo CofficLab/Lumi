@@ -1,7 +1,6 @@
 import Foundation
 import LumiKernel
 import AgentTurnRunnerPlugin
-import AskUserPlugin
 import ToolManagerPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
@@ -162,7 +161,6 @@ public enum PluginService {
             MessageStorePlugin(),
             MessageSenderPlugin(),
             AgentTurnRunnerPlugin(),
-            AskUserPlugin(),
             MessageRendererPlugin(),
             ConversationTitlePlugin(),
             ConversationListPlugin(),

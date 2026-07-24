@@ -33,7 +33,6 @@ let package = Package(
         .package(path: "../../Plugins/MessageStorePlugin"),
         .package(path: "../../Plugins/MessageSenderPlugin"),
         .package(path: "../../Plugins/AgentTurnRunnerPlugin"),
-        .package(path: "../../Plugins/AskUserPlugin"),
         .package(path: "../../Plugins/MessageRendererPlugin"),
         .package(path: "../../Plugins/ConversationInputPlugin"),
         .package(path: "../../Plugins/ConversationMessageCountPlugin"),
@@ -98,6 +97,7 @@ let package = Package(
         .package(path: "../../Plugins/EditorPanelPlugin"),
         .package(path: "../../Plugins/EditorFileTreePlugin"),
         .package(path: "../../Plugins/EditorFileTreeV2Plugin"),
+        .package(path: "../../Plugins/GitPlugin"),
         // Utility plugins
         .package(path: "../../Plugins/DeviceInfoPlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
@@ -156,7 +156,6 @@ let package = Package(
                 .product(name: "MessageStorePlugin", package: "MessageStorePlugin"),
                 .product(name: "MessageSenderPlugin", package: "MessageSenderPlugin"),
                 .product(name: "AgentTurnRunnerPlugin", package: "AgentTurnRunnerPlugin"),
-                .product(name: "AskUserPlugin", package: "AskUserPlugin"),
                 .product(name: "MessageRendererPlugin", package: "MessageRendererPlugin"),
                 .product(name: "ConversationInputPlugin", package: "ConversationInputPlugin"),
                 .product(name: "ConversationMessageCountPlugin", package: "ConversationMessageCountPlugin"),
@@ -222,6 +221,7 @@ let package = Package(
                 .product(name: "EditorFileTreePlugin", package: "EditorFileTreePlugin"),
                 .product(name: "EditorFileTreeV2Plugin", package: "EditorFileTreeV2Plugin"),
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "GitPlugin", package: "GitPlugin"),
                 // Utility plugins
                 .product(name: "DeviceInfoPlugin", package: "DeviceInfoPlugin"),
                 .product(name: "ClipboardManagerPlugin", package: "ClipboardManagerPlugin"),
