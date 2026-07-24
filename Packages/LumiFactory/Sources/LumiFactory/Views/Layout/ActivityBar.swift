@@ -5,12 +5,17 @@ import SwiftUI
 struct ActivityBar: View {
     @Environment(\.openWindow) private var openWindow
     @ObservedObject var kernel: LumiKernel
-    let containers: [ViewContainerItem]
+
+    private var containers: [ViewContainerItem] {
+        kernel.viewContainer?.allViewContainers ?? []
+    }
+
+    private var activeID: String? {
+        kernel.workspaceState?.activeContainerID
+            ?? kernel.layout?.state.activeSectionID
+    }
 
     var body: some View {
-        let activeID = kernel.workspaceState?.activeContainerID
-            ?? kernel.layout?.state.activeSectionID
-
         VStack(spacing: 6) {
             ForEach(containers) { container in
                 AppActivityIconButton(
