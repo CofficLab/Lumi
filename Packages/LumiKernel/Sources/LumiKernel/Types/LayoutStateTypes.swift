@@ -33,6 +33,26 @@ extension Notification.Name {
     /// userInfo: ["visible": Bool]
     public static let chatSectionVisibleDidChange = Notification.Name("ChatSectionVisibleDidChange")
 
+    /// Rail 视图可见性已变更
+    /// object: nil
+    /// userInfo: ["visible": Bool]
+    public static let railVisibleDidChange = Notification.Name("RailVisibleDidChange")
+
+    /// 主内容区域可见性已变更
+    /// object: nil
+    /// userInfo: ["visible": Bool]
+    public static let contentVisibleDidChange = Notification.Name("ContentVisibleDidChange")
+
+    /// ActivityBar 可见性已变更
+    /// object: nil
+    /// userInfo: ["visible": Bool]
+    public static let activityBarVisibleDidChange = Notification.Name("ActivityBarVisibleDidChange")
+
+    /// Panel 可见性已变更
+    /// object: nil
+    /// userInfo: ["visible": Bool]
+    public static let panelVisibleDidChange = Notification.Name("PanelVisibleDidChange")
+
     /// 侧边栏 Rail divider 位置已变更
     /// object: nil
     /// userInfo: ["containerID": String, "position": CGFloat]
@@ -87,6 +107,38 @@ extension NotificationCenter {
     public static func postChatSectionVisibleDidChange(visible: Bool) {
         NotificationCenter.default.post(
             name: .chatSectionVisibleDidChange,
+            object: nil,
+            userInfo: ["visible": visible]
+        )
+    }
+
+    public static func postRailVisibleDidChange(visible: Bool) {
+        NotificationCenter.default.post(
+            name: .railVisibleDidChange,
+            object: nil,
+            userInfo: ["visible": visible]
+        )
+    }
+
+    public static func postContentVisibleDidChange(visible: Bool) {
+        NotificationCenter.default.post(
+            name: .contentVisibleDidChange,
+            object: nil,
+            userInfo: ["visible": visible]
+        )
+    }
+
+    public static func postActivityBarVisibleDidChange(visible: Bool) {
+        NotificationCenter.default.post(
+            name: .activityBarVisibleDidChange,
+            object: nil,
+            userInfo: ["visible": visible]
+        )
+    }
+
+    public static func postPanelVisibleDidChange(visible: Bool) {
+        NotificationCenter.default.post(
+            name: .panelVisibleDidChange,
             object: nil,
             userInfo: ["visible": visible]
         )
@@ -161,6 +213,38 @@ public extension View {
     /// 监听聊天区可见性变更
     func onChatSectionVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .chatSectionVisibleDidChange)) { notification in
+            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
+            action(visible)
+        }
+    }
+
+    /// 监听 Rail 可见性变更
+    func onRailVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .railVisibleDidChange)) { notification in
+            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
+            action(visible)
+        }
+    }
+
+    /// 监听主内容区域可见性变更
+    func onContentVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .contentVisibleDidChange)) { notification in
+            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
+            action(visible)
+        }
+    }
+
+    /// 监听 ActivityBar 可见性变更
+    func onActivityBarVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .activityBarVisibleDidChange)) { notification in
+            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
+            action(visible)
+        }
+    }
+
+    /// 监听 Panel 可见性变更
+    func onPanelVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .panelVisibleDidChange)) { notification in
             guard let visible = notification.userInfo?["visible"] as? Bool else { return }
             action(visible)
         }
@@ -317,15 +401,45 @@ public final class LayoutState: ObservableObject, SuperLog {
     // MARK: - Workspace Visibility (merged from WorkspaceStateProviding)
 
     /// Rail 视图是否可见
-    @Published public var isRailVisible: Bool = true
+    @Published public var isRailVisible: Bool = true {
+        didSet {
+            guard isRailVisible != oldValue else { return }
+            NotificationCenter.postRailVisibleDidChange(visible: isRailVisible)
+        }
+    }
+
     /// Chat 区域是否可见
-    @Published public var isChatVisible: Bool = true
+    @Published public var isChatVisible: Bool = true {
+        didSet {
+            guard isChatVisible != oldValue else { return }
+            // 使用现有的 chatSectionVisible 通知
+            NotificationCenter.postChatSectionVisibleDidChange(visible: isChatVisible)
+        }
+    }
+
     /// 主内容区域是否可见
-    @Published public var isContentVisible: Bool = true
+    @Published public var isContentVisible: Bool = true {
+        didSet {
+            guard isContentVisible != oldValue else { return }
+            NotificationCenter.postContentVisibleDidChange(visible: isContentVisible)
+        }
+    }
+
     /// ActivityBar 是否可见
-    @Published public var isActivityBarVisible: Bool = true
+    @Published public var isActivityBarVisible: Bool = true {
+        didSet {
+            guard isActivityBarVisible != oldValue else { return }
+            NotificationCenter.postActivityBarVisibleDidChange(visible: isActivityBarVisible)
+        }
+    }
+
     /// 底部 Panel 是否可见
-    @Published public var isPanelVisible: Bool = true
+    @Published public var isPanelVisible: Bool = true {
+        didSet {
+            guard isPanelVisible != oldValue else { return }
+            NotificationCenter.postPanelVisibleDidChange(visible: isPanelVisible)
+        }
+    }
 
     // MARK: - Workspace Commands
 

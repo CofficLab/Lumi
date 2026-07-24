@@ -33,9 +33,9 @@ public final class ChatPanelPlugin: LumiPlugin {
         []
     }
 
-    public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
-        WorkspaceVisibility(
-            rail: true,
+    public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility { WorkspaceVisibility() }
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}            rail: true,
             chat: true,
             content: false,
             activityBar: true,

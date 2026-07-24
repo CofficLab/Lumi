@@ -11,12 +11,10 @@ struct SimpleRailView: View {
 
     @LumiTheme private var theme
 
+    @State private var isRailVisible: Bool = true
+
     private var tabs: [PanelRailTabItem] {
         kernel.panel?.allPanelRailTabItems ?? []
-    }
-
-    private var isRailVisible: Bool {
-        kernel.layoutManager?.isRailVisible ?? true
     }
 
     private var activeRailTabID: String {
@@ -26,6 +24,12 @@ struct SimpleRailView: View {
     var body: some View {
         if isRailVisible {
             railContent
+        }
+        .onRailVisibleDidChange { visible in
+            isRailVisible = visible
+        }
+        .onAppear {
+            isRailVisible = kernel.layoutManager?.isRailVisible ?? true
         }
     }
 

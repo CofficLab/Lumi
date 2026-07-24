@@ -9,9 +9,7 @@ struct PanelColumnView: View {
 
     let editor: any LumiEditorServicing
 
-    private var showRail: Bool {
-        kernel.layoutManager?.isRailVisible ?? true
-    }
+    @State private var showRail: Bool = true
 
     var body: some View {
         if showRail {
@@ -28,6 +26,12 @@ struct PanelColumnView: View {
             )
         } else {
             PanelView(kernel: kernel)
+        }
+        .onRailVisibleDidChange { visible in
+            showRail = visible
+        }
+        .onAppear {
+            showRail = kernel.layoutManager?.isRailVisible ?? true
         }
     }
 }

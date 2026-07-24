@@ -8,7 +8,7 @@ import SwiftUI
 /// - ToolManaging: Agent Tool 收集
 /// - UIThemeProviding: Theme 贡献
 @MainActor
-public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolManaging, UIThemeProviding {
+public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThemeProviding {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -16,14 +16,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
 
     /// Kernel 引用
     weak var kernel: LumiKernelContainer?
-
-    // Agent Tool registry
-    private var agentTools: [String: any LumiAgentTool] = [:]
-    private var agentToolOrder: [String] = []
-    private var subAgents: [String: LumiSubAgentDefinition] = [:]
-    private var subAgentOrder: [String] = []
-
-    // Send middleware registry (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     // Message renderer registry
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
@@ -72,6 +64,14 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             guard effectiveEnabled(for: plugin) else { continue }
             try await plugin.onReady(kernel: kernel)
         }
+
+        // 注册容器激活观察者，当容器切换时通知所有插件
+        kernel.layoutManager?.addContainerObserver { [weak self] containerID in
+            guard let self else { return }
+            Task { @MainActor in
+                self.onContainerActivated(kernel: kernel, containerID: containerID)
+            }
+        }
     }
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
@@ -109,11 +109,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let pluginOrder = plugin.order
-
-            // Sub Agents
-            for subAgent in plugin.subAgents(kernel: kernel) {
-                addSubAgent(subAgent)
-            }
 
             // Send Middlewares: now handled via LumiPlugin.willSendToLLM hook in AgentTurnRunner
 
@@ -402,51 +397,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             .sorted { $0.order < $1.order }
     }
 
-    // MARK: - ToolManaging
-
-    public func allAgentTools() -> [any LumiAgentTool] {
-        agentToolOrder.compactMap { agentTools[$0] }
-    }
-
-    public func add(_ tool: any LumiAgentTool, pluginID: String) {
-        let id = tool.name
-        if agentTools[id] == nil {
-            agentToolOrder.append(id)
-        }
-        agentTools[id] = tool
-    }
-
-    public func remove(id: String) {
-        agentTools.removeValue(forKey: id)
-        agentToolOrder.removeAll { $0 == id }
-    }
-
-    public func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])] {
-        let tools = agentToolOrder.compactMap { agentTools[$0] }
-        return tools.isEmpty ? [] : [("Built-in", tools)]
-    }
-
-    public func allSubAgents() -> [LumiSubAgentDefinition] {
-        subAgentOrder.compactMap { subAgents[$0] }
-    }
-
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
-        if subAgents[subAgent.id] == nil {
-            subAgentOrder.append(subAgent.id)
-        }
-        subAgents[subAgent.id] = subAgent
-    }
-
-    // MARK: - ToolManaging Execution
-
-    public func tool(named name: String) -> (any LumiAgentTool)? {
-        kernel?.toolManager?.tool(named: name)
-    }
-
-    public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
-        await kernel?.toolManager?.execute(toolCall, conversationID: conversationID) ?? LumiToolResult(content: "Tool service unavailable", isError: true)
-    }
-
     // MARK: - Send Middleware Registry (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     public func registerMessageRenderer(_ renderer: LumiMessageRendererItem) {
@@ -461,10 +411,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
     /// 与各 Provider 服务的 `clearAllContributions()` 配合,在
     /// `registerPluginUIContributions(in:)` 开头调用,使禁用插件的贡献即时撤回。
     public func clearInternalContributions() {
-        agentTools.removeAll()
-        agentToolOrder.removeAll()
-        subAgents.removeAll()
-        subAgentOrder.removeAll()
         messageRenderers.removeAll()
         messageRendererOrder.removeAll()
         themeRegistryStorage.removeAll()

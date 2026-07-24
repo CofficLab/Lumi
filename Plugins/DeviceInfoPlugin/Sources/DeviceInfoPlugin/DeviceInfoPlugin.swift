@@ -11,7 +11,7 @@ import SwiftUI
 public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
     public nonisolated static let emoji = "📊"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"
@@ -95,7 +95,30 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility { WorkspaceVisibility() }
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)onContainerActivated,contaienrID: \(containerID)")
+        }
+        
+        guard containerID == id else { return }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)调整可见性")
+        }
+        
+        guard let layoutManager = kernel.layoutManager else {
+            Self.logger.warning("\(Self.t)No LayoutManager, ignore")
+            return
+        }
+        
+        layoutManager.layoutState.applyVisibility(
+            rail: false,
+            chat: false,
+            content: true,
+            activityBar: true,
+            panel: true
+        )
+    }
+
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
