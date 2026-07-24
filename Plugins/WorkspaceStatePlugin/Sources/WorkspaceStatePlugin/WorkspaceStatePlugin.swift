@@ -64,12 +64,12 @@ public final class WorkspaceStatePlugin: LumiPlugin {
 /// `WorkspaceStateProviding` 的默认实现
 @MainActor
 public final class DefaultWorkspaceStateProviding: WorkspaceStateProviding, ObservableObject {
-    private var _isRailVisible = true
-    private var _isChatVisible = true
-    private var _isContentVisible = true
-    private var _isActivityBarVisible = true
-    private var _isPanelVisible = true
-    private var _activeContainerID: String?
+    @Published private var _isRailVisible = true
+    @Published private var _isChatVisible = true
+    @Published private var _isContentVisible = true
+    @Published private var _isActivityBarVisible = true
+    @Published private var _isPanelVisible = true
+    @Published private var _activeContainerID: String?
 
     /// 变更通知回调列表（由 PluginManagerProvider 注入）
     private var observers: [(String) -> Void] = []
