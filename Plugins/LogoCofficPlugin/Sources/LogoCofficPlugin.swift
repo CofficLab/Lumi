@@ -7,7 +7,11 @@ public final class LogoCofficPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-coffic"
     public let name = "Coffic Logo"
     public let order = 100
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .optIn
+
+    public let category: LumiPluginCategory = .general
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription: String = "咖啡主题 Logo，提供动画咖啡杯图标"
 
     public init() {}
 

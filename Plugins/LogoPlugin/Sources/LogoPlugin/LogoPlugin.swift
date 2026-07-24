@@ -1,8 +1,8 @@
 import Foundation
 import LumiKernel
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// Logo 插件
 ///
@@ -11,7 +11,7 @@ import os
 @MainActor
 public final class LogoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.logo")
-    nonisolated public static let emoji = "🖼️"
+    public nonisolated static let emoji = "🖼️"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
@@ -19,17 +19,13 @@ public final class LogoPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.logo"
     public let name = "Logo Plugin"
     public let order = 21
-	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 
     // MARK: - State
 
-    private var logoService: DefaultLogoProviding?
-
-    // MARK: - Initialization
+    private var logoService: LogoManager?
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await LogoOnBootHook().execute(kernel)
@@ -38,9 +34,6 @@ public final class LogoPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try LogoOnReadyHook().execute(kernel)
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

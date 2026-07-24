@@ -1,13 +1,16 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class LogoSmartLightPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-smart-light"
     public let name = "Smart Light Logo"
     public let order = 200
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
+    public let category: LumiPluginCategory = .general
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription: String = "智能灯光主题 Logo，提供动画灯泡图标"
 
     public init() {}
 
@@ -17,7 +20,6 @@ public final class LogoSmartLightPlugin: LumiPlugin {
         // Logo items are registered in logoItems method
     }
 
-
     public func logoItems(kernel: LumiKernel) -> [LogoItem] {
         [
             LogoItem(
@@ -26,12 +28,9 @@ public final class LogoSmartLightPlugin: LumiPlugin {
                 makeView: { scene in
                     SmartLightLogoView(scene: scene)
                 }
-            )
+            ),
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
