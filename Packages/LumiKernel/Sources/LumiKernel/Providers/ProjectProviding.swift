@@ -1,23 +1,6 @@
 import Combine
 import Foundation
 
-// MARK: - Project Info
-
-/// 项目信息（轻量级数据结构）
-public struct ProjectInfo: Sendable, Codable {
-    public let name: String
-    public let path: String
-    public let language: String?
-
-    public init(name: String, path: String, language: String? = nil) {
-        self.name = name
-        self.path = path
-        self.language = language
-    }
-}
-
-// MARK: - Project Capability Protocol
-
 /// 项目管理能力协议
 ///
 /// 定义 LumiCore 需要的项目管理功能，由 LumiCoreProject 实现。

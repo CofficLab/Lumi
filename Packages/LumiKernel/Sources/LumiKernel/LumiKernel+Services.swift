@@ -4,11 +4,6 @@ import LumiUI
 // MARK: - Service Accessors
 
 extension LumiKernelContainer {
-    /// LumiCore service (storage, project, layout, logo, toolManager, chat, editor)
-    public var lumiCore: (any LumiCoreProviding)? {
-        resolveService(LumiCoreProviding.self)
-    }
-
     /// Storage service
     public var storage: (any StorageProviding)? {
         resolveService(StorageProviding.self)

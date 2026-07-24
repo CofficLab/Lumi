@@ -4,11 +4,6 @@ import LumiUI
 // MARK: - Service Registration
 
 extension LumiKernelContainer {
-    /// Register LumiCore service
-    public func registerLumiCore(_ core: any LumiCoreProviding) {
-        registerService(LumiCoreProviding.self, core)
-    }
-
     /// Register storage service
     public func registerStorage(_ storage: any StorageProviding) {
         registerService(StorageProviding.self, storage)
@@ -79,15 +74,6 @@ extension LumiKernelContainer {
     /// Register LLM Provider service
     public func registerLLMProviderService(_ llmProvider: any LLMProviderManaging) {
         registerService(LLMProviderManaging.self, llmProvider)
-    }
-
-    /// Register LLM Provider settings contribution service
-    ///
-    /// 由 `LLMProviderManagerPlugin` 等 provider 管理器注册,让其它 LLM Provider 插件
-    /// 可通过 `kernel.resolveService((any LumiLLMProviderSettingsContributing).self)`
-    /// 拿到 provider 详情视图的贡献集合。
-    public func registerLLMProviderSettingsService(_ service: any LumiLLMProviderSettingsContributing) {
-        registerService(LumiLLMProviderSettingsContributing.self, service)
     }
 
     /// Register agent turn runner service
