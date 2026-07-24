@@ -7,7 +7,7 @@ public final class LogoCofficPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-coffic"
     public let name = "Coffic Logo"
     public let order = 100
-	public let policy: LumiPluginPolicy = .optIn
+	public let policy: LumiPluginPolicy = .alwaysOn
 
     public let category: LumiPluginCategory = .general
     public let stage: LumiPluginStage = .stable
