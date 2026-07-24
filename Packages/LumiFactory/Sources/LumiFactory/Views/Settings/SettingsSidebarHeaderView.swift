@@ -16,7 +16,7 @@ struct SettingsSidebarHeaderView: View {
         ) {
             HStack {
                 Spacer()
-                LogoView(scene: .about)
+                LogoView(scene: .about, kernel: kernel)
                     .frame(width: 64, height: 64)
                 Spacer()
             }

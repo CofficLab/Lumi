@@ -1,6 +1,8 @@
 import Foundation
 import LumiKernel
 import SwiftUI
+import SuperLogKit
+import os
 
 // MARK: - Default Logo Provider
 
@@ -8,7 +10,10 @@ import SwiftUI
 ///
 /// 负责管理所有插件的 Logo 项的注册和查询。
 @MainActor
-public final class DefaultLogoProviding: LogoProviding {
+public final class LogoManager: LogoProviding, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.logo")
+    public nonisolated static let emoji = "🖼️"
+    nonisolated static let verbose = true
     public private(set) var allLogoItems: [LogoItem] = []
 
     private var logoItems: [String: LogoItem] = [:]
@@ -17,6 +22,9 @@ public final class DefaultLogoProviding: LogoProviding {
     public init() {}
 
     public func registerLogoItem(_ item: LogoItem) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)注册Logo：\(item.id)")
+        }
         if logoItems[item.id] == nil {
             logoItemOrder.append(item.id)
         }
