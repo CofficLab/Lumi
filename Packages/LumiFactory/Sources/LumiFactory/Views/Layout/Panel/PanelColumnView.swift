@@ -5,16 +5,19 @@ import SwiftUI
 
 /// The main panel column that contains Rail and Panel Workspace
 struct PanelColumnView: View {
+    @ObservedObject var kernel: LumiKernel
+
     let container: LumiViewContainerItem?
     let headerItems: [LumiPanelHeaderItem]
     let bottomTabs: [LumiPanelBottomTabItem]
-    let showRail: Bool
-    let railTabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: LayoutState
     let editor: any LumiEditorServicing
 
     private var viewContainerID: String {
         container?.id ?? "main"
+    }
+
+    private var showRail: Bool {
+        kernel.layout?.isRailVisible ?? true
     }
 
     var body: some View {
@@ -22,12 +25,12 @@ struct PanelColumnView: View {
             if showRail {
                 railWithPanel
             } else {
-                PanelWorkspaceView(
+                PanelView(
                     container: container,
                     headerItems: headerItems,
                     bottomTabs: bottomTabs,
                     viewContainerID: viewContainerID,
-                    layoutState: layoutState
+                    layoutState: kernel.layout?.layoutState ?? LayoutState()
                 )
             }
         }
@@ -41,22 +44,17 @@ struct PanelColumnView: View {
 
     @ViewBuilder
     private var railWithPanel: some View {
-        if true {
-            HSplitView {
-                RailView(tabs: railTabs, layoutState: layoutState)
-                PanelWorkspaceView(
-                    container: container,
-                    headerItems: headerItems,
-                    bottomTabs: bottomTabs,
-                    viewContainerID: viewContainerID,
-                    layoutState: layoutState
-                )
-            }
-            .id(viewContainerID)
-            .background(SplitViewDividerPersistence.rail(layoutState: layoutState, viewContainerID: viewContainerID))
-        } else {
-            RailView(tabs: railTabs, layoutState: layoutState)
-                .id(viewContainerID)
+        HSplitView {
+            RailView(kernel: kernel)
+            PanelView(
+                container: container,
+                headerItems: headerItems,
+                bottomTabs: bottomTabs,
+                viewContainerID: viewContainerID,
+                layoutState: kernel.layout?.layoutState ?? LayoutState()
+            )
         }
+        .id(viewContainerID)
+        .background(SplitViewDividerPersistence.rail(layoutState: kernel.layout?.layoutState ?? LayoutState(), viewContainerID: viewContainerID))
     }
 }

@@ -2,7 +2,7 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-struct PanelWorkspaceView: View {
+struct PanelView: View {
     @LumiTheme private var theme
 
     let container: LumiViewContainerItem?

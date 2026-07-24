@@ -4,7 +4,7 @@ import SwiftUI
 // MARK: - Rail Content View
 
 struct RailContentView: View {
-    let tabs: [LumiPanelRailTabItem]
+    let tabs: [PanelRailTabItem]
     let activeTabID: String
 
     @ViewBuilder

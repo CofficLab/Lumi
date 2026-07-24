@@ -7,7 +7,7 @@ import SwiftUI
 struct RailTabBarView: View {
     @LumiTheme private var theme
 
-    let tabs: [LumiPanelRailTabItem]
+    let tabs: [PanelRailTabItem]
     @Binding var selectedTabID: String
 
     var body: some View {

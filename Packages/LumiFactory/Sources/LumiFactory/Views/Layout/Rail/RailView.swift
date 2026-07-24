@@ -2,13 +2,23 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// Rail 视图，显示侧边栏 tab bar 和内容
+///
+/// 自己从 kernel 获取 tabs 和状态，AppLayoutView 不需要了解其内部细节。
 struct RailView: View {
+    @ObservedObject var kernel: LumiKernel
+
     @LumiTheme private var theme
 
-    let tabs: [LumiPanelRailTabItem]
-    @ObservedObject var layoutState: LayoutState
-
     private static let minWidth: CGFloat = 200
+
+    private var tabs: [PanelRailTabItem] {
+        kernel.panel?.allPanelRailTabItems ?? []
+    }
+
+    private var activeRailTabID: String {
+        kernel.layout?.activeRailTabID ?? "explorer"
+    }
 
     private var showsTabBar: Bool {
         tabs.count > 1
@@ -20,18 +30,17 @@ struct RailView: View {
                 RailTabBarView(
                     tabs: tabs,
                     selectedTabID: Binding(
-                        get: { layoutState.activeRailTabID },
-                        set: { newValue in
-                            layoutState.activeRailTabID = newValue
-                        }
+                        get: { activeRailTabID },
+                        set: { kernel.layout?.presentRailTab(id: $0) }
                     )
                 )
             }
+
             RailContentView(
                 tabs: tabs,
-                activeTabID: layoutState.activeRailTabID
+                activeTabID: activeRailTabID
             )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
@@ -47,10 +56,10 @@ struct RailView: View {
     private func ensureValidSelection() {
         guard !tabs.isEmpty else { return }
 
-        if tabs.contains(where: { $0.id == layoutState.activeRailTabID }) {
+        if tabs.contains(where: { $0.id == activeRailTabID }) {
             return
         }
 
-        layoutState.activeRailTabID = tabs[0].id
+        kernel.layout?.presentRailTab(id: tabs[0].id)
     }
 }
