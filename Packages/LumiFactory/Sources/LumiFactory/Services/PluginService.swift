@@ -25,6 +25,7 @@ import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
+import EditorProviderPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -118,6 +119,7 @@ public enum PluginService {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
             LLMProviderManagerPlugin(),
+            EditorProviderPlugin(),
             // Host settings tabs (General/Appearance/About) — order 1, must lead the sidebar
             HostSettingsPlugin(),
             // LLM Providers (order 91-110)
