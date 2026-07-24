@@ -5,7 +5,6 @@ import LumiKernel
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
     let lumiCore: LumiCoreAccessing
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
@@ -13,39 +12,53 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var isLoading = false
     @State private var loadError: String?
 
-
     public init(lumiCore: LumiCoreAccessing) {
         self.lumiCore = lumiCore
     }
 
-
     public var body: some View {
-        PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("RAG Index Status", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Manage semantic indexes for tracked projects.", bundle: .module),
-            showHeader: false
-        ) {
-            if let loadError {
-                errorBanner(loadError)
-            }
-            if trackedProjects.isEmpty {
-                AppCard {
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
+                if trackedProjects.isEmpty {
                     AppEmptyState(
                         icon: "folder.badge.questionmark",
                         title: LumiPluginLocalization.string("Please select or add a project first for RAG to build and display indexes.", bundle: .module)
                     )
-                    .frame(minHeight: 160)
-                }
-            } else {
-                if let runtimeInfo {
-                    runtimeCard(runtimeInfo)
-                }
+                    .frame(maxWidth: .infinity, minHeight: 200)
+                } else {
+                    if let loadError {
+                        AppSettingSection(title: "Status", titleAlignment: .leading) {
+                            VStack(spacing: 0) {
+                                AppSettingRow(
+                                    title: loadError,
+                                    icon: "exclamationmark.triangle.fill"
+                                ) {
+                                    Button {
+                                        Task { await loadStatus() }
+                                    } label: {
+                                        Image(systemName: "arrow.clockwise")
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
 
+                    if let runtimeInfo {
+                        runtimeSection(runtimeInfo)
+                    }
 
-                ForEach(trackedProjects) { project in
-                    projectCard(project)
+                    let projects = trackedProjects
+                    ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
+                        projectSection(project)
+                        if index < projects.count - 1 {
+                            Divider()
+                                .padding(.vertical, 8)
+                        }
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
             await loadStatus()
@@ -58,102 +71,194 @@ public struct RAGSettingsView: View, SuperLog {
         }
     }
 
-
-    // MARK: - Cards
-
+    // MARK: - Sections
 
     @ViewBuilder
-    private func errorBanner(_ message: String) -> some View {
-        AppCard {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(theme.error)
-                Text(message)
-                    .font(.appMicro)
-                    .foregroundColor(theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-                Button {
-                    Task { await loadStatus() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.appMicro)
+    private func runtimeSection(_ info: RAGRuntimeInfo) -> some View {
+        AppSettingSection(title: "Runtime", titleAlignment: .leading) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "Vector Backend",
+                    icon: "cpu"
+                ) {
+                    Text(info.vectorBackend.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(theme.textSecondary)
-            }
-            .padding(10)
-        }
-    }
-
-    @ViewBuilder
-    private func runtimeCard(_ info: RAGRuntimeInfo) -> some View {
-        AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Runtime", bundle: .module), spacing: 8) {
-                GlassKeyValueRow(
-                    label: LumiPluginLocalization.string("Vector Backend", bundle: .module),
-                    value: info.vectorBackend.rawValue
-                )
             }
         }
     }
 
-
     @ViewBuilder
-    private func projectCard(_ project: RAGTrackedProject) -> some View {
-        AppCard {
-            AppSettingsSection(title: project.name, subtitle: project.path, spacing: 12) {
+    private func projectSection(_ project: RAGTrackedProject) -> some View {
+        AppSettingSection(
+            title: project.name,
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "Path",
+                    icon: "folder"
+                ) {
+                    Text(project.path)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(project.path)
+                }
+                Divider().padding(.vertical, 8)
+
+                statusRow(for: project)
+                Divider().padding(.vertical, 8)
+
                 if let status = statusesByPath[project.path] {
-                    GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("Last Indexed", bundle: .module),
-                        value: relativeDate(status.lastIndexedAt)
-                    )
-                    GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("File Count", bundle: .module),
-                        value: "\(status.fileCount)"
-                    )
-                    GlassKeyValueRow(
-                        label: LumiPluginLocalization.string("Chunk Count", bundle: .module),
-                        value: "\(status.chunkCount)"
-                    )
-                    AppSettingsRow {
-                        HStack {
-                            Text(LumiPluginLocalization.string("Status", bundle: .module))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                            Spacer()
-                            GlassBadge(
-                                text: LocalizedStringKey(
-                                    status.isStale
-                                        ? LumiPluginLocalization.string("Outdated", bundle: .module)
-                                        : LumiPluginLocalization.string("Up to Date", bundle: .module)
-                                ),
-                                style: status.isStale ? .warning : .success
-                            )
-                        }
+                    AppSettingRow(
+                        title: "Last Indexed",
+                        icon: "clock"
+                    ) {
+                        Text(relativeDate(status.lastIndexedAt))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider().padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: "Files",
+                        icon: "doc"
+                    ) {
+                        Text("\(status.fileCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider().padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: "Chunks",
+                        icon: "square.stack.3d.up"
+                    ) {
+                        Text("\(status.chunkCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider().padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: "Embedding",
+                        description: "dim \(status.embeddingDimension)",
+                        icon: "brain.head.profile"
+                    ) {
+                        Text(status.embeddingModel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 } else if isLoading {
-                    Text(LumiPluginLocalization.string("Loading…", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
+                    AppSettingRow(
+                        title: "Status",
+                        icon: "ellipsis.circle"
+                    ) {
+                        Text("Loading…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
-                    Text(LumiPluginLocalization.string("Not indexed yet", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
+                    AppSettingRow(
+                        title: "Status",
+                        icon: "circle.dashed"
+                    ) {
+                        Text("Not indexed yet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
-
-                if let progress = progressByPath[project.path], progress.totalFiles > 0, !progress.isFinished {
-                    ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
-                    Text(String(format: LumiPluginLocalization.string("Progress: %lld/%lld", bundle: .module), progress.scannedFiles, progress.totalFiles))
-                        .font(.appMicro)
-                        .foregroundColor(theme.textTertiary)
+                if let progress = progressByPath[project.path],
+                   progress.totalFiles > 0,
+                   !progress.isFinished {
+                    Divider().padding(.vertical, 8)
+                    AppSettingRow(
+                        title: "Progress",
+                        icon: "progress.indicator"
+                    ) {
+                        HStack(spacing: 8) {
+                            ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
+                                .frame(maxWidth: 160)
+                            Text("\(progress.scannedFiles)/\(progress.totalFiles)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
                 }
             }
         }
     }
-}
 
+    @ViewBuilder
+    private func statusRow(for project: RAGTrackedProject) -> some View {
+        if let progress = progressByPath[project.path], !progress.isFinished {
+            AppSettingRow(
+                title: "Status",
+                icon: "arrow.triangle.2.circlepath"
+            ) {
+                statusPill(text: "Indexing", color: .blue, spinning: true)
+            }
+        } else if let status = statusesByPath[project.path] {
+            if status.isStale {
+                AppSettingRow(
+                    title: "Status",
+                    icon: "exclamationmark.triangle.fill"
+                ) {
+                    statusPill(text: "Outdated", color: .orange, spinning: false)
+                }
+            } else {
+                AppSettingRow(
+                    title: "Status",
+                    icon: "checkmark.circle.fill"
+                ) {
+                    statusPill(text: "Up to Date", color: .green, spinning: false)
+                }
+            }
+        } else if isLoading {
+            AppSettingRow(
+                title: "Status",
+                icon: "ellipsis.circle"
+            ) {
+                statusPill(text: "Loading…", color: .secondary, spinning: false)
+            }
+        } else {
+            AppSettingRow(
+                title: "Status",
+                icon: "circle.dashed"
+            ) {
+                statusPill(text: "Not Indexed", color: .secondary, spinning: false)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func statusPill(text: String, color: Color, spinning: Bool) -> some View {
+        HStack(spacing: 4) {
+            if spinning {
+                ProgressView()
+                    .controlSize(.mini)
+                    .scaleEffect(0.6)
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: 6, height: 6)
+            }
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            Capsule().fill(color.opacity(0.12))
+        )
+    }
+}
 
 // MARK: - Load Status
 
@@ -164,11 +269,9 @@ extension RAGSettingsView {
         isLoading = true
         defer { isLoading = false }
 
-
         do {
             let service = ProjectRAGPlugin.getService()
             runtimeInfo = try await service.getRuntimeInfo()
-
 
             var next: [String: RAGIndexStatus] = [:]
             for project in projects {
@@ -184,12 +287,13 @@ extension RAGSettingsView {
     }
 }
 
-
 // MARK: - Helpers
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let projects = lumiCore.projectComponent.projects.map { RAGTrackedProject(name: $0.name, path: $0.path) } ?? []
+        let projects = lumiCore.projectComponent.projects.map {
+            RAGTrackedProject(name: $0.name, path: $0.path)
+        }
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let current: [RAGTrackedProject]
         if currentPath.isEmpty {
@@ -202,7 +306,6 @@ extension RAGSettingsView {
         }
         return dedupProjects(current + projects)
     }
-
 
     private func dedupProjects(_ projects: [RAGTrackedProject]) -> [RAGTrackedProject] {
         var seen = Set<String>()
@@ -217,14 +320,12 @@ extension RAGSettingsView {
         return result
     }
 
-
     private func relativeDate(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
-
 
 private struct RAGTrackedProject: Identifiable, Equatable {
     public var id: String { path }

@@ -42,7 +42,31 @@ public final class ProjectRAGPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        let core: (any LumiCoreAccessing)? = kernel.lumiCore
+        return [
+            SettingsTabItem(
+                id: "\(id).index-status",
+                title: "Project RAG",
+                systemImage: "doc.text.magnifyingglass",
+                order: 200
+            ) {
+                if let core {
+                    RAGSettingsView(lumiCore: core)
+                } else {
+                    AppSettingsContentScaffold(maxContentWidth: nil) {
+                        AppEmptyState(
+                            icon: "exclamationmark.triangle",
+                            title: "Project RAG unavailable",
+                            description: "LumiCore is not available; index status cannot be displayed."
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 200)
+                    }
+                }
+            },
+        ]
+    }
+
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
