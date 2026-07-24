@@ -9,7 +9,7 @@ import SuperLogKit
 /// LLM Provider plugins. Lookup is O(1) by id; iteration preserves the
 /// insertion order so that the provider UI shows a stable list.
 @MainActor
-public final class LLMProviderManager: LLMProviderManaging, LumiLLMProviderSettingsContributing, SuperLog {
+public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.service")
     public nonisolated static let emoji = "🧠"
     nonisolated static let verbose = false
@@ -191,12 +191,6 @@ public final class LLMProviderManager: LLMProviderManaging, LumiLLMProviderSetti
     /// 默认返回空 — Manager 自身不贡献视图。LLM Provider 插件可通过
     /// `registerProviderSettingsView(_:)` 在 `onBoot` 之后注册自己的项。
     private var providerSettingsViewItems: [LumiLLMProviderSettingsViewItem] = []
-
-    public func llmProviderSettingsViews(
-        lumiCore: (any LumiCoreProviding)?
-    ) -> [LumiLLMProviderSettingsViewItem] {
-        providerSettingsViewItems
-    }
 
     public func registerProviderSettingsView(_ item: LumiLLMProviderSettingsViewItem) {
         providerSettingsViewItems.removeAll { $0.providerID == item.providerID }
