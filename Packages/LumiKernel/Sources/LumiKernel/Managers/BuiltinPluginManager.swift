@@ -287,18 +287,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
             }
         }
 
-        // 应用每个插件声明的工作区可见性偏好
-        for plugin in allPlugins {
-            guard effectiveEnabled(for: plugin) else { continue }
-            let visibility = plugin.workspaceVisibility(kernel: kernel)
-            kernel.layoutManager?.layoutState.applyVisibility(
-                rail: visibility.rail,
-                chat: visibility.chat,
-                content: visibility.content,
-                activityBar: visibility.activityBar,
-                panel: visibility.panel
-            )
-        }
     }
 
     /// 收集所有插件贡献的 LLM Provider,并注册到内核的 `LLMProviderManaging` 服务。

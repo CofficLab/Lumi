@@ -57,7 +57,6 @@ public final class LogoSmartLightPlugin: LumiPlugin {
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility { WorkspaceVisibility() }
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}

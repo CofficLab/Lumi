@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Title Toolbar Capability Protocol
-
 /// 标题栏工具栏能力协议
 ///
 /// 定义 LumiCore 需要的标题栏工具栏管理功能，由具体布局插件实现。
