@@ -240,9 +240,9 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         let durationMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
         let durationSec = durationMs / 1000
         if durationSec > 5 {
-            RAGPlugin.logger.error("\(Self.t)search_code keyword 搜索耗时过长：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
+            ProjectRAGPlugin.logger.error("\(Self.t)search_code keyword 搜索耗时过长：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
         } else {
-            RAGPlugin.logger.info("\(Self.t)search_code keyword 搜索耗时：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
+            ProjectRAGPlugin.logger.info("\(Self.t)search_code keyword 搜索耗时：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
         }
     }
 
@@ -433,13 +433,13 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
         if RAGService.isAnyIndexing() {
             if Self.verbose {
-                RAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
+                ProjectRAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
             }
             return []
         }
 
         let service = await MainActor.run {
-            RAGPlugin.getService()
+            ProjectRAGPlugin.getService()
         }
         guard service.isInitialized else { return [] }
 
@@ -458,7 +458,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
                 )
             }
         } catch {
-            RAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
+            ProjectRAGPlugin.logger.error("\(Self.t)search_code semantic search failed: \(error.localizedDescription)")
             return []
         }
     }

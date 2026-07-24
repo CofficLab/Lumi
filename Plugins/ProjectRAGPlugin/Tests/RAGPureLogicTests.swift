@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import AgentRAGPlugin
+@testable import ProjectRAGPlugin
 
 /// Unit tests for the pure-logic RAG helpers: chunker, math, text, path, and
 /// intent analysis. None of these touch the filesystem, embedding providers,

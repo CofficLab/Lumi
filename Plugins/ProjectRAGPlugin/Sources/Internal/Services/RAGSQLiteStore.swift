@@ -598,7 +598,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         var candidates: [String] = []
         let libraryNames = ["vec0.dylib"]
 
-        // 优先：Swift Package 资源 bundle（AgentRAGPlugin 内部打包的 vec0.dylib）
+        // 优先：Swift Package 资源 bundle（ProjectRAGPlugin 内部打包的 vec0.dylib）
         let moduleBundle = Bundle.module
         for name in libraryNames {
             if let url = moduleBundle.url(forResource: name, withExtension: nil) {

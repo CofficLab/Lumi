@@ -1,6 +1,26 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    "Activity" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活跃度"
+          }
+        }
+      }
+    },
     "Activity Heatmap" : {
       "localizations" : {
         "en" : {
@@ -13,24 +33,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "活跃热力图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍熱力圖"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍熱力圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍熱力圖"
           }
         }
       }
@@ -46,25 +48,41 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "对话活跃度趋势"
+            "value" : "对话活跃度随时间变化"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "Daily message activity over time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話活躍度趨勢"
+            "value" : "Daily message activity over time"
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話活躍度趨勢"
+            "value" : "每日消息活跃度随时间变化"
+          }
+        }
+      }
+    },
+    "Daily token consumption over time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily token consumption over time"
           }
         },
-        "zh-TW" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話活躍度趨勢"
+            "value" : "每日 Token 消耗随时间变化"
           }
         }
       }
@@ -85,24 +103,6 @@
             "state" : "translated",
             "value" : "最近 30 天"
           }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 30 天"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 30 天"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 30 天"
-          }
         }
       }
     },
@@ -115,24 +115,6 @@
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 90 天"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 90 天"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 90 天"
-          }
-        },
-        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近 90 天"
@@ -153,24 +135,6 @@
             "state" : "translated",
             "value" : "最近一年"
           }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一年"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一年"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近一年"
-          }
         }
       }
     },
@@ -185,25 +149,39 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "较少"
+            "value" : "少"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "Loading activity data…" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "較少"
+            "value" : "Loading activity data…"
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "較少"
+            "value" : "正在加载活跃度数据…"
+          }
+        }
+      }
+    },
+    "Loading token data…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading token data…"
           }
         },
-        "zh-TW" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "較少"
+            "value" : "正在加载 Token 数据…"
           }
         }
       }
@@ -219,25 +197,23 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "较多"
+            "value" : "多"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "No data" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "較多"
+            "value" : "No data"
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "較多"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "較多"
+            "value" : "暂无数据"
           }
         }
       }
@@ -253,25 +229,23 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂无数据，开始对话后即可查看活跃情况。"
+            "value" : "暂无数据。开始对话后即可查看活跃度。"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "No token data available yet." : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暫無資料，開始對話後即可查看活躍情況。"
+            "value" : "No token data available yet."
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暫無資料，開始對話後即可查看活躍情況。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無資料，開始對話後即可檢視活躍情況。"
+            "value" : "暂无 Token 数据。"
           }
         }
       }
@@ -287,59 +261,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周期"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "週期"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "週期"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "週期"
-          }
-        }
-      }
-    },
-    "Show conversation activity heatmap in settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show conversation activity heatmap in settings"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在设置中显示对话活跃热力图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中顯示對話活躍熱力圖"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中顯示對話活躍熱力圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在設定中顯示對話活躍熱力圖"
+            "value" : "时间段"
           }
         }
       }
@@ -357,23 +279,21 @@
             "state" : "translated",
             "value" : "统计周期"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "Token Usage" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "統計週期"
+            "value" : "Token Usage"
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "統計週期"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "統計週期"
+            "value" : "Token 使用量"
           }
         }
       }
@@ -382,5 +302,5 @@
 
     }
   },
-  "version" : "1.1"
+  "version" : "1.0"
 }

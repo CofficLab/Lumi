@@ -1,15 +1,10 @@
 import SwiftUI
 import Charts
 import LumiUI
-import LumiKernel
 
 /// Line chart view displaying daily token consumption over time.
-struct TokenLineChartView: View {
-    // MARK: - Properties
-
-    let data: [ActivityDayToken]
-
-    // MARK: - Constants
+public struct TokenLineChartView: View {
+    public let data: [ActivityDayToken]
 
     private let lineColor = Color(hex: "6db0f0")
     private let areaGradient = LinearGradient(
@@ -21,11 +16,13 @@ struct TokenLineChartView: View {
         endPoint: .bottom
     )
 
-    // MARK: - Body
+    public init(data: [ActivityDayToken]) {
+        self.data = data
+    }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Title
+            // Title and total
             HStack {
                 Text(LumiPluginLocalization.string("Token Usage", bundle: .module))
                     .font(.appBody)
@@ -43,8 +40,6 @@ struct TokenLineChartView: View {
                 .frame(height: 150)
         }
     }
-
-    // MARK: - Chart
 
     @ViewBuilder
     private var chartContent: some View {
@@ -75,8 +70,6 @@ struct TokenLineChartView: View {
         }
     }
 
-    // MARK: - Helpers
-
     private var emptyState: some View {
         Text(LumiPluginLocalization.string("No data", bundle: .module))
             .font(.appBody)
@@ -91,7 +84,6 @@ struct TokenLineChartView: View {
 
     private var maxYValue: Int {
         let maxTokens = data.map(\.totalTokens).max() ?? 0
-        // Add 10% padding to the top
         return max(100, Int(Double(maxTokens) * 1.1))
     }
 
@@ -106,23 +98,23 @@ struct TokenLineChartView: View {
     }
 }
 
-// MARK: - Preview
-
 #Preview("With Data") {
-    let sampleData: [ActivityDayToken] = {
-        let cal = Calendar.current
-        let today = Date()
-        return (0..<30).compactMap { offset -> ActivityDayToken? in
-            guard let date = cal.date(byAdding: .day, value: -offset, to: today) else { return nil }
-            return ActivityDayToken(
-                date: date,
-                totalTokens: Int.random(in: 0...5000)
-            )
-        }.reversed()
-    }()
-    TokenLineChartView(data: sampleData)
+    let cal = Calendar.current
+    let today = Date()
+    let sampleData: [ActivityDayToken] = (0..<30).compactMap { offset -> ActivityDayToken? in
+        guard let date = cal.date(byAdding: .day, value: -offset, to: today) else { return nil }
+        return ActivityDayToken(
+            date: date,
+            totalTokens: Int.random(in: 0...5000)
+        )
+    }.reversed()
+    return TokenLineChartView(data: sampleData)
+        .frame(width: 480, height: 200)
+        .padding()
 }
 
 #Preview("Empty") {
     TokenLineChartView(data: [])
+        .frame(width: 480, height: 200)
+        .padding()
 }

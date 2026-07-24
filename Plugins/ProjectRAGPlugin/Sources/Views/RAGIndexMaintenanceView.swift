@@ -46,7 +46,7 @@ struct RAGIndexMaintenanceView: View {
     }
 
     private func triggerIndexIfNeeded(projectPath: String) async {
-        let service = RAGPlugin.getService()
+        let service = ProjectRAGPlugin.getService()
         try? await service.initialize()
 
         do {

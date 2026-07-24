@@ -4,12 +4,12 @@ import LumiUI
 import os
 
 @MainActor
-public final class RAGPlugin: LumiPlugin {
-    public let id = "com.coffic.lumi.plugin.rag"
-    public let name = "RAG"
+public final class ProjectRAGPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.project.rag"
+    public let name = "Project RAG"
     public let order = 200
 	public let policy: LumiPluginPolicy = .alwaysOn
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     public init() {}
 
@@ -19,7 +19,7 @@ public final class RAGPlugin: LumiPlugin {
         // RAG capabilities are provided through RAGPluginService singleton.
         RAGPluginRuntime.kernel = kernel
         RAGPluginService.configure(kernel: kernel)
-        RAGPlugin.bootstrapRuntime(kernel: kernel)
+        ProjectRAGPlugin.bootstrapRuntime(kernel: kernel)
     }
 
 

@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentRAGPlugin",
+    name: "ProjectRAGPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "AgentRAGPlugin",
-            targets: ["AgentRAGPlugin"]
+            name: "ProjectRAGPlugin",
+            targets: ["ProjectRAGPlugin"]
         )
     ],
     dependencies: [
@@ -29,7 +29,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "AgentRAGPlugin",
+            name: "ProjectRAGPlugin",
             dependencies: [
                 "CSQLite",
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -45,8 +45,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "AgentRAGPluginTests",
-            dependencies: ["AgentRAGPlugin"],
+            name: "ProjectRAGPluginTests",
+            dependencies: ["ProjectRAGPlugin"],
             path: "Tests"
         )
     ]

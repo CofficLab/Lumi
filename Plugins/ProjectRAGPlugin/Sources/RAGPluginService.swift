@@ -53,7 +53,7 @@ enum RAGPluginService {
     }
 }
 
-extension RAGPlugin {
+extension ProjectRAGPlugin {
     @MainActor
     static func getService() -> RAGService {
         RAGPluginService.getService()

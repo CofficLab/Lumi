@@ -1,88 +1,108 @@
-import Foundation
-import LumiKernel
 import SwiftUI
+import LumiKernel
 import LumiUI
 
-struct ActivityHeatmapSettingsView: View {
+/// Settings page for the Activity Heatmap plugin.
+/// Displayed as a tab in the plugin settings sidebar.
+public struct ActivityHeatmapSettingsView: View {
     @State private var viewModel: ActivityHeatmapViewModel
     @State private var period: ActivityHeatmapPeriod = .year
 
-    init(historyService: (any HistoryQueryService)?) {
+    public init(historyService: (any HistoryQueryService)?) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(historyService: historyService))
     }
 
-    var body: some View {
+    public var body: some View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
             subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
             // Period selector
-            AppCard {
-                AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
-                    AppSettingsPickerRow(
-                        LumiPluginLocalization.string("Period", bundle: .module),
-                        selection: $period
-                    ) {
-                        ForEach(ActivityHeatmapPeriod.allCases) { p in
-                            Text(p.localizedTitle).tag(p)
-                        }
-                    }
-                }
-            }
+            periodSelector
 
             // Heatmap card
-            AppCard {
-                if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
-                    emptyState
-                } else if viewModel.heatmapData.isEmpty {
-                    // First load, nothing to show yet → full placeholder.
-                    loadingView
-                } else {
-                    // Keep the previous heatmap visible while reloading on a range
-                    // switch: overlaying a subtle indicator is far less jarring
-                    // (and less janky) than swapping in a full ProgressView.
-                    ActivityHeatmapView(data: viewModel.heatmapData)
-                        .padding(16)
-                        .overlay(alignment: .topTrailing) {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .padding(8)
-                            }
-                        }
-                }
-            }
+            heatmapCard
 
             // Token usage line chart card
-            AppCard {
-                if viewModel.hasLoaded && viewModel.tokenData.isEmpty && !viewModel.isLoading {
-                    tokenEmptyState
-                } else if viewModel.tokenData.isEmpty {
-                    tokenLoadingView
-                } else {
-                    TokenLineChartView(data: viewModel.tokenData)
-                        .padding(16)
-                        .overlay(alignment: .topTrailing) {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .padding(8)
-                            }
-                        }
-                }
-            }
+            tokenChartCard
         }
         .onChange(of: period) { _, newValue in
-            // Explicit single load on range change (no VM didSet trigger).
             guard viewModel.period != newValue else { return }
             viewModel.period = newValue
             Task { await viewModel.load() }
         }
         .task {
-            // Single source of truth for the initial fetch.
             viewModel.period = period
             await viewModel.load()
+        }
+    }
+
+    // MARK: - Period Selector
+
+    private var periodSelector: some View {
+        AppCard {
+            AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
+                AppSettingsRow {
+                    HStack {
+                        Text(LumiPluginLocalization.string("Period", bundle: .module))
+                            .font(.appBody)
+                        Spacer()
+                        Picker("", selection: $period) {
+                            ForEach(ActivityHeatmapPeriod.allCases) { p in
+                                Text(p.localizedTitle).tag(p)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(minWidth: 120)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Heatmap Card
+
+    private var heatmapCard: some View {
+        AppCard {
+            if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
+                emptyState
+            } else if viewModel.heatmapData.isEmpty {
+                loadingView
+            } else {
+                ActivityHeatmapView(data: viewModel.heatmapData)
+                    .padding(16)
+                    .overlay(alignment: .topTrailing) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                                .padding(8)
+                        }
+                    }
+            }
+        }
+    }
+
+    // MARK: - Token Chart Card
+
+    private var tokenChartCard: some View {
+        AppCard {
+            if viewModel.hasLoaded && viewModel.tokenData.isEmpty && !viewModel.isLoading {
+                tokenEmptyState
+            } else if viewModel.tokenData.isEmpty {
+                tokenLoadingView
+            } else {
+                TokenLineChartView(data: viewModel.tokenData)
+                    .padding(16)
+                    .overlay(alignment: .topTrailing) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                                .padding(8)
+                        }
+                    }
+            }
         }
     }
 
@@ -134,8 +154,6 @@ struct ActivityHeatmapSettingsView: View {
         .padding(32)
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     ActivityHeatmapSettingsView(historyService: nil)

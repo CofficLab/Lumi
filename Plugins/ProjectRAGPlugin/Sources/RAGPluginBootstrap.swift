@@ -2,7 +2,7 @@ import Foundation
 import LumiKernel
 
 @MainActor
-public extension RAGPlugin {
+public extension ProjectRAGPlugin {
     static func bootstrapRuntime(kernel: LumiKernel) {
         let core = kernel.lumiCore
         RAGPluginRuntime.lumiCore = core

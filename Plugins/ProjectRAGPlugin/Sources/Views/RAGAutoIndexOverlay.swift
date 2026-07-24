@@ -59,14 +59,14 @@ extension RAGAutoIndexOverlay {
             }
             guard shouldTrigger else { return }
 
-            let service = RAGPlugin.getService()
+            let service = ProjectRAGPlugin.getService()
             // 服务已在 onEnable 时初始化，无需再次初始化
             for path in candidatePaths {
                 guard !Task.isCancelled else { return }
                 await service.ensureIndexedBackground(projectPath: path)
             }
             if Self.verbose {
-                RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                ProjectRAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
             }
         }
     }

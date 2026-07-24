@@ -1,7 +1,7 @@
 import Foundation
 import LocalizationKit
 
-/// Runtime localization for AgentRAGPlugin bundle.
+/// Runtime localization for ProjectRAGPlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {

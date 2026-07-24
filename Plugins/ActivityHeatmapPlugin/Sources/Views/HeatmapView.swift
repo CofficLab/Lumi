@@ -1,9 +1,9 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
 
-struct ActivityHeatmapView: View {
-    let data: [ActivityDay]
+/// GitHub-style activity heatmap showing daily message counts as colored cells.
+public struct ActivityHeatmapView: View {
+    public let data: [ActivityDay]
 
     // GitHub-style heatmap colors (5 levels)
     private let colors: [Color] = [
@@ -17,7 +17,11 @@ struct ActivityHeatmapView: View {
     private let cellSize: CGFloat = 12
     private let cellSpacing: CGFloat = 3
 
-    var body: some View {
+    public init(data: [ActivityDay]) {
+        self.data = data
+    }
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Title and legend
             HStack {
@@ -44,7 +48,6 @@ struct ActivityHeatmapView: View {
     }
 
     private var heatmapGrid: some View {
-        // Organize by column (week): 7 days per week
         let weeks = chunkIntoWeeks(data)
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: cellSpacing) {
@@ -71,4 +74,6 @@ struct ActivityHeatmapView: View {
 
 #Preview {
     ActivityHeatmapView(data: [])
+        .frame(width: 480, height: 200)
+        .padding()
 }

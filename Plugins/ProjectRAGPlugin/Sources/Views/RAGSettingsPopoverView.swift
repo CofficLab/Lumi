@@ -190,7 +190,7 @@ struct RAGSettingsPopoverView: View {
         }
 
         do {
-            let service = RAGPlugin.getService()
+            let service = ProjectRAGPlugin.getService()
             try await service.initialize()
             var next: [String: RAGIndexStatus] = [:]
             for project in projects {

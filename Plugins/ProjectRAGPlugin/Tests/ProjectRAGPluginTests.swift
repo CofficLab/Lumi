@@ -1,18 +1,18 @@
 import Foundation
 import LumiKernel
 import Testing
-@testable import AgentRAGPlugin
+@testable import ProjectRAGPlugin
 
 // MARK: - vec0.dylib 加载测试
 
 @Test func vec0DylibBundledInPackageResources() {
     let url = Bundle.module.url(forResource: "vec0", withExtension: "dylib")
-    #expect(url != nil, "vec0.dylib 应存在于 AgentRAGPlugin 的资源 bundle 中")
+    #expect(url != nil, "vec0.dylib 应存在于 ProjectRAGPlugin 的资源 bundle 中")
 }
 
 @Test func sqliteVecBackendLoadsSuccessfully() throws {
     let dbURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AgentRAGPluginTests")
+        .appendingPathComponent("ProjectRAGPluginTests")
         .appendingPathComponent("\(UUID().uuidString).sqlite")
     defer { try? FileManager.default.removeItem(at: dbURL) }
 
@@ -93,7 +93,7 @@ import Testing
 
 @Test func keywordSearchFindsUTF16SourceFiles() async throws {
     let projectURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AgentRAGPluginTests")
+        .appendingPathComponent("ProjectRAGPluginTests")
         .appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: projectURL) }
 
@@ -130,7 +130,7 @@ import Testing
 
 @Test func keywordSearchClampsOversizedTopK() async throws {
     let projectURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AgentRAGPluginTests")
+        .appendingPathComponent("ProjectRAGPluginTests")
         .appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: projectURL) }
 

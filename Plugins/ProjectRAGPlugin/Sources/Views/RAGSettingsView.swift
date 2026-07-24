@@ -166,7 +166,7 @@ extension RAGSettingsView {
 
 
         do {
-            let service = RAGPlugin.getService()
+            let service = ProjectRAGPlugin.getService()
             runtimeInfo = try await service.getRuntimeInfo()
 
 

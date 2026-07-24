@@ -2,12 +2,12 @@ import Foundation
 import LumiKernel
 
 /// Statistics period options for the heatmap view.
-enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable {
+public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
     case days30 = 30
     case days90 = 90
     case year = 365
 
-    var id: Int { rawValue }
+    public var id: Int { rawValue }
 
     var localizedTitle: String {
         switch self {
@@ -25,28 +25,28 @@ enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable {
 /// plus per-day token counts for a line chart.
 ///
 /// Performance notes:
-/// - Both data fetches run **off the main actor** via `nonisolated` requirements
+/// - Both data fetches run off the main actor via `nonisolated` requirements
 ///   on `HistoryQueryService`, so switching the time range never blocks the UI.
 /// - Sequential fetch avoids concurrent access issues with the shared service reference.
 /// - `loadGeneration` cancels stale loads: rapidly switching the period won't
 ///   let an older, slower response overwrite a newer one.
 @MainActor
 @Observable
-final class ActivityHeatmapViewModel {
+public final class ActivityHeatmapViewModel {
     // MARK: - Dependencies
 
     private let historyService: (any HistoryQueryService)?
 
     // MARK: - State
 
-    private(set) var heatmapData: [ActivityDay] = []
-    private(set) var tokenData: [ActivityDayToken] = []
-    private(set) var isLoading = false
-    private(set) var hasLoaded = false
+    private(set) public var heatmapData: [ActivityDay] = []
+    private(set) public var tokenData: [ActivityDayToken] = []
+    private(set) public var isLoading = false
+    private(set) public var hasLoaded = false
     /// The selected period. The owning view drives reloads explicitly
     /// (`onChange` → `load()`), which avoids the double-load that a `didSet`
     /// trigger would cause during initial `.task` seeding.
-    var period: ActivityHeatmapPeriod = .year
+    public var period: ActivityHeatmapPeriod = .year
 
     /// Bumped on every `load()`; results are only applied if the generation is
     /// still current, so a slow earlier request can't clobber a newer one.
@@ -54,13 +54,13 @@ final class ActivityHeatmapViewModel {
 
     // MARK: - Init
 
-    init(historyService: (any HistoryQueryService)?) {
+    public init(historyService: (any HistoryQueryService)?) {
         self.historyService = historyService
     }
 
     // MARK: - Load
 
-    func load() async {
+    public func load() async {
         guard let service = historyService else {
             hasLoaded = true
             return
@@ -76,7 +76,6 @@ final class ActivityHeatmapViewModel {
         let days = period.rawValue
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        // First day of the window (inclusive). Guarded by `days > 0`.
         guard days > 0,
               let oldestDay = cal.date(byAdding: .day, value: -(days - 1), to: today) else {
             if isCurrent(generation) {
@@ -87,12 +86,11 @@ final class ActivityHeatmapViewModel {
         }
 
         // Off-main-actor sequential fetch: message counts then token counts.
-        // Avoids concurrent access issues with the shared service reference.
         let counts = await service.fetchDailyMessageCounts(since: oldestDay)
         let tokenCounts = await service.fetchDailyTokenCounts(since: oldestDay)
         guard isCurrent(generation) else { return }
 
-        // Cheap O(days) shaping on the main thread.
+        // Shape data on the main thread.
         heatmapData = Self.buildHeatmapData(counts: counts, oldestDay: oldestDay, days: days)
         tokenData = Self.buildTokenData(tokenCounts: tokenCounts, oldestDay: oldestDay, days: days)
     }
@@ -105,8 +103,7 @@ final class ActivityHeatmapViewModel {
 
     /// Builds the calendar of `days` days (`oldestDay` → today) and normalizes
     /// each day's count against the window's max into levels 0–4.
-    /// `nonisolated static` so it can be unit-tested without the main actor.
-    nonisolated static func buildHeatmapData(
+    public nonisolated static func buildHeatmapData(
         counts: [Date: Int],
         oldestDay: Date,
         days: Int
@@ -118,8 +115,6 @@ final class ActivityHeatmapViewModel {
             cal.date(byAdding: .day, value: $0, to: oldestDay)
         }
 
-        // Normalize against the window's own max only. Counts outside the
-        // window (which the query normally excludes) must not skew the scale.
         let windowCounts = calendarDays.compactMap { counts[$0] }
         let maxCount = windowCounts.max() ?? 0
         guard maxCount > 0 else {
@@ -137,8 +132,7 @@ final class ActivityHeatmapViewModel {
 
     /// Builds the calendar of `days` days (`oldestDay` → today) with per-day
     /// token totals for the line chart.
-    /// `nonisolated static` so it can be unit-tested without the main actor.
-    nonisolated static func buildTokenData(
+    public nonisolated static func buildTokenData(
         tokenCounts: [Date: Int],
         oldestDay: Date,
         days: Int

@@ -3,10 +3,10 @@ import LumiKernel
 
 public enum RAGPluginRuntime {
     nonisolated(unsafe) public static var databaseDirectoryProvider: @Sendable () -> URL = {
-        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi-RAGPlugin", isDirectory: true)
+        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi-ProjectRAGPlugin", isDirectory: true)
     }
 
-    /// 内核引用，由 `RAGPlugin.boot(kernel:)` 设置。
+    /// 内核引用，由 `ProjectRAGPlugin.onReady(kernel:)` 设置。
     @MainActor
     public static var kernel: LumiKernel?
 

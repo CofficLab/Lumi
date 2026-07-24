@@ -1,25 +1,37 @@
 import Foundation
-import SwiftUI
 import LumiKernel
 import LumiUI
+import SwiftUI
 
-@MainActor
+/// ActivityHeatmapPlugin displays a GitHub-style activity heatmap and token usage chart
+/// in the settings sidebar, powered by the existing HistoryQueryService in LumiKernel.
 public final class ActivityHeatmapPlugin: LumiPlugin {
-    public let id = "com.coffic.lumi.plugin.activity-heatmap"
+    public let id = "com.coffic.activity-heatmap"
     public let name = "Activity Heatmap"
-    public let order = 60
-	public let policy: LumiPluginPolicy = .disabled
+    public let order = 210
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .conversation
+    public let pluginDescription = "Display daily message activity and token consumption charts."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        let historyService = kernel.resolveService(HistoryQueryService.self)
+        return [
+            SettingsTabItem(
+                id: id,
+                title: name,
+                systemImage: "chart.bar.xaxis",
+                order: order
+            ) {
+                ActivityHeatmapSettingsView(historyService: historyService)
+            },
+        ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -38,7 +50,6 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
