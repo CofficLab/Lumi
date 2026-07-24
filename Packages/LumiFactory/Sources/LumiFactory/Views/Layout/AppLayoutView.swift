@@ -49,7 +49,8 @@ struct AppLayoutView: View {
                     railTabs: railTabs,
                     isRailVisible: isRailVisible,
                     isChatVisible: isChatVisible,
-                    isContentVisible: isContentVisible
+                    isContentVisible: isContentVisible,
+                    layoutState: kernel.layout?.layoutState ?? LayoutState()
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,7 +70,8 @@ struct AppLayoutView: View {
         railTabs: [PanelRailTabItem],
         isRailVisible: Bool,
         isChatVisible: Bool,
-        isContentVisible: Bool
+        isContentVisible: Bool,
+        layoutState: LayoutState
     ) -> some View {
         // 收集需要展示的面板
         let showContent = isContentVisible && selected?.makeView != nil
@@ -79,7 +81,7 @@ struct AppLayoutView: View {
         if showContent && (showRail || showChat) {
             HSplitView {
                 if showRail {
-                    SimpleRailView(tabs: railTabs)
+                    SimpleRailView(tabs: railTabs, layoutState: layoutState)
                         .frame(minWidth: 200, maxWidth: 300)
                 }
                 if showContent, let makeView = selected?.makeView {
@@ -94,7 +96,7 @@ struct AppLayoutView: View {
             // 单一内容，无 split
             HStack(spacing: 0) {
                 if showRail {
-                    SimpleRailView(tabs: railTabs)
+                    SimpleRailView(tabs: railTabs, layoutState: layoutState)
                         .frame(minWidth: 200, maxWidth: 300)
                 }
                 if showContent, let makeView = selected?.makeView {
@@ -114,9 +116,9 @@ struct AppLayoutView: View {
 /// 简化版 Rail 视图，仅显示 rail tabs
 struct SimpleRailView: View {
     let tabs: [PanelRailTabItem]
+    @ObservedObject var layoutState: LayoutState
 
     @LumiTheme private var theme
-    @ObservedObject private var layoutState = LayoutState()
 
     var body: some View {
         VStack(spacing: 0) {
