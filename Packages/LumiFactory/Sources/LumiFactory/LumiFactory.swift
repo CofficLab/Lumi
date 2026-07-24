@@ -1,4 +1,5 @@
 import LumiKernel
+import GitPlugin
 import SuperLogKit
 import SwiftUI
 import os
@@ -60,7 +61,7 @@ public enum LumiFactory: SuperLog {
         kernels.append(kernel)
 
         if verbose {
-            logger.info("\(t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
+            Self.logger.info("\(Self.t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
         }
         return kernel
     }

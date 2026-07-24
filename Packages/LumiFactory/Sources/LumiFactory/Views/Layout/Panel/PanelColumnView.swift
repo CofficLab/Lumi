@@ -11,16 +11,10 @@ struct PanelColumnView: View {
     let showRail: Bool
     let railTabs: [LumiPanelRailTabItem]
     @ObservedObject var layoutState: LayoutState
-    let lumiCore: LumiCore
     let editor: any LumiEditorServicing
 
     private var viewContainerID: String {
         container?.id ?? "main"
-    }
-
-    /// 是否显示底部 panel chrome（来自 WorkspaceState）
-    private var showsPanelChrome: Bool {
-        lumiCore.workspaceState?.isPanelVisible ?? true
     }
 
     var body: some View {
@@ -38,11 +32,8 @@ struct PanelColumnView: View {
             }
         }
 
-        if showRail || showsPanelChrome {
-            EditorScopeView(lumiCore: lumiCore, editor: editor) {
-                column
-            }
-            .modifier(PanelChromeCommandHandler(layoutState: layoutState))
+        if showRail {
+            EmptyView()
         } else {
             column
         }
@@ -50,7 +41,7 @@ struct PanelColumnView: View {
 
     @ViewBuilder
     private var railWithPanel: some View {
-        if showsPanelChrome {
+        if true {
             HSplitView {
                 RailView(tabs: railTabs, layoutState: layoutState)
                 PanelWorkspaceView(
