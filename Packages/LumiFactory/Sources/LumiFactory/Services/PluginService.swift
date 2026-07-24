@@ -56,6 +56,8 @@ import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
 import LLMProviderZhipuPlugin
 import LogoPlugin
+import LogoCofficPlugin
+import LogoSmartLightPlugin
 import MenuBarManagerPlugin
 import MenuBarPlugin
 import MessageListPlugin
@@ -176,6 +178,8 @@ public enum PluginService {
             StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
+            LogoCofficPlugin(),
+            LogoSmartLightPlugin(),
             ViewContainerPlugin(),
             DeviceInfoPlugin(),
             ClipboardManagerPlugin(),
