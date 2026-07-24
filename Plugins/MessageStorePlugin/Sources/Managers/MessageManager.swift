@@ -141,30 +141,38 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
         // Update in cache
-        if let index = messageCache[conversationID]?.firstIndex(where: { $0.id == id }) {
-            let old = messageCache[conversationID]![index]
-            messageCache[conversationID]![index] = LumiChatMessage(
-                id: old.id,
-                conversationID: old.conversationID,
-                role: old.role,
-                content: content,
-                createdAt: old.createdAt,
-                providerID: old.providerID,
-                modelName: old.modelName,
-                isError: old.isError,
-                rawErrorDetail: old.rawErrorDetail,
-                renderKind: old.renderKind,
-                metadata: old.metadata,
-                toolCalls: old.toolCalls,
-                toolCallID: old.toolCallID,
-                reasoningContent: old.reasoningContent,
-                inputTokenCount: old.inputTokenCount,
-                outputTokenCount: old.outputTokenCount,
-                latencyMs: old.latencyMs,
-                timeToFirstTokenMs: old.timeToFirstTokenMs,
-                streamingDurationMs: old.streamingDurationMs
-            )
+        guard let index = messageCache[conversationID]?.firstIndex(where: { $0.id == id }) else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)updateMessage: message \(id) not found")
+            }
+            return
         }
+
+        let old = messageCache[conversationID]![index]
+        messageCache[conversationID]![index] = LumiChatMessage(
+            id: old.id,
+            conversationID: old.conversationID,
+            role: old.role,
+            content: content,
+            createdAt: old.createdAt,
+            providerID: old.providerID,
+            modelName: old.modelName,
+            isError: old.isError,
+            rawErrorDetail: old.rawErrorDetail,
+            renderKind: old.renderKind,
+            metadata: old.metadata,
+            toolCalls: old.toolCalls,
+            toolCallID: old.toolCallID,
+            reasoningContent: old.reasoningContent,
+            inputTokenCount: old.inputTokenCount,
+            outputTokenCount: old.outputTokenCount,
+            latencyMs: old.latencyMs,
+            timeToFirstTokenMs: old.timeToFirstTokenMs,
+            streamingDurationMs: old.streamingDurationMs
+        )
+
+        // Notify UI to refresh (previously missing — content updates did not trigger re-render)
+        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
 
         // Update in store async
         Task {

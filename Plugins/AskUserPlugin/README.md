@@ -10,21 +10,26 @@
 
 1. LLM 调用 `ask_user` 工具
 2. 工具立即返回 `__ASK_USER_PENDING__` 前缀 + JSON payload
-3. `ToolCallExecutor` 识别前缀，设置 `awaitingUserResponse = true`
-4. `AgentTurnService` 检测到暂停循环
-5. 渲染器（`AskUserRowRenderer`）根据 `verbosity` 路由到 `Brief` / `Standard` / `Detailed` view
-6. 用户点击选项，调用 `AskUserBridge.shared.resume(...)` 写回结果并恢复 Agent 循环
-7. LLM 收到用户回答作为 tool result，继续处理
+3. `AgentTurnRunner` 执行工具后检测到该前缀（`LumiAskUserMarkers.isPendingResponse`），
+   把该 turn 标记为 `.awaitingUserResponse` 并暂停循环
+4. `AskUserPlugin` 通过 `onTurnFinished` 钩子感知到暂停（内核在 turn 结束时分发该钩子）
+5. 渲染器（`AskUserRowRenderer`，由 `onReady` 注册到 `ToolCallRowRendererRegistry`）
+   根据 `verbosity` 路由到 `Brief` / `Standard` / `Detailed` view
+6. 用户点击选项，调用 `AskUserBridge.shared.resume(...)` 发送 `.lumiAskUserDidAnswer` 通知
+7. `AskUserAnswerObserver` 监听通知，把 pending 的 tool result 回写成真实答案，
+   然后再次调用 `AgentTurnRunner.runTurn` 恢复 Agent 循环
+8. LLM 收到用户回答作为 tool result，继续处理
 
 ## 核心组件
 
 | 组件 | 职责 |
 |---|---|
-| `AskUserTool` | 工具实现，生成 pending JSON payload |
+| `AskUserTool` | 工具实现（原生 `LumiAgentTool`），生成 pending JSON payload |
 | `AskUserRowRenderer` | ToolCall 行级渲染器，按 verbosity 分发视图 |
 | `AskUserBriefView` / `StandardView` / `DetailedView` | 三种 verbosity 的 SwiftUI 视图 |
-| `AskUserBridge` | 恢复回调桥接，渲染器 → ChatService |
-| `AskUserPlugin` | 插件入口，注册工具 + 渲染器 |
+| `AskUserBridge` | 恢复回调桥接，渲染器点击 → 发 `.lumiAskUserDidAnswer` 通知 |
+| `AskUserAnswerObserver` | 监听用户回答，回写 tool result 并恢复 turn |
+| `AskUserPlugin` | 插件入口（`policy = .alwaysOn`），`onBoot` 注册工具 + observer，`onReady` 注册渲染器 |
 
 ## 测试
 
@@ -34,60 +39,49 @@
 swift test --package-path Plugins/AskUserPlugin
 ```
 
-**当前状态：117 个测试，32 个 suite，全部通过。**
+**当前状态：79 个测试，22 个 suite，全部通过。**
 
 ### 覆盖矩阵
 
 | 文件 | Suite | 测试数 | 覆盖范围 |
 |---|---|---:|---|
-| `AskUserToolTests.swift` | `AskUserToolInputSchemaTests` | 6 | schema 类型 / 必需字段 |
+| `AskUserToolTests.swift` | `AskUserToolInputSchemaTests` | 7 | schema 类型 / 必需字段 |
 | | `AskUserToolDisplayDescriptionTests` | 3 | displayDescription 截断 / fallback |
 | | `AskUserToolRiskLevelTests` | 1 | 风险等级 |
-| | `AskUserToolDescriptionTests` | 2 | 中英文 description |
-| | `AskUserToolNameTests` | 2 | 工具名 / pending 前缀契约 |
+| | `AskUserToolInfoTests` | 3 | info / description / pending 前缀契约 |
 | | `AskUserToolExecuteTests` | 9 | execute 正常路径 + error path |
 | | `AskUserToolErrorResultTests` | 2 | errorResult 前缀 / 内容 |
 | | `AskUserResponseModelTests` | 2 | Codable 双向 |
 | | `AskUserToolResolvedOptionsTests` | 7 | options 归一化（空 / 缺失 / 非 [String] / 顺序 / 重复） |
-| | `AskUserToolResolvedAllowFreeInputTests` | 5 | allowFreeInput 归一化（默认 false / 非 Bool 回退） |
+| | `AskUserToolResolvedAllowFreeInputTests` | 5 | allowFreeInput 归一化（默认 false / 宽松 bool 解析） |
 | | `AskUserToolDefaultOptionsTests` | 2 | defaultOptions 不变量 |
 | | `AskUserToolBuildPendingResponseTests` | 4 | verbosity 六档透传 / nil fallback / 空 options |
 | | `AskUserToolEncodePayloadTests` | 3 | pretty JSON / round-trip / error payload |
 | | `AskUserToolErrorResultPayloadTests` | 2 | error JSON 解析 / 幂等性 |
 | `AskUserBridgeTests.swift` | `AskUserBridgeResumeTests` | 5 | resume handler 设置 / 替换 / 清除 / 调用 / nil 安全 |
 | | `AskUserBridgeSharedInstanceTests` | 2 | 单例恒等 |
-| `AskUserPluginTests.swift` | `AskUserPluginInfoTests` | 4 | info 字段 |
-| | `AskUserPluginPropertiesTests` | 3 | policy / category / icon |
-| | `AskUserPluginAgentToolsTests` | 2 | agentTools 返回 AskUserTool |
-| | `AskUserPluginConfigureResumeTests` | 3 | configureAskUserResume 注入 / 错误 UUID 忽略 |
+| `AskUserPluginTests.swift` | `AskUserPluginInfoTests` | 3 | id / name / order |
+| | `AskUserPluginPropertiesTests` | 1 | policy == .alwaysOn |
 | `AskUserRowRendererTests.swift` | `AskUserRowRendererParsePendingResponseTests` | 7 | 解析边界（prefix / 空 / 损坏 JSON / 缺字段 / 合法） |
 | | `AskUserRowRendererCanRenderTests` | 4 | canRender 双条件（name + awaiting） |
 | | `AskUserRowRendererIdentityTests` | 2 | id / priority 不变量 |
 | | `AskUserRowRendererRenderRouteTests` | 6 | verbosity 路由 / 占位 fallback |
-| | `AskUserPluginOneShotRegistrationTests` | 2 | 一次性注册 / messageRenderers 返回空 |
 | | `AskUserRowRendererRoundTripTests` | 2 | execute → render 端到端 / isPendingResponse helper |
-| `AskUserToolBridgeTests.swift` | `AskUserToolBridgeIdentityTests` | 3 | bridge.name / description / inputSchema |
-| | `AskUserToolBridgeExecuteTests` | 7 | 参数透传（options / allowFreeInput / toolCallId / verbosity） |
-| | `AskUserToolBridgeErrorPathTests` | 4 | error prefix / 缺失 / 空 / 非 String / JSON 解析 |
-| | `AskUserToolBridgeRiskLevelTests` | 3 | 风险等级透传 |
-| | `AskUserToolBridgeDisplayDescriptionTests` | 4 | displayDescription 透传 + 截断 + fallback |
-| | `AskUserToolBridgeContextConversionTests` | 3 | context 字段透传（id / verbosity 六档） |
 
 ### 未覆盖范围
 
-- **SwiftUI 视图交互**（Task 7 跳过）：`AskUserBriefView` / `StandardView` / `DetailedView` 的按钮点击
+- **SwiftUI 视图交互**：`AskUserBriefView` / `StandardView` / `DetailedView` 的按钮点击
   触发 `AskUserBridge.resume` 的端到端交互。`AskUserBridge` 本身有完整测试覆盖；
   视图层依赖 SwiftUI 反射框架（如 ViewInspector），仓库目前未引入。
-- **PluginService 集成**：插件注册到主 app 的路径（`PluginService.messageRenderers` 链
-  `AskUserPlugin.messageRenderers` → `ToolCallRowRendererRegistry`）已在
-  `AskUserPluginOneShotRegistrationTests` 中覆盖其注册副作用。
+- **内核闭环集成**：`AgentTurnRunner` 的 pending 暂停、`onTurnFinished` 分发、
+  `AskUserAnswerObserver` 回写 + 恢复 turn 属于跨插件/内核行为，需在 app 级集成测试中验证。
 
 ## 关键设计
 
 ### 渲染器 verbosity 路由
 
 `AskUserRowRenderer.render(toolCall:message:)` 根据 `response.verbosity`（来自
-`ToolExecutionContext.verbosity`）路由：
+`LumiToolExecutionContext.verbosity`）路由：
 
 | verbosity | view |
 |---|---|
@@ -96,11 +90,12 @@ swift test --package-path Plugins/AskUserPlugin
 | `v3` / `detailed` | `AskUserDetailedView` |
 | 其他 / 未知 | `AskUserStandardView`（fallback） |
 
-`context.verbosity == nil` 时，`AskUserTool.buildPendingResponse` 默认填充 `"standard"`。
+`context.verbosity == nil` 时，`AskUserTool.buildPendingResponse` 默认填充
+`LumiResponseVerbosity.defaultVerbosity.rawValue`（当前为 `"v2"` / standard）。
 
-### 一次性渲染器注册
+### 渲染器注册
 
-`AskUserPlugin.messageRenderers(context:)` 用 `didConfigureRenderer` 静态标志位
-确保 `ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())` 只调用一次。
-`ToolCallRowRendererRegistry` 本身也按 `id` 去重（重复 register 会替换而非 append），
-两道防线保证渲染器只占一个槽位。
+`AskUserPlugin.onReady(kernel:)` 调用
+`ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())` 完成注册。
+`ToolCallRowRendererRegistry` 按 `id` 去重（重复 register 会替换而非 append），
+`MessageRendererPlugin` 在渲染每个 toolCall 时通过 `findRenderer` 查询。

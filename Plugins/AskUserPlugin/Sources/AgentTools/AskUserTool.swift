@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiKernel
 import SuperLogKit
@@ -19,96 +18,78 @@ import os
 ///
 /// 1. LLM 调用 ask_user 工具
 /// 2. 工具立即返回 `__ASK_USER_PENDING__` 标记 + JSON
-/// 3. `ToolCallExecutor` 识别标记，构造 `awaitingUserResponse = true` 的 result
-/// 4. `AgentTurnService` 检测到暂停循环
-/// 5. UI 渲染选择界面，用户点击选项
-/// 6. 渲染器通过 `resumeToolCall` 回调写回真正结果并恢复 Agent 循环
-/// 7. LLM 收到用户的回答作为 tool result，继续处理
-public struct AskUserTool: SuperAgentTool, SuperLog {
+/// 3. `AgentTurnRunner` 执行工具后检测到该标记，把 turn 标记为
+///    `.awaitingUserResponse` 并暂停循环
+/// 4. UI 渲染选择界面（`AskUserRowRenderer`），用户点击选项
+/// 5. `AskUserBridge` 发送 `.lumiAskUserDidAnswer` 通知，
+///    `AskUserAnswerObserver` 监听后回写答案并恢复 Agent 循环
+/// 6. LLM 收到用户的回答作为 tool result，继续处理
+public struct AskUserTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "❓"
     public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.ask-user")
 
     /// 工具名称，用于在整个插件中统一引用
     public static let name = "ask_user"
-    public let name: String = Self.name
 
     /// 工具返回值中用于标记等待用户回答的前缀。
     ///
-    /// `ToolCallExecutor` 检测到此前缀后会设置 `awaitingUserResponse = true`。
+    /// `AgentTurnRunner` 检测到此前缀后会以 `.awaitingUserResponse` 结束 turn。
     public static let pendingPrefix = LumiAskUserMarkers.pendingPrefix
+
+    public static let info = LumiAgentToolInfo(
+        id: name,
+        displayName: "Ask User",
+        description: "Ask the user a question and wait for their response. Supports yes/no confirmation, multiple choice, and free text input. Use it whenever a user decision is required instead of assuming user intent."
+    )
 
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return """
-            向用户提问并等待回答。支持三种模式：
-            1. 是/否确认：只传 question，用于简单的二元决策
-            2. 多选项选择：传 question + options，用于从多个方案中选择
-            3. 自由输入：传 question + allow_free_input: true，用于收集用户文本
-            当需要用户决策时使用此工具，不要自己假设用户意图。
-            """
-        case .english:
-            return """
-            Ask the user a question and wait for their response. Supports three modes:
-            1. Yes/No confirmation: only pass question, for simple binary decisions
-            2. Multiple choice: pass question + options, for selecting from multiple options
-            3. Free input: pass question + allow_free_input: true, for collecting user text
-            When you need user decision, use this tool instead of assuming user intent.
-            """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "question": .object([
+                    "type": .string("string"),
+                    "description": .string("Question to ask the user (e.g.: Should I continue?)"),
+                ]),
+                "options": .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "description": .string("List of options for user to choose (e.g.: [\"OptionA\", \"OptionB\"]), defaults to Yes/No. Must be provided when the question is not a simple yes/no confirmation."),
+                ]),
+                "allow_free_input": .object([
+                    "type": .string("boolean"),
+                    "description": .string("Whether to allow free text input (default false, only allow selecting preset options)"),
+                ]),
+            ]),
+            "required": .array([.string("question")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "question": [
-                    "type": "string",
-                    "description": language == .chinese
-                        ? "向用户提出的问题（如：是否继续执行？）"
-                        : "Question to ask the user (e.g.: Should I continue?)",
-                ],
-                "options": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": language == .chinese
-                        ? "可选的选项列表（如：[\"方案A\", \"方案B\", \"方案C\"]），默认为是/否。当问题不是简单的是/否确认时，必须提供此参数。"
-                        : "List of options for user to choose (e.g.: [\"OptionA\", \"OptionB\", \"OptionC\"]), defaults to Yes/No. Must be provided when the question is not a simple yes/no confirmation.",
-                ],
-                "allow_free_input": [
-                    "type": "boolean",
-                    "description": language == .chinese
-                        ? "是否允许用户自由输入文本（默认 false，只允许选择预设选项）"
-                        : "Whether to allow free text input (default false, only allow selecting preset options)",
-                ],
-            ],
-            "required": ["question"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        if let question = arguments["question"]?.value as? String {
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        if let question = arguments.string("question") {
             return "询问: \(question.prefix(50))"
         }
         return "询问用户"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+    public func riskLevel(
+        arguments: [String: LumiJSONValue],
+        context: LumiToolExecutionContext?
+    ) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
         try context.checkCancellation()
 
-        guard let question = arguments["question"]?.value as? String, !question.isEmpty else {
+        guard let question = arguments.string("question"), !question.isEmpty else {
             return Self.errorResult(message: "question is required and cannot be empty")
         }
 
         // 检测是否是多选场景但没传 options
-        let hasOptions = arguments["options"]?.value != nil
+        let hasOptions = arguments.stringArray("options") != nil
         if !hasOptions && Self.looksLikeMultipleChoice(question) {
             return Self.errorResult(
                 message: "Your question appears to require multiple options, but the options parameter was not provided. Please provide an options list."
@@ -139,35 +120,32 @@ public struct AskUserTool: SuperAgentTool, SuperLog {
     ///
     /// 仅当 `options` 是非空字符串数组时才使用；
     /// 其他情况（缺失、非数组、为空数组）都回退到 `Self.defaultOptions`。
-    static func resolvedOptions(_ arguments: [String: ToolArgument]) -> [String] {
-        guard let raw = arguments["options"]?.value else {
-            return defaultOptions
-        }
-        guard let array = raw as? [String], !array.isEmpty else {
+    static func resolvedOptions(_ arguments: [String: LumiJSONValue]) -> [String] {
+        guard let array = arguments.stringArray("options"), !array.isEmpty else {
             return defaultOptions
         }
         return array
     }
 
     /// 解析 `allow_free_input` 参数；缺失或非 Bool 时默认为 `false`。
-    static func resolvedAllowFreeInput(_ arguments: [String: ToolArgument]) -> Bool {
-        (arguments["allow_free_input"]?.value as? Bool) ?? false
+    static func resolvedAllowFreeInput(_ arguments: [String: LumiJSONValue]) -> Bool {
+        arguments.bool("allow_free_input") ?? false
     }
 
     /// 构建 `AskUserPendingResponse`，集中所有字段归一化逻辑（verbosity 默认值等）。
     static func buildPendingResponse(
-        context: ToolExecutionContext,
+        context: LumiToolExecutionContext,
         question: String,
         options: [String],
         allowFreeInput: Bool
     ) -> AskUserPendingResponse {
         AskUserPendingResponse(
-            toolCallId: context.toolCallId,
+            toolCallId: context.toolCallID,
             question: question,
             options: options,
             allowFreeInput: allowFreeInput,
-            conversationId: context.conversationId.uuidString,
-            verbosity: context.verbosity ?? "standard"
+            conversationId: context.conversationID.uuidString,
+            verbosity: context.verbosity ?? LumiResponseVerbosity.defaultVerbosity.rawValue
         )
     }
 
@@ -249,7 +227,7 @@ public struct AskUserPendingResponse: Codable {
     public let allowFreeInput: Bool
     public let conversationId: String
     public let verbosity: String
-    
+
     public init(
         toolCallId: String,
         question: String,

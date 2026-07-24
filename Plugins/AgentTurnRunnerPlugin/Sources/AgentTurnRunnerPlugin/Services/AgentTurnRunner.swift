@@ -30,6 +30,12 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     private weak var kernel: LumiKernel?
     private var activeTurnTasks: [UUID: Task<Void, Never>] = [:]
     private var cancelledConversations: Set<UUID> = []
+    /// 因工具返回 pending（如 ask_user 等待用户回答）而暂停的对话。
+    ///
+    /// `executeTurnLoop` 检测到 pending 结果后写入此集合并退出循环，
+    /// `runTurn` 据此返回 `.awaitingUserResponse`。与 `cancelledConversations` 互斥：
+    /// 取消判断在前，已暂停的对话被取消时优先返回 `.cancelled`。
+    private var awaitingConversations: Set<UUID> = []
 
     // MARK: - Initialization
 
@@ -75,11 +81,18 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         // Determine outcome based on cancellation state
         if cancelledConversations.contains(conversationID) {
             cancelledConversations.remove(conversationID)
-            postTurnFinishedNotification(conversationID: conversationID, reason: .cancelled)
+            await postTurnFinishedNotification(conversationID: conversationID, reason: .cancelled)
             return .cancelled
         }
 
-        postTurnCompletedNotification(conversationID: conversationID)
+        // pending 工具结果（如 ask_user）：turn 暂停，等待用户回答后再恢复。
+        if awaitingConversations.contains(conversationID) {
+            awaitingConversations.remove(conversationID)
+            await postTurnFinishedNotification(conversationID: conversationID, reason: .awaitingUserResponse)
+            return .awaitingUserResponse
+        }
+
+        await postTurnCompletedNotification(conversationID: conversationID)
         return .completed
     }
 
@@ -242,6 +255,17 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name), isError=\(result.isError)")
                 }
+
+                // 工具返回 pending（如 ask_user 等待用户回答）：写入 pending 结果后暂停循环，
+                // 不再执行后续 toolCall，runTurn 据此返回 .awaitingUserResponse。
+                // 恢复时机由对应插件（如 AskUserAnswerObserver）回写答案后再次调用 runTurn。
+                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)检测到 pending 工具结果（\(toolCall.name)），暂停 turn 等待用户响应")
+                    }
+                    awaitingConversations.insert(conversationID)
+                    return
+                }
             }
 
             // Continue loop with new tool results in message history
@@ -263,7 +287,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         )
     }
 
-    private func postTurnCompletedNotification(conversationID: UUID) {
+    private func postTurnCompletedNotification(conversationID: UUID) async {
         let userInfo: [AnyHashable: Any] = [
             LumiMessageSavedNotification.conversationIDKey: conversationID,
             LumiTurnFinishedNotification.reasonKey: LumiTurnEndReason.completed.rawValue,
@@ -273,14 +297,11 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             object: nil,
             userInfo: userInfo
         )
-        NotificationCenter.default.post(
-            name: .lumiTurnFinished,
-            object: nil,
-            userInfo: userInfo
-        )
+        // 复用 finished 路径：发送 .lumiTurnFinished 并分发 onTurnFinished 钩子
+        await postTurnFinishedNotification(conversationID: conversationID, reason: .completed)
     }
 
-    private func postTurnFinishedNotification(conversationID: UUID, reason: LumiTurnEndReason) {
+    private func postTurnFinishedNotification(conversationID: UUID, reason: LumiTurnEndReason) async {
         let userInfo: [AnyHashable: Any] = [
             LumiMessageSavedNotification.conversationIDKey: conversationID,
             LumiTurnFinishedNotification.reasonKey: reason.rawValue,
@@ -290,6 +311,14 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             object: nil,
             userInfo: userInfo
         )
+
+        // 分发 onTurnFinished 钩子（按插件 order 升序，仅启用插件）。
+        // 与上面 willSendToLLM 的遍历模式一致。
+        guard let kernel else { return }
+        for plugin in kernel.pluginManager.allPlugins {
+            guard plugin.policy.shouldRegister else { continue }
+            await plugin.onTurnFinished(kernel: kernel, conversationID: conversationID, reason: reason)
+        }
     }
 
     // MARK: - Helpers

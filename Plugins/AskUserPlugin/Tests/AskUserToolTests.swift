@@ -1,8 +1,17 @@
-import AgentToolKit
 import Foundation
 import LumiKernel
 import Testing
 @testable import AskUserPlugin
+
+// MARK: - Test Helpers
+
+extension LumiJSONValue {
+    /// 测试用：按 key 取 object 内的字段。
+    subscript(_ key: String) -> LumiJSONValue? {
+        if case .object(let dict) = self { return dict[key] }
+        return nil
+    }
+}
 
 // MARK: - InputSchema Tests
 
@@ -10,51 +19,34 @@ import Testing
     let tool = AskUserTool()
 
     @Test func schemaTypeIsObject() {
-        let schema = tool.inputSchema
-        #expect(schema["type"] as? String == "object")
+        #expect(tool.inputSchema["type"]?.stringValue == "object")
     }
 
     @Test func schemaHasQuestionProperty() {
-        let schema = tool.inputSchema
-        let properties = schema["properties"] as? [String: Any]
-        #expect(properties?["question"] != nil)
+        #expect(tool.inputSchema["properties"]?["question"] != nil)
     }
 
     @Test func schemaQuestionTypeIsString() {
-        let schema = tool.inputSchema
-        let properties = schema["properties"] as? [String: Any]
-        let question = properties?["question"] as? [String: Any]
-        #expect(question?["type"] as? String == "string")
+        #expect(tool.inputSchema["properties"]?["question"]?["type"]?.stringValue == "string")
     }
 
     @Test func schemaHasOptionsProperty() {
-        let schema = tool.inputSchema
-        let properties = schema["properties"] as? [String: Any]
-        let options = properties?["options"] as? [String: Any]
-        #expect(options != nil)
-        #expect(options?["type"] as? String == "array")
+        #expect(tool.inputSchema["properties"]?["options"]?["type"]?.stringValue == "array")
     }
 
     @Test func schemaOptionsItemsAreStrings() {
-        let schema = tool.inputSchema
-        let properties = schema["properties"] as? [String: Any]
-        let options = properties?["options"] as? [String: Any]
-        let items = options?["items"] as? [String: Any]
-        #expect(items?["type"] as? String == "string")
+        #expect(tool.inputSchema["properties"]?["options"]?["items"]?["type"]?.stringValue == "string")
     }
 
     @Test func schemaHasAllowFreeInputProperty() {
-        let schema = tool.inputSchema
-        let properties = schema["properties"] as? [String: Any]
-        let allowFreeInput = properties?["allow_free_input"] as? [String: Any]
-        #expect(allowFreeInput != nil)
-        #expect(allowFreeInput?["type"] as? String == "boolean")
+        #expect(tool.inputSchema["properties"]?["allow_free_input"]?["type"]?.stringValue == "boolean")
     }
 
     @Test func schemaRequiredContainsQuestion() {
-        let schema = tool.inputSchema
-        let required = schema["required"] as? [String]
-        #expect(required?.contains("question") == true)
+        guard case .array(let required) = tool.inputSchema["required"] else {
+            Issue.record("required 不是 array"); return
+        }
+        #expect(required.contains { $0.stringValue == "question" })
     }
 }
 
@@ -64,21 +56,21 @@ import Testing
     let tool = AskUserTool()
 
     @Test func showsQuestionInDescription() {
-        let args: [String: ToolArgument] = ["question": .init("测试问题")]
-        let desc = tool.displayDescription(for: args)
+        let args: [String: LumiJSONValue] = ["question": .string("测试问题")]
+        let desc = tool.displayDescription(arguments: args)
         #expect(desc.contains("测试问题"))
     }
 
     @Test func truncatesLongQuestion() {
         let longQuestion = String(repeating: "a", count: 100)
-        let args: [String: ToolArgument] = ["question": .init(longQuestion)]
-        let desc = tool.displayDescription(for: args)
+        let args: [String: LumiJSONValue] = ["question": .string(longQuestion)]
+        let desc = tool.displayDescription(arguments: args)
         #expect(desc.count <= 60) // "询问: " + 50 chars
     }
 
     @Test func fallbackWhenNoQuestion() {
-        let args: [String: ToolArgument] = [:]
-        let desc = tool.displayDescription(for: args)
+        let args: [String: LumiJSONValue] = [:]
+        let desc = tool.displayDescription(arguments: args)
         #expect(desc == "询问用户")
     }
 }
@@ -89,34 +81,21 @@ import Testing
     let tool = AskUserTool()
 
     @Test func riskLevelIsLow() {
-        let args: [String: ToolArgument] = [:]
-        #expect(tool.permissionRiskLevel(arguments: args) == .low)
+        let args: [String: LumiJSONValue] = [:]
+        #expect(tool.riskLevel(arguments: args, context: nil) == .low)
     }
 }
 
-// MARK: - Description Tests
+// MARK: - Info / Description Tests
 
-@Suite struct AskUserToolDescriptionTests {
-    let tool = AskUserTool()
-
-    @Test func chineseDescriptionContainsAsk() {
-        let desc = tool.description(for: .chinese)
-        #expect(desc.contains("询问") || desc.contains("提问"))
-    }
-
-    @Test func englishDescriptionContainsAsk() {
-        let desc = tool.description(for: .english)
-        #expect(desc.lowercased().contains("ask"))
-    }
-}
-
-// MARK: - Name Tests
-
-@Suite struct AskUserToolNameTests {
+@Suite struct AskUserToolInfoTests {
     @Test func toolNameIsAskUser() {
         #expect(AskUserTool.name == "ask_user")
-        let tool = AskUserTool()
-        #expect(tool.name == "ask_user")
+        #expect(AskUserTool.info.id == "ask_user")
+    }
+
+    @Test func infoDescriptionMentionsAsk() {
+        #expect(AskUserTool.info.description.lowercased().contains("ask"))
     }
 
     @Test func pendingPrefixMatchesLumiMarkers() {
@@ -127,13 +106,15 @@ import Testing
 // MARK: - Helpers
 
 private func makeContext(
-    conversationId: UUID = UUID(),
-    toolCallId: String = "call-test"
-) -> ToolExecutionContext {
-    ToolExecutionContext(
-        conversationId: conversationId,
-        toolCallId: toolCallId,
-        toolName: "ask_user"
+    conversationID: UUID = UUID(),
+    toolCallID: String = "call-test",
+    verbosity: String? = nil
+) -> LumiToolExecutionContext {
+    LumiToolExecutionContext(
+        conversationID: conversationID,
+        toolCallID: toolCallID,
+        toolName: "ask_user",
+        verbosity: verbosity
     )
 }
 
@@ -143,28 +124,28 @@ private func makeContext(
     let tool = AskUserTool()
 
     @Test func executeReturnsPendingPrefix() async throws {
-        let args: [String: ToolArgument] = ["question": .init("测试问题")]
+        let args: [String: LumiJSONValue] = ["question": .string("测试问题")]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.hasPrefix(LumiAskUserMarkers.pendingPrefix))
     }
 
     @Test func executeContainsJSONWithQuestion() async throws {
-        let args: [String: ToolArgument] = ["question": .init("是否继续？")]
+        let args: [String: LumiJSONValue] = ["question": .string("是否继续？")]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.contains("是否继续？"))
     }
 
     @Test func executeContainsDefaultOptions() async throws {
-        let args: [String: ToolArgument] = ["question": .init("是否继续？")]
+        let args: [String: LumiJSONValue] = ["question": .string("是否继续？")]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.contains("是"))
         #expect(result.contains("否"))
     }
 
     @Test func executeWithCustomOptions() async throws {
-        let args: [String: ToolArgument] = [
-            "question": .init("选哪个？"),
-            "options": .init(["红色", "蓝色", "绿色"])
+        let args: [String: LumiJSONValue] = [
+            "question": .string("选哪个？"),
+            "options": .array(["红色", "蓝色", "绿色"].map { .string($0) }),
         ]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.contains("红色"))
@@ -173,35 +154,35 @@ private func makeContext(
     }
 
     @Test func executeReturnsErrorWhenQuestionMissing() async throws {
-        let args: [String: ToolArgument] = [:]
+        let args: [String: LumiJSONValue] = [:]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.hasPrefix(LumiAskUserMarkers.errorPrefix))
         #expect(result.contains("question"))
     }
 
     @Test func executeReturnsErrorWhenQuestionEmpty() async throws {
-        let args: [String: ToolArgument] = ["question": .init("")]
+        let args: [String: LumiJSONValue] = ["question": .string("")]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.hasPrefix(LumiAskUserMarkers.errorPrefix))
     }
 
-    @Test func executeContainsToolCallId() async throws {
-        let args: [String: ToolArgument] = ["question": .init("测试")]
-        let result = try await tool.execute(arguments: args, context: makeContext(toolCallId: "call-unique-id"))
+    @Test func executeContainsToolCallID() async throws {
+        let args: [String: LumiJSONValue] = ["question": .string("测试")]
+        let result = try await tool.execute(arguments: args, context: makeContext(toolCallID: "call-unique-id"))
         #expect(result.contains("call-unique-id"))
     }
 
-    @Test func executeContainsConversationId() async throws {
-        let conversationId = UUID()
-        let args: [String: ToolArgument] = ["question": .init("测试")]
-        let result = try await tool.execute(arguments: args, context: makeContext(conversationId: conversationId))
-        #expect(result.contains(conversationId.uuidString))
+    @Test func executeContainsConversationID() async throws {
+        let conversationID = UUID()
+        let args: [String: LumiJSONValue] = ["question": .string("测试")]
+        let result = try await tool.execute(arguments: args, context: makeContext(conversationID: conversationID))
+        #expect(result.contains(conversationID.uuidString))
     }
 
     @Test func executeWithAllowFreeInput() async throws {
-        let args: [String: ToolArgument] = [
-            "question": .init("你的想法？"),
-            "allow_free_input": .init(true)
+        let args: [String: LumiJSONValue] = [
+            "question": .string("你的想法？"),
+            "allow_free_input": .bool(true),
         ]
         let result = try await tool.execute(arguments: args, context: makeContext())
         #expect(result.contains("true"))
@@ -264,35 +245,35 @@ private func makeContext(
     }
 
     @Test func returnsDefaultWhenOptionsMissing() {
-        let args: [String: ToolArgument] = ["question": .init("x")]
+        let args: [String: LumiJSONValue] = ["question": .string("x")]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == AskUserTool.defaultOptions)
     }
 
     @Test func returnsDefaultWhenOptionsIsEmptyArray() {
         // 空数组应当回退到默认，而不是返回空列表（避免渲染器无选项可显示）
-        let args: [String: ToolArgument] = ["options": .init([] as [String])]
+        let args: [String: LumiJSONValue] = ["options": .array([])]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == AskUserTool.defaultOptions)
     }
 
     @Test func returnsDefaultWhenOptionsIsNotStringArray() {
         // 非 [String] 类型（如 [Int]）也应回退到默认
-        let args: [String: ToolArgument] = ["options": .init([1, 2, 3])]
+        let args: [String: LumiJSONValue] = ["options": .array([.int(1), .int(2), .int(3)])]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == AskUserTool.defaultOptions)
     }
 
     @Test func returnsProvidedOptionsWhenNonEmpty() {
         let provided = ["红", "蓝", "绿"]
-        let args: [String: ToolArgument] = ["options": .init(provided)]
+        let args: [String: LumiJSONValue] = ["options": .array(provided.map { .string($0) })]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == provided)
     }
 
     @Test func preservesOrderOfProvidedOptions() {
         let provided = ["c", "a", "b"]
-        let args: [String: ToolArgument] = ["options": .init(provided)]
+        let args: [String: LumiJSONValue] = ["options": .array(provided.map { .string($0) })]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == provided)
     }
@@ -300,7 +281,7 @@ private func makeContext(
     @Test func allowsDuplicateOptionStrings() {
         // 重复字符串不在 resolvedOptions 的处理范围内，按原样透传（去重是上层职责）
         let provided = ["是", "是", "否"]
-        let args: [String: ToolArgument] = ["options": .init(provided)]
+        let args: [String: LumiJSONValue] = ["options": .array(provided.map { .string($0) })]
         let result = AskUserTool.resolvedOptions(args)
         #expect(result == provided)
     }
@@ -315,30 +296,35 @@ private func makeContext(
     }
 
     @Test func returnsFalseWhenKeyMissing() {
-        let args: [String: ToolArgument] = ["question": .init("x")]
+        let args: [String: LumiJSONValue] = ["question": .string("x")]
         let result = AskUserTool.resolvedAllowFreeInput(args)
         #expect(result == false)
     }
 
     @Test func returnsTrueWhenExplicitlyTrue() {
-        let args: [String: ToolArgument] = ["allow_free_input": .init(true)]
+        let args: [String: LumiJSONValue] = ["allow_free_input": .bool(true)]
         let result = AskUserTool.resolvedAllowFreeInput(args)
         #expect(result == true)
     }
 
     @Test func returnsFalseWhenExplicitlyFalse() {
-        let args: [String: ToolArgument] = ["allow_free_input": .init(false)]
+        let args: [String: LumiJSONValue] = ["allow_free_input": .bool(false)]
         let result = AskUserTool.resolvedAllowFreeInput(args)
         #expect(result == false)
     }
 
-    @Test func returnsFalseWhenNonBoolValue() {
-        // 非 Bool 值（如 Int / String）应回退到 false，而不是崩溃
-        let intArgs: [String: ToolArgument] = ["allow_free_input": .init(1)]
-        #expect(AskUserTool.resolvedAllowFreeInput(intArgs) == false)
+    @Test func handlesNonCanonicalBoolValues() {
+        // resolvedAllowFreeInput 复用 LumiJSONValue.bool() 的宽松解析（与仓库其他原生工具一致）：
+        // 整数 1 / 字符串 "true" 等也会被接受为真值，而非崩溃。
+        let intArgs: [String: LumiJSONValue] = ["allow_free_input": .int(1)]
+        #expect(AskUserTool.resolvedAllowFreeInput(intArgs) == true)
 
-        let stringArgs: [String: ToolArgument] = ["allow_free_input": .init("true")]
-        #expect(AskUserTool.resolvedAllowFreeInput(stringArgs) == false)
+        let trueStrArgs: [String: LumiJSONValue] = ["allow_free_input": .string("true")]
+        #expect(AskUserTool.resolvedAllowFreeInput(trueStrArgs) == true)
+
+        // 无法识别为布尔的值（如 "maybe"）则回退到 false
+        let otherStrArgs: [String: LumiJSONValue] = ["allow_free_input": .string("maybe")]
+        #expect(AskUserTool.resolvedAllowFreeInput(otherStrArgs) == false)
     }
 }
 
@@ -355,12 +341,12 @@ private func makeContext(
 }
 
 @Suite struct AskUserToolBuildPendingResponseTests {
-    let conversationId = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+    let conversationID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
 
     @Test func copiesAllFieldsFromInputs() {
-        let context = ToolExecutionContext(
-            conversationId: conversationId,
-            toolCallId: "call-abc",
+        let context = LumiToolExecutionContext(
+            conversationID: conversationID,
+            toolCallID: "call-abc",
             toolName: "ask_user",
             verbosity: "detailed"
         )
@@ -374,14 +360,14 @@ private func makeContext(
         #expect(response.question == "是否继续?")
         #expect(response.options == ["是", "否"])
         #expect(response.allowFreeInput == true)
-        #expect(response.conversationId == conversationId.uuidString)
+        #expect(response.conversationId == conversationID.uuidString)
     }
 
     @Test func verbosityPassesThroughWhenContextProvidesIt() {
         for verbosity in ["brief", "standard", "detailed", "v1", "v2", "v3"] {
-            let context = ToolExecutionContext(
-                conversationId: conversationId,
-                toolCallId: "call",
+            let context = LumiToolExecutionContext(
+                conversationID: conversationID,
+                toolCallID: "call",
                 toolName: "ask_user",
                 verbosity: verbosity
             )
@@ -396,11 +382,12 @@ private func makeContext(
     }
 
     @Test func verbosityDefaultsToStandardWhenContextOmitsIt() {
-        // 源码契约：context.verbosity == nil 时，buildPendingResponse 必须默认回退到 "standard"。
+        // 源码契约：context.verbosity == nil 时，buildPendingResponse 必须默认回退到
+        // LumiResponseVerbosity.defaultVerbosity.rawValue（当前为 "v2" / standard）。
         // 这是渲染器路分发（standard → AskUserStandardView）的关键安全网。
-        let context = ToolExecutionContext(
-            conversationId: conversationId,
-            toolCallId: "call",
+        let context = LumiToolExecutionContext(
+            conversationID: conversationID,
+            toolCallID: "call",
             toolName: "ask_user",
             verbosity: nil
         )
@@ -410,15 +397,15 @@ private func makeContext(
             options: ["a"],
             allowFreeInput: false
         )
-        #expect(response.verbosity == "standard")
+        #expect(response.verbosity == LumiResponseVerbosity.defaultVerbosity.rawValue)
     }
 
     @Test func emptyOptionsArrayAllowed() {
         // buildPendingResponse 不做 options 校验（那是 resolvedOptions 的职责），
         // 它应当透传调用方传入的任意数组，包括空数组。
-        let context = ToolExecutionContext(
-            conversationId: conversationId,
-            toolCallId: "call",
+        let context = LumiToolExecutionContext(
+            conversationID: conversationID,
+            toolCallID: "call",
             toolName: "ask_user"
         )
         let response = AskUserTool.buildPendingResponse(
@@ -449,7 +436,7 @@ private func makeContext(
     }
 
     @Test func encodePendingPayloadRoundTripViaDecoder() throws {
-        // 编码产物应当能被同一模型解码回来 —— 这是 JSON payload 在 ToolCallExecutor
+        // 编码产物应当能被同一模型解码回来 —— 这是 JSON payload 在 AgentTurnRunner
         // 与渲染器之间传输的契约。
         let original = AskUserPendingResponse(
             toolCallId: "call-rt",

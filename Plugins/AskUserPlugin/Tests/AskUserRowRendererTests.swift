@@ -243,49 +243,6 @@ private func makePendingContent(
     }
 }
 
-// MARK: - One-Shot Registration Tests
-//
-// AskUserPlugin.messageRenderers 内部用 didConfigureRenderer 防止重复注册。
-// 我们从行为侧验证：多次调用后 ToolCallRowRendererRegistry 中 AskUserRowRenderer 只有一个实例。
-
-@Suite @MainActor struct AskUserPluginOneShotRegistrationTests {
-    @Test func multipleMessageRenderersCallsRegisterOnlyOnce() {
-        // Given
-        let context = LumiPluginContext(
-            activeSectionID: "test",
-            activeSectionTitle: "Test"
-        )
-
-        // When — 多次调用 messageRenderers
-        _ = AskUserPlugin.messageRenderers(context: context)
-        _ = AskUserPlugin.messageRenderers(context: context)
-        _ = AskUserPlugin.messageRenderers(context: context)
-
-        // Then — registry 中 ask-user-row 渲染器应当只有一个
-        // 由于没有暴露 renderers 列表 API，我们通过 priority/sort 后行为间接验证。
-        // 简化为：findRenderer(ask_user + awaiting=true) 应当非空且 id 正确
-        // 给一个合法的 result，让 canRender 走通 name + awaitingUserResponse 双检查
-        let pendingToolCall = makeAskUserToolCall(
-            content: makePendingContent(verbosity: "standard"),
-            awaitingUserResponse: true
-        )
-        let found = ToolCallRowRendererRegistry.shared.findRenderer(for: pendingToolCall)
-        #expect(found != nil)
-        #expect(type(of: found!).id == "ask-user-row")
-    }
-
-    @Test func messageRenderersReturnsEmpty() {
-        // AskUserPlugin 不在 messageRenderers 里返回任何渲染器项（注册是副作用），
-        // 渲染器注册由 MessageRendererPlugin 通过 registry 自行查询。
-        let context = LumiPluginContext(
-            activeSectionID: "test",
-            activeSectionTitle: "Test"
-        )
-        let items = AskUserPlugin.messageRenderers(context: context)
-        #expect(items.isEmpty)
-    }
-}
-
 // MARK: - JSON Round-Trip Integration Tests
 //
 // 模拟完整链路：AskUserTool.execute() → ToolCall.result.content → AskUserRowRenderer.parsePendingResponse
@@ -293,14 +250,14 @@ private func makePendingContent(
 @Suite @MainActor struct AskUserRowRendererRoundTripTests {
     @Test func executePayloadIsRenderable() async throws {
         // Given — execute() 产出 pendingPrefix + JSON payload
-        let args: [String: ToolArgument] = [
-            "question": .init("继续?"),
-            "options": .init(["是", "否", "稍后"])
+        let args: [String: LumiJSONValue] = [
+            "question": .string("继续?"),
+            "options": .array(["是", "否", "稍后"].map { .string($0) })
         ]
         let tool = AskUserTool()
-        let executeContext = ToolExecutionContext(
-            conversationId: UUID(),
-            toolCallId: "call-rt",
+        let executeContext = LumiToolExecutionContext(
+            conversationID: UUID(),
+            toolCallID: "call-rt",
             toolName: "ask_user",
             verbosity: "detailed"
         )
@@ -320,11 +277,11 @@ private func makePendingContent(
     @Test func executePayloadMatchesIsPendingResponseHelper() async throws {
         // LumiAskUserMarkers.isPendingResponse 是被 ChatService / AgentTurnService 用来
         // 设置 awaitingUserResponse 的依据，execute() 的产物应当通过此判断。
-        let args: [String: ToolArgument] = ["question": .init("hi")]
+        let args: [String: LumiJSONValue] = ["question": .string("hi")]
         let tool = AskUserTool()
-        let executeContext = ToolExecutionContext(
-            conversationId: UUID(),
-            toolCallId: "call",
+        let executeContext = LumiToolExecutionContext(
+            conversationID: UUID(),
+            toolCallID: "call",
             toolName: "ask_user"
         )
         let output = try await tool.execute(arguments: args, context: executeContext)
