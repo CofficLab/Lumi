@@ -94,8 +94,6 @@ let package = Package(
         .package(path: "../../Plugins/WorkspaceStatePlugin"),
         // Editor and UI plugins
         .package(path: "../../Plugins/EditorPanelPlugin"),
-        .package(path: "../../Plugins/EditorFileTreePlugin"),
-        .package(path: "../../Plugins/EditorFileTreeV2Plugin"),
         .package(path: "../../Plugins/GitPlugin"),
         // Utility plugins
         .package(path: "../../Plugins/DeviceInfoPlugin"),
@@ -216,8 +214,6 @@ let package = Package(
                 .product(name: "WorkspaceStatePlugin", package: "WorkspaceStatePlugin"),
                 // Editor and UI plugins
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
-                .product(name: "EditorFileTreePlugin", package: "EditorFileTreePlugin"),
-                .product(name: "EditorFileTreeV2Plugin", package: "EditorFileTreeV2Plugin"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "GitPlugin", package: "GitPlugin"),
                 // Utility plugins
