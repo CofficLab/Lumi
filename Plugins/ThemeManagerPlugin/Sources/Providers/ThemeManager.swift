@@ -78,7 +78,7 @@ public final class ThemeManager: LumiThemeServicing {
 
     /// Inject the plugin service after `LumiKernel.plugin` becomes available.
     ///
-    /// `DefaultThemeProviding.init` runs during `ThemeStatusBarPlugin.register(kernel:)`,
+    /// `DefaultThemeProviding.init` runs during `ThemeManagerPlugin.register(kernel:)`,
     /// but `kernel.plugin` is `nil` at that point (PluginManagementPlugin hasn't been
     /// registered yet). The plugin service is wired up in `boot(kernel:)` and the
     /// themes are reloaded then.

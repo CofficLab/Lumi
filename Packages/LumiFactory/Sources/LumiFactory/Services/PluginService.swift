@@ -72,7 +72,7 @@ import StatusBarPlugin
 import StoragePlugin
 import LegacyDataPlugin
 import ThemeAuroraPlugin
-import ThemeStatusBarPlugin
+import ThemeManagerPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
 import ThemeGithubPlugin
@@ -95,7 +95,6 @@ import ConversationSpeedPlugin
 import ChatModePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
-import WorkspaceStatePlugin
 import OpenInFinderPlugin
 import OpenInXcodePlugin
 import OpenInCursorPlugin
@@ -197,7 +196,7 @@ public enum PluginService {
             InputPlugin(),
             MenuBarManagerPlugin(),
             // Themes
-            ThemeStatusBarPlugin(),
+            ThemeManagerPlugin(),
             ThemeLumiPlugin(),
             ThemeAuroraPlugin(),
             ThemeAutumnPlugin(),

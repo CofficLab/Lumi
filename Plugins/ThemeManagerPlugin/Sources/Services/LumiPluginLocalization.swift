@@ -1,7 +1,7 @@
 import Foundation
 import LocalizationKit
 
-/// Runtime localization for ThemeStatusBarPlugin bundle.
+/// Runtime localization for ThemeManagerPlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {

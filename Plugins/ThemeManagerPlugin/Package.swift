@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ThemeStatusBarPlugin",
+    name: "ThemeManagerPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ThemeStatusBarPlugin",
-            targets: ["ThemeStatusBarPlugin"]
+            name: "ThemeManagerPlugin",
+            targets: ["ThemeManagerPlugin"]
         )
     ],
     dependencies: [
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ThemeStatusBarPlugin",
+            name: "ThemeManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -32,8 +32,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ThemeStatusBarPluginTests",
-            dependencies: ["ThemeStatusBarPlugin"],
+            name: "ThemeManagerPluginTests",
+            dependencies: ["ThemeManagerPlugin"],
             path: "Tests"
         )
     ]

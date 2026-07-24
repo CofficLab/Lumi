@@ -4,9 +4,9 @@ import LumiUI
 import SwiftUI
 
 @MainActor
-public final class ThemeStatusBarPlugin: LumiPlugin {
-    public let id = "com.coffic.lumi.plugin.theme-status-bar"
-    public let name = "Theme Status Bar"
+public final class ThemeManagerPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.theme-manager"
+    public let name = "Theme Manager"
     public let order = 22
     public let policy: LumiPluginPolicy = .alwaysOn
 
