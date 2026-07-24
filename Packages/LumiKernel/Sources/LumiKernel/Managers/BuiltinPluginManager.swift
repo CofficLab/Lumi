@@ -330,6 +330,33 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         try manager.registerLLMProviders(collected)
     }
 
+    /// 收集所有插件贡献的 Agent 工具,并注册到内核的 `ToolManaging` 服务。
+    ///
+    /// 调用时机:在 `LumiKernel.startup()` 的 `onReady` 之后,且 `registerLLMProviders` 之后。
+    /// 每个需要贡献工具的插件只需实现 `LumiPlugin.agentTools(kernel:)` 返回其实例,
+    /// 无需再在 `onBoot/onReady` 里主动调用 `kernel.toolManager?.add(...)`。
+    ///
+    /// `ToolManagerPlugin` 必须已经注册(其 `order = 30`),因此这里 `kernel.toolManager` 一定可用;
+    /// 若不可用则抛错,不再静默。
+    ///
+    /// - Throws:
+    ///   - `LumiKernelError.serviceNotAvailable("AgentTool")` 当 manager 服务未注册时。
+    public func registerAgentTools(in kernel: LumiKernel) throws {
+        self.kernel = kernel
+
+        guard let manager = kernel.toolManager else {
+            throw LumiKernelError.serviceNotAvailable(service: "AgentTool")
+        }
+
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            let tools = plugin.agentTools(kernel: kernel)
+            for tool in tools {
+                manager.add(tool, pluginID: plugin.id)
+            }
+        }
+    }
+
     /// 全量重建所有插件贡献(UI + LLM Provider)。
     ///
     /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,

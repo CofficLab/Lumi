@@ -84,10 +84,13 @@ public final class LumiKernelContainer: ObservableObject {
     ///    the kernel's `LLMProviderManaging` service. This runs after onReady
     ///    so that every plugin's `llmProviders(kernel:)` is evaluated against
     ///    a fully-initialized kernel.
+    /// 5. Collect all plugin-contributed Agent tools and register them with
+    ///    the kernel's `ToolManaging` service.
     /// - Throws: `LumiKernelError.missingRequiredServices` if required services
     ///   are missing, or `LumiKernelError.serviceNotAvailable` /
     ///   `LumiKernelError.llmProviderRegistrationFailed` if the LLM provider
-    ///   collection in step 4 fails.
+    ///   collection in step 4 fails, or `LumiKernelError.serviceNotAvailable`
+    ///   if the Agent tool collection in step 5 fails.
     public func startup() async throws {
         // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
         try await pluginManager.onBoot(kernel: self)
@@ -127,6 +130,11 @@ public final class LumiKernelContainer: ObservableObject {
         //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
+
+        // 5. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
+        //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
+        //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
+        try pluginManager.registerAgentTools(in: self)
     }
 }
 

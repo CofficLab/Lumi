@@ -81,6 +81,15 @@ extension LumiKernelContainer {
         registerService(LLMProviderManaging.self, llmProvider)
     }
 
+    /// Register LLM Provider settings contribution service
+    ///
+    /// 由 `LLMProviderManagerPlugin` 等 provider 管理器注册,让其它 LLM Provider 插件
+    /// 可通过 `kernel.resolveService((any LumiLLMProviderSettingsContributing).self)`
+    /// 拿到 provider 详情视图的贡献集合。
+    public func registerLLMProviderSettingsService(_ service: any LumiLLMProviderSettingsContributing) {
+        registerService(LumiLLMProviderSettingsContributing.self, service)
+    }
+
     /// Register agent turn runner service
     public func registerAgentTurnRunnerService(_ agentTurnRunner: any AgentTurnRunning) {
         registerService(AgentTurnRunning.self, agentTurnRunner)

@@ -107,7 +107,7 @@ import OpenInAntigravityPlugin
 import OpenInGitHubDesktopPlugin
 import OpenInGitOKPlugin
 import OpenRemotePlugin
-import AgentRAGPlugin
+import ProjectRAGPlugin
 
 /// 插件服务
 ///
@@ -167,7 +167,7 @@ public enum PluginService {
             ConversationTitlePlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
-            RAGPlugin(),
+            ProjectRAGPlugin(),
             CommandPlugin(),
             MenuBarPlugin(),
             ChatSectionPlugin(),

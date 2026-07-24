@@ -126,7 +126,7 @@ let package = Package(
         .package(path: "../../Plugins/OpenInGitHubDesktopPlugin"),
         .package(path: "../../Plugins/OpenInGitOKPlugin"),
         .package(path: "../../Plugins/OpenRemotePlugin"),
-        .package(path: "../../Plugins/AgentRAGPlugin"),
+        .package(path: "../../Plugins/ProjectRAGPlugin"),
     ],
     targets: [
         .target(
@@ -250,7 +250,7 @@ let package = Package(
                 .product(name: "OpenInGitHubDesktopPlugin", package: "OpenInGitHubDesktopPlugin"),
                 .product(name: "OpenInGitOKPlugin", package: "OpenInGitOKPlugin"),
                 .product(name: "OpenRemotePlugin", package: "OpenRemotePlugin"),
-                .product(name: "AgentRAGPlugin", package: "AgentRAGPlugin"),
+                .product(name: "ProjectRAGPlugin", package: "ProjectRAGPlugin"),
             ],
             resources: [
                 .process("Resources")

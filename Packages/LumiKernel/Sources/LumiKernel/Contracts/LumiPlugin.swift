@@ -59,6 +59,9 @@ public protocol LumiPlugin: AnyObject {
     /// 提供子 Agent 定义
     func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition]
 
+    /// 提供 Agent 工具
+    func agentTools(kernel: LumiKernel) -> [any LumiAgentTool]
+
     /// 提供消息渲染器
     func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem]
 
@@ -174,6 +177,9 @@ public extension LumiPlugin {
     func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
         messages
     }
+
+    /// Agent 工具的默认实现:不贡献任何工具。
+    func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
 
     /// 默认分类:通用。
     var category: LumiPluginCategory { .general }
