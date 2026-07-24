@@ -9,16 +9,11 @@ import SwiftUI
 /// 点击后弹出 Popover，用于切换「右侧栏」「底部面板」的显隐。
 public struct LayoutMenuButton: View {
     @LumiTheme private var theme
-    @ObservedObject private var lumiCore: LumiCore
+    @ObservedObject private var kernel: LumiKernel
     @State private var isPopoverPresented = false
 
-    // layoutState 从 lumiCore 获取
-    private var layoutState: LayoutState {
-        lumiCore.layoutComponent.state
-    }
-
-    public init(lumiCore: LumiCore) {
-        self._lumiCore = ObservedObject(wrappedValue: lumiCore)
+    public init(kernel: LumiKernel) {
+        self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
     public var body: some View {
@@ -33,8 +28,8 @@ public struct LayoutMenuButton: View {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: { layoutState.chatSectionVisible },
-                        set: { layoutState.chatSectionVisible = $0 }
+                        get: { kernel.workspaceState?.isChatVisible ?? true },
+                        set: { kernel.workspaceState?.setChatVisible($0) }
                     ),
                     icon: "rectangle.rightthird.inset.filled",
                     title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)
@@ -44,7 +39,10 @@ public struct LayoutMenuButton: View {
                     .padding(.vertical, 4)
 
                 LayoutPopoverToggle(
-                    isOn: Binding(get: { layoutState.bottomPanelVisible }, set: { layoutState.bottomPanelVisible = $0 }),
+                    isOn: Binding(
+                        get: { kernel.workspaceState?.isPanelVisible ?? true },
+                        set: { kernel.workspaceState?.setPanelVisible($0) }
+                    ),
                     icon: "rectangle.inset.filled",
                     title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
                 )

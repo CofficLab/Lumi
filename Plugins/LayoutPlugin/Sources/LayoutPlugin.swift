@@ -1,7 +1,7 @@
 import LumiKernel
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// 布局持久化插件
 ///
@@ -11,15 +11,15 @@ import os
 /// 内核只提供状态和发出事件，不感知插件存在。
 /// 插件通过 `NotificationCenter` 监听事件并执行持久化。
 @MainActor
-public final class LayoutPlugin: LumiPlugin {
+public final class LayoutPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
-    nonisolated static let emoji = "📐"
+    nonisolated public static let emoji = "📐"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Persistence"
     public let order = 99
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
@@ -27,7 +27,10 @@ public final class LayoutPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {
         if Self.verbose {
-            Self.logger.info("\(Self.t)boot，开始恢复布局")
+            Self.logger.info("\(Self.t)ready，开始恢复布局")
+        }
+        if let core = kernel.lumiCore {
+            LayoutPersistenceCoordinator.shared.configure(lumiCore: core)
         }
         LayoutPersistenceCoordinator.shared.restore()
     }
@@ -39,13 +42,18 @@ public final class LayoutPlugin: LumiPlugin {
                 title: "Layout",
                 placement: .trailing
             ) {
-                // LayoutMenuButton needs to be updated to accept kernel instead of lumiCore
-                // For now, return a placeholder
-                Text("Layout")
-            }
+                LayoutMenuButton(kernel: kernel)
+            },
         ]
     }
 
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: "\(id).event-listener") { content in
+                AnyView(LayoutRootView(content: content))
+            },
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -70,7 +78,6 @@ public final class LayoutPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
