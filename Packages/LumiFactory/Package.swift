@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../EditorService"),
         // Core plugins - provide required services
         .package(path: "../../Plugins/StoragePlugin"),
+        .package(path: "../../Plugins/LegacyDataPlugin"),
         .package(path: "../../Plugins/ProjectsPlugin"),
         .package(path: "../../Plugins/LayoutKernelPlugin"),
         .package(path: "../../Plugins/ViewContainerPlugin"),
@@ -136,6 +137,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 // Core plugins - provide required services
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
+                .product(name: "LegacyDataPlugin", package: "LegacyDataPlugin"),
                 .product(name: "ProjectsPlugin", package: "ProjectsPlugin"),
                 .product(name: "LayoutKernelPlugin", package: "LayoutKernelPlugin"),
                 .product(name: "ViewContainerPlugin", package: "ViewContainerPlugin"),

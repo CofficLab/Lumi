@@ -73,6 +73,7 @@ import RegistryManagerPlugin
 import SettingsPlugin
 import StatusBarPlugin
 import StoragePlugin
+import LegacyDataPlugin
 import ThemeAuroraPlugin
 import ThemeStatusBarPlugin
 import ThemeAutumnPlugin
@@ -233,6 +234,9 @@ public enum PluginService {
         if let plugin = try? StoragePlugin() {
             list.append(plugin)
         }
+
+        // LegacyDataPlugin (v4 → v5 migration, read-only legacy data access)
+        list.append(LegacyDataPlugin())
 
         return list
     }()
