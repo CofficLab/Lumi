@@ -83,6 +83,15 @@
       }
     },
     {
+      "identity" : "magicdiffview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicDiffView",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b97553a3cb8d877981ec787f5f94e5fd0301c9cd"
+      }
+    },
+    {
       "identity" : "magiclog",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicLog.git",
