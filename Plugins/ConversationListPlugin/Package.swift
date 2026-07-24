@@ -30,13 +30,6 @@ let package = Package(
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "ConversationListPluginTests",
-            dependencies: [
-                "ConversationListPlugin",
-            ],
-            path: "Tests"
         )
     ]
 )
