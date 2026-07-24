@@ -125,4 +125,11 @@ extension LumiKernelContainer {
     public func registerWorkspaceStateService(_ state: any WorkspaceStateProviding) {
         registerService(WorkspaceStateProviding.self, state)
     }
+
+    /// Register legacy data service (v4 → v5 migration, read-only)
+    ///
+    /// 可选服务:仅在 v4→v5 迁移窗口期注册,迁移完成后可整体移除。
+    public func registerLegacyDataService(_ legacyData: any LegacyDataProviding) {
+        registerService(LegacyDataProviding.self, legacyData)
+    }
 }

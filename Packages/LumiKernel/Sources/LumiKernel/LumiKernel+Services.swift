@@ -125,4 +125,12 @@ extension LumiKernelContainer {
     public var workspaceState: (any WorkspaceStateProviding)? {
         resolveService(WorkspaceStateProviding.self)
     }
+
+    /// Legacy data service (v4 → v5 migration, read-only)
+    ///
+    /// 可选服务:未注册时返回 nil(全新安装或迁移窗口期之后)。
+    /// 消费插件应 `guard let legacy = kernel.legacyData else { return }` 跳过迁移。
+    public var legacyData: (any LegacyDataProviding)? {
+        resolveService(LegacyDataProviding.self)
+    }
 }
