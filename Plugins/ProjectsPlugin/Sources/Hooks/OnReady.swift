@@ -39,6 +39,10 @@ public struct ProjectsOnReadyHook {
             Self.logger.info("📂 Initialized ProjectsStore")
         }
 
+        // 迁移 v4 历史项目(必须在 ViewModel 初始化之前完成 —— ViewModel init 时会
+        // loadProjects,此时 projects.json 应已含合并后的数据)。幂等 + 吞错。
+        ProjectsLegacyMigration(currentDataRootDirectory: storage.dataRootDirectory, store: store).run()
+
         // 2. 初始化 ViewModel
         let viewModel = ProjectsViewModel(store: store)
 
