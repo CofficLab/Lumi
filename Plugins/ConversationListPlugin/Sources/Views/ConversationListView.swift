@@ -90,9 +90,12 @@ extension ConversationListView {
                                 localSelectedConversationId = conversation.id
                             }
                         }
-                        .onAppear {
-                            handleRowAppear(conversation)
-                        }
+                    }
+
+                    // 固定在底部，hasMore 时始终渲染，触发下一页加载。
+                    // 不依赖最后一条出现（LazyVStack 惰性渲染会导致最后一条未创建）。
+                    if hasMore {
+                        loadingMoreTrigger
                     }
                 }
                 .padding(.horizontal, 8)
@@ -103,6 +106,27 @@ extension ConversationListView {
 
             if isLoadingPage {
                 loadingIndicator
+            }
+        }
+    }
+
+    /// 底部占位视图，始终渲染以触发 hasMore 时的下一页加载。
+    private var loadingMoreTrigger: some View {
+        Group {
+            if isLoadingPage {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+            } else {
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        loadNextPageIfNeeded()
+                    }
             }
         }
     }
@@ -185,10 +209,6 @@ extension ConversationListView {
         loadNextPageIfNeeded()
     }
 
-    private func handleRowAppear(_ conversation: ConversationListItem) {
-        guard conversation.id == conversations.last?.id else { return }
-        loadNextPageIfNeeded()
-    }
 
     private func loadNextPageIfNeeded() {
         guard hasMore, !isLoadingPage else { return }

@@ -839,9 +839,6 @@
         }
       }
     },
-    "Open data directory" : {
-
-    },
     "Open in New Window" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -877,10 +874,8 @@
         }
       }
     },
-    "Service not available" : {
-
-    },
     "Service unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
