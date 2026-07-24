@@ -1,7 +1,5 @@
 import AppKit
 import Combine
-import EditorPanelPlugin
-import EditorService
 import Foundation
 import SuperLogKit
 import os
@@ -71,14 +69,11 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
     /// App is about to terminate: save all window editors' unsaved content (data safety net).
     /// Regardless of auto-save mode, try to avoid losing editing成果 on exit.
     public func applicationWillTerminate(_ notification: Notification) {
-        EditorRuntimeBridge.editorService?.files.saveNowIfNeeded(reason: "app_will_terminate")
     }
 
     /// App entered background (lost active state): only trigger save in onWindowChange mode.
     public func applicationDidResignActive(_ notification: Notification) {
-        guard let files = EditorRuntimeBridge.editorService?.files,
-              files.autoSaveMode.respondsToWindowChange else { return }
-        files.triggerAutoSave(reason: "app_resign_active")
+
     }
 
     private func resolvePath(fromOpenURL url: URL) -> String? {
