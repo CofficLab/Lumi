@@ -57,4 +57,18 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            GitBranchTool(),
+            GitCommitTool(),
+            GitDiffTool(),
+            GitLogTool(),
+            GitShowTool(),
+            GitStatusTool(),
+            GitUnpushedTool(),
+        ]
+    }
 }
