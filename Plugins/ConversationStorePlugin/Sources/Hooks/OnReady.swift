@@ -6,7 +6,7 @@ import os
 /// ConversationStore 插件 OnReady 阶段钩子
 ///
 /// 负责 onReady 阶段的所有注册逻辑:注册 ConversationManager、初始化 ConversationStore、
-/// 迁移 v4 历史会话、装载会话列表。
+/// 迁移 v4 历史会话、装载会话列表。**迁移以后台任务方式启动**,不阻塞 onReady 串行链。
 @MainActor
 public struct ConversationStoreOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
@@ -40,12 +40,21 @@ public struct ConversationStoreOnReadyHook {
             ConversationManagerRuntimeBridge.shared.store = store
             ConversationManagerRuntimeBridge.shared.dataDirectory = dataDirectory
 
-            // 迁移 v4 历史会话(必须在 loadConversations 之前完成,幂等 + 吞错)
-            await ConversationLegacyMigration(kernel: kernel, store: store).run()
-
-            // Load conversations into the manager
-            if let manager = kernel.conversations as? ConversationManager {
-                manager.loadConversations()
+            // 后台启动 v4 历史会话迁移(不 await,立即返回,onReady 不阻塞)
+            // 注:`LegacyDataProviding` 是 @MainActor,读 v4 库在主线程;
+            // `store` 是 actor,写库会 hop 到 actor,不阻塞主线程。
+            let progress = ConversationMigrationProgressStore.shared
+            let migration = ConversationLegacyMigration(kernel: kernel, store: store, progress: progress)
+            let itemID = "com.coffic.lumi.plugin.conversation-store.migration.status"
+            Task { @MainActor in
+                await migration.run()
+                // 迁移完成后:装载会话到 manager(此时新库已含历史会话)+ 移除状态栏项
+                if let manager = kernel.conversations as? ConversationManager {
+                    manager.loadConversations()
+                }
+                if !progress.isActive {
+                    kernel.statusBar?.unregisterStatusBarItem(id: itemID)
+                }
             }
 
             if Self.verbose {

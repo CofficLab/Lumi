@@ -35,7 +35,21 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        // 迁移状态栏项:状态栏显示静态图标,点击弹出 popover 详情。
+        // 迁移完成后由 OnReady 的 Task 调 unregisterStatusBarItem 移除。
+        [
+            StatusBarItem(
+                id: "\(id).migration.status",
+                title: "Conversation Migration",
+                systemImage: "bubble.left.and.bubble.right",
+                placement: .trailing,
+                popover: {
+                    ConversationMigrationPopoverView()
+                }
+            ),
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
