@@ -51,6 +51,7 @@ import LLMProviderSublyxPlugin
 import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
 import LLMProviderZhipuPlugin
+import LLMProviderManagerPlugin
 import LogoPlugin
 import LogoCofficPlugin
 import LogoSmartLightPlugin
@@ -117,6 +118,7 @@ public enum PluginService {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
             WorkspaceStatePlugin(),
+            LLMProviderManagerPlugin(),
             // Host settings tabs (General/Appearance/About) — order 1, must lead the sidebar
             HostSettingsPlugin(),
             // LLM Providers (order 91-110)
