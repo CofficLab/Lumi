@@ -12,20 +12,14 @@ struct ConversationInputView: View, SuperLog {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
     @ObservedObject var inputState: InputState
-    @State private var errorMessage: String?
-
-    /// 当前是否在向内核发送中
-    private var isSending: Bool {
-        kernel.messageSender?.isSending ?? false
-    }
 
     var body: some View {
         VStack(spacing: 0) {
             AppDivider()
 
-            if let errorMessage {
+            if let errorMessage = inputState.errorMessage {
                 InputErrorView(message: errorMessage, onDismiss: {
-                    self.errorMessage = nil
+                    inputState.errorMessage = nil
                 })
                 .padding(.bottom, 4)
             }
@@ -35,35 +29,9 @@ struct ConversationInputView: View, SuperLog {
                 inputHeight: $inputState.inputHeight,
                 isInputFocused: $inputState.isInputFocused,
                 inputCursorPosition: $inputState.inputCursorPosition,
-                isSending: isSending,
-                onSend: send,
-                onStop: stop
+                onSend: { inputState.send(kernel: kernel) }
             )
         }
         .background(theme.background)
-    }
-
-    private func send() {
-        let trimmed = inputState.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard let messageSend = kernel.messageSender else {
-            errorMessage = "Message service is not available"
-            return
-        }
-
-        inputState.text = ""
-        errorMessage = nil
-
-        Task { @MainActor in
-            do {
-                try await messageSend.sendMessage(trimmed, conversationID: nil)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    private func stop() {
-        kernel.messageSender?.cancelCurrentRequest()
     }
 }

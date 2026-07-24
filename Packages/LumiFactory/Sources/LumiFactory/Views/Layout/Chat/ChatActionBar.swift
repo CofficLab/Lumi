@@ -13,6 +13,14 @@ struct ChatActionBar: View {
         kernel.chatSection?.allChatSectionActionBarItems ?? []
     }
 
+    private var leadingActionBarItems: [ChatSectionActionBarItem] {
+        actionBarItems.filter { $0.placement == .leading }
+    }
+
+    private var trailingActionBarItems: [ChatSectionActionBarItem] {
+        actionBarItems.filter { $0.placement == .trailing }
+    }
+
     init(kernel: LumiKernel) {
         self.kernel = kernel
     }
@@ -30,10 +38,17 @@ struct ChatActionBar: View {
                 )
             ) {
                 HStack(spacing: AppPanelChromeMetrics.actionBarItemSpacing) {
-                    ForEach(actionBarItems) { item in
+                    ForEach(leadingActionBarItems) { item in
                         item.makeView()
                     }
+
                     Spacer(minLength: 0)
+
+                    HStack(spacing: AppPanelChromeMetrics.actionBarItemSpacing) {
+                        ForEach(trailingActionBarItems) { item in
+                            item.makeView()
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

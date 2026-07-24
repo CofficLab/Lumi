@@ -215,6 +215,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
             for item in plugin.chatSectionActionBarItems(kernel: kernel) {
                 var actionBarItem = ChatSectionActionBarItem(
                     id: item.id,
+                    placement: item.placement,
                     content: item.makeView
                 )
                 actionBarItem.order = pluginOrder

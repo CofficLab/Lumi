@@ -156,14 +156,17 @@ public enum ChatSectionToolbarPlacement: Sendable {
 public struct ChatSectionActionBarItem: Identifiable, Sendable {
     public let id: String
     public var order: Int
+    public let placement: ChatSectionToolbarPlacement
     public let makeView: @MainActor @Sendable () -> AnyView
 
     /// 公开初始化器（不包含 order）
     public init<Content: View>(
         id: String,
+        placement: ChatSectionToolbarPlacement = .leading,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
+        self.placement = placement
         self.order = 200  // 默认值，内核会覆盖
         self.makeView = { AnyView(content()) }
     }
@@ -172,10 +175,12 @@ public struct ChatSectionActionBarItem: Identifiable, Sendable {
     internal init<Content: View>(
         id: String,
         order: Int,
+        placement: ChatSectionToolbarPlacement = .leading,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
         self.order = order
+        self.placement = placement
         self.makeView = { AnyView(content()) }
     }
 }
