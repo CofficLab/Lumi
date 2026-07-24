@@ -8,7 +8,6 @@ public protocol ProviderRenderKindManaging: Sendable {
     func providerPrefix(for providerId: String) -> String?
     func allProviderPrefixes() -> Set<String>
     func allProviderIds() -> Set<String>
-    func reset()
 }
 
 public final class ProviderRenderKindManager: ProviderRenderKindManaging, @unchecked Sendable {
@@ -68,12 +67,5 @@ public final class ProviderRenderKindManager: ProviderRenderKindManaging, @unche
         lock.lock()
         defer { lock.unlock() }
         return Set(prefixByProvider.keys)
-    }
-
-    public func reset() {
-        lock.lock()
-        defer { lock.unlock() }
-        prefixByProvider.removeAll()
-        providerByPrefix.removeAll()
     }
 }

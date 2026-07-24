@@ -22,13 +22,4 @@ public protocol PluginRegistry: AnyObject {
     func resetPlugin(id: String)
 }
 
-// MARK: - 默认实现(no-op,避免破坏尚不支持运行时启停的实现者)
-
-public extension PluginRegistry {
-    func effectiveEnabled(for plugin: LumiPlugin) -> Bool { plugin.policy.shouldRegister }
-    func isPluginEnabled(id: String) -> Bool {
-        allPlugins.contains { $0.id == id && effectiveEnabled(for: $0) }
-    }
-    func setPlugin(id: String, enabled: Bool) {}
-    func resetPlugin(id: String) {}
-}
+public extension PluginRegistry {}

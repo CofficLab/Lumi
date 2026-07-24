@@ -97,10 +97,9 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         // 首次启动时各 registry 为空,清空为 no-op,不影响行为。
         clearInternalContributions()
         kernel.settings?.clearAllContributions()
-        kernel.chatSection?.clearAllContributions()
+        kernel.sharedUI?.clearAllContributions()
         kernel.panel?.clearAllContributions()
         kernel.menuBar?.clearAllContributions()
-        kernel.toolbarProvider?.clearAllContributions()
         kernel.statusBar?.clearAllContributions()
         kernel.viewContainer?.clearAllContributions()
         kernel.logo?.clearAllContributions()
@@ -127,7 +126,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
             // Title Toolbar
             for item in plugin.titleToolbarItems(kernel: kernel) {
-                kernel.toolbarProvider?.registerTitleToolbarItem(item)
+                kernel.sharedUI?.registerTitleToolbarItem(item)
             }
 
             // Panel
@@ -187,7 +186,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 chatItem.order = pluginOrder
-                kernel.chatSection?.registerChatSectionItem(chatItem)
+                kernel.sharedUI?.registerChatSectionItem(chatItem)
             }
             for item in plugin.chatSectionToolbarItems(kernel: kernel) {
                 var toolbarItem = ChatSectionToolbarItem(
@@ -196,7 +195,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 toolbarItem.order = pluginOrder
-                kernel.chatSection?.registerChatSectionToolbarItem(toolbarItem)
+                kernel.sharedUI?.registerChatSectionToolbarItem(toolbarItem)
             }
             for item in plugin.chatSectionToolbarBarItems(kernel: kernel) {
                 var barItem = ChatSectionToolbarBarItem(
@@ -204,7 +203,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 barItem.order = pluginOrder
-                kernel.chatSection?.registerChatSectionToolbarBarItem(barItem)
+                kernel.sharedUI?.registerChatSectionToolbarBarItem(barItem)
             }
             for item in plugin.chatSectionHeaderItems(kernel: kernel) {
                 var headerItem = ChatSectionHeaderItem(
@@ -212,7 +211,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 headerItem.order = pluginOrder
-                kernel.chatSection?.registerChatSectionHeaderItem(headerItem)
+                kernel.sharedUI?.registerChatSectionHeaderItem(headerItem)
             }
             for item in plugin.chatSectionActionBarItems(kernel: kernel) {
                 var actionBarItem = ChatSectionActionBarItem(
@@ -221,7 +220,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 actionBarItem.order = pluginOrder
-                kernel.chatSection?.registerChatSectionActionBarItem(actionBarItem)
+                kernel.sharedUI?.registerChatSectionActionBarItem(actionBarItem)
             }
 
             // Status Bar

@@ -46,56 +46,8 @@ public final class ToolService: ToolManaging {
         tools.isEmpty ? [] : [("Built-in", tools)]
     }
 
-    public func allSubAgents() -> [LumiSubAgentDefinition] {
-        []
-    }
-
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
-        // Sub-agents not supported in per-request ToolService
-    }
-
-    public func registerTools(_ tools: [any LumiAgentTool]) throws {
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji)注册 \(tools.count) 个工具")
-        }
-        try LumiToolNameDeduplication.validateUnique(tools: tools)
-        var uniqueTools: [String: any LumiAgentTool] = [:]
-        for tool in tools {
-            uniqueTools[tool.name] = tool
-        }
-        self.toolsByName = uniqueTools
-        reindex()
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji)✅ 工具注册完成，总计 \(self.tools.count) 个")
-        }
-    }
-
-    public func appendTools(_ tools: [any LumiAgentTool]) {
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji)追加 \(tools.count) 个工具")
-        }
-        var appendedCount = 0
-        var skippedCount = 0
-        for tool in tools {
-            if toolsByName[tool.name] == nil {
-                toolsByName[tool.name] = tool
-                appendedCount += 1
-            } else {
-                skippedCount += 1
-            }
-        }
-        reindex()
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji)✅ 工具追加完成，新增 \(appendedCount) 个，跳过 \(skippedCount) 个；当前总计 \(self.tools.count) 个")
-        }
-    }
-
-    public func registerBuiltInTools(_ tools: [any LumiAgentTool]) {
-        if Self.verbose {
-            Self.logger.info("\(Self.emoji)注册 \(tools.count) 个内置工具")
-        }
-        appendTools(tools)
-    }
+    public func allSubAgents() -> [LumiSubAgentDefinition] { [] }
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {}
 
     // MARK: - Lookup
 

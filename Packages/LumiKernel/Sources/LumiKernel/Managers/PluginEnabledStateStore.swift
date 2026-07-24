@@ -38,11 +38,6 @@ final class PluginEnabledStateStore {
         persist()
     }
 
-    /// 所有当前的用户覆盖快照。
-    func allOverrides() -> [String: Bool] {
-        cache
-    }
-
     // MARK: - Persistence
 
     private func persist() {
