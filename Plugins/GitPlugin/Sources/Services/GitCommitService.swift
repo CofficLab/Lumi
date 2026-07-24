@@ -109,11 +109,16 @@ public enum GitCommitService: SuperLog {
     }
 
     /// 生成 commit message
+    ///
+    /// 该方法只关心"调用一次 LLM 并取回结果",因此通过最小协议
+    /// `LumiEphemeralChatQuerying` 与 chat 子系统通信 —— 不必依赖
+    /// `LumiChatServicing` 的全套方法。这让 GitPlugin 与大协议解耦,
+    /// 便于将来其他实现只提供该子集也能被 GitPlugin 复用。
     @MainActor
     public static func generateCommitMessage(
         changes: String,
         language: Language,
-        chatService: any LumiChatServicing
+        chatService: any LumiEphemeralChatQuerying
     ) async throws -> String {
         let conversationID = chatService.selectedConversationID ?? UUID()
         guard let model = chatService.modelName(for: conversationID) ?? chatService.selectedModel else {

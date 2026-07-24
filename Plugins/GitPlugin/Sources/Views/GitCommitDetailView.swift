@@ -10,31 +10,31 @@ import LumiUI
 ///
 /// 当 selectedCommitHash 为 nil 时，显示当前工作区的未提交变更（工作状态模式）。
 /// 工作区干净时，显示项目 Git 概览信息。
+///
+/// 依赖最小化:原本从 `LumiCoreAccessing` 同时拉项目状态和宿主布局状态;
+/// 现在切到 `ProjectProviding`,只关心"当前项目"。原有的
+/// "激活左侧 Commit History sidebar"逻辑由宿主侧在挂载时主动调用
+/// `LayoutState.activateViewContainer(id:)` 完成,不再由本视图越权操作宿主布局。
 public struct GitCommitDetailView: View, SuperLog {
 
     // MARK: - 属性
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
+    let project: any ProjectProviding
 
     @ObservedObject var gitVM: AppGitVM
 
-    // layoutState 从 lumiCore 获取
-    private var layoutState: LayoutState {
-        lumiCore.layoutComponent.state
-    }
-
-    public init(lumiCore: LumiCoreAccessing, gitVM: AppGitVM) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding, gitVM: AppGitVM) {
+        self.project = project
         self.gitVM = gitVM
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        project.currentProject?.path ?? ""
     }
 
     private var currentProjectName: String {
-        lumiCore.projectComponent.currentProject?.name ?? ""
+        project.currentProject?.name ?? ""
     }
 
     /// 当前加载的 commit 详情
@@ -91,7 +91,7 @@ public struct GitCommitDetailView: View, SuperLog {
                 loadingView
             } else if let error = errorMessage {
                 errorView(error)
-            } else if lumiCore.projectComponent.currentProject != nil {
+            } else if project.currentProject != nil {
                 noSelectionView
             } else {
                 noProjectView
@@ -99,7 +99,6 @@ public struct GitCommitDetailView: View, SuperLog {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            activateCommitHistorySidebar()
             handleSelectionChange()
         }
         .onChange(of: gitVM.selectedCommitHash) { _, _ in
@@ -132,13 +131,6 @@ public struct GitCommitDetailView: View, SuperLog {
 
     // MARK: - 私有方法
 
-    /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
-    private func activateCommitHistorySidebar() {
-        if layoutState.activeViewContainerID != GitPlugin.info.id {
-            layoutState.activateViewContainer(id: GitPlugin.info.id)
-        }
-    }
-
     /// 根据当前选中状态决定加载工作状态还是 commit 详情
     private func handleSelectionChange() {
         if gitVM.selectedCommitHash == nil {
@@ -153,7 +145,7 @@ public struct GitCommitDetailView: View, SuperLog {
     private var workingStateContent: some View {
         VStack(spacing: 0) {
             // Commit 输入区域（顶部）
-            GitCommitInputView(lumiCore: lumiCore, onCommitSuccess: {
+            GitCommitInputView(project: project, onCommitSuccess: {
                 loadWorkingState()
             })
 
@@ -865,7 +857,7 @@ private struct FlowLayout: Layout {
 // MARK: - 预览
 
 #Preview("GitCommitDetail") {
-    GitCommitDetailView(lumiCore: PreviewGitSupport.lumiCore, gitVM: PreviewGitSupport.gitVM)
+    GitCommitDetailView(project: PreviewGitSupport.project, gitVM: PreviewGitSupport.gitVM)
         .inRootView()
         .frame(width: 700, height: 600)
 }

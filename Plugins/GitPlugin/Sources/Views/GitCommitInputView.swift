@@ -6,8 +6,15 @@ import LumiUI
 ///
 /// 提供手动输入 commit message 或 AI 自动生成的功能。
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
+///
+/// 依赖最小化:本视图原本从 `LumiCoreAccessing` 拉项目路径,
+/// 现在改从窄协议 `ProjectProviding` 直接取 `currentProject?.path`。
+/// 好处:
+/// - 不再与整个 `LumiCoreProviding` 协议耦合;
+/// - 与 EditorTabStrip / EditorPanel 等已切换的插件保持同一接入姿势
+///   (`kernel.project?.currentProject?.path`)。
 public struct GitCommitInputView: View {
-    let lumiCore: LumiCoreAccessing
+    let project: any ProjectProviding
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
@@ -38,11 +45,11 @@ public struct GitCommitInputView: View {
     }
 
     public init(
-        lumiCore: LumiCoreAccessing,
+        project: any ProjectProviding,
         style: Style = .panel,
         onCommitSuccess: (() -> Void)? = nil
     ) {
-        self.lumiCore = lumiCore
+        self.project = project
         self.style = style
         self.onCommitSuccess = onCommitSuccess
     }
@@ -199,10 +206,10 @@ public struct GitCommitInputView: View {
 
     /// AI 生成 commit message
     private func generateAICommitMessage() async {
-        let path = lumiCore.projectComponent.currentProject?.path ?? ""
+        let path = project.currentProject?.path ?? ""
         guard !path.isEmpty else { return }
 
-        guard let chatService = GitRuntimeBridge.chatServiceProvider?() else {
+        guard let chatService = GitRuntimeBridge.chatQueryProvider?() else {
             await MainActor.run {
                 resultType = .error
                 resultMessage = LumiPluginLocalization.string("LLM not configured", bundle: .module)
@@ -248,7 +255,7 @@ public struct GitCommitInputView: View {
 
     /// 执行 commit
     private func performCommit() async {
-        let path = lumiCore.projectComponent.currentProject?.path ?? ""
+        let path = project.currentProject?.path ?? ""
         guard !path.isEmpty, canCommit else { return }
 
         let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -281,7 +288,7 @@ public struct GitCommitInputView: View {
 // MARK: - Preview
 
 #Preview {
-    GitCommitInputView(lumiCore: PreviewGitSupport.lumiCore)
+    GitCommitInputView(project: PreviewGitSupport.project)
         .inRootView()
         .frame(width: 600)
 }

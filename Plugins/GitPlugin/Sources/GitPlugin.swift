@@ -1,19 +1,12 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
+/// Git 集成插件
 @MainActor
 public final class GitPlugin: LumiPlugin, SuperLog {
-    // MARK: - SuperLog Configuration
-    //
-    // `Services/`, `Tools/`, and `Views/` reference `GitPlugin.logger`,
-    // `GitPlugin.verbose`, `GitPlugin.t`, and `GitPlugin.info`. They used to
-    // come from a `LumiPlugin, SuperLog` conformance; the LumiPlugin protocol
-    // no longer requires them so we expose them as plain static members and
-    // re-add the SuperLog conformance.
-
     public nonisolated static let emoji = "🟢"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
@@ -21,36 +14,19 @@ public final class GitPlugin: LumiPlugin, SuperLog {
         category: "plugin.git"
     )
 
-    /// Plugin metadata. The view layer (e.g. `GitCommitHistoryRootOverlay`)
-    /// reads `GitPlugin.info.id` when deciding which container to activate.
-    public static let info = LumiPluginInfo(
-        id: "GitPlugin",
-        displayName: "Git",
-        description: "Git integration: history, commit details, branches, diffs.",
-        order: 11,
-        category: .editor,
-        policy: .optOut,
-        stage: .stable,
-        iconName: "git.branch"
-    )
-
-    // MARK: - LumiPlugin identity
-
-    public let id = GitPlugin.info.id
-    public let name = GitPlugin.info.displayName
-    public let order = GitPlugin.info.order
-    public let policy: LumiPluginPolicy = GitPlugin.info.policy
+    public let id = "com.coffic.lumi.plugin.git"
+    public let name = "Git"
+    public let order = 11
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .development
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Git integration: history, commit details, branches, diffs."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
-    }
-
-
-    // MARK: - LumiPlugin stubs
+    public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

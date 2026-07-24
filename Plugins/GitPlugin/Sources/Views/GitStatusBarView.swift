@@ -9,22 +9,22 @@ import LumiUI
 /// - 项目路径变化（`onChange(of: currentProjectPath)`）
 /// - 从其他应用切回（`applicationDidBecomeActive`）
 public struct GitPluginStatusBarView: View {
-    let lumiCore: LumiCoreAccessing
+    let project: any ProjectProviding
     @State private var branch: String?
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding) {
+        self.project = project
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        project.currentProject?.path ?? ""
     }
 
     public var body: some View {
         Group {
             if let branch {
                 StatusBarHoverContainer(
-                    detailView: GitPluginPopoverView(lumiCore: lumiCore),
+                    detailView: GitPluginPopoverView(project: project),
                     popoverWidth: 920,
                     id: "git-status"
                 ) {

@@ -9,33 +9,26 @@ import LumiUI
 /// 参考 GitOK 的 CommitList + WorkingStateView 实现，显示当前项目的提交历史。
 /// 列表顶部有一个 "当前状态" 入口，展示未提交的变更数量，点击后可以在 Detail 中查看工作区 diff。
 /// 支持分页加载、切换项目时自动刷新。
+///
+/// 依赖最小化:原本从 `LumiCoreAccessing` 同时拉项目状态和宿主布局状态;
+/// 现在只读 `ProjectProviding.currentProject`,不再越权激活宿主布局。
 public struct GitCommitHistorySidebarView: View, SuperLog {
     @ObservedObject var gitVM: AppGitVM
-    let lumiCore: LumiCoreAccessing
+    let project: any ProjectProviding
 
-    // layoutState 从 lumiCore 获取
-    private var layoutState: LayoutState {
-        lumiCore.layoutComponent.state
-    }
-
-    public init(lumiCore: LumiCoreAccessing, gitVM: AppGitVM) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding, gitVM: AppGitVM) {
+        self.project = project
         self.gitVM = gitVM
-    }
-
-    /// 项目组件
-    private var projectComponent: ProjectComponent? {
-        lumiCore.projectComponent
     }
 
     /// 当前项目路径
     private var currentProjectPath: String {
-        projectComponent?.currentProject?.path ?? ""
+        project.currentProject?.path ?? ""
     }
 
     /// 是否已选择项目
     private var isProjectSelected: Bool {
-        projectComponent?.currentProject != nil
+        project.currentProject != nil
     }
 
     /// 提交列表数据
@@ -202,10 +195,8 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
         .onTapGesture {
             selectedCommitHash = nil
             gitVM.selectCommit(hash: nil)
-            // 确保侧边栏也选中这个标签
-            if layoutState.activeViewContainerID != GitPlugin.info.id {
-                layoutState.activateViewContainer(id: GitPlugin.info.id)
-            }
+            // 原本的 `layoutState.activateViewContainer(id:)` 调用已删除:
+            // 激活侧边栏属于宿主布局行为,宿主侧会在合适的时机自行处理。
         }
     }
 
@@ -464,7 +455,7 @@ extension GitService {
 // MARK: - Preview
 
 #Preview {
-    GitCommitHistorySidebarView(lumiCore: PreviewGitSupport.lumiCore, gitVM: PreviewGitSupport.gitVM)
+    GitCommitHistorySidebarView(project: PreviewGitSupport.project, gitVM: PreviewGitSupport.gitVM)
         .inRootView()
         .frame(width: 250, height: 400)
 }

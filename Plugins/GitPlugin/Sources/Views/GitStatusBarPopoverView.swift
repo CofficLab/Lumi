@@ -7,11 +7,11 @@ import MagicDiffView
 /// Git 状态栏弹出面板
 public struct GitPluginPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
+    let project: any ProjectProviding
 
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding) {
+        self.project = project
     }
     @State private var branches: [GitBranch] = []
     @State private var commits: [GitCommitLog] = []
@@ -37,7 +37,7 @@ public struct GitPluginPopoverView: View {
     private let commitPageSize = 25
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        project.currentProject?.path ?? ""
     }
 
     public var body: some View {
@@ -123,7 +123,7 @@ public struct GitPluginPopoverView: View {
     }
 
     private var commitInput: some View {
-        GitCommitInputView(lumiCore: lumiCore, style: .compact) {
+        GitCommitInputView(project: project, style: .compact) {
             Task { await refreshAll() }
         }
     }
