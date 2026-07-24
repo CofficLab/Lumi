@@ -82,11 +82,6 @@ final class LayoutPersistenceCoordinator: SuperLog {
         cleanupLegacySplitDimensions(in: store)
         restoreSplitDimensions(into: state, from: store, restored: &restored)
 
-        // 所有持久化值都已回填，标记恢复完成。
-        // UI 层（`AppLayoutView.selectDefaultContainerIfNeeded`）据此跳过首帧默认选择，
-        // 避免覆盖刚恢复的 `activeViewContainerID`。
-        state.markLayoutRestored()
-
         if Self.verbose {
             if restored.isEmpty {
                 LayoutPlugin.logger.info("\(self.t)磁盘无已保存布局，使用默认值")

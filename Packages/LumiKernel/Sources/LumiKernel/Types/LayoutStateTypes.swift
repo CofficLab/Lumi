@@ -281,51 +281,6 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
-    @Published public var activeViewContainerTitle: String = "Main" {
-        didSet {
-            guard activeViewContainerTitle != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)activeViewContainerTitle → \(self.activeViewContainerTitle)")
-            }
-        }
-    }
-
-    @Published public var currentChatSection: LumiChatSectionLayout = .none {
-        didSet {
-            guard currentChatSection != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)currentChatSection → \(self.currentChatSection)")
-            }
-        }
-    }
-
-    @Published public var showsRail: Bool = false {
-        didSet {
-            guard showsRail != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)showsRail → \(self.showsRail)")
-            }
-        }
-    }
-
-    @Published public var showsPanelChrome: Bool = false {
-        didSet {
-            guard showsPanelChrome != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)showsPanelChrome → \(self.showsPanelChrome)")
-            }
-        }
-    }
-
-    @Published public var isChatSectionVisible: Bool = false {
-        didSet {
-            guard isChatSectionVisible != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)isChatSectionVisible → \(self.isChatSectionVisible)")
-            }
-        }
-    }
-
     @Published public var chatSectionVisible: Bool = true {
         didSet {
             guard chatSectionVisible != oldValue else { return }
@@ -425,44 +380,9 @@ public final class LayoutState: ObservableObject, SuperLog {
         containerObservers.append(observer)
     }
 
-    // MARK: - Legacy Aliases
-
-    /// @deprecated use isRailVisible
-    public var railVisible: Bool {
-        get { isRailVisible }
-        set { isRailVisible = newValue }
-    }
-
-    /// @deprecated use isChatVisible
-    public var chatVisible: Bool {
-        get { isChatVisible }
-        set { isChatVisible = newValue }
-    }
-
-    /// @deprecated use isPanelVisible
-    public var panelVisible: Bool {
-        get { isPanelVisible }
-        set { isPanelVisible = newValue }
-    }
-
     @Published public private(set) var bottomPanelFocusGeneration = 0
 
     public static let defaultBottomTabID = "editor-bottom-problems"
-
-    @Published public var selectedSettingsTabID: String? {
-        didSet {
-            guard self.selectedSettingsTabID != oldValue else { return }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)selectedSettingsTabID → \(self.selectedSettingsTabID ?? "nil")")
-            }
-        }
-    }
-
-    @Published public private(set) var isLayoutRestored: Bool = false
-
-    public func markLayoutRestored() {
-        isLayoutRestored = true
-    }
 
     @Published private var railDividers: [String: CGFloat] = [:]
     @Published private var chatSectionDividers: [String: CGFloat] = [:]
@@ -484,14 +404,6 @@ public final class LayoutState: ObservableObject, SuperLog {
         self.defaultRailDivider = defaultRailDivider
         self.defaultChatSectionDivider = defaultChatSectionDivider
         self.defaultBottomPanelDivider = defaultBottomPanelDivider
-    }
-
-    public func activateViewContainer(id: String) {
-        activeViewContainerID = id
-    }
-
-    public func clearActiveViewContainer() {
-        activeViewContainerID = nil
     }
 
     public func railDivider(for viewContainerID: String, fallback: CGFloat? = nil) -> CGFloat {
