@@ -2,8 +2,8 @@ import AppKit
 import Combine
 import LumiKernel
 import LumiUI
-import SwiftUI
 import os
+import SwiftUI
 
 @MainActor
 public final class ConversationListPlugin: LumiPlugin {
@@ -21,9 +21,6 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
-    // MARK: - Panel Rail Tab Items
-
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
@@ -35,9 +32,6 @@ public final class ConversationListPlugin: LumiPlugin {
             },
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -52,9 +46,10 @@ public final class ConversationListPlugin: LumiPlugin {
                 placement: .trailing
             ) {
                 ConversationListToolbarButton(kernel: kernel)
-            }
+            },
         ]
     }
+
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }

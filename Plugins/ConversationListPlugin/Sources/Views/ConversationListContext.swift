@@ -105,6 +105,10 @@ public final class ConversationListContext: ObservableObject {
     }
 
     /// Sync state from ConversationManaging and publish granular changes.
+    ///
+    /// - Note: 不发布 `.created` 事件。"从无到 N 条" 这种批量初始化场景下,只通过 statusVersion++
+    ///   通知 View 刷新;View 端的 handleStatusVersionChanged 已经会按需 reload 整个分页。
+    ///   避免增量 `.created` 把"最新一条"插入到 view 的 conversations[0],污染正常排序的结果。
     private func syncFromSource() {
         let current = conversationManaging.conversations
         let currentSelected = conversationManaging.selectedConversationID
@@ -112,9 +116,7 @@ public final class ConversationListContext: ObservableObject {
         let previousIDs = Set(previousConversations.map(\.id))
         let currentIDs = Set(current.map(\.id))
 
-        if let createdID = currentIDs.subtracting(previousIDs).first {
-            lastChange = ConversationListChange(type: .created, conversationId: createdID)
-        } else if let deletedID = previousIDs.subtracting(currentIDs).first {
+        if let deletedID = previousIDs.subtracting(currentIDs).first {
             lastChange = ConversationListChange(type: .deleted, conversationId: deletedID)
         } else if let updatedID = currentIDs.intersection(previousIDs).first(where: { id in
             let prev = previousConversations.first { $0.id == id }

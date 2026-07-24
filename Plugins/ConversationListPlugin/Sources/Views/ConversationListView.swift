@@ -56,7 +56,7 @@ public struct ConversationListView: View, SuperLog {
             guard let change else { return }
             handleConversationChange(change)
         }
-        .onChange(of: context.statusVersion) { _, _ in }
+        .onChange(of: context.statusVersion, handleStatusVersionChanged)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
@@ -202,6 +202,17 @@ extension ConversationListView {
         reloadFromFirstPage()
     }
 
+    /// 对话管理后台数据追上来了（statusVersion 变化），但 view 首屏还没拿到数据时，重试首次加载。
+    ///
+    /// 场景：view 在 onAppear 时调用 performInitialLoadIfNeeded()，但此时 kernel.conversations.conversations
+    /// 还是 []（ConversationManager 启动时 + v4 迁移还没完成）。loadNextPageIfNeeded 拉出 0 条。
+    /// ConversationManager.loadConversations() 在迁移后异步加载 SwiftData 数据到 conversations，
+    /// 轮询会触发 statusVersion++；这里如果首屏列表仍空且没在加载中，就 reload。
+    private func handleStatusVersionChanged() {
+        guard didInitialLoad, conversations.isEmpty, !isLoadingPage else { return }
+        reloadFromFirstPage()
+    }
+
     private func reloadFromFirstPage() {
         conversations = []
         nextOffset = 0
@@ -215,6 +226,10 @@ extension ConversationListView {
 
         isLoadingPage = true
         let page = context.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+
+        if Self.verbose, ConversationListPlugin.verbose {
+            ConversationListPlugin.logger.info("\(self.t)📄 loadNextPage offset=\(nextOffset) page.count=\(page.count) hasMore_before=\(hasMore)")
+        }
 
         if nextOffset == 0 {
             conversations = page
