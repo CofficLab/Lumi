@@ -68,25 +68,31 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
 
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        guard let lumiCore = kernel.lumiCore,
-              let chatService = lumiCore.resolveService((any LumiChatServicing).self),
-              let manager = manager ?? kernel.resolveService((any LumiLLMProviderSettingsContributing).self) as? LLMProviderManager
-        else {
-            return []
-        }
-
-        let providerSettingsViews = manager.llmProviderSettingsViews(lumiCore: lumiCore)
-
+        // 始终注册两个 tab。具体的依赖解析在 contentBuilder 内延迟进行,
+        // 这样依赖缺失时侧边栏仍可见,错误信息由 `ProviderDependencySettingsView`
+        // 在详情页顶部以 `AppErrorBanner` + `DependenciesMissingDetailView` 展示。
+        //
+        // `manager` 通过 `@autoclosure` 传入,优先使用插件实例属性(避免每次 tab
+        // 重新构建时的反射查找开销),仅有意外情况下才回退到 kernel 服务表。
         return [
             SettingsTabItem(
                 id: "\(id).local",
                 title: "Local Providers",
                 systemImage: "cpu"
             ) {
-                LocalProviderSettingsPage(
-                    chatService: chatService,
-                    providerSettingsViews: providerSettingsViews,
-                    availability: manager.providerAvailabilityState
+                let state = SettingsTabDependencyState.resolve(
+                    kernel: kernel,
+                    managerAccessor: self.manager
+                )
+                return AnyView(
+                    ProviderDependencySettingsView(dependencyState: state) { chatService, manager in
+                        let views = manager.llmProviderSettingsViews(lumiCore: kernel.lumiCore)
+                        return LocalProviderSettingsPage(
+                            chatService: chatService,
+                            providerSettingsViews: views,
+                            availability: manager.providerAvailabilityState
+                        )
+                    }
                 )
             },
             SettingsTabItem(
@@ -94,10 +100,19 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
                 title: "Cloud Providers",
                 systemImage: "network"
             ) {
-                RemoteProviderSettingsPage(
-                    chatService: chatService,
-                    providerSettingsViews: providerSettingsViews,
-                    availability: manager.providerAvailabilityState
+                let state = SettingsTabDependencyState.resolve(
+                    kernel: kernel,
+                    managerAccessor: self.manager
+                )
+                return AnyView(
+                    ProviderDependencySettingsView(dependencyState: state) { chatService, manager in
+                        let views = manager.llmProviderSettingsViews(lumiCore: kernel.lumiCore)
+                        return RemoteProviderSettingsPage(
+                            chatService: chatService,
+                            providerSettingsViews: views,
+                            availability: manager.providerAvailabilityState
+                        )
+                    }
                 )
             },
         ]
