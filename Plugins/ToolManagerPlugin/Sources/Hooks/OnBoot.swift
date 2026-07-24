@@ -21,13 +21,5 @@ public struct ToolManagerOnBootHook {
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 ToolManager 服务")
         }
-
-        // Register 5 core tools
-        let pluginID = "com.coffic.lumi.plugin.tool-manager"
-        toolManagerService.add(ListDirectoryTool(), pluginID: pluginID)
-        toolManagerService.add(ReadFileTool(), pluginID: pluginID)
-        toolManagerService.add(WriteFileTool(), pluginID: pluginID)
-        toolManagerService.add(EditFileTool(), pluginID: pluginID)
-        toolManagerService.add(ShellTool(), pluginID: pluginID)
     }
 }
