@@ -3,6 +3,7 @@ import LumiKernel
 import LumiUI
 import os
 import SuperLogKit
+import SwiftUI
 
 /// Editor Provider Plugin
 ///
@@ -70,7 +71,7 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
 // MARK: - EditorProvider
 
 @MainActor
-private final class EditorProvider: EditorProviding {
+final class EditorProvider: EditorProviding {
     var currentFilePath: String?
     var currentThemeId: String = "default"
 
@@ -92,7 +93,7 @@ private final class EditorProvider: EditorProviding {
 
     func setCurrentTheme(_ themeId: String) throws {
         guard themes[themeId] != nil else {
-            throw LumiKernelError.editorServiceError("Theme not found: \(themeId)")
+            throw LumiKernelError.serviceNotAvailable(service: "Editor theme '\(themeId)' not found")
         }
         currentThemeId = themeId
     }
