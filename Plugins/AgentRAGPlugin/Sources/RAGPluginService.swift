@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 import os
 
 @MainActor
@@ -19,18 +20,24 @@ enum RAGPluginService {
     }
 
     static func configure(kernel: LumiKernel) {
-        let directoryProvider: @Sendable () -> URL = { [weak kernel] in
-            guard let kernel, let storage = kernel.storage else {
+        // Resolve the directory eagerly on the main actor so the Sendable
+        // provider closure does not need to touch @MainActor-isolated state.
+        let resolvedDirectory: URL = {
+            guard let storage = kernel.storage else {
                 return RAGPluginRuntime.databaseDirectoryProvider()
             }
             return storage.pluginDataDirectory(for: "RAG")
+        }()
+
+        let directoryProvider: @Sendable () -> URL = { resolvedDirectory }
+
+        let onProgress: @Sendable (RAGIndexProgressEvent) -> Void = { event in
+            NotificationCenter.postRAGIndexProgress(event)
         }
 
         service = RAGService(
             databaseDirectoryProvider: directoryProvider,
-            onProgress: { event in
-                NotificationCenter.postRAGIndexProgress(event)
-            }
+            onProgress: onProgress
         )
     }
 

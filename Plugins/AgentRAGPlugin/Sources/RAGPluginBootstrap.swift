@@ -3,9 +3,10 @@ import LumiKernel
 
 @MainActor
 public extension RAGPlugin {
-    static func bootstrapRuntime(context: any LumiCoreAccessing) {
-        RAGPluginRuntime.lumiCore = context.lumiCore
-        let ragDirectory = context.lumiCore?.storage.pluginDataDirectory(for: "RAG") ?? URL(fileURLWithPath: NSTemporaryDirectory())
+    static func bootstrapRuntime(kernel: LumiKernel) {
+        let core = kernel.lumiCore
+        RAGPluginRuntime.lumiCore = core
+        let ragDirectory = core?.storage.pluginDataDirectory(for: "RAG") ?? URL(fileURLWithPath: NSTemporaryDirectory())
         RAGPluginRuntime.databaseDirectoryProvider = { ragDirectory }
     }
 }

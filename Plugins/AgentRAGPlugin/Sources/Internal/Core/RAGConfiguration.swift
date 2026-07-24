@@ -25,6 +25,6 @@ public struct DefaultRAGConfiguration: RAGConfiguration, Sendable {
     }
 
     public func pluginDatabaseDirectory() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("RAGKit")
+        FileManager.default.temporaryDirectory.appendingPathComponent("RAG")
     }
 }
