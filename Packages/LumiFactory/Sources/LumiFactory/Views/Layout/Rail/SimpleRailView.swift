@@ -16,11 +16,11 @@ struct SimpleRailView: View {
     }
 
     private var isRailVisible: Bool {
-        kernel.layout?.isRailVisible ?? true
+        kernel.layoutManager?.isRailVisible ?? true
     }
 
     private var activeRailTabID: String {
-        kernel.layout?.activeRailTabID ?? "explorer"
+        kernel.layoutManager?.activeRailTabID ?? "explorer"
     }
 
     var body: some View {
@@ -62,7 +62,7 @@ struct SimpleRailView: View {
     private func railTabButton(_ tab: PanelRailTabItem) -> some View {
         let isSelected = activeRailTabID == tab.id
         return Button {
-            kernel.layout?.presentRailTab(id: tab.id)
+            kernel.layoutManager?.presentRailTab(id: tab.id)
         } label: {
             HStack {
                 Image(systemName: tab.systemImage)

@@ -14,7 +14,7 @@ struct PanelBottomView: View {
     }
 
     private var layoutState: LayoutState {
-        kernel.layout?.layoutState ?? LayoutState()
+        kernel.layoutManager?.layoutState ?? LayoutState()
     }
 
     var body: some View {

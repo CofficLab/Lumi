@@ -9,11 +9,11 @@ struct PanelView: View {
     @LumiTheme private var theme
 
     private var viewContainerID: String {
-        kernel.layout?.activeViewContainerID ?? "main"
+        kernel.layoutManager?.activeViewContainerID ?? "main"
     }
 
     private var layoutState: LayoutState {
-        kernel.layout?.layoutState ?? LayoutState()
+        kernel.layoutManager?.layoutState ?? LayoutState()
     }
 
     private var container: ViewContainerItem? {

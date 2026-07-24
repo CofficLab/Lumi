@@ -15,7 +15,7 @@ extension LumiKernelContainer {
     }
 
     /// Layout service
-    public var layout: (any LayoutProviding)? {
+    public var layoutManager: (any LayoutProviding)? {
         resolveService(LayoutProviding.self)
     }
 

@@ -10,7 +10,7 @@ struct PanelColumnView: View {
     let editor: any LumiEditorServicing
 
     private var showRail: Bool {
-        kernel.layout?.isRailVisible ?? true
+        kernel.layoutManager?.isRailVisible ?? true
     }
 
     var body: some View {
@@ -19,11 +19,11 @@ struct PanelColumnView: View {
                 RailView(kernel: kernel)
                 PanelView(kernel: kernel)
             }
-            .id(kernel.layout?.activeViewContainerID ?? "main")
+            .id(kernel.layoutManager?.activeViewContainerID ?? "main")
             .background(
                 SplitViewDividerPersistence.rail(
-                    layoutState: kernel.layout?.layoutState ?? LayoutState(),
-                    viewContainerID: kernel.layout?.activeViewContainerID ?? "main"
+                    layoutState: kernel.layoutManager?.layoutState ?? LayoutState(),
+                    viewContainerID: kernel.layoutManager?.activeViewContainerID ?? "main"
                 )
             )
         } else {

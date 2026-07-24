@@ -74,23 +74,6 @@ public final class LumiKernelContainer: ObservableObject {
     // MARK: - Startup & Validation
 
     /// Startup kernel and perform self-check
-    ///
-    /// 1. Call pluginManager.onBoot() to register all kernel services + UI contributions
-    /// 2. Validate that all required services are registered (services are expected
-    ///    to be registered in onBoot per the LumiPlugin contract).
-    /// 3. Call pluginManager.onReady() to perform async initialization that
-    ///    depends on registered services.
-    /// 4. Collect all plugin-contributed LLM providers and register them with
-    ///    the kernel's `LLMProviderManaging` service. This runs after onReady
-    ///    so that every plugin's `llmProviders(kernel:)` is evaluated against
-    ///    a fully-initialized kernel.
-    /// 5. Collect all plugin-contributed Agent tools and register them with
-    ///    the kernel's `ToolManaging` service.
-    /// - Throws: `LumiKernelError.missingRequiredServices` if required services
-    ///   are missing, or `LumiKernelError.serviceNotAvailable` /
-    ///   `LumiKernelError.llmProviderRegistrationFailed` if the LLM provider
-    ///   collection in step 4 fails, or `LumiKernelError.serviceNotAvailable`
-    ///   if the Agent tool collection in step 5 fails.
     public func startup() async throws {
         // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
         try await pluginManager.onBoot(kernel: self)
@@ -100,7 +83,7 @@ public final class LumiKernelContainer: ObservableObject {
 
         if storage == nil { missingServices.append("Storage") }
         if project == nil { missingServices.append("Project") }
-        if layout == nil { missingServices.append("Layout") }
+        if layoutManager == nil { missingServices.append("Layout") }
         if viewContainer == nil { missingServices.append("ViewContainer") }
         if command == nil { missingServices.append("Command") }
         if menuBar == nil { missingServices.append("MenuBar") }

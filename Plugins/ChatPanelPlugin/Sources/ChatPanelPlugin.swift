@@ -34,7 +34,6 @@ public final class ChatPanelPlugin: LumiPlugin {
     }
 
     public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
-        // Chat 容器始终显示 activity bar + rail + chat，不需要 main content
         WorkspaceVisibility(
             rail: true,
             chat: true,
@@ -46,7 +45,7 @@ public final class ChatPanelPlugin: LumiPlugin {
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
         guard containerID == id else { return }
-        kernel.layout?.layoutState.applyVisibility(
+        kernel.layoutManager?.layoutState.applyVisibility(
             rail: true,
             chat: true,
             content: false,

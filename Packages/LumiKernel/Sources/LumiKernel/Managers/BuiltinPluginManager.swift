@@ -74,6 +74,13 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         }
     }
 
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            plugin.onContainerActivated(kernel: kernel, containerID: containerID)
+        }
+    }
+
     public func plugin(id: String) -> LumiPlugin? {
         plugins[id]
     }
@@ -277,7 +284,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         // Sync layout active section with registered view containers.
         let containers = kernel.viewContainer?.allViewContainers ?? []
         if let first = containers.first,
-           let layoutService = kernel.layout,
+           let layoutService = kernel.layoutManager,
            layoutService.state.activeSectionID.isEmpty {
             layoutService.updateLayout { state in
                 state.activeSectionID = first.id
@@ -289,7 +296,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let visibility = plugin.workspaceVisibility(kernel: kernel)
-            kernel.layout?.layoutState.applyVisibility(
+            kernel.layoutManager?.layoutState.applyVisibility(
                 rail: visibility.rail,
                 chat: visibility.chat,
                 content: visibility.content,

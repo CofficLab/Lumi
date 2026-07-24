@@ -17,7 +17,7 @@ struct RailView: View {
     }
 
     private var activeRailTabID: String {
-        kernel.layout?.activeRailTabID ?? "explorer"
+        kernel.layoutManager?.activeRailTabID ?? "explorer"
     }
 
     private var showsTabBar: Bool {
@@ -31,7 +31,7 @@ struct RailView: View {
                     tabs: tabs,
                     selectedTabID: Binding(
                         get: { activeRailTabID },
-                        set: { kernel.layout?.presentRailTab(id: $0) }
+                        set: { kernel.layoutManager?.presentRailTab(id: $0) }
                     )
                 )
             }
@@ -60,6 +60,6 @@ struct RailView: View {
             return
         }
 
-        kernel.layout?.presentRailTab(id: tabs[0].id)
+        kernel.layoutManager?.presentRailTab(id: tabs[0].id)
     }
 }
