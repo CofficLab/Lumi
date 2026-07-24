@@ -25,7 +25,6 @@ import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
-import EditorPanelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -150,7 +149,6 @@ public enum PluginService {
             ToolManagerPlugin(),
             ProjectsPlugin(),
             LayoutKernelPlugin(),
-            EditorPanelPlugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
             MessageSenderPlugin(),

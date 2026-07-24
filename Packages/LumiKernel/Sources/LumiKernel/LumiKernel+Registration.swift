@@ -62,8 +62,8 @@ extension LumiKernelContainer {
     }
 
     /// Register editor service
-    public func registerEditor(_ editor: any EditorServiceProviding) {
-        registerService(EditorServiceProviding.self, editor)
+    public func registerEditor(_ editor: any EditorProviding) {
+        registerService(EditorProviding.self, editor)
     }
 
     /// Register agent tool service

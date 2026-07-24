@@ -62,8 +62,8 @@ extension LumiKernelContainer {
     }
 
     /// Editor service
-    public var editor: (any EditorServiceProviding)? {
-        resolveService(EditorServiceProviding.self)
+    public var editorProvider: (any EditorProviding)? {
+        resolveService(EditorProviding.self)
     }
 
     /// Agent tool service

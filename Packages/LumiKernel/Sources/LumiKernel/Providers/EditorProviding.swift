@@ -6,7 +6,7 @@ import LumiUI
 /// 定义 LumiCore 需要的编辑器功能，由具体编辑器插件实现。
 /// 包括文件操作和主题管理功能。
 @MainActor
-public protocol EditorServiceProviding: AnyObject {
+public protocol EditorProviding: AnyObject {
     // MARK: - 文件操作
 
     /// 打开文件
@@ -37,17 +37,4 @@ public protocol EditorServiceProviding: AnyObject {
     /// 注销编辑器主题
     /// - Parameter themeId: 主题唯一标识符
     func unregisterEditorTheme(themeId: String)
-}
-
-// MARK: - Raw EditorService Access
-
-/// 扩展用于获取底层 EditorService 实例
-/// 实现者可通过此方法返回原始的 EditorService 实例
-@MainActor
-public extension EditorServiceProviding {
-    /// 返回底层 EditorService 实例（如果有）
-    /// 默认返回 nil
-    var rawEditorService: AnyObject? {
-        nil
-    }
 }

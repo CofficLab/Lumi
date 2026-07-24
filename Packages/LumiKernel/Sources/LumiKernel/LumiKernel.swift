@@ -109,7 +109,7 @@ public final class LumiKernelContainer: ObservableObject {
         if llmProvider == nil { missingServices.append("LLMProvider") }
         if agentTurnRunner == nil { missingServices.append("AgentTurnRunner") }
         if chatSection == nil { missingServices.append("ChatSection") }
-        if editor == nil { missingServices.append("Editor") }
+        if editorProvider == nil { missingServices.append("Editor") }
         if toolManager == nil { missingServices.append("AgentTool") }
         if panel == nil { missingServices.append("Panel") }
         if statusBar == nil { missingServices.append("StatusBar") }
