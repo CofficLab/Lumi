@@ -19,7 +19,21 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        // 桥接 kernel.conversations 到 tools RuntimeBridge,并注册 Agent Tools。
+        // 注意 SetConversationProjectLumiTool 暂未启用 —— 等 ConversationManaging
+        // 协议扩展 setConversationProjectPath(...) 之后再补。
+        // toolbar item 由 titleToolbarItems(kernel:) 声明式提供,不在此处注册。
+        if let conversations = kernel.conversations {
+            ConversationListToolRuntimeBridge.conversations = conversations
+            if let toolManager = kernel.toolManager {
+                toolManager.add(CreateNewConversationLumiTool(), pluginID: id)
+                toolManager.add(DeleteConversationLumiTool(), pluginID: id)
+                toolManager.add(GetRecentConversationsLumiTool(), pluginID: id)
+                toolManager.add(GetConversationCountLumiTool(), pluginID: id)
+            }
+        }
+    }
 
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
