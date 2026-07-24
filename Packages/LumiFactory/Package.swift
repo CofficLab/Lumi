@@ -92,7 +92,6 @@ let package = Package(
         .package(path: "../../Plugins/LLMProviderXiaomiPlugin"),
         .package(path: "../../Plugins/LLMProviderXybbzPlugin"),
         .package(path: "../../Plugins/LLMProviderZhipuPlugin"),
-        .package(path: "../../Plugins/WorkspaceStatePlugin"),
         // Editor and UI plugins
         .package(path: "../../Plugins/GitPlugin"),
         // Utility plugins
@@ -212,7 +211,6 @@ let package = Package(
                 .product(name: "LLMProviderXiaomiPlugin", package: "LLMProviderXiaomiPlugin"),
                 .product(name: "LLMProviderXybbzPlugin", package: "LLMProviderXybbzPlugin"),
                 .product(name: "LLMProviderZhipuPlugin", package: "LLMProviderZhipuPlugin"),
-                .product(name: "WorkspaceStatePlugin", package: "WorkspaceStatePlugin"),
                 // Editor and UI plugins
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "GitPlugin", package: "GitPlugin"),

@@ -2,7 +2,8 @@ import Foundation
 
 /// 布局能力协议
 ///
-/// 定义 LumiCore 需要的布局管理功能，由 LumiCoreLayout 实现。
+/// 定义 LumiCore 需要的布局管理功能，由 LayoutService 实现。
+/// 包含工作区可见性管理（合并自原 WorkspaceStateProviding）。
 @MainActor
 public protocol LayoutProviding: ObservableObject {
     /// 布局状态（轻量级信息，用于持久化）

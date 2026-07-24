@@ -289,7 +289,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, ToolM
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let visibility = plugin.workspaceVisibility(kernel: kernel)
-            kernel.workspaceState?.applyVisibility(
+            kernel.layout?.layoutState.applyVisibility(
                 rail: visibility.rail,
                 chat: visibility.chat,
                 content: visibility.content,

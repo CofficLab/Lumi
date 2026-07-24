@@ -19,7 +19,7 @@ public struct MessageRendererOnBootHook {
         kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
 
         // 注册内置渲染器
-        guard let manager = kernel.resolveService(MessageRendererManaging.self) else {
+        guard let manager = kernel.resolveService(MessageRendering.self) else {
             return
         }
 

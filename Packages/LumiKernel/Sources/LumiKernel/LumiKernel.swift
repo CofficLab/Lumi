@@ -117,7 +117,6 @@ public final class LumiKernelContainer: ObservableObject {
         if logo == nil { missingServices.append("Logo") }
         if theme == nil { missingServices.append("Theme") }
         if messageRendererManager == nil { missingServices.append("MessageRendererManager") }
-        if workspaceState == nil { missingServices.append("WorkspaceState") }
 
         if !missingServices.isEmpty {
             throw LumiKernelError.missingRequiredServices(missingServices)

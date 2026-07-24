@@ -117,7 +117,6 @@ public enum PluginService {
     public static let plugins: [LumiPlugin] = {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
-            WorkspaceStatePlugin(),
             LLMProviderManagerPlugin(),
             EditorProviderPlugin(),
             // Host settings tabs (General/Appearance/About) — order 1, must lead the sidebar

@@ -112,13 +112,8 @@ extension LumiKernelContainer {
     }
 
     /// Message renderer management service
-    public var messageRendererManager: (any MessageRendererManaging)? {
-        resolveService(MessageRendererManaging.self)
-    }
-
-    /// Workspace state service (controls rail/chat/content/activityBar visibility)
-    public var workspaceState: (any WorkspaceStateProviding)? {
-        resolveService(WorkspaceStateProviding.self)
+    public var messageRendererManager: (any MessageRendering)? {
+        resolveService(MessageRendering.self)
     }
 
     /// Legacy data service (v4 → v5 migration, read-only)

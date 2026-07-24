@@ -11,7 +11,7 @@ struct ActivityBar: View {
     }
 
     private var activeID: String? {
-        kernel.workspaceState?.activeContainerID
+        kernel.layout?.layoutState.activeViewContainerID
             ?? kernel.layout?.state.activeSectionID
     }
 
@@ -23,8 +23,8 @@ struct ActivityBar: View {
                     label: container.title,
                     isActive: activeID == container.id
                 ) {
-                    // 通过 WorkspaceState 激活容器（插件会收到回调并调整可见性）
-                    kernel.workspaceState?.activateContainer(id: container.id)
+                    // 激活容器
+                    kernel.layout?.layoutState.activateContainer(id: container.id)
                     // 兼容旧 LayoutState（仍在被读取）
                     kernel.layout?.updateLayout { state in
                         state.activeSectionID = container.id

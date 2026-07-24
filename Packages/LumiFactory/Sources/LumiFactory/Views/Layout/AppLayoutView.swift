@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 新版应用主布局
 ///
-/// 基于 `LumiKernel` 构建，通过 `WorkspaceStateProviding` 读取工作区可见性。
+/// 基于 `LumiKernel` 构建，通过 LayoutProviding 读取工作区可见性。
 /// View 层只读 kernel，**不知道**是哪个插件控制了哪些能力。
 struct AppLayoutView: View {
     @LumiTheme private var theme
@@ -16,22 +16,21 @@ struct AppLayoutView: View {
 
     var body: some View {
         let containers = kernel.viewContainer?.allViewContainers ?? []
-        let workspace = kernel.workspaceState
-        let activeID = workspace?.activeContainerID
+        let layoutState = kernel.layout?.layoutState
+        let activeID = layoutState?.activeViewContainerID
             ?? kernel.layout?.state.activeSectionID
             ?? containers.first?.id
             ?? "main"
         let selected = containers.first { $0.id == activeID }
             ?? containers.first { $0.makeView != nil }
 
-        let layoutState = kernel.layout?.state ?? LayoutStateInfo()
         let chatView = ChatView(kernel: kernel)
 
         let railTabs = kernel.panel?.allPanelRailTabItems ?? []
-        let isRailVisible = workspace?.isRailVisible ?? true
-        let isChatVisible = workspace?.isChatVisible ?? true
-        let isContentVisible = workspace?.isContentVisible ?? true
-        let isActivityBarVisible = workspace?.isActivityBarVisible ?? true
+        let isRailVisible = layoutState?.isRailVisible ?? true
+        let isChatVisible = layoutState?.isChatVisible ?? true
+        let isContentVisible = layoutState?.isContentVisible ?? true
+        let isActivityBarVisible = layoutState?.isActivityBarVisible ?? true
 
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
@@ -39,7 +38,7 @@ struct AppLayoutView: View {
 
             HStack(spacing: 0) {
                 if isActivityBarVisible {
-                    ActivityBar(kernel: kernel, containers: containers)
+                    ActivityBar(kernel: kernel)
                     AppDivider(.vertical)
                 }
 
@@ -50,7 +49,7 @@ struct AppLayoutView: View {
                     isRailVisible: isRailVisible,
                     isChatVisible: isChatVisible,
                     isContentVisible: isContentVisible,
-                    layoutState: kernel.layout?.layoutState ?? LayoutState()
+                    layoutState: layoutState ?? LayoutState()
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

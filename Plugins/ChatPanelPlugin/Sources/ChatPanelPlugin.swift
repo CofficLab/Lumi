@@ -46,7 +46,7 @@ public final class ChatPanelPlugin: LumiPlugin {
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
         guard containerID == id else { return }
-        kernel.workspaceState?.applyVisibility(
+        kernel.layout?.layoutState.applyVisibility(
             rail: true,
             chat: true,
             content: false,

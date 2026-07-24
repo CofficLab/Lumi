@@ -7,7 +7,7 @@ import LumiKernel
 /// 插件通过 LumiPlugin.messageRenderers(kernel:) 贡献渲染器，
 /// 由本服务统一注册和管理。
 @MainActor
-public final class MessageRendererManager: MessageRendererManaging {
+public final class MessageRendererManager: MessageRendering {
     public static let shared = MessageRendererManager()
 
     // MARK: - State

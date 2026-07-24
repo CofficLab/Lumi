@@ -112,13 +112,8 @@ extension LumiKernelContainer {
     }
 
     /// Register message renderer management service
-    public func registerMessageRendererManagerService(_ manager: any MessageRendererManaging) {
-        registerService(MessageRendererManaging.self, manager)
-    }
-
-    /// Register workspace state service
-    public func registerWorkspaceStateService(_ state: any WorkspaceStateProviding) {
-        registerService(WorkspaceStateProviding.self, state)
+    public func registerMessageRendererManagerService(_ manager: any MessageRendering) {
+        registerService(MessageRendering.self, manager)
     }
 
     /// Register legacy data service (v4 → v5 migration, read-only)

@@ -6,7 +6,7 @@ import Foundation
 /// 插件通过 LumiPlugin.messageRenderers(kernel:) 贡献渲染器，
 /// 由本服务统一注册和管理。
 @MainActor
-public protocol MessageRendererManaging: AnyObject {
+public protocol MessageRendering: AnyObject {
     /// 所有已注册的消息渲染器，按 order 降序排列
     func allMessageRenderers() -> [LumiMessageRendererItem]
 
