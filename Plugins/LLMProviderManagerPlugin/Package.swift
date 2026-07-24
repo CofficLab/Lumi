@@ -3,13 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "LLMProviderManagerPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "LLMProviderManagerPlugin", targets: ["LLMProviderManagerPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/LumiCoreLLMProvider"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -17,9 +18,18 @@ let package = Package(
             name: "LLMProviderManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings")
+            ]
+        ),
+        .testTarget(
+            name: "LLMProviderManagerPluginTests",
+            dependencies: ["LLMProviderManagerPlugin"],
+            path: "Tests"
         ),
     ]
 )

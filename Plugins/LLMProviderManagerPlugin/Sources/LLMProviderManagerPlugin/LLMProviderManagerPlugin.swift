@@ -1,5 +1,6 @@
 import Foundation
 import LumiKernel
+import LumiUI
 import os
 import SuperLogKit
 import SwiftUI
@@ -18,18 +19,22 @@ import SwiftUI
 public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager")
     public nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-provider-manager"
     public let name = "LLM Provider Manager"
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
-    
+
+    private var manager: LLMProviderManager?
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
+        manager = service
         kernel.registerLLMProviderService(service)
+        kernel.registerLLMProviderSettingsService(service)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
         }
@@ -37,11 +42,12 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-    /// 自带一个 `MockLLMProvider`,保证内核启动后至少有 1 个可用的 LLM provider。
-    /// 真实 provider(Anthropic、OpenAI、…)由各自插件通过实现 `llmProviders(kernel:)`
-    /// 贡献,统一在 `BuiltinPluginManager.registerLLMProviders(in:)` 阶段注册。
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [MockLLMProvider()]
+        #if DEBUG
+            [MockLLMProvider()]
+        #else
+            []
+        #endif
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -60,7 +66,43 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        guard let lumiCore = kernel.lumiCore,
+              let chatService = lumiCore.resolveService((any LumiChatServicing).self),
+              let manager = manager ?? kernel.resolveService((any LumiLLMProviderSettingsContributing).self) as? LLMProviderManager
+        else {
+            return []
+        }
+
+        let providerSettingsViews = manager.llmProviderSettingsViews(lumiCore: lumiCore)
+
+        return [
+            SettingsTabItem(
+                id: "\(id).local",
+                title: "Local Providers",
+                systemImage: "cpu"
+            ) {
+                LocalProviderSettingsPage(
+                    chatService: chatService,
+                    providerSettingsViews: providerSettingsViews,
+                    availability: manager.providerAvailabilityState
+                )
+            },
+            SettingsTabItem(
+                id: "\(id).remote",
+                title: "Cloud Providers",
+                systemImage: "network"
+            ) {
+                RemoteProviderSettingsPage(
+                    chatService: chatService,
+                    providerSettingsViews: providerSettingsViews,
+                    availability: manager.providerAvailabilityState
+                )
+            },
+        ]
+    }
+
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

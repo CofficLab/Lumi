@@ -9,7 +9,7 @@ import SuperLogKit
 /// LLM Provider plugins. Lookup is O(1) by id; iteration preserves the
 /// insertion order so that the provider UI shows a stable list.
 @MainActor
-public final class LLMProviderManager: LLMProviderManaging, SuperLog {
+public final class LLMProviderManager: LLMProviderManaging, LumiLLMProviderSettingsContributing, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.service")
     public nonisolated static let emoji = "🧠"
     nonisolated static let verbose = false
@@ -18,6 +18,9 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
     private var llmProviderOrder: [String] = []
     private var _selectedProviderID: String?
     private var _selectedModel: String?
+
+    /// 共享的 provider 可用性状态。ModelSelector / Settings 页面都引用同一个实例。
+    public let providerAvailabilityState = ModelAvailabilityState()
 
     // MARK: - UserDefaults Keys
 
@@ -179,5 +182,24 @@ public final class LLMProviderManager: LLMProviderManaging, SuperLog {
             fileAttachments: request.fileAttachments
         )
         return try await provider.send(selectedRequest)
+    }
+
+    // MARK: - LumiLLMProviderSettingsContributing
+
+    /// 由 LLM Provider 插件贡献的 provider 详情视图项。
+    ///
+    /// 默认返回空 — Manager 自身不贡献视图。LLM Provider 插件可通过
+    /// `registerProviderSettingsView(_:)` 在 `onBoot` 之后注册自己的项。
+    private var providerSettingsViewItems: [LumiLLMProviderSettingsViewItem] = []
+
+    public func llmProviderSettingsViews(
+        lumiCore: (any LumiCoreProviding)?
+    ) -> [LumiLLMProviderSettingsViewItem] {
+        providerSettingsViewItems
+    }
+
+    public func registerProviderSettingsView(_ item: LumiLLMProviderSettingsViewItem) {
+        providerSettingsViewItems.removeAll { $0.providerID == item.providerID }
+        providerSettingsViewItems.append(item)
     }
 }
