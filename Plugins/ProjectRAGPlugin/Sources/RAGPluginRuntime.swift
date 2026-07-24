@@ -10,21 +10,10 @@ public enum RAGPluginRuntime {
     @MainActor
     public static var kernel: LumiKernel?
 
-    /// 旧版内核上下文引用，保留兼容。
-    @MainActor
-    public static var lumiCore: (any LumiCoreAccessing)? {
-        get { kernel as? any LumiCoreAccessing }
-        set { kernel = newValue as? LumiKernel }
-    }
-
     /// 当前项目路径，优先从 kernel 读取。
     @MainActor
     public static var currentProjectPath: String {
         if let path = kernel?.project?.currentProject?.path, !path.isEmpty {
-            return path
-        }
-
-        if let path = lumiCore?.projectComponent.currentProject?.path, !path.isEmpty {
             return path
         }
 

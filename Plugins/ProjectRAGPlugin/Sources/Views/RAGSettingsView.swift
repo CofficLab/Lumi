@@ -5,15 +5,15 @@ import LumiKernel
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
-    let lumiCore: LumiCoreAccessing
+    let kernel: LumiKernel
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
     @State private var loadError: String?
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
     public var body: some View {
@@ -291,7 +291,7 @@ extension RAGSettingsView {
 
 extension RAGSettingsView {
     private var trackedProjects: [RAGTrackedProject] {
-        let projects = lumiCore.projectComponent.projects.map {
+        let projects = (kernel.project?.projects ?? []).map {
             RAGTrackedProject(name: $0.name, path: $0.path)
         }
         let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)

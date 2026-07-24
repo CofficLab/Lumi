@@ -1,14 +1,14 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
 import os
+import SwiftUI
 
 @MainActor
 public final class ProjectRAGPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.project.rag"
     public let name = "Project RAG"
     public let order = 200
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .alwaysOn
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     public init() {}
@@ -21,9 +21,6 @@ public final class ProjectRAGPlugin: LumiPlugin {
         RAGPluginService.configure(kernel: kernel)
         ProjectRAGPlugin.bootstrapRuntime(kernel: kernel)
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -43,7 +40,6 @@ public final class ProjectRAGPlugin: LumiPlugin {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        let core: (any LumiCoreAccessing)? = kernel.lumiCore
         return [
             SettingsTabItem(
                 id: "\(id).index-status",
@@ -51,18 +47,7 @@ public final class ProjectRAGPlugin: LumiPlugin {
                 systemImage: "doc.text.magnifyingglass",
                 order: 200
             ) {
-                if let core {
-                    RAGSettingsView(lumiCore: core)
-                } else {
-                    AppSettingsContentScaffold(maxContentWidth: nil) {
-                        AppEmptyState(
-                            icon: "exclamationmark.triangle",
-                            title: "Project RAG unavailable",
-                            description: "LumiCore is not available; index status cannot be displayed."
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 200)
-                    }
-                }
+                RAGSettingsView(kernel: kernel)
             },
         ]
     }

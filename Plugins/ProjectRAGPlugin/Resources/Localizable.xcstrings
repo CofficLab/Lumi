@@ -113,6 +113,16 @@
         }
       }
     },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
     "Actions" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -737,6 +747,7 @@
       }
     },
     "Manage semantic indexes for tracked projects." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -877,6 +888,7 @@
       }
     },
     "Progress: %lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

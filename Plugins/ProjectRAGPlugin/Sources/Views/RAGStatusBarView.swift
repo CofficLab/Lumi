@@ -12,7 +12,7 @@ public struct RAGStatusBarView: View, SuperLog {
     public nonisolated static let emoji = "🦞"
     public nonisolated static let verbose: Bool = false
     // MARK: - 属性
-    let lumiCore: LumiCoreAccessing
+    let kernel: LumiKernel
     @State private var indexStatus: RAGIndexStatus?
     @State private var isIndexing = false
     @State private var progressEvent: RAGIndexProgressEvent?
@@ -20,8 +20,8 @@ public struct RAGStatusBarView: View, SuperLog {
     @State private var isNotInitialized = false
     @State private var lastUpdateAttempt: Date = .distantPast
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
     // MARK: - 计算属性
@@ -34,7 +34,7 @@ public struct RAGStatusBarView: View, SuperLog {
 
     public var body: some View {
         StatusBarHoverContainer(
-            detailView: RAGSettingsPopoverView(lumiCore: lumiCore),
+            detailView: RAGSettingsPopoverView(kernel: kernel),
             popoverWidth: 420,
             id: "rag-status"
         ) {
