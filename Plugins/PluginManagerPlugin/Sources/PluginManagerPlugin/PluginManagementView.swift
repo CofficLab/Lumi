@@ -241,7 +241,6 @@ private struct PluginSettingsDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                enableControl
                 AppDivider()
                 metaInfo
                 AppDivider()
@@ -287,6 +286,10 @@ private struct PluginSettingsDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            // 启用/关闭开关置于右上角
+            enableControl
+                .fixedSize()
         }
     }
 
