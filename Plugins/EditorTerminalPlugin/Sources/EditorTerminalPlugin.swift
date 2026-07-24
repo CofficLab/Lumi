@@ -20,7 +20,7 @@ public final class EditorTerminalPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {
         // 设置 RuntimeBridge
         EditorBottomTerminalBridge.kernel = kernel
-        kernel.panel?.registerPanelBottomTabItem(
+        kernel.sharedUI?.registerPanelBottomTabItem(
             PanelBottomTabItem(
                 id: "editor-bottom-terminal",
                 title: LumiPluginLocalization.string("Terminal", bundle: .module),

@@ -5,7 +5,7 @@ import ToolManagerPlugin
 import AppManagerPlugin
 import BrewManagerPlugin
 import ChatPanelPlugin
-import ChatSectionPlugin
+import SharedUIPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationListPlugin
@@ -56,19 +56,16 @@ import LogoPlugin
 import LogoCofficPlugin
 import LogoSmartLightPlugin
 import MenuBarManagerPlugin
-import MenuBarPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import ModelSelectorPlugin
 import NettoPlugin
-import PanelPlugin
 import PortManagerPlugin
 import ProjectsPlugin
 import QuickLauncherPlugin
 import RClickPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
-import StatusBarPlugin
 import StoragePlugin
 import LegacyDataPlugin
 import ThemeAuroraPlugin
@@ -89,7 +86,6 @@ import ThemeSummerPlugin
 import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
-import TitleToolbarPlugin
 import VerbosityPlugin
 import ConversationSpeedPlugin
 import ChatModePlugin
@@ -144,8 +140,7 @@ public enum PluginService {
             CodexLumiPlugin(),
             ZhipuPlugin(),
             // UI & Features
-            PanelPlugin(),
-            TitleToolbarPlugin(),
+            SharedUIPlugin(),
             ToolManagerPlugin(),
             ProjectsPlugin(),
             LayoutKernelPlugin(),
@@ -159,8 +154,6 @@ public enum PluginService {
             ConversationNewPlugin(),
             ProjectRAGPlugin(),
             CommandPlugin(),
-            MenuBarPlugin(),
-            ChatSectionPlugin(),
             ChatPanelPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
@@ -170,7 +163,6 @@ public enum PluginService {
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
-            StatusBarPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),

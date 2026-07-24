@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 状态栏错误视图
 ///
-/// 当 StatusBarProviding 服务不可用时显示错误提示。
+/// 当 SharedUI 服务不可用时显示错误提示。
 struct StatusBarErrorView: View {
     let message: String
     @State private var isHovered = false
@@ -25,6 +25,6 @@ struct StatusBarErrorView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("StatusBarProviding service is not registered. Please ensure StatusBarPlugin is loaded.")
+        .help("SharedUI service is not registered. Please ensure SharedUIPlugin is loaded.")
     }
 }

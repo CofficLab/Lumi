@@ -4,26 +4,27 @@ import SuperLogKit
 import SwiftUI
 import os
 
-/// 状态栏插件
+/// 共享 UI 插件
 ///
-/// 提供 StatusBarProviding 服务的默认实现。
-/// 负责管理所有插件的状态栏项的注册和查询。
+/// 提供 SharedUIProviding 服务的默认实现。
+/// 合并了 TitleToolbarPlugin 和 ChatSectionPlugin 的功能，
+/// 统一管理所有外部共享的 UI 组件（标题栏工具栏、聊天分区及相关组件）。
 @MainActor
-public final class StatusBarPlugin: LumiPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.statusbar")
-    nonisolated public static let emoji = "🔔"
+public final class SharedUIPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.shared-ui")
+    nonisolated public static let emoji = "🧩"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 
-    public let id = "com.coffic.lumi.plugin.statusbar"
-    public let name = "StatusBar Plugin"
-    public let order = 19
-	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
+    public let id = "com.coffic.lumi.plugin.shared-ui"
+    public let name = "SharedUI Plugin"
+    public let order = 16
+    public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 
-    private var statusBarService: DefaultStatusBarProviding?
+    private var sharedUIService: DefaultSharedUIProviding?
 
     // MARK: - Initialization
 
@@ -32,13 +33,17 @@ public final class StatusBarPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
-        try await StatusBarOnBootHook().execute(kernel)
+        let sharedUIServiceInstance = DefaultSharedUIProviding()
+        kernel.registerSharedUIService(sharedUIServiceInstance)
+        self.sharedUIService = sharedUIServiceInstance
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 SharedUI 插件到内核")
+            Self.logger.info("\(Self.t)SharedUI 插件启动完成")
+        }
     }
 
-    public func onReady(kernel: LumiKernel) async throws {
-        try StatusBarOnReadyHook().execute(kernel)
-    }
-
+    public func onReady(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 

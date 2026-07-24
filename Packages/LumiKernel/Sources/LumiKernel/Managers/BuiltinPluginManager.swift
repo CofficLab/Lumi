@@ -98,9 +98,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         clearInternalContributions()
         kernel.settings?.clearAllContributions()
         kernel.sharedUI?.clearAllContributions()
-        kernel.panel?.clearAllContributions()
-        kernel.menuBar?.clearAllContributions()
-        kernel.statusBar?.clearAllContributions()
         kernel.viewContainer?.clearAllContributions()
         kernel.logo?.clearAllContributions()
         // onboarding 服务当前未注册(kernel.onboarding == nil),无需处理。
@@ -118,10 +115,10 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
             // Menu Bar
             for content in plugin.menuBarContentItems(kernel: kernel) {
-                kernel.menuBar?.registerMenuBarContent(content)
+                kernel.sharedUI?.registerMenuBarContent(content)
             }
             for popup in plugin.menuBarPopupItems(kernel: kernel) {
-                kernel.menuBar?.registerMenuBarPopup(popup)
+                kernel.sharedUI?.registerMenuBarPopup(popup)
             }
 
             // Title Toolbar
@@ -131,7 +128,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
             // Panel
             for item in plugin.panelHeaderItems(kernel: kernel) {
-                kernel.panel?.registerPanelHeaderItem(item)
+                kernel.sharedUI?.registerPanelHeaderItem(item)
             }
             for item in plugin.panelBottomTabItems(kernel: kernel) {
                 var tabItem = PanelBottomTabItem(
@@ -141,7 +138,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 tabItem.order = pluginOrder
-                kernel.panel?.registerPanelBottomTabItem(tabItem)
+                kernel.sharedUI?.registerPanelBottomTabItem(tabItem)
             }
             for item in plugin.panelRailTabItems(kernel: kernel) {
                 var railItem = PanelRailTabItem(
@@ -151,7 +148,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
-                kernel.panel?.registerPanelRailTabItem(railItem)
+                kernel.sharedUI?.registerPanelRailTabItem(railItem)
             }
 
             // View Containers
@@ -225,7 +222,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
             // Status Bar
             for item in plugin.statusBarItems(kernel: kernel) {
-                kernel.statusBar?.registerStatusBarItem(item)
+                kernel.sharedUI?.registerStatusBarItem(item)
             }
 
             // Settings

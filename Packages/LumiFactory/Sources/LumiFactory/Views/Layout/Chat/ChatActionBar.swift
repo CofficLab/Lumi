@@ -10,7 +10,7 @@ struct ChatActionBar: View {
     @ObservedObject var kernel: LumiKernel
 
     private var actionBarItems: [ChatSectionActionBarItem] {
-        kernel.chatSection?.allChatSectionActionBarItems ?? []
+        kernel.sharedUI?.allChatSectionActionBarItems ?? []
     }
 
     private var leadingActionBarItems: [ChatSectionActionBarItem] {

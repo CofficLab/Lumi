@@ -11,7 +11,7 @@ struct AppTitleToolbar: View {
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let items = kernel.toolbarProvider?.allTitleToolbarItems ?? []
+        let items = kernel.sharedUI?.allTitleToolbarItems ?? []
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }

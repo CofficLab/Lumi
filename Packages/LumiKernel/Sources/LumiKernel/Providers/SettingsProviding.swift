@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Settings Capability Protocol
-
 /// 设置能力协议
 ///
 /// 定义 LumiCore 需要的设置管理功能，由具体布局插件实现。

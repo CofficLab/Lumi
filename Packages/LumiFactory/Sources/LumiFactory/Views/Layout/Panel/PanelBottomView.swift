@@ -10,7 +10,7 @@ struct PanelBottomView: View {
     @LumiTheme private var theme
 
     private var tabs: [PanelBottomTabItem] {
-        kernel.panel?.allPanelBottomTabItems ?? []
+        kernel.sharedUI?.allPanelBottomTabItems ?? []
     }
 
     private var layoutState: LayoutState {

@@ -22,11 +22,11 @@ struct PanelView: View {
     }
 
     private var headerItems: [PanelHeaderItem] {
-        kernel.panel?.allPanelHeaderItems ?? []
+        kernel.sharedUI?.allPanelHeaderItems ?? []
     }
 
     private var bottomTabs: [PanelBottomTabItem] {
-        kernel.panel?.allPanelBottomTabItems ?? []
+        kernel.sharedUI?.allPanelBottomTabItems ?? []
     }
 
     /// 是否有任何底部 panel tab

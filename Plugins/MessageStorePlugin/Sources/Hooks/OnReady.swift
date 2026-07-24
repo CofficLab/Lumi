@@ -45,7 +45,7 @@ public struct MessageStoreOnReadyHook {
                 await migration.run()
                 // 迁移完成后移除状态栏项(完成后自动隐藏,符合"完成后不再占用状态栏"的设计)
                 if !progress.isActive {
-                    kernel.statusBar?.unregisterStatusBarItem(id: itemID)
+                    kernel.sharedUI?.unregisterStatusBarItem(id: itemID)
                 }
             }
 

@@ -29,14 +29,9 @@ extension LumiKernelContainer {
         registerService(CommandProviding.self, command)
     }
 
-    /// Register menu bar service
-    public func registerMenuBarService(_ menuBar: any MenuBarProviding) {
-        registerService(MenuBarProviding.self, menuBar)
-    }
-
-    /// Register title toolbar service
-    public func registerTitleToolbarService(_ titleToolbar: any TitleToolbarProviding) {
-        registerService(TitleToolbarProviding.self, titleToolbar)
+    /// Register shared UI service
+    public func registerSharedUIService(_ sharedUI: any SharedUIProviding) {
+        registerService(SharedUIProviding.self, sharedUI)
     }
 
     /// Register send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
@@ -54,11 +49,6 @@ extension LumiKernelContainer {
     /// Register message managing service
     public func registerMessageManager(_ messageManager: any MessageManaging) {
         registerService(MessageManaging.self, messageManager)
-    }
-
-    /// Register chat section service
-    public func registerChatSectionService(_ chatSection: any ChatSectionProviding) {
-        registerService(ChatSectionProviding.self, chatSection)
     }
 
     /// Register editor service
@@ -79,16 +69,6 @@ extension LumiKernelContainer {
     /// Register agent turn runner service
     public func registerAgentTurnRunnerService(_ agentTurnRunner: any AgentTurnRunning) {
         registerService(AgentTurnRunning.self, agentTurnRunner)
-    }
-
-    /// Register panel service
-    public func registerPanelService(_ panel: any PanelProviding) {
-        registerService(PanelProviding.self, panel)
-    }
-
-    /// Register status bar service
-    public func registerStatusBarService(_ statusBar: any StatusBarProviding) {
-        registerService(StatusBarProviding.self, statusBar)
     }
 
     /// Register settings service

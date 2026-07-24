@@ -85,16 +85,12 @@ public final class LumiKernelContainer: ObservableObject {
         if layoutManager == nil { missingServices.append("Layout") }
         if viewContainer == nil { missingServices.append("ViewContainer") }
         if command == nil { missingServices.append("Command") }
-        if menuBar == nil { missingServices.append("MenuBar") }
-        if toolbarProvider == nil { missingServices.append("TitleToolbar") }
+        if sharedUI == nil { missingServices.append("SharedUI") }
         if messageSender == nil { missingServices.append("MessageSend") }
         if llmProvider == nil { missingServices.append("LLMProvider") }
         if agentTurnRunner == nil { missingServices.append("AgentTurnRunner") }
-        if chatSection == nil { missingServices.append("ChatSection") }
         if editorProvider == nil { missingServices.append("Editor") }
         if toolManager == nil { missingServices.append("AgentTool") }
-        if panel == nil { missingServices.append("Panel") }
-        if statusBar == nil { missingServices.append("StatusBar") }
         if settings == nil { missingServices.append("Settings") }
         if logo == nil { missingServices.append("Logo") }
         if theme == nil { missingServices.append("Theme") }

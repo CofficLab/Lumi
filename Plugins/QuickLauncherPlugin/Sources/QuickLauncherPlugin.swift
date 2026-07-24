@@ -31,7 +31,7 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: LumiKernel) async throws {
         // 注册菜单栏弹窗（order 自动从插件继承）
-        kernel.menuBar?.registerMenuBarPopup(
+        kernel.sharedUI?.registerMenuBarPopup(
             MenuBarPopupItem(id: "\(id).launcher") {
                 QuickLauncherMenuBarPopupView()
             }

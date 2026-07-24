@@ -4,17 +4,17 @@ import SwiftUI
 
 /// Chat 工具栏视图
 ///
-/// 自己从 `kernel.chatSection` 取出 toolbar items 与 bar items，
+/// 自己从 `kernel.sharedUI` 取出 toolbar items 与 bar items，
 /// 按 leading / trailing / bar 三个位置渲染。
 struct ChatToolbarView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var toolbarItems: [ChatSectionToolbarItem] {
-        kernel.chatSection?.allChatSectionToolbarItems ?? []
+        kernel.sharedUI?.allChatSectionToolbarItems ?? []
     }
 
     private var toolbarBarItems: [ChatSectionToolbarBarItem] {
-        kernel.chatSection?.allChatSectionToolbarBarItems ?? []
+        kernel.sharedUI?.allChatSectionToolbarBarItems ?? []
     }
 
     private var leadingToolbarItems: [ChatSectionToolbarItem] {

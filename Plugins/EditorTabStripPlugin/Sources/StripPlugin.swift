@@ -21,7 +21,7 @@ public final class StripHeaderPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {
         EditorTabStripBridge.kernel = kernel
         let pluginName = name
-        kernel.panel?.registerPanelHeaderItem(
+        kernel.sharedUI?.registerPanelHeaderItem(
             PanelHeaderItem(id: id) {
                 if let service = EditorTabStripBridge.editorService {
                     HeaderView(service: service, kernel: kernel)

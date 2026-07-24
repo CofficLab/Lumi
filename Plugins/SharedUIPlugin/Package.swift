@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "TitleToolbarPlugin",
+    name: "SharedUIPlugin",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "TitleToolbarPlugin",
-            targets: ["TitleToolbarPlugin"]
+            name: "SharedUIPlugin",
+            targets: ["SharedUIPlugin"]
         )
     ],
     dependencies: [
@@ -19,14 +19,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "TitleToolbarPlugin",
+            name: "SharedUIPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
-            path: "Sources/TitleToolbarPlugin"
+            path: "Sources/SharedUIPlugin"
         )
     ]
 )

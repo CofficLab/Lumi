@@ -29,14 +29,9 @@ extension LumiKernelContainer {
         resolveService(CommandProviding.self)
     }
 
-    /// Menu bar service
-    public var menuBar: (any MenuBarProviding)? {
-        resolveService(MenuBarProviding.self)
-    }
-
-    /// Title toolbar service
-    public var toolbarProvider: (any TitleToolbarProviding)? {
-        resolveService(TitleToolbarProviding.self)
+    /// Shared UI service
+    public var sharedUI: (any SharedUIProviding)? {
+        resolveService(SharedUIProviding.self)
     }
 
     /// Send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
@@ -54,11 +49,6 @@ extension LumiKernelContainer {
     /// Message management service
     public var messageManager: (any MessageManaging)? {
         resolveService(MessageManaging.self)
-    }
-
-    /// Chat section service
-    public var chatSection: (any ChatSectionProviding)? {
-        resolveService(ChatSectionProviding.self)
     }
 
     /// Editor service
@@ -79,16 +69,6 @@ extension LumiKernelContainer {
     /// Agent turn runner service (executes LLM loop including tool calls)
     public var agentTurnRunner: (any AgentTurnRunning)? {
         resolveService(AgentTurnRunning.self)
-    }
-
-    /// Panel service
-    public var panel: (any PanelProviding)? {
-        resolveService(PanelProviding.self)
-    }
-
-    /// Status bar service
-    public var statusBar: (any StatusBarProviding)? {
-        resolveService(StatusBarProviding.self)
     }
 
     /// Settings service

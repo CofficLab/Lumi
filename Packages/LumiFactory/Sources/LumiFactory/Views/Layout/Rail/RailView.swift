@@ -13,7 +13,7 @@ struct RailView: View {
     private static let minWidth: CGFloat = 200
 
     private var tabs: [PanelRailTabItem] {
-        kernel.panel?.allPanelRailTabItems ?? []
+        kernel.sharedUI?.allPanelRailTabItems ?? []
     }
 
     private var activeRailTabID: String {
