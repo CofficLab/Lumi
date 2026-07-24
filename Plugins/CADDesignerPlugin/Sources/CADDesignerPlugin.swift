@@ -1,22 +1,52 @@
-import SwiftUI
+import Foundation
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
+import SwiftUI
 
+/// CAD Designer 插件
+///
+/// 提供铝型材 CAD 设计功能的插件,支持项目创建、组件放置、连接生成等操作。
 @MainActor
-public final class CADDesignerPlugin: LumiPlugin {
+public final class CADDesignerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.cad-designer")
+    public nonisolated static let emoji = "📐"
+    nonisolated static let verbose = false
+
+    // MARK: - LumiPlugin
+
     public let id = "com.coffic.lumi.plugin.cad-designer"
-    public let name = "CADDesigner"
+    public let name = "CAD Designer"
     public let order = 80
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await CADDesignerOnBootHook().execute(kernel)
     }
 
+    public func onReady(kernel: LumiKernel) async throws {
+        try await CADDesignerOnReadyHook().execute(kernel)
+    }
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            CreateCADProjectTool(),
+            LoadCADProjectTool(),
+            SaveCADProjectTool(),
+            BuildFrameTool(),
+            PlaceProfileTool(),
+            PlaceConnectorTool(),
+            ConnectComponentsTool(),
+            UpdateProfileTool(),
+            GenerateBOMTool(),
+            OptimizeCuttingTool(),
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 

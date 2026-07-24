@@ -99,6 +99,7 @@ import OpenInGitHubDesktopPlugin
 import OpenInGitOKPlugin
 import OpenRemotePlugin
 import ProjectRAGPlugin
+// import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
 ///
@@ -168,6 +169,7 @@ public enum PluginService {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             ViewContainerPlugin(),
+            // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
