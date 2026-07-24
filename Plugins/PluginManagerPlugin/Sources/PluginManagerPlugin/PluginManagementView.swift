@@ -331,7 +331,7 @@ private struct PluginSettingsDetailView: View {
             )
             metaRow(
                 label: PluginManagerText.string("Stage"),
-                value: "\(plugin.stage.displayName) · \(plugin.stage.descriptionText)"
+                value: "\(plugin.stage.displayName) · \(plugin.stage.description)"
             )
         }
         .font(.appCaption)
