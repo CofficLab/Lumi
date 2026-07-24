@@ -28,7 +28,7 @@ public struct ConversationListView: View, SuperLog {
 
     public init(context: ConversationListContext) {
         self.context = context
-        self.selectionStore = ConversationListLocalStore(databaseDirectory: context.databaseDirectory())
+        self.selectionStore = ConversationListLocalStore(databaseDirectory: context.dataDirectory)
     }
 
     public var body: some View {

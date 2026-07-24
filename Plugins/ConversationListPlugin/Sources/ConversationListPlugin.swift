@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -18,17 +19,7 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // 注册工具栏会话列表按钮
-        let toolbarItem = TitleToolbarItem(
-            id: "\(id).conversation-list",
-            title: "Chats",
-            placement: .trailing
-        ) {
-            ConversationListToolbarButton(kernel: kernel)
-        }
-        kernel.toolbarProvider?.registerTitleToolbarItem(toolbarItem)
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
 
     // MARK: - Panel Rail Tab Items
@@ -53,7 +44,17 @@ public final class ConversationListPlugin: LumiPlugin {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).conversation-list",
+                title: "Chats",
+                placement: .trailing
+            ) {
+                ConversationListToolbarButton(kernel: kernel)
+            }
+        ]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
@@ -107,105 +108,30 @@ struct ConversationListToolbarButton: View {
 /// 会话列表弹窗内容
 struct ConversationListPopoverContent: View {
     let kernel: LumiKernel
-    @State private var refreshTrigger = 0
+    @StateObject private var context: ConversationListContext
 
-    private static let notifications = Notification.Name("com.coffic.lumi.conversationsDidChange")
-
-    private var conversations: (any ConversationManaging)? {
-        kernel.conversations
-    }
-
-    private var conversationList: [LumiConversationSummary] {
-        _ = refreshTrigger
-        return conversations?.conversations ?? []
-    }
-
-    private var dataDirectory: URL? {
-        conversations?.dataDirectory
-    }
-
-    private func openDataDirectory() {
-        guard let url = dataDirectory else { return }
-        NSWorkspace.shared.open(url)
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        guard let conv = kernel.conversations else {
+            // conversations unavailable — crash early in debug.
+            fatalError("kernel.conversations is nil when creating ConversationListPopoverContent")
+        }
+        _context = StateObject(wrappedValue: ConversationListContext(conversationManaging: conv))
     }
 
     var body: some View {
-        contentView
-    }
-
-    @ViewBuilder
-    private var contentView: some View {
-        if let conv = conversations {
-            conversationListView(conv)
-        } else {
-            placeholderView
-        }
-    }
-
-    private var placeholderView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "message.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            Text("Conversations")
-                .font(.headline)
-            Text("Service not available")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-    }
-
-    @ViewBuilder
-    private func conversationListView(_ conv: any ConversationManaging) -> some View {
         VStack(spacing: 0) {
             HStack {
                 Text("Conversations")
                     .font(.headline)
                 Spacer()
-                Button(action: openDataDirectory) {
-                    Image(systemName: "folder")
-                }
-                .help("Open data directory")
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
 
             Divider()
 
-            let list = conversationList
-            if list.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "message")
-                        .font(.system(size: 32))
-                        .foregroundColor(.secondary)
-                    Text("No conversations")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(list) { conversation in
-                    ConversationRow(
-                        conversation: conversation,
-                        isProcessing: conv.isSending(for: conversation.id),
-                        llmProvider: kernel.llmProvider,
-                        isSelected: conv.selectedConversationID == conversation.id,
-                        onSelect: {
-                            conv.selectConversation(id: conversation.id)
-                            refreshTrigger += 1
-                        },
-                        onDelete: {
-                            conv.deleteConversation(id: conversation.id)
-                            refreshTrigger += 1
-                        }
-                    )
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: Self.notifications)) { _ in
-            refreshTrigger += 1
+            ConversationListView(context: context)
         }
     }
 }

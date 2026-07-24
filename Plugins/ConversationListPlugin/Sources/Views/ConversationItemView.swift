@@ -200,7 +200,7 @@ extension ConversationItemView {
 #Preview("会话项 - 默认状态") {
     ConversationItemView(
         conversation: ConversationListItem.example(),
-        onDelete: { if ConversationListPlugin.verbose { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") } }
+        onDelete: {}
     )
     .frame(width: 200)
     .padding()
