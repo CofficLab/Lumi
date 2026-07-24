@@ -8,12 +8,13 @@ import os
 ///
 /// 负责 onReady 阶段的所有注册逻辑：
 /// - ProjectsStore / ProjectsViewModel / ProjectsSyncCoordinator 初始化
-/// - Agent Tools
 /// - 设置 RuntimeBridge 供 titleToolbarItems 声明式访问与工具使用
 ///
 /// 标题栏工具栏项由 `LumiPlugin.titleToolbarItems(kernel:)` 声明式提供，
 /// 由 BuiltinPluginManager 在 registerPluginUIContributions 阶段收集。
 /// ProjectService 的注册已在 OnBoot 阶段完成。
+///
+/// Agent Tools 的注册已移至 `ProjectsPlugin.agentTools(kernel:)`。
 @MainActor
 public struct ProjectsOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
@@ -62,18 +63,6 @@ public struct ProjectsOnReadyHook {
         //    `titleToolbarItems(kernel:)` 声明式访问 viewModel（在 onReady 之后
         //    由 BuiltinPluginManager.registerPluginUIContributions 收集）。
         ProjectsToolRuntimeBridge.viewModel = viewModel
-
-        // 5. 注册 Agent Tools
-        guard let toolManager = kernel.toolManager else {
-            throw ProjectsPluginError.toolManagerNotAvailable
-        }
-        toolManager.add(ListProjectsTool(), pluginID: pluginID)
-        toolManager.add(AddProjectTool(), pluginID: pluginID)
-        toolManager.add(GetCurrentProjectTool(), pluginID: pluginID)
-
-        if Self.verbose {
-            Self.logger.info("📂 Registered Agent Tools: list_projects, add_project, get_current_project")
-        }
 
         if Self.verbose {
             Self.logger.info("📂 Projects 插件 onReady 完成")

@@ -16,9 +16,6 @@ public final class AskUserPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        // 注册 ask_user 工具（复用内核已注册的 ToolManaging 服务）
-        kernel.toolManager?.add(AskUserTool(), pluginID: id)
-
         // 监听用户回答，回写 tool result 并恢复 Agent 循环
         answerObserver = AskUserAnswerObserver(kernel: kernel)
     }
@@ -26,6 +23,10 @@ public final class AskUserPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {
         // 注册 ToolCall 行级渲染器，让 ask_user 的 pending 状态渲染为选择界面
         ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
+    }
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [AskUserTool()]
     }
 
 

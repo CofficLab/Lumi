@@ -22,10 +22,13 @@ public final class EditorPanelPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {
         guard policy.shouldRegister else { return }
+    }
 
-        // 注册 AgentTools
-        kernel.toolManager?.add(GetCurrentFileTool(), pluginID: id)
-        kernel.toolManager?.add(SetCurrentFileTool(), pluginID: id)
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            GetCurrentFileTool(),
+            SetCurrentFileTool(),
+        ]
     }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
