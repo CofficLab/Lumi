@@ -61,11 +61,11 @@ public final class LegacyDataService: LegacyDataProviding, SuperLog {
         let container = try ensureSnapshot()
 
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<LegacyV4Conversation>(
+        let descriptor = FetchDescriptor<Conversation>(
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
 
-        let entities: [LegacyV4Conversation]
+        let entities: [Conversation]
         do {
             entities = try context.fetch(descriptor)
         } catch {
@@ -79,12 +79,12 @@ public final class LegacyDataService: LegacyDataProviding, SuperLog {
         let container = try ensureSnapshot()
 
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<LegacyV4ChatMessageEntity>(
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate { $0.conversationId == conversationID },
             sortBy: [SortDescriptor(\.timestamp, order: .forward)]
         )
 
-        let entities: [LegacyV4ChatMessageEntity]
+        let entities: [ChatMessageEntity]
         do {
             entities = try context.fetch(descriptor)
         } catch {
@@ -140,19 +140,25 @@ public final class LegacyDataService: LegacyDataProviding, SuperLog {
 
         let copiedDB = copyDir.appendingPathComponent(Self.v4DatabaseFileName, isDirectory: false)
 
-        // 2. 用 v4 legacy schema 只读打开副本(allowsSave: false 防止任何写入/迁移)
+        // 2. 用 v4 legacy schema 打开副本。
+        //
+        // 关键:这里用 allowsSave: true(不是 false)。SwiftData 默认开启轻量迁移,
+        // 打开库时会做 store 元数据校验/迁移;若设只读,迁移无法写入会直接失败
+        // (日志: "Cannot migrate store in-place: attempt to write a readonly database")。
+        // 由于操作的是一次性副本,让 SwiftData 在副本上完成必要的元数据迁移是安全的,
+        // 我们只 fetch 不 save,原件(v4)始终纹丝不动。
         let schema = Schema([
-            LegacyV4Conversation.self,
-            LegacyV4ChatMessageEntity.self,
-            LegacyV4ImageAttachmentEntity.self,
-            LegacyV4ToolCallEntity.self,
-            LegacyV4MessageMetricsEntity.self,
-            LegacyV4ChatStateEntity.self,
+            Conversation.self,
+            ChatMessageEntity.self,
+            ImageAttachmentEntity.self,
+            ToolCallEntity.self,
+            MessageMetricsEntity.self,
+            ChatStateEntity.self,
         ])
         let config = ModelConfiguration(
             schema: schema,
             url: copiedDB,
-            allowsSave: false,
+            allowsSave: true,
             cloudKitDatabase: .none
         )
 
@@ -174,7 +180,7 @@ public final class LegacyDataService: LegacyDataProviding, SuperLog {
 
     /// v4 Conversation → LumiConversationSummary
     /// v4 的 model/projid 字段语义与 v5 略有差异,这里做字段映射。
-    private static func convert(_ entity: LegacyV4Conversation) -> LumiConversationSummary {
+    private static func convert(_ entity: Conversation) -> LumiConversationSummary {
         LumiConversationSummary(
             id: entity.id,
             title: entity.title,
@@ -194,7 +200,7 @@ public final class LegacyDataService: LegacyDataProviding, SuperLog {
 
     /// v4 ChatMessageEntity → LumiChatMessage
     /// toolCalls / metrics 已内嵌在该实体的 JSON 字段里,无需额外查独立表。
-    private static func convert(_ entity: LegacyV4ChatMessageEntity) -> LumiChatMessage? {
+    private static func convert(_ entity: ChatMessageEntity) -> LumiChatMessage? {
         guard let role = LumiChatMessageRole(rawValue: entity.role) else { return nil }
 
         let decoder = JSONDecoder()

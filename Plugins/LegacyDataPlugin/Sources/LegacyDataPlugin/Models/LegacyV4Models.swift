@@ -6,9 +6,16 @@ import SwiftData
 // 这 6 个 @Model 是从 v4.19.0 的 LumiChatKit 原样照搬的,用于以 SwiftData 打开
 // v4 旧库 `Core/Lumi.db` 读取历史数据。
 //
-// ⚠️ 严禁修改字段名 / 类型 / 可空性 / @Attribute / 类名 —— SwiftData 打开已存在的
-// 旧库时会用这些定义做 schema 比对,任何不一致都会触发 schema mismatch 或轻量迁移。
-// v4 的字段语义与 v5 不同,转换逻辑放在 LegacyDataService 里,此处只负责"忠实读取"。
+// ⚠️ 两个不可违背的硬约束:
+// 1. 字段名 / 类型 / 可空性 / @Attribute 严禁修改 —— SwiftData 用 schema 比对。
+// 2. 【关键】类名必须与 v4 库里的实体名完全一致 —— SwiftData 用「类名」推断实体名
+//    并匹配库里的表。v4 库 Z_PRIMARYKEY 表记录的实体名是 Conversation / ChatMessageEntity
+//    / ChatStateEntity / ImageAttachmentEntity / MessageMetricsEntity / ToolCallEntity。
+//    若改类名(如加 LegacyV4 前缀),SwiftData 会认为库里没有该实体、把原表当孤立删除,
+//    导致 fetch 永远返回空。因此类名不能用前缀,必须保持 v4 原名。
+//
+// 这些类只在本插件内使用,与 v5 的 ConversationModel / MessageModel(不同类名)
+// 分属不同 module,不会冲突。迁移窗口期结束后本文件整体移除。
 //
 // 特征(经核对):
 // - 无任何 @Relationship 声明,表间仅靠 UUID 字段手动关联。
@@ -16,7 +23,7 @@ import SwiftData
 // - 主键均带 @Attribute(.unique)。
 
 @Model
-final class LegacyV4Conversation {
+final class Conversation {
     @Attribute(.unique) var id: UUID
     var projectId: String?
     var title: String
@@ -57,7 +64,7 @@ final class LegacyV4Conversation {
 }
 
 @Model
-final class LegacyV4ChatMessageEntity {
+final class ChatMessageEntity {
     @Attribute(.unique) var id: UUID
     var conversationId: UUID
     var role: String
@@ -107,7 +114,7 @@ final class LegacyV4ChatMessageEntity {
 }
 
 @Model
-final class LegacyV4ImageAttachmentEntity {
+final class ImageAttachmentEntity {
     @Attribute(.unique) var id: UUID
     var messageId: UUID?
     var data: Data
@@ -124,7 +131,7 @@ final class LegacyV4ImageAttachmentEntity {
 }
 
 @Model
-final class LegacyV4ToolCallEntity {
+final class ToolCallEntity {
     @Attribute(.unique) var id: String
     var messageId: UUID
     var name: String
@@ -162,7 +169,7 @@ final class LegacyV4ToolCallEntity {
 }
 
 @Model
-final class LegacyV4MessageMetricsEntity {
+final class MessageMetricsEntity {
     @Attribute(.unique) var messageId: UUID
     var latency: Double?
     var inputTokens: Int?
@@ -185,7 +192,7 @@ final class LegacyV4MessageMetricsEntity {
 }
 
 @Model
-final class LegacyV4ChatStateEntity {
+final class ChatStateEntity {
     @Attribute(.unique) var id: String
     var selectedConversationID: UUID?
     var selectedProviderID: String?

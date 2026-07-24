@@ -102,7 +102,7 @@ struct LegacyDataServiceTests {
         // 再次用 v4 Model 直接打开原件,数据应完好无损
         let container = try openV4Container(at: fixture.rootDirectory, allowsSave: true)
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<LegacyV4Conversation>()
+        let descriptor = FetchDescriptor<Conversation>()
         let conversations = try context.fetch(descriptor)
         #expect(conversations.count == 1)
         #expect(conversations.first?.title == "原件")
@@ -222,8 +222,8 @@ private struct V4Fixture {
 /// 用 v4 Model 创建真实的 SwiftData 库并写入数据
 @MainActor
 private func makeV4Fixture(
-    conversations: [LegacyV4Conversation],
-    messages: [LegacyV4ChatMessageEntity] = []
+    conversations: [Conversation],
+    messages: [ChatMessageEntity] = []
 ) throws -> V4Fixture {
     let root = makeTempDir()
     _ = try createV4Store(at: root, conversations: conversations, messages: messages)
@@ -234,20 +234,20 @@ private func makeV4Fixture(
 @MainActor
 private func createV4Store(
     at rootDirectory: URL,
-    conversations: [LegacyV4Conversation],
-    messages: [LegacyV4ChatMessageEntity]
+    conversations: [Conversation],
+    messages: [ChatMessageEntity]
 ) throws -> ModelContainer {
     let coreDir = rootDirectory.appendingPathComponent("Core", isDirectory: true)
     try FileManager.default.createDirectory(at: coreDir, withIntermediateDirectories: true)
     let dbURL = coreDir.appendingPathComponent("Lumi.db", isDirectory: false)
 
     let schema = Schema([
-        LegacyV4Conversation.self,
-        LegacyV4ChatMessageEntity.self,
-        LegacyV4ImageAttachmentEntity.self,
-        LegacyV4ToolCallEntity.self,
-        LegacyV4MessageMetricsEntity.self,
-        LegacyV4ChatStateEntity.self,
+        Conversation.self,
+        ChatMessageEntity.self,
+        ImageAttachmentEntity.self,
+        ToolCallEntity.self,
+        MessageMetricsEntity.self,
+        ChatStateEntity.self,
     ])
     let config = ModelConfiguration(schema: schema, url: dbURL, allowsSave: true, cloudKitDatabase: .none)
     let container = try ModelContainer(for: schema, configurations: [config])
@@ -267,12 +267,12 @@ private func openV4Container(at rootDirectory: URL, allowsSave: Bool) throws -> 
         .appendingPathComponent("Core", isDirectory: true)
         .appendingPathComponent("Lumi.db", isDirectory: false)
     let schema = Schema([
-        LegacyV4Conversation.self,
-        LegacyV4ChatMessageEntity.self,
-        LegacyV4ImageAttachmentEntity.self,
-        LegacyV4ToolCallEntity.self,
-        LegacyV4MessageMetricsEntity.self,
-        LegacyV4ChatStateEntity.self,
+        Conversation.self,
+        ChatMessageEntity.self,
+        ImageAttachmentEntity.self,
+        ToolCallEntity.self,
+        MessageMetricsEntity.self,
+        ChatStateEntity.self,
     ])
     let config = ModelConfiguration(schema: schema, url: dbURL, allowsSave: allowsSave, cloudKitDatabase: .none)
     return try ModelContainer(for: schema, configurations: [config])
@@ -294,8 +294,8 @@ private func makeConversation(
     chatMode: String? = nil,
     model: String? = nil,
     projectId: String? = nil
-) -> LegacyV4Conversation {
-    LegacyV4Conversation(
+) -> Conversation {
+    Conversation(
         id: id,
         projectId: projectId,
         title: title,
@@ -320,8 +320,8 @@ private func makeMessage(
     toolCallsJSON: String? = nil,
     toolCallID: String? = nil,
     reasoningContent: String? = nil
-) -> LegacyV4ChatMessageEntity {
-    LegacyV4ChatMessageEntity(
+) -> ChatMessageEntity {
+    ChatMessageEntity(
         id: id,
         conversationId: conversationID,
         role: role,

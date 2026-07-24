@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// LegacyData 插件 OnBoot 阶段钩子
 ///
@@ -9,7 +9,7 @@ import os
 /// 注册在 onBoot 完成,确保消费插件(ConversationStorePlugin / MessageStorePlugin)
 /// 在 onReady 时能通过 `kernel.legacyData` 取用。
 @MainActor
-public struct LegacyDataOnBootHook {
+public struct LegacyDataOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.legacy-data")
     nonisolated static let verbose = true
 
@@ -24,9 +24,9 @@ public struct LegacyDataOnBootHook {
 
         if Self.verbose {
             if let v4Root {
-                Self.logger.info("已注册 LegacyData 服务,v4 目录: \(v4Root.path)")
+                Self.logger.info("\(Self.t)已注册 LegacyData 服务,v4 目录: \(v4Root.path)")
             } else {
-                Self.logger.info("已注册 LegacyData 服务(未发现 v4 旧数据,全新安装)")
+                Self.logger.info("\(Self.t)已注册 LegacyData 服务(未发现 v4 旧数据,全新安装)")
             }
         }
     }
@@ -41,9 +41,9 @@ public struct LegacyDataOnBootHook {
         let parent = currentRoot.deletingLastPathComponent()
 
         #if DEBUG
-        let candidates = ["db_production_v4", "db_debug_v4"]
+            let candidates = ["db_production_v4", "db_debug_v4"]
         #else
-        let candidates = ["db_production_v4"]
+            let candidates = ["db_production_v4"]
         #endif
 
         let fileManager = FileManager.default

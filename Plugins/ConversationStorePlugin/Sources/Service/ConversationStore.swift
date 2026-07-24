@@ -133,6 +133,51 @@ public actor ConversationStore: SuperLog {
         return model
     }
 
+    // MARK: - Migration Import
+
+    /// 批量导入历史会话(v4 迁移专用)
+    ///
+    /// 用于 v4 → v5 迁移:把 `LegacyDataProviding` 读出的 `LumiConversationSummary`
+    /// 批量写入 v5 库,保留全部字段(verbosity/language/model/projectPath 等),
+    /// 单次 `save` 保证原子性。按 id 去重:已存在的会话跳过,避免重复导入。
+    ///
+    /// - Parameter summaries: 待导入的会话列表。
+    /// - Returns: 实际新增的数量(跳过已存在的)。
+    @discardableResult
+    func importSummaries(_ summaries: [LumiConversationSummary]) throws -> Int {
+        guard !summaries.isEmpty else { return 0 }
+
+        let context = ModelContext(container)
+
+        // 查出已存在的 id 集合,用于去重
+        let existingIDs: Set<String> = {
+            let descriptor = FetchDescriptor<ConversationModel>()
+            let models = (try? context.fetch(descriptor)) ?? []
+            return Set(models.map { $0.id })
+        }()
+
+        var inserted = 0
+        for summary in summaries {
+            let idString = summary.id.uuidString
+            guard !existingIDs.contains(idString) else { continue }
+            context.insert(ConversationModel.from(summary: summary))
+            inserted += 1
+        }
+
+        guard inserted > 0 else { return 0 }
+
+        do {
+            try context.save()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史会话")
+            }
+            return inserted
+        } catch {
+            Self.logger.error("\(Self.t)迁移导入会话失败：\(error.localizedDescription)")
+            throw error
+        }
+    }
+
     // MARK: - Read
 
     /// Fetch all conversations, sorted by updatedAt descending

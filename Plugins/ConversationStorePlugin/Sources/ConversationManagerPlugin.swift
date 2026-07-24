@@ -1,8 +1,8 @@
 import Foundation
-import SwiftUI
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
 /// Conversation Store Plugin
 ///
@@ -10,65 +10,21 @@ import os
 @MainActor
 public final class ConversationStorePlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
-    nonisolated public static let emoji = "💬"
+    public nonisolated static let emoji = "💬"
     public static let verbose = false
-
-    // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
     public let name = "Conversation Store"
     public let order = 61
     public let policy: LumiPluginPolicy = .alwaysOn
 
-    // MARK: - Initialization
-
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        let manager = ConversationManager(kernel: kernel)
-        kernel.registerConversations(manager)
-
-        // Register initial (empty) state - will be loaded properly in boot()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 ConversationManager")
-        }
-
-        // Initialize ConversationStore with proper database root URL
-        let databaseRootURL: URL
-        let dataDirectory: URL
-
-        if let storage = kernel.storage {
-            databaseRootURL = storage.dataRootDirectory
-            dataDirectory = storage.dataRootDirectory
-        } else {
-            databaseRootURL = ConversationStore.defaultDatabaseRootURL
-            dataDirectory = ConversationStore.defaultDatabaseRootURL
-        }
-
-        do {
-            let store = try ConversationStore(databaseRootURL: databaseRootURL)
-            ConversationManagerRuntimeBridge.shared.store = store
-            ConversationManagerRuntimeBridge.shared.dataDirectory = dataDirectory
-
-            // Load conversations into the manager
-            if let manager = kernel.conversations as? ConversationManager {
-                manager.loadConversations()
-            }
-
-            if Self.verbose {
-                Self.logger.info("\(Self.t)ConversationStorePlugin 启动完成，数据库路径: \(databaseRootURL.path)")
-            }
-        } catch {
-            throw ConversationStoreError.initializationFailed("ConversationStorePlugin 数据库初始化失败: \(error.localizedDescription)")
-        }
+        try await ConversationStoreOnReadyHook().execute(kernel)
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
