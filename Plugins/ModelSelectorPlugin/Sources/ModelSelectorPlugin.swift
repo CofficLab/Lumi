@@ -16,36 +16,11 @@ public final class ModelSelectorPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
-        guard let lumiCore = kernel.lumiCore,
-              let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
-            return []
-        }
-
-        let availability = kernel.resolveService((any LumiLLMProviderSettingsContributing).self)
-            .map { $0 as? LLMProviderManager }
-            .flatMap { $0?.providerAvailabilityState }
-
-        return [
-            ChatSectionToolbarItem(id: "\(id).picker", placement: .leading) {
-                ModelProviderPicker(
-                    chatService: chatService,
-                    availability: availability
-                )
-            },
-        ]
+        return []
     }
 
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
-        guard let lumiCore = kernel.lumiCore,
-              let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
-            return []
-        }
-
-        return [
-            ChatSectionToolbarBarItem(id: "\(id).tps") {
-                CurrentModelTPSToolbarView(chatService: chatService)
-            },
-        ]
+        return []
     }
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
@@ -65,20 +40,9 @@ public final class ModelSelectorPlugin: LumiPlugin {
     }
 
     public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] {
-        guard let lumiCore = kernel.lumiCore,
-              let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
-            return []
-        }
-        return [
-            SwitchModelTool(chatService: chatService),
-            CheckModelAvailabilityTool(chatService: chatService),
-            ListAvailableModelsTool(chatService: chatService),
-        ]
+        return []
     }
-
-    /// Settings tabs (Local / Cloud Providers) 已迁到 `LLMProviderManagerPlugin`。
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
