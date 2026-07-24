@@ -17,23 +17,7 @@ public final class MessageStorePlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        let manager = MessageManager(kernel: kernel)
-        kernel.registerMessageManager(manager)
-
-        // Initialize MessageStore with proper database root URL
-        let databaseRootURL: URL
-        if let storage = kernel.storage {
-            databaseRootURL = storage.dataRootDirectory
-        } else {
-            databaseRootURL = MessageStore.defaultDatabaseRootURL
-        }
-
-        do {
-            let store = try MessageStore(databaseRootURL: databaseRootURL)
-            MessageStoreRuntimeBridge.shared.store = store
-        } catch {
-            throw MessageStoreError.initializationFailed("MessageStorePlugin 数据库初始化失败: \(error.localizedDescription)")
-        }
+        try await MessageStoreOnReadyHook().execute(kernel)
     }
 
 
@@ -48,7 +32,21 @@ public final class MessageStorePlugin: LumiPlugin {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        // 迁移状态栏项:状态栏显示静态图标,点击弹出 popover 详情。
+        // 状态栏图标始终可见(迁移中/完成后都在),popover 内根据 phase 显示不同内容。
+        [
+            StatusBarItem(
+                id: "\(id).migration.status",
+                title: "Message Migration",
+                systemImage: "arrow.triangle.2.circlepath",
+                placement: .trailing,
+                popover: {
+                    MessageMigrationPopoverView()
+                }
+            ),
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

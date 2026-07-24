@@ -113,6 +113,51 @@ public actor MessageStore: SuperLog {
         return model
     }
 
+    // MARK: - Migration Import
+
+    /// 批量导入历史消息(v4 迁移专用)
+    ///
+    /// 用于 v4 → v5 迁移:把 `LegacyDataProviding` 读出的 `LumiChatMessage` 批量写入
+    /// v5 库,单次 `save` 保证原子性和性能(2 万条消息若逐条 save 会很慢)。按 id 去重:
+    /// 已存在的消息跳过,避免重复导入。
+    ///
+    /// - Parameter messages: 待导入的消息列表。
+    /// - Returns: 实际新增的数量(跳过已存在的)。
+    @discardableResult
+    func importMessages(_ messages: [LumiChatMessage]) throws -> Int {
+        guard !messages.isEmpty else { return 0 }
+
+        let context = ModelContext(container)
+
+        // 查出已存在的 id 集合,用于去重
+        let existingIDs: Set<String> = {
+            let descriptor = FetchDescriptor<MessageModel>()
+            let models = (try? context.fetch(descriptor)) ?? []
+            return Set(models.map { $0.id })
+        }()
+
+        var inserted = 0
+        for message in messages {
+            let idString = message.id.uuidString
+            guard !existingIDs.contains(idString) else { continue }
+            context.insert(MessageModel.from(message: message))
+            inserted += 1
+        }
+
+        guard inserted > 0 else { return 0 }
+
+        do {
+            try context.save()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史消息")
+            }
+            return inserted
+        } catch {
+            Self.logger.error("\(Self.t)迁移导入消息失败：\(error.localizedDescription)")
+            throw error
+        }
+    }
+
     // MARK: - Read
 
     /// Fetch all messages for a conversation, sorted by createdAt
