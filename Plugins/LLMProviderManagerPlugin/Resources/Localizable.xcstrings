@@ -1521,9 +1521,6 @@
         }
       }
     },
-    "Saved" : {
-
-    },
     "Search providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1587,9 +1584,6 @@
           }
         }
       }
-    },
-    "Select a provider" : {
-
     },
     "Switch Model" : {
       "extractionState" : "stale",
