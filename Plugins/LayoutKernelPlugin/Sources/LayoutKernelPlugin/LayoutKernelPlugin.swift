@@ -1,8 +1,8 @@
 import Foundation
-import SwiftUI
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
 /// 布局插件
 ///
@@ -10,7 +10,7 @@ import os
 @MainActor
 public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
-    nonisolated public static let emoji = "📐"
+    public nonisolated static let emoji = "📐"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
@@ -18,7 +18,7 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Plugin"
     public let order = 40
-	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
     // MARK: - Initialization
 
@@ -33,7 +33,6 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try LayoutKernelOnReadyHook().execute(kernel)
     }
-
 
     // MARK: - LumiPlugin stubs
 

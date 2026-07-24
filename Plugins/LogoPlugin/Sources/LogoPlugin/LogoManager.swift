@@ -13,7 +13,7 @@ import os
 public final class LogoManager: LogoProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.logo")
     public nonisolated static let emoji = "🖼️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     public private(set) var allLogoItems: [LogoItem] = []
 
     private var logoItems: [String: LogoItem] = [:]

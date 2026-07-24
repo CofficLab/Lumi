@@ -27,15 +27,17 @@ struct AttachmentPreviewResolverView: View {
 /// 持有当前 box;当 messageSend 实例变化时重建
 @MainActor
 private final class BoxHolder: ObservableObject {
-    @Published private(set) var box: ObservableMessageSendingBox?
+    private(set) var box: ObservableMessageSendingBox?
 
     /// 取得当前 messageSend 对应的 box,必要时重建
+    /// 注意:不能在 body 渲染期间直接赋值 @Published,改用 objectWillChange 手动通知
     func box(for messageSend: any MessageSending) -> ObservableMessageSendingBox {
         if let existing = box, existing.service === messageSend {
             return existing
         }
         let new = ObservableMessageSendingBox(service: messageSend)
         box = new
+        objectWillChange.send()
         return new
     }
 }
