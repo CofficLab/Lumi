@@ -5,12 +5,12 @@ import SwiftUI
 struct PanelBodyView: View {
     @LumiTheme private var theme
 
-    let container: LumiViewContainerItem?
+    let container: ViewContainerItem?
 
     var body: some View {
         Group {
-            if let container {
-                container.makeView()
+            if let container, let makeView = container.makeView {
+                makeView()
                     .id(container.id)
             } else {
                 ZStack {

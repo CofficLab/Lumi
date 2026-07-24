@@ -2,39 +2,41 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// 面板视图，显示容器内容和底部面板
 struct PanelView: View {
+    @ObservedObject var kernel: LumiKernel
+
     @LumiTheme private var theme
 
-    let container: LumiViewContainerItem?
-    let headerItems: [LumiPanelHeaderItem]
-    let bottomTabs: [LumiPanelBottomTabItem]
-    let viewContainerID: String
+    private var viewContainerID: String {
+        kernel.layout?.activeViewContainerID ?? "main"
+    }
 
-    @ObservedObject var layoutState: LayoutState
+    private var layoutState: LayoutState {
+        kernel.layout?.layoutState ?? LayoutState()
+    }
+
+    private var container: ViewContainerItem? {
+        kernel.viewContainer?.allViewContainers.first { $0.id == viewContainerID }
+            ?? kernel.viewContainer?.allViewContainers.first
+    }
+
+    private var headerItems: [PanelHeaderItem] {
+        kernel.panel?.allPanelHeaderItems ?? []
+    }
+
+    private var bottomTabs: [PanelBottomTabItem] {
+        kernel.panel?.allPanelBottomTabItems ?? []
+    }
 
     /// 是否有任何底部 panel tab
     private var hasBottomTabs: Bool {
         !bottomTabs.isEmpty
     }
 
-    /// 头部面板是否可见（由 WorkspaceState 控制）
+    /// 头部面板是否可见
     private var showsHeader: Bool {
-        // header 跟随 panel chrome 状态
         layoutState.bottomPanelVisible && hasBottomTabs
-    }
-
-    init(
-        container: LumiViewContainerItem?,
-        headerItems: [LumiPanelHeaderItem],
-        bottomTabs: [LumiPanelBottomTabItem],
-        viewContainerID: String,
-        layoutState: LayoutState
-    ) {
-        self.container = container
-        self.headerItems = headerItems
-        self.bottomTabs = bottomTabs
-        self.viewContainerID = viewContainerID
-        self.layoutState = layoutState
     }
 
     private var showBottomPanel: Bool {
@@ -48,8 +50,7 @@ struct PanelView: View {
                     contentPanel
                         .layoutPriority(1)
                     PanelBottomView(
-                        tabs: bottomTabs,
-                        layoutState: layoutState,
+                        kernel: kernel,
                         viewContainerID: viewContainerID
                     )
                 }

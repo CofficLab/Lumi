@@ -2,12 +2,20 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// 底部面板视图
 struct PanelBottomView: View {
+    @ObservedObject var kernel: LumiKernel
+    let viewContainerID: String
+
     @LumiTheme private var theme
 
-    let tabs: [LumiPanelBottomTabItem]
-    @ObservedObject var layoutState: LayoutState
-    let viewContainerID: String
+    private var tabs: [PanelBottomTabItem] {
+        kernel.panel?.allPanelBottomTabItems ?? []
+    }
+
+    private var layoutState: LayoutState {
+        kernel.layout?.layoutState ?? LayoutState()
+    }
 
     var body: some View {
         VStack(spacing: 0) {

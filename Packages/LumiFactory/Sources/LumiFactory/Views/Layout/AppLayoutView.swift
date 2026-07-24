@@ -20,6 +20,8 @@ struct AppLayoutView: View {
                 ActivityBar(kernel: kernel)
                 AppDivider(.vertical)
                 RailView(kernel: kernel)
+                PanelView(kernel: kernel)
+                ChatView(kernel: kernel)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
