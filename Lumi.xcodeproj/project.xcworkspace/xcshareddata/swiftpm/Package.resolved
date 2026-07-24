@@ -1,5 +1,5 @@
 {
-  "originHash" : "084d66e09e40bf58379ba972cac55271a7a5432274ba96364506969b1376b73b",
+  "originHash" : "5fc99b37e55013190913a29e32c5081afa53e66f4d60d967a3b70de018945855",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -154,15 +154,6 @@
       }
     },
     {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
-      "state" : {
-        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
-        "version" : "1.8.2"
-      }
-    },
-    {
       "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
@@ -277,15 +268,6 @@
       "state" : {
         "revision" : "58c4bc11963a140358d791f678a60a2745a23146",
         "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "swiftterm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/migueldeicaza/SwiftTerm",
-      "state" : {
-        "revision" : "dd2fb8ac5b861e7bf617c872895e338f38165648",
-        "version" : "1.15.0"
       }
     },
     {

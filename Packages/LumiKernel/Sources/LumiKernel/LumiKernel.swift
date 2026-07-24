@@ -31,7 +31,6 @@ public final class LumiKernelContainer: ObservableObject {
         self.pluginManager = BuiltinPluginManager()
         self.pluginManager.kernel = self
         // 注册其他服务
-        registerService(ToolManaging.self, pluginManager)
         registerService(UIThemeProviding.self, pluginManager)
     }
 

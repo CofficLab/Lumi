@@ -153,9 +153,6 @@ public protocol LumiPlugin: AnyObject {
 
     // MARK: - Workspace State
 
-    /// 插件注册时调用，声明插件默认的工作区可见性偏好。
-    func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility
-
     /// 容器激活时被回调
     func onContainerActivated(kernel: LumiKernel, containerID: String)
 
