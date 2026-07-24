@@ -25,14 +25,12 @@ import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
-import EditorKernelPlugin
 import EditorPanelPlugin
 import EditorFileTreePlugin
 import EditorFileTreeV2Plugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
-import LLMProviderManagerPlugin
 import LLMProviderAiRouterPlugin
 import LLMProviderAliyunPlugin
 import LLMProviderAnthropicPlugin
@@ -153,7 +151,6 @@ public enum PluginService {
             ToolManagerPlugin(),
             ProjectsPlugin(),
             LayoutKernelPlugin(),
-            EditorKernelPlugin(),
             EditorPanelPlugin(),
             EditorFileTreePanelPlugin(),
             EditorFileTreeV2Plugin(),
