@@ -21,13 +21,14 @@ public final class DockerManagerPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        guard policy.shouldRegister else { return }
-        kernel.viewContainer?.register(
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(id: id, title: "Docker", systemImage: "shippingbox") {
                 DockerImagesView()
-            }
-        )
+            },
+        ]
     }
 
 
@@ -43,7 +44,6 @@ public final class DockerManagerPlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

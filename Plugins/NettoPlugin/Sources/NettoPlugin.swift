@@ -29,23 +29,18 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        guard policy.shouldRegister else { return }
-        // 注册视图容器（order 自动从插件继承）
-        kernel.viewContainer?.register(
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(
                 id: id,
                 title: "Netto Firewall",
                 systemImage: "shield.lefthalf.filled"
             ) {
                 NettoDashboardView()
-            }
-        )
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 Netto Firewall 视图容器到内核")
-            Self.logger.info("\(Self.t)Netto Firewall 插件启动完成")
-        }
+            },
+        ]
     }
 
 
@@ -61,7 +56,6 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

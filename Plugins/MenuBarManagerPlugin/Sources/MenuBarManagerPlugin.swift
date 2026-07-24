@@ -24,12 +24,14 @@ public final class MenuBarManagerPlugin: LumiPlugin {
         if let storage = kernel.storage {
             MenuBarManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
-        guard policy.shouldRegister else { return }
-        kernel.viewContainer?.register(
+    }
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(id: id, title: "Menu Bar Manager", systemImage: "menubar.rectangle") {
                 MenuBarSettingsView()
-            }
-        )
+            },
+        ]
     }
 
 
@@ -45,7 +47,6 @@ public final class MenuBarManagerPlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

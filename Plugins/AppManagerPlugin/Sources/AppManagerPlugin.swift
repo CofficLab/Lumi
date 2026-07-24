@@ -40,22 +40,18 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
             AppManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
             Self.databaseRootURLProvider = { storage.dataRootDirectory }
         }
+    }
 
-        guard policy.shouldRegister else { return }
-        kernel.viewContainer?.register(
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(
                 id: id,
                 title: "App Manager",
                 systemImage: "apps.ipad"
             ) {
                 AppManagerView()
-            }
-        )
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 App Manager 视图容器到内核")
-            Self.logger.info("\(Self.t)App Manager 插件启动完成")
-        }
+            },
+        ]
     }
 
 
@@ -71,7 +67,6 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

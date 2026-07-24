@@ -24,13 +24,14 @@ public final class RClickPlugin: LumiPlugin {
         if let storage = kernel.storage {
             RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
+    }
 
-        guard policy.shouldRegister else { return }
-        kernel.viewContainer?.register(
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(id: id, title: "Right Click", systemImage: "cursorarrow.click.2") {
                 RClickSettingsView()
-            }
-        )
+            },
+        ]
     }
 
 
@@ -46,7 +47,6 @@ public final class RClickPlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

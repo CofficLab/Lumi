@@ -1,8 +1,8 @@
 import Foundation
 import LumiKernel
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// 设备信息内核插件
 ///
@@ -10,36 +10,20 @@ import os
 @MainActor
 public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
-    nonisolated public static let emoji = "📊"
+    public nonisolated static let emoji = "📊"
     nonisolated static let verbose = false
-
-    // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"
     public let order = 200
-	public let policy: LumiPluginPolicy = .alwaysOn  // 功能插件
-
-    // MARK: - Initialization
+    public let policy: LumiPluginPolicy = .alwaysOn // 功能插件
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
         guard policy.shouldRegister else { return }
-        // 注册主视图容器（order 自动从插件继承）
-        kernel.viewContainer?.register(
-            ViewContainerItem(
-                id: id,
-                title: "Device Info",
-                systemImage: "macbook.and.iphone"
-            ) {
-                DeviceInfoView()
-            }
-        )
 
         // 注册菜单栏内容（order 自动从插件继承）
         kernel.menuBar?.registerMenuBarContent(
@@ -73,8 +57,17 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         }
     }
 
-
-    // MARK: - LumiPlugin stubs
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: "Device Info",
+                systemImage: "macbook.and.iphone"
+            ) {
+                DeviceInfoView()
+            },
+        ]
+    }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -86,7 +79,6 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

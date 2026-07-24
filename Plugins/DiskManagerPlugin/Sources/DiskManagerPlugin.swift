@@ -29,22 +29,18 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        guard policy.shouldRegister else { return }
-        // 注册视图容器
-        kernel.viewContainer?.register(
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
             ViewContainerItem(
                 id: id,
                 title: name,
                 systemImage: "internaldrive"
             ) {
                 DiskManagerView()
-            }
-        )
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 DiskManager 插件到内核")
-        }
+            },
+        ]
     }
 
 
@@ -60,7 +56,6 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

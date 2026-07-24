@@ -14,7 +14,7 @@ public final class EditorPanelPlugin: LumiPlugin {
     public let id = "LumiEditor"
     public let name = "Code Editor"
     public let order = 77
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
@@ -22,23 +22,23 @@ public final class EditorPanelPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {
         guard policy.shouldRegister else { return }
-        kernel.viewContainer?.register(
-            ViewContainerItem(
-                id: id,
-                title: name,
-                systemImage: "chevron.left.forwardslash.chevron.right"
-            ) {
-                EditorPanelHostView(kernel: kernel)
-            }
-        )
 
         // 注册 AgentTools
         kernel.toolManager?.add(GetCurrentFileTool(), pluginID: id)
         kernel.toolManager?.add(SetCurrentFileTool(), pluginID: id)
     }
 
-
-    // MARK: - Workspace State
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "chevron.left.forwardslash.chevron.right"
+            ) {
+                EditorPanelHostView(kernel: kernel)
+            },
+        ]
+    }
 
     public func workspaceVisibility(kernel: LumiKernel) -> WorkspaceVisibility {
         // Editor 容器：显示 rail + content + panel，不显示 chat
@@ -62,9 +62,6 @@ public final class EditorPanelPlugin: LumiPlugin {
         )
     }
 
-
-    // MARK: - LumiPlugin stubs
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
@@ -75,7 +72,6 @@ public final class EditorPanelPlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
