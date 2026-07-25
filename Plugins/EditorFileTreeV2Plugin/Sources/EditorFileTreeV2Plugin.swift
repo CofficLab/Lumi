@@ -7,15 +7,16 @@ import SwiftUI
 /// 文件树 V2 插件
 ///
 /// 从 kernel 获取当前项目路径，展示文件树在 RailView 中。
-public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
-    public static let emoji = "🌲"
-    public static let verbose = false
+@MainActor
+public final class EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
+    public nonisolated static let emoji = "🌲"
+    public nonisolated static let verbose = false
 
-    public static let id = "com.coffic.lumi.plugin.editor-file-tree-v2"
-    public static let name = "Editor File Tree V2"
-    public static let order = 0
-    public static let policy: LumiPluginPolicy = .alwaysOn
+    public let id = "com.coffic.lumi.plugin.editor-file-tree-v2"
+    public let name = "Editor File Tree V2"
+    public let order = 0
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
@@ -24,12 +25,9 @@ public enum EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
-        guard let _ = kernel.layoutManager?.isRailVisible else { return [] }
-
-        return [
+        [
             PanelRailTabItem(
                 id: id,
-                order: Self.order,
                 title: "Explorer V2",
                 systemImage: "square.grid.2x2.fill"
             ) {
