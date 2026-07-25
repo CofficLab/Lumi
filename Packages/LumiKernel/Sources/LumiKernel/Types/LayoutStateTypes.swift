@@ -154,8 +154,8 @@ public final class LayoutState: ObservableObject, SuperLog {
                 content: container.isContentVisible,
                 panel: container.isPanelVisible
             )
-            if let bottomVisible = container.isPanelBottomVisible {
-                isPanelBottomVisible = bottomVisible
+            if container.isPanelBottomVisible != nil {
+                isPanelBottomVisible = container.isPanelBottomVisible!
             }
         }
         for observer in containerObservers {

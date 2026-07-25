@@ -15,7 +15,7 @@ struct PanelView: View {
     }
 
     private var viewContainerID: String {
-        kernel.layoutManager?.activeViewContainerID ?? "main"
+        kernel.layoutManager?.activeViewContainerID ?? ""
     }
 
     private var layoutState: LayoutState {
@@ -30,8 +30,10 @@ struct PanelView: View {
                         .frame(maxWidth: .infinity)
                     PanelBodyView(kernel: kernel)
                         .frame(maxWidth: .infinity)
-                    PanelBottomView(kernel: kernel)
-                        .frame(maxWidth: .infinity)
+                    if layoutState.isPanelBottomVisible {
+                        PanelBottomView(kernel: kernel)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
