@@ -11,7 +11,7 @@ import SwiftUI
 public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
     public nonisolated static let emoji = "📊"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"
@@ -52,9 +52,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         )
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 DeviceInfo 视图容器到内核")
-            Self.logger.info("\(Self.t)DeviceInfo 插件启动完成")
-        }
+            Self.logger.info("\(Self.t)已注册 DeviceInfo 视图容器到内核")        }
     }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
