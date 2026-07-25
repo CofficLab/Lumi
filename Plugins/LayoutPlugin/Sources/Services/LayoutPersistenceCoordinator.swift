@@ -5,7 +5,7 @@ import os
 
 /// 布局持久化协调器
 ///
-/// 仅负责从磁盘读取已保存的布局状态并写入 `LumiCore.layoutState`。
+/// 仅负责从磁盘读取已保存的布局状态并写入 `LayoutProviding.layoutState`。
 /// 事件监听和持久化写入由 `LayoutPersistenceAnchor` 视图处理。
 @MainActor
 final class LayoutPersistenceCoordinator: SuperLog {
@@ -13,29 +13,27 @@ final class LayoutPersistenceCoordinator: SuperLog {
     nonisolated static let verbose = LayoutPlugin.verbose
     static let shared = LayoutPersistenceCoordinator()
 
-    /// 内核实例引用，用于获取 layoutState
+    /// LayoutProviding 实例引用，用于获取 layoutState
     // MARK: - Configuration
 
-    // 使用 LumiCoreAccessing 协议而非具体 LumiCore 类型，
-    // 使协调器与内核实现解耦，也便于单元测试时传入 mock。
-    private weak var lumiCore: (any LumiCoreAccessing)?
+    private weak var layoutProvider: (any LayoutProviding)?
 
     private init() {}
 
-    /// 配置内核实例
-    func configure(lumiCore: any LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    /// 配置 LayoutProviding 实例
+    func configure(layoutProvider: any LayoutProviding) {
+        self.layoutProvider = layoutProvider
     }
 
     /// 从磁盘恢复布局状态到内核
     func restore() {
-        guard let state = lumiCore?.layoutComponent.state else {
+        guard let provider = layoutProvider else {
             if Self.verbose {
-                LayoutPlugin.logger.warning("\(self.t)LumiCore.layoutComponent.state 未初始化，跳过恢复")
+                LayoutPlugin.logger.warning("\(self.t)layoutProvider 未初始化，跳过恢复")
             }
             return
         }
-        restore(into: state, from: LayoutPluginLocalStore.shared)
+        restore(into: provider.layoutState, from: LayoutPluginLocalStore.shared)
     }
 
     /// 从指定 store 恢复布局状态到指定的 layoutState（可注入，便于测试）。

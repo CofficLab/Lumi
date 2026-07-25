@@ -29,8 +29,8 @@ public final class LayoutPlugin: LumiPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)ready，开始恢复布局")
         }
-        if let core = kernel.lumiCore {
-            LayoutPersistenceCoordinator.shared.configure(lumiCore: core)
+        if let manager = kernel.layoutManager {
+            LayoutPersistenceCoordinator.shared.configure(layoutProvider: manager)
         }
         LayoutPersistenceCoordinator.shared.restore()
     }
