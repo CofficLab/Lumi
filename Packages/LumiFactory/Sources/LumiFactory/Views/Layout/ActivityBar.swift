@@ -12,7 +12,6 @@ struct ActivityBar: View {
 
     private var activeID: String? {
         kernel.layoutManager?.layoutState.activeViewContainerID
-            ?? kernel.layoutManager?.layoutState.activeSectionID
     }
 
     var body: some View {
