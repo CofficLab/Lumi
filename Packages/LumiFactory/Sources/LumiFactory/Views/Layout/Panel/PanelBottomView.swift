@@ -77,7 +77,10 @@ struct PanelBottomView: View {
             tab.makeView()
                 .id(tab.id)
         } else {
-            Color.clear
+            AppEmptyState(
+                icon: "square.split.2x1",
+                title: "No panels"
+            )
         }
     }
 
