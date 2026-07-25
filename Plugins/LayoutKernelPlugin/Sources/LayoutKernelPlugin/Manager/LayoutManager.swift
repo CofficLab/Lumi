@@ -56,7 +56,18 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public func setPanelVisible(_ visible: Bool) { layoutState.setPanelVisible(visible) }
     public func setPanelBottomVisible(_ visible: Bool) { layoutState.setPanelBottomVisible(visible) }
 
-    public func activateContainer(id: String) { layoutState.activateContainer(id: id) }
+    public func activateContainer(id: String) {
+        let container = self.layoutState.viewContainer(id: id)
+        let containerBottomVisible = container?.isPanelBottomVisible
+        if Self.verbose {
+            Self.logger.info("\(Self.t)activateContainer(id: \(id), container.isPanelBottomVisible: \(containerBottomVisible.map { String($0) } ?? "nil"))")
+        }
+        self.layoutState.activateContainer(id: id)
+        let bottomVisible = self.layoutState.isPanelBottomVisible
+        if Self.verbose {
+            Self.logger.info("\(Self.t)activateContainer done, isPanelBottomVisible = \(bottomVisible)")
+        }
+    }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
         if Self.verbose {
             Self.logger.info("\(Self.t)applyVisibility(rail: \(rail.map { String($0) } ?? "-"), chat: \(chat.map { String($0) } ?? "-"), content: \(content.map { String($0) } ?? "-"), panel: \(panel.map { String($0) } ?? "-"))")
