@@ -34,7 +34,7 @@ struct AppLayoutView: View {
                 PanelView(kernel: kernel)
                     .frame(maxWidth: .infinity)
 
-                if isChatVisible {
+                if isChatVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
                     AppDivider(.vertical)
                     ChatView(kernel: kernel)
                         .frame(maxWidth: 320, maxHeight: .infinity)
