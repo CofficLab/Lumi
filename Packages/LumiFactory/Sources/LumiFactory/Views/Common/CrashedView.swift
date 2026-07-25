@@ -1,143 +1,113 @@
 import LumiKernel
+import LumiLocalizationKit
+import LumiUI
 import SwiftUI
 
 /// Displays a fatal error screen when the app cannot continue running.
-/// Modeled after Cisum's CrashedView.
+///
+/// 所有视觉元素均来自 LumiUI(`@LumiTheme` / `AppCard` / `GlassKeyValueRow` /
+/// `AppButton`),保证崩溃屏与正常界面在主题(深浅色 / accent)下观感一致。
 struct CrashedView: View {
+    @LumiTheme private var theme
+
     var error: Error
 
     @State private var isCopied = false
 
     var body: some View {
         ScrollView {
-            VStack {
-                Spacer(minLength: 20)
+            VStack(spacing: AppUI.Spacing.lg) {
+                Spacer(minLength: AppUI.Spacing.xl)
 
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 60))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(theme.error)
                     .scaledToFit()
                     .frame(maxHeight: 120)
 
-                Spacer()
+                Text(LumiLocalization.string("Unable to continue", bundle: .module))
+                    .font(.appTitle)
+                    .foregroundStyle(theme.textPrimary)
 
-                VStack {
-                    Text("Unable to continue")
-                        .font(.title)
-                        .padding(.bottom, 10)
+                errorCard
 
-                    GroupBox {
-                        Text(String(describing: type(of: error)))
-                            .padding(.top, 20)
-                            .padding(.bottom, 20)
-                            .font(.title2)
+                debugView
 
-                        Text("\(error.localizedDescription)")
-                            .font(.subheadline)
-                            .foregroundStyle(.red)
-                            .padding(.bottom, 10)
-
-                        // Copy error details button
-                        Button(action: {
-                            copyErrorToClipboard()
-                        }) {
-                            HStack {
-                                Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                                    .foregroundColor(isCopied ? .green : .blue)
-                                Text(isCopied ? "Copied" : "Copy Error Details")
-                                    .foregroundColor(isCopied ? .green : .blue)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.1))
-                                    .stroke(isCopied ? Color.green : Color.blue, lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .scaleEffect(isCopied ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCopied)
-                        .padding(.top, 10)
-                        .padding(.bottom, 10)
-                    }.padding()
+                #if os(macOS)
+                    AppButton(
+                        LumiLocalization.string("Quit", bundle: .module),
+                        systemImage: "power",
+                        style: .primary,
+                        size: .medium
+                    ) {
+                        NSApplication.shared.terminate(self)
+                    }
 
                     Spacer()
-
-                    debugView
-
-                    #if os(macOS)
-                        Button {
-                            NSApplication.shared.terminate(self)
-                        } label: {
-                            Text("Quit")
-                        }
-                        .controlSize(.extraLarge)
-
-                        Spacer()
-                    #endif
-                }
+                #endif
             }
+            .padding(.horizontal, AppUI.Spacing.xl)
+            .padding(.bottom, AppUI.Spacing.xl)
+            .frame(maxWidth: 640)
+            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.background.opacity(0.8))
+        .background(theme.background)
     }
 
-    var debugView: some View {
-        VStack(spacing: 10) {
-            Section(content: {
-                GroupBox {
-                    makeKeyValueItem(
-                        key: String(localized: "App Support"),
-                        // 崩溃屏自身不能 throw（否则崩溃屏二次崩溃）。
-                        // makeDataRootDirectory() 已改为 throws，此处用 try? 降级；
-                        // 解析失败时显示占位符，恰好说明环境异常。
-                        value: makeDataRootDirectory()?.path(percentEncoded: false)
-                            ?? "(unavailable)"
-                    )
-                }
-            }, header: { makeTitle("Folders") })
+    private var errorCard: some View {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            Text(String(describing: type(of: error)))
+                .font(.appBodyEmphasized)
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
 
-            GroupBox {
-                Text("Please quit and reopen the app, or check logs for more details.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            Text(error.localizedDescription)
+                .font(.appCallout)
+                .foregroundStyle(theme.error)
+                .textSelection(.enabled)
+
+            CopyMessageButton(
+                content: Self.errorDetailsText(error),
+                showFeedback: $isCopied
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppUI.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppUI.Radius.md, style: .continuous)
+                .fill(theme.error.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppUI.Radius.md, style: .continuous)
+                .stroke(theme.error.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    private var debugView: some View {
+        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            Text(LumiLocalization.string("Folders", bundle: .module))
+                .font(.appSectionTitle)
+                .foregroundStyle(theme.textSecondary)
+
+            AppCard(style: .subtle, cornerRadius: AppUI.Radius.md, padding: AppUI.Spacing.compactPadding) {
+                // 崩溃屏自身不能 throw(否则崩溃屏二次崩溃)。
+                // makeDataRootDirectory() 已改为 throws,此处用 try? 降级;
+                // 解析失败时显示占位符,恰好说明环境异常。
+                GlassKeyValueRow(
+                    label: LumiLocalization.string("App Support", bundle: .module),
+                    value: makeDataRootDirectory()?.path(percentEncoded: false) ?? "(unavailable)"
+                )
             }
-        }
-        .padding(20)
-    }
 
-    private func makeTitle(_ title: LocalizedStringKey) -> some View {
-        HStack {
-            Text(title).font(.headline).padding(.leading, 10)
-            Spacer()
-        }
-    }
-
-    private func makeKeyValueItem(key: String, value: String) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(key)
-                Text(value)
-                    .font(.footnote)
-                    .opacity(0.8)
-            }
-            Spacer()
-        }
-        .padding(5)
-    }
-
-    /// Copy error details to clipboard
-    private func copyErrorToClipboard() {
-        Self.errorDetailsText(error).copy()
-
-        withAnimation {
-            isCopied = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation {
-                isCopied = false
+            AppCard(style: .subtle, cornerRadius: AppUI.Radius.md, padding: AppUI.Spacing.cardPadding) {
+                Text(LumiLocalization.string(
+                    "Please quit and reopen the app, or check logs for more details.",
+                    bundle: .module
+                ))
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -155,17 +125,6 @@ struct CrashedView: View {
         Error type: \(String(describing: type(of: error)))
         Error description: \(error.localizedDescription)
         """
-    }
-}
-
-// MARK: - Clipboard Helper
-
-extension String {
-    func copy() {
-        #if os(macOS)
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(self, forType: .string)
-        #endif
     }
 }
 

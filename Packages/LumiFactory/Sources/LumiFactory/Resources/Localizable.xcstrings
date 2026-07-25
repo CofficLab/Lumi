@@ -309,6 +309,34 @@
         }
       }
     },
+    "Check for Updates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新"
+          }
+        }
+      }
+    },
     "Check for Updates...": {
       "localizations": {
         "en": {
@@ -561,6 +589,34 @@
         }
       }
     },
+    "Loading components and plugins…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading components and plugins…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载组件和插件…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入元件與外掛…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入元件與外掛…"
+          }
+        }
+      }
+    },
     "Logo": {
       "localizations": {
         "en": {
@@ -614,6 +670,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "MLX 本地模型需要 macOS 14 或更高版本。"
+          }
+        }
+      }
+    },
+    "Missing services:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺失的服务:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing services:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺失的服務:"
           }
         }
       }
@@ -727,6 +805,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "新手引導"
+          }
+        }
+      }
+    },
+    "Open Lumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Lumi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Lumi"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟 Lumi"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟 Lumi"
           }
         }
       }
@@ -868,6 +974,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出"
+          }
+        }
+      }
+    },
+    "Quit Lumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Lumi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 Lumi"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結束 Lumi"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結束 Lumi"
           }
         }
       }
@@ -1044,6 +1178,28 @@
         }
       }
     },
+    "Settings Unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置不可用"
+          }
+        }
+      }
+    },
     "Start": {
       "localizations": {
         "en": {
@@ -1152,6 +1308,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "成功"
+          }
+        }
+      }
+    },
+    "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内核尚未完成初始化。部分必需服务缺失,因此无法显示设置界面。请重启应用;若问题持续,请查看日志。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心尚未完成初始化。部分必要服務缺失,因此無法顯示設定介面。請重啟應用;若問題持續,請查看日誌。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs."
           }
         }
       }
@@ -2360,72 +2538,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "選擇一個插件"
-          }
-        }
-      }
-    },
-    "Settings Unavailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings Unavailable"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定不可用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置不可用"
-          }
-        }
-      }
-    },
-    "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内核尚未完成初始化。部分必需服务缺失,因此无法显示设置界面。请重启应用;若问题持续,请查看日志。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "核心尚未完成初始化。部分必要服務缺失,因此無法顯示設定介面。請重啟應用;若問題持續,請查看日誌。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The kernel is not fully initialized. Some required services are missing, so the settings interface cannot be shown. Please restart the app; if the problem persists, check the logs."
-          }
-        }
-      }
-    },
-    "Missing services:": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺失的服务:"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Missing services:"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺失的服務:"
           }
         }
       }

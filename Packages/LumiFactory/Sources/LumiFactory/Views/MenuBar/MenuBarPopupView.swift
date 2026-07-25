@@ -1,8 +1,11 @@
 import LumiKernel
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
 struct MenuBarPopupView: View {
+    @LumiTheme private var theme
+
     let popupItems: [LumiMenuBarPopupItem]
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
@@ -35,9 +38,9 @@ struct MenuBarPopupView: View {
     private var appActionsSection: some View {
         VStack(spacing: 0) {
             MenuBarActionRow(
-                "打开 Lumi",
+                title: LumiLocalization.string("Open Lumi", bundle: .module),
                 icon: "macwindow",
-                color: Color(hex: "7C6FFF"),
+                color: theme.primary,
                 action: onShowMainWindow
             )
 
@@ -45,9 +48,9 @@ struct MenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                "检查更新",
+                title: LumiLocalization.string("Check for Updates", bundle: .module),
                 icon: "arrow.down.circle",
-                color: Color(hex: "0A84FF"),
+                color: theme.primary,
                 action: onCheckForUpdates
             )
 
@@ -55,9 +58,9 @@ struct MenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                "退出 Lumi",
+                title: LumiLocalization.string("Quit Lumi", bundle: .module),
                 icon: "power",
-                color: Color(hex: "FF453A"),
+                color: theme.error,
                 action: onQuit
             )
         }
