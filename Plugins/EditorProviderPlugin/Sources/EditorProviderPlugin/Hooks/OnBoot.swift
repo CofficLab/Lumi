@@ -18,7 +18,7 @@ public struct EditorProviderOnBootHook: SuperLog {
         kernel.registerEditor(editorProvider)
 
         if Self.verbose {
-            Self.logger.info("EditorProviderPlugin: registered EditorProviding to kernel")
+            Self.logger.info("\(Self.t)EditorProviderPlugin: registered EditorProviding to kernel")
         }
     }
 }
