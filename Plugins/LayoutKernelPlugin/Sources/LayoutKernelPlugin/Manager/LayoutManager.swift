@@ -65,6 +65,13 @@ public final class LayoutManager: LayoutProviding, SuperLog {
         layoutState.addContainerObserver(observer)
     }
 
+    // MARK: - View Containers
+
+    public var allViewContainers: [ViewContainerItem] { layoutState.allViewContainers }
+    public func viewContainer(id: String) -> ViewContainerItem? { layoutState.viewContainer(id: id) }
+    public func registerViewContainer(_ container: ViewContainerItem) { layoutState.registerViewContainer(container) }
+    public func unregisterViewContainer(id: String) { layoutState.unregisterViewContainer(id: id) }
+
     // MARK: - Container
 
     public var activeViewContainerID: String? { layoutState.activeViewContainerID }

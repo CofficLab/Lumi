@@ -27,6 +27,20 @@ public protocol LayoutProviding: ObservableObject {
     func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?)
     func addContainerObserver(_ observer: @escaping (String) -> Void)
 
+    // MARK: - View Containers
+
+    /// 所有视图容器（按 order 排序）
+    var allViewContainers: [ViewContainerItem] { get }
+
+    /// 按 ID 查询视图容器
+    func viewContainer(id: String) -> ViewContainerItem?
+
+    /// 注册视图容器
+    func registerViewContainer(_ container: ViewContainerItem)
+
+    /// 注销视图容器
+    func unregisterViewContainer(id: String)
+
     // MARK: - Container
 
     var activeViewContainerID: String? { get }

@@ -16,7 +16,7 @@ struct PanelBodyView: View {
 
     /// 匹配当前激活的容器，匹配不到则显示空状态。
     private var container: ViewContainerItem? {
-        kernel.sharedUI?.allViewContainers.first { $0.id == viewContainerID }
+        kernel.layoutManager?.allViewContainers.first { $0.id == viewContainerID }
     }
 
     var body: some View {

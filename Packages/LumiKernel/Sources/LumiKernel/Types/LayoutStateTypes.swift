@@ -134,9 +134,18 @@ public final class LayoutState: ObservableObject, SuperLog {
         isPanelVisible = visible
     }
 
-    /// 激活容器并通知观察者
+    /// 激活容器并通知观察者，同时根据容器配置自动应用可见性
     public func activateContainer(id: String) {
         activeViewContainerID = id
+        // 根据容器配置自动应用可见性
+        if let container = viewContainer(id: id) {
+            applyVisibility(
+                rail: container.isRailVisible,
+                chat: container.isChatVisible,
+                content: container.isContentVisible,
+                panel: container.isPanelVisible
+            )
+        }
         for observer in containerObservers {
             observer(id)
         }
@@ -153,6 +162,42 @@ public final class LayoutState: ObservableObject, SuperLog {
         if let chat { isChatVisible = chat }
         if let content { isContentVisible = content }
         if let panel { isPanelVisible = panel }
+    }
+
+    // MARK: - View Containers
+
+    private var viewContainers: [String: ViewContainerItem] = [:]
+    private var viewContainerOrder: [String] = []
+    @Published private var sortedViewContainers: [ViewContainerItem] = []
+
+    /// 所有视图容器（按 order 排序）
+    public var allViewContainers: [ViewContainerItem] {
+        sortedViewContainers
+    }
+
+    /// 按 ID 查询视图容器
+    public func viewContainer(id: String) -> ViewContainerItem? {
+        viewContainers[id]
+    }
+
+    /// 注册视图容器
+    public func registerViewContainer(_ container: ViewContainerItem) {
+        guard viewContainers[container.id] == nil else { return }
+        viewContainers[container.id] = container
+        viewContainerOrder.append(container.id)
+        updateSortedViewContainers()
+    }
+
+    /// 注销视图容器
+    public func unregisterViewContainer(id: String) {
+        viewContainers.removeValue(forKey: id)
+        viewContainerOrder.removeAll { $0 == id }
+        updateSortedViewContainers()
+    }
+
+    private func updateSortedViewContainers() {
+        sortedViewContainers = viewContainerOrder.compactMap { viewContainers[$0] }
+            .sorted { $0.order < $1.order }
     }
 
     // MARK: - Container Observers

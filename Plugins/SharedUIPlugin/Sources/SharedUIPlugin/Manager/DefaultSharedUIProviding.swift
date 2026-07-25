@@ -54,13 +54,6 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     private var panelRailTabItems: [String: PanelRailTabItem] = [:]
     private var panelRailTabOrder: [String] = []
 
-    // MARK: - View Containers
-
-    public private(set) var allViewContainers: [ViewContainerItem] = []
-
-    private var viewContainers: [String: ViewContainerItem] = [:]
-    private var viewContainerOrder: [String] = []
-
     // MARK: - Menu Bar
 
     public private(set) var allMenuBarContents: [MenuBarContentItem] = []
@@ -259,32 +252,6 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
             .sorted(by: { $0.order < $1.order })
     }
 
-    // MARK: - View Containers
-
-    public func viewContainer(id: String) -> ViewContainerItem? {
-        viewContainers[id]
-    }
-
-    public func registerViewContainer(_ container: ViewContainerItem) {
-        if viewContainers[container.id] == nil {
-            viewContainerOrder.append(container.id)
-        }
-        viewContainers[container.id] = container
-        updateSortedViewContainers()
-    }
-
-    public func unregisterViewContainer(id: String) {
-        viewContainers.removeValue(forKey: id)
-        viewContainerOrder.removeAll { $0 == id }
-        updateSortedViewContainers()
-    }
-
-    private func updateSortedViewContainers() {
-        objectWillChange.send()
-        allViewContainers = viewContainerOrder.compactMap { viewContainers[$0] }
-            .sorted(by: { $0.order < $1.order })
-    }
-
     // MARK: - Menu Bar
 
     public func registerMenuBarContent(_ content: MenuBarContentItem) {
@@ -366,11 +333,6 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
         panelRailTabItems.removeAll()
         panelRailTabOrder.removeAll()
         updateSortedPanelRailTabItems()
-
-        // View Containers
-        viewContainers.removeAll()
-        viewContainerOrder.removeAll()
-        updateSortedViewContainers()
 
         // Menu Bar
         menuBarContents.removeAll()
