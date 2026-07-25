@@ -5,44 +5,6 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// 插件声明的工作区可见性偏好
-public struct WorkspaceVisibility: Sendable {
-    public var rail: Bool?
-    public var chat: Bool?
-    public var content: Bool?
-    public var activityBar: Bool?
-    public var panel: Bool?
-
-    public init(
-        rail: Bool? = nil,
-        chat: Bool? = nil,
-        content: Bool? = nil,
-        activityBar: Bool? = nil,
-        panel: Bool? = nil
-    ) {
-        self.rail = rail
-        self.chat = chat
-        self.content = content
-        self.activityBar = activityBar
-        self.panel = panel
-    }
-
-    /// 全部可见
-    public static let allVisible = WorkspaceVisibility(
-        rail: true, chat: true, content: true, activityBar: true, panel: true
-    )
-
-    /// 仅显示 Chat
-    public static let chatOnly = WorkspaceVisibility(
-        rail: false, chat: true, content: false, activityBar: true, panel: false
-    )
-
-    /// 仅显示 Content + Rail
-    public static let contentWithRail = WorkspaceVisibility(
-        rail: true, chat: false, content: true, activityBar: true, panel: true
-    )
-}
-
 /// 布局状态信息（轻量级数据结构）
 public struct LayoutStateInfo: Sendable, Codable {
     public var activeSectionID: String

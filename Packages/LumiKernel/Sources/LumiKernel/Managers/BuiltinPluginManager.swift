@@ -75,6 +75,17 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     }
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        // 先按容器声明自动应用可见性偏好（如果有）
+        if let container = kernel.viewContainer?.viewContainer(id: containerID) {
+            kernel.layoutManager?.layoutState.applyVisibility(
+                rail: container.isRailVisible,
+                chat: container.isChatVisible,
+                content: container.isContentVisible,
+                activityBar: container.isActivityBarVisible,
+                panel: container.isPanelVisible
+            )
+        }
+        // 再广播给所有插件（保留扩展点，用于非可见性的副作用）
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             plugin.onContainerActivated(kernel: kernel, containerID: containerID)
@@ -159,13 +170,23 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
+                        isRailVisible: container.isRailVisible,
+                        isChatVisible: container.isChatVisible,
+                        isContentVisible: container.isContentVisible,
+                        isActivityBarVisible: container.isActivityBarVisible,
+                        isPanelVisible: container.isPanelVisible,
                         content: makeView
                     )
                 } else {
                     viewContainer = ViewContainerItem(
                         id: container.id,
                         title: container.title,
-                        systemImage: container.systemImage
+                        systemImage: container.systemImage,
+                        isRailVisible: container.isRailVisible,
+                        isChatVisible: container.isChatVisible,
+                        isContentVisible: container.isContentVisible,
+                        isActivityBarVisible: container.isActivityBarVisible,
+                        isPanelVisible: container.isPanelVisible
                     )
                 }
                 var containerWithOrder = viewContainer
