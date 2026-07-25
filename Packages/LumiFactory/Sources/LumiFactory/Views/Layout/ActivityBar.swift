@@ -12,7 +12,7 @@ struct ActivityBar: View {
 
     private var activeID: String? {
         kernel.layoutManager?.layoutState.activeViewContainerID
-            ?? kernel.layoutManager?.state.activeSectionID
+            ?? kernel.layoutManager?.layoutState.activeSectionID
     }
 
     var body: some View {
@@ -25,10 +25,8 @@ struct ActivityBar: View {
                 ) {
                     // 激活容器
                     kernel.layoutManager?.layoutState.activateContainer(id: container.id)
-                    kernel.layoutManager?.updateLayout { state in
-                        state.activeSectionID = container.id
-                        state.activeSectionTitle = container.title
-                    }
+                    kernel.layoutManager?.layoutState.activeSectionID = container.id
+                    kernel.layoutManager?.layoutState.activeSectionTitle = container.title
                 }
             }
 
