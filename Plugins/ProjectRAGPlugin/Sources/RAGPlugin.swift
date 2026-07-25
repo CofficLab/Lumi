@@ -1,25 +1,35 @@
 import LumiKernel
 import LumiUI
 import os
+import SuperLogKit
 import SwiftUI
 
 @MainActor
-public final class ProjectRAGPlugin: LumiPlugin {
+public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
+    nonisolated public static let emoji = "📚"
+    nonisolated static let verbose = false
+
     public let id = "com.coffic.lumi.plugin.project.rag"
     public let name = "Project RAG"
     public let order = 200
     public let policy: LumiPluginPolicy = .alwaysOn
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)onReady")
+        }
         // RAG capabilities are provided through RAGPluginService singleton.
         RAGPluginRuntime.kernel = kernel
         RAGPluginService.configure(kernel: kernel)
         ProjectRAGPlugin.bootstrapRuntime(kernel: kernel)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)onReady completed")
+        }
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
