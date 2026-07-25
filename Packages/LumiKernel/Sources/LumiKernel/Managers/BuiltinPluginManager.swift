@@ -164,6 +164,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
                         isPanelVisible: container.isPanelVisible,
+                        isPanelBottomVisible: container.isPanelBottomVisible,
                         content: makeView
                     )
                 } else {
@@ -174,7 +175,8 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isRailVisible: container.isRailVisible,
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
-                        isPanelVisible: container.isPanelVisible
+                        isPanelVisible: container.isPanelVisible,
+                        isPanelBottomVisible: container.isPanelBottomVisible
                     )
                 }
                 var containerWithOrder = viewContainer
