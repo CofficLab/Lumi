@@ -4,8 +4,15 @@ import SwiftUI
 // MARK: - Rail Content View
 
 struct RailContentView: View {
-    let tabs: [PanelRailTabItem]
-    let activeTabID: String
+    @ObservedObject var kernel: LumiKernel
+
+    private var tabs: [PanelRailTabItem] {
+        kernel.sharedUI?.allPanelRailTabItems ?? []
+    }
+
+    private var activeTabID: String {
+        kernel.layoutManager?.activeRailTabID ?? ""
+    }
 
     @ViewBuilder
     var body: some View {
