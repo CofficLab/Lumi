@@ -3,6 +3,17 @@ import Foundation
 import os
 import SuperLogKit
 
+// MARK: - Notification Names
+
+private extension Notification.Name {
+    static let selectedRemoteProviderIDDidChange = Notification.Name("LumiProviderState.SelectedRemoteProviderIDDidChange")
+    static let selectedLocalProviderIDDidChange = Notification.Name("LumiProviderState.SelectedLocalProviderIDDidChange")
+    static let selectedModelsDidChange = Notification.Name("LumiProviderState.SelectedModelsDidChange")
+    static let routingModeDidChange = Notification.Name("LumiProviderState.RoutingModeDidChange")
+    static let providerAvailabilityDidChange = Notification.Name("LumiProviderState.AvailabilityDidChange")
+    static let providerStatusesDidChange = Notification.Name("LumiProviderState.StatusesDidChange")
+}
+
 @MainActor
 public final class LumiProviderState: ObservableObject, SuperLog {
     nonisolated public static let emoji = "🤖"
@@ -14,7 +25,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
             guard selectedRemoteProviderID != oldValue else { return }
             let value = selectedRemoteProviderID
             if Self.verbose { Self.logger.info("selectedRemoteProviderID → \(value ?? "nil")") }
-            NotificationCenter.postSelectedRemoteProviderIDDidChange(providerID: value)
+            NotificationCenter.default.post(name: .selectedRemoteProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
         }
     }
 
@@ -23,7 +34,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
             guard selectedLocalProviderID != oldValue else { return }
             let value = selectedLocalProviderID
             if Self.verbose { Self.logger.info("selectedLocalProviderID → \(value ?? "nil")") }
-            NotificationCenter.postSelectedLocalProviderIDDidChange(providerID: value)
+            NotificationCenter.default.post(name: .selectedLocalProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
         }
     }
 
@@ -31,7 +42,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.selectedModels != oldValue else { return }
             if Self.verbose { Self.logger.info("selectedModels → \(self.selectedModels)") }
-            NotificationCenter.postSelectedModelsDidChange(selectedModels: self.selectedModels)
+            NotificationCenter.default.post(name: .selectedModelsDidChange, object: nil, userInfo: ["selectedModels": self.selectedModels])
         }
     }
 
@@ -39,7 +50,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.routingMode != oldValue else { return }
             if Self.verbose { Self.logger.info("routingMode → \(String(describing: self.routingMode))") }
-            NotificationCenter.postRoutingModeDidChange(routingMode: self.routingMode)
+            NotificationCenter.default.post(name: .routingModeDidChange, object: nil, userInfo: ["routingMode": self.routingMode])
         }
     }
 
@@ -47,7 +58,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.availabilityResults != oldValue else { return }
             if Self.verbose { Self.logger.info("availabilityResults.count → \(self.availabilityResults.count)") }
-            NotificationCenter.postProviderAvailabilityDidChange(availabilityResults: self.availabilityResults)
+            NotificationCenter.default.post(name: .providerAvailabilityDidChange, object: nil, userInfo: ["availabilityResults": self.availabilityResults])
         }
     }
 
@@ -55,7 +66,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.providerStatuses != oldValue else { return }
             if Self.verbose { Self.logger.info("providerStatuses.count → \(self.providerStatuses.count)") }
-            NotificationCenter.postProviderStatusesDidChange(providerStatuses: self.providerStatuses)
+            NotificationCenter.default.post(name: .providerStatusesDidChange, object: nil, userInfo: ["providerStatuses": self.providerStatuses])
         }
     }
 
@@ -84,32 +95,4 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         if let status { providerStatuses[providerID] = status } else { providerStatuses.removeValue(forKey: providerID) }
     }
     public func restoreProviderStatuses(_ statuses: [String: LumiLLMProviderStatus]) { providerStatuses = statuses }
-}
-
-public extension NotificationCenter {
-    private static let selectedRemoteProviderIDDidChange = Notification.Name("LumiProviderState.SelectedRemoteProviderIDDidChange")
-    private static let selectedLocalProviderIDDidChange = Notification.Name("LumiProviderState.SelectedLocalProviderIDDidChange")
-    private static let selectedModelsDidChange = Notification.Name("LumiProviderState.SelectedModelsDidChange")
-    private static let routingModeDidChange = Notification.Name("LumiProviderState.RoutingModeDidChange")
-    private static let providerAvailabilityDidChange = Notification.Name("LumiProviderState.AvailabilityDidChange")
-    private static let providerStatusesDidChange = Notification.Name("LumiProviderState.StatusesDidChange")
-
-    static func postSelectedRemoteProviderIDDidChange(providerID: String?) {
-        NotificationCenter.default.post(name: selectedRemoteProviderIDDidChange, object: nil, userInfo: ["providerID": providerID as Any])
-    }
-    static func postSelectedLocalProviderIDDidChange(providerID: String?) {
-        NotificationCenter.default.post(name: selectedLocalProviderIDDidChange, object: nil, userInfo: ["providerID": providerID as Any])
-    }
-    static func postSelectedModelsDidChange(selectedModels: [String: String]) {
-        NotificationCenter.default.post(name: selectedModelsDidChange, object: nil, userInfo: ["selectedModels": selectedModels])
-    }
-    static func postRoutingModeDidChange(routingMode: LumiModelRoutingMode) {
-        NotificationCenter.default.post(name: routingModeDidChange, object: nil, userInfo: ["routingMode": routingMode])
-    }
-    static func postProviderAvailabilityDidChange(availabilityResults: [String: LumiModelAvailabilityResult]) {
-        NotificationCenter.default.post(name: providerAvailabilityDidChange, object: nil, userInfo: ["availabilityResults": availabilityResults])
-    }
-    static func postProviderStatusesDidChange(providerStatuses: [String: LumiLLMProviderStatus]) {
-        NotificationCenter.default.post(name: providerStatusesDidChange, object: nil, userInfo: ["providerStatuses": providerStatuses])
-    }
 }
