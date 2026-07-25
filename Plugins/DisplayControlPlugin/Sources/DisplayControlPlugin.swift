@@ -1,28 +1,24 @@
 import Foundation
 import LumiKernel
 import LumiUI
-import SwiftUI
 import os
+import SuperLogKit
+import SwiftUI
 
 /// Display Control Plugin
 ///
 /// Control brightness, volume, and contrast for external displays via DDC/CI.
 @MainActor
-public final class DisplayControlPlugin: LumiPlugin {
+public final class DisplayControlPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
-
-    // MARK: - LumiPlugin
+    static let verbose: Bool = false
 
     public let id = "com.coffic.lumi.plugin.display-control"
     public let name = "Display Control"
     public let order = 21
-	public let policy: LumiPluginPolicy = .optOut
-
-    // MARK: - Initialization
+    public let policy: LumiPluginPolicy = .optOut
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
@@ -33,15 +29,17 @@ public final class DisplayControlPlugin: LumiPlugin {
             ViewContainerItem(
                 id: id,
                 title: "Display Control",
-                systemImage: "display"
+                systemImage: "display",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: true,
+                isActivityBarVisible: true,
+                isPanelVisible: true
             ) {
                 DisplayControlView()
             },
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

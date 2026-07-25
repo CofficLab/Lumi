@@ -62,7 +62,12 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: "Device Info",
-                systemImage: "macbook.and.iphone"
+                systemImage: "macbook.and.iphone",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: true,
+                isActivityBarVisible: true,
+                isPanelVisible: true
             ) {
                 DeviceInfoView()
             },
@@ -94,30 +99,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)onContainerActivated,contaienrID: \(containerID)")
-        }
-        
-        guard containerID == id else { return }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)调整可见性")
-        }
-        
-        guard let layoutManager = kernel.layoutManager else {
-            Self.logger.warning("\(Self.t)No LayoutManager, ignore")
-            return
-        }
-        
-        layoutManager.layoutState.applyVisibility(
-            rail: false,
-            chat: false,
-            content: true,
-            activityBar: true,
-            panel: true
-        )
-    }
-
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

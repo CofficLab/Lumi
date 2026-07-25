@@ -33,7 +33,12 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: "Clipboard",
-                systemImage: "doc.on.clipboard"
+                systemImage: "doc.on.clipboard",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: true,
+                isActivityBarVisible: true,
+                isPanelVisible: true
             ) {
                 ClipboardHistoryView()
             },
@@ -65,17 +70,7 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
-        guard containerID == id else { return }
-
-        kernel.layoutManager?.layoutState.applyVisibility(
-            rail: false,
-            chat: false,
-            content: true,
-            activityBar: true,
-            panel: true
-        )
-    }
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

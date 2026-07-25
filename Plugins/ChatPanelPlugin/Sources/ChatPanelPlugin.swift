@@ -24,24 +24,18 @@ public final class ChatPanelPlugin: LumiPlugin {
             ViewContainerItem(
                 id: id,
                 title: name,
-                systemImage: "bubble.left.and.bubble.right.fill"
+                systemImage: "bubble.left.and.bubble.right.fill",
+                isRailVisible: true,
+                isChatVisible: true,
+                isContentVisible: false,
+                isActivityBarVisible: true,
+                isPanelVisible: false
             ),
         ]
     }
 
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
         []
-    }
-
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
-        guard containerID == id else { return }
-        kernel.layoutManager?.layoutState.applyVisibility(
-            rail: true,
-            chat: true,
-            content: false,
-            activityBar: true,
-            panel: false
-        )
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
@@ -68,6 +62,7 @@ public final class ChatPanelPlugin: LumiPlugin {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
