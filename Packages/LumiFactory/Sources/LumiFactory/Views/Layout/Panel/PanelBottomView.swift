@@ -15,6 +15,10 @@ struct PanelBottomView: View {
         kernel.sharedUI?.allPanelBottomTabItems ?? []
     }
 
+    private var isBottomPanelVisible: Bool {
+        kernel.layoutManager?.bottomPanelVisible ?? true
+    }
+
     private var viewContainerID: String {
         kernel.layoutManager?.activeViewContainerID ?? "main"
     }
@@ -24,19 +28,23 @@ struct PanelBottomView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabBar
-            AppDivider()
-            tabContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(minHeight: 80)
-        .background(theme.surface)
-        .onAppear {
-            ensureValidSelection()
-        }
-        .onChange(of: tabs.map(\.id)) { _, _ in
-            ensureValidSelection()
+        Group {
+            if isBottomPanelVisible {
+                VStack(spacing: 0) {
+                    tabBar
+                    AppDivider()
+                    tabContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(minHeight: 80)
+                .background(theme.surface)
+                .onAppear {
+                    ensureValidSelection()
+                }
+                .onChange(of: tabs.map(\.id)) { _, _ in
+                    ensureValidSelection()
+                }
+            }
         }
     }
 

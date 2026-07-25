@@ -28,6 +28,7 @@ public struct WindowMain: View, SuperLog {
                 CrashedView(error: error)
             } else if let kernel = kernel {
                 AppLayoutView(kernel: kernel)
+                    .frame(maxWidth: .infinity)
             }
         }
         .task {

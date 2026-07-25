@@ -25,6 +25,8 @@ struct PanelBodyView: View {
             if let container, let makeView = container.makeView {
                 makeView()
                     .id(container.id)
+                    .frame(maxWidth: .infinity)
+//                    .background(.yellow)
             } else {
                 ZStack {
                     theme.surface
@@ -37,5 +39,6 @@ struct PanelBodyView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.yellow)
     }
 }

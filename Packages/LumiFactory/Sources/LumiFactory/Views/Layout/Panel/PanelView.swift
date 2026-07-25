@@ -10,6 +10,10 @@ struct PanelView: View {
 
     @LumiTheme private var theme
 
+    private var isPanelVisible: Bool {
+        kernel.layoutManager?.isPanelVisible ?? true
+    }
+
     private var viewContainerID: String {
         kernel.layoutManager?.activeViewContainerID ?? "main"
     }
@@ -19,17 +23,27 @@ struct PanelView: View {
     }
 
     var body: some View {
-        VSplitView {
-            PanelHeaderView(kernel: kernel)
-            PanelBodyView(kernel: kernel)
-            PanelBottomView(kernel: kernel)
+        Group {
+            if isPanelVisible {
+                VSplitView {
+                    PanelHeaderView(kernel: kernel)
+                        .frame(maxWidth: .infinity)
+                    PanelBodyView(kernel: kernel)
+                        .frame(maxWidth: .infinity)
+                        .background(.red)
+                    PanelBottomView(kernel: kernel)
+                        .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    SplitViewDividerPersistence.bottomPanel(
+                        layoutState: layoutState,
+                        viewContainerID: viewContainerID
+                    )
+                )
+                .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
+                .background(.green)
+            }
         }
-        .background(
-            SplitViewDividerPersistence.bottomPanel(
-                layoutState: layoutState,
-                viewContainerID: viewContainerID
-            )
-        )
-        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
     }
 }
