@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiKernel
 import os
@@ -16,9 +17,25 @@ public final class LayoutService: LayoutProviding, SuperLog {
     /// 原始布局状态（用于视图绑定）
     public let layoutState: LayoutState
 
+    /// 订阅 `layoutState.objectWillChange`,转发到本服务。
+    ///
+    /// `activeRailTabID`、`bottomPanelVisible` 等运行时状态都存放在 `LayoutState` 的
+    /// `@Published` 属性里。Kernel 只订阅本服务(通过 `LayoutProviding`)的
+    /// `objectWillChange`,若不在此转发,任何 `LayoutState` 的变更都无法触发
+    /// `@ObservedObject kernel` 的视图重绘——表现为 Rail 标签栏高亮不随点击切换等故障。
+    private var layoutStateSubscription: AnyCancellable?
+
     public init(initialState: LayoutStateInfo = LayoutStateInfo()) {
         self.state = initialState
         self.layoutState = LayoutState()
+
+        // 把 LayoutState 的变更重新发布到 LayoutService,使经 LayoutProviding
+        // 订阅本服务的消费者(kernel 及其视图)能收到通知。
+        self.layoutStateSubscription = layoutState.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                self?.objectWillChange.send()
+            }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)LayoutService initialized")
