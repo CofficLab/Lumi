@@ -3,14 +3,20 @@ import LumiUI
 import SwiftUI
 
 /// 底部面板视图
+///
+/// 只接收 kernel，所需数据（底部标签、当前激活的 view container、
+/// 标签选中态）由视图自身从内核读取。
 struct PanelBottomView: View {
     @ObservedObject var kernel: LumiKernel
-    let viewContainerID: String
 
     @LumiTheme private var theme
 
     private var tabs: [PanelBottomTabItem] {
         kernel.sharedUI?.allPanelBottomTabItems ?? []
+    }
+
+    private var viewContainerID: String {
+        kernel.layoutManager?.activeViewContainerID ?? "main"
     }
 
     private var layoutState: LayoutState {
