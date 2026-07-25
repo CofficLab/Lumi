@@ -7,8 +7,13 @@ import SwiftUI
 
 /// 应用启动时的 Loading 页面。
 ///
-/// 复用 LumiUI 的 `AppLoadingOverlay` 作为加载指示器与文案,保证与
-/// 设置窗口、插件加载等所有加载态观感一致;外层只补一层 logo 与品牌背景。
+/// 用 ProgressView + 主题文案呈现加载态,观感与设置窗口、插件加载一致;
+/// 外层补一层 logo 与品牌渐变背景。
+///
+/// 注:不复用 LumiUI 的 `AppLoadingOverlay` —— 它的 `message` 入参是
+/// `LocalizedStringKey`,而这里文案走 `LumiLocalization.string(...)`(返回 String),
+/// 类型不兼容。同时 LumiUI 的 `AppUI.Spacing` / `DesignTokens.Spacing` 未声明
+/// `public`,跨模块不可见,故间距直接用数值。
 struct LoadingView: View {
     @LumiTheme private var theme
 
@@ -16,22 +21,25 @@ struct LoadingView: View {
         ZStack {
             backgroundView
 
-            VStack(spacing: AppUI.Spacing.xxl) {
+            VStack(spacing: 48) {
                 Spacer()
 
                 LogoView(scene: .general)
                     .frame(width: 64, height: 64)
 
-                AppLoadingOverlay(
-                    message: LumiLocalization.string("Loading components and plugins…", bundle: .module),
-                    size: .medium
-                )
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.0)
+                    Text(LumiLocalization.string("Loading components and plugins…", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                }
                 .frame(maxWidth: 320)
 
                 Spacer()
                 Spacer()
             }
-            .padding(.horizontal, AppUI.Spacing.xl)
+            .padding(.horizontal, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)

@@ -3,6 +3,19 @@ import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
+/// 本文件私有的间距/圆角常量。
+///
+/// LumiUI 的 `AppUI.Spacing` / `AppUI.Radius`(及 `DesignTokens.Spacing` /
+/// `DesignTokens.Radius`)目前均未声明 `public`,只在 LumiUI 包内可见,跨模块无法引用。
+/// 这里用本地常量复刻所用到的那几个值,语义与设计令牌保持一致。
+private enum CrashLayout {
+    static let spacingSm: CGFloat = 8
+    static let spacingMd: CGFloat = 16
+    static let spacingLg: CGFloat = 24
+    static let spacingXl: CGFloat = 32
+    static let radiusMd: CGFloat = 16
+}
+
 /// Displays a fatal error screen when the app cannot continue running.
 ///
 /// 所有视觉元素均来自 LumiUI(`@LumiTheme` / `AppCard` / `GlassKeyValueRow` /
@@ -16,8 +29,8 @@ struct CrashedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: AppUI.Spacing.lg) {
-                Spacer(minLength: AppUI.Spacing.xl)
+            VStack(spacing: CrashLayout.spacingLg) {
+                Spacer(minLength: CrashLayout.spacingXl)
 
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 60))
@@ -46,8 +59,8 @@ struct CrashedView: View {
                     Spacer()
                 #endif
             }
-            .padding(.horizontal, AppUI.Spacing.xl)
-            .padding(.bottom, AppUI.Spacing.xl)
+            .padding(.horizontal, CrashLayout.spacingXl)
+            .padding(.bottom, CrashLayout.spacingXl)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
         }
@@ -56,7 +69,7 @@ struct CrashedView: View {
     }
 
     private var errorCard: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: CrashLayout.spacingMd) {
             Text(String(describing: type(of: error)))
                 .font(.appBodyEmphasized)
                 .foregroundStyle(theme.textPrimary)
@@ -73,24 +86,24 @@ struct CrashedView: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppUI.Spacing.md)
+        .padding(CrashLayout.spacingMd)
         .background(
-            RoundedRectangle(cornerRadius: AppUI.Radius.md, style: .continuous)
+            RoundedRectangle(cornerRadius: CrashLayout.radiusMd, style: .continuous)
                 .fill(theme.error.opacity(0.08))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppUI.Radius.md, style: .continuous)
+            RoundedRectangle(cornerRadius: CrashLayout.radiusMd, style: .continuous)
                 .stroke(theme.error.opacity(0.2), lineWidth: 1)
         )
     }
 
     private var debugView: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: CrashLayout.spacingMd) {
             Text(LumiLocalization.string("Folders", bundle: .module))
                 .font(.appSectionTitle)
                 .foregroundStyle(theme.textSecondary)
 
-            AppCard(style: .subtle, cornerRadius: AppUI.Radius.md, padding: AppUI.Spacing.compactPadding) {
+            AppCard(style: .subtle, cornerRadius: CrashLayout.radiusMd, padding: EdgeInsets(top: CrashLayout.spacingSm, leading: CrashLayout.spacingSm, bottom: CrashLayout.spacingSm, trailing: CrashLayout.spacingSm)) {
                 // 崩溃屏自身不能 throw(否则崩溃屏二次崩溃)。
                 // makeDataRootDirectory() 已改为 throws,此处用 try? 降级;
                 // 解析失败时显示占位符,恰好说明环境异常。
@@ -100,7 +113,7 @@ struct CrashedView: View {
                 )
             }
 
-            AppCard(style: .subtle, cornerRadius: AppUI.Radius.md, padding: AppUI.Spacing.cardPadding) {
+            AppCard(style: .subtle, cornerRadius: CrashLayout.radiusMd, padding: EdgeInsets(top: CrashLayout.spacingMd, leading: CrashLayout.spacingMd, bottom: CrashLayout.spacingMd, trailing: CrashLayout.spacingMd)) {
                 Text(LumiLocalization.string(
                     "Please quit and reopen the app, or check logs for more details.",
                     bundle: .module
