@@ -30,7 +30,6 @@ struct PanelView: View {
                         .frame(maxWidth: .infinity)
                     PanelBodyView(kernel: kernel)
                         .frame(maxWidth: .infinity)
-                        .background(.red)
                     PanelBottomView(kernel: kernel)
                         .frame(maxWidth: .infinity)
                 }
@@ -42,7 +41,6 @@ struct PanelView: View {
                     )
                 )
                 .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-                .background(.green)
             }
         }
     }

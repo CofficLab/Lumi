@@ -43,14 +43,12 @@ struct AppLayoutView: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.red)
 
             AppDivider()
             StatusBar(kernel: kernel)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-//        .background(theme.background)
-        .background(.green)
+        .background(theme.background)
         .ignoresSafeArea()
         .onRailVisibleDidChange { visible in
             isRailVisible = visible

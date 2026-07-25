@@ -26,7 +26,6 @@ struct PanelBodyView: View {
                 makeView()
                     .id(container.id)
                     .frame(maxWidth: .infinity)
-//                    .background(.yellow)
             } else {
                 ZStack {
                     theme.surface
@@ -39,6 +38,5 @@ struct PanelBodyView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.yellow)
     }
 }
