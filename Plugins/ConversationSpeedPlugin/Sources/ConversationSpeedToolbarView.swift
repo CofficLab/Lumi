@@ -1,15 +1,10 @@
 import LumiKernel
 import SwiftUI
-import SuperLogKit
-import os
 
 struct ConversationSpeedToolbarView: View {
     @ObservedObject var kernel: LumiKernel
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
-
-    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversationspeed.toolbar")
-    nonisolated private static let verbose = true
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
@@ -45,20 +40,24 @@ struct ConversationSpeedToolbarView: View {
 
     private func updateTPS() {
         guard let conversationID = selectedConversationID else {
-            Self.logger.info("⚡️ No selected conversation ID")
+            if ConversationSpeedPlugin.verbose {
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)No selected conversation ID")
+            }
             return
         }
 
         guard let lastMessage = kernel.messageManager?.lastMessage(in: conversationID) else {
-            Self.logger.info("⚡️ No last message for conversation \(conversationID.uuidString.prefix(8))")
+            if ConversationSpeedPlugin.verbose {
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)No last message for conversation \(conversationID.uuidString.prefix(8))")
+            }
             return
         }
 
-        Self.logger.info("⚡️ Last message: id=\(lastMessage.id.uuidString.prefix(8)), content length=\(lastMessage.content.count)")
-
         // Try tokensPerSecond property first
         if let tps = lastMessage.tokensPerSecond {
-            Self.logger.info("⚡️ tokensPerSecond from property: \(tps)")
+            if ConversationSpeedPlugin.verbose {
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)tokensPerSecond from property: \(tps)")
+            }
             cachedTPS = tps
             hasShownTPSAtLeastOnce = true
             return
@@ -71,17 +70,23 @@ struct ConversationSpeedToolbarView: View {
            let streamingDurationMs = Double(streamingDurationStr),
            streamingDurationMs > 0 {
             let tps = Double(outputTokens) / (streamingDurationMs / 1000.0)
-            Self.logger.info("⚡️ Calculated TPS from metadata: \(tps) (outputTokens=\(outputTokens), duration=\(streamingDurationMs)ms)")
+            if ConversationSpeedPlugin.verbose {
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Calculated TPS from metadata: \(tps) (outputTokens=\(outputTokens), duration=\(streamingDurationMs)ms)")
+            }
             cachedTPS = tps
             hasShownTPSAtLeastOnce = true
         } else {
             // Don't clear cachedTPS if we've already shown it once
             // This handles cases where subsequent messages (like tool results) don't have TPS data
             if !hasShownTPSAtLeastOnce {
-                Self.logger.info("⚡️ Cannot calculate TPS (no cached value): outputTokens=\(lastMessage.metadata["outputTokens"] ?? "nil"), streamingDurationMs=\(lastMessage.metadata["streamingDurationMs"] ?? "nil")")
+                if ConversationSpeedPlugin.verbose {
+                    ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Cannot calculate TPS (no cached value)")
+                }
                 cachedTPS = nil
             } else {
-                Self.logger.info("⚡️ Keeping cached TPS=\(cachedTPS ?? 0) (already shown once)")
+                if ConversationSpeedPlugin.verbose {
+                    ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Keeping cached TPS=\(cachedTPS ?? 0)")
+                }
             }
         }
     }
