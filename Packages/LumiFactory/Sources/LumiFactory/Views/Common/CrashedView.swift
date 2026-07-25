@@ -3,23 +3,10 @@ import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
-/// 本文件私有的间距/圆角常量。
-///
-/// LumiUI 的 `AppUI.Spacing` / `AppUI.Radius`(及 `DesignTokens.Spacing` /
-/// `DesignTokens.Radius`)目前均未声明 `public`,只在 LumiUI 包内可见,跨模块无法引用。
-/// 这里用本地常量复刻所用到的那几个值,语义与设计令牌保持一致。
-private enum CrashLayout {
-    static let spacingSm: CGFloat = 8
-    static let spacingMd: CGFloat = 16
-    static let spacingLg: CGFloat = 24
-    static let spacingXl: CGFloat = 32
-    static let radiusMd: CGFloat = 16
-}
-
 /// Displays a fatal error screen when the app cannot continue running.
 ///
 /// 所有视觉元素均来自 LumiUI(`@LumiTheme` / `AppCard` / `GlassKeyValueRow` /
-/// `AppButton`),保证崩溃屏与正常界面在主题(深浅色 / accent)下观感一致。
+/// `AppButton` / `DesignTokens`),保证崩溃屏与正常界面在主题(深浅色 / accent)下观感一致。
 struct CrashedView: View {
     @LumiTheme private var theme
 
@@ -29,8 +16,8 @@ struct CrashedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: CrashLayout.spacingLg) {
-                Spacer(minLength: CrashLayout.spacingXl)
+            VStack(spacing: DesignTokens.Spacing.lg) {
+                Spacer(minLength: DesignTokens.Spacing.xl)
 
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 60))
@@ -59,8 +46,8 @@ struct CrashedView: View {
                     Spacer()
                 #endif
             }
-            .padding(.horizontal, CrashLayout.spacingXl)
-            .padding(.bottom, CrashLayout.spacingXl)
+            .padding(.horizontal, DesignTokens.Spacing.xl)
+            .padding(.bottom, DesignTokens.Spacing.xl)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
         }
@@ -69,7 +56,7 @@ struct CrashedView: View {
     }
 
     private var errorCard: some View {
-        VStack(alignment: .leading, spacing: CrashLayout.spacingMd) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             Text(String(describing: type(of: error)))
                 .font(.appBodyEmphasized)
                 .foregroundStyle(theme.textPrimary)
@@ -86,24 +73,24 @@ struct CrashedView: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(CrashLayout.spacingMd)
+        .padding(DesignTokens.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: CrashLayout.radiusMd, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
                 .fill(theme.error.opacity(0.08))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: CrashLayout.radiusMd, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
                 .stroke(theme.error.opacity(0.2), lineWidth: 1)
         )
     }
 
     private var debugView: some View {
-        VStack(alignment: .leading, spacing: CrashLayout.spacingMd) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             Text(LumiLocalization.string("Folders", bundle: .module))
                 .font(.appSectionTitle)
                 .foregroundStyle(theme.textSecondary)
 
-            AppCard(style: .subtle, cornerRadius: CrashLayout.radiusMd, padding: EdgeInsets(top: CrashLayout.spacingSm, leading: CrashLayout.spacingSm, bottom: CrashLayout.spacingSm, trailing: CrashLayout.spacingSm)) {
+            AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.compactPadding) {
                 // 崩溃屏自身不能 throw(否则崩溃屏二次崩溃)。
                 // makeDataRootDirectory() 已改为 throws,此处用 try? 降级;
                 // 解析失败时显示占位符,恰好说明环境异常。
@@ -113,7 +100,7 @@ struct CrashedView: View {
                 )
             }
 
-            AppCard(style: .subtle, cornerRadius: CrashLayout.radiusMd, padding: EdgeInsets(top: CrashLayout.spacingMd, leading: CrashLayout.spacingMd, bottom: CrashLayout.spacingMd, trailing: CrashLayout.spacingMd)) {
+            AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.md, padding: DesignTokens.Spacing.cardPadding) {
                 Text(LumiLocalization.string(
                     "Please quit and reopen the app, or check logs for more details.",
                     bundle: .module

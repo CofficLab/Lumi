@@ -12,8 +12,7 @@ import SwiftUI
 ///
 /// 注:不复用 LumiUI 的 `AppLoadingOverlay` —— 它的 `message` 入参是
 /// `LocalizedStringKey`,而这里文案走 `LumiLocalization.string(...)`(返回 String),
-/// 类型不兼容。同时 LumiUI 的 `AppUI.Spacing` / `DesignTokens.Spacing` 未声明
-/// `public`,跨模块不可见,故间距直接用数值。
+/// 类型不兼容,故用内联的 ProgressView + Text。
 struct LoadingView: View {
     @LumiTheme private var theme
 
@@ -21,13 +20,13 @@ struct LoadingView: View {
         ZStack {
             backgroundView
 
-            VStack(spacing: 48) {
+            VStack(spacing: DesignTokens.Spacing.xxl) {
                 Spacer()
 
                 LogoView(scene: .general)
                     .frame(width: 64, height: 64)
 
-                VStack(spacing: 16) {
+                VStack(spacing: DesignTokens.Spacing.md) {
                     ProgressView()
                         .scaleEffect(1.0)
                     Text(LumiLocalization.string("Loading components and plugins…", bundle: .module))
@@ -39,7 +38,7 @@ struct LoadingView: View {
                 Spacer()
                 Spacer()
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, DesignTokens.Spacing.xl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
