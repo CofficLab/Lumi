@@ -56,16 +56,10 @@ class GPUManagerViewModel: ObservableObject {
     // MARK: - Color Helpers
 
     var utilizationColor: Color {
-        metricColor(value: gpuService.utilization)
+        MetricStatusScale.from(percentage: gpuService.utilization).themeColor
     }
 
     var memoryColor: Color {
-        metricColor(value: gpuService.memoryUsagePercentage)
-    }
-
-    private func metricColor(value: Double) -> Color {
-        if value < 60 { return .green }
-        if value < 85 { return .orange }
-        return .red
+        MetricStatusScale.from(percentage: gpuService.memoryUsagePercentage).themeColor
     }
 }

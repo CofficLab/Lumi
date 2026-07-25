@@ -4,6 +4,8 @@ import SwiftUI
 /// Menu bar popup view for GPU monitoring.
 /// Shows live GPU utilization with progress bar and mini trend graph.
 struct GPUMenuBarPopupView: View {
+    @LumiTheme private var theme
+
     @StateObject private var viewModel = GPUManagerViewModel()
     @ObservedObject private var historyService = GPUHistoryService.shared
 
@@ -23,7 +25,7 @@ struct GPUMenuBarPopupView: View {
             HStack {
                 Text(LumiPluginLocalization.string("GPU", bundle: .module))
                     .font(.system(size: 11))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Spacer()
 
@@ -35,14 +37,14 @@ struct GPUMenuBarPopupView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "98989E").opacity(0.2))
+                        .fill(theme.textTertiary.opacity(0.2))
 
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(hex: "BF5AF2").opacity(0.8),
-                                    Color(hex: "BF5AF2"),
+                                    theme.info.opacity(0.8),
+                                    theme.info,
                                 ]),
                                 startPoint: .leading,
                                 endPoint: .trailing
@@ -66,22 +68,22 @@ struct GPUMenuBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
                     .font(.system(size: 10))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Spacer()
 
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(Color(hex: "BF5AF2").opacity(0.8))
+                            .fill(theme.info.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(LumiPluginLocalization.string("Usage", bundle: .module))
                             .font(.system(size: 9))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .foregroundColor(theme.textTertiary)
                     }
                 }
             }
@@ -95,7 +97,7 @@ struct GPUMenuBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(Color(hex: "98989E").opacity(0.1), lineWidth: 1)
+                        .stroke(theme.textTertiary.opacity(0.1), lineWidth: 1)
                     }
 
                     if !recentData.isEmpty {
@@ -106,8 +108,8 @@ struct GPUMenuBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(hex: "BF5AF2").opacity(0.4),
-                                    Color(hex: "BF5AF2").opacity(0.05),
+                                    theme.info.opacity(0.4),
+                                    theme.info.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -118,11 +120,11 @@ struct GPUMenuBarPopupView: View {
                             data: recentData.map { $0.usage },
                             maxValue: maxValue
                         )
-                        .stroke(Color(hex: "BF5AF2").opacity(0.8), lineWidth: 1.2)
+                        .stroke(theme.info.opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.system(size: 10))
-                            .foregroundColor(Color(hex: "98989E"))
+                            .foregroundColor(theme.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -131,6 +133,6 @@ struct GPUMenuBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.06))
+        .background(theme.textTertiary.opacity(0.06))
     }
 }

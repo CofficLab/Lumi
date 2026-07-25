@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct CPUHistoryDetailView: View {
+    @LumiTheme private var theme
+
     @ObservedObject private var historyService = CPUHistoryService.shared
     @State private var selectedRange: CPUTimeRange = .hour1
 
@@ -11,7 +13,7 @@ struct CPUHistoryDetailView: View {
             HStack {
                 Text(LumiPluginLocalization.string("CPU Load Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Spacer()
 

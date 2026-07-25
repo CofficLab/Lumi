@@ -2,10 +2,12 @@ import SwiftUI
 import LumiUI
 
 struct SystemMonitorView: View {
+    @LumiTheme private var theme
+
     @StateObject private var viewModel = SystemMonitorViewModel()
     @ObservedObject private var gpuService = GPUService.shared
     @ObservedObject private var batteryService = BatteryService.shared
-    
+
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
             // CPU Card
@@ -23,65 +25,65 @@ struct SystemMonitorView: View {
             }
             
             // GPU Card
-            MonitorCard(title: LumiPluginLocalization.string("GPU", bundle: .module), 
+            MonitorCard(title: LumiPluginLocalization.string("GPU", bundle: .module),
                         value: String(format: "%.0f%%", gpuService.utilization),
                         color: gpuColor) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                         .font(.system(size: 9))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    
+                        .foregroundColor(theme.textSecondary)
+
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(LumiPluginLocalization.string("Memory", bundle: .module))
                                 .font(.system(size: 8))
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(theme.textSecondary)
                             Text(gpuService.usedMemoryString)
                                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                                 .foregroundColor(gpuColor)
                         }
-                        
+
                         if gpuService.temperature > 0 {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                     .font(.system(size: 8))
-                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    .foregroundColor(theme.textSecondary)
                                 Text(String(format: "%.0f°C", gpuService.temperature))
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(gpuColor)
                             }
                         }
                     }
-                    
+
                     Spacer()
                 }
                 .padding(8)
             }
-            
+
             // Network Card
-            MonitorCard(title: LumiPluginLocalization.string("Network", bundle: .module), 
+            MonitorCard(title: LumiPluginLocalization.string("Network", bundle: .module),
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
-                        color: Color(hex: "0A84FF")) {
+                        color: theme.info) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: Color(hex: "0A84FF"), maxVal: 1024*1024*10)
+                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: theme.info, maxVal: 1024*1024*10)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: Color(hex: "7C6FFF"), maxVal: 1024*1024*5)
+                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: theme.primary, maxVal: 1024*1024*5)
                         .opacity(0.6)
                 }
             }
-            
+
             // Disk Card
-            MonitorCard(title: LumiPluginLocalization.string("Disk I/O", bundle: .module), 
+            MonitorCard(title: LumiPluginLocalization.string("Disk I/O", bundle: .module),
                         value: String(format: LumiPluginLocalization.string("R: %@ W: %@", bundle: .module), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
-                        color: Color(hex: "FF9F0A")) {
+                        color: theme.warning) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.disk.readHistory, color: Color(hex: "FF9F0A"), maxVal: 1024*1024*50)
+                    WaveformView(data: viewModel.metrics.disk.readHistory, color: theme.warning, maxVal: 1024*1024*50)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: Color(hex: "FF453A"), maxVal: 1024*1024*20)
+                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: theme.error, maxVal: 1024*1024*20)
                         .opacity(0.6)
                 }
             }
-            
+
             // Battery Card
             if batteryService.hasBattery {
                 MonitorCard(title: LumiPluginLocalization.string("Battery", bundle: .module),
@@ -92,53 +94,53 @@ struct SystemMonitorView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(LumiPluginLocalization.string("Health", bundle: .module))
                                     .font(.system(size: 8))
-                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    .foregroundColor(theme.textSecondary)
                                 Text("\(Int(batteryService.healthPercentage))%")
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(batteryHealthColor)
                             }
-                            
+
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(LumiPluginLocalization.string("Cycles", bundle: .module))
                                     .font(.system(size: 8))
-                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                    .foregroundColor(theme.textSecondary)
                                 Text("\(batteryService.cycleCount)")
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                    .foregroundColor(Color.adaptive(light: "3C3C43", dark: "EBEBF5"))
+                                    .foregroundColor(theme.textSecondary)
                             }
-                            
+
                             if batteryService.temperature > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                         .font(.system(size: 8))
-                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                        .foregroundColor(theme.textSecondary)
                                     Text(String(format: "%.1f°C", batteryService.temperature))
                                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                                         .foregroundColor(batteryTemperatureColor)
                                 }
                             }
-                            
+
                             if batteryService.watts > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(LumiPluginLocalization.string("Power", bundle: .module))
                                         .font(.system(size: 8))
-                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                        .foregroundColor(theme.textSecondary)
                                     Text(batteryService.wattsString)
                                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                                         .foregroundColor(batteryLevelColor)
                                 }
                             }
                         }
-                        
+
                         Spacer()
-                        
+
                         // Battery bar
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.adaptive(light: "E5E5EA", dark: "38383A"))
+                                    .fill(theme.textTertiary.opacity(0.2))
                                     .frame(height: 8)
-                                
+
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(batteryLevelColor)
                                     .frame(width: geo.size.width * min(max(batteryService.level, 0), 1), height: 8)
@@ -164,12 +166,9 @@ struct SystemMonitorView: View {
     }
     
     private var gpuColor: Color {
-        let value = gpuService.utilization
-        if value < 60 { return Color(hex: "BF5AF2") }
-        if value < 85 { return Color(hex: "FF9F0A") }
-        return Color(hex: "FF453A")
+        MetricStatusScale.from(percentage: gpuService.utilization).color(in: theme)
     }
-    
+
     private var batteryMonitorValue: String {
         let pct = Int(batteryService.level * 100)
         if batteryService.isCharging {
@@ -177,52 +176,45 @@ struct SystemMonitorView: View {
         }
         return "\(pct)%"
     }
-    
+
     private var batteryLevelColor: Color {
-        let pct = batteryService.level * 100
-        if pct > 50 { return Color(hex: "30D158") }
-        if pct > 20 { return Color(hex: "FF9F0A") }
-        return Color(hex: "FF453A")
+        MetricStatus.batteryLevel(batteryService.level).color(in: theme)
     }
-    
+
     private var batteryHealthColor: Color {
-        let h = batteryService.healthPercentage
-        if h >= 80 { return Color(hex: "30D158") }
-        if h >= 60 { return Color(hex: "FF9F0A") }
-        return Color(hex: "FF453A")
+        MetricStatus.batteryHealth(batteryService.healthPercentage).color(in: theme)
     }
-    
+
     private var batteryTemperatureColor: Color {
-        let t = batteryService.temperature
-        if t < 35 { return Color(hex: "30D158") }
-        if t < 45 { return Color(hex: "FF9F0A") }
-        return Color(hex: "FF453A")
+        MetricStatus.temperature(batteryService.temperature).color(in: theme)
     }
 }
 
 struct MonitorCard<Content: View>: View {
+    @LumiTheme private var theme
+
     let title: String
     let value: String
     let color: Color
     let content: () -> Content
-    
+
     var body: some View {
         AppCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(theme.textSecondary)
                     Spacer()
                     Text(value)
                         .font(.system(.body, design: .monospaced))
                         .fontWeight(.medium)
                         .foregroundColor(color)
                 }
-                
+
                 content()
                     .frame(height: 100)
-                    .background(Color.white.opacity(0.04))
+                    .background(theme.textTertiary.opacity(0.06))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }

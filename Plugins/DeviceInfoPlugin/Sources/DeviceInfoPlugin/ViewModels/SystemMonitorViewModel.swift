@@ -38,16 +38,10 @@ class SystemMonitorViewModel: ObservableObject {
     // MARK: - Helpers
     
     var cpuColor: Color {
-        metricColor(value: metrics.cpuUsage.percentage)
+        MetricStatusScale.from(ratio: metrics.cpuUsage.percentage).themeColor
     }
-    
+
     var memoryColor: Color {
-        metricColor(value: metrics.memoryUsage.percentage)
-    }
-    
-    private func metricColor(value: Double) -> Color {
-        if value < 0.6 { return .green }
-        if value < 0.85 { return .orange }
-        return .red
+        MetricStatusScale.from(ratio: metrics.memoryUsage.percentage).themeColor
     }
 }

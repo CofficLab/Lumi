@@ -85,24 +85,15 @@ class BatteryManagerViewModel: ObservableObject {
     // MARK: - Color Helpers
 
     var levelColor: Color {
-        guard batteryService.hasBattery else { return .green }
-        let pct = Double(levelPercentage)
-        if pct > 50 { return .green }
-        if pct > 20 { return .orange }
-        return .red
+        guard batteryService.hasBattery else { return MetricStatus.normal.themeColor }
+        return MetricStatus.batteryLevel(batteryService.level).themeColor
     }
 
     var healthColor: Color {
-        let h = batteryService.healthPercentage
-        if h >= 80 { return .green }
-        if h >= 60 { return .orange }
-        return .red
+        MetricStatus.batteryHealth(batteryService.healthPercentage).themeColor
     }
 
     var temperatureColor: Color {
-        let t = batteryService.temperature
-        if t < 35 { return .green }
-        if t < 45 { return .orange }
-        return .red
+        MetricStatus.temperature(batteryService.temperature).themeColor
     }
 }

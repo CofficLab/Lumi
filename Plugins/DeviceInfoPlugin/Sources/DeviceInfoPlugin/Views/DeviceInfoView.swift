@@ -66,20 +66,20 @@ public struct DeviceInfoView: View {
                                 GeometryReader { geo in
                                     HStack(spacing: 0) {
                                         RoundedRectangle(cornerRadius: 2)
-                                            .fill(Color(hex: "30D158"))
+                                            .fill(theme.success)
                                             .frame(width: geo.size.width * min(max(cpuService.userUsage / 100, 0), 1))
                                         RoundedRectangle(cornerRadius: 2)
-                                            .fill(Color(hex: "FF9F0A"))
+                                            .fill(theme.warning)
                                             .frame(width: geo.size.width * min(max(cpuService.systemUsage / 100, 0), 1))
                                     }
                                 }
-                                .background(RoundedRectangle(cornerRadius: 2).fill(Color(hex: "98989E").opacity(0.15)))
+                                .background(RoundedRectangle(cornerRadius: 2).fill(theme.textTertiary.opacity(0.15)))
                                 .frame(height: 4)
 
                                 HStack(spacing: 8) {
                                     HStack(spacing: 3) {
                                         Circle()
-                                            .fill(Color(hex: "30D158"))
+                                            .fill(theme.success)
                                             .frame(width: 5, height: 5)
                                         Text(String(format: "%.0f%%", cpuService.userUsage))
                                             .font(.system(size: 9))
@@ -87,7 +87,7 @@ public struct DeviceInfoView: View {
                                     }
                                     HStack(spacing: 3) {
                                         Circle()
-                                            .fill(Color(hex: "FF9F0A"))
+                                            .fill(theme.warning)
                                             .frame(width: 5, height: 5)
                                         Text(String(format: "%.0f%%", cpuService.systemUsage))
                                             .font(.system(size: 9))
@@ -166,7 +166,7 @@ public struct DeviceInfoView: View {
                                     // Desktop Mac without internal battery
                                     HStack {
                                         Image(systemName: "powerplug.fill")
-                                            .foregroundColor(.green)
+                                            .foregroundColor(theme.success)
                                         Text(LumiPluginLocalization.string("AC Power", bundle: .module))
                                             .font(.body.weight(.medium))
                                             .foregroundColor(theme.textPrimary)
@@ -181,7 +181,7 @@ public struct DeviceInfoView: View {
                             }
                         }
 
-                        DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: Color(hex: "BF5AF2")) {
+                        DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
                                     .font(.caption)
@@ -194,11 +194,11 @@ public struct DeviceInfoView: View {
                                         .foregroundColor(theme.textPrimary)
                                     Spacer()
                                     Capsule()
-                                        .fill(Color(hex: "BF5AF2").opacity(0.2))
+                                        .fill(theme.info.opacity(0.2))
                                         .frame(width: 40, height: 6)
                                         .overlay(alignment: .leading) {
                                             Capsule()
-                                                .fill(Color(hex: "BF5AF2"))
+                                                .fill(theme.info)
                                                 .frame(width: 40 * min(max(gpuService.utilization / 100, 0), 1), height: 6)
                                         }
                                 }
@@ -314,18 +314,12 @@ public struct DeviceInfoView: View {
     }
 
     private var batteryLevelColor: Color {
-        guard batteryService.hasBattery else { return .green }
-        let pct = batteryService.level * 100
-        if pct > 50 { return .green }
-        if pct > 20 { return .orange }
-        return .red
+        guard batteryService.hasBattery else { return theme.success }
+        return MetricStatus.batteryLevel(batteryService.level).color(in: theme)
     }
 
     private var batteryHealthColor: Color {
-        let h = batteryService.healthPercentage
-        if h >= 80 { return .green }
-        if h >= 60 { return .orange }
-        return .red
+        MetricStatus.batteryHealth(batteryService.healthPercentage).color(in: theme)
     }
 
     private func formatUptime(_ interval: TimeInterval) -> String {

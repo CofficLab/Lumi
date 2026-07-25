@@ -2,6 +2,8 @@ import SwiftUI
 import LumiUI
 
 struct MemoryHistoryDetailView: View {
+    @LumiTheme private var theme
+
     @ObservedObject private var historyService = MemoryHistoryService.shared
     @State private var selectedRange: MemoryTimeRange = .hour1
 
@@ -10,7 +12,7 @@ struct MemoryHistoryDetailView: View {
             HStack {
                 Text(LumiPluginLocalization.string("Memory Usage Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(theme.textTertiary)
 
                 Spacer()
 

@@ -1,4 +1,5 @@
 import AppKit
+import LumiUI
 import SwiftUI
 
 /// 菜单栏 GPU 单柱渲染器
@@ -13,10 +14,21 @@ struct GPUMenuBarChartRenderer {
     private static let imageHeight: CGFloat = 14
 
     // MARK: - Colors
+    //
+    // GPU 单柱在菜单栏里渲染为带色位图(`isTemplate = false`),颜色取自当前 LumiTheme,
+    // 这样它会跟随用户主题(info / error),而不是写死的紫色/红色。
+    // 菜单栏 NSImage 始终在主线程绘制(`DeviceInfoMenuBarSnapshot` 由 RunLoop.main 上的
+    // sink 构造),故用 `MainActor.assumeIsolated` 取主题色。
 
-    private static let normalColor = NSColor(hex: "BF5AF2") // Purple for GPU
-    private static let warningColor = NSColor(hex: "FF6B6B")
-    private static let trackColor = NSColor.labelColor.withAlphaComponent(0.12)
+    private static var trackColor: NSColor { NSColor.labelColor.withAlphaComponent(0.12) }
+
+    private static var normalColor: NSColor {
+        MainActor.assumeIsolated { NSColor(currentTheme.info) }
+    }
+
+    private static var warningColor: NSColor {
+        MainActor.assumeIsolated { NSColor(currentTheme.error) }
+    }
 
     // MARK: - Public Methods
 
