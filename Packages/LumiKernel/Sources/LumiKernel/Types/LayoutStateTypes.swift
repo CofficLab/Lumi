@@ -100,14 +100,6 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
-    /// ActivityBar 是否可见
-    @Published public var isActivityBarVisible: Bool = true {
-        didSet {
-            guard isActivityBarVisible != oldValue else { return }
-            NotificationCenter.postActivityBarVisibleDidChange(visible: isActivityBarVisible)
-        }
-    }
-
     /// 底部 Panel 是否可见
     @Published public var isPanelVisible: Bool = true {
         didSet {
@@ -130,10 +122,6 @@ public final class LayoutState: ObservableObject, SuperLog {
         isContentVisible = visible
     }
 
-    public func setActivityBarVisible(_ visible: Bool) {
-        isActivityBarVisible = visible
-    }
-
     public func setPanelVisible(_ visible: Bool) {
         isPanelVisible = visible
     }
@@ -151,13 +139,11 @@ public final class LayoutState: ObservableObject, SuperLog {
         rail: Bool?,
         chat: Bool?,
         content: Bool?,
-        activityBar: Bool?,
         panel: Bool?
     ) {
         if let rail { isRailVisible = rail }
         if let chat { isChatVisible = chat }
         if let content { isContentVisible = content }
-        if let activityBar { isActivityBarVisible = activityBar }
         if let panel { isPanelVisible = panel }
     }
 

@@ -20,7 +20,6 @@ public protocol LayoutProviding: ObservableObject {
     var isRailVisible: Bool { get }
     var isChatVisible: Bool { get }
     var isContentVisible: Bool { get }
-    var isActivityBarVisible: Bool { get }
     var isPanelVisible: Bool { get }
 
     // MARK: - Workspace Commands
@@ -28,11 +27,10 @@ public protocol LayoutProviding: ObservableObject {
     func setRailVisible(_ visible: Bool)
     func setChatVisible(_ visible: Bool)
     func setContentVisible(_ visible: Bool)
-    func setActivityBarVisible(_ visible: Bool)
     func setPanelVisible(_ visible: Bool)
 
     func activateContainer(id: String)
-    func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, activityBar: Bool?, panel: Bool?)
+    func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?)
     func addContainerObserver(_ observer: @escaping (String) -> Void)
 
     // MARK: - Container

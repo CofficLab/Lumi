@@ -66,7 +66,6 @@ public final class DefaultWorkspaceStateProviding: WorkspaceStateProviding, Obse
     @Published private var _isRailVisible = true
     @Published private var _isChatVisible = true
     @Published private var _isContentVisible = true
-    @Published private var _isActivityBarVisible = true
     @Published private var _isPanelVisible = true
     @Published private var _activeContainerID: String?
 
@@ -80,7 +79,6 @@ public final class DefaultWorkspaceStateProviding: WorkspaceStateProviding, Obse
     public var isRailVisible: Bool { _isRailVisible }
     public var isChatVisible: Bool { _isChatVisible }
     public var isContentVisible: Bool { _isContentVisible }
-    public var isActivityBarVisible: Bool { _isActivityBarVisible }
     public var isPanelVisible: Bool { _isPanelVisible }
     public var activeContainerID: String? { _activeContainerID }
 
@@ -89,7 +87,6 @@ public final class DefaultWorkspaceStateProviding: WorkspaceStateProviding, Obse
     public func setRailVisible(_ visible: Bool) { _isRailVisible = visible }
     public func setChatVisible(_ visible: Bool) { _isChatVisible = visible }
     public func setContentVisible(_ visible: Bool) { _isContentVisible = visible }
-    public func setActivityBarVisible(_ visible: Bool) { _isActivityBarVisible = visible }
     public func setPanelVisible(_ visible: Bool) { _isPanelVisible = visible }
 
     public func activateContainer(id: String) {
@@ -104,13 +101,11 @@ public final class DefaultWorkspaceStateProviding: WorkspaceStateProviding, Obse
         rail: Bool?,
         chat: Bool?,
         content: Bool?,
-        activityBar: Bool?,
         panel: Bool?
     ) {
         if let rail { _isRailVisible = rail }
         if let chat { _isChatVisible = chat }
         if let content { _isContentVisible = content }
-        if let activityBar { _isActivityBarVisible = activityBar }
         if let panel { _isPanelVisible = panel }
     }
 

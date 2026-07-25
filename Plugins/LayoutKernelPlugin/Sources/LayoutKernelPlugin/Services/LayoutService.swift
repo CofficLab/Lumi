@@ -57,7 +57,6 @@ public final class LayoutService: LayoutProviding, SuperLog {
     public var isRailVisible: Bool { layoutState.isRailVisible }
     public var isChatVisible: Bool { layoutState.isChatVisible }
     public var isContentVisible: Bool { layoutState.isContentVisible }
-    public var isActivityBarVisible: Bool { layoutState.isActivityBarVisible }
     public var isPanelVisible: Bool { layoutState.isPanelVisible }
 
     // MARK: - Workspace Commands
@@ -65,12 +64,11 @@ public final class LayoutService: LayoutProviding, SuperLog {
     public func setRailVisible(_ visible: Bool) { layoutState.setRailVisible(visible) }
     public func setChatVisible(_ visible: Bool) { layoutState.setChatVisible(visible) }
     public func setContentVisible(_ visible: Bool) { layoutState.setContentVisible(visible) }
-    public func setActivityBarVisible(_ visible: Bool) { layoutState.setActivityBarVisible(visible) }
     public func setPanelVisible(_ visible: Bool) { layoutState.setPanelVisible(visible) }
 
     public func activateContainer(id: String) { layoutState.activateContainer(id: id) }
-    public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, activityBar: Bool?, panel: Bool?) {
-        layoutState.applyVisibility(rail: rail, chat: chat, content: content, activityBar: activityBar, panel: panel)
+    public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
+        layoutState.applyVisibility(rail: rail, chat: chat, content: content, panel: panel)
     }
     public func addContainerObserver(_ observer: @escaping (String) -> Void) {
         layoutState.addContainerObserver(observer)

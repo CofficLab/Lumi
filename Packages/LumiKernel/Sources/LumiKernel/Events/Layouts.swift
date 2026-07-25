@@ -39,11 +39,6 @@ extension Notification.Name {
     /// userInfo: ["visible": Bool]
     public static let contentVisibleDidChange = Notification.Name("ContentVisibleDidChange")
 
-    /// ActivityBar 可见性已变更
-    /// object: nil
-    /// userInfo: ["visible": Bool]
-    public static let activityBarVisibleDidChange = Notification.Name("ActivityBarVisibleDidChange")
-
     /// Panel 可见性已变更
     /// object: nil
     /// userInfo: ["visible": Bool]
@@ -119,14 +114,6 @@ extension NotificationCenter {
     public static func postContentVisibleDidChange(visible: Bool) {
         NotificationCenter.default.post(
             name: .contentVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postActivityBarVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .activityBarVisibleDidChange,
             object: nil,
             userInfo: ["visible": visible]
         )
@@ -238,14 +225,6 @@ public extension View {
     /// 监听主内容区域可见性变更
     func onContentVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .contentVisibleDidChange)) { notification in
-            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
-            action(visible)
-        }
-    }
-
-    /// 监听 ActivityBar 可见性变更
-    func onActivityBarVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .activityBarVisibleDidChange)) { notification in
             guard let visible = notification.userInfo?["visible"] as? Bool else { return }
             action(visible)
         }

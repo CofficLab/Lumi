@@ -84,7 +84,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         }
     }
 
-    /// 按当前激活容器的声明，把 rail/chat/content/activityBar/panel 可见性合并进 `LayoutState`。
+    /// 按当前激活容器的声明，把 rail/chat/content/panel 可见性合并进 `LayoutState`。
     ///
     /// 这是容器可见性应用的单一入口：`onContainerActivated`（用户点击 ActivityBar 切换）和
     /// `registerPluginUIContributions` 末尾（启动/重建后回填）都走这里。
@@ -99,7 +99,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
             rail: container.isRailVisible,
             chat: container.isChatVisible,
             content: container.isContentVisible,
-            activityBar: container.isActivityBarVisible,
             panel: container.isPanelVisible
         )
     }
@@ -185,7 +184,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isRailVisible: container.isRailVisible,
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
-                        isActivityBarVisible: container.isActivityBarVisible,
                         isPanelVisible: container.isPanelVisible,
                         content: makeView
                     )
@@ -197,7 +195,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isRailVisible: container.isRailVisible,
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
-                        isActivityBarVisible: container.isActivityBarVisible,
                         isPanelVisible: container.isPanelVisible
                     )
                 }
