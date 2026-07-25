@@ -89,6 +89,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedTitleToolbarItems() {
+        objectWillChange.send()
         allTitleToolbarItems = titleToolbarItemOrder.compactMap { titleToolbarItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -194,6 +195,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedStatusBarItems() {
+        objectWillChange.send()
         allStatusBarItems = statusBarItemOrder.compactMap { statusBarItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -225,6 +227,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedPanelBottomTabItems() {
+        objectWillChange.send()
         allPanelBottomTabItems = panelBottomTabOrder.compactMap { panelBottomTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -244,6 +247,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedPanelRailTabItems() {
+        objectWillChange.send()
         allPanelRailTabItems = panelRailTabOrder.compactMap { panelRailTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -265,6 +269,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedMenuBarContents() {
+        objectWillChange.send()
         allMenuBarContents = menuBarContentOrder.compactMap { menuBarContents[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -284,6 +289,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     }
 
     private func updateSortedMenuBarPopups() {
+        objectWillChange.send()
         allMenuBarPopups = menuBarPopupOrder.compactMap { menuBarPopups[$0] }
             .sorted(by: { $0.order < $1.order })
     }
@@ -340,26 +346,31 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
     // MARK: - Private
 
     private func updateSortedChatSectionItems() {
+        objectWillChange.send()
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionToolbarItems() {
+        objectWillChange.send()
         allChatSectionToolbarItems = chatSectionToolbarItemOrder.compactMap { chatSectionToolbarItems[$0] }
             .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionToolbarBars() {
+        objectWillChange.send()
         allChatSectionToolbarBarItems = chatSectionToolbarBarOrder.compactMap { chatSectionToolbarBars[$0] }
             .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionHeaders() {
+        objectWillChange.send()
         allChatSectionHeaderItems = chatSectionHeaderOrder.compactMap { chatSectionHeaders[$0] }
             .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionActionBars() {
+        objectWillChange.send()
         allChatSectionActionBarItems = chatSectionActionBarOrder.compactMap { chatSectionActionBars[$0] }
             .sorted(by: { $0.order < $1.order })
     }
