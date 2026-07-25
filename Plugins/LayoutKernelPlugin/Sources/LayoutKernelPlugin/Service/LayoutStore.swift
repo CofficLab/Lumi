@@ -52,11 +52,22 @@ public final class LayoutStore: SuperLog {
     /// 从磁盘读取已保存的布局信息。
     /// - Returns: 已保存的 `LayoutStateInfo`；文件不存在，空或损坏时返回 `nil`。
     public func loadLayoutInfo() -> LayoutStateInfo? {
+        if Self.verbose {
+            let path = layoutInfoFileURL.path
+            Self.logger.info("\(Self.t)尝试从磁盘加载布局信息: \(path)")
+        }
         guard let data = try? Data(contentsOf: layoutInfoFileURL) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)布局文件不存在")
+            }
             return nil
         }
         do {
-            return try JSONDecoder().decode(LayoutStateInfo.self, from: data)
+            let info = try JSONDecoder().decode(LayoutStateInfo.self, from: data)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)成功加载布局: activeSectionID=\(info.activeSectionID), chatSectionVisible=\(info.chatSectionVisible)")
+            }
+            return info
         } catch {
             Self.logger.error("\(Self.t)布局信息读取失败: \(error.localizedDescription)")
             return nil
