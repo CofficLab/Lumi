@@ -26,6 +26,7 @@ import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
 import EditorProviderPlugin
+import EditorKernelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -115,6 +116,9 @@ public enum PluginService {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
             LLMProviderManagerPlugin(),
+            // EditorKernelPlugin 必须先于 EditorProviderPlugin:
+            // 前者在 OnBoot 注册具象 EditorService,后者在 OnReady resolve 并转发文件操作。
+            EditorKernelPlugin(),
             EditorProviderPlugin(),
             // Host settings tabs (General/Appearance/About) — order 1, must lead the sidebar
             HostSettingsPlugin(),
