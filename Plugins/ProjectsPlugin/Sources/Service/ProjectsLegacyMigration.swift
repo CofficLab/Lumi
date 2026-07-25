@@ -18,6 +18,7 @@ import os
 public struct ProjectsLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
     nonisolated public static let emoji = "📁"
+    nonisolated(unsafe) static var verbose = false
 
     /// 迁移策略(语义同 ConversationLegacyMigration / MessageLegacyMigration)
     public enum MigrationPolicy {
@@ -50,14 +51,14 @@ public struct ProjectsLegacyMigration: SuperLog {
 
         // 幂等:.once 策略下,已迁移过则直接跳过
         if Self.policy == .once, defaults.bool(forKey: Self.migrationMarkerKey) {
-            Self.logger.info("\(Self.t)项目迁移跳过(marker 已标记完成)")
+            if Self.verbose { Self.logger.info("\(Self.t)项目迁移跳过(marker 已标记完成)") }
             return
         }
 
         // 定位 v4 目录(当前 v5 dataRoot 的兄弟目录)
         guard let v4Root = resolveV4DataRootDirectory() else {
             defaults.set(true, forKey: Self.migrationMarkerKey)
-            Self.logger.info("\(Self.t)项目迁移跳过(未找到 v4 数据目录,全新安装)")
+            if Self.verbose { Self.logger.info("\(Self.t)项目迁移跳过(未找到 v4 数据目录,全新安装)") }
             return
         }
 
@@ -68,7 +69,7 @@ public struct ProjectsLegacyMigration: SuperLog {
 
         guard !legacyProjects.isEmpty else {
             defaults.set(true, forKey: Self.migrationMarkerKey)
-            Self.logger.info("\(Self.t)项目迁移跳过(v4 项目列表为空)")
+            if Self.verbose { Self.logger.info("\(Self.t)项目迁移跳过(v4 项目列表为空)") }
             return
         }
 
@@ -80,7 +81,7 @@ public struct ProjectsLegacyMigration: SuperLog {
         guard !newProjects.isEmpty else {
             // v4 项目都已存在于 v5,无需写入
             defaults.set(true, forKey: Self.migrationMarkerKey)
-            Self.logger.info("\(Self.t)项目迁移跳过(v4 项目均已存在于 v5)")
+            if Self.verbose { Self.logger.info("\(Self.t)项目迁移跳过(v4 项目均已存在于 v5)") }
             return
         }
 
@@ -106,7 +107,9 @@ public struct ProjectsLegacyMigration: SuperLog {
         defaults.set(true, forKey: Self.migrationMarkerKey)
 
         let policyLabel = Self.policy == .once ? "once" : "always"
-        Self.logger.info("\(Self.t)项目迁移完成:读取 v4 \(legacyProjects.count) 个,新增 \(newProjects.count) 个,合并后共 \(mergedProjects.count) 个 [策略=\(policyLabel)]")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)项目迁移完成:读取 v4 \(legacyProjects.count) 个,新增 \(newProjects.count) 个,合并后共 \(mergedProjects.count) 个 [策略=\(policyLabel)]")
+        }
     }
 
     // MARK: - v4 目录定位
