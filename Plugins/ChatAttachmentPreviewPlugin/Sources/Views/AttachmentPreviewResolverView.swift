@@ -29,15 +29,19 @@ struct AttachmentPreviewResolverView: View {
 private final class BoxHolder: ObservableObject {
     private(set) var box: ObservableMessageSendingBox?
 
-    /// 取得当前 messageSend 对应的 box,必要时重建
-    /// 注意:不能在 body 渲染期间直接赋值 @Published,改用 objectWillChange 手动通知
+    /// 取得当前 messageSend 对应的 box,必要时重建。
+    ///
+    /// 注意:此方法只在父 view 的 body 内被调用。新 box 会同步返回并传给
+    /// `AttachmentPreviewView`,因此**不能**在此处触发 `objectWillChange.send()`
+    /// —— 在 body 渲染期间发布更新会引发 "Publishing changes from within view
+    /// updates" 警告。父 view 的重渲染由 `kernel`(`@ObservedObject`)驱动,
+    /// 下次重渲染时通过 service 身份比较即可取到缓存的 box,无需本 holder 自行通知。
     func box(for messageSend: any MessageSending) -> ObservableMessageSendingBox {
         if let existing = box, existing.service === messageSend {
             return existing
         }
         let new = ObservableMessageSendingBox(service: messageSend)
         box = new
-        objectWillChange.send()
         return new
     }
 }
