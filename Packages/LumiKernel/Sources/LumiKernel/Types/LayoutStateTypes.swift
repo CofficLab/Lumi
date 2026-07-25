@@ -29,6 +29,14 @@ public final class LayoutState: ObservableObject, SuperLog {
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
+    // MARK: - Section Info (moved from LayoutStateInfo)
+
+    /// 当前激活的 Section ID
+    @Published public var activeSectionID: String = ""
+
+    /// 当前激活的 Section 标题
+    @Published public var activeSectionTitle: String = ""
+
     @Published public var activeViewContainerID: String? {
         didSet {
             guard activeViewContainerID != oldValue else { return }
