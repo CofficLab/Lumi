@@ -56,6 +56,9 @@ public final class LayoutManager: LayoutProviding, SuperLog {
 
     public func activateContainer(id: String) { layoutState.activateContainer(id: id) }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)applyVisibility(rail: \(rail.map { String($0) } ?? "-"), chat: \(chat.map { String($0) } ?? "-"), content: \(content.map { String($0) } ?? "-"), panel: \(panel.map { String($0) } ?? "-"))")
+        }
         layoutState.applyVisibility(rail: rail, chat: chat, content: content, panel: panel)
     }
     public func addContainerObserver(_ observer: @escaping (String) -> Void) {
