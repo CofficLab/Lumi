@@ -78,24 +78,36 @@ public final class LumiKernelContainer: ObservableObject {
         try await pluginManager.onBoot(kernel: self)
 
         // 2. 服务校验 — 必需的内核服务必须在 OnBoot 阶段注册完毕
-        var missingServices: [String] = []
-
-        if storage == nil { missingServices.append("Storage") }
-        if project == nil { missingServices.append("Project") }
-        if layoutManager == nil { missingServices.append("Layout") }
-        if command == nil { missingServices.append("Command") }
-        if sharedUI == nil { missingServices.append("SharedUI") }
-        if messageSender == nil { missingServices.append("MessageSend") }
-        if llmProvider == nil { missingServices.append("LLMProvider") }
-        if agentTurnRunner == nil { missingServices.append("AgentTurnRunner") }
-        if editorProvider == nil { missingServices.append("Editor") }
-        if toolManager == nil { missingServices.append("AgentTool") }
-        if settings == nil { missingServices.append("Settings") }
-        if logo == nil { missingServices.append("Logo") }
-        if theme == nil { missingServices.append("Theme") }
-        if messageRendererManager == nil { missingServices.append("MessageRendererManager") }
-
-        if !missingServices.isEmpty {
+        guard storage != nil,
+              project != nil,
+              layoutManager != nil,
+              command != nil,
+              sharedUI != nil,
+              messageSender != nil,
+              llmProvider != nil,
+              agentTurnRunner != nil,
+              editorProvider != nil,
+              toolManager != nil,
+              settings != nil,
+              logo != nil,
+              theme != nil,
+              messageRendererManager != nil else {
+            let missingServices = [
+                storage == nil ? "Storage" : nil,
+                project == nil ? "Project" : nil,
+                layoutManager == nil ? "Layout" : nil,
+                command == nil ? "Command" : nil,
+                sharedUI == nil ? "SharedUI" : nil,
+                messageSender == nil ? "MessageSend" : nil,
+                llmProvider == nil ? "LLMProvider" : nil,
+                agentTurnRunner == nil ? "AgentTurnRunner" : nil,
+                editorProvider == nil ? "Editor" : nil,
+                toolManager == nil ? "AgentTool" : nil,
+                settings == nil ? "Settings" : nil,
+                logo == nil ? "Logo" : nil,
+                theme == nil ? "Theme" : nil,
+                messageRendererManager == nil ? "MessageRendererManager" : nil,
+            ].compactMap { $0 }
             throw LumiKernelError.missingRequiredServices(missingServices)
         }
 
