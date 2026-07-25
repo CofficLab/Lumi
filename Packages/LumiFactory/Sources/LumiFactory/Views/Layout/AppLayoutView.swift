@@ -11,6 +11,7 @@ struct AppLayoutView: View {
     @State private var isActivityBarVisible: Bool = true
     @State private var isPanelVisible: Bool = true
     @State private var isContentVisible: Bool = true
+    @State private var isChatVisible: Bool = true
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -33,8 +34,10 @@ struct AppLayoutView: View {
                 if isPanelVisible {
                     PanelView(kernel: kernel)
                 }
-                AppDivider(.vertical)
-                ChatView(kernel: kernel)
+                if isChatVisible {
+                    AppDivider(.vertical)
+                    ChatView(kernel: kernel)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -53,11 +56,15 @@ struct AppLayoutView: View {
         .onPanelVisibleDidChange { visible in
             isPanelVisible = visible
         }
+        .onChatSectionVisibleDidChange { visible in
+            isChatVisible = visible
+        }
         .onAppear {
             isRailVisible = kernel.layoutManager?.isRailVisible ?? true
             isActivityBarVisible = kernel.layoutManager?.isActivityBarVisible ?? true
             isPanelVisible = kernel.layoutManager?.isPanelVisible ?? true
             isContentVisible = kernel.layoutManager?.isContentVisible ?? true
+            isChatVisible = kernel.layoutManager?.isChatVisible ?? true
         }
     }
 }

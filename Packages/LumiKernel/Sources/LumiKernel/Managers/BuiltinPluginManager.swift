@@ -76,20 +76,32 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
         // 先按容器声明自动应用可见性偏好（如果有）
-        if let container = kernel.viewContainer?.viewContainer(id: containerID) {
-            kernel.layoutManager?.layoutState.applyVisibility(
-                rail: container.isRailVisible,
-                chat: container.isChatVisible,
-                content: container.isContentVisible,
-                activityBar: container.isActivityBarVisible,
-                panel: container.isPanelVisible
-            )
-        }
+        applyActiveContainerVisibility(kernel: kernel, containerID: containerID)
         // 再广播给所有插件（保留扩展点，用于非可见性的副作用）
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             plugin.onContainerActivated(kernel: kernel, containerID: containerID)
         }
+    }
+
+    /// 按当前激活容器的声明，把 rail/chat/content/activityBar/panel 可见性合并进 `LayoutState`。
+    ///
+    /// 这是容器可见性应用的单一入口：`onContainerActivated`（用户点击 ActivityBar 切换）和
+    /// `registerPluginUIContributions` 末尾（启动/重建后回填）都走这里。
+    ///
+    /// 容器 ID 可能为空（首次启动尚未激活任何容器）或对应容器尚未注册（恢复持久化状态时
+    /// 注册表可能为空），两种情况下都安全跳过，不影响其他流程。
+    func applyActiveContainerVisibility(kernel: LumiKernel, containerID: String?) {
+        guard let containerID,
+              let container = kernel.viewContainer?.viewContainer(id: containerID)
+        else { return }
+        kernel.layoutManager?.layoutState.applyVisibility(
+            rail: container.isRailVisible,
+            chat: container.isChatVisible,
+            content: container.isContentVisible,
+            activityBar: container.isActivityBarVisible,
+            panel: container.isPanelVisible
+        )
     }
 
     public func plugin(id: String) -> LumiPlugin? {
@@ -303,6 +315,16 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                 state.activeSectionTitle = ""
             }
         }
+
+        // 容器注册完毕后，回填当前激活容器的可见性声明。
+        // 持久化恢复（`LayoutPersistenceCoordinator.restore()`）发生在 `onReady` 阶段，
+        // 此时容器还未注册，只能直接给 `activeViewContainerID` 赋值，绕过了
+        // `activateContainer` → `onContainerActivated` 的可见性应用路径。
+        // 因此启动/重建完成后必须在此处补一次 apply，否则 rail/chat 仍按默认值显示。
+        applyActiveContainerVisibility(
+            kernel: kernel,
+            containerID: kernel.layoutManager?.layoutState.activeViewContainerID
+        )
 
     }
 
