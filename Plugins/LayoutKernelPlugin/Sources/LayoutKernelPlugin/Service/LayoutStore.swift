@@ -17,7 +17,7 @@ public final class LayoutStore: SuperLog {
         category: "plugin.layoutkernel.store"
     )
     public nonisolated static let emoji = "📐"
-    public static var verbose = false
+    public static var verbose = true
 
     // MARK: - Constants
 
@@ -71,6 +71,9 @@ public final class LayoutStore: SuperLog {
     public func saveLayoutInfo(_ info: LayoutStateInfo?) {
         guard let info else {
             removeLayoutInfoFile()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)布局信息已清除")
+            }
             return
         }
         do {
@@ -84,6 +87,10 @@ public final class LayoutStore: SuperLog {
             return
         }
         Self.write(info, to: layoutInfoFileURL)
+        if Self.verbose {
+            let path = layoutInfoFileURL.path
+            Self.logger.info("\(Self.t)布局信息已保存到磁盘: \(path)")
+        }
     }
 
     // MARK: - Private
