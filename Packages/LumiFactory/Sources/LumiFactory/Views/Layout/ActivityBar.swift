@@ -22,7 +22,7 @@ struct ActivityBar: View {
                     label: container.title,
                     isActive: activeID == container.id
                 ) {
-                    kernel.layoutManager?.layoutState.activateContainer(id: container.id)
+                    kernel.layoutManager?.activateContainer(id: container.id)
                 }
             }
 
