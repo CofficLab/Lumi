@@ -31,8 +31,13 @@ struct AppLayoutView: View {
                     AppDivider(.vertical)
                 }
 
-                PanelView(kernel: kernel)
-                    .frame(maxWidth: .infinity)
+                if kernel.layoutManager?.layoutState.activeViewContainerID != nil {
+                    PanelView(kernel: kernel)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    WelcomeView()
+                        .frame(maxWidth: .infinity)
+                }
 
                 if isChatVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
                     AppDivider(.vertical)
