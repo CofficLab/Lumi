@@ -30,7 +30,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
         let conversationManaging = kernel.resolveService((any ConversationManaging).self)
 
         return [
-            ChatSectionActionBarItem(id: "\(id).action-bar-button", placement: .trailing) {
+            ChatSectionActionBarItem(id: "\(id).action-bar-button", placement: .leading) {
                 ModelSelectorActionBarButton(
                     llmProvider: llmProvider,
                     conversationManaging: conversationManaging
@@ -42,6 +42,7 @@ public final class ModelSelectorPlugin: LumiPlugin {
     public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] {
         return []
     }
+
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
