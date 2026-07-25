@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// ViewContainer 插件 OnBoot 阶段钩子
 ///
@@ -15,12 +15,10 @@ public struct ViewContainerOnBootHook {
 
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
-        let viewContainerServiceInstance = DefaultViewContainerProviding()
-        kernel.registerViewContainerService(viewContainerServiceInstance)
+        kernel.registerViewContainerService(DefaultViewContainerProviding())
 
         if Self.verbose {
             Self.logger.info("已注册 ViewContainer 插件到内核")
-            Self.logger.info("ViewContainer 插件启动完成")
         }
     }
 }

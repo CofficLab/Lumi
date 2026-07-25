@@ -1,8 +1,8 @@
 import Foundation
 import LumiKernel
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// ViewContainer 插件
 ///
@@ -11,25 +11,17 @@ import os
 @MainActor
 public final class ViewContainerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.viewcontainer")
-    nonisolated public static let emoji = "🗂️"
+    public nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
-
-    // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.viewcontainer"
     public let name = "ViewContainer Plugin"
     public let order = 10
-    public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
-
-    // MARK: - State
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 
     private var viewContainerService: DefaultViewContainerProviding?
 
-    // MARK: - Initialization
-
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await ViewContainerOnBootHook().execute(kernel)
@@ -38,8 +30,6 @@ public final class ViewContainerPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try ViewContainerOnReadyHook().execute(kernel)
     }
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -70,5 +60,4 @@ public final class ViewContainerPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-
 }
