@@ -8,9 +8,10 @@ import os
 /// 负责 boot 阶段的所有初始化逻辑：
 /// - 注册 ProjectService（内核服务）
 @MainActor
-public struct ProjectsOnBootHook {
+public struct ProjectsOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
     nonisolated static let verbose = false
+    nonisolated public static let emoji = "📂"
 
     public init() {}
 
@@ -25,9 +26,13 @@ public struct ProjectsOnBootHook {
         }
 
         // 2. 启动时同步当前项目状态
+        guard let project = kernel.project else {
+            Self.logger.error("\(Self.t)ProjectService 注册后仍为 nil")
+            return
+        }
         let viewModel = ProjectsToolRuntimeBridge.viewModel
         if let currentProject = viewModel?.currentProject {
-            try await kernel.project?.openProject(at: currentProject.path)
+            try await project.openProject(at: currentProject.path)
         }
 
         if Self.verbose {
