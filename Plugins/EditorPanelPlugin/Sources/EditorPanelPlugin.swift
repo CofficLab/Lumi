@@ -43,6 +43,7 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
                 isChatVisible: true,
                 isContentVisible: true,
                 isPanelVisible: true,
+                isPanelHeaderVisible: true,
                 isPanelBottomVisible: true
             ) {
                 EditorPanelHostView(kernel: kernel)
