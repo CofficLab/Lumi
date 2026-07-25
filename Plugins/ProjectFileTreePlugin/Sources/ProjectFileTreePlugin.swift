@@ -4,14 +4,24 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// 项目文件树插件
+/// 项目文件树插件(V2)
 ///
-/// 从 kernel 获取当前项目路径，展示文件树在 RailView 中。
+/// 在 RailView 中贡献 "Explorer V2" 标签,托管基于 NSCollectionView 的文件树
+/// (TreeViewV2)。提供文件浏览、Git 状态徽标、拖放、增删改、多选等完整能力。
 @MainActor
 public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-file-tree")
     public nonisolated static let emoji = "🌲"
     public nonisolated static let verbose = false
+
+    // MARK: - 功能开关(供 V2 内部视图/服务读取)
+
+    /// 是否启用 Git 状态徽标(基于 libgit2)。
+    public nonisolated static let gitStatusEnabled = true
+    /// 是否启用拖放(文件移动)。
+    public nonisolated static let dragAndDropEnabled = true
+    /// 是否启用外部定位文件的闪烁高亮。
+    public nonisolated static let flashHighlightEnabled = true
 
     public let id = "com.coffic.lumi.plugin.project-file-tree"
     public let name = "Project File Tree"
@@ -20,18 +30,21 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // 记录数据根目录,供 FileTreeSettings 持久化展开状态。
+        ProjectFileTreePluginRuntimeBridge.dataRootDirectory = kernel.storage?.dataRootDirectory
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: id,
-                title: "Project Files",
+                id: "explorer-v2",
+                title: "Explorer V2",
                 systemImage: "square.grid.2x2.fill"
             ) {
-                SimpleFileTreeView(kernel: kernel)
+                TreeViewV2(kernel: kernel)
             }
         ]
     }
