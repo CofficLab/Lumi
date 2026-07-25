@@ -39,9 +39,8 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "chevron.left.forwardslash.chevron.right",
-                // 编辑器容器:显示 rail 与 panel,隐藏聊天区。
                 isRailVisible: true,
-                isChatVisible: false,
+                isChatVisible: true,
                 isContentVisible: true,
                 isPanelVisible: true
             ) {
