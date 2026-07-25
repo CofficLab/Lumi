@@ -42,7 +42,7 @@ struct AppLayoutView: View {
                 if isChatVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
                     AppDivider(.vertical)
                     ChatView(kernel: kernel)
-                        .frame(maxWidth: 320, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 
                 Spacer()
