@@ -17,7 +17,7 @@ public final class LayoutStore: SuperLog {
         category: "plugin.layoutkernel.store"
     )
     public nonisolated static let emoji = "📐"
-    public static var verbose = true
+    public static var verbose: Bool = true
 
     // MARK: - Constants
 
@@ -65,7 +65,7 @@ public final class LayoutStore: SuperLog {
         do {
             let info = try JSONDecoder().decode(LayoutStateInfo.self, from: data)
             if Self.verbose {
-                Self.logger.info("\(Self.t)成功加载布局: activeSectionID=\(info.activeSectionID), chatSectionVisible=\(info.chatSectionVisible)")
+                Self.logger.info("\(Self.t)成功加载布局: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
             }
             return info
         } catch {

@@ -80,11 +80,16 @@ public final class LayoutManager: LayoutProviding, SuperLog {
         let info = LayoutStateInfo(
             activeSectionID: self.layoutState.activeSectionID,
             activeSectionTitle: self.layoutState.activeSectionTitle,
-            chatSectionVisible: self.layoutState.isChatVisible
+            activeViewContainerID: self.layoutState.activeViewContainerID,
+            chatSectionVisible: self.layoutState.isChatVisible,
+            railVisible: self.layoutState.isRailVisible,
+            contentVisible: self.layoutState.isContentVisible,
+            panelVisible: self.layoutState.isPanelVisible,
+            panelBottomVisible: self.layoutState.isPanelBottomVisible
         )
         self.store.saveLayoutInfo(info)
         if Self.verbose {
-            Self.logger.info("\(Self.t)saveState: activeSectionID=\(info.activeSectionID), chatSectionVisible=\(info.chatSectionVisible)")
+            Self.logger.info("\(Self.t)saveState: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
         }
     }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {

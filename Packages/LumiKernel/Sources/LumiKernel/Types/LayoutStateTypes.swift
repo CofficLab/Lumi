@@ -9,16 +9,31 @@ import SwiftUI
 public struct LayoutStateInfo: Sendable, Codable {
     public var activeSectionID: String
     public var activeSectionTitle: String
+    public var activeViewContainerID: String?
     public var chatSectionVisible: Bool
+    public var railVisible: Bool
+    public var contentVisible: Bool
+    public var panelVisible: Bool
+    public var panelBottomVisible: Bool
 
     public init(
         activeSectionID: String = "",
         activeSectionTitle: String = "",
-        chatSectionVisible: Bool = true
+        activeViewContainerID: String? = nil,
+        chatSectionVisible: Bool = true,
+        railVisible: Bool = true,
+        contentVisible: Bool = true,
+        panelVisible: Bool = true,
+        panelBottomVisible: Bool = true
     ) {
         self.activeSectionID = activeSectionID
         self.activeSectionTitle = activeSectionTitle
+        self.activeViewContainerID = activeViewContainerID
         self.chatSectionVisible = chatSectionVisible
+        self.railVisible = railVisible
+        self.contentVisible = contentVisible
+        self.panelVisible = panelVisible
+        self.panelBottomVisible = panelBottomVisible
     }
 }
 

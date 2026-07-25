@@ -22,11 +22,18 @@ public struct LayoutKernelOnBootHook: SuperLog {
         // 从磁盘恢复布局状态
         if let info = store.loadLayoutInfo() {
             if Self.verbose {
-                Self.logger.info("\(Self.t)恢复布局: activeSectionID=\(info.activeSectionID), chatSectionVisible=\(info.chatSectionVisible)")
+                Self.logger.info("\(Self.t)恢复布局: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
             }
             manager.layoutState.activeSectionID = info.activeSectionID
             manager.layoutState.activeSectionTitle = info.activeSectionTitle
+            if let containerID = info.activeViewContainerID {
+                manager.layoutState.activeViewContainerID = containerID
+            }
             manager.layoutState.isChatVisible = info.chatSectionVisible
+            manager.layoutState.isRailVisible = info.railVisible
+            manager.layoutState.isContentVisible = info.contentVisible
+            manager.layoutState.isPanelVisible = info.panelVisible
+            manager.layoutState.isPanelBottomVisible = info.panelBottomVisible
         } else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)无已保存布局，使用默认值")
