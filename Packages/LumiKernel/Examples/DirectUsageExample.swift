@@ -74,8 +74,6 @@ private final class ProjectService: ProjectProviding {
 
 @MainActor
 private final class LayoutService: LayoutProviding {
-    var state: LayoutStateInfo { LayoutStateInfo() }
-    func updateLayout(_ update: (inout LayoutStateInfo) -> Void) {}
 }
 
 @MainActor
