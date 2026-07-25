@@ -123,6 +123,20 @@ public final class LumiKernelContainer: ObservableObject {
         //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
         //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerAgentTools(in: self)
+
+        // 6. 同步当前激活容器的可见性状态
+        //    — 从 LayoutProviding 获取 activeViewContainerID,
+        //    — 再从 LayoutProviding 获取该容器的 rail/chat/content/panel 可见性,
+        //    — 最后更新到 LayoutProviding 的状态中。
+        if let containerID = layoutManager?.layoutState.activeViewContainerID,
+           let container = layoutManager?.viewContainer(id: containerID) {
+            layoutManager?.applyVisibility(
+                rail: container.isRailVisible,
+                chat: container.isChatVisible,
+                content: container.isContentVisible,
+                panel: container.isPanelVisible
+            )
+        }
     }
 }
 
