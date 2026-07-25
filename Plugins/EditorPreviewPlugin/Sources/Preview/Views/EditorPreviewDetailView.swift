@@ -63,6 +63,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
             canvasArea
         }
         .onAppear {
+            Self.logger.info("\(self.t)👁 onAppear — currentFile=\(currentFileURL?.lastPathComponent ?? "nil"), editorService=\(editorService != nil), sourceText.length=\(sourceText?.count ?? -1), previewMode=\(String(describing: viewModel.previewMode), privacy: .public)")
             if Self.verbose {
                 Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
             }

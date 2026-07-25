@@ -735,34 +735,47 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     private func updatePreviewMode(for url: URL?) {
         guard let url else {
             previewMode = .unsupported(nil)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: url=nil → unsupported")
             return
         }
 
         let ext = url.pathExtension.lowercased()
         if ext == "swift" {
             previewMode = .swift
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → swift")
         } else if ext == "xcassets" {
             previewMode = .xcassets(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → xcassets")
         } else if Self.imageExtensions.contains(ext) {
             previewMode = .image(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → image")
         } else if Self.markdownExtensions.contains(ext) {
             previewMode = .markdown(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → markdown (ext=\(ext, privacy: .public))")
         } else if Self.stringCatalogExtensions.contains(ext) {
             previewMode = .stringCatalog(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → stringCatalog")
         } else if Self.jsonExtensions.contains(ext) {
             previewMode = .json(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → json")
         } else if Self.plistExtensions.contains(ext) {
             previewMode = .plist(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → plist")
         } else if Self.csvExtensions.contains(ext) {
             previewMode = .csv(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → csv")
         } else if Self.htmlExtensions.contains(ext) {
             previewMode = .html(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → html")
         } else if Self.pdfExtensions.contains(ext) {
             previewMode = .pdf(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → pdf")
         } else if Self.docExtensions.contains(ext) {
             previewMode = .doc(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → doc")
         } else {
             previewMode = .unsupported(url)
+            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → unsupported (ext=\(ext, privacy: .public))")
         }
     }
 

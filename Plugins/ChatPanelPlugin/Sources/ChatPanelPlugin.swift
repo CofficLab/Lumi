@@ -10,7 +10,7 @@ import SwiftUI
 public final class ChatPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-panel"
     public let name = "Chat"
-    public let order = 78
+    public let order = 278
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}

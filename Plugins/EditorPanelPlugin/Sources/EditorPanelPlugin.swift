@@ -21,7 +21,7 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
 
     public let id = "LumiEditor"
     public let name = LumiPluginLocalization.string("Code Editor", bundle: .module)
-    public let order = 77
+    public let order = 277
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
@@ -42,7 +42,8 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
                 isRailVisible: true,
                 isChatVisible: true,
                 isContentVisible: true,
-                isPanelVisible: true
+                isPanelVisible: true,
+                isPanelBottomVisible: true
             ) {
                 EditorPanelHostView(kernel: kernel)
             }

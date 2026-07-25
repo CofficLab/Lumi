@@ -14,7 +14,7 @@ public final class DockerManagerPlugin: LumiPlugin {
 
     public let id = "com.coffic.lumi.plugin.docker-manager"
     public let name = "Docker"
-    public let order = 50
+    public let order = 254
 	public let policy: LumiPluginPolicy = .disabled
 
     public init() {}

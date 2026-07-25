@@ -15,7 +15,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.display-control"
     public let name = "Display Control"
-    public let order = 21
+    public let order = 210
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

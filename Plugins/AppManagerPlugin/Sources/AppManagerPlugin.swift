@@ -18,7 +18,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.app-manager"
     public let name = "App Manager"
-    public let order = 42
+    public let order = 242
 	public let policy: LumiPluginPolicy = .optOut
 
     /// 数据根目录解析器

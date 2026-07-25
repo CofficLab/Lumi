@@ -20,6 +20,9 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {
         EditorPreviewRuntimeBridge.kernel = kernel
+        EditorPreviewRuntimeBridge.editorServiceProvider = {
+            kernel.resolveService(EditorService.self)
+        }
     }
 
 

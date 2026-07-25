@@ -18,7 +18,7 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.brew-manager"
     public let name = "Package Management"
-    public let order = 60
+    public let order = 260
     public let policy: LumiPluginPolicy = .optOut
 
     // MARK: - Initialization
