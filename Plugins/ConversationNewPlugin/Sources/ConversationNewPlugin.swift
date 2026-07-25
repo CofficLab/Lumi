@@ -15,9 +15,6 @@ public final class ConversationNewPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
-    // MARK: - LumiPlugin stubs
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
@@ -31,9 +28,10 @@ public final class ConversationNewPlugin: LumiPlugin {
                 placement: .trailing
             ) {
                 NewChatButton(kernel: kernel)
-            }
+            },
         ]
     }
+
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
