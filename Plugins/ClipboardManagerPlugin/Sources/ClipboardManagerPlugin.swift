@@ -1,9 +1,9 @@
 import Foundation
 import LumiKernel
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// Clipboard Manager 内核插件
 ///
@@ -12,26 +12,19 @@ import os
 @MainActor
 public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
-    nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose = false
-
-    // MARK: - LumiPlugin
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
     public let name = "Clipboard Manager Plugin"
     public let order = 70
-	public let policy: LumiPluginPolicy = .optOut  // 功能插件
-
-    // MARK: - Initialization
+    public let policy: LumiPluginPolicy = .optOut // 功能插件
 
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 启动剪贴板监控
         ClipboardMonitor.shared.startMonitoring()
     }
 
@@ -46,9 +39,6 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
             },
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -75,7 +65,17 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        guard containerID == id else { return }
+
+        kernel.layoutManager?.layoutState.applyVisibility(
+            rail: false,
+            chat: false,
+            content: true,
+            activityBar: true,
+            panel: true
+        )
+    }
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
