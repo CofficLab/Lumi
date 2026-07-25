@@ -50,12 +50,17 @@ public final class LayoutStore: SuperLog {
     // MARK: - Read
 
     /// 从磁盘读取已保存的布局信息。
-    /// - Returns: 已保存的 `LayoutStateInfo`；文件不存在、空或损坏时返回 `nil`。
+    /// - Returns: 已保存的 `LayoutStateInfo`；文件不存在，空或损坏时返回 `nil`。
     public func loadLayoutInfo() -> LayoutStateInfo? {
         guard let data = try? Data(contentsOf: layoutInfoFileURL) else {
             return nil
         }
-        return try? JSONDecoder().decode(LayoutStateInfo.self, from: data)
+        do {
+            return try JSONDecoder().decode(LayoutStateInfo.self, from: data)
+        } catch {
+            Self.logger.error("\(Self.t)布局信息读取失败: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     // MARK: - Write
@@ -68,11 +73,16 @@ public final class LayoutStore: SuperLog {
             removeLayoutInfoFile()
             return
         }
-        try? FileManager.default.createDirectory(
-            at: settingsDirectory,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
+        do {
+            try FileManager.default.createDirectory(
+                at: settingsDirectory,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        } catch {
+            Self.logger.error("\(Self.t)目录创建失败: \(error.localizedDescription)")
+            return
+        }
         Self.write(info, to: layoutInfoFileURL)
     }
 
@@ -92,6 +102,7 @@ public final class LayoutStore: SuperLog {
     /// 原子写入：先写临时文件，再 `replaceItemAt` 替换目标。
     private static func write<Value: Encodable>(_ value: Value, to fileURL: URL) {
         guard let data = try? JSONEncoder().encode(value) else {
+            logger.error("\(Self.t)布局信息编码失败")
             return
         }
 
@@ -108,6 +119,7 @@ public final class LayoutStore: SuperLog {
                 try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
             }
         } catch {
+            logger.error("\(Self.t)布局信息写入失败: \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: temporaryURL)
         }
     }
