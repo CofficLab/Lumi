@@ -139,6 +139,8 @@ public final class LayoutState: ObservableObject, SuperLog {
         activeViewContainerID = id
         // 根据容器配置自动应用可见性
         if let container = viewContainer(id: id) {
+            activeSectionID = container.id
+            activeSectionTitle = container.title
             applyVisibility(
                 rail: container.isRailVisible,
                 chat: container.isChatVisible,

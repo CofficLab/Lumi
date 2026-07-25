@@ -22,10 +22,7 @@ struct ActivityBar: View {
                     label: container.title,
                     isActive: activeID == container.id
                 ) {
-                    // 激活容器
                     kernel.layoutManager?.layoutState.activateContainer(id: container.id)
-                    kernel.layoutManager?.layoutState.activeSectionID = container.id
-                    kernel.layoutManager?.layoutState.activeSectionTitle = container.title
                 }
             }
 
