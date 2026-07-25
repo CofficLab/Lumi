@@ -6,7 +6,7 @@ import SuperLogKit
 
 /// 布局服务实现
 ///
-/// 持久化由外层插件负责，详见 `LayoutStore`。内核仅持有运行时状态 `layoutState`。
+/// 持久化由 LayoutStore 负责，在状态变更时自动保存。
 @MainActor
 public final class LayoutManager: LayoutProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
@@ -16,6 +16,9 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     /// 布局状态（用于视图绑定和运行时状态）
     public let layoutState: LayoutState
 
+    /// 布局持久化存储
+    private let store: LayoutStore
+
     /// 订阅 `layoutState.objectWillChange`,转发到本服务。
     ///
     /// `activeRailTabID`、`bottomPanelVisible` 等运行时状态都存放在 `LayoutState` 的
@@ -24,7 +27,8 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     /// `@ObservedObject kernel` 的视图重绘——表现为 Rail 标签栏高亮不随点击切换等故障。
     private var layoutStateSubscription: AnyCancellable?
 
-    public init() {
+    public init(store: LayoutStore) {
+        self.store = store
         self.layoutState = LayoutState()
 
         // 把 LayoutState 的变更重新发布到 LayoutManager,使经 LayoutProviding
@@ -66,6 +70,21 @@ public final class LayoutManager: LayoutProviding, SuperLog {
         let bottomVisible = self.layoutState.isPanelBottomVisible
         if Self.verbose {
             Self.logger.info("\(Self.t)activateContainer done, isPanelBottomVisible = \(bottomVisible)")
+        }
+        // 保存到磁盘
+        saveState()
+    }
+
+    /// 保存当前状态到磁盘
+    private func saveState() {
+        let info = LayoutStateInfo(
+            activeSectionID: self.layoutState.activeSectionID,
+            activeSectionTitle: self.layoutState.activeSectionTitle,
+            chatSectionVisible: self.layoutState.isChatVisible
+        )
+        self.store.saveLayoutInfo(info)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)saveState: activeSectionID=\(info.activeSectionID), chatSectionVisible=\(info.chatSectionVisible)")
         }
     }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
