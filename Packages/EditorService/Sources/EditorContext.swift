@@ -1,8 +1,13 @@
 import Combine
 import Foundation
+import LumiKernel
 import LumiUI
 
 /// Bridges editor file-tree and chrome views to the active `EditorService`.
+///
+/// 同时作为 `FileTreeEditorCoordination` 的实现,向 kernel 注册,供文件树等 UI 组件
+/// 通过协议消费编辑器协同能力(打开/关闭/迁移 session、高亮、加入对话等),
+/// 而无需直接依赖 `EditorService` 包。
 @MainActor
 public final class EditorContext: ObservableObject {
     public static let syncSelectedFileNotificationName = Notification.Name("EditorContext.syncSelectedFile")
@@ -22,6 +27,12 @@ public final class EditorContext: ObservableObject {
         self.themeVM = themeVM
         fileTreeHighlightedFileURL = service.files.currentFileURL
         bindFileTreeHighlightToEditorCurrentFile()
+    }
+
+    /// 文件树高亮 URL 的变化流(协议要求)。
+    /// 将 `@Published fileTreeHighlightedFileURL` 的投影 publisher 暴露为 `AnyPublisher`。
+    public var fileTreeHighlightPublisher: AnyPublisher<URL?, Never> {
+        $fileTreeHighlightedFileURL.eraseToAnyPublisher()
     }
 
     public func resolvedFileTreeHighlightURL() -> URL? {
@@ -115,3 +126,10 @@ public final class EditorContext: ObservableObject {
             .store(in: &cancellables)
     }
 }
+
+// MARK: - FileTreeEditorCoordination
+
+/// `EditorContext` 实现文件树协同能力协议,向 kernel 注册后,文件树等 UI 组件
+/// 可通过 `kernel.resolveService(FileTreeEditorCoordination.self)` 取用,
+/// 无需直接依赖 `EditorService` 包。
+extension EditorContext: FileTreeEditorCoordination {}

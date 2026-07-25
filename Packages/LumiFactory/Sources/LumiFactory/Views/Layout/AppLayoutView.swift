@@ -54,6 +54,7 @@ struct AppLayoutView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
+        .environmentObject(AppThemeVM.shared)
         .ignoresSafeArea()
         .onRailVisibleDidChange { visible in
             isRailVisible = visible

@@ -31,6 +31,11 @@ public struct EditorKernelOnBootHook: SuperLog {
         let editorService = EditorService(editorExtensionRegistry: registry)
         kernel.registerService(EditorService.self, editorService)
 
+        // 创建文件树/编辑器协同器并注册到内核,供文件树等 UI 组件通过
+        // `FileTreeEditorCoordination` 协议消费(无需直接依赖 EditorService)。
+        let editorContext = EditorContext(service: editorService)
+        kernel.registerFileTreeEditorCoordination(editorContext)
+
         if Self.verbose {
             Self.logger.info("\(Self.t)EditorService registered successfully")
         }

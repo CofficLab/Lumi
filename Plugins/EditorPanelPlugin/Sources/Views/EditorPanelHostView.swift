@@ -19,7 +19,6 @@ public struct EditorPanelHostView: View {
         if let editorService = kernel.resolveService(EditorService.self) {
             EditorPanelView(kernel: kernel)
                 .environmentObject(editorService)
-                .environmentObject(AppThemeVM.shared)
         } else {
             Text("Editor Service Unavailable")
                 .font(.appCaption)

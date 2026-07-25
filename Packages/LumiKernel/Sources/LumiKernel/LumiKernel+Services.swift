@@ -51,6 +51,14 @@ extension LumiKernelContainer {
         resolveService(EditorProviding.self)
     }
 
+    /// File-tree/editor coordination service
+    ///
+    /// 文件树与编辑器的协同能力(高亮、打开/关闭/迁移 session、加入对话等)。
+    /// 由编辑器插件注册,文件树等 UI 组件消费。
+    public var fileTreeEditorCoordination: (any FileTreeEditorCoordination)? {
+        resolveService(FileTreeEditorCoordination.self)
+    }
+
     /// Agent tool service
     public var toolManager: (any ToolManaging)? {
         resolveService(ToolManaging.self)

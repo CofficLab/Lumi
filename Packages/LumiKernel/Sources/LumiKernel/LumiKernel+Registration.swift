@@ -51,6 +51,14 @@ extension LumiKernelContainer {
         registerService(EditorProviding.self, editor)
     }
 
+    /// Register file-tree/editor coordination service
+    ///
+    /// 注册文件树与编辑器协同能力(通常由编辑器插件以 `EditorContext` 实现)。
+    /// 文件树等 UI 组件通过 `kernel.resolveService(FileTreeEditorCoordination.self)` 取用。
+    public func registerFileTreeEditorCoordination(_ coordination: any FileTreeEditorCoordination) {
+        registerService(FileTreeEditorCoordination.self, coordination)
+    }
+
     /// Register agent tool service
     public func registerToolManagerService(_ toolManager: any ToolManaging) {
         registerService(ToolManaging.self, toolManager)
