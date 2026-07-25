@@ -27,6 +27,7 @@ import DisplayControlPlugin
 import DockerManagerPlugin
 import EditorProviderPlugin
 import EditorKernelPlugin
+import EditorPanelPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -174,6 +175,9 @@ public enum PluginService {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             ViewContainerPlugin(),
+            // Editor UI Shell — 贡献 "Code Editor" 视图容器,托管 EditorService。
+            // 依赖 EditorKernelPlugin 在 OnBoot 注册的具象 EditorService。
+            EditorPanelPlugin(),
             // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),

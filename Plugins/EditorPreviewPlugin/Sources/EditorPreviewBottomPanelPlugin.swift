@@ -20,15 +20,6 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {
         EditorPreviewRuntimeBridge.kernel = kernel
-        kernel.panel?.registerPanelBottomTabItem(
-            PanelBottomTabItem(
-                id: "editor-bottom-preview",
-                title: LumiPluginLocalization.string("Preview", bundle: .module),
-                systemImage: "eye"
-            ) {
-                EditorPreviewDetailView(kernel: kernel)
-            }
-        )
     }
 
 
@@ -41,7 +32,17 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
-    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] {
+        [
+            PanelBottomTabItem(
+                id: "editor-bottom-preview",
+                title: LumiPluginLocalization.string("Preview", bundle: .module),
+                systemImage: "eye"
+            ) {
+                EditorPreviewDetailView(kernel: kernel)
+            }
+        ]
+    }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
