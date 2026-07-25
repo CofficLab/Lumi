@@ -16,17 +16,15 @@ struct PanelBottomView: View {
     }
 
     private var viewContainerID: String {
-        kernel.layoutManager?.activeViewContainerID ?? "main"
+        kernel.layoutManager?.activeViewContainerID ?? ""
     }
 
     private var container: ViewContainerItem? {
-        kernel.layoutManager?.allViewContainers.first { $0.id == viewContainerID }
-            ?? kernel.layoutManager?.allViewContainers.first
+        guard !viewContainerID.isEmpty else { return nil }
+        return kernel.layoutManager?.allViewContainers.first { $0.id == viewContainerID }
     }
 
     private var isBottomPanelVisible: Bool {
-        // 优先采用当前激活容器声明的可见性；
-        // 未声明（nil）时回退到全局 bottomPanelVisible。
         container?.isPanelBottomVisible
             ?? kernel.layoutManager?.bottomPanelVisible
             ?? true

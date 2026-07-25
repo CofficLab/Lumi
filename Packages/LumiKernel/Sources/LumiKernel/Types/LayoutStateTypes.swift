@@ -116,6 +116,9 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
+    /// 底部 Panel 底部是否可见
+    @Published public var isPanelBottomVisible: Bool = true
+
     // MARK: - Workspace Commands
 
     public func setRailVisible(_ visible: Bool) {
@@ -134,6 +137,10 @@ public final class LayoutState: ObservableObject, SuperLog {
         isPanelVisible = visible
     }
 
+    public func setPanelBottomVisible(_ visible: Bool) {
+        isPanelBottomVisible = visible
+    }
+
     /// 激活容器并通知观察者，同时根据容器配置自动应用可见性
     public func activateContainer(id: String) {
         activeViewContainerID = id
@@ -147,6 +154,9 @@ public final class LayoutState: ObservableObject, SuperLog {
                 content: container.isContentVisible,
                 panel: container.isPanelVisible
             )
+            if let bottomVisible = container.isPanelBottomVisible {
+                isPanelBottomVisible = bottomVisible
+            }
         }
         for observer in containerObservers {
             observer(id)
