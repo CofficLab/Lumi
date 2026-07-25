@@ -16,8 +16,8 @@ struct PanelBodyView: View {
 
     /// 优先匹配当前激活的容器，否则回退到第一个。
     private var container: ViewContainerItem? {
-        kernel.viewContainer?.allViewContainers.first { $0.id == viewContainerID }
-            ?? kernel.viewContainer?.allViewContainers.first
+        kernel.sharedUI?.allViewContainers.first { $0.id == viewContainerID }
+            ?? kernel.sharedUI?.allViewContainers.first
     }
 
     var body: some View {

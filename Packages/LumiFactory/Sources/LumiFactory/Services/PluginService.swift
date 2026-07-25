@@ -92,7 +92,6 @@ import VerbosityPlugin
 import ConversationSpeedPlugin
 import ChatModePlugin
 import VideoConverterPlugin
-import ViewContainerPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
 import OpenInXcodePlugin
@@ -174,7 +173,6 @@ public enum PluginService {
             LogoPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
-            ViewContainerPlugin(),
             // Editor UI Shell — 贡献 "Code Editor" 视图容器,托管 EditorService。
             // 依赖 EditorKernelPlugin 在 OnBoot 注册的具象 EditorService。
             EditorPanelPlugin(),

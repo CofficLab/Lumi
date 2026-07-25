@@ -20,8 +20,8 @@ struct PanelBottomView: View {
     }
 
     private var container: ViewContainerItem? {
-        kernel.viewContainer?.allViewContainers.first { $0.id == viewContainerID }
-            ?? kernel.viewContainer?.allViewContainers.first
+        kernel.sharedUI?.allViewContainers.first { $0.id == viewContainerID }
+            ?? kernel.sharedUI?.allViewContainers.first
     }
 
     private var isBottomPanelVisible: Bool {

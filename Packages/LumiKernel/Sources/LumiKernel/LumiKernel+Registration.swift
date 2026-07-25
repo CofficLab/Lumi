@@ -19,11 +19,6 @@ extension LumiKernelContainer {
         registerService(LayoutProviding.self, layout)
     }
 
-    /// Register view container service
-    public func registerViewContainerService(_ service: any ViewContainerProviding) {
-        registerService(ViewContainerProviding.self, service)
-    }
-
     /// Register command service
     public func registerCommandService(_ command: any CommandProviding) {
         registerService(CommandProviding.self, command)

@@ -19,11 +19,6 @@ extension LumiKernelContainer {
         resolveService(LayoutProviding.self)
     }
 
-    /// View container service
-    public var viewContainer: (any ViewContainerProviding)? {
-        resolveService(ViewContainerProviding.self)
-    }
-
     /// Command menu service
     public var command: (any CommandProviding)? {
         resolveService(CommandProviding.self)

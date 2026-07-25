@@ -93,7 +93,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     /// 注册表可能为空），两种情况下都安全跳过，不影响其他流程。
     func applyActiveContainerVisibility(kernel: LumiKernel, containerID: String?) {
         guard let containerID,
-              let container = kernel.viewContainer?.viewContainer(id: containerID)
+              let container = kernel.sharedUI?.viewContainer(id: containerID)
         else { return }
         kernel.layoutManager?.layoutState.applyVisibility(
             rail: container.isRailVisible,
@@ -120,7 +120,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         clearInternalContributions()
         kernel.settings?.clearAllContributions()
         kernel.sharedUI?.clearAllContributions()
-        kernel.viewContainer?.clearAllContributions()
         kernel.logo?.clearAllContributions()
         // onboarding 服务当前未注册(kernel.onboarding == nil),无需处理。
 
@@ -200,7 +199,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                 }
                 var containerWithOrder = viewContainer
                 containerWithOrder.order = pluginOrder
-                kernel.viewContainer?.register(containerWithOrder)
+                kernel.sharedUI?.registerViewContainer(containerWithOrder)
             }
 
             // Chat Section
@@ -303,7 +302,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         }
 
         // Sync layout active section with registered view containers.
-        let containers = kernel.viewContainer?.allViewContainers ?? []
+        let containers = kernel.sharedUI?.allViewContainers ?? []
         if let first = containers.first,
            let layoutService = kernel.layoutManager,
            layoutService.state.activeSectionID.isEmpty {

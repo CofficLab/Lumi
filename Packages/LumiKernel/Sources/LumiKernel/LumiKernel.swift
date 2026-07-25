@@ -83,7 +83,6 @@ public final class LumiKernelContainer: ObservableObject {
         if storage == nil { missingServices.append("Storage") }
         if project == nil { missingServices.append("Project") }
         if layoutManager == nil { missingServices.append("Layout") }
-        if viewContainer == nil { missingServices.append("ViewContainer") }
         if command == nil { missingServices.append("Command") }
         if sharedUI == nil { missingServices.append("SharedUI") }
         if messageSender == nil { missingServices.append("MessageSend") }

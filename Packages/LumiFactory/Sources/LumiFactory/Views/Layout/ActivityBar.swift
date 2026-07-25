@@ -7,7 +7,7 @@ struct ActivityBar: View {
     @ObservedObject var kernel: LumiKernel
 
     private var containers: [ViewContainerItem] {
-        kernel.viewContainer?.allViewContainers ?? []
+        kernel.sharedUI?.allViewContainers ?? []
     }
 
     private var activeID: String? {
