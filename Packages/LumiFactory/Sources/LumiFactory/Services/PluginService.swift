@@ -29,6 +29,7 @@ import EditorProviderPlugin
 import EditorKernelPlugin
 import EditorPanelPlugin
 import EditorTabStripPlugin
+import EditorPreviewPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -180,6 +181,8 @@ public enum PluginService {
             // Editor 标签栏 — 在 PanelHeader 显示已打开文件的标签。
             // 通过 EditorTabStripCoordination 协议消费编辑器能力。
             StripHeaderPlugin(),
+            // Editor 预览面板 — 在 PanelBottom 显示文件预览。
+            EditorPreviewBottomPanelPlugin(),
             // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
