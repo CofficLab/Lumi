@@ -59,6 +59,14 @@ extension LumiKernelContainer {
         registerService(FileTreeEditorCoordination.self, coordination)
     }
 
+    /// Register editor tab-strip coordination service
+    ///
+    /// 注册标签栏与编辑器协同能力(通常由编辑器插件以 `EditorContext` 实现)。
+    /// 标签栏等 UI 组件通过 `kernel.resolveService(EditorTabStripCoordination.self)` 取用。
+    public func registerEditorTabStripCoordination(_ coordination: any EditorTabStripCoordination) {
+        registerService(EditorTabStripCoordination.self, coordination)
+    }
+
     /// Register agent tool service
     public func registerToolManagerService(_ toolManager: any ToolManaging) {
         registerService(ToolManaging.self, toolManager)

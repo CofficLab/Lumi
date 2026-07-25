@@ -35,6 +35,8 @@ public struct EditorKernelOnBootHook: SuperLog {
         // `FileTreeEditorCoordination` 协议消费(无需直接依赖 EditorService)。
         let editorContext = EditorContext(service: editorService)
         kernel.registerFileTreeEditorCoordination(editorContext)
+        // 同一实例同时实现标签栏协同协议。
+        kernel.registerEditorTabStripCoordination(editorContext)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)EditorService registered successfully")

@@ -1,5 +1,4 @@
 import CryptoKit
-import EditorService
 import LumiKernel
 import SuperLogKit
 import Foundation
@@ -59,7 +58,7 @@ public final class StripStore: @unchecked Sendable, SuperLog {
     /// 保存指定项目的标签页列表（异步，不阻塞调用线程）
     public func saveTabs(
         projectPath: String,
-        tabs: [EditorTab],
+        tabs: [TabDescriptor],
         activeTabPath: String?
     ) {
         queue.async { [self] in

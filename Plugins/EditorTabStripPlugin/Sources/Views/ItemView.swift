@@ -1,32 +1,38 @@
-import EditorService
 import SwiftUI
 import LumiUI
-import UniformTypeIdentifiers
 import LumiKernel
+import UniformTypeIdentifiers
 
 /// 单个标签页的完整交互项
 ///
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
+/// 编辑器操作通过 `EditorTabStripCoordination` 协议委托,不直接依赖 EditorService。
 public struct ItemView: View {
     @LumiUI.LumiTheme private var uiTheme: any LumiUITheme
 
     @LumiMotionPreferenceReader private var motionPreference
     @State private var isHovered = false
 
-    @ObservedObject private var service: EditorService
-    public let tab: EditorTab
+    private let coordination: (any EditorTabStripCoordination)?
+    private let allTabs: [TabDescriptor]
+    private let activeSessionID: UUID?
+    public let tab: TabDescriptor
     public let theme: any LumiAppChromeTheme
-    public let onStartDrag: (EditorTab) -> Void
-    public let onDropBefore: (EditorTab?) -> Void
+    public let onStartDrag: (TabDescriptor) -> Void
+    public let onDropBefore: (TabDescriptor?) -> Void
 
     public init(
-        service: EditorService,
-        tab: EditorTab,
+        coordination: (any EditorTabStripCoordination)?,
+        allTabs: [TabDescriptor],
+        activeSessionID: UUID?,
+        tab: TabDescriptor,
         theme: any LumiAppChromeTheme,
-        onStartDrag: @escaping (EditorTab) -> Void,
-        onDropBefore: @escaping (EditorTab?) -> Void
+        onStartDrag: @escaping (TabDescriptor) -> Void,
+        onDropBefore: @escaping (TabDescriptor?) -> Void
     ) {
-        self._service = ObservedObject(wrappedValue: service)
+        self.coordination = coordination
+        self.allTabs = allTabs
+        self.activeSessionID = activeSessionID
         self.tab = tab
         self.theme = theme
         self.onStartDrag = onStartDrag
@@ -34,15 +40,15 @@ public struct ItemView: View {
     }
 
     private var isActive: Bool {
-        service.sessions.activeSessionID == tab.sessionID
+        activeSessionID == tab.sessionID
     }
 
     private var isDirty: Bool {
-        tab.isDirty || (isActive && service.files.currentFileURL == tab.fileURL && service.files.hasUnsavedChanges)
+        tab.isDirty
     }
 
     private var tabIndex: Int? {
-        service.sessions.tabs.firstIndex(where: { $0.sessionID == tab.sessionID })
+        allTabs.firstIndex(where: { $0.sessionID == tab.sessionID })
     }
 
     private var canCloseTabsToLeft: Bool {
@@ -52,50 +58,49 @@ public struct ItemView: View {
 
     private var canCloseTabsToRight: Bool {
         guard let tabIndex else { return false }
-        return tabIndex < service.sessions.tabs.count - 1
+        return tabIndex < allTabs.count - 1
     }
 
     public var body: some View {
         tabContent
-        .contentShape(Rectangle())
-        .onTapGesture {
-            activateSession(tab)
-        }
-        .onDrop(of: [.plainText], isTargeted: nil) { _ in
-            onDropBefore(tab)
-            return true
-        }
-        .contextMenu {
-            Button(
-                tab.isPinned
-                    ? LumiPluginLocalization.string("Unpin Tab", bundle: .module)
-                    : LumiPluginLocalization.string("Pin Tab", bundle: .module)
-            ) {
-                togglePinned()
+            .contentShape(Rectangle())
+            .onTapGesture {
+                coordination?.activateSession(id: tab.sessionID)
             }
-            Button(LumiPluginLocalization.string("Close Others", bundle: .module)) {
-                closeOtherSessions()
+            .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                onDropBefore(tab)
+                return true
             }
-            Button(LumiPluginLocalization.string("Close Tabs to the Left", bundle: .module)) {
-                closeTabsToLeft()
-            }
-            .disabled(!canCloseTabsToLeft)
+            .contextMenu {
+                Button(
+                    tab.isPinned
+                        ? LumiPluginLocalization.string("Unpin Tab", bundle: .module)
+                        : LumiPluginLocalization.string("Pin Tab", bundle: .module)
+                ) {
+                    coordination?.togglePinned(sessionID: tab.sessionID)
+                }
+                Button(LumiPluginLocalization.string("Close Others", bundle: .module)) {
+                    coordination?.closeOtherSessions(keeping: tab.sessionID)
+                }
+                Button(LumiPluginLocalization.string("Close Tabs to the Left", bundle: .module)) {
+                    coordination?.closeTabsToLeft(of: tab.sessionID)
+                }
+                .disabled(!canCloseTabsToLeft)
 
-            Button(LumiPluginLocalization.string("Close Tabs to the Right", bundle: .module)) {
-                closeTabsToRight()
+                Button(LumiPluginLocalization.string("Close Tabs to the Right", bundle: .module)) {
+                    coordination?.closeTabsToRight(of: tab.sessionID)
+                }
+                .disabled(!canCloseTabsToRight)
             }
-            .disabled(!canCloseTabsToRight)
-        }
-        .onDrag {
-            onStartDrag(tab)
-            // 传递绝对路径纯文本，便于拖入输入框等；标签排序仍靠 onStartDrag 状态
-            if let path = tab.fileURL?.path {
-                return NSItemProvider(object: path as NSString)
+            .onDrag {
+                onStartDrag(tab)
+                if let path = tab.fileURL?.path {
+                    return NSItemProvider(object: path as NSString)
+                }
+                return NSItemProvider(object: tab.sessionID.uuidString as NSString)
+            } preview: {
+                tabDragPreview
             }
-            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
-        } preview: {
-            tabDragPreview
-        }
     }
 
     private var tabContent: some View {
@@ -122,7 +127,7 @@ public struct ItemView: View {
                 .lineLimit(1)
 
             Button {
-                closeSession(tab)
+                coordination?.closeSession(id: tab.sessionID)
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -155,27 +160,6 @@ public struct ItemView: View {
         }
     }
 
-    // MARK: - 操作
-
-    private func activateSession(_ tab: EditorTab) {
-        service.sessions.activateAndRestoreSession(id: tab.sessionID)
-    }
-
-    private func closeSession(_ tab: EditorTab) {
-        guard let session = service.sessions.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == service.sessions.activeSessionID
-        if wasActive, service.files.hasUnsavedChanges {
-            service.files.saveNow()
-        }
-
-        let nextSession = service.sessions.closeSession(id: session.id)
-        guard wasActive, let nextSession else { return }
-
-        // closeSession 已切换 activeSessionID，只需加载文件 + 恢复交互状态
-        service.files.loadFile(from: nextSession.fileURL)
-        service.files.applySessionRestore(nextSession)
-    }
-
     // MARK: - Drag Preview
 
     private var tabDragPreview: some View {
@@ -191,76 +175,5 @@ public struct ItemView: View {
                     .appSurface(style: .custom(uiTheme.warning.opacity(0.95)), cornerRadius: 8)
             }
         }
-    }
-
-    // MARK: - 操作
-
-    private func closeOtherSessions() {
-        guard let session = service.sessions.session(for: tab.sessionID) else { return }
-        if service.files.currentFileURL != session.fileURL, service.files.hasUnsavedChanges {
-            service.files.saveNow()
-        }
-
-        let keptSession = service.sessions.closeOtherSessions(keeping: session.id)
-        service.files.loadFile(from: keptSession?.fileURL)
-        if let keptSession {
-            service.files.applySessionRestore(keptSession)
-        }
-    }
-
-    private func togglePinned() {
-        service.sessions.togglePinned(sessionID: tab.sessionID)
-    }
-
-    private func closeTabsToLeft() {
-        closeTabsOnSide(
-            closesActiveSession: activeSessionIsLeftOfTab,
-            close: { service.sessions.closeTabsToLeft(of: $0) }
-        )
-    }
-
-    private func closeTabsToRight() {
-        closeTabsOnSide(
-            closesActiveSession: activeSessionIsRightOfTab,
-            close: { service.sessions.closeTabsToRight(of: $0) }
-        )
-    }
-
-    private func closeTabsOnSide(
-        closesActiveSession: Bool,
-        close: (EditorSession.ID) -> EditorSession?
-    ) {
-        let previousActiveSessionID = service.sessions.activeSessionID
-        if closesActiveSession, service.files.hasUnsavedChanges {
-            service.files.saveNow()
-        }
-
-        let nextSession = close(tab.sessionID)
-        guard nextSession?.id != previousActiveSessionID else { return }
-
-        service.files.loadFile(from: nextSession?.fileURL)
-        if let nextSession {
-            service.files.applySessionRestore(nextSession)
-        }
-    }
-
-    private var activeSessionIsLeftOfTab: Bool {
-        guard let activeSessionID = service.sessions.activeSessionID,
-              let activeIndex = service.sessions.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
-              let targetIndex = tabIndex else {
-            return false
-        }
-
-        return activeIndex < targetIndex
-    }
-
-    private var activeSessionIsRightOfTab: Bool {
-        guard let activeSessionID = service.sessions.activeSessionID,
-              let activeIndex = service.sessions.tabs.firstIndex(where: { $0.sessionID == activeSessionID }),
-              let targetIndex = tabIndex else {
-            return false
-        }
-
-        return activeIndex > targetIndex
     }
 }

@@ -1,4 +1,4 @@
-import EditorService
+import Combine
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -7,6 +7,9 @@ import SwiftUI
 ///
 /// 渲染 Tab 栏 UI，并嵌入 `StripCoordinator` 实现
 /// 标签页的自动保存和项目切换时的恢复。
+///
+/// 编辑器协同能力通过 kernel 的 `EditorTabStripCoordination` 协议消费,
+/// 本视图不依赖具体编辑器服务实现。
 public struct HeaderView: View {
 
     // MARK: - 属性
@@ -14,7 +17,14 @@ public struct HeaderView: View {
     let kernel: LumiKernel
     @EnvironmentObject private var themeVM: AppThemeVM
     @State private var draggedTabSessionID: UUID?
-    @ObservedObject private var service: EditorService
+
+    /// 编辑器协同能力(从内核解析;若未注册则相关操作降级为空操作)。
+    private let coordination: (any EditorTabStripCoordination)?
+    /// 标签状态流(init 时捕获一次,避免 body 重建 publisher 触发死循环)。
+    private let statePublisher: AnyPublisher<TabStripState, Never>
+
+    /// 当前标签状态(由 publisher 驱动)。
+    @State private var state: TabStripState = TabStripState(tabs: [], activeSessionID: nil)
 
     /// 标签页持久化协调器
     @StateObject private var coordinator = StripCoordinator()
@@ -23,14 +33,12 @@ public struct HeaderView: View {
         kernel.project?.currentProject?.path ?? ""
     }
 
-    public init(service: EditorService, kernel: LumiKernel) {
-        self._service = ObservedObject(wrappedValue: service)
+    public init(coordination: (any EditorTabStripCoordination)?, kernel: LumiKernel) {
+        self.coordination = coordination
         self.kernel = kernel
+        self.statePublisher = coordination?.tabStripStatePublisher
+            ?? Empty().eraseToAnyPublisher()
     }
-
-    // ⚠️ sessionStore 用于 StripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
-    // 这些 Publisher 无法通过门面方法转发。
-    public var sessionStore: EditorSessionStore { service.sessionStore }
 
     // MARK: - Body
 
@@ -48,44 +56,42 @@ public struct HeaderView: View {
             }
         }
         .borderBottom()
+        .onReceive(statePublisher) { newState in
+            state = newState
+        }
         .onAppear {
+            guard let coordination else { return }
             coordinator.startObserving(
-                sessionStore: sessionStore,
+                coordination: coordination,
                 projectPathProvider: {
                     kernel.project?.currentProject?.path ?? ""
                 },
-                openFile: { [weak service] url in
-                    let projectPath = kernel.project?.currentProject?.path
-                    Task { @MainActor in
-                        await service?.refreshProjectContext(for: projectPath)
-                        service?.sessions.open(at: url)
-                    }
+                openFile: { [weak coordination] url in
+                    coordination?.openFile(at: url)
                 },
-                openFileSessionOnly: { [weak service] url in
-                    service?.sessions.openFileSessionInBackground(at: url)
+                openFileSessionOnly: { [weak coordination] url in
+                    coordination?.openFileSessionInBackground(at: url)
                 }
             )
         }
         .onDisappear {
+            guard let coordination else { return }
             coordinator.stopObserving(
-                sessionStore: sessionStore,
+                coordination: coordination,
                 projectPath: currentProjectPath
             )
         }
         .onChange(of: currentProjectPath) { oldPath, newPath in
+            guard let coordination else { return }
             coordinator.handleProjectPathChange(
                 oldPath: oldPath,
                 newPath: newPath,
-                sessionStore: sessionStore,
-                openFile: { [weak service] url in
-                    let projectPath = kernel.project?.currentProject?.path
-                    Task { @MainActor in
-                        await service?.refreshProjectContext(for: projectPath)
-                        service?.sessions.open(at: url)
-                    }
+                coordination: coordination,
+                openFile: { [weak coordination] url in
+                    coordination?.openFile(at: url)
                 },
-                openFileSessionOnly: { [weak service] url in
-                    service?.sessions.openFileSessionInBackground(at: url)
+                openFileSessionOnly: { [weak coordination] url in
+                    coordination?.openFileSessionInBackground(at: url)
                 }
             )
         }
@@ -105,9 +111,9 @@ public struct HeaderView: View {
         themeVM.activeChromeTheme
     }
 
-    private var visibleTabs: [EditorTab] {
+    private var visibleTabs: [TabDescriptor] {
         guard let projectRoot = normalizedProjectRoot else { return [] }
-        return service.sessions.tabs.filter { tab in
+        return state.tabs.filter { tab in
             guard let fileURL = tab.fileURL else { return false }
             return isFile(fileURL, inside: projectRoot)
         }
@@ -115,7 +121,7 @@ public struct HeaderView: View {
 
     /// 当前激活的会话 ID，用于驱动 tab 栏自动滚动到激活 tab
     private var activeSessionID: UUID? {
-        service.sessions.activeSessionID
+        state.activeSessionID
     }
 
     private var normalizedProjectRoot: String? {
@@ -132,7 +138,9 @@ public struct HeaderView: View {
                 HStack(spacing: 0) {
                     ForEach(visibleTabs) { tab in
                         ItemView(
-                            service: service,
+                            coordination: coordination,
+                            allTabs: visibleTabs,
+                            activeSessionID: activeSessionID,
                             tab: tab,
                             theme: theme,
                             onStartDrag: beginTabDrag,
@@ -149,17 +157,13 @@ public struct HeaderView: View {
                             return true
                         }
                 }
-                // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
             }
-            // 激活 tab 变化时自动滚动到可视区域（对齐 VS Code 体验）：
-            // 覆盖新打开文件、点击切换、外部命令切换等所有场景。
             .onChange(of: activeSessionID) { _, newSessionID in
                 guard let newSessionID else { return }
                 withAnimation(.easeInOut(duration: 0.2)) {
                     proxy.scrollTo(newSessionID, anchor: .center)
                 }
             }
-            // 首次出现时（含从磁盘恢复标签后）定位到激活 tab
             .onAppear {
                 guard let activeSessionID else { return }
                 proxy.scrollTo(activeSessionID, anchor: .center)
@@ -170,18 +174,18 @@ public struct HeaderView: View {
     // MARK: - 操作方法
 
     /// 开始拖拽标签页
-    private func beginTabDrag(_ tab: EditorTab) {
+    private func beginTabDrag(_ tab: TabDescriptor) {
         draggedTabSessionID = tab.sessionID
     }
 
     /// 将拖拽的标签页放入当前位置
-    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
+    private func dropDraggedTabInActiveStrip(before targetTab: TabDescriptor?) {
         guard let draggedTabSessionID else { return }
         defer { self.draggedTabSessionID = nil }
 
         if targetTab?.sessionID == draggedTabSessionID { return }
 
-        _ = service.sessions.reorderSession(
+        coordination?.reorderSession(
             sessionID: draggedTabSessionID,
             before: targetTab?.sessionID
         )
@@ -192,19 +196,12 @@ public struct HeaderView: View {
         guard let projectRoot = normalizedProjectRoot else { return }
         let targetPath = URL(fileURLWithPath: path).standardizedFileURL.path
         guard targetPath == projectRoot || targetPath.hasPrefix(projectRoot + "/") else { return }
-        // 如果路径与当前文件相同，无需切换
-        guard service.files.currentFileURL?.path != path else { return }
 
         // 验证文件存在
-        guard FileManager.default.fileExists(atPath: path) else {
-            return
-        }
+        guard FileManager.default.fileExists(atPath: path) else { return }
 
         let url = URL(fileURLWithPath: path)
-        Task { @MainActor in
-            await service.refreshProjectContext(for: currentProjectPath)
-            service.sessions.open(at: url)
-        }
+        coordination?.openFile(at: url)
     }
 
     private func isFile(_ fileURL: URL, inside projectRoot: String) -> Bool {

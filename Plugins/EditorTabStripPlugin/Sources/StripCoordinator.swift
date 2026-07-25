@@ -1,15 +1,14 @@
 import Combine
-import EditorService
+import LumiKernel
 import SuperLogKit
 import Foundation
 
 /// 编辑器标签页持久化协调器
 ///
-/// 订阅 `EditorSessionStore` 的 tabs 变化，自动防抖保存到磁盘；
+/// 订阅 `EditorTabStripCoordination.tabStripStatePublisher` 的标签变化,自动防抖保存到磁盘;
 /// 在项目路径变化时保存旧项目标签并恢复新项目标签。
 ///
-/// 通过 `@EnvironmentObject` 获取 `WindowEditorVM` 和 `WindowProjectVM`，
-/// 不依赖任何其他插件。
+/// 通过协议消费编辑器能力,不直接依赖 `EditorService`。
 @MainActor
 public final class StripCoordinator: ObservableObject, SuperLog {
     public nonisolated static var emoji: String { "📑" }
@@ -34,7 +33,7 @@ public final class StripCoordinator: ObservableObject, SuperLog {
 
     /// 开始订阅 tabs 变化，自动防抖保存；如果是首次调用且 tabs 为空，立即恢复。
     public func startObserving(
-        sessionStore: EditorSessionStore,
+        coordination: any EditorTabStripCoordination,
         projectPathProvider: @MainActor @escaping () -> String,
         openFile: @MainActor @escaping (URL) async -> Void,
         openFileSessionOnly: @MainActor @escaping (URL) -> Void
@@ -43,10 +42,10 @@ public final class StripCoordinator: ObservableObject, SuperLog {
         restoreToken = UUID()
 
         // 首次启动且 tabs 为空 → 等待项目路径就绪后从磁盘恢复
-        if !hasRestored && sessionStore.tabs.isEmpty {
+        if !hasRestored, coordination.currentTabs.isEmpty {
             Task { @MainActor [weak self] in
                 await self?.attemptInitialRestore(
-                    sessionStore: sessionStore,
+                    coordination: coordination,
                     projectPathProvider: projectPathProvider,
                     openFile: openFile,
                     openFileSessionOnly: openFileSessionOnly
@@ -54,18 +53,18 @@ public final class StripCoordinator: ObservableObject, SuperLog {
             }
         }
 
-        Publishers.CombineLatest(sessionStore.$tabs, sessionStore.$activeSessionID)
+        coordination.tabStripStatePublisher
             .debounce(for: .seconds(2), scheduler: RunLoop.main)
-            .sink { [weak self] tabs, activeSessionID in
+            .sink { [weak self] state in
                 guard let self else { return }
                 let path = projectPathProvider()
                 guard !path.isEmpty else { return }
                 let activeTabPath = self.activeTabPath(
-                    from: tabs, activeSessionID: activeSessionID
+                    from: state.tabs, activeSessionID: state.activeSessionID
                 )
                 self.store.saveTabs(
                     projectPath: path,
-                    tabs: tabs,
+                    tabs: state.tabs,
                     activeTabPath: activeTabPath
                 )
             }
@@ -74,19 +73,19 @@ public final class StripCoordinator: ObservableObject, SuperLog {
 
     /// 停止订阅并立即保存当前状态
     public func stopObserving(
-        sessionStore: EditorSessionStore,
+        coordination: any EditorTabStripCoordination,
         projectPath: String
     ) {
         cancellables.removeAll()
 
         guard !projectPath.isEmpty else { return }
         let activeTabPath = self.activeTabPath(
-            from: sessionStore.tabs,
-            activeSessionID: sessionStore.activeSessionID
+            from: coordination.currentTabs,
+            activeSessionID: coordination.currentActiveSessionID
         )
         store.saveTabs(
             projectPath: projectPath,
-            tabs: sessionStore.tabs,
+            tabs: coordination.currentTabs,
             activeTabPath: activeTabPath
         )
     }
@@ -97,19 +96,19 @@ public final class StripCoordinator: ObservableObject, SuperLog {
     public func handleProjectPathChange(
         oldPath: String,
         newPath: String,
-        sessionStore: EditorSessionStore,
+        coordination: any EditorTabStripCoordination,
         openFile: @MainActor @escaping (URL) async -> Void,
         openFileSessionOnly: @MainActor @escaping (URL) -> Void
     ) {
         // 保存旧项目的标签页
         if !oldPath.isEmpty {
             let activeTabPath = self.activeTabPath(
-                from: sessionStore.tabs,
-                activeSessionID: sessionStore.activeSessionID
+                from: coordination.currentTabs,
+                activeSessionID: coordination.currentActiveSessionID
             )
             store.saveTabs(
                 projectPath: oldPath,
-                tabs: sessionStore.tabs,
+                tabs: coordination.currentTabs,
                 activeTabPath: activeTabPath
             )
         }
@@ -177,13 +176,13 @@ public final class StripCoordinator: ObservableObject, SuperLog {
 
     /// 轮询等待项目路径就绪，避免空路径时过早消费首次恢复机会。
     private func attemptInitialRestore(
-        sessionStore: EditorSessionStore,
+        coordination: any EditorTabStripCoordination,
         projectPathProvider: @MainActor @escaping () -> String,
         openFile: @MainActor @escaping (URL) async -> Void,
         openFileSessionOnly: @MainActor @escaping (URL) -> Void
     ) async {
         for _ in 0 ..< 60 {
-            guard !hasRestored, sessionStore.tabs.isEmpty else { return }
+            guard !hasRestored, coordination.currentTabs.isEmpty else { return }
 
             let path = projectPathProvider().trimmingCharacters(in: .whitespacesAndNewlines)
             if path.isEmpty {
@@ -204,7 +203,7 @@ public final class StripCoordinator: ObservableObject, SuperLog {
 
     /// 从 tabs 和 activeSessionID 中提取活跃标签的文件路径
     private func activeTabPath(
-        from tabs: [EditorTab],
+        from tabs: [TabDescriptor],
         activeSessionID: UUID?
     ) -> String? {
         guard let activeSessionID else { return nil }
