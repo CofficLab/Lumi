@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// LayoutKernel 插件 OnBoot 阶段钩子
 ///
@@ -15,12 +15,7 @@ public struct LayoutKernelOnBootHook: SuperLog {
 
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)registering Layout service...")
-        }
-
-        let layoutService = LayoutService()
-        kernel.registerLayout(layoutService)
+        kernel.registerLayout(LayoutService())
 
         if Self.verbose {
             Self.logger.info("\(Self.t)Layout service registered successfully")

@@ -15,9 +15,5 @@ public struct LayoutKernelOnReadyHook {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) throws {
-        if Self.verbose {
-            Self.logger.info("Layout onReady (no-op, 服务已在 OnBoot 注册)")
-        }
-    }
+    public func execute(_ kernel: LumiKernel) throws {}
 }

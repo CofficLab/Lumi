@@ -13,18 +13,12 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "📐"
     nonisolated static let verbose = false
 
-    // MARK: - LumiPlugin
-
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Plugin"
     public let order = 40
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
-    // MARK: - Initialization
-
     public init() {}
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await LayoutKernelOnBootHook().execute(kernel)
@@ -33,8 +27,6 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try LayoutKernelOnReadyHook().execute(kernel)
     }
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
