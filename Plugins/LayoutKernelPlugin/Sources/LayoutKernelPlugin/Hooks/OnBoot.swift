@@ -22,10 +22,8 @@ public struct LayoutKernelOnBootHook: SuperLog {
         // 从磁盘恢复布局状态
         if let info = store.loadLayoutInfo() {
             if Self.verbose {
-                Self.logger.info("\(Self.t)恢复布局: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
+                Self.logger.info("\(Self.t)恢复布局: activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
             }
-            manager.layoutState.activeSectionID = info.activeSectionID
-            manager.layoutState.activeSectionTitle = info.activeSectionTitle
             if let containerID = info.activeViewContainerID {
                 manager.layoutState.activeViewContainerID = containerID
             }

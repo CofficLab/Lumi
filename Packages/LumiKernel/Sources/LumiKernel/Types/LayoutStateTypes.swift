@@ -7,8 +7,6 @@ import SwiftUI
 
 /// 布局状态信息（轻量级数据结构）
 public struct LayoutStateInfo: Sendable, Codable {
-    public var activeSectionID: String
-    public var activeSectionTitle: String
     public var activeViewContainerID: String?
     public var chatSectionVisible: Bool
     public var railVisible: Bool
@@ -17,8 +15,6 @@ public struct LayoutStateInfo: Sendable, Codable {
     public var panelBottomVisible: Bool
 
     public init(
-        activeSectionID: String = "",
-        activeSectionTitle: String = "",
         activeViewContainerID: String? = nil,
         chatSectionVisible: Bool = true,
         railVisible: Bool = true,
@@ -26,8 +22,6 @@ public struct LayoutStateInfo: Sendable, Codable {
         panelVisible: Bool = true,
         panelBottomVisible: Bool = true
     ) {
-        self.activeSectionID = activeSectionID
-        self.activeSectionTitle = activeSectionTitle
         self.activeViewContainerID = activeViewContainerID
         self.chatSectionVisible = chatSectionVisible
         self.railVisible = railVisible
@@ -43,14 +37,6 @@ public final class LayoutState: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📐"
     nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
-
-    // MARK: - Section Info (moved from LayoutStateInfo)
-
-    /// 当前激活的 Section ID
-    @Published public var activeSectionID: String = ""
-
-    /// 当前激活的 Section 标题
-    @Published public var activeSectionTitle: String = ""
 
     @Published public var activeViewContainerID: String? {
         didSet {
@@ -161,8 +147,6 @@ public final class LayoutState: ObservableObject, SuperLog {
         activeViewContainerID = id
         // 根据容器配置自动应用可见性
         if let container = viewContainer(id: id) {
-            activeSectionID = container.id
-            activeSectionTitle = container.title
             applyVisibility(
                 rail: container.isRailVisible,
                 chat: container.isChatVisible,

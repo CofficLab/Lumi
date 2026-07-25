@@ -287,9 +287,8 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         let containers = kernel.layoutManager?.allViewContainers ?? []
         if let first = containers.first,
            let layoutService = kernel.layoutManager,
-           layoutService.layoutState.activeSectionID.isEmpty {
-            layoutService.layoutState.activeSectionID = first.id
-            layoutService.layoutState.activeSectionTitle = ""
+           layoutService.layoutState.activeViewContainerID == nil {
+            layoutService.layoutState.activeViewContainerID = first.id
         }
 
         // 容器注册完毕后，回填当前激活容器的可见性声明。

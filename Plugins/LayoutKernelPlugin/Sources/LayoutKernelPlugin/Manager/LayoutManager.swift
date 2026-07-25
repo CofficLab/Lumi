@@ -78,8 +78,6 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     /// 保存当前状态到磁盘
     private func saveState() {
         let info = LayoutStateInfo(
-            activeSectionID: self.layoutState.activeSectionID,
-            activeSectionTitle: self.layoutState.activeSectionTitle,
             activeViewContainerID: self.layoutState.activeViewContainerID,
             chatSectionVisible: self.layoutState.isChatVisible,
             railVisible: self.layoutState.isRailVisible,
@@ -89,7 +87,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
         )
         self.store.saveLayoutInfo(info)
         if Self.verbose {
-            Self.logger.info("\(Self.t)saveState: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
+            Self.logger.info("\(Self.t)saveState: activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
         }
     }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
@@ -112,11 +110,6 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     // MARK: - Container
 
     public var activeViewContainerID: String? { layoutState.activeViewContainerID }
-
-    // MARK: - Section Info
-
-    public var activeSectionID: String { layoutState.activeSectionID }
-    public var activeSectionTitle: String { layoutState.activeSectionTitle }
 
     // MARK: - Rail Tabs
 

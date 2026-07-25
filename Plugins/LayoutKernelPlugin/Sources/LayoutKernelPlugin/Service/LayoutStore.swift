@@ -5,7 +5,7 @@ import os
 
 /// 布局状态持久化存储
 ///
-/// 负责 `LayoutStateInfo`（`activeSectionID`、`activeSectionTitle`、`chatSectionVisible`）的磁盘读写。
+/// 负责 `LayoutStateInfo`（`activeViewContainerID`、可见性状态等）的磁盘读写。
 /// 数据目录来自构造时注入的 `pluginDirectory`，其获取方式与 `ProjectsPlugin.onReady` 一致：
 /// `kernel.storage.pluginDataDirectory(for: "LayoutKernel")`。
 ///
@@ -65,7 +65,7 @@ public final class LayoutStore: SuperLog {
         do {
             let info = try JSONDecoder().decode(LayoutStateInfo.self, from: data)
             if Self.verbose {
-                Self.logger.info("\(Self.t)成功加载布局: activeSectionID=\(info.activeSectionID), activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
+                Self.logger.info("\(Self.t)成功加载布局: activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
             }
             return info
         } catch {

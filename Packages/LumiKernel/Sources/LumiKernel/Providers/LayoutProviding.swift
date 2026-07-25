@@ -47,11 +47,6 @@ public protocol LayoutProviding: ObservableObject {
 
     var activeViewContainerID: String? { get }
 
-    // MARK: - Section Info
-
-    var activeSectionID: String { get }
-    var activeSectionTitle: String { get }
-
     // MARK: - Rail Tabs
 
     var activeRailTabID: String { get }
