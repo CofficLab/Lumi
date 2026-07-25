@@ -192,9 +192,9 @@ private enum DDCTransport {
         packet[packet.count - 1] = checksum(seed: checksumSeed, data: packet, start: 0, end: packet.count - 2)
 
         var success = false
-        for _ in 0..<5 {
-            for _ in 0..<2 {
-                usleep(10_000)
+        for _ in 0 ..< 5 {
+            for _ in 0 ..< 2 {
+                usleep(10000)
                 let packetCount = UInt32(packet.count)
                 success = packet.withUnsafeMutableBufferPointer { buffer in
                     guard let baseAddress = buffer.baseAddress else { return false }
@@ -211,7 +211,7 @@ private enum DDCTransport {
             if reply.isEmpty {
                 if success { return true }
             } else {
-                usleep(50_000)
+                usleep(50000)
                 let replyCount = UInt32(reply.count)
                 success = reply.withUnsafeMutableBufferPointer { buffer in
                     guard let baseAddress = buffer.baseAddress else { return false }
@@ -229,7 +229,7 @@ private enum DDCTransport {
                 if success { return true }
             }
 
-            usleep(20_000)
+            usleep(20000)
         }
 
         return false
@@ -238,7 +238,7 @@ private enum DDCTransport {
     private static func checksum(seed: UInt8, data: [UInt8], start: Int, end: Int) -> UInt8 {
         guard start <= end else { return seed }
         var value = seed
-        for index in start...end {
+        for index in start ... end {
             value ^= data[index]
         }
         return value
@@ -247,7 +247,8 @@ private enum DDCTransport {
 
 // MARK: - Arm64 DDC Matcher
 
-private final class Arm64DDCMatcher {
+private final class Arm64DDCMatcher: SuperLog {
+    static let verbose: Bool = false
     private static let maxMatchScore = 20
 
     func matchedServices(for displayIDs: [CGDirectDisplayID]) -> [CGDirectDisplayID: DDCService] {
@@ -288,7 +289,9 @@ private final class Arm64DDCMatcher {
             }
         }
 
-        DisplayControlPlugin.logger.debug("DDC: Matched \(matched.count) services from \(registryServices.count) registry services")
+        if Self.verbose {
+            DisplayControlPlugin.logger.debug("\(Self.t)Matched \(matched.count) services from \(registryServices.count) registry services")
+        }
         return matched
     }
 
@@ -296,11 +299,9 @@ private final class Arm64DDCMatcher {
     /// Passes NULL for the allocator (kCFAllocatorDefault is nil on macOS, meaning "use default").
     private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
         guard let createService = ioAVServiceCreateWithService else {
-            DisplayControlPlugin.logger.warning("DDC: IOAVServiceCreateWithService unavailable — DDC control disabled")
             return nil
         }
         guard let rawPtr = createService(nil, entry) else {
-            DisplayControlPlugin.logger.warning("DDC: IOAVServiceCreateWithService returned nil for entry")
             return nil
         }
         // The C function follows Create rule — returns a retained CF object.
@@ -412,8 +413,8 @@ private final class Arm64DDCMatcher {
             kCFAllocatorDefault,
             IOOptionBits(kIORegistryIterateRecursively)
         ), let location = unmanagedLocation.takeRetainedValue() as? String,
-           location == "External",
-           let avService = safeCreateAVService(entry: entry)
+        location == "External",
+        let avService = safeCreateAVService(entry: entry)
         else {
             return
         }
@@ -471,9 +472,9 @@ private final class Arm64DDCMatcher {
             return []
         }
 
-        let product = UInt16(max(0, min(productID, 65_535)))
+        let product = UInt16(max(0, min(productID, 65535)))
         return [
-            (String(format: "%04X", UInt16(max(0, min(vendorID, 65_535)))), 0),
+            (String(format: "%04X", UInt16(max(0, min(vendorID, 65535)))), 0),
             (
                 String(format: "%02X", UInt8((product >> 0) & 0xFF))
                     + String(format: "%02X", UInt8((product >> 8) & 0xFF)),
@@ -488,7 +489,7 @@ private final class Arm64DDCMatcher {
                 String(format: "%02X", UInt8(max(0, min(horizontalSize / 10, 255))))
                     + String(format: "%02X", UInt8(max(0, min(verticalSize / 10, 255)))),
                 30
-            )
+            ),
         ]
     }
 }
