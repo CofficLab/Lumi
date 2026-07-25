@@ -28,7 +28,12 @@ public final class MenuBarManagerPlugin: LumiPlugin {
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            ViewContainerItem(id: id, title: "Menu Bar Manager", systemImage: "menubar.rectangle") {
+            ViewContainerItem(
+                id: id,
+                title: "Menu Bar Manager",
+                systemImage: "menubar.rectangle",
+                isPanelHeaderVisible: false
+            ) {
                 MenuBarSettingsView()
             },
         ]

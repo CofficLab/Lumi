@@ -25,7 +25,12 @@ public final class DockerManagerPlugin: LumiPlugin {
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            ViewContainerItem(id: id, title: "Docker", systemImage: "shippingbox") {
+            ViewContainerItem(
+                id: id,
+                title: "Docker",
+                systemImage: "shippingbox",
+                isPanelHeaderVisible: false
+            ) {
                 DockerImagesView()
             },
         ]

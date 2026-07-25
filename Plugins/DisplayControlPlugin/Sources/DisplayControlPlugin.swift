@@ -34,6 +34,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
                 isChatVisible: false,
                 isContentVisible: true,
                 isPanelVisible: true,
+                isPanelHeaderVisible: false,
                 isPanelBottomVisible: false
             ) {
                 DisplayControlView()

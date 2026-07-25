@@ -50,6 +50,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
                 systemImage: "apps.ipad",
                 isRailVisible: false,
                 isChatVisible: false,
+                isPanelHeaderVisible: false,
                 isPanelBottomVisible: false
             ) {
                 AppManagerView()

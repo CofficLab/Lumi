@@ -28,7 +28,12 @@ public final class InputPlugin: LumiPlugin {
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            ViewContainerItem(id: id, title: "Input Manager", systemImage: "keyboard") {
+            ViewContainerItem(
+                id: id,
+                title: "Input Manager",
+                systemImage: "keyboard",
+                isPanelHeaderVisible: false
+            ) {
                 InputSettingsView()
             },
         ]

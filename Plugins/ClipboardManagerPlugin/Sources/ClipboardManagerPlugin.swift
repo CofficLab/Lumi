@@ -37,7 +37,8 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
                 isRailVisible: false,
                 isChatVisible: false,
                 isContentVisible: true,
-                isPanelVisible: true
+                isPanelVisible: true,
+                isPanelHeaderVisible: false
             ) {
                 ClipboardHistoryView()
             },

@@ -28,7 +28,12 @@ public final class RClickPlugin: LumiPlugin {
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            ViewContainerItem(id: id, title: "Right Click", systemImage: "cursorarrow.click.2") {
+            ViewContainerItem(
+                id: id,
+                title: "Right Click",
+                systemImage: "cursorarrow.click.2",
+                isPanelHeaderVisible: false
+            ) {
                 RClickSettingsView()
             },
         ]

@@ -28,7 +28,8 @@ public final class ChatPanelPlugin: LumiPlugin {
                 isRailVisible: true,
                 isChatVisible: true,
                 isContentVisible: false,
-                isPanelVisible: false
+                isPanelVisible: false,
+                isPanelHeaderVisible: false
             ),
         ]
     }
