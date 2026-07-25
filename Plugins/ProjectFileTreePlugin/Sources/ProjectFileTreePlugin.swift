@@ -4,17 +4,17 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// 文件树 V2 插件
+/// 项目文件树插件
 ///
 /// 从 kernel 获取当前项目路径，展示文件树在 RailView 中。
 @MainActor
-public final class EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
-    nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
+public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
+    nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-file-tree")
     public nonisolated static let emoji = "🌲"
     public nonisolated static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.editor-file-tree-v2"
-    public let name = "Editor File Tree V2"
+    public let id = "com.coffic.lumi.plugin.project-file-tree"
+    public let name = "Project File Tree"
     public let order = 0
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -28,7 +28,7 @@ public final class EditorFileTreeV2Plugin: LumiPlugin, SuperLog {
         [
             PanelRailTabItem(
                 id: id,
-                title: "Explorer V2",
+                title: "Project Files",
                 systemImage: "square.grid.2x2.fill"
             ) {
                 SimpleFileTreeView(kernel: kernel)

@@ -41,12 +41,13 @@ struct SimpleFileTreeView: View {
     }
 
     private func loadProjectPath() {
-        guard let projectPath = kernel.projects?.currentProject?.path else {
+        let projectPath = kernel.project?.currentProject?.path
+        guard let path = projectPath, !path.isEmpty else {
             rootNode = nil
             return
         }
 
-        let url = URL(fileURLWithPath: projectPath)
+        let url = URL(fileURLWithPath: path)
         rootNode = FileNode(url: url, name: url.lastPathComponent, isDirectory: true)
     }
 }
@@ -121,9 +122,7 @@ struct FileTreeNodeView: View {
             }
 
             if isExpanded && node.isDirectory {
-                var mutableNode = node
-                mutableNode.loadChildren()
-                ForEach(mutableNode.children) { child in
+                ForEach(childrenForDisplay) { child in
                     FileTreeNodeView(node: child, depth: depth + 1, expandedPaths: $expandedPaths)
                 }
             }
@@ -132,6 +131,12 @@ struct FileTreeNodeView: View {
 
     private var isExpanded: Bool {
         expandedPaths.contains(node.id)
+    }
+
+    private var childrenForDisplay: [FileNode] {
+        var mutableNode = node
+        mutableNode.loadChildren()
+        return mutableNode.children
     }
 
     private func toggleExpansion() {

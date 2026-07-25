@@ -91,7 +91,7 @@ import ConversationSpeedPlugin
 import ChatModePlugin
 import VideoConverterPlugin
 import ViewContainerPlugin
-import EditorFileTreeV2Plugin
+import ProjectFileTreePlugin
 import OpenInFinderPlugin
 import OpenInXcodePlugin
 import OpenInCursorPlugin
@@ -172,7 +172,7 @@ public enum PluginService {
             ViewContainerPlugin(),
             // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
-            EditorFileTreeV2Plugin(),
+            ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
             DiskManagerPlugin(),

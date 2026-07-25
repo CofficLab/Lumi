@@ -8,7 +8,7 @@ import Foundation
 /// used to live in this file before being migrated to `GitAsyncBridge`.
 enum GitAccessCoordinator {
     /// Single serial queue used for all libgit2 calls in the GitPlugin (and reused by other
-    /// plugins that touch libgit2, e.g. `EditorFileTreePlugin` / `EditorFileTreeV2Plugin`).
+    /// plugins that touch libgit2, e.g. `EditorFileTreePlugin` / `ProjectFileTreePlugin`).
     static let queue = DispatchQueue(
         label: "com.coffic.lumi.git-access-coordinator",
         qos: .userInitiated

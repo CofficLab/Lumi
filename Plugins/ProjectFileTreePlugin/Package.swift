@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "EditorFileTreeV2Plugin",
+    name: "ProjectFileTreePlugin",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "EditorFileTreeV2Plugin",
-            targets: ["EditorFileTreeV2Plugin"]
+            name: "ProjectFileTreePlugin",
+            targets: ["ProjectFileTreePlugin"]
         )
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "EditorFileTreeV2Plugin",
+            name: "ProjectFileTreePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),

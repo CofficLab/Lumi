@@ -92,7 +92,7 @@ let package = Package(
         .package(path: "../../Plugins/GitPlugin"),
         // Utility plugins
         .package(path: "../../Plugins/DeviceInfoPlugin"),
-        .package(path: "../../Plugins/EditorFileTreeV2Plugin"),
+        .package(path: "../../Plugins/ProjectFileTreePlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
         .package(path: "../../Plugins/BrewManagerPlugin"),
         .package(path: "../../Plugins/DiskManagerPlugin"),
@@ -209,7 +209,7 @@ let package = Package(
                 .product(name: "GitPlugin", package: "GitPlugin"),
                 // Utility plugins
                 .product(name: "DeviceInfoPlugin", package: "DeviceInfoPlugin"),
-                .product(name: "EditorFileTreeV2Plugin", package: "EditorFileTreeV2Plugin"),
+                .product(name: "ProjectFileTreePlugin", package: "ProjectFileTreePlugin"),
                 .product(name: "ClipboardManagerPlugin", package: "ClipboardManagerPlugin"),
                 .product(name: "BrewManagerPlugin", package: "BrewManagerPlugin"),
                 .product(name: "DiskManagerPlugin", package: "DiskManagerPlugin"),
