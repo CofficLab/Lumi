@@ -25,7 +25,7 @@ struct AppLayoutView: View {
                     .frame(maxHeight: .infinity)
                 AppDivider(.vertical)
 
-                if isRailVisible {
+                if isRailVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
                     RailView(kernel: kernel)
                         .frame(maxWidth: 240, maxHeight: .infinity)
                     AppDivider(.vertical)
