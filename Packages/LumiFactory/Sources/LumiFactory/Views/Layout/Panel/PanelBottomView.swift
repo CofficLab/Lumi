@@ -4,8 +4,7 @@ import SwiftUI
 
 /// 底部面板视图
 ///
-/// 只接收 kernel，所需数据（底部标签、当前激活的 view container、
-/// 标签选中态）由视图自身从内核读取。
+/// 只接收 kernel，从 layoutState 读取可见性和标签状态。
 struct PanelBottomView: View {
     @ObservedObject var kernel: LumiKernel
 
@@ -19,39 +18,24 @@ struct PanelBottomView: View {
         kernel.layoutManager?.activeViewContainerID ?? ""
     }
 
-    private var container: ViewContainerItem? {
-        guard !viewContainerID.isEmpty else { return nil }
-        return kernel.layoutManager?.allViewContainers.first { $0.id == viewContainerID }
-    }
-
-    private var isBottomPanelVisible: Bool {
-        container?.isPanelBottomVisible
-            ?? kernel.layoutManager?.bottomPanelVisible
-            ?? true
-    }
-
     private var layoutState: LayoutState {
         kernel.layoutManager?.layoutState ?? LayoutState()
     }
 
     var body: some View {
-        Group {
-            if isBottomPanelVisible {
-                VStack(spacing: 0) {
-                    tabBar
-                    AppDivider()
-                    tabContent
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .frame(minHeight: 80)
-                .background(theme.surface)
-                .onAppear {
-                    ensureValidSelection()
-                }
-                .onChange(of: tabs.map(\.id)) { _, _ in
-                    ensureValidSelection()
-                }
-            }
+        VStack(spacing: 0) {
+            tabBar
+            AppDivider()
+            tabContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(minHeight: 80)
+        .background(theme.surface)
+        .onAppear {
+            ensureValidSelection()
+        }
+        .onChange(of: tabs.map(\.id)) { _, _ in
+            ensureValidSelection()
         }
     }
 

@@ -46,6 +46,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public var isChatVisible: Bool { layoutState.isChatVisible }
     public var isContentVisible: Bool { layoutState.isContentVisible }
     public var isPanelVisible: Bool { layoutState.isPanelVisible }
+    public var isPanelBottomVisible: Bool { layoutState.isPanelBottomVisible }
 
     // MARK: - Workspace Commands
 
@@ -53,6 +54,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public func setChatVisible(_ visible: Bool) { layoutState.setChatVisible(visible) }
     public func setContentVisible(_ visible: Bool) { layoutState.setContentVisible(visible) }
     public func setPanelVisible(_ visible: Bool) { layoutState.setPanelVisible(visible) }
+    public func setPanelBottomVisible(_ visible: Bool) { layoutState.setPanelBottomVisible(visible) }
 
     public func activateContainer(id: String) { layoutState.activateContainer(id: id) }
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
