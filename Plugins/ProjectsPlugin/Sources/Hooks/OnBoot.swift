@@ -27,7 +27,7 @@ public struct ProjectsOnBootHook {
         // 2. 启动时同步当前项目状态
         let viewModel = ProjectsToolRuntimeBridge.viewModel
         if let currentProject = viewModel?.currentProject {
-            try? await kernel.project?.openProject(at: currentProject.path)
+            try await kernel.project?.openProject(at: currentProject.path)
         }
 
         if Self.verbose {
