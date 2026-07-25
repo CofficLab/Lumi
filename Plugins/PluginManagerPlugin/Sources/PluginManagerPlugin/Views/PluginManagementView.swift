@@ -322,14 +322,6 @@ private struct PluginSettingsDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             metaRow(label: PluginManagerText.string("Category"), value: plugin.category.displayName)
             metaRow(
-                label: PluginManagerText.string("Policy"),
-                value: policyDisplayName(plugin.policy)
-            )
-            metaRow(
-                label: PluginManagerText.string("Order"),
-                value: String(format: PluginManagerText.string(PluginManagerText.order), plugin.order)
-            )
-            metaRow(
                 label: PluginManagerText.string("Stage"),
                 value: "\(plugin.stage.displayName) · \(plugin.stage.description)"
             )
