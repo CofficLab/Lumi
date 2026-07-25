@@ -117,6 +117,9 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
+    /// Panel Header 是否可见
+    @Published public var isPanelHeaderVisible: Bool = true
+
     /// 底部 Panel 底部是否可见
     @Published public var isPanelBottomVisible: Bool = true
 
@@ -153,6 +156,9 @@ public final class LayoutState: ObservableObject, SuperLog {
                 content: container.isContentVisible,
                 panel: container.isPanelVisible
             )
+            if container.isPanelHeaderVisible != nil {
+                isPanelHeaderVisible = container.isPanelHeaderVisible!
+            }
             if container.isPanelBottomVisible != nil {
                 isPanelBottomVisible = container.isPanelBottomVisible!
             }

@@ -164,6 +164,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
                         isPanelVisible: container.isPanelVisible,
+                        isPanelHeaderVisible: container.isPanelHeaderVisible,
                         isPanelBottomVisible: container.isPanelBottomVisible,
                         content: makeView
                     )
@@ -176,6 +177,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                         isChatVisible: container.isChatVisible,
                         isContentVisible: container.isContentVisible,
                         isPanelVisible: container.isPanelVisible,
+                        isPanelHeaderVisible: container.isPanelHeaderVisible,
                         isPanelBottomVisible: container.isPanelBottomVisible
                     )
                 }

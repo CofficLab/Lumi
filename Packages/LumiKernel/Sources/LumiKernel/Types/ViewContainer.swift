@@ -24,6 +24,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
     public let isChatVisible: Bool?
     public let isContentVisible: Bool?
     public let isPanelVisible: Bool?
+    public let isPanelHeaderVisible: Bool?
     public let isPanelBottomVisible: Bool?
 
     /// 公开初始化器（含视图内容）
@@ -35,6 +36,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isChatVisible: Bool? = nil,
         isContentVisible: Bool? = nil,
         isPanelVisible: Bool? = nil,
+        isPanelHeaderVisible: Bool? = nil,
         isPanelBottomVisible: Bool? = nil,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -46,6 +48,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isChatVisible = isChatVisible
         self.isContentVisible = isContentVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelHeaderVisible = isPanelHeaderVisible
         self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = { AnyView(content()) }
     }
@@ -60,6 +63,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isChatVisible: Bool? = nil,
         isContentVisible: Bool? = nil,
         isPanelVisible: Bool? = nil,
+        isPanelHeaderVisible: Bool? = nil,
         isPanelBottomVisible: Bool? = nil,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -71,6 +75,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isChatVisible = isChatVisible
         self.isContentVisible = isContentVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelHeaderVisible = isPanelHeaderVisible
         self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = { AnyView(content()) }
     }
@@ -84,6 +89,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isChatVisible: Bool? = nil,
         isContentVisible: Bool? = nil,
         isPanelVisible: Bool? = nil,
+        isPanelHeaderVisible: Bool? = nil,
         isPanelBottomVisible: Bool? = nil
     ) {
         self.id = id
@@ -94,6 +100,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isChatVisible = isChatVisible
         self.isContentVisible = isContentVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelHeaderVisible = isPanelHeaderVisible
         self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = nil
     }

@@ -26,8 +26,10 @@ struct PanelView: View {
         Group {
             if isPanelVisible {
                 VSplitView {
-                    PanelHeaderView(kernel: kernel)
-                        .frame(maxWidth: .infinity)
+                    if layoutState.isPanelHeaderVisible {
+                        PanelHeaderView(kernel: kernel)
+                            .frame(maxWidth: .infinity)
+                    }
                     PanelBodyView(kernel: kernel)
                         .frame(maxWidth: .infinity)
                     if layoutState.isPanelBottomVisible {
