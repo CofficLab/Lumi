@@ -25,6 +25,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
     public let isContentVisible: Bool?
     public let isActivityBarVisible: Bool?
     public let isPanelVisible: Bool?
+    public let isPanelBottomVisible: Bool?
 
     /// 公开初始化器（含视图内容）
     public init<Content: View>(
@@ -36,6 +37,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isContentVisible: Bool? = nil,
         isActivityBarVisible: Bool? = nil,
         isPanelVisible: Bool? = nil,
+        isPanelBottomVisible: Bool? = nil,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -47,6 +49,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isContentVisible = isContentVisible
         self.isActivityBarVisible = isActivityBarVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = { AnyView(content()) }
     }
 
@@ -61,6 +64,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isContentVisible: Bool? = nil,
         isActivityBarVisible: Bool? = nil,
         isPanelVisible: Bool? = nil,
+        isPanelBottomVisible: Bool? = nil,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -72,6 +76,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isContentVisible = isContentVisible
         self.isActivityBarVisible = isActivityBarVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = { AnyView(content()) }
     }
 
@@ -84,7 +89,8 @@ public struct ViewContainerItem: Identifiable, Sendable {
         isChatVisible: Bool? = nil,
         isContentVisible: Bool? = nil,
         isActivityBarVisible: Bool? = nil,
-        isPanelVisible: Bool? = nil
+        isPanelVisible: Bool? = nil,
+        isPanelBottomVisible: Bool? = nil
     ) {
         self.id = id
         self.title = title
@@ -95,6 +101,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.isContentVisible = isContentVisible
         self.isActivityBarVisible = isActivityBarVisible
         self.isPanelVisible = isPanelVisible
+        self.isPanelBottomVisible = isPanelBottomVisible
         self.makeView = nil
     }
 }

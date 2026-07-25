@@ -67,7 +67,8 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
                 isChatVisible: false,
                 isContentVisible: true,
                 isActivityBarVisible: true,
-                isPanelVisible: true
+                isPanelVisible: true,
+                isPanelBottomVisible: false
             ) {
                 DeviceInfoView()
             },
