@@ -24,6 +24,7 @@ import os
 public struct MessageLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-store")
     nonisolated public static let emoji = "💬"
+    nonisolated(unsafe) static var verbose = false
 
     /// 迁移策略(语义同 ConversationLegacyMigration)
     public enum MigrationPolicy {
@@ -59,18 +60,18 @@ public struct MessageLegacyMigration: SuperLog {
 
         // 幂等:.once 策略下,已迁移过则直接跳过
         if policy == .once, defaults.bool(forKey: markerKey) {
-            Self.logger.info("\(Self.t)消息迁移跳过(marker 已标记完成)")
+            if Self.verbose { Self.logger.info("\(Self.t)消息迁移跳过(marker 已标记完成)") }
             return
         }
 
         guard let legacy = kernel.legacyData else {
-            Self.logger.info("\(Self.t)消息迁移跳过(无 legacy 服务,全新安装或迁移窗口期已过)")
+            if Self.verbose { Self.logger.info("\(Self.t)消息迁移跳过(无 legacy 服务,全新安装或迁移窗口期已过)") }
             return
         }
 
         guard legacy.hasLegacyData() else {
             defaults.set(true, forKey: markerKey)
-            Self.logger.info("\(Self.t)消息迁移跳过(无 v4 旧数据)")
+            if Self.verbose { Self.logger.info("\(Self.t)消息迁移跳过(无 v4 旧数据)") }
             return
         }
 
@@ -85,13 +86,13 @@ public struct MessageLegacyMigration: SuperLog {
         }
         guard !conversations.isEmpty else {
             defaults.set(true, forKey: markerKey)
-            Self.logger.info("\(Self.t)消息迁移跳过(v4 会话为空,无可迁移消息)")
+            if Self.verbose { Self.logger.info("\(Self.t)消息迁移跳过(v4 会话为空,无可迁移消息)") }
             return
         }
 
         let startTime = Date()
         await progress.start(totalConversations: conversations.count)
-        Self.logger.info("\(Self.t)消息迁移开始:共 \(conversations.count) 个会话")
+        if Self.verbose { Self.logger.info("\(Self.t)消息迁移开始:共 \(conversations.count) 个会话") }
 
         var totalImported = 0
         var totalRead = 0
@@ -126,7 +127,7 @@ public struct MessageLegacyMigration: SuperLog {
             await progress.tick(importedDelta: imported)
 
             // 每 50 个会话打印一次进度(保留日志可观测性)
-            if (index + 1) % 50 == 0 {
+            if (index + 1) % 50 == 0, Self.verbose {
                 Self.logger.info("\(Self.t)消息迁移进度:\(index + 1)/\(conversations.count) 会话,已读取 \(totalRead) 条,已导入 \(totalImported) 条")
             }
         }
@@ -136,6 +137,8 @@ public struct MessageLegacyMigration: SuperLog {
         await progress.finish()
         let elapsed = Date().timeIntervalSince(startTime)
         let policyLabel = policy == .once ? "once" : "always"
-        Self.logger.info("\(Self.t)消息迁移完成:共 \(conversations.count) 会话,读取 \(totalRead) 条,导入 \(totalImported) 条,耗时 \(String(format: "%.2f", elapsed))s [策略=\(policyLabel)]")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)消息迁移完成:共 \(conversations.count) 会话,读取 \(totalRead) 条,导入 \(totalImported) 条,耗时 \(String(format: "%.2f", elapsed))s [策略=\(policyLabel)]")
+        }
     }
 }
