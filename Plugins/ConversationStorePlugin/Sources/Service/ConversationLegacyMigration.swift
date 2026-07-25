@@ -38,7 +38,7 @@ public struct ConversationLegacyMigration: SuperLog {
     ///
     /// - 测试期:设为 `.always`,每次启动都跑迁移,便于反复验证幂等和正确性。
     /// - 上线前:改回 `.once`,生产环境只迁一次。
-    public static var policy: MigrationPolicy = .always
+    public static var policy: MigrationPolicy = .once
 
     /// 迁移标记的 UserDefaults key
     private static let migrationMarkerKey = "lumi.v4_migration.conversations.completed"
