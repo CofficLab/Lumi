@@ -1,8 +1,8 @@
 import Foundation
 import LumiKernel
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// 命令插件
 ///
@@ -11,7 +11,7 @@ import os
 @MainActor
 public final class CommandPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.command")
-    nonisolated public static let emoji = "⌨️"
+    public nonisolated static let emoji = "⌨️"
     nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
@@ -19,7 +19,7 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.command"
     public let name = "Command Plugin"
     public let order = 15
-	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
+    public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 
     // MARK: - State
 
@@ -38,7 +38,6 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try CommandOnReadyHook().execute(kernel)
     }
-
 
     // MARK: - LumiPlugin stubs
 

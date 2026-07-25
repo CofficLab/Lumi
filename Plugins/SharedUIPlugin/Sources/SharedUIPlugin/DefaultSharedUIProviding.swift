@@ -90,7 +90,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedTitleToolbarItems() {
         allTitleToolbarItems = titleToolbarItemOrder.compactMap { titleToolbarItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     // MARK: - Chat Section
@@ -195,7 +195,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedStatusBarItems() {
         allStatusBarItems = statusBarItemOrder.compactMap { statusBarItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     // MARK: - Panel
@@ -226,7 +226,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedPanelBottomTabItems() {
         allPanelBottomTabItems = panelBottomTabOrder.compactMap { panelBottomTabItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     public func registerPanelRailTabItem(_ item: PanelRailTabItem) {
@@ -245,7 +245,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedPanelRailTabItems() {
         allPanelRailTabItems = panelRailTabOrder.compactMap { panelRailTabItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     // MARK: - Menu Bar
@@ -266,7 +266,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedMenuBarContents() {
         allMenuBarContents = menuBarContentOrder.compactMap { menuBarContents[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     public func registerMenuBarPopup(_ popup: MenuBarPopupItem) {
@@ -285,7 +285,7 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedMenuBarPopups() {
         allMenuBarPopups = menuBarPopupOrder.compactMap { menuBarPopups[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     // MARK: - Clear
@@ -341,26 +341,26 @@ public final class DefaultSharedUIProviding: SharedUIProviding {
 
     private func updateSortedChatSectionItems() {
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionToolbarItems() {
         allChatSectionToolbarItems = chatSectionToolbarItemOrder.compactMap { chatSectionToolbarItems[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionToolbarBars() {
         allChatSectionToolbarBarItems = chatSectionToolbarBarOrder.compactMap { chatSectionToolbarBars[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionHeaders() {
         allChatSectionHeaderItems = chatSectionHeaderOrder.compactMap { chatSectionHeaders[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 
     private func updateSortedChatSectionActionBars() {
         allChatSectionActionBarItems = chatSectionActionBarOrder.compactMap { chatSectionActionBars[$0] }
-            .sorted { $0.order < $1.order }
+            .sorted(by: { $0.order < $1.order })
     }
 }

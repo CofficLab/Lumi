@@ -24,6 +24,7 @@ public struct StatusBarItem: Identifiable, Sendable {
     public let title: String
     public let systemImage: String
     public let placement: StatusBarPlacement
+    public var order: Int
     public let makeStatusBarView: (@MainActor @Sendable () -> AnyView)?
     public let makePopoverView: @MainActor @Sendable () -> AnyView
 
@@ -32,12 +33,14 @@ public struct StatusBarItem: Identifiable, Sendable {
         title: String,
         systemImage: String,
         placement: StatusBarPlacement = .trailing,
+        order: Int = 200,
         @ViewBuilder popover: @escaping @MainActor @Sendable () -> Popover
     ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.placement = placement
+        self.order = order
         self.makeStatusBarView = nil
         self.makePopoverView = { AnyView(popover()) }
     }
@@ -47,12 +50,14 @@ public struct StatusBarItem: Identifiable, Sendable {
         title: String,
         systemImage: String,
         placement: StatusBarPlacement = .trailing,
+        order: Int = 200,
         @ViewBuilder statusBarView: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.placement = placement
+        self.order = order
         self.makeStatusBarView = { AnyView(statusBarView()) }
         self.makePopoverView = { AnyView(EmptyView()) }
     }

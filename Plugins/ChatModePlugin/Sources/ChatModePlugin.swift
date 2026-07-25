@@ -1,6 +1,6 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class ChatModePlugin: LumiPlugin {
@@ -15,17 +15,15 @@ public final class ChatModePlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
     // MARK: - Chat Section Toolbar Bar
 
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
         [
             ChatSectionToolbarBarItem(id: id) {
                 AutomationLevelToolbarView(kernel: kernel)
-            }
+            },
         ]
     }
-
 
     // MARK: - LumiPlugin stubs
 
