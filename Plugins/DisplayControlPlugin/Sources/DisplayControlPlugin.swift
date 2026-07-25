@@ -33,7 +33,8 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
                 isRailVisible: false,
                 isChatVisible: false,
                 isContentVisible: true,
-                isPanelVisible: true
+                isPanelVisible: true,
+                isPanelBottomVisible: false
             ) {
                 DisplayControlView()
             },
