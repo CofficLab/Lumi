@@ -57,6 +57,10 @@ public final class ConversationListContext: ObservableObject {
         conversationManaging.dataDirectory
     }
 
+    public var conversationCount: Int {
+        conversationManaging.conversations.count
+    }
+
     public func fetchConversationsPage(limit: Int, offset: Int) -> [ConversationListItem] {
         let sorted = conversationManaging.conversations.sorted { lhs, rhs in
             if lhs.updatedAt == rhs.updatedAt {

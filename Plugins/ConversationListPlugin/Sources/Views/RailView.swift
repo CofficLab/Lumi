@@ -1,15 +1,15 @@
 import LumiKernel
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// Rail 面板视图
-struct ConversationRailView: View, SuperLog {
+struct RailView: View, SuperLog {
     let kernel: LumiKernel
 
-    nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) public static var verbose = false
+    public nonisolated static let emoji = "💬"
+    public nonisolated(unsafe) static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.rail")
 
     @State private var context: ConversationListContext?

@@ -46,7 +46,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 title: "Chats",
                 systemImage: "message.fill"
             ) {
-                ConversationRailView(kernel: kernel)
+                RailView(kernel: kernel)
             },
         ]
     }
@@ -93,40 +93,3 @@ public final class ConversationListPlugin: LumiPlugin {
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
 
-// MARK: - Popover Content
-
-/// 会话列表弹窗内容
-struct ConversationListPopoverContent: View {
-    let kernel: LumiKernel
-    @StateObject private var context: ConversationListContext
-
-    init(kernel: LumiKernel) {
-        self.kernel = kernel
-        guard let conv = kernel.conversations else {
-            // conversations unavailable — crash early in debug.
-            fatalError("kernel.conversations is nil when creating ConversationListPopoverContent")
-        }
-        _context = StateObject(
-            wrappedValue: ConversationListContext(
-                conversationManaging: conv,
-                messageManaging: kernel.messageManager
-            )
-        )
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Conversations")
-                    .font(.headline)
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            Divider()
-
-            ConversationListView(context: context)
-        }
-    }
-}

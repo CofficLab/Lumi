@@ -16,7 +16,7 @@ struct ConversationListToolbarButton: View {
                 isPresented.toggle()
             }
             .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                ConversationListPopoverContent(kernel: kernel)
+                PopoverContent(kernel: kernel)
                     .frame(width: 300, height: 480)
             }
         }

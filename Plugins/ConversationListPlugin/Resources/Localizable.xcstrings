@@ -35,41 +35,6 @@
         }
       }
     },
-    "%d messages" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d messages"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d条消息"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d則訊息"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d則訊息"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d則訊息"
-          }
-        }
-      }
-    },
     "%d days ago" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -136,6 +101,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d小時前"
+          }
+        }
+      }
+    },
+    "%d messages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d messages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d条消息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d則訊息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d則訊息"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d則訊息"
           }
         }
       }
@@ -209,6 +209,9 @@
           }
         }
       }
+    },
+    "%lld" : {
+
     },
     "•" : {
       "extractionState" : "stale",
