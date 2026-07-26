@@ -16,6 +16,9 @@ public struct TreeViewV2: View, SuperLog {
 
     let kernel: LumiKernel
 
+    /// 当前项目路径缓存，用于驱动 SwiftUI 刷新。
+    @State private var projectPath: String
+
     /// 文件树多选状态
     @StateObject private var selectionState = SelectionState()
 
@@ -27,11 +30,10 @@ public struct TreeViewV2: View, SuperLog {
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
+        _projectPath = State(initialValue: kernel.project?.currentProject?.path ?? "")
     }
 
     public var body: some View {
-        let projectPath = currentProjectPath
-
         VStack(spacing: 0) {
             if projectPath.isEmpty {
                 NoProjectView()
@@ -55,8 +57,8 @@ public struct TreeViewV2: View, SuperLog {
         }
         .environmentObject(selectionState)
         .frame(maxHeight: .infinity)
-        .onCurrentProjectDidChange { _ in
-            onProjectPathChanged()
+        .onReceive(kernel.objectWillChange) { _ in
+            syncProjectPathIfNeeded()
         }
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
@@ -64,21 +66,17 @@ public struct TreeViewV2: View, SuperLog {
 
     // MARK: - Private Computed Properties
 
-    private var currentProjectPath: String {
-        kernel.project?.currentProject?.path ?? ""
-    }
-
     private var showPackageDependencies: Bool {
-        guard !currentProjectPath.isEmpty else { return false }
+        guard !projectPath.isEmpty else { return false }
         return PackageDependencyResolver.shouldShowPackageDependencies(
-            projectRootURL: URL(fileURLWithPath: currentProjectPath)
+            projectRootURL: URL(fileURLWithPath: projectPath)
         )
     }
 
     // MARK: - Event Handlers
 
     private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
-        let projectRoot = currentProjectPath
+        let projectRoot = projectPath
         if isExpanded {
             FileTreeSettings.shared.addExpandedPath(relativePath, for: projectRoot)
         } else {
@@ -91,16 +89,22 @@ public struct TreeViewV2: View, SuperLog {
         packageStore.refresh()
     }
 
-    private func onProjectPathChanged() {
+    private func syncProjectPathIfNeeded() {
+        let newProjectPath = kernel.project?.currentProject?.path ?? ""
+        guard newProjectPath != projectPath else { return }
+
+        projectPath = newProjectPath
         coordinator.stop()
-        packageStore.setProjectRootPath(currentProjectPath)
+        coordinator.setProjectRootPath(newProjectPath)
+        packageStore.setProjectRootPath(newProjectPath)
     }
 
     private func onAppear() {
-        coordinator.setProjectRootPath(currentProjectPath)
-        packageStore.setProjectRootPath(currentProjectPath)
+        syncProjectPathIfNeeded()
+        coordinator.setProjectRootPath(projectPath)
+        packageStore.setProjectRootPath(projectPath)
         if Self.verbose {
-            Self.logger.info("\(Self.t)出现，项目路径: \(currentProjectPath)")
+            Self.logger.info("\(Self.t)出现，项目路径: \(projectPath)")
         }
     }
 
