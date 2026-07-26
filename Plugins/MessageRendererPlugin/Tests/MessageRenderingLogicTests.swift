@@ -163,6 +163,41 @@ import LumiKernel
     }
 }
 
+@Suite struct ToolCallBriefSummaryFormatterTests {
+
+    @Test func joinsMultipleToolCallsIntoOneInlineSummary() {
+        let calls = [
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: "Read files"),
+            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayName: "Edit applied"),
+        ]
+
+        #expect(
+            ToolCallBriefSummaryFormatter.summaryText(for: calls)
+                == "Read files  ·  Edit applied"
+        )
+    }
+
+    @Test func fallsBackToToolNameWhenDisplayNameIsMissingOrBlank() {
+        let calls = [
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: ""),
+            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayName: nil),
+        ]
+
+        #expect(
+            ToolCallBriefSummaryFormatter.summaryText(for: calls)
+                == "read_files  ·  apply_patch"
+        )
+    }
+
+    @Test func trimsWhitespaceFromTitles() {
+        let calls = [
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: "  Read files  "),
+        ]
+
+        #expect(ToolCallBriefSummaryFormatter.summaryText(for: calls) == "Read files")
+    }
+}
+
 @Suite struct ErrorTransportDetailsResolverTests {
 
     private static let separator = "\n\n--- Request / Response Details ---\n"

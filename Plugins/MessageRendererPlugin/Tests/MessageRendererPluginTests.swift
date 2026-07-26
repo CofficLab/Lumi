@@ -8,8 +8,8 @@ import Testing
 @testable import MessageRendererPlugin
 
 @MainActor
-@Test func pluginRegistersCoreRenderers() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func pluginRegistersCoreRenderers() async throws {
+    let renderers = try await bootedRenderers()
     #expect(renderers.map(\.id).contains("core-user-message"))
     #expect(renderers.map(\.id).contains("core-assistant-message"))
     #expect(renderers.map(\.id).contains("core-tool-message"))
@@ -17,8 +17,8 @@ import Testing
 }
 
 @MainActor
-@Test func coreRenderersMatchExpectedRoles() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func coreRenderersMatchExpectedRoles() async throws {
+    let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let user = LumiChatMessage(conversationID: conversationID, role: .user, content: "hello")
     let assistant = LumiChatMessage(conversationID: conversationID, role: .assistant, content: "hi")
@@ -32,8 +32,8 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToZhipuRenderKind() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func coreErrorRendererDefersToZhipuRenderKind() async throws {
+    let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let zhipuError = LumiChatMessage(
         conversationID: conversationID,
@@ -48,8 +48,8 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererMatchesGenericErrors() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func coreErrorRendererMatchesGenericErrors() async throws {
+    let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let error = LumiChatMessage(
         conversationID: conversationID,
@@ -62,8 +62,8 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToAliyunRenderKind() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func coreErrorRendererDefersToAliyunRenderKind() async throws {
+    let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let aliyunError = LumiChatMessage(
         conversationID: conversationID,
@@ -78,8 +78,8 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToXiaomiRenderKind() {
-    let renderers = MessageRendererPlugin.messageRenderers(context: testContext)
+@Test func coreErrorRendererDefersToXiaomiRenderKind() async throws {
+    let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let xiaomiAPIKeyError = LumiChatMessage(
         conversationID: conversationID,
@@ -93,8 +93,11 @@ import Testing
     #expect(renderers.first { $0.id == "core-error-message" }?.canRender(xiaomiAPIKeyError) == false)
 }
 
-private var testContext: LumiPluginContext {
-    LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
+@MainActor
+private func bootedRenderers() async throws -> [LumiMessageRendererItem] {
+    let kernel = LumiKernel()
+    try await MessageRendererOnBootHook().execute(kernel)
+    return kernel.messageRendererManager?.allMessageRenderers() ?? []
 }
 
 // MARK: - Assistant markdown contrast

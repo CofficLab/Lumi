@@ -39,6 +39,14 @@ struct ToolCallRowsView: View {
         message.toolCalls ?? []
     }
 
+    private var rowContext: ToolCallRowMessageContext {
+        ToolCallRowMessageContext(
+            conversationId: message.conversationID,
+            assistantMessageId: message.id,
+            verbosityRawValue: verbosity.rawValue
+        )
+    }
+
     var body: some View {
         if verbosity == .brief {
             LumiInlineToolCallListView(toolCalls: toolCalls)
@@ -50,14 +58,26 @@ struct ToolCallRowsView: View {
     private var lumiCardRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(toolCalls) { toolCall in
-                ToolCallRowView(
-                    message: message,
-                    toolCall: toolCall,
-                    verbosity: verbosity,
-                    parameterPopoverToolCallID: $parameterPopoverToolCallID,
-                    resultPopoverToolCallID: $resultPopoverToolCallID
-                )
+                toolCallRow(for: toolCall)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func toolCallRow(for toolCall: LumiToolCall) -> some View {
+        if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
+            customRenderer.render(
+                toolCall: toolCall.agentToolCall,
+                message: rowContext
+            )
+        } else {
+            ToolCallRowView(
+                message: message,
+                toolCall: toolCall,
+                verbosity: verbosity,
+                parameterPopoverToolCallID: $parameterPopoverToolCallID,
+                resultPopoverToolCallID: $resultPopoverToolCallID
+            )
         }
     }
 }
@@ -72,19 +92,37 @@ private struct LumiInlineToolCallListView: View {
     let toolCalls: [LumiToolCall]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(toolCalls) { toolCall in
-                Text(lineText(for: toolCall))
-                    .font(.appCaption)
-                    .foregroundColor(theme.textSecondary)
-                    .allowsHitTesting(true)
-            }
+        if summaryText.isEmpty {
+            EmptyView()
+        } else {
+            Text(summaryText)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
         }
     }
 
-    private func lineText(for toolCall: LumiToolCall) -> String {
-        let title = (toolCall.displayName?.isEmpty == false ? toolCall.displayName : nil) ?? toolCall.name
-        return "\u{00b7} \(title)"
+    private var summaryText: String {
+        ToolCallBriefSummaryFormatter.summaryText(for: toolCalls)
+    }
+}
+
+enum ToolCallBriefSummaryFormatter {
+    static func summaryText(for toolCalls: [LumiToolCall]) -> String {
+        toolCalls
+            .map(title(for:))
+            .filter { !$0.isEmpty }
+            .joined(separator: "  ·  ")
+    }
+
+    static func title(for toolCall: LumiToolCall) -> String {
+        let title = toolCall.displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let title, !title.isEmpty {
+            return title
+        }
+        return toolCall.name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -139,7 +177,8 @@ private struct ToolCallRowView: View {
                     toolCall: toolCall.agentToolCall,
                     message: ToolCallRowMessageContext(
                         conversationId: message.conversationID,
-                        assistantMessageId: message.id
+                        assistantMessageId: message.id,
+                        verbosityRawValue: verbosity.rawValue
                     )
                 )
             } else {
