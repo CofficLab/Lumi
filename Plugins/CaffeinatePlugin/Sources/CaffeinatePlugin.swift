@@ -1,9 +1,18 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class CaffeinatePlugin: LumiPlugin {
+public final class CaffeinatePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "☕️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.caffeinate"
+    )
+
     public let id = "Caffeinate"
     public let name = "Caffeinate"
     public let order = 1
