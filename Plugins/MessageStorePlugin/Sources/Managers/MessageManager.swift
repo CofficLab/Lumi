@@ -67,6 +67,17 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return cached
     }
 
+    public func displayMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        let all = messages(for: conversationID)
+        // 低于「详细」(V3) 级别时,隐藏工具调用结果消息（role == .tool）,
+        // 让上层 UI 无需自行判断详细程度。
+        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
+        guard verbosity == .detailed else {
+            return all.filter { $0.role != .tool }
+        }
+        return all
+    }
+
     public nonisolated func messagesAsync(for conversationID: UUID) async -> [LumiChatMessage] {
         await store?.fetchMessages(conversationId: conversationID) ?? []
     }

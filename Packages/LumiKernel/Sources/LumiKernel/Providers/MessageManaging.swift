@@ -5,8 +5,16 @@ import Foundation
 /// 定义消息的获取、删除、插入等管理功能。
 @MainActor
 public protocol MessageManaging: ObservableObject {
-    /// 获取指定对话的所有消息
+    /// 获取指定对话的所有消息（原始数据,包含工具调用结果）
+    ///
+    /// 后端逻辑（如构建 LLM 上下文、生成摘要）应使用此方法,确保获得完整消息历史。
     func messages(for conversationID: UUID) -> [LumiChatMessage]
+
+    /// 获取指定对话的 UI 展示消息（根据详细程度过滤）
+    ///
+    /// 低于「详细」(V3) 级别时,会过滤掉工具调用结果消息（role == .tool）。
+    /// UI 层（如 MessageListView）应使用此方法,无需自行判断详细程度。
+    func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
 
     /// 删除指定消息
     func deleteMessage(id: UUID, in conversationID: UUID)

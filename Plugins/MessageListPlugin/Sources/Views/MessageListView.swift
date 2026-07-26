@@ -24,28 +24,11 @@ struct MessageListView: View, SuperLog {
         kernel.messageSender?.isSending ?? false
     }
 
-    /// 当前会话的回复详细级别
-    private var currentVerbosity: LumiResponseVerbosity {
-        let conversationID = kernel.conversations?.selectedConversationID
-        return kernel.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
-    }
-
-    /// 工具调用结果消息（role == .tool）仅在「详细」(V3) 级别下展示。
-    private var showsToolResultMessages: Bool {
-        currentVerbosity == .detailed
-    }
-
     /// Display messages with a transient status message appended when sending.
-    /// 低于「详细」(V3) 级别时隐藏工具调用结果消息。
+    /// 工具调用结果消息的过滤已在 MessageManager.messages(for:) 中完成。
     private var displayMessages: [LumiChatMessage] {
         guard let conversationID = kernel.conversations?.selectedConversationID else {
             return messages
-        }
-        let visible: [LumiChatMessage]
-        if showsToolResultMessages {
-            visible = messages
-        } else {
-            visible = messages.filter { $0.role != .tool }
         }
         if isSending {
             let statusMessage = LumiChatMessage(
@@ -54,9 +37,9 @@ struct MessageListView: View, SuperLog {
                 content: "正在发送消息…",
                 metadata: ["isTransientStatus": "true"]
             )
-            return visible + [statusMessage]
+            return messages + [statusMessage]
         }
-        return visible
+        return messages
     }
 
     // MARK: - SuperLog
@@ -160,7 +143,9 @@ struct MessageListView: View, SuperLog {
             return
         }
         hasSelectedConversation = true
-        let loaded = kernel.messageManager?.messages(for: conversationID) ?? []
+        // 使用 displayMessages(for:) 获取已根据详细程度过滤的消息,
+        // 无需在 UI 层自行判断工具调用可见性。
+        let loaded = kernel.messageManager?.displayMessages(for: conversationID) ?? []
         if Self.verbose {
             Self.logger.info("\(Self.t)Loaded \(loaded.count) messages for conversation \(conversationID.uuidString.prefix(8))")
         }
