@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LocalizationKit"),
+        .package(path: "../SuperLogKit"),
     ],
 
     targets: [
@@ -22,6 +23,7 @@ let package = Package(
             name: "HttpKit",
             dependencies: [
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [
