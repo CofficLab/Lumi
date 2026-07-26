@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiKernel
 import os
@@ -9,15 +10,15 @@ import SuperLogKit
 /// LLM Provider plugins. Lookup is O(1) by id; iteration preserves the
 /// insertion order so that the provider UI shows a stable list.
 @MainActor
-public final class LLMProviderManager: LLMProviderManaging, SuperLog {
+public final class LLMProviderManager: LLMProviderManaging, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager.service")
     public nonisolated static let emoji = "🧠"
     nonisolated static let verbose = false
 
     private var llmProviders: [String: any LumiLLMProvider] = [:]
     private var llmProviderOrder: [String] = []
-    private var _selectedProviderID: String?
-    private var _selectedModel: String?
+    @Published private var _selectedProviderID: String?
+    @Published private var _selectedModel: String?
 
     /// 共享的 provider 可用性状态。ModelSelector / Settings 页面都引用同一个实例。
     public let providerAvailabilityState = ModelAvailabilityState()

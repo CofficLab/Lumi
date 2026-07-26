@@ -35,8 +35,8 @@ public final class MiniMaxPlugin: LumiPlugin {
                 title: "MiniMax Token Plan",
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
-                popover: {
-                    TokenPlanDetailView(status: .loading, onRefresh: {})
+                statusBarView: {
+                    MiniMaxStatusBarVisibilityView(kernel: kernel)
                 }
             )
         ]
