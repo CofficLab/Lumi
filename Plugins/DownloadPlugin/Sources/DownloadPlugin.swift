@@ -31,6 +31,46 @@ public final class DownloadPlugin: LumiPlugin, SuperLog {
         }
     }
 
+    // MARK: - Helper Methods
+
+    /// 默认下载目录
+    public nonisolated static func defaultDownloadDirectory() -> URL {
+        let fileManager = FileManager.default
+        let downloadsURL = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        return downloadsURL
+    }
+
+    /// 从 URL 提取文件名
+    public nonisolated static func extractFilename(from url: URL) -> String {
+        // 尝试从 URL 路径提取
+        let pathComponent = url.lastPathComponent
+        if !pathComponent.isEmpty, pathComponent != "/", !pathComponent.contains("?") {
+            return pathComponent
+        }
+
+        // 尝试从查询参数提取
+        if let query = url.query {
+            let pairs = query.components(separatedBy: "&")
+            for pair in pairs {
+                let keyValue = pair.components(separatedBy: "=")
+                if keyValue.count == 2 {
+                    let key = keyValue[0]
+                    let value = keyValue[1].removingPercentEncoding ?? keyValue[1]
+                    if key.lowercased() == "filename" || key.lowercased() == "file" {
+                        return value
+                    }
+                }
+            }
+        }
+
+        // 使用时间戳作为默认文件名
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timestamp = formatter.string(from: Date())
+        return "download_\(timestamp)"
+    }
+
 
     // MARK: - LumiPlugin stubs
 
